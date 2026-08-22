@@ -125,9 +125,8 @@ Y = Z_{\text{core}} C^T + b \quad \in \mathbb{R}^{B \times N \times d_{\text{out
 ### 4.1 Parameter Count Formulas
 For input dimension $N = d_{\text{in}}$ and output dimension $M = d_{\text{out}}$:
 
-- **Original Linear Parameters**: $P_{\text{orig}} = M \cdot N + M$
-- **CURLinear Parameters**: $P_{\text{CURLinear}} = M \cdot r + r^2 + r \cdot N + M = r(M + N + r) + M$
-- **Memory Savings Fraction**: $1 - \frac{r(M + N + r)}{M \cdot N}$
+Specifically, regarding \textbf{Original Linear Parameters}, $P_{\text{orig}} = M \cdot N + M$ Furthermore, regarding \textbf{CURLinear Parameters}, $P_{\text{CURLinear}} = M \cdot r + r^2 + r \cdot N + M = r(M + N + r) + M$ Concurrently, regarding \textbf{Memory Savings Fraction}, $1 - \frac{r(M + N + r)}{M \cdot N}$
+
 
 ### 4.2 Layer Memory Profile Table ($M=4096, N=4096$, FP16 Precision)
 

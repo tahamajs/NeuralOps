@@ -102,6 +102,7 @@ class BonsaiPruner(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("bonsai")
+@COMPRESSOR_REGISTRY.register("bonsai_pruner")
 def bonsai_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for Bonsai pruner."""
     sparsity = getattr(comp_config, "bonsai_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)

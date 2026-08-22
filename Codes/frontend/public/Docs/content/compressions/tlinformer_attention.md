@@ -108,7 +108,8 @@ Input Hidden States X [B, N, D]
 ### FLOP & MAC Counting
 1. **Input & Output Linears ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
 2. **Sequence Contraction MatMuls ($\mathbf{P}_K \widetilde{\mathbf{K}}, \mathbf{P}_V \widetilde{\mathbf{V}}$)**:
-   - $2 \times (2 B H r N d) = 4 B N r D$ FLOPs.
+$2 \times (2 B H r N d) = 4 B N r D$ FLOPs.
+
 3. **Score Matrix Product ($\mathbf{Q} \mathbf{K}_{\text{proj}}^\top$)**: $2 B H N r d = 2 B N r D$ FLOPs.
 4. **Context Aggregation Product ($\mathbf{A} \mathbf{V}_{\text{proj}}$)**: $2 B H N r d = 2 B N r D$ FLOPs.
 
@@ -120,12 +121,8 @@ Input Hidden States X [B, N, D]
 Compared to standard attention's $8 B N D^2 + 4 B N^2 D$, sequence compute drops from quadratic $\mathcal{O}(N^2)$ to strictly linear $\mathcal{O}(N r)$.
 
 ### Memory Footprint & Tensor Store
-- **Parameters**: $4 D^2 + 2 r N_{\text{max}}$ floats.
-- **Activation Memory**:
-  - Masked Keys/Values ($\widetilde{\mathbf{K}}, \widetilde{\mathbf{V}}$): $2 B H N d = 2 B N D$ floats.
-  - Projected Key/Value Tensors ($\mathbf{K}_{\text{proj}}, \mathbf{V}_{\text{proj}}$): $2 B H r d = 2 B r D$ floats.
-  - Attention Score Tensor ($\mathbf{S}$): $B H N r$ floats.
-  - Peak Activation Footprint: $\mathcal{O}(B N D + B H N r)$.
+Specifically, regarding \textbf{Parameters}, $4 D^2 + 2 r N_{\text{max}}$ floats. Furthermore, regarding \textbf{Activation Memory},  Concurrently, Masked Keys/Values ($\widetilde{\mathbf{K}}, \widetilde{\mathbf{V}}$): $2 B H N d = 2 B N D$ floats. In this setting, Projected Key/Value Tensors ($\mathbf{K}_{\text{proj}}, \mathbf{V}_{\text{proj}}$): $2 B H r d = 2 B r D$ floats. Additionally, Attention Score Tensor ($\mathbf{S}$): $B H N r$ floats. Moreover, Peak Activation Footprint: $\mathcal{O}(B N D + B H N r)$.
+
 
 ---
 

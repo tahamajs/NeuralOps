@@ -13,6 +13,8 @@ import logging
 import os
 
 from framework.compression_engine.aa_svd_compressor import AASVDCompressor, SVDLinear
+from framework.compression_engine.adaptive_compressor import AdaptiveTransformerCompressor
+from framework.compression_engine.adaptive_ranks import AdaptiveRanksCompressor
 from framework.compression_engine.adasvd_compressor import AdaSVDCompressor
 from framework.compression_engine.admm_compressor import ADMMCompressor
 from framework.compression_engine.admm_pruner import ADMMPruner
@@ -40,6 +42,7 @@ from framework.compression_engine.dynamic_rank import (
     allocate_entropy_ranks,
     compute_singular_entropy,
 )
+from framework.compression_engine.enlighten_compressor import ENLightenCompressor
 from framework.compression_engine.entropy_budget_allocation import EntropyBudgetCompressor
 from framework.compression_engine.erc_svd import ERCCompressor
 from framework.compression_engine.faq_quantizer import FAQLinear, FAQQuantizer
@@ -76,6 +79,12 @@ from framework.compression_engine.mamba_shedder import MambaShedderCompressor
 from framework.compression_engine.mgie_svd import MGIECompressor
 from framework.compression_engine.mgie_svd_compressor import MGIESVDBudgetCompressor
 from framework.compression_engine.modegpt_compressor import MoDeGPTCompressor
+from framework.compression_engine.nli_softmax import (
+    NLISoftmax,
+    NLISoftmaxCompressor,
+    NLISoftmaxFunction,
+    nli_softmax,
+)
 from framework.compression_engine.oats_compressor import OATSCompressor
 from framework.compression_engine.proxsparse import (
     ProxSparseCompressor,
@@ -89,6 +98,17 @@ from framework.compression_engine.res_svd import (
 from framework.compression_engine.rpca_compressor import RPCACompressor
 from framework.compression_engine.saes_svd_v2 import SAESSVDCompressorV2
 from framework.compression_engine.salr import SALRCompressor, SALRLayer
+from framework.compression_engine.sdrm_compressor import SDRMCompressor
+from framework.compression_engine.uniql_compressor import UniQLCompressor
+from framework.compression_engine.optimal_subspace_projection import (
+    OptimalSubspaceProjectionCompressor,
+    SubspaceProjectionCompressor,
+)
+from framework.compression_engine.rotational_slicegpt_int4 import (
+    RotationalSliceGPTCompressor,
+    RotationalSliceGPTINT4Compressor,
+    RotationalSliceGPTINT4Linear,
+)
 from framework.compression_engine.slicegpt import SliceGPTCompressor
 from framework.compression_engine.slicegpt_pca import SliceGPTPCACompressor
 from framework.compression_engine.slim_compressor import SLiMCompressor
@@ -98,7 +118,13 @@ from framework.compression_engine.soka_compressor import (
     SoKACompressor,
 )
 from framework.compression_engine.sparsegpt import SparseGPTCompressor
-from framework.compression_engine.svd_linear import SVDLinearLayer
+from framework.compression_engine.subspace_projection import (
+    SubspaceLinear,
+)
+from framework.compression_engine.svd_linear import (
+    SVDLinearCompressor,
+    SVDLinearLayer,
+)
 from framework.compression_engine.swift_svd import SwiftSVDCompressor
 from framework.compression_engine.swift_svd_act import SwiftSVDActivationCompressor
 from framework.compression_engine.zerokv_neo_compressor import (
@@ -122,6 +148,8 @@ __all__ = [
     # SVD and Spectral Low-Rank Compressors
     "AASVDCompressor",
     "AdaSVDCompressor",
+    "AdaptiveTransformerCompressor",
+    "AdaptiveRanksCompressor",
     "DirectSVDCompressor",
     "DobiSVDCompressor",
     "DobiSVDLinearLayer",
@@ -142,10 +170,13 @@ __all__ = [
     "SAESCompressor",
     "SALRCompressor",
     "SALRLayer",
+    "SDRMCompressor",
     "SVDLinear",
     "SVDLinearLayer",
+    "SVDLinearCompressor",
     "SwiftSVDCompressor",
     "SwiftSVDActivationCompressor",
+    "UniQLCompressor",
     "allocate_entropy_ranks",
     "compute_singular_entropy",
     "LowRankCompressor",
@@ -153,15 +184,21 @@ __all__ = [
     "SoKACompressor",
     "LiLLaMACompressor",
     "LSCCompressor",
-    # Structural Pruning and Layer Shedding
     "SliceGPTCompressor",
     "SliceGPTPCACompressor",
+    "RotationalSliceGPTINT4Compressor",
+    "RotationalSliceGPTCompressor",
+    "RotationalSliceGPTINT4Linear",
+    "OptimalSubspaceProjectionCompressor",
+    "SubspaceProjectionCompressor",
+    "SubspaceLinear",
     "SparseGPTCompressor",
     "ADMMCompressor",
     "ADMMPruner",
     "ARMORPruner",
     "ASTPruner",
     "BonsaiPruner",
+    "ENLightenCompressor",
     "FLAPCompressor",
     "FLATLLMCompressor",
     "MambaShedderCompressor",
@@ -199,4 +236,9 @@ __all__ = [
     "HuffmanCompressor",
     "HuffmanCoder",
     "HuffmanNode",
+    # NLI Softmax
+    "NLISoftmaxFunction",
+    "nli_softmax",
+    "NLISoftmax",
+    "NLISoftmaxCompressor",
 ]

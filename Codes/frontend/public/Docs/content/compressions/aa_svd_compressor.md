@@ -115,9 +115,8 @@ Because $W_{\text{anchored}}$ is constrained to the range of $P_{\text{anchor}}$
 ### 4.1 Memory & FLOP Formulas
 When AASVD is deployed as a weight reconstruction mechanism (overwriting `module.weight.data` in-place), parameter memory remains identical to the original uncompressed model ($d_{\text{out}} \times d_{\text{in}}$). When deployed as a factorized linear layer ($U_r \operatorname{diag}(S_r) V_r^T$):
 
-- **Original Parameters**: $P_{\text{orig}} = d_{\text{out}} \cdot d_{\text{in}}$
-- **Factorized Parameters**: $P_{\text{AASVD}} = r(d_{\text{out}} + d_{\text{in}} + 1)$
-- **Inference FLOPs / Token**: $2 r (d_{\text{out}} + d_{\text{in}})$
+Specifically, regarding \textbf{Original Parameters}, $P_{\text{orig}} = d_{\text{out}} \cdot d_{\text{in}}$ Furthermore, regarding \textbf{Factorized Parameters}, $P_{\text{AASVD}} = r(d_{\text{out}} + d_{\text{in}} + 1)$ Concurrently, regarding \textbf{Inference FLOPs / Token}, $2 r (d_{\text{out}} + d_{\text{in}})$
+
 
 ### 4.2 Benchmark Footprint Table ($d_{\text{out}} = 4096, d_{\text{in}} = 4096$, Rank $r = 128$)
 
