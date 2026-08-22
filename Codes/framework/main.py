@@ -180,6 +180,13 @@ def load_data(cfg, tokenizer):
             tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
         )
         dataset = raw.map(preprocess_fn, batched=True, remove_columns=raw["train"].column_names)
+        
+        # Crop dataset to max_train_samples (e.g. 1000) if requested for fast benchmarking
+        max_samples = getattr(cfg, "max_train_samples", None)
+        if max_samples is not None and "train" in dataset:
+            actual_count = min(len(dataset["train"]), int(max_samples))
+            dataset["train"] = dataset["train"].select(range(actual_count))
+
         cols = ["input_ids", "attention_mask", "labels"]
         if "token_type_ids" in dataset["train"].column_names:
             cols.append("token_type_ids")
