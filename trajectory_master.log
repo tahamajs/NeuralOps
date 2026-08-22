@@ -1664,3 +1664,5 @@ ompleted)
 [2026-08-22 05:11:33] [Worker-2] [73/126] << SUCCESS: attn=nasc | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7020 | Time: 31.2s
 [2026-08-22 05:11:37] [Worker-2] [74/126] >> Launching: attn=nasc_attention | task=sst2 | seed=42
 [2026-08-22 05:12:08] [Worker-2] [74/126] << SUCCESS: attn=nasc_attention | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7020 | Time: 31.3s
+[2026-08-22 05:12:10] [Worker-2] [75/126] >> Launching: attn=nasc_injection | task=sst2 | seed=42
+[2026-08-22 05:12:41] [Worker-2] [75/126] << SUCCESS: attn=nasc_injection | task=sst2 | Acc: 71.44% | F1: 69.97% | Loss: 0.5841 | Time: 30.8s
