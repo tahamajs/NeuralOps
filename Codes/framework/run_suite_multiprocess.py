@@ -443,7 +443,7 @@ def main():
     log_master(f"Trajectory Matrix: {len(ATTN_MODELS)} Models x {len(TASKS)} Tasks = {total} Runs")
     log_master("Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.")
 
-    NUM_WORKERS = 1
+    NUM_WORKERS = 3
     processes = []
     for w_id in range(1, NUM_WORKERS + 1):
         p = mp.Process(target=worker_process_main, args=(w_id, task_queue, total), daemon=False)
