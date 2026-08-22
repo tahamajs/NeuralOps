@@ -129,13 +129,13 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                       "mamba_svd_flash_inject",
                       "mla", "moba", "moe_deltakv_paged", "nasc",
                       "nasc_attention", "nasc_injection", "nexus", "nha"}
-        super_heavy_attn = {"expert_choice_moe", "granite_hybrid",
-                            "factorised_matrix_state", "hgrn2_outer",
-                            "inject_aegis_spectron_fp8", "jamba2", "jamba_info",
-                            "kda", "leka_v1", "leka_v2", "leka_v3"}
+        super_heavy_attn = {"factorised_matrix_state", "hgrn2_outer", "kda", "leka_v1", "leka_v2", "leka_v3"}
+        extreme_attn = {"expert_choice_moe", "granite_hybrid", "jamba2", "inject_aegis_spectron_fp8"}
                             
-        if attn in super_heavy_attn:
-            cfg.batch_size = 16
+        if attn in extreme_attn:
+            cfg.batch_size = 4
+        elif attn in super_heavy_attn:
+            cfg.batch_size = 8
         elif attn in heavy_attn:
             cfg.batch_size = 32
         elif attn in {"adasplash", "nha_compressor", "token_compressed"}:
