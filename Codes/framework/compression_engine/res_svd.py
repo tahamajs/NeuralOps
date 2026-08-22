@@ -326,6 +326,17 @@ class ResSVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="res_svd", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            base_rank = getattr(cfg, "base_rank", getattr(cfg, "rank", base_rank))
+            residual_rank = getattr(cfg, "residual_rank", residual_rank)
+            scaling = getattr(cfg, "scaling", getattr(cfg, "lora_alpha", scaling))
+            factorize_base = getattr(cfg, "factorize_base", factorize_base)
+            freeze_base = getattr(cfg, "freeze_base", freeze_base)
+
+        if "rank" in kwargs and kwargs["rank"] is not None:
+            base_rank = kwargs["rank"]
+
         self.base_rank = base_rank
         self.residual_rank = residual_rank
         self.scaling = scaling

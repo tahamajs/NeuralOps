@@ -1,81 +1,134 @@
 """
-CUR‑MoE Compressor: apply CUR decomposition to MoE expert layers.
-Registered as 'cur_moe'.
+CUR-MoE Compressor: apply CUR cross-approximation to Mixture of Experts (MoE) modules and expert layers.
+Registered in COMPRESSOR_REGISTRY as 'cur_moe'.
 """
-from typing import Any
 
-import numpy as np
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
+import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+
+from .cur_linear import CURLinear
 
 
 class CURMoECompressor(BaseCompressor):
     """
-    Compresses MoE expert layers using CUR decomposition.
+    Compresses Mixture of Experts (MoE) layers using CUR cross-approximation.
 
     Args:
         model: PyTorch model containing MoE modules.
-        rank: rank for CUR decomposition.
-        method: 'leverage' or 'uniform'.
+        rank: Target rank for CUR decomposition of expert weights.
+        method: 'leverage' (statistical leverage scores) or 'energy' (Frobenius energy).
+        cfg: Optional configuration object.
+        deterministic: Whether to use deterministic top-k selection (default True).
+        **kwargs: Additional parameters for BaseCompressor.
     """
 
-    def __init__(self, model, rank=64, method="leverage", **kwargs):
-        super().__init__(model, name="cur_moe", **kwargs)
-        self.rank = rank
-        self.method = method
+    def __init__(
+        self,
+        model: Optional[nn.Module] = None,
+        rank: int = 64,
+        method: str = "leverage",
+        cfg: Optional[Any] = None,
+        deterministic: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(model if model is not None else nn.Identity(), name="cur_moe", **kwargs)
+        self.rank = rank or getattr(cfg, "cur_moe_rank", None) or getattr(cfg, "rank", 64)
+        self.method = method or getattr(cfg, "cur_moe_method", "leverage")
+        self.cfg = cfg
+        self.deterministic = deterministic
+        self.compressed_layers: List[str] = []
 
-    def compress(self) -> Any:
-        """Compress the target module using this strategy."""
-        for name, module in self.model.named_modules():
+    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Compress expert linear layers in MoE architecture."""
+        if model is not None:
+            self.model = model
+            self._original_params = self._count_params(self.model)
+
+        self.compressed_layers = []
+        # First scan for standard MoE modules (with module.experts or expert submodules)
+        for name, module in list(self.model.named_modules()):
             if hasattr(module, "experts"):
-                for expert in module.experts:
-                    for param_name, param in expert.named_parameters():
-                        if "weight" in param_name and param.dim() == 2:
-                            W = param.data.float().cpu().numpy()
-                            out_dim, in_dim = W.shape
-                            r = min(self.rank, min(out_dim, in_dim))
+                experts_container = module.experts
+                if isinstance(experts_container, (nn.ModuleList, list)):
+                    for exp_idx, expert in enumerate(experts_container):
+                        for child_name, child_mod in list(expert.named_children()):
+                            if isinstance(child_mod, nn.Linear) and not isinstance(child_mod, CURLinear):
+                                cur_layer = CURLinear.from_linear(
+                                    child_mod,
+                                    rank=self.rank,
+                                    method=self.method,
+                                    deterministic=self.deterministic,
+                                )
+                                setattr(expert, child_name, cur_layer)
+                                self.compressed_layers.append(f"{name}.experts.{exp_idx}.{child_name}")
+            elif "expert" in name.lower() and isinstance(module, nn.Linear) and not isinstance(module, CURLinear):
+                cur_layer = CURLinear.from_linear(
+                    module,
+                    rank=self.rank,
+                    method=self.method,
+                    deterministic=self.deterministic,
+                )
+                parent = self._get_parent_module(name)
+                if parent is not None:
+                    child_name = name.split(".")[-1]
+                    setattr(parent, child_name, cur_layer)
+                    self.compressed_layers.append(name)
 
-                            # Column selection
-                            if self.method == "leverage":
-                                col_norms = np.linalg.norm(W, axis=0)
-                                col_probs = col_norms / (col_norms.sum() + 1e-8)
-                            else:
-                                col_probs = np.ones(in_dim) / in_dim
-                            selected_cols = np.random.choice(
-                                in_dim, size=r, replace=False, p=col_probs
-                            )
-                            C = W[:, selected_cols]
+        # If no explicit MoE structure was found, apply to linear layers as fallback
+        if len(self.compressed_layers) == 0:
+            for name, module in list(self.model.named_modules()):
+                if isinstance(module, nn.Linear) and not isinstance(module, CURLinear):
+                    max_rank = min(module.in_features, module.out_features)
+                    r = min(self.rank, max_rank)
+                    cur_layer = CURLinear.from_linear(
+                        module,
+                        rank=r,
+                        method=self.method,
+                        deterministic=self.deterministic,
+                    )
+                    parent = self._get_parent_module(name)
+                    if parent is not None:
+                        child_name = name.split(".")[-1]
+                        setattr(parent, child_name, cur_layer)
+                        self.compressed_layers.append(name)
 
-                            # Row selection
-                            if self.method == "leverage":
-                                row_norms = np.linalg.norm(W, axis=1)
-                                row_probs = row_norms / (row_norms.sum() + 1e-8)
-                            else:
-                                row_probs = np.ones(out_dim) / out_dim
-                            selected_rows = np.random.choice(
-                                out_dim, size=r, replace=False, p=row_probs
-                            )
-                            R = W[selected_rows, :]
-
-                            # Compute U
-                            C_pinv = np.linalg.pinv(C)
-                            R_pinv = np.linalg.pinv(R)
-                            U = C_pinv @ W @ R_pinv
-
-                            W_approx = C @ U @ R
-                            param.data = torch.tensor(
-                                W_approx, dtype=param.dtype, device=param.device
-                            )
         self._compressed_params = self._count_params(self.model)
-        return self.model, self.get_compression_stats()
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                "compressed_layer_count": len(self.compressed_layers),
+                "cur_method": self.method,
+                "cur_moe_rank": self.rank,
+            }
+        )
+        return self.model, stats
+
+    def _get_parent_module(self, full_name: str) -> Optional[nn.Module]:
+        parts = full_name.split(".")
+        parent = self.model
+        for part in parts[:-1]:
+            parent = getattr(parent, part, None)
+            if parent is None:
+                return None
+        return parent
 
 
 @COMPRESSOR_REGISTRY.register("cur_moe")
-def cur_moe_factory(model, comp_config) -> Any:
-    """Cur moe factory."""
-    rank = getattr(comp_config, "cur_moe_rank", 64)
+def cur_moe_factory(
+    model: nn.Module,
+    comp_config: Optional[Any] = None,
+    rank: Optional[int] = None,
+    **kwargs: Any,
+) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+    """Factory function for CUR-MoE compressor."""
+    effective_rank = rank or getattr(comp_config, "cur_moe_rank", None) or getattr(comp_config, "rank", 64)
     method = getattr(comp_config, "cur_moe_method", "leverage")
-    compressor = CURMoECompressor(model, rank=rank, method=method)
+    compressor = CURMoECompressor(model, rank=effective_rank, method=method, cfg=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

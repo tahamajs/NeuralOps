@@ -81,8 +81,19 @@ def get_completed_runs():
 def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, git_lock: mp.Lock):
     # Separate Python process running on its own CPU core & CUDA context
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+    os.environ["OMP_NUM_THREADS"] = "8"
+    os.environ["MKL_NUM_THREADS"] = "8"
+    os.environ["OPENBLAS_NUM_THREADS"] = "8"
+    os.environ["NUMEXPR_NUM_THREADS"] = "8"
+    os.environ["TORCH_NUM_THREADS"] = "8"
     import torch
     import gc
+    # Fully saturate CPU across all logical cores
+    try:
+        torch.set_num_threads(8)
+        torch.set_num_interop_threads(4)
+    except Exception:
+        pass
     torch.backends.cudnn.benchmark = True
     if torch.cuda.is_available():
         # Hard cap at 45% of 8GB = 3.6GB VRAM per worker (2 workers = 7.2GB max) to perfectly prevent Windows Shared Memory swapping
