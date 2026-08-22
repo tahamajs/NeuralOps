@@ -110,10 +110,10 @@ class MoDeGPTCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("modegpt")
-def modegpt_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """MoDeGPT compressor factory function."""
-    rank = getattr(comp_config, "modegpt_rank", 64) if comp_config else 64
-    method = getattr(comp_config, "modegpt_method", "svd") if comp_config else "svd"
-    compressor = MoDeGPTCompressor(model, rank=rank, method=method)
+    rank = kwargs.pop("rank", getattr(comp_config, "modegpt_rank", 64) if comp_config else 64)
+    method = kwargs.pop("method", getattr(comp_config, "modegpt_method", "svd") if comp_config else "svd")
+    compressor = MoDeGPTCompressor(model, rank=rank, method=method, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
