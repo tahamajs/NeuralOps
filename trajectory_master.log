@@ -1315,3 +1315,5 @@ ompleted)
 [2026-08-22 04:45:18] [Worker-2] [60/126] -- SKIPPING: attn=mamba | task=sst2 (Already completed)
 [2026-08-22 04:45:18] [Worker-2] [61/126] >> Launching: attn=mamba_inject | task=sst2 | seed=42
 [2026-08-22 04:45:32] [Worker-2] [61/126] << SUCCESS: attn=mamba_inject | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6982 | Time: 13.9s
+[2026-08-22 04:45:34] [Worker-2] [62/126] >> Launching: attn=mamba_svd_flash | task=sst2 | seed=42
+[2026-08-22 04:46:18] [Worker-2] [62/126] << SUCCESS: attn=mamba_svd_flash | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7014 | Time: 43.9s
