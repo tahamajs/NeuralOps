@@ -139,7 +139,7 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                       "primal", "projection_factorized_attn", "qcqa",
                       "mamba_svd_flash_inject",
                       "mla", "moba", "moe_deltakv_paged", "nasc",
-                      "nasc_attention", "nasc_injection", "nexus", "nha", "oha"}
+                      "nasc_attention", "nasc_injection", "nexus", "nha", "oha", "lola_attn"}
         super_heavy_attn = {"kda", "leka_v1", "leka_v2", "leka_v3", "orion", "orion_module"}
         extreme_attn = {"inject_aegis_spectron_fp8", "mla"}
         ultra_heavy_attn = {"hgrn2_outer", "granite_hybrid", "jamba2", "expert_choice_moe", "factorised_matrix_state"}
