@@ -443,3 +443,5 @@ ompleted)
 [2026-08-22 04:13:37] [Worker-1] [6/126] << SUCCESS: attn=aegis_hybrid_attn | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7027 | Time: 8.7s
 [2026-08-22 04:13:40] [Worker-1] [7/126] >> Launching: attn=aegis_spectron_fp8 | task=sst2 | seed=42
 [2026-08-22 04:15:20] [Worker-1] [7/126] << SUCCESS: attn=aegis_spectron_fp8 | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6937 | Time: 100.1s
+[2026-08-22 04:15:23] [Worker-1] [8/126] >> Launching: attn=aegis_spectron_fp8_attn | task=sst2 | seed=42
+[2026-08-22 04:17:06] [Worker-1] [8/126] << SUCCESS: attn=aegis_spectron_fp8_attn | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6937 | Time: 102.2s
