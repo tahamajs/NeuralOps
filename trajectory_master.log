@@ -2006,3 +2006,5 @@ ompleted)
 [2026-08-22 10:15:18] [Worker-2] [114/145] << SUCCESS: attn=svd_linear_decay | task=sst2 | Acc: 84.63% | F1: 84.63% | Loss: 0.4989 | Time: 20.5s
 [2026-08-22 10:15:19] [Worker-2] [115/145] >> Launching: attn=svd_llm_v2 | task=sst2 | seed=42
 [2026-08-22 10:15:39] [Worker-2] [115/145] << SUCCESS: attn=svd_llm_v2 | task=sst2 | Acc: 76.38% | F1: 76.34% | Loss: 0.6390 | Time: 19.6s
+[2026-08-22 10:15:41] [Worker-2] [116/145] >> Launching: attn=svd_proj_attn | task=sst2 | seed=42
+[2026-08-22 10:15:58] [Worker-2] [116/145] << SUCCESS: attn=svd_proj_attn | task=sst2 | Acc: 75.34% | F1: 75.34% | Loss: 0.5708 | Time: 17.3s
