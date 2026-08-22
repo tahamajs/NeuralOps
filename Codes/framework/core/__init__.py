@@ -4,39 +4,84 @@ Provides model‑agnostic architecture detection, attention injection,
 compression pipeline, and base classes.
 """
 
-from .adapters import ADAPTER_MAP, get_adapter
-from .architecture import (
-    detect_architecture,
-    get_attention_modules,
-    get_classifier_head,
-    get_embedding_module,
-    get_ffn_modules,
-    get_transformer_layers,
-)
-from .attention_mask import apply_attention_mask, get_token_valid_mask
-from .attention_utils import available_attention_types, inject_attention, softpick
-from .base import BaseAttention, BaseCompressor
-from .compression_engine import CompressionPipeline, compress_model
-from .memory import GPUMemoryGuard, cleanup_gpu_memory, get_gpu_memory_stats
-from .model_utils import activation_hooks, copy_attention_weights
-from .model_utils import count_parameters as count_params
-from .model_utils import (
-    get_parent_and_child_name,
-    replace_module,
-    run_calibration_forward,
-)
-from .model_wrapper import UnifiedTransformerConfig, UnifiedTransformerModel
-from .registry import (
-    ATTENTION_REGISTRY,
-    AUX_REGISTRY,
-    COMPRESSOR_REGISTRY,
-    DATASET_REGISTRY,
-    LOSS_REGISTRY,
-    METHOD_REGISTRY,
-    MODEL_REGISTRY,
-    TRAINER_REGISTRY,
-    VISUALIZER_REGISTRY,
-    list_all_components,
-)
-from .multi_mode_benchmark import MultiModeBenchmarkRunner, SUPPORTED_MODES
-from .utils import format_number, get_device, human_readable_time, set_seed
+from __future__ import annotations
+
+import importlib
+import logging
+from typing import Any, Dict
+
+logger = logging.getLogger(__name__)
+
+# Map symbol names to their module filename within framework.core
+_MODULE_MAP: Dict[str, str] = {
+    "ADAPTER_MAP": "adapters",
+    "get_adapter": "adapters",
+    "detect_architecture": "architecture",
+    "get_attention_modules": "architecture",
+    "get_classifier_head": "architecture",
+    "get_embedding_module": "architecture",
+    "get_ffn_modules": "architecture",
+    "get_transformer_layers": "architecture",
+    "apply_attention_mask": "attention_mask",
+    "get_token_valid_mask": "attention_mask",
+    "available_attention_types": "attention_utils",
+    "inject_attention": "attention_utils",
+    "softpick": "attention_utils",
+    "BaseAttention": "base",
+    "BaseCompressor": "base",
+    "CompressionPipeline": "compression_engine",
+    "compress_model": "compression_engine",
+    "GPUMemoryGuard": "memory",
+    "cleanup_gpu_memory": "memory",
+    "get_gpu_memory_stats": "memory",
+    "activation_hooks": "model_utils",
+    "copy_attention_weights": "model_utils",
+    "count_params": "model_utils",
+    "get_parent_and_child_name": "model_utils",
+    "replace_module": "model_utils",
+    "run_calibration_forward": "model_utils",
+    "UnifiedTransformerConfig": "model_wrapper",
+    "UnifiedTransformerModel": "model_wrapper",
+    "ATTENTION_REGISTRY": "registry",
+    "AUX_REGISTRY": "registry",
+    "COMPRESSOR_REGISTRY": "registry",
+    "DATASET_REGISTRY": "registry",
+    "LOSS_REGISTRY": "registry",
+    "METHOD_REGISTRY": "registry",
+    "MODEL_REGISTRY": "registry",
+    "TRAINER_REGISTRY": "registry",
+    "VISUALIZER_REGISTRY": "registry",
+    "list_all_components": "registry",
+    "MultiModeBenchmarkRunner": "multi_mode_benchmark",
+    "SUPPORTED_MODES": "multi_mode_benchmark",
+    "format_number": "utils",
+    "get_device": "utils",
+    "human_readable_time": "utils",
+    "set_seed": "utils",
+}
+
+
+def __getattr__(name: str) -> Any:
+    """PEP 562 lazy attribute loading for framework.core symbols."""
+    if name in _MODULE_MAP:
+        mod_name = _MODULE_MAP[name]
+        try:
+            module = importlib.import_module(f"framework.core.{mod_name}")
+            val = getattr(module, name)
+            globals()[name] = val
+            return val
+        except Exception as e:
+            logger.error("Failed to lazily load %s from framework.core.%s: %s", name, mod_name, e)
+            raise
+    # Submodule lookup fallback
+    try:
+        module = importlib.import_module(f"framework.core.{name}")
+        globals()[name] = module
+        return module
+    except ModuleNotFoundError:
+        pass
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+__all__ = list(_MODULE_MAP.keys())
+
