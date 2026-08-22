@@ -1975,3 +1975,8 @@ ompleted)
 [2026-08-22 10:03:11] [Worker-2] [95/145] << SUCCESS: attn=rpc | task=sst2 | Acc: 83.26% | F1: 83.25% | Loss: 0.4544 | Time: 19.0s
 [2026-08-22 10:03:12] [Worker-2] [96/145] >> Launching: attn=salt_attention | task=sst2 | seed=42
 [2026-08-22 10:03:38] [Worker-2] [96/145] << SUCCESS: attn=salt_attention | task=sst2 | Acc: 77.75% | F1: 77.62% | Loss: 0.5879 | Time: 26.4s
+[2026-08-22 10:03:40] [Worker-2] [97/145] -- SKIPPING: attn=samba_m3 | task=sst2 (Already completed)
+[2026-08-22 10:03:40] [Worker-2] [98/145] >> Launching: attn=samba_moe | task=sst2 | seed=42
+[2026-08-22 10:03:42] [Worker-2] [98/145] WARNING: OOM for samba_moe. Auto-recovering: Retrying with batch_size=16 (Attempt 1/3)...
+[2026-08-22 10:03:44] [Worker-2] [98/145] WARNING: OOM for samba_moe. Auto-recovering: Retrying with batch_size=8 (Attempt 2/3)...
+[2026-08-22 10:11:50] [Worker-2] [98/145] << SUCCESS: attn=samba_moe | task=sst2 | Acc: 81.65% | F1: 81.65% | Loss: 0.4180 | Time: 490.5s
