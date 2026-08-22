@@ -1982,3 +1982,10 @@ ompleted)
 [2026-08-22 10:11:50] [Worker-2] [98/145] << SUCCESS: attn=samba_moe | task=sst2 | Acc: 81.65% | F1: 81.65% | Loss: 0.4180 | Time: 490.5s
 [2026-08-22 10:11:52] [Worker-2] [99/145] >> Launching: attn=simple_ssm | task=sst2 | seed=42
 [2026-08-22 10:12:44] [Worker-2] [99/145] << SUCCESS: attn=simple_ssm | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7026 | Time: 51.9s
+[2026-08-22 10:12:45] [Worker-2] [100/145] -- SKIPPING: attn=soa_attn | task=sst2 (Already completed)
+[2026-08-22 10:12:45] [Worker-2] [101/145] -- SKIPPING: attn=soa_fused_attn | task=sst2 (Already completed)
+[2026-08-22 10:12:45] [Worker-2] [102/145] -- SKIPPING: attn=soa_fused_module | task=sst2 (Already completed)
+[2026-08-22 10:12:45] [Worker-2] [103/145] -- SKIPPING: attn=soa_module | task=sst2 (Already completed)
+[2026-08-22 10:12:45] [Worker-2] [104/145] -- SKIPPING: attn=span_expanded | task=sst2 (Already completed)
+[2026-08-22 10:12:46] [Worker-2] [105/145] >> Launching: attn=spectra_v2 | task=sst2 | seed=42
+[2026-08-22 10:13:05] [Worker-2] [105/145] << SUCCESS: attn=spectra_v2 | task=sst2 | Acc: 77.06% | F1: 76.87% | Loss: 0.6951 | Time: 18.9s
