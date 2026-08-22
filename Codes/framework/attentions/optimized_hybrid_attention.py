@@ -169,18 +169,17 @@ class OptimizedHybridAttention(BaseAttention):
         )
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
+            if attention_mask.dim() == 4:
+                local_add = attention_mask
+                mask_2d = (attention_mask[:, 0, 0, :] > -10000.0).float() if attention_mask.size(1) == 1 else (attention_mask[:, 0, :, 0] > -10000.0).float()
+                comp_add = (1.0 - mask_2d.unsqueeze(-1)) * -10000.0
+            elif attention_mask.dim() == 2:
                 mask_2d = attention_mask.to(dtype=hidden_states.dtype)
                 local_add = (1.0 - mask_2d[:, None, None, :]) * -10000.0
                 comp_add = (1.0 - mask_2d[:, :, None]) * -10000.0
-            elif attention_mask.dim() == 4:
-                local_add = attention_mask
-                comp_add = attention_mask.squeeze(1).squeeze(1).unsqueeze(-1)
             else:
-                raise ValueError(f"Unsupported mask shape: {attention_mask.shape}")
-        else:
-            local_add = None
-            comp_add = None
+                local_add = None
+                comp_add = None
 
         # Local sliding-window attention
         scale = 1.0 / math.sqrt(self.head_dim)
