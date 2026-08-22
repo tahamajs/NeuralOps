@@ -134,8 +134,13 @@ class DirectSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-def direct_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Direct SVD factory function."""
     compressor = DirectSVDCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+direct_svd_compressor_factory = direct_svd_factory
+
+__all__ = ["DirectSVDCompressor", "direct_svd_factory", "direct_svd_compressor_factory"]

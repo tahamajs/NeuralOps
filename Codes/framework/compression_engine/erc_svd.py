@@ -137,8 +137,19 @@ class ERCCompressor(BaseCompressor):
         return self.model, stats
 
 
-def erc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def erc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """ERC factory function."""
     compressor = ERCCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+erc_svd_factory = erc_factory
+erc_svd_compressor_factory = erc_factory
+
+__all__ = [
+    "ERCCompressor",
+    "erc_factory",
+    "erc_svd_factory",
+    "erc_svd_compressor_factory",
+]
