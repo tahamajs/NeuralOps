@@ -51,9 +51,9 @@ class SDRMCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("sdrm")
 def sdrm_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """SDRM compressor factory."""
-    total_param_ratio = kwargs.get(
+    total_param_ratio = kwargs.pop(
         "total_param_ratio",
-        kwargs.get("ratio", getattr(comp_config, "total_param_ratio", 0.7) if comp_config is not None else 0.7),
+        kwargs.pop("ratio", getattr(comp_config, "total_param_ratio", 0.7) if comp_config is not None else 0.7),
     )
     compressor = SDRMCompressor(model, total_param_ratio=total_param_ratio, **kwargs)
     compressed_model, _ = compressor.compress()

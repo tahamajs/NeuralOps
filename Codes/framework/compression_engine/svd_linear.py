@@ -104,9 +104,10 @@ class SVDLinearCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("svd_linear")
+@COMPRESSOR_REGISTRY.register("svd_linear_compressor")
 def svd_linear_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """SVD Linear compressor factory."""
-    rank = getattr(comp_config, "rank", kwargs.get("rank", 64))
+    rank = kwargs.pop("rank", getattr(comp_config, "rank", 64) if comp_config is not None else 64)
     compressor = SVDLinearCompressor(model, rank=rank, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
