@@ -69,17 +69,17 @@ where $L = U_{:, 1:r} \text{diag}(\sigma_{1:r}) V_{:, 1:r}^T$ via SVD, and $R_{\
 ### 3.1 Dataflow & Execution Trace
 
 1. **Reference Store Update**:
-   - Concatenate new sequence tokens $K, V$ to reference store: `ref_k = torch.cat([ref_k, K], dim=1)`.
-   - Truncate store to keep at most `max_refs` tokens.
+Concatenate new sequence tokens $K, V$ to reference store: `ref_k = torch.cat([ref_k, K], dim=1)`. Furthermore, Truncate store to keep at most `max_refs` tokens.
+
 2. **Similarity Matching**:
-   - Compute key similarity `sim = torch.matmul(k, ref_k.transpose(-2, -1))`.
-   - Retrieve top-$k$ reference indices `_, idx = sim.topk(tk, dim=-1)`.
+Compute key similarity `sim = torch.matmul(k, ref_k.transpose(-2, -1))`. Furthermore, Retrieve top-$k$ reference indices `_, idx = sim.topk(tk, dim=-1)`.
+
 3. **Reference Aggregation**:
-   - Expand reference indices and gather matching reference vectors.
-   - Compute mean reference tensors `rk = ref_k_expanded.gather(...).mean(dim=3)`.
+Expand reference indices and gather matching reference vectors. Furthermore, Compute mean reference tensors `rk = ref_k_expanded.gather(...).mean(dim=3)`.
+
 4. **Residual Masking**:
-   - Compute residuals `k_residual = k - rk`.
-   - Filter low-magnitude residual vectors using L2 norm thresholding: `k_residual.norm(dim=-1) > 1e-3`.
+Compute residuals `k_residual = k - rk`. Furthermore, Filter low-magnitude residual vectors using L2 norm thresholding: `k_residual.norm(dim=-1) > 1e-3`.
+
 
 ```
 Incoming KV Tensors ──► Append to Reference Store ──► Similarity MatMul K @ Ref_K^T
@@ -112,7 +112,8 @@ $$\| K - \widehat{K} \|_F^2 \le \sum_{i \in \text{pruned}} \| \Delta K_i \|_2^2 
 
 ### 5.2 Failure Cases
 
-- **Cold Start Sequences**: For the first $N < \text{topk}$ tokens of a generation pass, reference store $R_K$ is empty, requiring uncompressed KV cache pass-through.
+Specifically, regarding \textbf{Cold Start Sequences}, for the first $N < \text{topk}$ tokens of a generation pass, reference store $R_K$ is empty, requiring uncompressed KV cache pass-through.
+
 
 ---
 

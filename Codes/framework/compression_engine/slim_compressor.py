@@ -122,6 +122,7 @@ class SLiMCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("slim")
+@COMPRESSOR_REGISTRY.register("slim_compressor")
 def slim_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for SLiM compressor."""
     bits = getattr(comp_config, "slim_bits", getattr(comp_config, "bits", 4)) if comp_config else kwargs.get("bits", 4)

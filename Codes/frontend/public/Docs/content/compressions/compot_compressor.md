@@ -19,8 +19,8 @@ The module is designed for the DistilBERT compression framework. It requires a t
 
 COMPOT relies on a calibration dataset—a few sentences representative of downstream usage. The model is run in evaluation mode with a forward hook attached to every `nn.Linear` module. For each such layer, the hook records:
 
-- **Input** `X` ∈ ℝ<sup>N×d_in</sup> : the pre‑activation vectors for all tokens in the batch (flattened over batch and sequence).
-- **Output** `Y` ∈ ℝ<sup>N×d_out</sup> : the corresponding post‑activation vectors.
+**Input** `X` ∈ ℝ<sup>N×d_in</sup> : the pre‑activation vectors for all tokens in the batch (flattened over batch and sequence). Furthermore, **Output** `Y` ∈ ℝ<sup>N×d_out</sup> : the corresponding post‑activation vectors.
+
 
 Here `N` is the total number of tokens (batch × seq_len). The hooks are removed after one forward pass, and the collected tensors are moved to CPU for processing.
 
@@ -33,8 +33,8 @@ X = Q · R
 ```
 
 where:
-- **Q** ∈ ℝ<sup>N×r</sup> has orthonormal columns (r = min(N, d_in) for reduced QR).
-- **R** ∈ ℝ<sup>r×d_in</sup> is upper triangular.
+**Q** ∈ ℝ<sup>N×r</sup> has orthonormal columns (r = min(N, d_in) for reduced QR). Furthermore, **R** ∈ ℝ<sup>r×d_in</sup> is upper triangular.
+
 
 **Q** forms an orthonormal dictionary that captures the directions of variation in the input data. By projecting both the inputs and the outputs onto this dictionary, we can compress the weight matrix in a data‑adaptive way.
 
@@ -74,9 +74,8 @@ Because **Q** has orthonormal columns, `Q^T` acts as the reverse mapping from di
 
 ### Intuition
 
-- **Data‑awareness**: By using the actual input distribution to form the orthogonal basis **Q**, the compression focuses on preserving the mapping for directions that are actually used, while directions never seen in the calibration data can be compressed more aggressively.
-- **Orthogonal dictionary**: The QR decomposition produces an orthonormal basis, which stabilizes the projection and SVD steps.
-- **Double compression**: The weight matrix is first compressed by projecting onto a smaller subspace (r ≤ d_in), and then the projected mapping D is further compressed via SVD. This can achieve substantial parameter reduction without discarding the data‑relevant structure.
+Specifically, regarding \textbf{Data‑awareness}, by using the actual input distribution to form the orthogonal basis **Q**, the compression focuses on preserving the mapping for directions that are actually used, while directions never seen in the calibration data can be compressed more aggressively. Furthermore, regarding \textbf{Orthogonal dictionary}, the QR decomposition produces an orthonormal basis, which stabilizes the projection and SVD steps. Concurrently, regarding \textbf{Double compression}, the weight matrix is first compressed by projecting onto a smaller subspace (r ≤ d_in), and then the projected mapping D is further compressed via SVD. This can achieve substantial parameter reduction without discarding the data‑relevant structure.
+
 
 ---
 
@@ -92,10 +91,8 @@ class COMPOTCompressor(BaseCompressor):
         ...
 ```
 
-- **`rank`**: Target rank for the SVD of D (default 64).
-- **`calibration_texts`**: List of strings for calibration. Default includes three generic sentences.
-- **`tokenizer`**: Tokenizer for the model (required). Must be provided.
-- **`device`**: Device for calibration forward pass (defaults to model’s device).
+Specifically, regarding \textbf{`rank`}, target rank for the SVD of D (default 64). Furthermore, regarding \textbf{`calibration_texts`}, list of strings for calibration. Default includes three generic sentences. Concurrently, regarding \textbf{`tokenizer`}, tokenizer for the model (required). Must be provided. In this setting, regarding \textbf{`device`}, device for calibration forward pass (defaults to model’s device).
+
 
 The `compress()` method steps:
 
@@ -104,15 +101,8 @@ The `compress()` method steps:
 3. Tokenizes calibration texts (padded/truncated to 128) and runs a forward pass.
 4. Removes hooks.
 5. For each linear layer:
-   - Retrieves collected `inp` (N, in_features) and `out` (N, out_features).
-   - Checks if enough samples (`N ≥ in_features`), else skips the layer.
-   - Performs QR decomposition: `Q, R = np.linalg.qr(inp, mode='reduced')`. Q has shape (N, r) with r = min(N, in_features).
-   - Computes `D = out.T @ Q` (shape: out_features × r).
-   - SVD of D: `U, S, Vt = np.linalg.svd(D, full_matrices=False)`.
-   - Truncates to `k = min(rank, len(S), out_features, r)`.
-   - Forms `D_approx = U[:, :k] @ diag(S[:k]) @ Vt[:k, :]`.
-   - Reconstructs `W_new = D_approx @ Q.T`.
-   - Writes `W_new` back to `module.weight.data`, preserving original dtype and device.
+Retrieves collected `inp` (N, in_features) and `out` (N, out_features). Furthermore, Checks if enough samples (`N ≥ in_features`), else skips the layer. Concurrently, Performs QR decomposition: `Q, R = np.linalg.qr(inp, mode='reduced')`. Q has shape (N, r) with r = min(N, in_features). In this setting, Computes `D = out.T @ Q` (shape: out_features × r). Additionally, SVD of D: `U, S, Vt = np.linalg.svd(D, full_matrices=False)`. Moreover, Truncates to `k = min(rank, len(S), out_features, r)`. From an analytical standpoint, Forms `D_approx = U[:, :k] @ diag(S[:k]) @ Vt[:k, :]`. In terms of operational dynamics, Reconstructs `W_new = D_approx @ Q.T`. Specifically, Writes `W_new` back to `module.weight.data`, preserving original dtype and device.
+
 6. Restores model to training mode, updates compressed param count, returns model and stats.
 
 **Important**: Biases are left unchanged. The weight matrix remains a dense tensor; to achieve inference speed‑up, the low‑rank factors should be extracted and used as two smaller linear layers (factorization). The reconstruction `W_new` is simply the dense approximation.
@@ -185,19 +175,13 @@ compressed_model = compression_pipeline(model, comp_config)
 
 ### Advantages
 
-- **Data‑aware compression**: Unlike purely weight‑based SVD, COMPOT adapts to the actual input distribution, often preserving more accuracy for the same rank.
-- **Orthogonal dictionary stability**: QR decomposition ensures a well‑conditioned basis, improving the robustness of the subsequent SVD.
-- **Lightweight calibration**: Only a few sentences are needed, making the method fast.
-- **No retraining**: Purely algebraic; works out‑of‑the‑box.
-- **Applicable to all linear layers**: The hooks capture every `nn.Linear`, so the entire model is compressed.
+Specifically, regarding \textbf{Data‑aware compression}, unlike purely weight‑based SVD, COMPOT adapts to the actual input distribution, often preserving more accuracy for the same rank. Furthermore, regarding \textbf{Orthogonal dictionary stability}, qR decomposition ensures a well‑conditioned basis, improving the robustness of the subsequent SVD. Concurrently, regarding \textbf{Lightweight calibration}, only a few sentences are needed, making the method fast. In this setting, regarding \textbf{No retraining}, purely algebraic; works out‑of‑the‑box. Additionally, regarding \textbf{Applicable to all linear layers}, the hooks capture every `nn.Linear`, so the entire model is compressed.
+
 
 ### Limitations
 
-- **Dense weight output**: The reconstructed weight is still a full matrix. To realize inference speed‑up, one must decompose it into two smaller layers (e.g., `W ≈ D_approx @ Q.T` can be seen as a linear layer with weight `D_approx` followed by `Q.T` if dimensions align). However, Q is of shape (N, d_in) with N being the number of calibration samples, which is typically larger than d_in, making `D_approx @ Q.T` still a dense (d_out × d_in) matrix. Actually, in the algorithm, Q is (N, r) with r ≈ N, so Q.T is (r, d_in) and D_approx is (d_out, r). The product is a full matrix; one could store D_approx and Q explicitly as two layers only if r < d_in, which is not guaranteed. The current implementation does not split the weight; it just approximates it.
-- **Sample size requirement**: The layer input matrix must have at least `in_features` rows to perform a full QR decomposition; otherwise the layer is skipped. For wide layers with small calibration batches, this may leave some layers uncompressed.
-- **Tokenization complexity**: The tokenizer must be available and properly configured. The `max_length=128` may cut off important signal for tasks with longer context.
-- **Deterministic but calibration‑dependent**: The quality of the compression depends on how well the calibration texts cover the input distribution. Poor calibration can lead to worse results than generic SVD.
-- **Bias unchanged**: Bias terms are not compressed, which could cause a small accuracy mismatch, especially after significant weight changes.
+Specifically, regarding \textbf{Dense weight output}, the reconstructed weight is still a full matrix. To realize inference speed‑up, one must decompose it into two smaller layers (e.g., `W ≈ D_approx @ Q.T` can be seen as a linear layer with weight `D_approx` followed by `Q.T` if dimensions align). However, Q is of shape (N, d_in) with N being the number of calibration samples, which is typically larger than d_in, making `D_approx @ Q.T` still a dense (d_out × d_in) matrix. Actually, in the algorithm, Q is (N, r) with r ≈ N, so Q.T is (r, d_in) and D_approx is (d_out, r). The product is a full matrix; one could store D_approx and Q explicitly as two layers only if r < d_in, which is not guaranteed. The current implementation does not split the weight; it just approximates it. Furthermore, regarding \textbf{Sample size requirement}, the layer input matrix must have at least `in_features` rows to perform a full QR decomposition; otherwise the layer is skipped. For wide layers with small calibration batches, this may leave some layers uncompressed. Concurrently, regarding \textbf{Tokenization complexity}, the tokenizer must be available and properly configured. The `max_length=128` may cut off important signal for tasks with longer context. In this setting, regarding \textbf{Deterministic but calibration‑dependent}, the quality of the compression depends on how well the calibration texts cover the input distribution. Poor calibration can lead to worse results than generic SVD. Additionally, regarding \textbf{Bias unchanged}, bias terms are not compressed, which could cause a small accuracy mismatch, especially after significant weight changes.
+
 
 ### Comparison with Other SVD‑Based Compressors
 

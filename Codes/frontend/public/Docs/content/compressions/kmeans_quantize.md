@@ -56,19 +56,17 @@ Let $W \in \mathbb{R}^{N \times M}$ be a weight tensor reshaped into 1D sequence
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Weight Extraction & Flattening**:
-   - Extract weight tensor from target `nn.Linear` module.
-   - Reshape to 1D numpy array `weight_np = linear.weight.data.float().cpu().numpy().reshape(-1, 1)`.
+Extract weight tensor from target `nn.Linear` module. Furthermore, Reshape to 1D numpy array `weight_np = linear.weight.data.float().cpu().numpy().reshape(-1, 1)`.
+
 2. **K-Means Codebook Fitting**:
-   - Fit `sklearn.cluster.KMeans(n_clusters=K, random_state=42, n_init="auto")`.
-   - Extract 1D centroids `centroids = kmeans.cluster_centers_.squeeze()`.
-   - Extract 2D cluster label indices `indices = kmeans.labels_.reshape(shape)`.
+Fit `sklearn.cluster.KMeans(n_clusters=K, random_state=42, n_init="auto")`. Furthermore, Extract 1D centroids `centroids = kmeans.cluster_centers_.squeeze()`. Concurrently, Extract 2D cluster label indices `indices = kmeans.labels_.reshape(shape)`.
+
 3. **Module Replacement**:
-   - Replace original `nn.Linear` with custom `KMeansLinear` module.
-   - Register `centroids` as 1D float buffer and `indices` as integer buffer.
-   - Preserve original bias parameter if present.
+Replace original `nn.Linear` with custom `KMeansLinear` module. Furthermore, Register `centroids` as 1D float buffer and `indices` as integer buffer. Concurrently, Preserve original bias parameter if present.
+
 4. **On-the-Fly Forward Reconstruction**:
-   - In forward pass, compute $W = \text{centroids}[\text{indices}]$.
-   - Execute linear operation `F.linear(x, W, bias)`.
+In forward pass, compute $W = \text{centroids}[\text{indices}]$. Furthermore, Execute linear operation `F.linear(x, W, bias)`.
+
 
 ```
 Input Linear Module ──► Reshape Weights ──► Fit KMeans (Clusters K)
@@ -104,7 +102,8 @@ Because K-Means optimizes centroid placement non-uniformly around peak probabili
 
 ### 5.2 Failure Cases
 
-- **Slow Clustering Fitting**: Fitting K-Means on ultra-large matrices ($N \cdot M > 10^8$) using CPU-based `sklearn` can cause calibration bottlenecks.
+Specifically, regarding \textbf{Slow Clustering Fitting}, fitting K-Means on ultra-large matrices ($N \cdot M > 10^8$) using CPU-based `sklearn` can cause calibration bottlenecks.
+
 
 ---
 

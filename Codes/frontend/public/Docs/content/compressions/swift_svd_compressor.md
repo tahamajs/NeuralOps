@@ -90,8 +90,8 @@ Because $C_{XY} = W \Sigma_{XX}$, singular vectors $V_C$ inherently weight input
 ## 4. Parameter Savings & Memory Footprint Profiling
 
 ### 4.1 Calibration Overhead vs Operational Footprint
-- **Calibration Memory Overhead**: Holding activation matrices $X$ ($K \times d_{\text{in}}$) and $Y$ ($K \times d_{\text{out}}$) in memory requires $K(d_{\text{in}} + d_{\text{out}}) \times 2$ bytes. For $K=2048, d_{\text{in}}=4096, d_{\text{out}}=4096$, calibration memory is 33.55 MB per layer.
-- **Inference Footprint**: When deployed as factorized matrices $U_r \operatorname{diag}(S_r) V_r^T$, parameter footprint is $r(d_{\text{out}} + d_{\text{in}} + 1)$, yielding $87.5\%$ memory savings for $r=256$.
+Specifically, regarding \textbf{Calibration Memory Overhead}, holding activation matrices $X$ ($K \times d_{\text{in}}$) and $Y$ ($K \times d_{\text{out}}$) in memory requires $K(d_{\text{in}} + d_{\text{out}}) \times 2$ bytes. For $K=2048, d_{\text{in}}=4096, d_{\text{out}}=4096$, calibration memory is 33.55 MB per layer. Furthermore, regarding \textbf{Inference Footprint}, when deployed as factorized matrices $U_r \operatorname{diag}(S_r) V_r^T$, parameter footprint is $r(d_{\text{out}} + d_{\text{in}} + 1)$, yielding $87.5\%$ memory savings for $r=256$.
+
 
 ### 4.2 Resource Profile ($d_{\text{in}}=4096, d_{\text{out}}=4096$, $K=2048$ Tokens)
 

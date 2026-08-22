@@ -93,6 +93,7 @@ class LSCCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("lsc")
+@COMPRESSOR_REGISTRY.register("lsc_compressor")
 def lsc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for LSC compressor."""
     rank = getattr(comp_config, "lsc_rank", getattr(comp_config, "rank", 32)) if comp_config else kwargs.get("rank", 32)
