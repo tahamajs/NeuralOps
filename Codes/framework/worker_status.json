@@ -1,18 +1,16 @@
 {
   "1": {
     "status": "running",
-    "attn": "compressed_attention_layer_energy",
+    "attn": "lsh",
     "task": "sst2",
-    "idx": "20/1008",
-    "pid": 21276,
-    "start_time": 1787358401.246764
+    "idx": "59/145",
+    "pid": 13276,
+    "start_time": 1787370119.3490317
   },
   "2": {
-    "status": "running",
-    "attn": "aegis_hybrid",
-    "task": "sst2",
-    "idx": "5/1008",
-    "pid": 20028,
-    "start_time": 1787292413.2307858
+    "status": "finished",
+    "attn": "-",
+    "task": "-",
+    "pid": 22440
   }
 }
