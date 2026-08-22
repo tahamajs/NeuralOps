@@ -1641,3 +1641,6 @@ ompleted)
 [2026-08-22 05:04:50] [Worker-1] [56/126] -- SKIPPING: attn=linformer | task=sst2 (Already completed)
 [2026-08-22 05:04:51] [Worker-1] [57/126] >> Launching: attn=lola_attn | task=sst2 | seed=42
 [2026-08-22 05:04:56] [Worker-1] [57/126] NOTICE: attn=lola_attn | task=sst2 | Error: CUDA out of memory. Tried to allocate 156.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.75 GiB is free. 3.20 GiB allowed; Of the allocated memory 2.84 GiB is allocated by PyTorch, and 219.33 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 5.9s
+[2026-08-22 05:04:59] [Worker-1] [58/126] -- SKIPPING: attn=lora_attn | task=sst2 (Already completed)
+[2026-08-22 05:04:59] [Worker-1] [59/126] >> Launching: attn=lsh | task=sst2 | seed=42
+[2026-08-22 05:09:56] [Worker-2] [49/126] << SUCCESS: attn=inject_aegis_spectron_fp8 | task=sst2 | Acc: 70.53% | F1: 70.52% | Loss: 0.9112 | Time: 744.4s
