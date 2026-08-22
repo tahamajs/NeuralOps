@@ -736,3 +736,5 @@ ompleted)
 [2026-08-22 04:33:25] [Worker-1] [44/126] NOTICE: attn=hgrn2_outer | task=sst2 | Error: CUDA out of memory. Tried to allocate 36.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 658.76 MiB is free. 6.00 GiB allowed; Of the allocated memory 5.98 GiB is allocated by PyTorch, and 8.75 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 0.7s
 [2026-08-22 04:33:27] [Worker-1] [45/126] >> Launching: attn=hla | task=sst2 | seed=42
 [2026-08-22 04:33:28] [Worker-1] [45/126] NOTICE: attn=hla | task=sst2 | Error: The size of tensor a (12) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.4s
+[2026-08-22 04:33:30] [Worker-1] [46/126] >> Launching: attn=hymba_transx | task=sst2 | seed=42
+[2026-08-22 04:34:03] [Worker-1] [46/126] << SUCCESS: attn=hymba_transx | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6930 | Time: 33.3s
