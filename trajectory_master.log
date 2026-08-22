@@ -646,3 +646,8 @@ ompleted)
 [2026-08-22 04:29:17] [Worker-1] [16/126] -- SKIPPING: attn=block_transformer_hiba | task=sst2 (Already completed)
 [2026-08-22 04:29:17] [Worker-1] [17/126] >> Launching: attn=chela_slay | task=sst2 | seed=42
 [2026-08-22 04:29:17] [Worker-1] [17/126] NOTICE: attn=chela_slay | task=sst2 | Error: The size of tensor a (12) must match the size of tensor b (128) at non-singleton dimension 2 | Time: 0.6s
+[2026-08-22 04:29:19] [Worker-1] [18/126] -- SKIPPING: attn=cluster | task=sst2 (Already completed)
+[2026-08-22 04:29:19] [Worker-1] [19/126] -- SKIPPING: attn=compressed_attention_layer | task=sst2 (Already completed)
+[2026-08-22 04:29:19] [Worker-1] [20/126] -- SKIPPING: attn=compressed_attention_layer_energy | task=sst2 (Already completed)
+[2026-08-22 04:29:19] [Worker-1] [21/126] >> Launching: attn=compressed_mha | task=sst2 | seed=42
+[2026-08-22 04:29:22] [Worker-1] [21/126] NOTICE: attn=compressed_mha | task=sst2 | Error: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! | Time: 2.4s
