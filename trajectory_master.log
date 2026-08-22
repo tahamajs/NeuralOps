@@ -332,3 +332,48 @@ ompleted)
 [2026-08-22 04:07:25] [Worker-1] [33/126] NOTICE: attn=gated_delta_net_inject | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.0s
 [2026-08-22 04:07:26] [Worker-3] [34/126] >> Launching: attn=gated_deltanet_block | task=sst2 | seed=42
 [2026-08-22 04:07:27] [Worker-3] [34/126] NOTICE: attn=gated_deltanet_block | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.0s
+[2026-08-22 04:07:28] [Worker-1] [35/126] >> Launching: attn=gated_linear_attn | task=sst2 | seed=42
+[2026-08-22 04:07:29] [Worker-3] [36/126] >> Launching: attn=goldfinch_ahn | task=sst2 | seed=42
+[2026-08-22 04:08:02] ============================================================
+[2026-08-22 04:08:02]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-22 04:08:02] ============================================================
+[2026-08-22 04:08:02] Started background telemetry sync thread.
+[2026-08-22 04:08:02] Trajectory Matrix: 126 Models x 1 Tasks = 126 Runs
+[2026-08-22 04:08:02] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-22 04:08:13] [Worker-1] [1/126] -- SKIPPING: attn=adaptive_span | task=sst2 (Already completed)
+[2026-08-22 04:08:13] [Worker-1] [2/126] -- SKIPPING: attn=adaptive_svd | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [3/126] -- SKIPPING: attn=adaptive_svd_attn | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [4/126] -- SKIPPING: attn=adasplash | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [5/126] -- SKIPPING: attn=aegis_hybrid | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [6/126] -- SKIPPING: attn=aegis_hybrid_attn | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [7/126] -- SKIPPING: attn=aegis_spectron_fp8 | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [8/126] -- SKIPPING: attn=aegis_spectron_fp8_attn | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [9/126] -- SKIPPING: attn=aegis_v2 | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [10/126] -- SKIPPING: attn=aegis_v3 | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [11/126] -- SKIPPING: attn=aegis_v4 | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [12/126] -- SKIPPING: attn=aegis_v5 | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [13/126] -- SKIPPING: attn=aegis_v6 | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [14/126] -- SKIPPING: attn=asvd | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [15/126] -- SKIPPING: attn=bam_umoe | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [16/126] -- SKIPPING: attn=block_transformer_hiba | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [17/126] -- SKIPPING: attn=chela_slay | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-2] [18/126] -- SKIPPING: attn=cluster | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-2] [20/126] -- SKIPPING: attn=compressed_attention_layer_energy | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [19/126] -- SKIPPING: attn=compressed_attention_layer | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-2] [21/126] -- SKIPPING: attn=compressed_mha | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [22/126] -- SKIPPING: attn=compression_unified_rope | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-2] [23/126] >> Launching: attn=decay_linear_attn | task=sst2 | seed=42
+[2026-08-22 04:08:14] [Worker-1] [24/126] -- SKIPPING: attn=eat | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [25/126] -- SKIPPING: attn=expert_choice_moe | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [26/126] -- SKIPPING: attn=factorised_matrix_state | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [27/126] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [28/126] -- SKIPPING: attn=flash3_fp8 | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [29/126] -- SKIPPING: attn=full | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [30/126] -- SKIPPING: attn=fusion_attn | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [31/126] -- SKIPPING: attn=galerkin | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [32/126] -- SKIPPING: attn=gated_delta_net | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [33/126] -- SKIPPING: attn=gated_delta_net_inject | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [34/126] -- SKIPPING: attn=gated_deltanet_block | task=sst2 (Already completed)
+[2026-08-22 04:08:14] [Worker-1] [35/126] >> Launching: attn=gated_linear_attn | task=sst2 | seed=42
+[2026-08-22 04:08:18] [Worker-3] [36/126] >> Launching: attn=goldfinch_ahn | task=sst2 | seed=42
+[2026-08-22 04:08:34] [Worker-2] [23/126] << SUCCESS: attn=decay_linear_attn | task=sst2 | Acc: 79.82% | F1: 79.76% | Loss: 0.4950 | Time: 19.5s
