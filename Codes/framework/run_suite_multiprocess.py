@@ -130,7 +130,7 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
         elif attn in {"adasplash", "nha_compressor", "token_compressed"}:
             cfg.batch_size = 8
         else:
-            cfg.batch_size = 64   # Increased batch size to maximize compute with 1 worker
+            cfg.batch_size = 32   # Optimal batch size to fit within the 6GB hard cap
 
         cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
 
