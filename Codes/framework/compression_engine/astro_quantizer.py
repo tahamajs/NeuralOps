@@ -249,10 +249,10 @@ class AstroQuantizer(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("astro")
 def astro_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Astro compressor factory function."""
-    bits = kwargs.get("bits", getattr(comp_config, "astro_bits", 8) if comp_config is not None else 8)
-    symmetric = kwargs.get("symmetric", getattr(comp_config, "astro_symmetric", True) if comp_config is not None else True)
-    per_channel = kwargs.get("per_channel", getattr(comp_config, "astro_per_channel", False) if comp_config is not None else False)
-    use_ste = kwargs.get("use_ste", getattr(comp_config, "astro_use_ste", False) if comp_config is not None else False)
+    bits = kwargs.pop("bits", getattr(comp_config, "astro_bits", 8) if comp_config is not None else 8)
+    symmetric = kwargs.pop("symmetric", getattr(comp_config, "astro_symmetric", True) if comp_config is not None else True)
+    per_channel = kwargs.pop("per_channel", getattr(comp_config, "astro_per_channel", False) if comp_config is not None else False)
+    use_ste = kwargs.pop("use_ste", getattr(comp_config, "astro_use_ste", False) if comp_config is not None else False)
 
     compressor = AstroQuantizer(
         model,

@@ -263,11 +263,11 @@ class FAQQuantizer(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("faq")
 def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """FAQ compressor factory function."""
-    bits = kwargs.get("bits", getattr(comp_config, "faq_bits", 8) if comp_config is not None else 8)
-    alpha = kwargs.get("alpha", getattr(comp_config, "faq_alpha", 0.5) if comp_config is not None else 0.5)
-    symmetric = kwargs.get("symmetric", getattr(comp_config, "faq_symmetric", True) if comp_config is not None else True)
-    use_ste = kwargs.get("use_ste", getattr(comp_config, "faq_use_ste", False) if comp_config is not None else False)
-    tokenizer = kwargs.get("tokenizer", getattr(model, "tokenizer", None))
+    bits = kwargs.pop("bits", getattr(comp_config, "faq_bits", 8) if comp_config is not None else 8)
+    alpha = kwargs.pop("alpha", getattr(comp_config, "faq_alpha", 0.5) if comp_config is not None else 0.5)
+    symmetric = kwargs.pop("symmetric", getattr(comp_config, "faq_symmetric", True) if comp_config is not None else True)
+    use_ste = kwargs.pop("use_ste", getattr(comp_config, "faq_use_ste", False) if comp_config is not None else False)
+    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None))
     compressor = FAQQuantizer(
         model,
         tokenizer=tokenizer,

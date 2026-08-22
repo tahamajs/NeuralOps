@@ -203,8 +203,8 @@ class KMeansCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("kmeans")
 def kmeans_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """KMeans compressor factory function."""
-    n_clusters = kwargs.get("n_clusters", getattr(comp_config, "kmeans_clusters", 256) if comp_config is not None else 256)
-    bits = kwargs.get("bits", getattr(comp_config, "kmeans_bits", None) if comp_config is not None else None)
+    n_clusters = kwargs.pop("n_clusters", getattr(comp_config, "kmeans_clusters", 256) if comp_config is not None else 256)
+    bits = kwargs.pop("bits", getattr(comp_config, "kmeans_bits", None) if comp_config is not None else None)
     compressor = KMeansCompressor(model, n_clusters=n_clusters, bits=bits, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
