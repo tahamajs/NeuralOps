@@ -126,7 +126,8 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                       "aegis_hybrid", "mamba_svd_flash", "mamba_inject",
                       "spectron", "hgrn2_layer", "simple_ssm", "samba_moe",
                       "expert_choice_moe", "granite_hybrid",
-                      "primal", "projection_factorized_attn", "qcqa"}
+                      "primal", "projection_factorized_attn", "qcqa",
+                      "mamba_svd_flash_inject"}
         if attn in heavy_attn:
             cfg.batch_size = 32
         elif attn in {"adasplash", "nha_compressor", "token_compressed"}:

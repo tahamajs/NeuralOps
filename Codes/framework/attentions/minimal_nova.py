@@ -162,7 +162,7 @@ class MinimalNOVAAttention(BaseAttention):
                 token_valid = None
             if token_valid is not None:
                 scores = scores.masked_fill(
-                    ~token_valid.unsqueeze(1).unsqueeze(2), float("-1e5")
+                    ~token_valid.unsqueeze(1).unsqueeze(2), -10000.0
                 )
 
         attn_weights = F.softmax(scores, dim=-1)
