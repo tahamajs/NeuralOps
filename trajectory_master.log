@@ -1321,3 +1321,5 @@ ompleted)
 [2026-08-22 04:46:22] [Worker-2] [63/126] NOTICE: attn=mamba_svd_flash_inject | task=sst2 | Error: CUDA out of memory. Tried to allocate 48.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.66 GiB is free. 3.20 GiB allowed; Of the allocated memory 3.18 GiB is allocated by PyTorch, and 7.72 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.1s
 [2026-08-22 04:46:25] [Worker-2] [64/126] >> Launching: attn=minimal_aurora | task=sst2 | seed=42
 [2026-08-22 04:46:29] [Worker-2] [64/126] NOTICE: attn=minimal_aurora | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 4.0s
+[2026-08-22 04:46:31] [Worker-2] [65/126] >> Launching: attn=minimal_nova | task=sst2 | seed=42
+[2026-08-22 04:46:35] [Worker-2] [65/126] NOTICE: attn=minimal_nova | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 4.0s
