@@ -79,18 +79,25 @@ class CompressedDistilBertAttention(nn.Module):
         self.register_buffer("S_out", torch.from_numpy(S_out[:rank_out]).float())
         self.register_buffer("Vh_out", torch.from_numpy(Vh_out[:rank_out, :]).float())
 
-        self.bias_q: Optional[torch.Tensor] = (
-            q_src.bias.data.clone() if q_src.bias is not None else None
-        )
-        self.bias_k: Optional[torch.Tensor] = (
-            k_src.bias.data.clone() if k_src.bias is not None else None
-        )
-        self.bias_v: Optional[torch.Tensor] = (
-            v_src.bias.data.clone() if v_src.bias is not None else None
-        )
-        self.bias_out: Optional[torch.Tensor] = (
-            out_src.bias.data.clone() if out_src.bias is not None else None
-        )
+        if q_src.bias is not None:
+            self.register_buffer("bias_q", q_src.bias.data.clone())
+        else:
+            self.bias_q = None
+            
+        if k_src.bias is not None:
+            self.register_buffer("bias_k", k_src.bias.data.clone())
+        else:
+            self.bias_k = None
+            
+        if v_src.bias is not None:
+            self.register_buffer("bias_v", v_src.bias.data.clone())
+        else:
+            self.bias_v = None
+            
+        if out_src.bias is not None:
+            self.register_buffer("bias_out", out_src.bias.data.clone())
+        else:
+            self.bias_out = None
 
     def forward(
         self,
@@ -113,20 +120,6 @@ class CompressedDistilBertAttention(nn.Module):
                 - Transformed context representation $[B, N, D]$.
                 - Attention probabilities tensor (if requested) or None.
         """
-        device = hidden_states.device
-        if self.U_qkv.device != device:
-            self.U_qkv = self.U_qkv.to(device)
-            self.S_qkv = self.S_qkv.to(device)
-            self.Vh_qkv = self.Vh_qkv.to(device)
-            self.U_out = self.U_out.to(device)
-            self.S_out = self.S_out.to(device)
-            self.Vh_out = self.Vh_out.to(device)
-            if self.bias_q is not None:
-                self.bias_q = self.bias_q.to(device)
-                self.bias_k = self.bias_k.to(device)
-                self.bias_v = self.bias_v.to(device)
-                self.bias_out = self.bias_out.to(device)
-
         B, N, _ = hidden_states.shape
         proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
         qkv_comp = torch.matmul(proj, self.U_qkv.t())
