@@ -1992,3 +1992,5 @@ ompleted)
 [2026-08-22 10:13:06] [Worker-2] [106/145] -- SKIPPING: attn=spectral_mamba | task=sst2 (Already completed)
 [2026-08-22 10:13:06] [Worker-2] [107/145] >> Launching: attn=spectron | task=sst2 | seed=42
 [2026-08-22 10:13:37] [Worker-2] [107/145] << SUCCESS: attn=spectron | task=sst2 | Acc: 76.61% | F1: 76.38% | Loss: 0.5623 | Time: 30.6s
+[2026-08-22 10:13:38] [Worker-2] [108/145] >> Launching: attn=squeezing_heads_distiller | task=sst2 | seed=42
+[2026-08-22 10:13:54] [Worker-2] [108/145] << SUCCESS: attn=squeezing_heads_distiller | task=sst2 | Acc: 78.10% | F1: 78.06% | Loss: 0.5374 | Time: 15.6s
