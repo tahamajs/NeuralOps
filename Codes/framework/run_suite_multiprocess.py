@@ -80,11 +80,18 @@ def get_completed_runs():
 
 def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, git_lock: mp.Lock):
     # Separate Python process running on its own CPU core & CUDA context
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
     import torch
+    import gc
     torch.backends.cudnn.benchmark = True
     if torch.cuda.is_available():
-        # Hard cap at 40% of 8GB = 3.2GB VRAM per worker (2 workers = 6.4GB max) to perfectly prevent Windows Shared Memory swapping
-        torch.cuda.set_per_process_memory_fraction(0.40)
+        # Hard cap at 45% of 8GB = 3.6GB VRAM per worker (2 workers = 7.2GB max) to perfectly prevent Windows Shared Memory swapping
+        try:
+            torch.cuda.set_per_process_memory_fraction(0.45)
+        except Exception:
+            pass
+        torch.cuda.empty_cache()
+    gc.collect()
     from main import run_train, _import_framework
     fw = _import_framework()
 
@@ -105,6 +112,10 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
             log_master(f"[Worker-{worker_id}] [{idx}/{total_tasks}] -- SKIPPING: attn={attn} | task={task} (Already completed)")
             continue
 
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
+
         log_master(f"[Worker-{worker_id}] [{idx}/{total_tasks}] >> Launching: attn={attn} | task={task} | seed=42")
         update_worker_status_file(worker_id, {
             "status": "running", "attn": attn, "task": task, "idx": f"{idx}/{total_tasks}", "pid": os.getpid(), "start_time": time.time()
@@ -120,7 +131,7 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
         cfg.save_model = False
         cfg.seed = 42
 
-        # Maximize GPU utilization on RTX 4070 8GB (single worker)
+        # Maximize GPU utilization on RTX 4070 8GB
         heavy_attn = {"full", "flash3", "griffin_ssd", "aegis_v3", "spectra_v2",
                       "samba_m3", "mamba", "gated_delta_net", "spectral_mamba",
                       "aegis_hybrid", "mamba_svd_flash", "mamba_inject",
@@ -129,10 +140,13 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                       "mamba_svd_flash_inject",
                       "mla", "moba", "moe_deltakv_paged", "nasc",
                       "nasc_attention", "nasc_injection", "nexus", "nha", "oha"}
-        super_heavy_attn = {"factorised_matrix_state", "hgrn2_outer", "kda", "leka_v1", "leka_v2", "leka_v3", "orion", "orion_module"}
-        extreme_attn = {"expert_choice_moe", "granite_hybrid", "jamba2", "inject_aegis_spectron_fp8", "mla"}
+        super_heavy_attn = {"kda", "leka_v1", "leka_v2", "leka_v3", "orion", "orion_module"}
+        extreme_attn = {"inject_aegis_spectron_fp8", "mla"}
+        ultra_heavy_attn = {"hgrn2_outer", "granite_hybrid", "jamba2", "expert_choice_moe", "factorised_matrix_state"}
                             
-        if attn in extreme_attn:
+        if attn in ultra_heavy_attn:
+            cfg.batch_size = 2
+        elif attn in extreme_attn:
             cfg.batch_size = 4
         elif attn in super_heavy_attn:
             cfg.batch_size = 8

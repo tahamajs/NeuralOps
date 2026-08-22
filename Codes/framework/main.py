@@ -61,6 +61,7 @@ if "HF_ENDPOINT" not in os.environ:
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "300")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 # Point to local cache if present
 _potential_caches = [
