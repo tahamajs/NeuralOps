@@ -33,25 +33,34 @@ MASTER_LOG = PROJECT_DIR / "trajectory_master.log"
 RESULTS_DIR = WORKDIR / "experiments"
 WORKER_STATE_FILE = WORKDIR / "worker_status.json"
 
-ATTN_MODELS = [
-    ("svd_linear", "SVD Linear Attention"),
-    ("svd", "SVD Base Attention"),
-    ("full", "Standard Multi-Head Attention"),
-    ("lora_attn", "LoRA Low-Rank Attention"),
-    ("performer", "Performer (FAVOR+)"),
-    ("nystrom", "Nyströmformer"),
-    ("linformer", "Linformer"),
-    ("flash3", "FlashAttention-3"),
-    ("mamba", "Mamba SSM Attention"),
-    ("gated_delta_net", "Gated DeltaNet"),
-    ("adasplash", "AdaSplash Attention"),
-    ("aegis_v3", "Aegis-v3 Attention"),
-    ("griffin_ssd", "Griffin SSD"),
-    ("spectra_v2", "Spectra-v2 Attention"),
-    ("samba_m3", "Samba-M3"),
-]
+try:
+    import sys
+    if str(PROJECT_DIR / "Codes") not in sys.path:
+        sys.path.insert(0, str(PROJECT_DIR / "Codes"))
+    if str(WORKDIR) not in sys.path:
+        sys.path.insert(0, str(WORKDIR))
+    from framework.attentions import ATTENTION_REGISTRY
+    ATTN_MODELS = [(k, k.replace('_', ' ').title()) for k in sorted(ATTENTION_REGISTRY.keys())]
+except Exception:
+    ATTN_MODELS = [
+        ("svd_linear", "SVD Linear Attention"),
+        ("svd", "SVD Base Attention"),
+        ("full", "Standard Multi-Head Attention"),
+        ("lora_attn", "LoRA Low-Rank Attention"),
+        ("performer", "Performer (FAVOR+)"),
+        ("nystrom", "Nyströmformer"),
+        ("linformer", "Linformer"),
+        ("flash3", "FlashAttention-3"),
+        ("mamba", "Mamba SSM Attention"),
+        ("gated_delta_net", "Gated DeltaNet"),
+        ("adasplash", "AdaSplash Attention"),
+        ("aegis_v3", "Aegis-v3 Attention"),
+        ("griffin_ssd", "Griffin SSD"),
+        ("spectra_v2", "Spectra-v2 Attention"),
+        ("samba_m3", "Samba-M3"),
+    ]
 
-TASKS = ["sst2", "mrpc", "qnli", "cola", "qqp", "rte", "stsb", "wnli"]
+TASKS = ["sst2"]
 
 
 def get_gpu_stats():
