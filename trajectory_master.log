@@ -2008,3 +2008,5 @@ ompleted)
 [2026-08-22 10:15:39] [Worker-2] [115/145] << SUCCESS: attn=svd_llm_v2 | task=sst2 | Acc: 76.38% | F1: 76.34% | Loss: 0.6390 | Time: 19.6s
 [2026-08-22 10:15:41] [Worker-2] [116/145] >> Launching: attn=svd_proj_attn | task=sst2 | seed=42
 [2026-08-22 10:15:58] [Worker-2] [116/145] << SUCCESS: attn=svd_proj_attn | task=sst2 | Acc: 75.34% | F1: 75.34% | Loss: 0.5708 | Time: 17.3s
+[2026-08-22 10:15:59] [Worker-2] [117/145] >> Launching: attn=token_compressed | task=sst2 | seed=42
+[2026-08-22 10:16:01] [Worker-2] [117/145] NOTICE: attn=token_compressed | task=sst2 | Error: maximum recursion depth exceeded | Time: 1.7s
