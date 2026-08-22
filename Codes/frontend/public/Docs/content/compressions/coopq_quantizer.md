@@ -49,14 +49,14 @@ Let $\{W^{(1)}, W^{(2)}, \dots, W^{(L)}\}$ be the set of weight matrices across 
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Global Sensitivity Profiling**:
-   - Iterate through model modules to identify `nn.Linear` layers.
-   - Record maximum absolute weight values `sensitivities[name] = W.abs().max().item()`.
-   - Sum sensitivities `total_sens = sum(sensitivities.values())`.
+Iterate through model modules to identify `nn.Linear` layers. Furthermore, Record maximum absolute weight values `sensitivities[name] = W.abs().max().item()`. Concurrently, Sum sensitivities `total_sens = sum(sensitivities.values())`.
+
 2. **Adaptive Bit Assignment**:
-   - Compute fraction `frac = sensitivities[name] / total_sens`.
-   - Assign integer bits `bits_layer = max(1, min(8, int(self.bits + 4 * frac)))`.
+Compute fraction `frac = sensitivities[name] / total_sens`. Furthermore, Assign integer bits `bits_layer = max(1, min(8, int(self.bits + 4 * frac)))`.
+
 3. **Layer-Wise Quantization Execution**:
-   - Execute uniform min-max quantization pass using layer-specific bit width $b_l$.
+Execute uniform min-max quantization pass using layer-specific bit width $b_l$.
+
 
 ```
 Model Inspection ──► Extract max(|W_l|) ──► Normalize Fractions f_l

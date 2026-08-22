@@ -76,12 +76,12 @@ class MLoRQCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("mlorq")
-def mlorq_factory(model, comp_config) -> Any:
+def mlorq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Mlorq factory."""
-    total_budget_mb = getattr(comp_config, "mlorq_budget_mb", 500)
-    bits_candidates = getattr(comp_config, "mlorq_bits_candidates", [2, 4, 8])
+    total_budget_mb = getattr(comp_config, "mlorq_budget_mb", kwargs.get("total_memory_budget_mb", 500))
+    bits_candidates = getattr(comp_config, "mlorq_bits_candidates", kwargs.get("bits_candidates", [2, 4, 8]))
     compressor = MLoRQCompressor(
-        model, total_memory_budget_mb=total_budget_mb, bits_candidates=bits_candidates
+        model, total_memory_budget_mb=total_budget_mb, bits_candidates=bits_candidates, **kwargs
     )
     compressed_model, _ = compressor.compress()
     return compressed_model

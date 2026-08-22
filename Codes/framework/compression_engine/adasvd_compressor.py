@@ -170,8 +170,13 @@ class AdaSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-def adasvd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """AdaSVD factory function."""
     compressor = AdaSVDCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+adasvd_compressor_factory = adasvd_factory
+
+__all__ = ["AdaSVDCompressor", "adasvd_factory", "adasvd_compressor_factory"]

@@ -115,8 +115,8 @@ The low-rank approximated weight tensor $\hat{W}_{\text{CURE}}$ is synthesized v
 ### 4.1 Calibration Time Complexity & Memory Savings
 Randomized permutation sampling operates in $O(r)$ time, compared to $O(d_{\text{in}} \cdot d_{\text{out}})$ for leverage-score norm calculations and $O(d_{\text{out}} \cdot d_{\text{in}} \cdot \min(d_{\text{out}}, d_{\text{in}}))$ for standard SVD.
 
-- **Calibration Time Reduction**: Up to $50\times$ faster decomposition per expert layer.
-- **Factorized Storage Memory**: When stored as $C, U, R$ factorized buffers, memory savings equal $1 - \frac{r(d_{\text{out}} + d_{\text{in}} + r)}{d_{\text{out}} \cdot d_{\text{in}}}$.
+Specifically, regarding \textbf{Calibration Time Reduction}, up to $50\times$ faster decomposition per expert layer. Furthermore, regarding \textbf{Factorized Storage Memory}, when stored as $C, U, R$ factorized buffers, memory savings equal $1 - \frac{r(d_{\text{out}} + d_{\text{in}} + r)}{d_{\text{out}} \cdot d_{\text{in}}}$.
+
 
 ### 4.2 Resource Profile Table ($d_{\text{out}} = 11008, d_{\text{in}} = 4096$, Rank $r = 32$)
 

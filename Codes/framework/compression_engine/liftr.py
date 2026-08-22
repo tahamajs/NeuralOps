@@ -123,9 +123,13 @@ class LIFTRCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("liftr")
+@COMPRESSOR_REGISTRY.register("liftr_compressor")
 def liftr_compressor_entry(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for LIFTR compressor."""
     replace_attention = getattr(comp_config, "replace_attention", True) if comp_config else kwargs.get("replace_attention", True)
     compressor = LIFTRCompressor(model, replace_attention=replace_attention, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+liftr_factory = liftr_compressor_entry

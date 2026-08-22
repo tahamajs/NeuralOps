@@ -161,6 +161,7 @@ SoKACompressor = LowRankCompressor
 
 
 @COMPRESSOR_REGISTRY.register("soka")
+@COMPRESSOR_REGISTRY.register("soka_compressor")
 def soka_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for SoKA compressor."""
     rank = getattr(comp_config, "soka_rank", getattr(comp_config, "rank", 8)) if comp_config else kwargs.get("rank", 8)

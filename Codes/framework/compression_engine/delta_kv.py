@@ -69,6 +69,11 @@ class DeltaKVStore:
             self.ref_k = orig_k
             self.ref_v = orig_v
         else:
+            # Match device and dtype if changed
+            if self.ref_k.device != orig_k.device or self.ref_k.dtype != orig_k.dtype:
+                self.ref_k = self.ref_k.to(device=orig_k.device, dtype=orig_k.dtype)
+                self.ref_v = self.ref_v.to(device=orig_v.device, dtype=orig_v.dtype)
+
             # Match batch dimension if changed
             if self.ref_k.shape[0] != B:
                 self.ref_k = self.ref_k[:1].expand(B, -1, -1, -1).clone()
@@ -108,9 +113,13 @@ class DeltaKVStore:
         B, H, N, D = k_4d.shape
         ref_b, ref_h, ref_n, ref_d = self.ref_k.shape
 
+        # Match device and dtype
+        ref_k_cur = self.ref_k.to(device=k.device, dtype=k.dtype)
+        ref_v_cur = self.ref_v.to(device=v.device, dtype=v.dtype)
+
         # Broadcast references across batch if needed
-        ref_k_b = self.ref_k if ref_b == B else self.ref_k[:1].expand(B, -1, -1, -1)
-        ref_v_b = self.ref_v if ref_b == B else self.ref_v[:1].expand(B, -1, -1, -1)
+        ref_k_b = ref_k_cur if ref_b == B else ref_k_cur[:1].expand(B, -1, -1, -1)
+        ref_v_b = ref_v_cur if ref_b == B else ref_v_cur[:1].expand(B, -1, -1, -1)
 
         tk = min(self.topk, ref_n)
         if tk == 0:
@@ -118,7 +127,7 @@ class DeltaKVStore:
             return k, v
 
         # Compute cosine-scaled similarity: (B, H, N, D) x (B, H, D, ref_N) -> (B, H, N, ref_N)
-        sim = torch.matmul(k_4d, ref_k_b.transpose(-2, -1)) / (D**0.5)
+        sim = torch.matmul(k_4d.float(), ref_k_b.float().transpose(-2, -1)) / (D**0.5)
         _, top_idx = torch.topk(sim, tk, dim=-1)  # (B, H, N, tk)
 
         # Gather reference key-value representations
@@ -127,16 +136,16 @@ class DeltaKVStore:
         ref_k_exp = ref_k_b.unsqueeze(2).expand(B, H, N, ref_n, D)
         ref_v_exp = ref_v_b.unsqueeze(2).expand(B, H, N, ref_n, D)
 
-        rk = ref_k_exp.gather(3, top_idx_exp).mean(dim=3)  # (B, H, N, D)
-        rv = ref_v_exp.gather(3, top_idx_exp).mean(dim=3)  # (B, H, N, D)
+        rk = ref_k_exp.gather(3, top_idx_exp).mean(dim=3).to(dtype=k_4d.dtype)  # (B, H, N, D)
+        rv = ref_v_exp.gather(3, top_idx_exp).mean(dim=3).to(dtype=v_4d.dtype)  # (B, H, N, D)
 
         # Compute delta residuals
         k_residual = k_4d - rk
         v_residual = v_4d - rv
 
         # Residual thresholding / sparsity mask
-        k_norm = torch.norm(k_residual, dim=-1, keepdim=True)
-        v_norm = torch.norm(v_residual, dim=-1, keepdim=True)
+        k_norm = torch.norm(k_residual.float(), dim=-1, keepdim=True)
+        v_norm = torch.norm(v_residual.float(), dim=-1, keepdim=True)
 
         k_mask = (k_norm > self.residual_threshold).to(dtype=k_4d.dtype)
         v_mask = (v_norm > self.residual_threshold).to(dtype=v_4d.dtype)
@@ -182,7 +191,7 @@ class DeltaKVCompressor(BaseCompressor):
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float()
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                r = max(1, min(self.rank, min(W.shape)))
+                r = max(1, min(self.rank, min(W.shape), len(S)))
                 L = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
 
                 # Sparse residual
@@ -204,10 +213,10 @@ class DeltaKVCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("delta_kv")
-def delta_kv_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def delta_kv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """DeltaKV compressor factory function."""
-    rank = getattr(comp_config, "delta_kv_rank", 16) if comp_config else 16
-    sparsity = getattr(comp_config, "delta_kv_sparsity", 0.29) if comp_config else 0.29
-    compressor = DeltaKVCompressor(model, rank=rank, sparsity=sparsity)
+    rank = kwargs.get("rank", getattr(comp_config, "delta_kv_rank", 16) if comp_config is not None else 16)
+    sparsity = kwargs.get("sparsity", getattr(comp_config, "delta_kv_sparsity", 0.29) if comp_config is not None else 0.29)
+    compressor = DeltaKVCompressor(model, rank=rank, sparsity=sparsity, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

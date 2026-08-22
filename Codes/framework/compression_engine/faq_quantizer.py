@@ -63,7 +63,7 @@ class FAQLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Scale weights by activation sensitivity for quantization
-        s = torch.clamp(self.act_scale, min=1e-6).unsqueeze(0)
+        s = torch.clamp(self.act_scale, min=1e-6).unsqueeze(0).to(device=self.weight.device, dtype=self.weight.dtype)
         w_scaled = self.weight * s
         w_q = quantize_dequantize_tensor(
             w_scaled,
@@ -83,7 +83,11 @@ class FAQLinear(nn.Module):
                 per_channel=False,
                 use_ste=self.training,
             )
-        return nn.functional.linear(x, w_restored, b_q)
+        return nn.functional.linear(
+            x,
+            w_restored.to(dtype=x.dtype, device=x.device),
+            b_q.to(dtype=x.dtype, device=x.device) if b_q is not None else None,
+        )
 
 
 class FAQQuantizer(BaseCompressor):
@@ -257,11 +261,21 @@ class FAQQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("faq")
-def faq_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """FAQ compressor factory function."""
-    bits = getattr(comp_config, "faq_bits", 8) if comp_config else 8
-    alpha = getattr(comp_config, "faq_alpha", 0.5) if comp_config else 0.5
-    tokenizer = getattr(model, "tokenizer", None)
-    compressor = FAQQuantizer(model, tokenizer=tokenizer, bits=bits, alpha=alpha)
+    bits = kwargs.get("bits", getattr(comp_config, "faq_bits", 8) if comp_config is not None else 8)
+    alpha = kwargs.get("alpha", getattr(comp_config, "faq_alpha", 0.5) if comp_config is not None else 0.5)
+    symmetric = kwargs.get("symmetric", getattr(comp_config, "faq_symmetric", True) if comp_config is not None else True)
+    use_ste = kwargs.get("use_ste", getattr(comp_config, "faq_use_ste", False) if comp_config is not None else False)
+    tokenizer = kwargs.get("tokenizer", getattr(model, "tokenizer", None))
+    compressor = FAQQuantizer(
+        model,
+        tokenizer=tokenizer,
+        bits=bits,
+        alpha=alpha,
+        symmetric=symmetric,
+        use_ste=use_ste,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model

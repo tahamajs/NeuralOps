@@ -47,8 +47,8 @@ Despite the “error suppression” in the name, the current code does not propa
 
 ### A. Compression Time Complexity
 
-- **Per layer**: Full SVD of an M×N matrix costs O(M·N·min(M,N)). For typical hidden sizes (768), this is fast (a few milliseconds on GPU).
-- **Overall**: The compressor iterates over all `nn.Linear` modules, performing one SVD each. Total time is linear in the number of layers.
+Specifically, regarding \textbf{Per layer}, full SVD of an M×N matrix costs O(M·N·min(M,N)). For typical hidden sizes (768), this is fast (a few milliseconds on GPU). Furthermore, regarding \textbf{Overall}, the compressor iterates over all `nn.Linear` modules, performing one SVD each. Total time is linear in the number of layers.
+
 
 ### B. Inference Complexity
 
@@ -56,8 +56,8 @@ After compression, the weight matrices are still dense tensors of the same shape
 
 ### C. Memory Usage
 
-- **During compression**: The weight tensor, its SVD factors (U, Σ, V), and the approximation require a few times the memory of the original weight for each layer temporarily.
-- **After compression**: The weight tensors occupy the same amount of memory as before (M·N floats). The model’s parameter count remains unchanged. To reduce storage, the low‑rank factors must be extracted and stored explicitly.
+Specifically, regarding \textbf{During compression}, the weight tensor, its SVD factors (U, Σ, V), and the approximation require a few times the memory of the original weight for each layer temporarily. Furthermore, regarding \textbf{After compression}, the weight tensors occupy the same amount of memory as before (M·N floats). The model’s parameter count remains unchanged. To reduce storage, the low‑rank factors must be extracted and stored explicitly.
+
 
 ---
 
@@ -72,7 +72,8 @@ class SAESSVDCompressorV2(BaseCompressor):
         self.rank_ratio = rank_ratio
 ```
 
-- **`rank_ratio`**: A float in (0,1] specifying the fraction of the full rank to retain (default 0.7). 1.0 means no compression; 0.1 means aggressive reduction.
+Specifically, regarding \textbf{`rank_ratio`}, a float in (0,1] specifying the fraction of the full rank to retain (default 0.7). 1.0 means no compression; 0.1 means aggressive reduction.
+
 
 The `compress()` method:
 
@@ -125,18 +126,13 @@ Then run the compression pipeline. All linear layers will be replaced by their r
 
 ### Advantages
 
-- **Proportional compression**: Using a ratio ensures that smaller layers (e.g., in attention heads with fewer dimensions) are not overly compressed relative to larger layers.
-- **Simplicity**: The code is extremely short and easy to verify.
-- **No calibration data**: Works on any pretrained model immediately.
-- **Consistent across layers**: Every layer is compressed by the same relative amount, which can be a fair baseline.
+Specifically, regarding \textbf{Proportional compression}, using a ratio ensures that smaller layers (e.g., in attention heads with fewer dimensions) are not overly compressed relative to larger layers. Furthermore, regarding \textbf{Simplicity}, the code is extremely short and easy to verify. Concurrently, regarding \textbf{No calibration data}, works on any pretrained model immediately. In this setting, regarding \textbf{Consistent across layers}, every layer is compressed by the same relative amount, which can be a fair baseline.
+
 
 ### Limitations
 
-- **No actual error suppression**: The module does not implement any mechanism to reduce accumulated error across layers. The name is aspirational.
-- **Dense weight output**: As with other SVD‑based compressors, the weights remain full dense matrices; memory and computation are not reduced unless factors are extracted.
-- **Fixed ratio for all layers**: Some layers may tolerate more compression than others; an adaptive scheme could yield better overall accuracy.
-- **SVD cost**: Full SVD on GPU can be memory‑intensive for very large layers, though for typical Transformer dimensions it's acceptable.
-- **Bias not compressed**: Biases stay in full precision, which is a minor inconsistency.
+Specifically, regarding \textbf{No actual error suppression}, the module does not implement any mechanism to reduce accumulated error across layers. The name is aspirational. Furthermore, regarding \textbf{Dense weight output}, as with other SVD‑based compressors, the weights remain full dense matrices; memory and computation are not reduced unless factors are extracted. Concurrently, regarding \textbf{Fixed ratio for all layers}, some layers may tolerate more compression than others; an adaptive scheme could yield better overall accuracy. In this setting, regarding \textbf{SVD cost}, full SVD on GPU can be memory‑intensive for very large layers, though for typical Transformer dimensions it's acceptable. Additionally, regarding \textbf{Bias not compressed}, biases stay in full precision, which is a minor inconsistency.
+
 
 ### Comparison with SAES‑SVD v1 and Other SVD Compressors
 

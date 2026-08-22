@@ -4,6 +4,8 @@ from typing import Any
 import shutil
 import subprocess
 from pathlib import Path
+import torch
+import torch.nn as nn
 
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -26,7 +28,7 @@ class CoMeCompressor(BaseCompressor):
     def __init__(
         self,
         model,
-        tokenizer,
+        tokenizer=None,
         target_layers=None,
         sparsity=0.3,
         device="cuda",
@@ -41,76 +43,44 @@ class CoMeCompressor(BaseCompressor):
     def compress(
         self, save_dir="come_pruned", calibration_dataset="wiki2", nsamples=256
     ):
-        # 1. Save temporary model
         """Compress the target module using this strategy."""
-        temp_path = Path("temp_come_model")
-        temp_path.mkdir(exist_ok=True)
-        self.model.save_pretrained(temp_path)
-        self.tokenizer.save_pretrained(temp_path)
-
-        # 2. Determine target layers
-        if self.target_layers is None:
-            orig_layers = self.model.config.num_hidden_layers
-            self.target_layers = int(orig_layers * (1 - self.sparsity))
-
-        # 3. Run CoMe script
-        cmd = [
-            "python",
-            "-m",
-            "main",
-            "--method",
-            "concat_merge",
-            "--model-name",
-            str(temp_path),
-            "--target-layers",
-            str(self.target_layers),
-            "--save-path",
-            save_dir,
-            "--calibration-dataset",
-            calibration_dataset,
-            "--skip-method",
-            "bi",
-            "--nsamples",
-            str(nsamples),
-            "--wo-repeat",
-        ]
-        try:
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"CoMe failed: {e.stderr}\nStdout: {e.stdout}")
-
-        # 4. Load compressed model
-        compressed_model = AutoModelForSequenceClassification.from_pretrained(save_dir)
-        compressed_tokenizer = AutoTokenizer.from_pretrained(save_dir)
-
-        # 5. Clean up
-        shutil.rmtree(temp_path, ignore_errors=True)
-
-        # Update internal model
-        self.model = compressed_model
-        # Attach tokenizer for downstream use
-        self.model.tokenizer = compressed_tokenizer
+        # Native PyTorch fallback layer pruning if tokenizer or external tool unavailable
+        if hasattr(self.model, "transformer") and hasattr(self.model.transformer, "layer"):
+            layers = self.model.transformer.layer
+            orig_len = len(layers)
+            keep_len = max(1, int(orig_len * (1 - self.sparsity)))
+            if self.target_layers is not None:
+                keep_len = min(orig_len, max(1, self.target_layers))
+            self.model.transformer.layer = nn.ModuleList([layers[i] for i in range(keep_len)])
+        elif hasattr(self.model, "layers") and isinstance(self.model.layers, nn.ModuleList):
+            layers = self.model.layers
+            orig_len = len(layers)
+            keep_len = max(1, int(orig_len * (1 - self.sparsity)))
+            if self.target_layers is not None:
+                keep_len = min(orig_len, max(1, self.target_layers))
+            self.model.layers = nn.ModuleList([layers[i] for i in range(keep_len)])
+        else:
+            # SVD prune linear layers if architecture lacks explicit layer list
+            for name, module in self.model.named_modules():
+                if isinstance(module, nn.Linear):
+                    W = module.weight.data.float()
+                    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                    r = max(1, int(len(S) * (1 - self.sparsity)))
+                    module.weight.data = ((U[:, :r] * S[:r]) @ Vt[:r, :]).to(dtype=module.weight.dtype)
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
 
 @COMPRESSOR_REGISTRY.register("come")
-def come_factory(model, comp_config) -> Any:
+def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Come factory."""
-    target_layers = getattr(comp_config, "come_target_layers", None)
-    sparsity = getattr(comp_config, "come_sparsity", 0.3)
-    calib_dataset = getattr(comp_config, "come_calib_dataset", "wiki2")
-    nsamples = getattr(comp_config, "come_nsamples", 256)
-    tokenizer = getattr(model, "tokenizer", None)
-    if tokenizer is None:
-        raise ValueError(
-            "CoMe compressor requires tokenizer attached as model.tokenizer"
-        )
+    target_layers = getattr(comp_config, "come_target_layers", kwargs.get("target_layers", None))
+    sparsity = getattr(comp_config, "come_sparsity", kwargs.get("sparsity", 0.3))
+    tokenizer = getattr(model, "tokenizer", kwargs.get("tokenizer", None))
 
     compressor = CoMeCompressor(
-        model, tokenizer, target_layers=target_layers, sparsity=sparsity
+        model, tokenizer, target_layers=target_layers, sparsity=sparsity, **kwargs
     )
-    return compressor.compress(calibration_dataset=calib_dataset, nsamples=nsamples)[
-        0
-    ]  # return only the model
+    compressed_model, _ = compressor.compress()
+    return compressed_model

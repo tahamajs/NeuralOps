@@ -155,6 +155,7 @@ class LiLLaMACompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("lillama")
+@COMPRESSOR_REGISTRY.register("lillama_compressor")
 def lillama_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for LiLLaMA compressor."""
     rank = getattr(comp_config, "lillama_rank", getattr(comp_config, "rank", 32)) if comp_config else kwargs.get("rank", 32)

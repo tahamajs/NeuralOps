@@ -52,18 +52,14 @@ Let $X \in \mathbb{R}^{N \times D_{\text{in}}}$ be the input activation tensor c
 ### 3.1 Dataflow & Execution Pipeline
 
 1. **Activation Collection**:
-   - Register forward hooks on all `nn.Linear` layers in the target model.
-   - Run forward pass on calibration sentences to capture input activations $X$.
+Register forward hooks on all `nn.Linear` layers in the target model. Furthermore, Run forward pass on calibration sentences to capture input activations $X$.
+
 2. **Sensitivity Computation**:
-   - Detach activations and compute `fisher = (act_flat ** 2).mean(dim=0)`.
-   - Take square root `sensitivities[name] = fisher.sqrt()`.
+Detach activations and compute `fisher = (act_flat ** 2).mean(dim=0)`. Furthermore, Take square root `sensitivities[name] = fisher.sqrt()`.
+
 3. **Column Pruning Pass**:
-   - Remove forward hooks.
-   - For each target linear layer:
-     - Retrieve score vector `sens = sensitivities[name]`.
-     - Find top indices `keep_idx = torch.argsort(sens, descending=True)[:n_keep]`.
-     - Construct binary mask vector `mask[keep_idx] = 1.0`.
-     - Assign `module.weight.data = weight * mask.unsqueeze(0)`.
+Remove forward hooks. Furthermore, For each target linear layer: Concurrently, Retrieve score vector `sens = sensitivities[name]`. In this setting, Find top indices `keep_idx = torch.argsort(sens, descending=True)[:n_keep]`. Additionally, Construct binary mask vector `mask[keep_idx] = 1.0`. Moreover, Assign `module.weight.data = weight * mask.unsqueeze(0)`.
+
 
 ```
 Calibration Pass ──► Forward Hook ──► Collect Input Act X ──► Compute Fisher Sensitivity
@@ -97,7 +93,8 @@ $$\mathbb{E}\left[ \| Y - Y_{\text{shed}} \|_F^2 \right] \le \| W \|_F^2 \cdot \
 
 ### 5.2 Failure Cases
 
-- **State Dimension Disconnection**: In SSM state matrices $A, B, C$, shedding channels without updating state discretization parameters $\Delta$ breaks state stability.
+Specifically, regarding \textbf{State Dimension Disconnection}, in SSM state matrices $A, B, C$, shedding channels without updating state discretization parameters $\Delta$ breaks state stability.
+
 
 ---
 

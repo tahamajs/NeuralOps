@@ -7,108 +7,165 @@ quantization (Astro, FAQ, CoopQ, KMeans, Huffman), and KV cache compression
 strategies (DeltaKV, HybridKV, KVTC, CacheNotes, ZeroKV-Neo, MoDeGPT).
 """
 
-import glob
+from __future__ import annotations
+
 import importlib
 import logging
-import os
-
-from framework.compression_engine.aa_svd_compressor import AASVDCompressor, SVDLinear
-from framework.compression_engine.adasvd_compressor import AdaSVDCompressor
-from framework.compression_engine.admm_compressor import ADMMCompressor
-from framework.compression_engine.admm_pruner import ADMMPruner
-from framework.compression_engine.armor_pruner import ARMORPruner
-from framework.compression_engine.ast_pruner import ASTPruner
-from framework.compression_engine.astro_quantizer import (
-    AstroLinear,
-    AstroQuantizer,
-    STEFakeQuantize,
-    quantize_dequantize_tensor,
-)
-from framework.compression_engine.bonsai_pruner import BonsaiPruner
-from framework.compression_engine.cachenotes_compressor import (
-    CacheNotesCompressor,
-    CacheNotesKVCache,
-    CompressionPlanningTokens,
-)
-from framework.compression_engine.coopq_quantizer import CoopQQuantizer
-from framework.compression_engine.delta_kv import DeltaKVCompressor, DeltaKVStore
-from framework.compression_engine.direct_svd import DirectSVDCompressor
-from framework.compression_engine.dobi_svd import DobiSVDCompressor, DobiSVDLinearLayer
-from framework.compression_engine.dynamic_rank import (
-    DynamicEntropySVDCompressor,
-    DynamicSVDLinear,
-    allocate_entropy_ranks,
-    compute_singular_entropy,
-)
-from framework.compression_engine.entropy_budget_allocation import EntropyBudgetCompressor
-from framework.compression_engine.erc_svd import ERCCompressor
-from framework.compression_engine.faq_quantizer import FAQLinear, FAQQuantizer
-from framework.compression_engine.flap import FLAPCompressor
-from framework.compression_engine.flat_llm import FLATLLMCompressor
-from framework.compression_engine.huffman_coder import (
-    HuffmanCoder,
-    HuffmanCompressor,
-    HuffmanNode,
-)
-from framework.compression_engine.hybrid_svd_layer import (
-    DirectSVDEncoderLayer,
-    HybridSVDCompressor,
-    SVDSingleHead,
-)
-from framework.compression_engine.hybridkv_compressor import (
-    HybridKVCache,
-    HybridKVCompressor,
-)
-from framework.compression_engine.kmeans_quantize import (
-    KMeansCompressor,
-    KMeansLinear,
-    fast_kmeans_1d,
-)
-from framework.compression_engine.kvtc_compressor import (
-    KVTCCompressor,
-    KVTCStore,
-    SimpleEntropyCoder,
-)
-from framework.compression_engine.liftr import LIFTRCompressor
-from framework.compression_engine.lillama_compressor import LiLLaMACompressor
-from framework.compression_engine.lsc_compressor import LSCCompressor
-from framework.compression_engine.mamba_shedder import MambaShedderCompressor
-from framework.compression_engine.mgie_svd import MGIECompressor
-from framework.compression_engine.mgie_svd_compressor import MGIESVDBudgetCompressor
-from framework.compression_engine.modegpt_compressor import MoDeGPTCompressor
-from framework.compression_engine.oats_compressor import OATSCompressor
-from framework.compression_engine.proxsparse import (
-    ProxSparseCompressor,
-    ProxSparsePruner,
-)
-from framework.compression_engine.res_svd import (
-    ResSVDCompressor,
-    ResSVDLinear,
-    SpectralResidualLoRA,
-)
-from framework.compression_engine.rpca_compressor import RPCACompressor
-from framework.compression_engine.saes_svd_v2 import SAESSVDCompressorV2
-from framework.compression_engine.salr import SALRCompressor, SALRLayer
-from framework.compression_engine.slicegpt import SliceGPTCompressor
-from framework.compression_engine.slicegpt_pca import SliceGPTPCACompressor
-from framework.compression_engine.slim_compressor import SLiMCompressor
-from framework.compression_engine.soka_compressor import (
-    LowRankCompressor,
-    LowRankLinear,
-    SoKACompressor,
-)
-from framework.compression_engine.sparsegpt import SparseGPTCompressor
-from framework.compression_engine.svd_linear import SVDLinearLayer
-from framework.compression_engine.swift_svd import SwiftSVDCompressor
-from framework.compression_engine.swift_svd_act import SwiftSVDActivationCompressor
-from framework.compression_engine.zerokv_neo_compressor import (
-    ZeroKVNeoCache,
-    ZeroKVNeoCompressor,
-)
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
-# Auto-discover and register all compressor modules in this directory
+# Map symbol names to their module filename within framework.compression_engine
+_MODULE_MAP: Dict[str, str] = {
+    # SVD and Spectral Low-Rank Compressors
+    "AASVDCompressor": "aa_svd_compressor",
+    "SVDLinear": "aa_svd_compressor",
+    "AdaptiveTransformerCompressor": "adaptive_compressor",
+    "AdaptiveRanksCompressor": "adaptive_ranks",
+    "AdaSVDCompressor": "adasvd_compressor",
+    "DirectSVDCompressor": "direct_svd",
+    "DobiSVDCompressor": "dobi_svd",
+    "DobiSVDLinearLayer": "dobi_svd",
+    "DynamicEntropySVDCompressor": "dynamic_rank",
+    "DynamicSVDLinear": "dynamic_rank",
+    "allocate_entropy_ranks": "dynamic_rank",
+    "compute_singular_entropy": "dynamic_rank",
+    "EntropyBudgetCompressor": "entropy_budget_allocation",
+    "ERCCompressor": "erc_svd",
+    "HybridSVDCompressor": "hybrid_svd_layer",
+    "DirectSVDEncoderLayer": "hybrid_svd_layer",
+    "SVDSingleHead": "hybrid_svd_layer",
+    "MGIECompressor": "mgie_svd",
+    "MGIESVDBudgetCompressor": "mgie_svd_compressor",
+    "ResSVDCompressor": "res_svd",
+    "ResSVDLinear": "res_svd",
+    "SpectralResidualLoRA": "res_svd",
+    "RPCACompressor": "rpca_compressor",
+    "SAESSVDCompressorV2": "saes_svd_v2",
+    "SAESCompressor": "saes_svd",
+    "SALRCompressor": "salr",
+    "SALRLayer": "salr",
+    "SDRMCompressor": "sdrm_compressor",
+    "SVDLinearLayer": "svd_linear",
+    "SVDLinearCompressor": "svd_linear",
+    "SwiftSVDCompressor": "swift_svd",
+    "SwiftSVDActivationCompressor": "swift_svd_act",
+    "UniQLCompressor": "uniql_compressor",
+    "LowRankCompressor": "soka_compressor",
+    "LowRankLinear": "soka_compressor",
+    "SoKACompressor": "soka_compressor",
+    "soka_factory": "soka_compressor",
+    "LiLLaMACompressor": "lillama_compressor",
+    "lillama_factory": "lillama_compressor",
+    "LSCCompressor": "lsc_compressor",
+    "lsc_factory": "lsc_compressor",
+    # Structural Pruning and Layer Shedding
+    "SliceGPTCompressor": "slicegpt",
+    "slicegpt_factory": "slicegpt",
+    "SliceGPTPCACompressor": "slicegpt_pca",
+    "slicegpt_pca_factory": "slicegpt_pca",
+    "RotationalSliceGPTINT4Compressor": "rotational_slicegpt_int4",
+    "RotationalSliceGPTCompressor": "rotational_slicegpt_int4",
+    "RotationalSliceGPTINT4Linear": "rotational_slicegpt_int4",
+    "rotational_slicegpt_int4_factory": "rotational_slicegpt_int4",
+    "OptimalSubspaceProjectionCompressor": "optimal_subspace_projection",
+    "SubspaceProjectionCompressor": "optimal_subspace_projection",
+    "optimal_subspace_projection_factory": "optimal_subspace_projection",
+    "SubspaceLinear": "subspace_projection",
+    "SparseGPTCompressor": "sparsegpt",
+    "sparsegpt_factory": "sparsegpt",
+    "ADMMCompressor": "admm_compressor",
+    "admm_factory": "admm_compressor",
+    "ADMMPruner": "admm_pruner",
+    "admm_pruner_factory": "admm_pruner",
+    "ARMORPruner": "armor_pruner",
+    "armor_pruner_factory": "armor_pruner",
+    "ASTPruner": "ast_pruner",
+    "ast_pruner_factory": "ast_pruner",
+    "BonsaiPruner": "bonsai_pruner",
+    "bonsai_factory": "bonsai_pruner",
+    "ENLightenCompressor": "enlighten_compressor",
+    "FLAPCompressor": "flap",
+    "flap_compressor_factory": "flap",
+    "FLATLLMCompressor": "flat_llm",
+    "flat_llm_factory": "flat_llm",
+    "MambaShedderCompressor": "mamba_shedder",
+    "mamba_shedder_factory": "mamba_shedder",
+    "ProxSparsePruner": "proxsparse",
+    "ProxSparseCompressor": "proxsparse",
+    "proxsparse_factory": "proxsparse",
+    "SLiMCompressor": "slim_compressor",
+    "slim_factory": "slim_compressor",
+    "LIFTRCompressor": "liftr",
+    "liftr_compressor_entry": "liftr",
+    "liftr_factory": "liftr",
+    "OATSCompressor": "oats_compressor",
+    "oats_compressor_factory": "oats_compressor",
+    # Quantization
+    "AstroQuantizer": "astro_quantizer",
+    "AstroLinear": "astro_quantizer",
+    "STEFakeQuantize": "astro_quantizer",
+    "quantize_dequantize_tensor": "astro_quantizer",
+    "FAQQuantizer": "faq_quantizer",
+    "FAQLinear": "faq_quantizer",
+    "CoopQQuantizer": "coopq_quantizer",
+    "KMeansCompressor": "kmeans_quantize",
+    "KMeansLinear": "kmeans_quantize",
+    "fast_kmeans_1d": "kmeans_quantize",
+    # KV Cache
+    "DeltaKVCompressor": "delta_kv",
+    "DeltaKVStore": "delta_kv",
+    "HybridKVCompressor": "hybridkv_compressor",
+    "HybridKVCache": "hybridkv_compressor",
+    "KVTCCompressor": "kvtc_compressor",
+    "KVTCStore": "kvtc_compressor",
+    "SimpleEntropyCoder": "kvtc_compressor",
+    "CacheNotesCompressor": "cachenotes_compressor",
+    "CacheNotesKVCache": "cachenotes_compressor",
+    "CompressionPlanningTokens": "cachenotes_compressor",
+    "ZeroKVNeoCompressor": "zerokv_neo_compressor",
+    "ZeroKVNeoCache": "zerokv_neo_compressor",
+    "MoDeGPTCompressor": "modegpt_compressor",
+    # Huffman
+    "HuffmanCompressor": "huffman_coder",
+    "HuffmanCoder": "huffman_coder",
+    "HuffmanNode": "huffman_coder",
+    # NLI Softmax
+    "NLISoftmaxFunction": "nli_softmax",
+    "nli_softmax": "nli_softmax",
+    "NLISoftmax": "nli_softmax",
+    "NLISoftmaxCompressor": "nli_softmax",
+}
+
+
+def __getattr__(name: str) -> Any:
+    """PEP 562 lazy attribute loading for submodules and compressor classes."""
+    if name in _MODULE_MAP:
+        mod_name = _MODULE_MAP[name]
+        try:
+            module = importlib.import_module(f"framework.compression_engine.{mod_name}")
+            val = getattr(module, name)
+            globals()[name] = val
+            return val
+        except Exception as e:
+            logger.error("Failed to lazily load %s from %s: %s", name, mod_name, e)
+            raise
+    # Submodule lookup fallback
+    try:
+        module = importlib.import_module(f"framework.compression_engine.{name}")
+        globals()[name] = module
+        return module
+    except ModuleNotFoundError:
+        pass
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+__all__ = list(_MODULE_MAP.keys())
+
+# Auto-discover and register all compressor modules in this package
+import glob
+import os
+
 _pkg_dir = os.path.dirname(__file__)
 for _file in glob.glob(os.path.join(_pkg_dir, "*.py")):
     _mod_name = os.path.splitext(os.path.basename(_file))[0]
@@ -117,86 +174,3 @@ for _file in glob.glob(os.path.join(_pkg_dir, "*.py")):
             importlib.import_module(f"framework.compression_engine.{_mod_name}")
         except Exception as _e:
             logger.debug("Failed to auto-load compressor module %s: %s", _mod_name, _e)
-
-__all__ = [
-    # SVD and Spectral Low-Rank Compressors
-    "AASVDCompressor",
-    "AdaSVDCompressor",
-    "DirectSVDCompressor",
-    "DobiSVDCompressor",
-    "DobiSVDLinearLayer",
-    "DynamicEntropySVDCompressor",
-    "DynamicSVDLinear",
-    "EntropyBudgetCompressor",
-    "ERCCompressor",
-    "HybridSVDCompressor",
-    "DirectSVDEncoderLayer",
-    "SVDSingleHead",
-    "MGIECompressor",
-    "MGIESVDBudgetCompressor",
-    "ResSVDCompressor",
-    "ResSVDLinear",
-    "SpectralResidualLoRA",
-    "RPCACompressor",
-    "SAESSVDCompressorV2",
-    "SAESCompressor",
-    "SALRCompressor",
-    "SALRLayer",
-    "SVDLinear",
-    "SVDLinearLayer",
-    "SwiftSVDCompressor",
-    "SwiftSVDActivationCompressor",
-    "allocate_entropy_ranks",
-    "compute_singular_entropy",
-    "LowRankCompressor",
-    "LowRankLinear",
-    "SoKACompressor",
-    "LiLLaMACompressor",
-    "LSCCompressor",
-    # Structural Pruning and Layer Shedding
-    "SliceGPTCompressor",
-    "SliceGPTPCACompressor",
-    "SparseGPTCompressor",
-    "ADMMCompressor",
-    "ADMMPruner",
-    "ARMORPruner",
-    "ASTPruner",
-    "BonsaiPruner",
-    "FLAPCompressor",
-    "FLATLLMCompressor",
-    "MambaShedderCompressor",
-    "ProxSparsePruner",
-    "ProxSparseCompressor",
-    "SLiMCompressor",
-    "LIFTRCompressor",
-    "OATSCompressor",
-    # Quantization
-    "AstroQuantizer",
-    "AstroLinear",
-    "STEFakeQuantize",
-    "quantize_dequantize_tensor",
-    "FAQQuantizer",
-    "FAQLinear",
-    "CoopQQuantizer",
-    "KMeansCompressor",
-    "KMeansLinear",
-    "fast_kmeans_1d",
-    # KV Cache
-    "DeltaKVCompressor",
-    "DeltaKVStore",
-    "HybridKVCompressor",
-    "HybridKVCache",
-    "KVTCCompressor",
-    "KVTCStore",
-    "SimpleEntropyCoder",
-    "CacheNotesCompressor",
-    "CacheNotesKVCache",
-    "CompressionPlanningTokens",
-    "ZeroKVNeoCompressor",
-    "ZeroKVNeoCache",
-    "MoDeGPTCompressor",
-    # Huffman
-    "HuffmanCompressor",
-    "HuffmanCoder",
-    "HuffmanNode",
-]

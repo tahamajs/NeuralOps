@@ -56,9 +56,8 @@ grad_input = grad_output * sig * (1 - sig)
 
 This treats the gradient as if the softmax were a pointwise sigmoid applied independently to each element, completely ignoring the normalisation coupling between elements. Consequently, the approximate gradient:
 
-- Is **cheap** to compute: only a few element‑wise multiplications and a sigmoid evaluation (which is already fast).
-- Does **not require storing** the forward softmax output `y` (though in the current code, `y` is still computed and returned, but it is not saved for backward; only `x` is saved). This saves memory.
-- Is **inaccurate**: it does not satisfy the properties of a probability distribution gradient (e.g., rows of the Jacobian should sum to zero, but here they do not). This can lead to incorrect gradient signals during training.
+Is **cheap** to compute: only a few element‑wise multiplications and a sigmoid evaluation (which is already fast). Furthermore, Does **not require storing** the forward softmax output `y` (though in the current code, `y` is still computed and returned, but it is not saved for backward; only `x` is saved). This saves memory. Concurrently, Is **inaccurate**: it does not satisfy the properties of a probability distribution gradient (e.g., rows of the Jacobian should sum to zero, but here they do not). This can lead to incorrect gradient signals during training.
+
 
 ### 2.3 Rationale for the Approximation
 
@@ -72,13 +71,15 @@ The sigmoid derivative `σ(x)(1-σ(x))` is often used as a cheap approximation f
 
 Inherits from `torch.autograd.Function`. Overrides `forward` and `backward`.
 
-- **`forward(ctx, x)`**:  
+Specifically, regarding \textbf{`forward(ctx, x)`}, 
+
   1. Clamps `x` to `[-3,3]` (unused).  
   2. Computes `y = F.softmax(x, dim=-1)`.  
   3. Saves the original input `x` for backward.  
   4. Returns `y`.
 
-- **`backward(ctx, grad_output)`**:  
+Specifically, regarding \textbf{`backward(ctx, grad_output)`}, 
+
   1. Retrieves `x`.  
   2. Computes `sig = torch.sigmoid(x)`.  
   3. Computes `grad_input = grad_output * sig * (1 - sig)`.  
@@ -121,22 +122,18 @@ To revert to standard softmax, replace with `F.softmax(attention_scores, dim=-1)
 
 ### Advantages
 
-- **Faster gradient computation**: The backward pass avoids the full softmax Jacobian, requiring only a pointwise sigmoid and multiplications. This can be significantly faster, especially for large sequence lengths.
-- **Reduced memory**: The forward softmax output `y` is not stored for backward (only `x` is saved), cutting memory usage.
-- **Quantisation‑friendly**: The sigmoid and its derivative are easier to approximate with integer arithmetic than the softmax gradient, paving the way for fully quantised attention.
+Specifically, regarding \textbf{Faster gradient computation}, the backward pass avoids the full softmax Jacobian, requiring only a pointwise sigmoid and multiplications. This can be significantly faster, especially for large sequence lengths. Furthermore, regarding \textbf{Reduced memory}, the forward softmax output `y` is not stored for backward (only `x` is saved), cutting memory usage. Concurrently, regarding \textbf{Quantisation‑friendly}, the sigmoid and its derivative are easier to approximate with integer arithmetic than the softmax gradient, paving the way for fully quantised attention.
+
 
 ### Limitations
 
-- **Forward still expensive**: The forward pass still computes `F.softmax`, which involves exponentiation and summation. The intended speed‑up is primarily in the backward pass. To make forward faster, the softmax itself should be approximated (e.g., using a polynomial or lookup table), which is not yet implemented.
-- **Gradient inaccuracy**: The approximate gradient is a crude replacement. It ignores the off‑diagonal terms of the Jacobian, which can mislead optimisation, potentially causing divergence or poor convergence.
-- **No normalisation property**: The gradient does not respect the fact that the sum of probabilities is 1, leading to non‑zero sum of gradient components, which may introduce drift in parameter updates.
-- **Clamping not used**: The clamping to `[-3,3]` is a leftover and does nothing. If a piecewise approximation were implemented, clamping would be necessary to limit the input range.
+Specifically, regarding \textbf{Forward still expensive}, the forward pass still computes `F.softmax`, which involves exponentiation and summation. The intended speed‑up is primarily in the backward pass. To make forward faster, the softmax itself should be approximated (e.g., using a polynomial or lookup table), which is not yet implemented. Furthermore, regarding \textbf{Gradient inaccuracy}, the approximate gradient is a crude replacement. It ignores the off‑diagonal terms of the Jacobian, which can mislead optimisation, potentially causing divergence or poor convergence. Concurrently, regarding \textbf{No normalisation property}, the gradient does not respect the fact that the sum of probabilities is 1, leading to non‑zero sum of gradient components, which may introduce drift in parameter updates. In this setting, regarding \textbf{Clamping not used}, the clamping to `[-3,3]` is a leftover and does nothing. If a piecewise approximation were implemented, clamping would be necessary to limit the input range.
+
 
 ### Future Work
 
-- Replace the forward pass with a proper non‑linear interpolation (NLI) approximation, such as a second‑order polynomial fitted to the exponential, or a lookup table.
-- Implement a fully integer‑softmax using the NLI philosophy, enabling efficient deployment on edge TPUs or integer‑only hardware.
-- Investigate the impact of the simplified gradient on different training regimes (e.g., fine‑tuning vs. from scratch) and tasks.
+Replace the forward pass with a proper non‑linear interpolation (NLI) approximation, such as a second‑order polynomial fitted to the exponential, or a lookup table. Furthermore, Implement a fully integer‑softmax using the NLI philosophy, enabling efficient deployment on edge TPUs or integer‑only hardware. Concurrently, Investigate the impact of the simplified gradient on different training regimes (e.g., fine‑tuning vs. from scratch) and tasks.
+
 
 ---
 
