@@ -82,6 +82,9 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
     # Separate Python process running on its own CPU core & CUDA context
     import torch
     torch.backends.cudnn.benchmark = True
+    if torch.cuda.is_available():
+        # Hard cap at 75% of 8GB = 6GB VRAM per worker to prevent Windows Shared Memory swapping
+        torch.cuda.set_per_process_memory_fraction(0.75)
     from main import run_train, _import_framework
     fw = _import_framework()
 
@@ -123,11 +126,11 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                       "aegis_hybrid", "mamba_svd_flash", "mamba_inject",
                       "spectron", "hgrn2_layer", "simple_ssm", "samba_moe"}
         if attn in heavy_attn:
-            cfg.batch_size = 8
+            cfg.batch_size = 16
         elif attn in {"adasplash", "nha_compressor", "token_compressed"}:
-            cfg.batch_size = 4
+            cfg.batch_size = 8
         else:
-            cfg.batch_size = 16   # Reduced to allow 2 concurrent workers on RTX 4070
+            cfg.batch_size = 64   # Increased batch size to maximize compute with 1 worker
 
         cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
 
@@ -444,7 +447,7 @@ def main():
     log_master(f"Trajectory Matrix: {len(ATTN_MODELS)} Models x {len(TASKS)} Tasks = {total} Runs")
     log_master("Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.")
 
-    NUM_WORKERS = 2
+    NUM_WORKERS = 1
     processes = []
     git_lock = mp.Lock()
     for w_id in range(1, NUM_WORKERS + 1):
