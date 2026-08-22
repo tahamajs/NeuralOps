@@ -1,0 +1,4 @@
+epoch,eval_accuracy,eval_f1_macro,eval_f1_weighted,eval_loss,eval_runtime,eval_samples_per_second,eval_steps_per_second,step,total_flos,train_loss,train_runtime,train_samples_per_second,train_steps_per_second
+1.0,0.5091743119266054,0.3373860182370821,0.3435765873790469,0.6937283873558044,28.5495,30.543,0.49,32,,,,,
+1.0,,,,,,,,32,33251343360000.0,0.6925199031829834,70.1818,14.249,0.456
+1.0,0.5091743119266054,0.3373860182370821,0.3435765873790469,0.6937283873558044,29.3206,29.74,0.477,32,,,,,
