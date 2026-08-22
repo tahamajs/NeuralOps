@@ -448,3 +448,9 @@ ompleted)
 [2026-08-22 04:17:08] [Worker-1] [9/126] -- SKIPPING: attn=aegis_v2 | task=sst2 (Already completed)
 [2026-08-22 04:17:08] [Worker-1] [10/126] >> Launching: attn=aegis_v3 | task=sst2 | seed=42
 [2026-08-22 04:17:18] [Worker-1] [10/126] << SUCCESS: attn=aegis_v3 | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6945 | Time: 10.2s
+[2026-08-22 04:17:20] [Worker-1] [11/126] -- SKIPPING: attn=aegis_v4 | task=sst2 (Already completed)
+[2026-08-22 04:17:20] [Worker-1] [12/126] -- SKIPPING: attn=aegis_v5 | task=sst2 (Already completed)
+[2026-08-22 04:17:20] [Worker-1] [13/126] -- SKIPPING: attn=aegis_v6 | task=sst2 (Already completed)
+[2026-08-22 04:17:20] [Worker-1] [14/126] -- SKIPPING: attn=asvd | task=sst2 (Already completed)
+[2026-08-22 04:17:20] [Worker-1] [15/126] >> Launching: attn=bam_umoe | task=sst2 | seed=42
+[2026-08-22 04:17:24] [Worker-1] [15/126] NOTICE: attn=bam_umoe | task=sst2 | Error: The size of tensor a (32) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 4.0s
