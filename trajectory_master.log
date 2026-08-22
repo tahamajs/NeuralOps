@@ -1634,3 +1634,7 @@ ompleted)
 [2026-08-22 04:57:37] [Worker-1] [51/126] -- SKIPPING: attn=jamba_info | task=sst2 (Already completed)
 [2026-08-22 04:57:37] [Worker-1] [52/126] >> Launching: attn=kda | task=sst2 | seed=42
 [2026-08-22 05:03:58] [Worker-1] [52/126] << SUCCESS: attn=kda | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6966 | Time: 380.7s
+[2026-08-22 05:04:01] [Worker-1] [53/126] -- SKIPPING: attn=leka_v1 | task=sst2 (Already completed)
+[2026-08-22 05:04:01] [Worker-1] [54/126] -- SKIPPING: attn=leka_v2 | task=sst2 (Already completed)
+[2026-08-22 05:04:01] [Worker-1] [55/126] >> Launching: attn=leka_v3 | task=sst2 | seed=42
+[2026-08-22 05:04:48] [Worker-1] [55/126] << SUCCESS: attn=leka_v3 | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6967 | Time: 47.3s
