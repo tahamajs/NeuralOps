@@ -1507,3 +1507,5 @@ ompleted)
 [2026-08-22 04:51:37] [Worker-1] [63/126] NOTICE: attn=mamba_svd_flash_inject | task=sst2 | Error: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.63 GiB is free. 3.20 GiB allowed; Of the allocated memory 3.03 GiB is allocated by PyTorch, and 148.65 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.2s
 [2026-08-22 04:51:40] [Worker-1] [64/126] >> Launching: attn=minimal_aurora | task=sst2 | seed=42
 [2026-08-22 04:51:57] [Worker-1] [64/126] << SUCCESS: attn=minimal_aurora | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.8s
+[2026-08-22 04:52:00] [Worker-1] [65/126] >> Launching: attn=minimal_nova | task=sst2 | seed=42
+[2026-08-22 04:52:18] [Worker-1] [65/126] << SUCCESS: attn=minimal_nova | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.9s
