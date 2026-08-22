@@ -183,32 +183,23 @@
                 document.getElementById('conn-status').innerText = 'ONLINE';
                 document.getElementById('conn-status').className = 'text-emerald-400 font-bold';
 
-                // Hardware telemetry - Universal extractor
-                if (data.gpu) {
-                    const util = (typeof data.gpu.gpu_util !== 'undefined') ? Math.round(data.gpu.gpu_util) : Math.round(data.gpu[0] || 0);
-                    const memUsed = (typeof data.gpu.mem_used_mb !== 'undefined') ? (data.gpu.mem_used_mb / 1024).toFixed(1) : ((data.gpu[1] || 0) / 1024).toFixed(1);
-                    const memTotal = (typeof data.gpu.mem_total_mb !== 'undefined') ? (data.gpu.mem_total_mb / 1024).toFixed(1) : ((data.gpu[2] || 8188) / 1024).toFixed(1);
-                    const temp = (typeof data.gpu.temp_c !== 'undefined') ? Math.round(data.gpu.temp_c) : Math.round(data.gpu[3] || 0);
-                    const power = (typeof data.gpu.power_w !== 'undefined') ? Math.round(data.gpu.power_w) : Math.round(data.gpu[4] || 0);
-                    const ramUsed = (typeof data.gpu.sys_ram_used_gb !== 'undefined') ? data.gpu.sys_ram_used_gb : (data.gpu[5] || '--');
+                // Hardware telemetry
+                if (Array.isArray(data.gpu) && data.gpu.length >= 2) {
+                    const util = Math.round(data.gpu[0] || 0);
+                    const memUsed = ((data.gpu[1] || 0) / 1024).toFixed(1);
+                    const memTotal = ((data.gpu[2] || 8188) / 1024).toFixed(1);
+                    const temp = Math.round(data.gpu[3] || 0);
+                    const power = Math.round(data.gpu[4] || 0);
+                    const ramUsed = (data.gpu[5] !== undefined) ? data.gpu[5] : '--';
 
-                    const gpuUtilEl = document.getElementById('gpu-util');
-                    const gpuBarEl = document.getElementById('gpu-bar');
-                    const vramUsedEl = document.getElementById('vram-used');
-                    const vramTotalEl = document.getElementById('vram-total');
-                    const vramBarEl = document.getElementById('vram-bar');
-                    const gpuTempEl = document.getElementById('gpu-temp');
-                    const gpuPowerEl = document.getElementById('gpu-power');
-                    const ramEl = document.getElementById('ram-usage');
-
-                    if (gpuUtilEl) gpuUtilEl.innerText = util + '%';
-                    if (gpuBarEl) gpuBarEl.style.width = Math.min(100, util) + '%';
-                    if (vramUsedEl) vramUsedEl.innerText = memUsed;
-                    if (vramTotalEl) vramTotalEl.innerText = memTotal;
-                    if (vramBarEl) vramBarEl.style.width = Math.min(100, (parseFloat(memUsed) / (parseFloat(memTotal) || 8.0)) * 100) + '%';
-                    if (gpuTempEl) gpuTempEl.innerText = temp + '°C';
-                    if (gpuPowerEl) gpuPowerEl.innerText = power + ' W';
-                    if (ramEl) ramEl.innerText = ramUsed;
+                    document.getElementById('gpu-util').innerText = util + '%';
+                    document.getElementById('gpu-bar').style.width = Math.min(100, util) + '%';
+                    document.getElementById('vram-used').innerText = memUsed;
+                    document.getElementById('vram-total').innerText = memTotal;
+                    document.getElementById('vram-bar').style.width = Math.min(100, ((data.gpu[1] || 0) / (data.gpu[2] || 8188)) * 100) + '%';
+                    document.getElementById('gpu-temp').innerText = temp + '°C';
+                    document.getElementById('gpu-power').innerText = power + ' W';
+                    document.getElementById('ram-usage').innerText = ramUsed;
                 }
 
                 // Active training curve
