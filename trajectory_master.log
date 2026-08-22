@@ -313,3 +313,5 @@ ompleted)
 [2026-08-22 04:06:08] [Worker-1] [22/126] >> Launching: attn=compression_unified_rope | task=sst2 | seed=42
 [2026-08-22 04:06:13] [Worker-3] [24/126] >> Launching: attn=eat | task=sst2 | seed=42
 [2026-08-22 04:06:17] [Worker-1] [22/126] << SUCCESS: attn=compression_unified_rope | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7094 | Time: 8.9s
+[2026-08-22 04:06:20] [Worker-1] [25/126] >> Launching: attn=expert_choice_moe | task=sst2 | seed=42
+[2026-08-22 04:06:26] [Worker-3] [24/126] << SUCCESS: attn=eat | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6950 | Time: 13.5s
