@@ -663,3 +663,5 @@ ompleted)
 [2026-08-22 04:29:31] [Worker-1] [29/126] -- SKIPPING: attn=full | task=sst2 (Already completed)
 [2026-08-22 04:29:31] [Worker-1] [30/126] >> Launching: attn=fusion_attn | task=sst2 | seed=42
 [2026-08-22 04:29:36] [Worker-1] [30/126] << SUCCESS: attn=fusion_attn | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7052 | Time: 5.4s
+[2026-08-22 04:29:39] [Worker-1] [31/126] >> Launching: attn=galerkin | task=sst2 | seed=42
+[2026-08-22 04:29:43] [Worker-1] [31/126] << SUCCESS: attn=galerkin | task=sst2 | Acc: 51.03% | F1: 34.41% | Loss: 0.7057 | Time: 4.7s
