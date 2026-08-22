@@ -665,3 +665,11 @@ ompleted)
 [2026-08-22 04:29:36] [Worker-1] [30/126] << SUCCESS: attn=fusion_attn | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7052 | Time: 5.4s
 [2026-08-22 04:29:39] [Worker-1] [31/126] >> Launching: attn=galerkin | task=sst2 | seed=42
 [2026-08-22 04:29:43] [Worker-1] [31/126] << SUCCESS: attn=galerkin | task=sst2 | Acc: 51.03% | F1: 34.41% | Loss: 0.7057 | Time: 4.7s
+[2026-08-22 04:29:46] [Worker-1] [32/126] -- SKIPPING: attn=gated_delta_net | task=sst2 (Already completed)
+[2026-08-22 04:29:46] [Worker-1] [33/126] -- SKIPPING: attn=gated_delta_net_inject | task=sst2 (Already completed)
+[2026-08-22 04:29:46] [Worker-1] [34/126] -- SKIPPING: attn=gated_deltanet_block | task=sst2 (Already completed)
+[2026-08-22 04:29:46] [Worker-1] [35/126] -- SKIPPING: attn=gated_linear_attn | task=sst2 (Already completed)
+[2026-08-22 04:29:46] [Worker-1] [36/126] -- SKIPPING: attn=goldfinch_ahn | task=sst2 (Already completed)
+[2026-08-22 04:29:46] [Worker-1] [37/126] -- SKIPPING: attn=gqa | task=sst2 (Already completed)
+[2026-08-22 04:29:46] [Worker-1] [38/126] >> Launching: attn=granite_hybrid | task=sst2 | seed=42
+[2026-08-22 04:29:48] [Worker-1] [38/126] NOTICE: attn=granite_hybrid | task=sst2 | Error: CUDA out of memory. Tried to allocate 12.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 658.82 MiB is free. 6.00 GiB allowed; Of the allocated memory 5.65 GiB is allocated by PyTorch, and 352.71 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 2.0s
