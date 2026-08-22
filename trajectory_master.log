@@ -1095,3 +1095,5 @@ ompleted)
 [2026-08-22 04:38:30] [Worker-2] [100/126] << SUCCESS: attn=soa_attn | task=sst2 | Acc: 56.88% | F1: 48.14% | Loss: 0.6588 | Time: 9.0s
 [2026-08-22 04:38:33] [Worker-2] [101/126] >> Launching: attn=soa_fused_attn | task=sst2 | seed=42
 [2026-08-22 04:38:41] [Worker-2] [101/126] << SUCCESS: attn=soa_fused_attn | task=sst2 | Acc: 56.88% | F1: 48.14% | Loss: 0.6588 | Time: 8.4s
+[2026-08-22 04:38:44] [Worker-2] [102/126] >> Launching: attn=soa_fused_module | task=sst2 | seed=42
+[2026-08-22 04:38:52] [Worker-2] [102/126] << SUCCESS: attn=soa_fused_module | task=sst2 | Acc: 56.88% | F1: 48.14% | Loss: 0.6588 | Time: 8.3s
