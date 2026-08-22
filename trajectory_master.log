@@ -2012,3 +2012,5 @@ ompleted)
 [2026-08-22 10:16:01] [Worker-2] [117/145] NOTICE: attn=token_compressed | task=sst2 | Error: maximum recursion depth exceeded | Time: 1.7s
 [2026-08-22 10:16:03] [Worker-2] [118/145] >> Launching: attn=token_compressed_module | task=sst2 | seed=42
 [2026-08-22 10:16:15] [Worker-2] [118/145] << SUCCESS: attn=token_compressed_module | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6911 | Time: 12.6s
+[2026-08-22 10:16:17] [Worker-2] [119/145] >> Launching: attn=tpa | task=sst2 | seed=42
+[2026-08-22 10:16:36] [Worker-2] [119/145] << SUCCESS: attn=tpa | task=sst2 | Acc: 75.23% | F1: 75.06% | Loss: 0.5750 | Time: 19.2s
