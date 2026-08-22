@@ -12,10 +12,10 @@ Provides shared mathematical routines:
 
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
-import numpy as np
 
 
 # Standard default calibration text corpus
@@ -119,7 +119,7 @@ def compute_empirical_hessian(
     # H = (2/N) * X^T X
     H = (2.0 / float(max(N, 1))) * torch.matmul(X.T, X)
     diag_mean = torch.diagonal(H).mean().item()
-    if not np.isfinite(diag_mean) or diag_mean <= 0.0:
+    if not math.isfinite(diag_mean) or diag_mean <= 0.0:
         diag_mean = 1.0
 
     reg = max(float(damping) * diag_mean, 1e-5)

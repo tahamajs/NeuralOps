@@ -150,7 +150,27 @@ def __getattr__(name: str) -> Any:
         except Exception as e:
             logger.error("Failed to lazily load %s from %s: %s", name, mod_name, e)
             raise
+    # Submodule lookup fallback
+    try:
+        module = importlib.import_module(f"framework.compression_engine.{name}")
+        globals()[name] = module
+        return module
+    except ModuleNotFoundError:
+        pass
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = list(_MODULE_MAP.keys())
+
+# Auto-discover and register all compressor modules in this package
+import glob
+import os
+
+_pkg_dir = os.path.dirname(__file__)
+for _file in glob.glob(os.path.join(_pkg_dir, "*.py")):
+    _mod_name = os.path.splitext(os.path.basename(_file))[0]
+    if not _mod_name.startswith("_"):
+        try:
+            importlib.import_module(f"framework.compression_engine.{_mod_name}")
+        except Exception as _e:
+            logger.debug("Failed to auto-load compressor module %s: %s", _mod_name, _e)
