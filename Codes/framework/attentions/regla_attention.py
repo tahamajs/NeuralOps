@@ -89,14 +89,14 @@ class ReGLAAttention(BaseAttention):
         k_gated = k * torch.sigmoid(g)
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask.unsqueeze(1).unsqueeze(-1).to(k_gated.dtype)
+            if attention_mask.dim() == 4:
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).float()
             elif attention_mask.dim() == 3:
-                mask = attention_mask.unsqueeze(-1).to(k_gated.dtype)
-            elif attention_mask.dim() == 4:
-                mask = (attention_mask > -10000.0).to(k_gated.dtype)
+                mask = attention_mask[:, 0, :]
             else:
-                mask = attention_mask.to(k_gated.dtype)
+                mask = attention_mask
+            
+            mask = mask.unsqueeze(1).unsqueeze(-1).to(k_gated.dtype)
             k_gated = k_gated * mask
 
         kv = torch.matmul(k_gated.transpose(-2, -1), v)

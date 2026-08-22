@@ -64,16 +64,22 @@ class RALALinearAttention(nn.Module):
         """ apply linear mask."""
         if attention_mask is None:
             return k
-        if attention_mask.dim() == 2:  # (B, L)
-            mask = attention_mask[:, None, None, :]
-        elif attention_mask.dim() == 3:  # (B, 1, L)
-            mask = attention_mask[:, None, :, :]
+        
+        # Ensure mask is [B, L]
+        if attention_mask.dim() == 4:
+            mask = attention_mask[:, 0, 0, :]
+        elif attention_mask.dim() == 3:
+            mask = attention_mask[:, 0, :]
         else:
             mask = attention_mask
+            
+        # Reshape to [B, 1, L, 1] so it can broadcast against k [B, H, L, d_k]
+        mask = mask.unsqueeze(1).unsqueeze(-1)
+        
         mask_val: torch.Tensor = (
-            (1.0 - mask.to(torch.float32)).clamp(min=0) * -10000.0
+            (mask > -10000.0).to(torch.float32)
         )
-        return k + mask_val.to(k.dtype)
+        return k * mask_val.to(k.dtype)
 
     def forward(
         self,
