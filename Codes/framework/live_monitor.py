@@ -3,6 +3,7 @@
 Zero-Bloat Modular Live Experiment Monitor & Dashboard
 Serves modular static files (web/index.html, web/app.js, web/styles.css)
 and provides real-time JSON API /api/stats.
+Background cache thread: stats refreshed every 3s so HTTP requests are instant.
 """
 import http.server
 import json
@@ -10,6 +11,7 @@ import os
 import re
 import socketserver
 import subprocess
+import threading
 import time
 from pathlib import Path
 
@@ -17,6 +19,11 @@ try:
     import psutil
 except ImportError:
     psutil = None
+
+# ── Global response cache ─────────────────────────────────────────────────────
+_cache_lock = threading.Lock()
+_cached_response: str = "{}"
+_cache_ready = threading.Event()
 
 PORT = 8080
 WORKDIR = Path(__file__).resolve().parent
@@ -192,7 +199,69 @@ def get_all_active_loss_histories(workers):
     return histories
 
 
+def _build_stats_response() -> str:
+    """Build the full stats JSON response. Called by background thread only."""
+    gpu = get_gpu_stats()
+    storage = get_storage_stats()
+    workers = get_active_workers()
+    results = get_completed_results()
+    matrix = get_trajectory_matrix(results, workers)
+    train_multi = get_all_active_loss_histories(workers)
+
+    logs = []
+    if MASTER_LOG.exists():
+        try:
+            logs = MASTER_LOG.read_text(encoding="utf-8", errors="ignore").splitlines()[-25:]
+        except Exception:
+            pass
+
+    gpu["0"] = gpu.get("gpu_util", 0.0)
+    gpu["1"] = gpu.get("mem_used_mb", 0.0)
+    gpu["2"] = gpu.get("mem_total_mb", 8188.0)
+    gpu["3"] = gpu.get("temp_c", 0.0)
+    gpu["4"] = gpu.get("power_w", 0.0)
+    gpu["5"] = gpu.get("sys_ram_used_gb", 0.0)
+
+    total_completed = len(results)
+    first_active = train_multi[0] if (train_multi and len(train_multi) > 0) else {}
+    train_obj = {
+        "active_model": first_active.get("active_model", "SVD"),
+        "active_task": first_active.get("active_task", "SST2"),
+        "active_index": f"{total_completed}/1008",
+        "loss_history": first_active.get("loss_history", [])
+    }
+
+    response = {
+        "gpu": gpu,
+        "train": train_obj,
+        "storage": storage,
+        "workers": workers,
+        "results": results,
+        "matrix": matrix,
+        "train_multi": train_multi,
+        "logs": logs,
+    }
+    return json.dumps(response).replace("NaN", "null").replace("Infinity", "null")
+
+
+def _cache_refresh_loop():
+    """Background thread: refresh cached stats every 3 seconds."""
+    global _cached_response
+    while True:
+        try:
+            data = _build_stats_response()
+            with _cache_lock:
+                _cached_response = data
+            _cache_ready.set()
+        except Exception:
+            pass
+        time.sleep(3)
+
+
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass  # suppress per-request stdout noise
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -204,56 +273,17 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         req_path = self.path.split('?')[0]
 
         if self.path == "/api/stats":
+            _cache_ready.wait(timeout=10)
+            with _cache_lock:
+                payload = _cached_response.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "*")
+            self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
-
-            gpu = get_gpu_stats()
-            storage = get_storage_stats()
-            workers = get_active_workers()
-            results = get_completed_results()
-            matrix = get_trajectory_matrix(results, workers)
-            train_multi = get_all_active_loss_histories(workers)
-
-            logs = []
-            if MASTER_LOG.exists():
-                try:
-                    logs = MASTER_LOG.read_text(encoding="utf-8", errors="ignore").splitlines()[-25:]
-                except Exception:
-                    pass
-
-            # Enrich GPU with numeric keys for array-style indexing
-            gpu["0"] = gpu.get("gpu_util", 0.0)
-            gpu["1"] = gpu.get("mem_used_mb", 0.0)
-            gpu["2"] = gpu.get("mem_total_mb", 8188.0)
-            gpu["3"] = gpu.get("temp_c", 0.0)
-            gpu["4"] = gpu.get("power_w", 0.0)
-            gpu["5"] = gpu.get("sys_ram_used_gb", 0.0)
-
-            total_completed = len(results)
-            first_active = train_multi[0] if (train_multi and len(train_multi) > 0) else {}
-            train_obj = {
-                "active_model": first_active.get("active_model", "SVD"),
-                "active_task": first_active.get("active_task", "SST2"),
-                "active_index": f"{total_completed}/45",
-                "loss_history": first_active.get("loss_history", [])
-            }
-
-            response = {
-                "gpu": gpu,
-                "train": train_obj,
-                "storage": storage,
-                "workers": workers,
-                "results": results,
-                "matrix": matrix,
-                "train_multi": train_multi,
-                "logs": logs,
-            }
-            json_str = json.dumps(response).replace("NaN", "null").replace("Infinity", "null")
-            self.wfile.write(json_str.encode("utf-8"))
+            self.wfile.write(payload)
             return
 
         if req_path == "/favicon.ico":
@@ -262,11 +292,17 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if req_path in ("/", "/index.html"):
+            html_file = WEB_DIR / "index.html"
+            if html_file.exists():
+                content = html_file.read_bytes()
+            else:
+                content = b"<h1>Dashboard loading...</h1>"
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(content)))
             self.end_headers()
-            self.wfile.write(HTML_PAGE.encode("utf-8"))
+            self.wfile.write(content)
             return
 
         if req_path in ("/styles.css", "/style.css"):
@@ -355,6 +391,10 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def main():
+    # Start background cache thread so /api/stats responds instantly
+    t = threading.Thread(target=_cache_refresh_loop, daemon=True)
+    t.start()
+
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("0.0.0.0", PORT), DashboardHandler) as httpd:
         print(f"Modular Live Analytics Hub active on http://0.0.0.0:{PORT}")
