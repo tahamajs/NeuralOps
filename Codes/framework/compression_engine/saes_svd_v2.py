@@ -22,21 +22,8 @@ logger = logging.getLogger(__name__)
 @COMPRESSOR_REGISTRY.register("saes_svd_v2")
 @COMPRESSOR_REGISTRY.register("saes")
 class SAESSVDCompressorV2(BaseCompressor):
-    """
-    Spectrum-Aware Error Suppression SVD (SAES-SVD v2).
+    """Spectrum-Aware Error Suppression SVD (SAES-SVD v2)."""
 
-    Decomposes linear weights via SVD, computes the spectral decay profile,
-    and applies iterative residual error compensation steps to absorb truncation
-    energy into the factorized matrices A = U * sqrt(Sigma) and B = sqrt(Sigma) * V^T,
-    replacing nn.Linear layers with factorized SVDLinear modules.
-
-    Args:
-        model: PyTorch model.
-        rank: Target rank r. If None, calculated via rank_ratio.
-        rank_ratio: Retention ratio of maximum rank (0.0 < rank_ratio <= 1.0).
-        correcting_steps: Number of iterative residual compensation steps.
-        target_modules: Optional list of layer name filters.
-    """
 
     def __init__(
         self,
@@ -154,3 +141,10 @@ def saes_svd_v2_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any
     compressor = SAESSVDCompressorV2(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+# Backward compatibility alias
+SAESCompressor = SAESSVDCompressorV2
+
+__all__ = ["SAESSVDCompressorV2", "SAESCompressor", "saes_svd_v2_factory"]
+

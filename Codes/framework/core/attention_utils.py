@@ -21,7 +21,6 @@ from .adapters import get_adapter
 from .architecture import detect_architecture, get_attention_modules
 from .model_utils import replace_module
 from .registry import ATTENTION_REGISTRY
-from framework.compression_engine.aa_svd_compressor import SVDLinear
 
 logger = logging.getLogger(__name__)
 
