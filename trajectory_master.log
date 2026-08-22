@@ -1828,3 +1828,8 @@ ompleted)
 [2026-08-22 05:22:54] [Worker-1] [58/126] -- SKIPPING: attn=lora_attn | task=sst2 (Already completed)
 [2026-08-22 05:22:54] [Worker-1] [59/126] >> Launching: attn=lsh | task=sst2 | seed=42
 [2026-08-22 05:35:38] [Worker-2] [26/126] << SUCCESS: attn=factorised_matrix_state | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6934 | Time: 789.0s
+[2026-08-22 05:35:41] [Worker-2] [60/126] -- SKIPPING: attn=mamba | task=sst2 (Already completed)
+[2026-08-22 05:35:41] [Worker-2] [61/126] -- SKIPPING: attn=mamba_inject | task=sst2 (Already completed)
+[2026-08-22 05:35:41] [Worker-2] [62/126] -- SKIPPING: attn=mamba_svd_flash | task=sst2 (Already completed)
+[2026-08-22 05:35:41] [Worker-2] [63/126] >> Launching: attn=mamba_svd_flash_inject | task=sst2 | seed=42
+[2026-08-22 05:35:43] [Worker-2] [63/126] NOTICE: attn=mamba_svd_flash_inject | task=sst2 | Error: CUDA out of memory. Tried to allocate 12.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 260.98 MiB is free. 3.60 GiB allowed; Of the allocated memory 3.42 GiB is allocated by PyTorch, and 186.42 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.6s
