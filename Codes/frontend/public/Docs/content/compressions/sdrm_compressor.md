@@ -70,9 +70,8 @@ Although the weight matrix is still stored as `d_out × d_in` numbers, its effec
 
 For each linear layer of size `M × N`:
 
-- **Full SVD**: O(M·N·min(M,N)) via `np.linalg.svd`. For 768×768, this is about 4.5×10⁸ operations, a few milliseconds on CPU.
-- **Rank computation**: O(1).
-- Overall compression time for a model with L layers is O(L·D³), where D is typical hidden size. For DistilBERT, this is a few seconds.
+Specifically, regarding \textbf{Full SVD}, o(M·N·min(M,N)) via `np.linalg.svd`. For 768×768, this is about 4.5×10⁸ operations, a few milliseconds on CPU. Furthermore, regarding \textbf{Rank computation}, o(1). Concurrently, Overall compression time for a model with L layers is O(L·D³), where D is typical hidden size. For DistilBERT, this is a few seconds.
+
 
 ### B. Inference Complexity
 
@@ -80,8 +79,8 @@ After compression, the weights are still dense matrices. The forward pass is unc
 
 ### C. Memory Usage
 
-- **During compression**: Storing the weight and its SVD factors temporarily requires a few times the weight size.
-- **After compression**: The model parameters remain the same count (dense weights). The storage footprint does not decrease. To actually reduce memory, the weights must be replaced by the factorised representation (two matrices per layer) with ranks given by SDRM.
+Specifically, regarding \textbf{During compression}, storing the weight and its SVD factors temporarily requires a few times the weight size. Furthermore, regarding \textbf{After compression}, the model parameters remain the same count (dense weights). The storage footprint does not decrease. To actually reduce memory, the weights must be replaced by the factorised representation (two matrices per layer) with ranks given by SDRM.
+
 
 ---
 
@@ -96,7 +95,8 @@ class SDRMCompressor(BaseCompressor):
         self.total_param_ratio = total_param_ratio
 ```
 
-- **`total_param_ratio`**: Fraction of original weight parameters to retain. Must be in (0,1]. Default 0.7.
+Specifically, regarding \textbf{`total_param_ratio`}, fraction of original weight parameters to retain. Must be in (0,1]. Default 0.7.
+
 
 **`compress()` method**:
 
@@ -149,19 +149,13 @@ Then run the compression pipeline. All linear layer weights will be replaced by 
 
 ### Advantages
 
-- **Global budget control**: A single intuitive hyperparameter sets the overall compression level; no per‑layer tuning required.
-- **Fair allocation**: Each layer is reduced by the same relative amount, preventing over‑compression of small layers.
-- **Data‑free**: Works on any pretrained model immediately.
-- **Simple and fast**: Only one SVD per layer; no calibration or gradients needed.
-- **Foundation for factorisation**: The assigned ranks are optimal for a later conversion to low‑rank factorised layers.
+Specifically, regarding \textbf{Global budget control}, a single intuitive hyperparameter sets the overall compression level; no per‑layer tuning required. Furthermore, regarding \textbf{Fair allocation}, each layer is reduced by the same relative amount, preventing over‑compression of small layers. Concurrently, regarding \textbf{Data‑free}, works on any pretrained model immediately. In this setting, regarding \textbf{Simple and fast}, only one SVD per layer; no calibration or gradients needed. Additionally, regarding \textbf{Foundation for factorisation}, the assigned ranks are optimal for a later conversion to low‑rank factorised layers.
+
 
 ### Limitations
 
-- **No immediate memory or speed savings**: Weights remain dense; additional steps needed to extract factors.
-- **Rigid per‑layer uniform ratio**: All layers get the same fraction, despite varying sensitivity; some layers could be compressed more aggressively than others.
-- **Rank derived from parameter count, not information content**: The rank is based purely on geometry, not on singular value energy or task importance. A more sophisticated method would allocate higher ranks to layers with higher entropy or Fisher information.
-- **Possible rank capping**: If `allowed / (d_out+d_in)` exceeds `min(d_out,d_in)`, the layer cannot be compressed beyond its full rank, which may cause the actual total parameter budget to exceed the target (since some layers remain at full rank while others get less). The budget is approximated.
-- **Biases not factored**: Bias terms are not included in the budget, which is fine as they are a minor fraction.
+Specifically, regarding \textbf{No immediate memory or speed savings}, weights remain dense; additional steps needed to extract factors. Furthermore, regarding \textbf{Rigid per‑layer uniform ratio}, all layers get the same fraction, despite varying sensitivity; some layers could be compressed more aggressively than others. Concurrently, regarding \textbf{Rank derived from parameter count, not information content}, the rank is based purely on geometry, not on singular value energy or task importance. A more sophisticated method would allocate higher ranks to layers with higher entropy or Fisher information. In this setting, regarding \textbf{Possible rank capping}, if `allowed / (d_out+d_in)` exceeds `min(d_out,d_in)`, the layer cannot be compressed beyond its full rank, which may cause the actual total parameter budget to exceed the target (since some layers remain at full rank while others get less). The budget is approximated. Additionally, regarding \textbf{Biases not factored}, bias terms are not included in the budget, which is fine as they are a minor fraction.
+
 
 ### Comparison with Other Budget‑Aware Methods
 

@@ -80,8 +80,8 @@ On memory‑constrained devices or accelerators with limited on‑chip SRAM, fet
 
 ### A. Compression Time
 
-- **Tiling and averaging**: For each layer, the `from_linear` method iterates over all tiles (at most `(M/T)·(N/T)`). For M=N=768, T=32, there are 24×24 = 576 tiles. Computing mean per tile and assigning to bucket is O(number of tiles). Very fast.
-- **No data calibration**: Compression is purely weight‑based.
+Specifically, regarding \textbf{Tiling and averaging}, for each layer, the `from_linear` method iterates over all tiles (at most `(M/T)·(N/T)`). For M=N=768, T=32, there are 24×24 = 576 tiles. Computing mean per tile and assigning to bucket is O(number of tiles). Very fast. Furthermore, regarding \textbf{No data calibration}, compression is purely weight‑based.
+
 
 ### B. Inference Complexity
 
@@ -91,13 +91,12 @@ However, the actual FLOPs of the linear operation remain O(batch·M·N) because 
 
 ### C. Memory Usage
 
-- **Model storage**: The weight matrix is replaced by:
-  - `weight_table`: `B` floats.
-  - `tile_hash_idx`: a integer tensor of shape `(tiles_out, tiles_in)` (e.g., 24×24 = 576 integers).
-  - Bias: `out_features` floats.
+Specifically, regarding \textbf{Model storage}, the weight matrix is replaced by: Furthermore, `weight_table`: `B` floats. Concurrently, `tile_hash_idx`: a integer tensor of shape `(tiles_out, tiles_in)` (e.g., 24×24 = 576 integers). In this setting, Bias: `out_features` floats.
+
   Total stored parameters: `B + out_features` floats + a few hundred integers. For typical values, this is a few KB instead of several MB per layer.
 
-- **Runtime memory**: The forward pass creates a temporary full padded matrix of size up to `(ceil(M/T)*T) × (ceil(N/T)*T)`, which is roughly `M×N`. This can be as large as the original weight tensor during inference, partially offsetting the storage savings unless the tiling is integrated into the linear algebra kernel.
+Specifically, regarding \textbf{Runtime memory}, the forward pass creates a temporary full padded matrix of size up to `(ceil(M/T)*T) × (ceil(N/T)*T)`, which is roughly `M×N`. This can be as large as the original weight tensor during inference, partially offsetting the storage savings unless the tiling is integrated into the linear algebra kernel.
+
 
 To fully realise memory benefits during inference, one should avoid materialising the full weight and instead use a custom CUDA kernel that reads the weight table and tile map on‑the‑fly. The provided Python code is a functional prototype.
 
@@ -113,13 +112,12 @@ class ROASTLinear(nn.Module):
         ...
 ```
 
-- **`n_buckets`**: Size of the weight table (default 1024).
-- **`tile_size`**: Side length of a square tile (default 32). The weight matrix will be partitioned into `tile_size × tile_size` blocks.
+Specifically, regarding \textbf{`n_buckets`}, size of the weight table (default 1024). Furthermore, regarding \textbf{`tile_size`}, side length of a square tile (default 32). The weight matrix will be partitioned into `tile_size × tile_size` blocks.
+
 
 The constructor:
-- Computes `tiles_out` and `tiles_in` (padded dimensions divided by `tile_size`).
-- Creates `weight_table` (shape `(n_buckets,)`) as a parameter.
-- Precomputes `tile_hash_idx` matrix of shape `(tiles_out, tiles_in)` containing bucket indices via hash `(i*10007 + j*10009) % n_buckets`.
+Computes `tiles_out` and `tiles_in` (padded dimensions divided by `tile_size`). Furthermore, Creates `weight_table` (shape `(n_buckets,)`) as a parameter. Concurrently, Precomputes `tile_hash_idx` matrix of shape `(tiles_out, tiles_in)` containing bucket indices via hash `(i*10007 + j*10009) % n_buckets`.
+
 
 **`forward(x)`**: Builds the weight matrix by looping over tile rows and columns, filling blocks with `weight_table[hash_idx[i,j]]`. The current double‑loop implementation is slow and should be replaced with a vectorised operation for performance (e.g., using `torch.repeat_interleave` or `torch.kron`).
 
@@ -182,18 +180,13 @@ Then run the compression pipeline. All linear layers will be replaced with `ROAS
 
 ### Advantages
 
-- **Extreme parameter reduction**: Storage per layer drops from millions to a few thousand scalars.
-- **Hardware‑friendly tiling**: The block structure maps naturally to memory hierarchies and parallel computing units.
-- **No calibration data needed**: Weight‑only compression; model can be compressed immediately.
-- **Learnable**: The weight table can be fine‑tuned, allowing the model to adapt to the sharing constraints.
+Specifically, regarding \textbf{Extreme parameter reduction}, storage per layer drops from millions to a few thousand scalars. Furthermore, regarding \textbf{Hardware‑friendly tiling}, the block structure maps naturally to memory hierarchies and parallel computing units. Concurrently, regarding \textbf{No calibration data needed}, weight‑only compression; model can be compressed immediately. In this setting, regarding \textbf{Learnable}, the weight table can be fine‑tuned, allowing the model to adapt to the sharing constraints.
+
 
 ### Limitations
 
-- **Slow forward pass (current impl.)**: The Python double‑loop over tiles is inefficient. A vectorised or custom CUDA implementation is necessary for practical inference.
-- **Coarse approximation**: Forcing entire tiles to share a single value is a strong constraint; accuracy may drop significantly without fine‑tuning.
-- **Initialisation quality**: The simple tile‑mean assignment may be poor, especially when multiple tiles map to the same bucket. A better method would average over all tiles sharing a bucket.
-- **No per‑layer adaptivity**: All layers get the same `tile_size` and `n_buckets`; some layers may tolerate larger tiles, others need finer granularity.
-- **Padded dimensions**: If `in_features` or `out_features` are not multiples of `tile_size`, the padding creates extra zeros in the reconstructed weight, which may slightly affect the output.
+Specifically, regarding \textbf{Slow forward pass (current impl.)}, the Python double‑loop over tiles is inefficient. A vectorised or custom CUDA implementation is necessary for practical inference. Furthermore, regarding \textbf{Coarse approximation}, forcing entire tiles to share a single value is a strong constraint; accuracy may drop significantly without fine‑tuning. Concurrently, regarding \textbf{Initialisation quality}, the simple tile‑mean assignment may be poor, especially when multiple tiles map to the same bucket. A better method would average over all tiles sharing a bucket. In this setting, regarding \textbf{No per‑layer adaptivity}, all layers get the same `tile_size` and `n_buckets`; some layers may tolerate larger tiles, others need finer granularity. Additionally, regarding \textbf{Padded dimensions}, if `in_features` or `out_features` are not multiples of `tile_size`, the padding creates extra zeros in the reconstructed weight, which may slightly affect the output.
+
 
 ### Comparison with HashedNets
 

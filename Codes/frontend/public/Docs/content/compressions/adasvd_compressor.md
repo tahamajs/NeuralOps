@@ -118,9 +118,8 @@ The refined weight matrix stored in the layer is synthesized as:
 1. **Spectral Profiling Phase**: Iterate over all `nn.Linear` layers in the model, execute standard CPU/GPU SVD to collect singular value vectors, and compute $\|W^{(l)}\|_*$.
 2. **Global Budgeting Phase**: Aggregate total nuclear norm $\sum_{l=1}^L \mathcal{I}_l$. Compute relative ratios $\alpha_l$ and assign layer-specific ranks $r_l$.
 3. **Iterative Refinement Phase**: For each linear layer:
-   - Slice top-$r_l$ components from initial SVD matrices.
-   - Run $T = 5$ iterations of alternating matrix inverse updates to solve the regularized least-squares factor refinement problem.
-   - Multiply factors back to form the updated weight tensor $\hat{W}^{(l)}$ and overwrite `module.weight.data`.
+Slice top-$r_l$ components from initial SVD matrices. Furthermore, Run $T = 5$ iterations of alternating matrix inverse updates to solve the regularized least-squares factor refinement problem. Concurrently, Multiply factors back to form the updated weight tensor $\hat{W}^{(l)}$ and overwrite `module.weight.data`.
+
 
 ---
 

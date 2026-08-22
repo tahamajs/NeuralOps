@@ -219,6 +219,7 @@ class OATSCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("oats")
+@COMPRESSOR_REGISTRY.register("oats_compressor")
 def oats_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for OATS compressor."""
     sparsity = getattr(comp_config, "oats_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)

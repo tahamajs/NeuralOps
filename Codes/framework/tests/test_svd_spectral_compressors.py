@@ -34,36 +34,42 @@ _FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."
 if _FRAMEWORK_PARENT not in sys.path:
     sys.path.insert(0, _FRAMEWORK_PARENT)
 
-from framework.compression_engine.aa_svd_compressor import AASVDCompressor, SVDLinear
-from framework.compression_engine.adasvd_compressor import AdaSVDCompressor
-from framework.compression_engine.direct_svd import DirectSVDCompressor
-from framework.compression_engine.dobi_svd import DobiSVDCompressor, DobiSVDLinearLayer
+from framework.compression_engine.aa_svd_compressor import AASVDCompressor, SVDLinear, aasvd_factory
+from framework.compression_engine.adasvd_compressor import AdaSVDCompressor, adasvd_factory
+from framework.compression_engine.adaptive_compressor import AdaptiveTransformerCompressor, adaptive_svd_factory
+from framework.compression_engine.adaptive_ranks import AdaptiveRanksCompressor, adaptive_ranks_factory
+from framework.compression_engine.direct_svd import DirectSVDCompressor, direct_svd_factory
+from framework.compression_engine.dobi_svd import DobiSVDCompressor, DobiSVDLinearLayer, dobi_factory
 from framework.compression_engine.dynamic_rank import (
     DynamicEntropySVDCompressor,
     DynamicSVDLinear,
     allocate_entropy_ranks,
     compute_singular_entropy,
+    dynamic_entropy_svd_factory,
 )
-from framework.compression_engine.entropy_budget_allocation import EntropyBudgetCompressor
-from framework.compression_engine.erc_svd import ERCCompressor
+from framework.compression_engine.entropy_budget_allocation import EntropyBudgetCompressor, entropy_budget_factory
+from framework.compression_engine.erc_svd import ERCCompressor, erc_factory
 from framework.compression_engine.hybrid_svd_layer import (
     DirectSVDEncoderLayer,
     HybridSVDCompressor,
     SVDSingleHead,
+    hybrid_svd_factory,
 )
-from framework.compression_engine.mgie_svd import MGIECompressor
-from framework.compression_engine.mgie_svd_compressor import MGIESVDBudgetCompressor
+from framework.compression_engine.mgie_svd import MGIECompressor, mgie_factory
+from framework.compression_engine.mgie_svd_compressor import MGIESVDBudgetCompressor, mgie_budget_factory
 from framework.compression_engine.res_svd import (
     ResSVDCompressor,
     ResSVDLinear,
     SpectralResidualLoRA,
+    res_svd_factory,
+    spectral_residual_lora_factory,
 )
-from framework.compression_engine.rpca_compressor import RPCACompressor
-from framework.compression_engine.saes_svd_v2 import SAESCompressor, SAESSVDCompressorV2
-from framework.compression_engine.salr import SALRCompressor, SALRLayer
-from framework.compression_engine.svd_linear import SVDLinearLayer
-from framework.compression_engine.swift_svd import SwiftSVDCompressor
-from framework.compression_engine.swift_svd_act import SwiftSVDActivationCompressor
+from framework.compression_engine.rpca_compressor import RPCACompressor, rpca_compressor_factory
+from framework.compression_engine.saes_svd_v2 import SAESCompressor, SAESSVDCompressorV2, saes_svd_v2_factory
+from framework.compression_engine.salr import SALRCompressor, SALRLayer, salr_factory
+from framework.compression_engine.svd_linear import SVDLinearCompressor, SVDLinearLayer, svd_linear_factory
+from framework.compression_engine.swift_svd import SwiftSVDCompressor, swift_svd_factory
+from framework.compression_engine.swift_svd_act import SwiftSVDActivationCompressor, swift_svd_act_factory
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 
@@ -296,11 +302,70 @@ class TestSVDSpectralCompressionEngines(unittest.TestCase):
         comp_params = sum(p.numel() for p in comp_model.parameters())
         self.assertLess(comp_params, orig_params)
 
-    # 17. Registry Lookups
+    # 17. Adaptive Transformer Compressor & Adaptive Ranks
+    def test_adaptive_transformer_compressor(self) -> None:
+        model = MockTransformerBlock(self.hidden_size)
+        orig_params = sum(p.numel() for p in model.parameters())
+        compressor = AdaptiveTransformerCompressor(model, energy_threshold=0.9, min_rank=16)
+        comp_model, stats = compressor.compress()
+        self._verify_compressed_model(comp_model, orig_params, stats)
+
+    def test_adaptive_ranks_compressor(self) -> None:
+        model = MockTransformerBlock(self.hidden_size)
+        orig_params = sum(p.numel() for p in model.parameters())
+        compressor = AdaptiveRanksCompressor(model, energy_threshold=0.9, min_rank=16)
+        comp_model, stats = compressor.compress()
+        self._verify_compressed_model(comp_model, orig_params, stats)
+
+    # 18. SVD Linear Compressor & Layer
+    def test_svd_linear_compressor(self) -> None:
+        model = MockTransformerBlock(self.hidden_size)
+        orig_params = sum(p.numel() for p in model.parameters())
+        compressor = SVDLinearCompressor(model, rank=16)
+        comp_model, stats = compressor.compress()
+        self._verify_compressed_model(comp_model, orig_params, stats)
+
+    # 19. Exhaustive Verification of All Factory Functions
+    def test_all_svd_factory_functions(self) -> None:
+        factories = [
+            ("aasvd_factory", aasvd_factory),
+            ("adasvd_factory", adasvd_factory),
+            ("adaptive_svd_factory", adaptive_svd_factory),
+            ("adaptive_ranks_factory", adaptive_ranks_factory),
+            ("direct_svd_factory", direct_svd_factory),
+            ("dobi_factory", dobi_factory),
+            ("dynamic_entropy_svd_factory", dynamic_entropy_svd_factory),
+            ("entropy_budget_factory", entropy_budget_factory),
+            ("erc_factory", erc_factory),
+            ("hybrid_svd_factory", hybrid_svd_factory),
+            ("mgie_factory", mgie_factory),
+            ("mgie_budget_factory", mgie_budget_factory),
+            ("res_svd_factory", res_svd_factory),
+            ("spectral_residual_lora_factory", spectral_residual_lora_factory),
+            ("rpca_compressor_factory", rpca_compressor_factory),
+            ("saes_svd_v2_factory", saes_svd_v2_factory),
+            ("salr_factory", salr_factory),
+            ("svd_linear_factory", svd_linear_factory),
+            ("swift_svd_factory", swift_svd_factory),
+            ("swift_svd_act_factory", swift_svd_act_factory),
+        ]
+
+        for name, fn in factories:
+            model = MockTransformerBlock(self.hidden_size)
+            # Verify factory accepts (model, comp_config=None, **kwargs)
+            comp_model = fn(model, comp_config=None, rank=16)
+            self.assertIsInstance(comp_model, nn.Module, f"Factory {name} did not return nn.Module")
+            out = comp_model(self.x)
+            self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.hidden_size), f"Factory {name} output shape mismatch")
+            self.assertFalse(torch.isnan(out).any(), f"Factory {name} output contained NaNs")
+
+    # 20. Registry Lookups
     def test_all_svd_registry_lookups(self) -> None:
         expected_keys = [
             "aasvd",
             "adasvd",
+            "adaptive_svd",
+            "adaptive_ranks",
             "dynamic_entropy_svd",
             "entropy_rank_allocator",
             "entropy_budget",
@@ -319,6 +384,7 @@ class TestSVDSpectralCompressionEngines(unittest.TestCase):
             "hybrid_svd",
             "direct_svd_encoder",
             "salr",
+            "svd_linear_compressor",
         ]
         for key in expected_keys:
             comp_cls_or_fn = COMPRESSOR_REGISTRY.get(key)

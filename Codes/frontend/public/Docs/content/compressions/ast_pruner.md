@@ -51,18 +51,17 @@ $$\mathbf{w}^{(i, k)} = \left[ W_{i, 4k}, W_{i, 4k+1}, W_{i, 4k+2}, W_{i, 4k+3} 
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Linear Layer Extraction**:
-   - Locate all `nn.Linear` modules in the target model.
-   - Convert weight matrix $W$ to FP32 CPU numpy array for pattern evaluation.
+Locate all `nn.Linear` modules in the target model. Furthermore, Convert weight matrix $W$ to FP32 CPU numpy array for pattern evaluation.
+
 2. **Double Nested Block Iteration**:
-   - Loop over rows $i \in [0, N-1]$.
-   - Loop over column block start indices $j \in [0, M-1, \text{step}=4]$.
+Loop over rows $i \in [0, N-1]$. Furthermore, Loop over column block start indices $j \in [0, M-1, \text{step}=4]$.
+
 3. **Local Sorting & Masking**:
-   - Extract slice `sub = W[i, j : j+4]`.
-   - Retrieve top 2 indices: `idx = np.argsort(np.abs(sub))[-2:]`.
-   - Construct length-4 binary mask with ones at `idx`.
-   - Update `W_ast[i, j : j+4] = sub * mask`.
+Extract slice `sub = W[i, j : j+4]`. Furthermore, Retrieve top 2 indices: `idx = np.argsort(np.abs(sub))[-2:]`. Concurrently, Construct length-4 binary mask with ones at `idx`. In this setting, Update `W_ast[i, j : j+4] = sub * mask`.
+
 4. **Tensor Restoration**:
-   - Cast $W_{\text{AST}}$ back to original model dtype and CUDA device.
+Cast $W_{\text{AST}}$ back to original model dtype and CUDA device.
+
 
 ```
 Weight Matrix W [N, M]
@@ -102,7 +101,8 @@ $$\| W - W_{\text{AST}} \|_F^2 = \sum_{i=1}^N \sum_{k=0}^{M/4 - 1} \left( \left(
 
 ### 5.2 Failure Cases
 
-- **Channel-Wise Outliers**: If a single block contains 3 or 4 critical large magnitude weights, AST Pruner strictly forces 2 of them to zero, inducing severe localized activation distortions.
+Specifically, regarding \textbf{Channel-Wise Outliers}, if a single block contains 3 or 4 critical large magnitude weights, AST Pruner strictly forces 2 of them to zero, inducing severe localized activation distortions.
+
 
 ---
 

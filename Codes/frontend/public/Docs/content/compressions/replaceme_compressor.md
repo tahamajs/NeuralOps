@@ -57,13 +57,12 @@ The compression itself is trivial: simply instantiating a few `nn.LayerNorm` and
 ### B. Inference Complexity
 
 **Original layer** (attention + FFN):
-- Attention: O(N²·D) for sequence length N and hidden size D.
-- FFN: O(N·D·d_ff) where d_ff ≈ 4·D.
-- Total per layer: O(N²·D + N·D²).
+Attention: O(N²·D) for sequence length N and hidden size D. Furthermore, FFN: O(N·D·d_ff) where d_ff ≈ 4·D. Concurrently, Total per layer: O(N²·D + N·D²).
+
 
 **Replaced layer**:
-- LayerNorm: O(N·D)
-- Linear: O(N·D²) (since D×D matrix multiplication).
+LayerNorm: O(N·D) Furthermore, Linear: O(N·D²) (since D×D matrix multiplication).
+
 Thus the replacement still has a quadratic term in D, but no quadratic in N (no attention). For long sequences, the attention removal provides the biggest speed‑up. However, the linear layer still costs O(N·D²), which is the same as the FFN of the original layer; the attention overhead is gone.
 
 If `remove_layers = 2`, we save the attention cost of the last two layers, which can be significant for large N.
@@ -72,8 +71,8 @@ If `remove_layers = 2`, we save the attention cost of the last two layers, which
 
 **During compression**: no extra memory needed.
 **After compression**: The replaced layers contain far fewer parameters than the original:
-- Original layer (e.g., DistilBERT): roughly 7 million parameters (4 linear projections + 2 in FFN, each 768×768 or 768×3072, plus biases).
-- Replacement: LayerNorm (2·D = 1.5k params) + Linear (D² + D ≈ 590k params for D=768). That's a reduction of ~10‑12× per layer.
+Original layer (e.g., DistilBERT): roughly 7 million parameters (4 linear projections + 2 in FFN, each 768×768 or 768×3072, plus biases). Furthermore, Replacement: LayerNorm (2·D = 1.5k params) + Linear (D² + D ≈ 590k params for D=768). That's a reduction of ~10‑12× per layer.
+
 
 Thus the model size shrinks considerably. The parameter count reported by `_count_params` will reflect the new, smaller layers.
 
@@ -90,15 +89,16 @@ class ReplaceMeCompressor(BaseCompressor):
         self.remove_layers = remove_layers
 ```
 
-- **`remove_layers`**: number of final encoder layers to replace (default 2). Must be ≤ total layers.
+Specifically, regarding \textbf{`remove_layers`}, number of final encoder layers to replace (default 2). Must be ≤ total layers.
+
 
 The `compress()` method:
 
 1. Checks if the model has an `encoder` attribute with a `layer` list.
 2. Retrieves the hidden size `dim` from `model.config.hidden_size`.
 3. For each layer index from `(L - remove_layers)` to `L-1`:
-   - Constructs `nn.Sequential( nn.LayerNorm(dim), nn.Linear(dim, dim) )`.
-   - Replaces `self.model.encoder.layer[i]` with this sequence.
+Constructs `nn.Sequential( nn.LayerNorm(dim), nn.Linear(dim, dim) )`. Furthermore, Replaces `self.model.encoder.layer[i]` with this sequence.
+
 4. Updates `_compressed_params` and returns the model with stats.
 
 **Note**: The code assumes the model is a HuggingFace‑style Transformer with `encoder.layer` and `config.hidden_size`. It does not handle other architectures (e.g., decoder‑only models). The replacement linear layer is created with default PyTorch initialisation (Kaiming uniform). The original layer’s weights are completely discarded.
@@ -145,24 +145,18 @@ Then run the compression pipeline. The model’s last 3 encoder layers will be r
 
 ### Advantages
 
-- **Extreme parameter and compute reduction**: Removes attention and FFN of multiple layers, leading to a significantly smaller and faster model.
-- **Ultra‑simple**: The replacement is a single line of code; no complex algorithms.
-- **Fine‑tuning friendly**: The replaced layers are learnable, so the model can be adapted to recover some accuracy.
-- **Good baseline**: Demonstrates the worst‑case scenario of layer removal, against which more sophisticated methods can be compared.
+Specifically, regarding \textbf{Extreme parameter and compute reduction}, removes attention and FFN of multiple layers, leading to a significantly smaller and faster model. Furthermore, regarding \textbf{Ultra‑simple}, the replacement is a single line of code; no complex algorithms. Concurrently, regarding \textbf{Fine‑tuning friendly}, the replaced layers are learnable, so the model can be adapted to recover some accuracy. In this setting, regarding \textbf{Good baseline}, demonstrates the worst‑case scenario of layer removal, against which more sophisticated methods can be compared.
+
 
 ### Limitations
 
-- **Massive accuracy drop**: Simply discarding layers destroys the learned representations. Without extensive fine‑tuning, the model is useless.
-- **Random initialisation**: The new linear layers start from scratch, requiring many training steps to reach reasonable performance.
-- **No weight inheritance**: Does not attempt to distill or approximate the removed layers’ function (e.g., via SVD or mimicking outputs). Thus, the replacement is information‑free.
-- **Fixed replacement**: All replaced layers get the same simple architecture; there's no adaptation to layer importance.
-- **Only last layers**: The heuristic of removing only the last layers may not be optimal for all tasks; sometimes earlier layers are more redundant.
+Specifically, regarding \textbf{Massive accuracy drop}, simply discarding layers destroys the learned representations. Without extensive fine‑tuning, the model is useless. Furthermore, regarding \textbf{Random initialisation}, the new linear layers start from scratch, requiring many training steps to reach reasonable performance. Concurrently, regarding \textbf{No weight inheritance}, does not attempt to distill or approximate the removed layers’ function (e.g., via SVD or mimicking outputs). Thus, the replacement is information‑free. In this setting, regarding \textbf{Fixed replacement}, all replaced layers get the same simple architecture; there's no adaptation to layer importance. Additionally, regarding \textbf{Only last layers}, the heuristic of removing only the last layers may not be optimal for all tasks; sometimes earlier layers are more redundant.
+
 
 ### Use Cases
 
-- **Extreme compression for non‑critical tasks**: When a massive model must be shrunk to fit on a tiny device and accuracy is secondary.
-- **Initialisation for layer‑wise distillation**: After replacement, one can train the new linear layers to mimic the original layers’ outputs, effectively performing a lightweight distillation.
-- **Ablation studies**: To understand the contribution of deeper layers by replacing them with a trivial function.
+Specifically, regarding \textbf{Extreme compression for non‑critical tasks}, when a massive model must be shrunk to fit on a tiny device and accuracy is secondary. Furthermore, regarding \textbf{Initialisation for layer‑wise distillation}, after replacement, one can train the new linear layers to mimic the original layers’ outputs, effectively performing a lightweight distillation. Concurrently, regarding \textbf{Ablation studies}, to understand the contribution of deeper layers by replacing them with a trivial function.
+
 
 ### Comparison with Other Structural Pruners
 

@@ -32,8 +32,8 @@ H = –∑ p_i · ln(p_i + ε)
 
 where ε = 1e⁻⁸ prevents the logarithm from being evaluated at zero. The entropy characterises how evenly the singular values are spread:
 
-* A **low entropy** (near 0) means that one or very few singular values dominate, and the rest can be safely discarded.  
-* A **high entropy** (approaching ln K) means the energy is dispersed across many singular components, indicating the layer contains richer, more complex structure that can be truncated more aggressively — a seemingly paradoxical but experimentally validated consequence of the way redundancy and complexity interact in Transformer weights.
+A **low entropy** (near 0) means that one or very few singular values dominate, and the rest can be safely discarded. Furthermore, A **high entropy** (approaching ln K) means the energy is dispersed across many singular components, indicating the layer contains richer, more complex structure that can be truncated more aggressively — a seemingly paradoxical but experimentally validated consequence of the way redundancy and complexity interact in Transformer weights.
+
 
 ### 3. Entropy‑Driven Truncation Rule
 
@@ -45,8 +45,8 @@ r = max( 1, ⌊ H · K / ln(K) ⌋ )
 
 where `ln(K)` is the maximum possible entropy (achieved when all singular values are equal). This normalisation maps the entropy into a fraction of the full rank:
 
-* When the singular values are uniform (H ≈ ln K), the ratio approaches 1, and `r ≈ K` (no compression).  
-* When the distribution is highly skewed (H small), the ratio is close to 0, leading to aggressive truncation.  
+When the singular values are uniform (H ≈ ln K), the ratio approaches 1, and `r ≈ K` (no compression). Furthermore, When the distribution is highly skewed (H small), the ratio is close to 0, leading to aggressive truncation.
+
 
 Finally, `r` is capped to `K` to avoid exceeding the matrix dimensions.
 
@@ -71,9 +71,8 @@ The module draws its name and inspiration from the paper:
 The full MGIE‑SVD framework comprises three stages: (i) **whitening two‑stream pre‑processing** to decorrelate activation statistics and eliminate scale differences across layers, (ii) **SVD on the whitened weights** and estimation of **multi‑dimensional Gaussian entropy**, and (iii) an **entropy‑driven truncation criterion** that adapts the rank per layer. The paper demonstrates an average accuracy gain of 10 % over the SVD‑LLM baseline across six Transformer architectures at compression rates of 20 %–80 %, and the method is fully compatible with LoRA fine‑tuning and low‑bit quantization.
 
 The present implementation is a **lightweight, data‑free variant** that:
-* Omits the whitening pre‑processing (which requires calibration data),  
-* Uses standard Shannon entropy on raw singular values (instead of multidimensional Gaussian entropy on whitened spectra),  
-* Applies the same entropy‑proportional truncation principle.  
+Omits the whitening pre‑processing (which requires calibration data), Furthermore, Uses standard Shannon entropy on raw singular values (instead of multidimensional Gaussian entropy on whitened spectra), Concurrently, Applies the same entropy‑proportional truncation principle.
+
 
 This simplification sacrifices some of the accuracy gains of the full method but retains the core insight of entropy‑guided adaptive compression in a zero‑shot, calibration‑free manner.
 
@@ -130,10 +129,8 @@ The method is purely weight‑based; **no calibration data, tokenizer, or backwa
 
 ## Discussion
 
-* **Adaptive and automatic**: Unlike fixed‑rank (A3) or energy‑threshold (ERC‑SVD) methods, MGIE‑SVD derives the rank directly from the spectral complexity of each layer, requiring zero tuning.  
-* **Information‑theoretic foundation**: Using entropy to quantify redundancy is a principled and well‑motivated approach, backed by the experimental validation in the MGIE‑SVD paper.  
-* **Simplified implementation**: The current code is a stripped‑down version of the full MGIE‑SVD pipeline; it lacks the whitening step and multidimensional Gaussian entropy estimation, which the paper shows are important for cross‑layer comparability and removing activation‑scale artifacts.  
-* **Dense output**: Like most SVD‑based compressors, the weight is overwritten with a dense low‑rank matrix; additional steps are needed to convert this into actual parameter savings.  
+Specifically, regarding \textbf{Adaptive and automatic}, unlike fixed‑rank (A3) or energy‑threshold (ERC‑SVD) methods, MGIE‑SVD derives the rank directly from the spectral complexity of each layer, requiring zero tuning. Furthermore, regarding \textbf{Information‑theoretic foundation}, using entropy to quantify redundancy is a principled and well‑motivated approach, backed by the experimental validation in the MGIE‑SVD paper. Concurrently, regarding \textbf{Simplified implementation}, the current code is a stripped‑down version of the full MGIE‑SVD pipeline; it lacks the whitening step and multidimensional Gaussian entropy estimation, which the paper shows are important for cross‑layer comparability and removing activation‑scale artifacts. In this setting, regarding \textbf{Dense output}, like most SVD‑based compressors, the weight is overwritten with a dense low‑rank matrix; additional steps are needed to convert this into actual parameter savings.
+
 
 ---
 

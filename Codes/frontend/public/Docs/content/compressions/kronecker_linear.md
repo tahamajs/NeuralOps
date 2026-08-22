@@ -127,9 +127,8 @@ For efficient computation without full tensor expansion, matrix-vector product p
 ### 4.1 Parameter Count Formulas
 Let $M = d_{\text{out}} = out_a \cdot out_b$ and $N = d_{\text{in}} = in_a \cdot in_b$.
 
-- **Uncompressed Dense Parameters**: $P_{\text{dense}} = M \cdot N + M$
-- **Kronecker Factorized Parameters**: $P_{\text{Kronecker}} = (out_a \cdot in_a) + (out_b \cdot in_b) + M$
-- **Theoretical Parameter Reduction Ratio**:
+Specifically, regarding \textbf{Uncompressed Dense Parameters}, $P_{\text{dense}} = M \cdot N + M$ Furthermore, regarding \textbf{Kronecker Factorized Parameters}, $P_{\text{Kronecker}} = (out_a \cdot in_a) + (out_b \cdot in_b) + M$ Concurrently, regarding \textbf{Theoretical Parameter Reduction Ratio}, 
+
 \[
 \mathcal{C}_R = \frac{M \cdot N}{(out_a \cdot in_a) + (out_b \cdot in_b)} \approx \frac{out_a \cdot out_b \cdot in_a \cdot in_b}{out_a \cdot in_a + out_b \cdot in_b}
 \]

@@ -82,8 +82,8 @@ This requires the mask to be a float tensor of shape `(B, N)` or `(B, H, N, N)` 
 
 ### 5. Complexity Analysis
 
-- **Standard attention**: O(N²·D)
-- **Spectraformer**: O(N·R·D) for Q/K projection and KV accumulation, plus O(N·R·D) for the numerator/denominator. Total is O(N·R·D). For N ≫ R, this is a massive saving. For example, with D=64, R=256, N=4096, standard attention costs 4096²·64 ≈ 1.07e9, while Spectraformer costs 4096·256·64 ≈ 6.7e7, a ~16× reduction.
+Specifically, regarding \textbf{Standard attention}, o(N²·D) Furthermore, regarding \textbf{Spectraformer}, o(N·R·D) for Q/K projection and KV accumulation, plus O(N·R·D) for the numerator/denominator. Total is O(N·R·D). For N ≫ R, this is a massive saving. For example, with D=64, R=256, N=4096, standard attention costs 4096²·64 ≈ 1.07e9, while Spectraformer costs 4096·256·64 ≈ 6.7e7, a ~16× reduction.
+
 
 ---
 
@@ -97,9 +97,8 @@ class SpectraformerAttention(BaseAttention):
         ...
 ```
 
-- **`rank`**: Number of random features (default 256). Larger values better approximate softmax but increase computation.
-- The projection layers (Q, K, V, output) are created as standard `nn.Linear`. They are not initialised from a pretrained model in this snippet; an injection function would handle copying.
-- `_reshape` transforms `(B, N, H*D)` into `(B, H, N, D)`.
+Specifically, regarding \textbf{`rank`}, number of random features (default 256). Larger values better approximate softmax but increase computation. Furthermore, The projection layers (Q, K, V, output) are created as standard `nn.Linear`. They are not initialised from a pretrained model in this snippet; an injection function would handle copying. Concurrently, `_reshape` transforms `(B, N, H*D)` into `(B, H, N, D)`.
+
 
 #### Forward Pass
 
@@ -143,19 +142,13 @@ An injection function (not shown) would be needed to transfer the pretrained wei
 
 ### Advantages
 
-- **Linear complexity**: O(N·R·D) instead of O(N²·D), enabling long‑sequence processing with fixed memory.
-- **No trainable parameters added**: The random projection matrix **R** is not learned; the only parameters are the standard Q/K/V/O projections. This means the model size remains unchanged compared to a standard attention layer.
-- **Simple implementation**: Only a few lines of code beyond standard attention; easy to understand and modify.
-- **ReLU activation**: The ReLU non‑linearity is fast and may induce beneficial sparsity in the feature maps.
+Specifically, regarding \textbf{Linear complexity}, o(N·R·D) instead of O(N²·D), enabling long‑sequence processing with fixed memory. Furthermore, regarding \textbf{No trainable parameters added}, the random projection matrix **R** is not learned; the only parameters are the standard Q/K/V/O projections. This means the model size remains unchanged compared to a standard attention layer. Concurrently, regarding \textbf{Simple implementation}, only a few lines of code beyond standard attention; easy to understand and modify. In this setting, regarding \textbf{ReLU activation}, the ReLU non‑linearity is fast and may induce beneficial sparsity in the feature maps.
+
 
 ### Limitations
 
-- **Stochasticity**: The random matrix **R** is regenerated each forward pass, making the output non‑deterministic. For inference, this can be fixed by setting a seed or using a stored matrix.
-- **Mask type mismatch**: The multiplicative mask requirement is incompatible with the usual additive mask of DistilBERT, requiring pre‑processing of the mask.
-- **Approximation quality**: The ReLU‑based feature map does not have a rigorous approximation guarantee for softmax; performance may be worse than methods like Performer that use exponential feature maps or orthogonal random features.
-- **Numerical stability**: Division by the denominator can suffer from small values, though `1e-8` stabilises it.
-- **Not initialized from pretrained**: The code as shown creates new linear layers with random weights; an injection function is needed to copy the pretrained Q/K/V/O weights, otherwise the model must be fine‑tuned from scratch.
-- **Rank selection**: The rank must be chosen manually; too small a rank will degrade accuracy, too large reduces speed benefits.
+Specifically, regarding \textbf{Stochasticity}, the random matrix **R** is regenerated each forward pass, making the output non‑deterministic. For inference, this can be fixed by setting a seed or using a stored matrix. Furthermore, regarding \textbf{Mask type mismatch}, the multiplicative mask requirement is incompatible with the usual additive mask of DistilBERT, requiring pre‑processing of the mask. Concurrently, regarding \textbf{Approximation quality}, the ReLU‑based feature map does not have a rigorous approximation guarantee for softmax; performance may be worse than methods like Performer that use exponential feature maps or orthogonal random features. In this setting, regarding \textbf{Numerical stability}, division by the denominator can suffer from small values, though `1e-8` stabilises it. Additionally, regarding \textbf{Not initialized from pretrained}, the code as shown creates new linear layers with random weights; an injection function is needed to copy the pretrained Q/K/V/O weights, otherwise the model must be fine‑tuned from scratch. Moreover, regarding \textbf{Rank selection}, the rank must be chosen manually; too small a rank will degrade accuracy, too large reduces speed benefits.
+
 
 ### Comparison with Other Linear Attentions
 
