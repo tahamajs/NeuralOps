@@ -1456,3 +1456,22 @@ ompleted)
 [2026-08-22 04:51:06] [Worker-1] [25/126] NOTICE: attn=expert_choice_moe | task=sst2 | Error: CUDA out of memory. Tried to allocate 2.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.66 GiB is free. 3.20 GiB allowed; Of the allocated memory 2.98 GiB is allocated by PyTorch, and 223.54 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.8s
 [2026-08-22 04:51:07] [Worker-2] [26/126] >> Launching: attn=factorised_matrix_state | task=sst2 | seed=42
 [2026-08-22 04:51:08] [Worker-2] [26/126] NOTICE: attn=factorised_matrix_state | task=sst2 | Error: CUDA out of memory. Tried to allocate 144.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 634.51 MiB is free. 3.20 GiB allowed; Of the allocated memory 2.97 GiB is allocated by PyTorch, and 106.79 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 0.7s
+[2026-08-22 04:51:08] [Worker-1] [27/126] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [28/126] -- SKIPPING: attn=flash3_fp8 | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [29/126] -- SKIPPING: attn=full | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [30/126] -- SKIPPING: attn=fusion_attn | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [31/126] -- SKIPPING: attn=galerkin | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [32/126] -- SKIPPING: attn=gated_delta_net | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [33/126] -- SKIPPING: attn=gated_delta_net_inject | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [34/126] -- SKIPPING: attn=gated_deltanet_block | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [35/126] -- SKIPPING: attn=gated_linear_attn | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [36/126] -- SKIPPING: attn=goldfinch_ahn | task=sst2 (Already completed)
+[2026-08-22 04:51:08] [Worker-1] [37/126] -- SKIPPING: attn=gqa | task=sst2 (Already completed)
+[2026-08-22 04:51:09] [Worker-1] [38/126] >> Launching: attn=granite_hybrid | task=sst2 | seed=42
+[2026-08-22 04:51:10] [Worker-2] [39/126] -- SKIPPING: attn=griffin_ssd | task=sst2 (Already completed)
+[2026-08-22 04:51:10] [Worker-2] [40/126] -- SKIPPING: attn=halo_regla | task=sst2 (Already completed)
+[2026-08-22 04:51:10] [Worker-2] [41/126] -- SKIPPING: attn=hamming | task=sst2 (Already completed)
+[2026-08-22 04:51:10] [Worker-2] [42/126] -- SKIPPING: attn=hgrn2_gated_deltanet | task=sst2 (Already completed)
+[2026-08-22 04:51:10] [Worker-2] [43/126] -- SKIPPING: attn=hgrn2_layer | task=sst2 (Already completed)
+[2026-08-22 04:51:10] [Worker-2] [44/126] >> Launching: attn=hgrn2_outer | task=sst2 | seed=42
+[2026-08-22 04:51:10] [Worker-1] [38/126] NOTICE: attn=granite_hybrid | task=sst2 | Error: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.67 GiB is free. 3.20 GiB allowed; Of the allocated memory 2.97 GiB is allocated by PyTorch, and 221.60 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.8s
