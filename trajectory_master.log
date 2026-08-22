@@ -318,3 +318,6 @@ ompleted)
 [2026-08-22 04:06:29] [Worker-3] [26/126] >> Launching: attn=factorised_matrix_state | task=sst2 | seed=42
 [2026-08-22 04:06:31] [Worker-3] [26/126] NOTICE: attn=factorised_matrix_state | task=sst2 | Error: The size of tensor a (32) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 1.9s
 [2026-08-22 04:07:01] [Worker-1] [25/126] NOTICE: attn=expert_choice_moe | task=sst2 | Error: [Errno 22] Invalid argument | Time: 40.8s
+[2026-08-22 04:07:10] [Worker-1] [27/126] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+[2026-08-22 04:07:10] [Worker-1] [28/126] >> Launching: attn=flash3_fp8 | task=sst2 | seed=42
+[2026-08-22 04:07:11] [Worker-1] [28/126] NOTICE: attn=flash3_fp8 | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.6s
