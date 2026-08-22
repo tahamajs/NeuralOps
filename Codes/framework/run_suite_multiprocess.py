@@ -128,9 +128,9 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                       "primal", "projection_factorized_attn", "qcqa",
                       "mamba_svd_flash_inject",
                       "mla", "moba", "moe_deltakv_paged", "nasc",
-                      "nasc_attention", "nasc_injection", "nexus", "nha"}
-        super_heavy_attn = {"factorised_matrix_state", "hgrn2_outer", "kda", "leka_v1", "leka_v2", "leka_v3"}
-        extreme_attn = {"expert_choice_moe", "granite_hybrid", "jamba2", "inject_aegis_spectron_fp8"}
+                      "nasc_attention", "nasc_injection", "nexus", "nha", "oha"}
+        super_heavy_attn = {"factorised_matrix_state", "hgrn2_outer", "kda", "leka_v1", "leka_v2", "leka_v3", "orion", "orion_module"}
+        extreme_attn = {"expert_choice_moe", "granite_hybrid", "jamba2", "inject_aegis_spectron_fp8", "mla"}
                             
         if attn in extreme_attn:
             cfg.batch_size = 4
