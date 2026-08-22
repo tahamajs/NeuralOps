@@ -1969,3 +1969,5 @@ ompleted)
 [2026-08-22 10:02:00] [Worker-2] [92/145] WARNING: OOM for reap_moe. Auto-recovering: Retrying with batch_size=8 (Attempt 3/3)...
 [2026-08-22 10:02:03] [Worker-2] [93/145] >> Launching: attn=regla | task=sst2 | seed=42
 [2026-08-22 10:02:22] [Worker-2] [93/145] << SUCCESS: attn=regla | task=sst2 | Acc: 47.82% | F1: 45.31% | Loss: nan | Time: 19.8s
+[2026-08-22 10:02:24] [Worker-2] [94/145] >> Launching: attn=routing | task=sst2 | seed=42
+[2026-08-22 10:02:50] [Worker-2] [94/145] << SUCCESS: attn=routing | task=sst2 | Acc: 72.13% | F1: 72.06% | Loss: 0.5916 | Time: 26.1s
