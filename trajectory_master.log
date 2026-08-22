@@ -1857,3 +1857,213 @@ ompleted)
 [2026-08-22 05:36:33] [Worker-2] [82/126] << SUCCESS: attn=orion | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6956 | Time: 41.8s
 [2026-08-22 05:36:37] [Worker-2] [83/126] >> Launching: attn=orion_module | task=sst2 | seed=42
 [2026-08-22 05:37:27] [Worker-2] [83/126] << SUCCESS: attn=orion_module | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6956 | Time: 50.2s
+[2026-08-22 07:11:46] ============================================================
+[2026-08-22 07:11:46]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-22 07:11:46] ============================================================
+[2026-08-22 07:11:46] Started background telemetry sync thread.
+[2026-08-22 07:11:46] Trajectory Matrix: 126 Attns + 19 Compressors x 1 Tasks = 145 Runs
+[2026-08-22 07:11:46] Targeting 90-100% GPU Compute Utilization via Isolated OS Processes with Automatic OOM Auto-Recovery.
+[2026-08-22 07:11:58] [Worker-1] [1/145] -- SKIPPING: attn=adaptive_span | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [2/145] -- SKIPPING: attn=adaptive_svd | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [3/145] -- SKIPPING: attn=adaptive_svd_attn | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [4/145] -- SKIPPING: attn=adasplash | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [5/145] -- SKIPPING: attn=aegis_hybrid | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [6/145] -- SKIPPING: attn=aegis_hybrid_attn | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [7/145] -- SKIPPING: attn=aegis_spectron_fp8 | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [8/145] -- SKIPPING: attn=aegis_spectron_fp8_attn | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [9/145] -- SKIPPING: attn=aegis_v2 | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [10/145] -- SKIPPING: attn=aegis_v3 | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [11/145] -- SKIPPING: attn=aegis_v4 | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [12/145] -- SKIPPING: attn=aegis_v5 | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [13/145] -- SKIPPING: attn=aegis_v6 | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [14/145] -- SKIPPING: attn=asvd | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [15/145] -- SKIPPING: attn=bam_umoe | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [16/145] -- SKIPPING: attn=block_transformer_hiba | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [17/145] -- SKIPPING: attn=chela_slay | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [18/145] -- SKIPPING: attn=cluster | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [19/145] -- SKIPPING: attn=compressed_attention_layer | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [20/145] -- SKIPPING: attn=compressed_attention_layer_energy | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [21/145] -- SKIPPING: attn=compressed_mha | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [22/145] -- SKIPPING: attn=compression_unified_rope | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [23/145] -- SKIPPING: attn=decay_linear_attn | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [24/145] -- SKIPPING: attn=eat | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [25/145] -- SKIPPING: attn=expert_choice_moe | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [26/145] -- SKIPPING: attn=factorised_matrix_state | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [27/145] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [28/145] -- SKIPPING: attn=flash3_fp8 | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [29/145] -- SKIPPING: attn=full | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [30/145] -- SKIPPING: attn=fusion_attn | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [31/145] -- SKIPPING: attn=galerkin | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [32/145] -- SKIPPING: attn=gated_delta_net | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [33/145] -- SKIPPING: attn=gated_delta_net_inject | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [34/145] -- SKIPPING: attn=gated_deltanet_block | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [35/145] -- SKIPPING: attn=gated_linear_attn | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [36/145] -- SKIPPING: attn=goldfinch_ahn | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [37/145] -- SKIPPING: attn=gqa | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [38/145] -- SKIPPING: attn=granite_hybrid | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [39/145] -- SKIPPING: attn=griffin_ssd | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [40/145] -- SKIPPING: attn=halo_regla | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [41/145] -- SKIPPING: attn=hamming | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [42/145] -- SKIPPING: attn=hgrn2_gated_deltanet | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [43/145] -- SKIPPING: attn=hgrn2_layer | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [44/145] -- SKIPPING: attn=hgrn2_outer | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [45/145] -- SKIPPING: attn=hla | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [46/145] -- SKIPPING: attn=hymba_transx | task=sst2 (Already completed)
+[2026-08-22 07:11:58] [Worker-1] [47/145] -- SKIPPING: attn=infini | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [48/145] -- SKIPPING: attn=inject_aegis_hybrid | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [49/145] -- SKIPPING: attn=inject_aegis_spectron_fp8 | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [50/145] -- SKIPPING: attn=jamba2 | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [51/145] -- SKIPPING: attn=jamba_info | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [52/145] -- SKIPPING: attn=kda | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [53/145] -- SKIPPING: attn=leka_v1 | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [54/145] -- SKIPPING: attn=leka_v2 | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [55/145] -- SKIPPING: attn=leka_v3 | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [56/145] -- SKIPPING: attn=linformer | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [57/145] -- SKIPPING: attn=lola_attn | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [58/145] -- SKIPPING: attn=lora_attn | task=sst2 (Already completed)
+[2026-08-22 07:11:59] [Worker-1] [59/145] >> Launching: attn=lsh | task=sst2 | seed=42
+[2026-08-22 07:12:00] [Worker-2] [60/145] -- SKIPPING: attn=mamba | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [61/145] -- SKIPPING: attn=mamba_inject | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [62/145] -- SKIPPING: attn=mamba_svd_flash | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [63/145] -- SKIPPING: attn=mamba_svd_flash_inject | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [64/145] -- SKIPPING: attn=minimal_aurora | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [65/145] -- SKIPPING: attn=minimal_nova | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [66/145] -- SKIPPING: attn=minimal_prism | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [67/145] -- SKIPPING: attn=minimal_svd | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [68/145] -- SKIPPING: attn=minimal_svd_v2 | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [69/145] -- SKIPPING: attn=mixattention_moska | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [70/145] -- SKIPPING: attn=mla | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [71/145] -- SKIPPING: attn=moba | task=sst2 (Already completed)
+[2026-08-22 07:12:00] [Worker-2] [72/145] -- SKIPPING: attn=moe_deltakv_paged | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [73/145] -- SKIPPING: attn=nasc | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [74/145] -- SKIPPING: attn=nasc_attention | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [75/145] -- SKIPPING: attn=nasc_injection | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [76/145] -- SKIPPING: attn=nexus | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [77/145] -- SKIPPING: attn=nha | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [78/145] -- SKIPPING: attn=nha_compressor | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [79/145] -- SKIPPING: attn=nsa | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [80/145] -- SKIPPING: attn=nystrom | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [81/145] -- SKIPPING: attn=oha | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [82/145] -- SKIPPING: attn=orion | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [83/145] -- SKIPPING: attn=orion_module | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [84/145] -- SKIPPING: attn=performer | task=sst2 (Already completed)
+[2026-08-22 07:12:01] [Worker-2] [85/145] >> Launching: attn=phantom | task=sst2 | seed=42
+[2026-08-22 08:35:26] [Worker-2] [85/145] << SUCCESS: attn=phantom | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7053 | Time: 5004.9s
+[2026-08-22 08:35:28] [Worker-2] [86/145] >> Launching: attn=phantom_module | task=sst2 | seed=42
+[2026-08-22 10:00:04] [Worker-2] [86/145] << SUCCESS: attn=phantom_module | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7053 | Time: 5076.6s
+[2026-08-22 10:00:07] [Worker-2] [87/145] >> Launching: attn=primal | task=sst2 | seed=42
+[2026-08-22 10:01:03] [Worker-2] [87/145] NOTICE: attn=primal | task=sst2 | Error: linalg.svd: (Batch element 12): The algorithm failed to converge because the input matrix is ill-conditioned or has too many repeated singular values (error code: 63). | Time: 56.1s
+[2026-08-22 10:01:04] [Worker-2] [88/145] >> Launching: attn=progressive_token_pruning | task=sst2 | seed=42
+[2026-08-22 10:01:06] [Worker-2] [88/145] NOTICE: attn=progressive_token_pruning | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 2.1s
+[2026-08-22 10:01:08] [Worker-2] [89/145] >> Launching: attn=projection_factorized_attn | task=sst2 | seed=42
+[2026-08-22 10:01:33] [Worker-2] [89/145] << SUCCESS: attn=projection_factorized_attn | task=sst2 | Acc: 80.62% | F1: 80.46% | Loss: 0.6943 | Time: 25.4s
+[2026-08-22 10:01:35] [Worker-2] [90/145] >> Launching: attn=qcqa | task=sst2 | seed=42
+[2026-08-22 10:01:38] [Worker-2] [90/145] WARNING: OOM for qcqa. Auto-recovering: Retrying with batch_size=16 (Attempt 1/3)...
+[2026-08-22 10:01:42] [Worker-2] [90/145] WARNING: OOM for qcqa. Auto-recovering: Retrying with batch_size=8 (Attempt 2/3)...
+[2026-08-22 10:01:46] [Worker-2] [90/145] WARNING: OOM for qcqa. Auto-recovering: Retrying with batch_size=4 (Attempt 3/3)...
+[2026-08-22 10:01:49] [Worker-2] [91/145] >> Launching: attn=rala | task=sst2 | seed=42
+[2026-08-22 10:01:50] [Worker-2] [91/145] NOTICE: attn=rala | task=sst2 | Error: The size of tensor a (64) must match the size of tensor b (128) at non-singleton dimension 3 | Time: 0.5s
+[2026-08-22 10:01:51] [Worker-2] [92/145] >> Launching: attn=reap_moe | task=sst2 | seed=42
+[2026-08-22 10:01:53] [Worker-2] [92/145] WARNING: OOM for reap_moe. Auto-recovering: Retrying with batch_size=32 (Attempt 1/3)...
+[2026-08-22 10:01:57] [Worker-2] [92/145] WARNING: OOM for reap_moe. Auto-recovering: Retrying with batch_size=16 (Attempt 2/3)...
+[2026-08-22 10:02:00] [Worker-2] [92/145] WARNING: OOM for reap_moe. Auto-recovering: Retrying with batch_size=8 (Attempt 3/3)...
+[2026-08-22 10:02:03] [Worker-2] [93/145] >> Launching: attn=regla | task=sst2 | seed=42
+[2026-08-22 10:02:22] [Worker-2] [93/145] << SUCCESS: attn=regla | task=sst2 | Acc: 47.82% | F1: 45.31% | Loss: nan | Time: 19.8s
+[2026-08-22 10:02:24] [Worker-2] [94/145] >> Launching: attn=routing | task=sst2 | seed=42
+[2026-08-22 10:02:50] [Worker-2] [94/145] << SUCCESS: attn=routing | task=sst2 | Acc: 72.13% | F1: 72.06% | Loss: 0.5916 | Time: 26.1s
+[2026-08-22 10:02:52] [Worker-2] [95/145] >> Launching: attn=rpc | task=sst2 | seed=42
+[2026-08-22 10:03:11] [Worker-2] [95/145] << SUCCESS: attn=rpc | task=sst2 | Acc: 83.26% | F1: 83.25% | Loss: 0.4544 | Time: 19.0s
+[2026-08-22 10:03:12] [Worker-2] [96/145] >> Launching: attn=salt_attention | task=sst2 | seed=42
+[2026-08-22 10:03:38] [Worker-2] [96/145] << SUCCESS: attn=salt_attention | task=sst2 | Acc: 77.75% | F1: 77.62% | Loss: 0.5879 | Time: 26.4s
+[2026-08-22 10:03:40] [Worker-2] [97/145] -- SKIPPING: attn=samba_m3 | task=sst2 (Already completed)
+[2026-08-22 10:03:40] [Worker-2] [98/145] >> Launching: attn=samba_moe | task=sst2 | seed=42
+[2026-08-22 10:03:42] [Worker-2] [98/145] WARNING: OOM for samba_moe. Auto-recovering: Retrying with batch_size=16 (Attempt 1/3)...
+[2026-08-22 10:03:44] [Worker-2] [98/145] WARNING: OOM for samba_moe. Auto-recovering: Retrying with batch_size=8 (Attempt 2/3)...
+[2026-08-22 10:11:50] [Worker-2] [98/145] << SUCCESS: attn=samba_moe | task=sst2 | Acc: 81.65% | F1: 81.65% | Loss: 0.4180 | Time: 490.5s
+[2026-08-22 10:11:52] [Worker-2] [99/145] >> Launching: attn=simple_ssm | task=sst2 | seed=42
+[2026-08-22 10:12:44] [Worker-2] [99/145] << SUCCESS: attn=simple_ssm | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7026 | Time: 51.9s
+[2026-08-22 10:12:45] [Worker-2] [100/145] -- SKIPPING: attn=soa_attn | task=sst2 (Already completed)
+[2026-08-22 10:12:45] [Worker-2] [101/145] -- SKIPPING: attn=soa_fused_attn | task=sst2 (Already completed)
+[2026-08-22 10:12:45] [Worker-2] [102/145] -- SKIPPING: attn=soa_fused_module | task=sst2 (Already completed)
+[2026-08-22 10:12:45] [Worker-2] [103/145] -- SKIPPING: attn=soa_module | task=sst2 (Already completed)
+[2026-08-22 10:12:45] [Worker-2] [104/145] -- SKIPPING: attn=span_expanded | task=sst2 (Already completed)
+[2026-08-22 10:12:46] [Worker-2] [105/145] >> Launching: attn=spectra_v2 | task=sst2 | seed=42
+[2026-08-22 10:13:05] [Worker-2] [105/145] << SUCCESS: attn=spectra_v2 | task=sst2 | Acc: 77.06% | F1: 76.87% | Loss: 0.6951 | Time: 18.9s
+[2026-08-22 10:13:06] [Worker-2] [106/145] -- SKIPPING: attn=spectral_mamba | task=sst2 (Already completed)
+[2026-08-22 10:13:06] [Worker-2] [107/145] >> Launching: attn=spectron | task=sst2 | seed=42
+[2026-08-22 10:13:37] [Worker-2] [107/145] << SUCCESS: attn=spectron | task=sst2 | Acc: 76.61% | F1: 76.38% | Loss: 0.5623 | Time: 30.6s
+[2026-08-22 10:13:38] [Worker-2] [108/145] >> Launching: attn=squeezing_heads_distiller | task=sst2 | seed=42
+[2026-08-22 10:13:54] [Worker-2] [108/145] << SUCCESS: attn=squeezing_heads_distiller | task=sst2 | Acc: 78.10% | F1: 78.06% | Loss: 0.5374 | Time: 15.6s
+[2026-08-22 10:13:55] [Worker-2] [109/145] -- SKIPPING: attn=svd | task=sst2 (Already completed)
+[2026-08-22 10:13:55] [Worker-2] [110/145] >> Launching: attn=svd_compressed | task=sst2 | seed=42
+[2026-08-22 10:14:14] [Worker-2] [110/145] << SUCCESS: attn=svd_compressed | task=sst2 | Acc: 77.64% | F1: 77.59% | Loss: 0.5522 | Time: 18.5s
+[2026-08-22 10:14:15] [Worker-2] [111/145] >> Launching: attn=svd_compressed_module | task=sst2 | seed=42
+[2026-08-22 10:14:34] [Worker-2] [111/145] << SUCCESS: attn=svd_compressed_module | task=sst2 | Acc: 77.64% | F1: 77.59% | Loss: 0.5522 | Time: 18.3s
+[2026-08-22 10:14:35] [Worker-2] [112/145] -- SKIPPING: attn=svd_linear | task=sst2 (Already completed)
+[2026-08-22 10:14:35] [Worker-2] [113/145] >> Launching: attn=svd_linear_attn | task=sst2 | seed=42
+[2026-08-22 10:14:56] [Worker-2] [113/145] << SUCCESS: attn=svd_linear_attn | task=sst2 | Acc: 84.63% | F1: 84.63% | Loss: 0.4989 | Time: 20.6s
+[2026-08-22 10:14:57] [Worker-2] [114/145] >> Launching: attn=svd_linear_decay | task=sst2 | seed=42
+[2026-08-22 10:15:18] [Worker-2] [114/145] << SUCCESS: attn=svd_linear_decay | task=sst2 | Acc: 84.63% | F1: 84.63% | Loss: 0.4989 | Time: 20.5s
+[2026-08-22 10:15:19] [Worker-2] [115/145] >> Launching: attn=svd_llm_v2 | task=sst2 | seed=42
+[2026-08-22 10:15:39] [Worker-2] [115/145] << SUCCESS: attn=svd_llm_v2 | task=sst2 | Acc: 76.38% | F1: 76.34% | Loss: 0.6390 | Time: 19.6s
+[2026-08-22 10:15:41] [Worker-2] [116/145] >> Launching: attn=svd_proj_attn | task=sst2 | seed=42
+[2026-08-22 10:15:58] [Worker-2] [116/145] << SUCCESS: attn=svd_proj_attn | task=sst2 | Acc: 75.34% | F1: 75.34% | Loss: 0.5708 | Time: 17.3s
+[2026-08-22 10:15:59] [Worker-2] [117/145] >> Launching: attn=token_compressed | task=sst2 | seed=42
+[2026-08-22 10:16:01] [Worker-2] [117/145] NOTICE: attn=token_compressed | task=sst2 | Error: maximum recursion depth exceeded | Time: 1.7s
+[2026-08-22 10:16:03] [Worker-2] [118/145] >> Launching: attn=token_compressed_module | task=sst2 | seed=42
+[2026-08-22 10:16:15] [Worker-2] [118/145] << SUCCESS: attn=token_compressed_module | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6911 | Time: 12.6s
+[2026-08-22 10:16:17] [Worker-2] [119/145] >> Launching: attn=tpa | task=sst2 | seed=42
+[2026-08-22 10:16:36] [Worker-2] [119/145] << SUCCESS: attn=tpa | task=sst2 | Acc: 75.23% | F1: 75.06% | Loss: 0.5750 | Time: 19.2s
+[2026-08-22 10:16:38] [Worker-2] [120/145] >> Launching: attn=upi_stuffed_mamba | task=sst2 | seed=42
+[2026-08-22 10:16:38] [Worker-2] [120/145] NOTICE: attn=upi_stuffed_mamba | task=sst2 | Error: mat1 and mat2 shapes cannot be multiplied (8192x768 and 1x2) | Time: 0.8s
+[2026-08-22 10:16:40] [Worker-2] [121/145] >> Launching: attn=vig | task=sst2 | seed=42
+[2026-08-22 10:16:40] [Worker-2] [121/145] NOTICE: attn=vig | task=sst2 | Error: shape '[64, 11, 12]' is invalid for input of size 1048576 | Time: 0.6s
+[2026-08-22 10:16:42] [Worker-2] [122/145] >> Launching: attn=vspec | task=sst2 | seed=42
+[2026-08-22 10:16:46] [Worker-2] [122/145] NOTICE: attn=vspec | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 4.2s
+[2026-08-22 10:16:47] [Worker-2] [123/145] >> Launching: attn=wgqa | task=sst2 | seed=42
+[2026-08-22 10:17:06] [Worker-2] [123/145] << SUCCESS: attn=wgqa | task=sst2 | Acc: 77.98% | F1: 77.95% | Loss: 0.6020 | Time: 18.9s
+[2026-08-22 10:17:11] [Worker-2] [124/145] >> Launching: attn=xattention | task=sst2 | seed=42
+[2026-08-22 10:17:30] [Worker-2] [124/145] << SUCCESS: attn=xattention | task=sst2 | Acc: 79.24% | F1: 78.91% | Loss: 0.5323 | Time: 19.0s
+[2026-08-22 10:17:31] [Worker-2] [125/145] >> Launching: attn=your_attention_name | task=sst2 | seed=42
+[2026-08-22 10:17:50] [Worker-2] [125/145] << SUCCESS: attn=your_attention_name | task=sst2 | Acc: 75.00% | F1: 74.98% | Loss: 0.5640 | Time: 18.7s
+[2026-08-22 10:17:52] [Worker-2] [126/145] >> Launching: attn=zeros | task=sst2 | seed=42
+[2026-08-22 10:18:09] [Worker-2] [126/145] << SUCCESS: attn=zeros | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6964 | Time: 16.9s
+[2026-08-22 10:18:10] [Worker-2] [127/145] >> Launching: attn=compress_aasvd | task=sst2 | seed=42
+[2026-08-22 10:18:10] [Worker-2] [127/145] NOTICE: attn=compress_aasvd | task=sst2 | Error: Unknown compressor 'compress_aasvd'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:12] [Worker-2] [128/145] >> Launching: attn=compress_adasvd | task=sst2 | seed=42
+[2026-08-22 10:18:12] [Worker-2] [128/145] NOTICE: attn=compress_adasvd | task=sst2 | Error: Unknown compressor 'compress_adasvd'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:13] [Worker-2] [129/145] >> Launching: attn=compress_astro | task=sst2 | seed=42
+[2026-08-22 10:18:13] [Worker-2] [129/145] NOTICE: attn=compress_astro | task=sst2 | Error: Unknown compressor 'compress_astro'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:14] [Worker-2] [130/145] >> Launching: attn=compress_cur | task=sst2 | seed=42
+[2026-08-22 10:18:14] [Worker-2] [130/145] NOTICE: attn=compress_cur | task=sst2 | Error: Unknown compressor 'compress_cur'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:16] [Worker-2] [131/145] >> Launching: attn=compress_direct_svd | task=sst2 | seed=42
+[2026-08-22 10:18:16] [Worker-2] [131/145] NOTICE: attn=compress_direct_svd | task=sst2 | Error: Unknown compressor 'compress_direct_svd'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:17] [Worker-2] [132/145] >> Launching: attn=compress_dynamic_entropy_svd | task=sst2 | seed=42
+[2026-08-22 10:18:17] [Worker-2] [132/145] NOTICE: attn=compress_dynamic_entropy_svd | task=sst2 | Error: Unknown compressor 'compress_dynamic_entropy_svd'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:19] [Worker-2] [133/145] >> Launching: attn=compress_kronecker | task=sst2 | seed=42
+[2026-08-22 10:18:19] [Worker-2] [133/145] NOTICE: attn=compress_kronecker | task=sst2 | Error: Unknown compressor 'compress_kronecker'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:20] [Worker-2] [134/145] >> Launching: attn=compress_nmf | task=sst2 | seed=42
+[2026-08-22 10:18:20] [Worker-2] [134/145] NOTICE: attn=compress_nmf | task=sst2 | Error: Unknown compressor 'compress_nmf'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:22] [Worker-2] [135/145] >> Launching: attn=compress_res_svd | task=sst2 | seed=42
+[2026-08-22 10:18:22] [Worker-2] [135/145] NOTICE: attn=compress_res_svd | task=sst2 | Error: Unknown compressor 'compress_res_svd'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:23] [Worker-2] [136/145] >> Launching: attn=compress_rpca | task=sst2 | seed=42
+[2026-08-22 10:18:23] [Worker-2] [136/145] NOTICE: attn=compress_rpca | task=sst2 | Error: Unknown compressor 'compress_rpca'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:25] [Worker-2] [137/145] >> Launching: attn=compress_slicegpt | task=sst2 | seed=42
+[2026-08-22 10:18:25] [Worker-2] [137/145] NOTICE: attn=compress_slicegpt | task=sst2 | Error: Unknown compressor 'compress_slicegpt'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:26] [Worker-2] [138/145] >> Launching: attn=compress_sparsegpt | task=sst2 | seed=42
+[2026-08-22 10:18:26] [Worker-2] [138/145] NOTICE: attn=compress_sparsegpt | task=sst2 | Error: Unknown compressor 'compress_sparsegpt'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:27] [Worker-2] [139/145] >> Launching: attn=compress_swift_svd | task=sst2 | seed=42
+[2026-08-22 10:18:27] [Worker-2] [139/145] NOTICE: attn=compress_swift_svd | task=sst2 | Error: Unknown compressor 'compress_swift_svd'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:29] [Worker-2] [140/145] >> Launching: attn=compress_tt | task=sst2 | seed=42
+[2026-08-22 10:18:29] [Worker-2] [140/145] NOTICE: attn=compress_tt | task=sst2 | Error: Unknown compressor 'compress_tt'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:30] [Worker-2] [141/145] >> Launching: attn=compress_kmeans | task=sst2 | seed=42
+[2026-08-22 10:18:30] [Worker-2] [141/145] NOTICE: attn=compress_kmeans | task=sst2 | Error: Unknown compressor 'compress_kmeans'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:32] [Worker-2] [142/145] >> Launching: attn=compress_delta_kv | task=sst2 | seed=42
+[2026-08-22 10:18:32] [Worker-2] [142/145] NOTICE: attn=compress_delta_kv | task=sst2 | Error: Unknown compressor 'compress_delta_kv'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:33] [Worker-2] [143/145] >> Launching: attn=compress_admm | task=sst2 | seed=42
+[2026-08-22 10:18:33] [Worker-2] [143/145] NOTICE: attn=compress_admm | task=sst2 | Error: Unknown compressor 'compress_admm'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:35] [Worker-2] [144/145] >> Launching: attn=compress_flap | task=sst2 | seed=42
+[2026-08-22 10:18:35] [Worker-2] [144/145] NOTICE: attn=compress_flap | task=sst2 | Error: Unknown compressor 'compress_flap'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 10:18:36] [Worker-2] [145/145] >> Launching: attn=compress_lillama | task=sst2 | seed=42
+[2026-08-22 10:18:36] [Worker-2] [145/145] NOTICE: attn=compress_lillama | task=sst2 | Error: Unknown compressor 'compress_lillama'. Available: ['astro', 'cachenotes', 'coopq', 'delta_kv', 'dynamic_entropy_svd', 'entropy_rank_allocator', 'faq', 'huffman', 'hybridkv', 'kmeans', 'kvtc', 'modegpt', 'res_svd', 'spectral_residual_lora', 'zerokv_neo', 'a3', 'aasvd', 'your_compressor_name', 'adaptive_svd', 'adasvd', 'admm', 'admm_pruner', 'armor_pruner', 'ast_pruner', 'bonsai', 'come', 'compot', 'cr', 'cur_moe', 'cur', 'direct_svd', 'dobi', 'enlighten', 'entropy_budget', 'erc', 'flap', 'flat_llm', 'frandi', 'gfws', 'hashed_net', 'direct_svd_encoder', 'hybrid_svd', 'kronecker', 'kronecker_tt_lora', 'liftr', 'lillama', 'lsc', 'mamba_shedder', 'mgie', 'mgie_budget', 'mlorq', 'nmf', 'oats', 'subspace_projection', 'proxsparse', 'replaceme', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'sdrm', 'slicegpt', 'slicegpt_pca', 'slim', 'soka', 'sparsegpt', 'swift_svd', 'swift_svd_act', 'tt'] | Time: 0.0s
+[2026-08-22 14:11:23] [Worker-1] [59/145] << SUCCESS: attn=lsh | task=sst2 | Acc: 76.49% | F1: 76.48% | Loss: 0.5405 | Time: 25163.9s
