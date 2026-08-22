@@ -190,12 +190,12 @@ class FUSIONATTN(nn.Module):
         context = self._moba_block_attention(q, k, v, gate_scores, dense_mask)
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask.unsqueeze(1).unsqueeze(-1)
-            elif attention_mask.dim() == 4:
-                mask = (attention_mask > -10000.0).float().squeeze(1).squeeze(1).unsqueeze(-1)
+            if attention_mask.dim() == 4:
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).float().unsqueeze(1).unsqueeze(-1)
+            elif attention_mask.dim() == 2:
+                mask = attention_mask.float().unsqueeze(1).unsqueeze(-1)
             else:
-                mask = attention_mask
+                mask = attention_mask.float()
             context = context * mask.to(context.dtype)
 
         context = context.transpose(1, 2).contiguous().view(B, N, D)
