@@ -2026,3 +2026,5 @@ ompleted)
 [2026-08-22 10:17:30] [Worker-2] [124/145] << SUCCESS: attn=xattention | task=sst2 | Acc: 79.24% | F1: 78.91% | Loss: 0.5323 | Time: 19.0s
 [2026-08-22 10:17:31] [Worker-2] [125/145] >> Launching: attn=your_attention_name | task=sst2 | seed=42
 [2026-08-22 10:17:50] [Worker-2] [125/145] << SUCCESS: attn=your_attention_name | task=sst2 | Acc: 75.00% | F1: 74.98% | Loss: 0.5640 | Time: 18.7s
+[2026-08-22 10:17:52] [Worker-2] [126/145] >> Launching: attn=zeros | task=sst2 | seed=42
+[2026-08-22 10:18:09] [Worker-2] [126/145] << SUCCESS: attn=zeros | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6964 | Time: 16.9s
