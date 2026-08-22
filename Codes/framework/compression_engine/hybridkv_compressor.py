@@ -72,6 +72,9 @@ class HybridKVCache:
             self.k_cache = k_4d
             self.v_cache = v_4d
         else:
+            if self.k_cache.device != k_4d.device or self.k_cache.dtype != k_4d.dtype:
+                self.k_cache = self.k_cache.to(device=k_4d.device, dtype=k_4d.dtype)
+                self.v_cache = self.v_cache.to(device=v_4d.device, dtype=v_4d.dtype)
             if self.k_cache.shape[0] != B:
                 self.k_cache = self.k_cache[:1].expand(B, -1, -1, -1).clone()
                 self.v_cache = self.v_cache[:1].expand(B, -1, -1, -1).clone()
@@ -85,16 +88,17 @@ class HybridKVCache:
         # Apply hybrid eviction per head
         sinks = min(self.num_sinks, cur_len)
         window = min(self.recent_window, cur_len - sinks)
-        middle_capacity = self.max_cache_len - sinks - window
+        middle_capacity = max(0, self.max_cache_len - sinks - window)
+
+        sink_k = self.k_cache[:, :, :sinks, :]
+        sink_v = self.v_cache[:, :, :sinks, :]
+        win_k = self.k_cache[:, :, -window:, :] if window > 0 else torch.empty(0, device=self.k_cache.device, dtype=self.k_cache.dtype)
+        win_v = self.v_cache[:, :, -window:, :] if window > 0 else torch.empty(0, device=self.v_cache.device, dtype=self.v_cache.dtype)
 
         if middle_capacity <= 0:
             # Fallback to sinks + recent window
-            sink_k = self.k_cache[:, :, :sinks, :]
-            sink_v = self.v_cache[:, :, :sinks, :]
-            win_k = self.k_cache[:, :, -window:, :] if window > 0 else torch.empty(0)
-            win_v = self.v_cache[:, :, -window:, :] if window > 0 else torch.empty(0)
-            self.k_cache = torch.cat([sink_k, win_k], dim=2) if window > 0 else sink_k
-            self.v_cache = torch.cat([sink_v, win_v], dim=2) if window > 0 else sink_v
+            self.k_cache = torch.cat([sink_k, win_k], dim=2).contiguous() if window > 0 else sink_k.contiguous()
+            self.v_cache = torch.cat([sink_v, win_v], dim=2).contiguous() if window > 0 else sink_v.contiguous()
             return self.k_cache, self.v_cache
 
         # Intermediate token eviction using L2 norms
@@ -111,13 +115,17 @@ class HybridKVCache:
         sel_mid_k = mid_k.gather(2, idx_exp)
         sel_mid_v = mid_v.gather(2, idx_exp)
 
-        sink_k = self.k_cache[:, :, :sinks, :]
-        sink_v = self.v_cache[:, :, :sinks, :]
-        win_k = self.k_cache[:, :, -window:, :]
-        win_v = self.v_cache[:, :, -window:, :]
+        parts_k = [sink_k]
+        parts_v = [sink_v]
+        if sel_mid_k.size(2) > 0:
+            parts_k.append(sel_mid_k)
+            parts_v.append(sel_mid_v)
+        if window > 0:
+            parts_k.append(win_k)
+            parts_v.append(win_v)
 
-        self.k_cache = torch.cat([sink_k, sel_mid_k, win_k], dim=2).contiguous()
-        self.v_cache = torch.cat([sink_v, sel_mid_v, win_v], dim=2).contiguous()
+        self.k_cache = torch.cat(parts_k, dim=2).contiguous()
+        self.v_cache = torch.cat(parts_v, dim=2).contiguous()
 
         return self.k_cache, self.v_cache
 
@@ -149,9 +157,9 @@ class HybridKVCompressor(BaseCompressor):
         """
         Classify a projection head as 'static' or 'dynamic' based on normalized variance.
         """
-        if weight.numel() == 0:
+        if weight.numel() == 0 or weight.shape[1] <= 1:
             return "static"
-        row_variance = torch.var(weight.float(), dim=1)
+        row_variance = torch.var(weight.float(), dim=1, unbiased=False)
         max_var = row_variance.max() + 1e-8
         norm_var = row_variance / max_var
         dynamic_ratio = (norm_var > threshold).float().mean().item()
@@ -218,10 +226,10 @@ class HybridKVCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("hybridkv")
-def hybridkv_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def hybridkv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """HybridKV compressor factory function."""
-    budget = getattr(comp_config, "hybridkv_budget", 0.3) if comp_config else 0.3
-    static_ratio = getattr(comp_config, "hybridkv_static_ratio", 0.7) if comp_config else 0.7
-    compressor = HybridKVCompressor(model, budget=budget, static_ratio=static_ratio)
+    budget = kwargs.get("budget", getattr(comp_config, "hybridkv_budget", 0.3) if comp_config is not None else 0.3)
+    static_ratio = kwargs.get("static_ratio", getattr(comp_config, "hybridkv_static_ratio", 0.7) if comp_config is not None else 0.7)
+    compressor = HybridKVCompressor(model, budget=budget, static_ratio=static_ratio, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
