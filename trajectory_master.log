@@ -1559,3 +1559,9 @@ ompleted)
 [2026-08-22 04:54:24] [Worker-2] [44/126] >> Launching: attn=hgrn2_outer | task=sst2 | seed=42
 [2026-08-22 04:54:24] [Worker-1] [38/126] NOTICE: attn=granite_hybrid | task=sst2 | Error: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.66 GiB is free. 3.20 GiB allowed; Of the allocated memory 3.19 GiB is allocated by PyTorch, and 5.29 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.9s
 [2026-08-22 04:54:24] [Worker-2] [44/126] NOTICE: attn=hgrn2_outer | task=sst2 | Error: CUDA out of memory. Tried to allocate 18.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 222.14 MiB is free. 3.20 GiB allowed; Of the allocated memory 3.17 GiB is allocated by PyTorch, and 26.85 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 0.5s
+[2026-08-22 04:54:26] [Worker-1] [45/126] >> Launching: attn=hla | task=sst2 | seed=42
+[2026-08-22 04:54:28] [Worker-2] [46/126] -- SKIPPING: attn=hymba_transx | task=sst2 (Already completed)
+[2026-08-22 04:54:28] [Worker-2] [47/126] -- SKIPPING: attn=infini | task=sst2 (Already completed)
+[2026-08-22 04:54:28] [Worker-2] [48/126] -- SKIPPING: attn=inject_aegis_hybrid | task=sst2 (Already completed)
+[2026-08-22 04:54:28] [Worker-2] [49/126] >> Launching: attn=inject_aegis_spectron_fp8 | task=sst2 | seed=42
+[2026-08-22 04:54:56] [Worker-1] [45/126] << SUCCESS: attn=hla | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7025 | Time: 30.3s
