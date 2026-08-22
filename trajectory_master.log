@@ -1973,3 +1973,5 @@ ompleted)
 [2026-08-22 10:02:50] [Worker-2] [94/145] << SUCCESS: attn=routing | task=sst2 | Acc: 72.13% | F1: 72.06% | Loss: 0.5916 | Time: 26.1s
 [2026-08-22 10:02:52] [Worker-2] [95/145] >> Launching: attn=rpc | task=sst2 | seed=42
 [2026-08-22 10:03:11] [Worker-2] [95/145] << SUCCESS: attn=rpc | task=sst2 | Acc: 83.26% | F1: 83.25% | Loss: 0.4544 | Time: 19.0s
+[2026-08-22 10:03:12] [Worker-2] [96/145] >> Launching: attn=salt_attention | task=sst2 | seed=42
+[2026-08-22 10:03:38] [Worker-2] [96/145] << SUCCESS: attn=salt_attention | task=sst2 | Acc: 77.75% | F1: 77.62% | Loss: 0.5879 | Time: 26.4s
