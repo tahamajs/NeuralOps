@@ -186,6 +186,7 @@ class LowRankSparseLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("spectron")
+@ATTENTION_REGISTRY.register("spectron_attn")
 class SpectronAttention(nn.Module):
     r"""Importance-aware SVD-compressed attention module with optional trainable sparse residual branch.
 
@@ -201,31 +202,53 @@ class SpectronAttention(nn.Module):
 
     def __init__(
         self,
-        model_config: Any,
+        model_config: Optional[Any] = None,
         dropout: float = 0.1,
         layer_idx: int = 0,
         pretrained_attn: Optional[Any] = None,
         ranks: Optional[Dict[str, int]] = None,
         add_sparse: bool = False,
         sparsity_level: float = 0.7,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
-        self.num_heads: int = model_config.num_attention_heads
-        self.head_dim: int = model_config.hidden_size // self.num_heads
-        self.all_head_size: int = self.num_heads * self.head_dim
-        self.hidden_size: int = model_config.hidden_size
-        if pretrained_attn is None or ranks is None:
-            raise ValueError("Both pretrained_attn and ranks dict required.")
+        if model_config is None and pretrained_attn is not None:
+            class DummyConfig:
+                pass
+            model_config = DummyConfig()
+            model_config.hidden_size = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None)).out_features
+            model_config.num_attention_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 12))
 
-        proj_weights = {
-            "q": (pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias),
-            "k": (pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias),
-            "v": (pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias),
-            "o": (pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias),
-        }
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+        self.head_dim: int = getattr(model_config, "hidden_size", 768) // self.num_heads if model_config is not None else 64
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.hidden_size: int = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
+
+        if ranks is None:
+            ranks = {"q": 64, "k": 64, "v": 64, "o": 64}
+
+        if pretrained_attn is not None:
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
+            proj_weights = {
+                "q": (q_src.weight.data, q_src.bias.data if q_src.bias is not None else None),
+                "k": (k_src.weight.data, k_src.bias.data if k_src.bias is not None else None),
+                "v": (v_src.weight.data, v_src.bias.data if v_src.bias is not None else None),
+                "o": (out_src.weight.data, out_src.bias.data if out_src.bias is not None else None),
+            }
+        else:
+            proj_weights = {
+                "q": (torch.randn(self.all_head_size, self.hidden_size) * 0.02, None),
+                "k": (torch.randn(self.all_head_size, self.hidden_size) * 0.02, None),
+                "v": (torch.randn(self.all_head_size, self.hidden_size) * 0.02, None),
+                "o": (torch.randn(self.hidden_size, self.all_head_size) * 0.02, None),
+            }
+
         for proj in ["q", "k", "v", "o"]:
             W, bias = proj_weights[proj]
-            down, up = self._factorise(W, bias, ranks[proj])
+            down, up = self._factorise(W, bias, ranks.get(proj, 64))
             setattr(self, f"{proj}_down", down)
             setattr(self, f"{proj}_up", up)
             if add_sparse:
@@ -234,6 +257,12 @@ class SpectronAttention(nn.Module):
 
         self.add_sparse: bool = add_sparse
         self.dropout = nn.Dropout(dropout)
+
+    @classmethod
+    def from_distilbert_pretrained(
+        cls, old_attn: nn.Module, model_config: Optional[Any] = None, **kwargs: Any
+    ) -> "SpectronAttention":
+        return cls(model_config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def _factorise(
         self, W: torch.Tensor, bias: Optional[torch.Tensor], rank: int
@@ -387,6 +416,36 @@ def inject_spectron(
             sparsity_level=getattr(args, "sparsity", 0.7),
         )
         distil_layer.attention = new_attn
+
+
+@ATTENTION_REGISTRY.register("spectron_inject")
+def inject_spectron_layer(
+    layer: Any,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> SpectronAttention:
+    r"""Injects SpectronAttention into a single transformer layer."""
+    if model_config is None and hasattr(layer, "attention"):
+        old_attn = layer.attention
+    r = getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 64))
+    ranks = {"q": r, "k": r, "v": r, "o": r}
+    if model_config is None and old_attn is not None:
+        new_attn = SpectronAttention.from_distilbert_pretrained(old_attn, ranks=ranks)
+    else:
+        new_attn = SpectronAttention(
+            model_config=model_config,
+            pretrained_attn=old_attn,
+            ranks=ranks,
+            layer_idx=layer_idx,
+            dropout=getattr(comp_config, "dropout", 0.1),
+        )
+    if hasattr(layer, "attention"):
+        layer.attention = new_attn
+    return new_attn
 
 
 # ======================================================================

@@ -1,10 +1,12 @@
+"""
+MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).
+"""
+
 import math
 from typing import Any, Dict, Optional, Tuple
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -13,65 +15,72 @@ from framework.core.registry import ATTENTION_REGISTRY
 class MixAttentionMoSKA(BaseAttention):
     r"""
     MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).
-
-    Mathematical Mechanism:
-        Computes token variance across channel dimensions as an information-theoretic importance metric,
-        pruning the key-value sequence down to a fraction $\rho = \text{fasa\_keep\_ratio}$:
-        $$\begin{aligned}
-        I_t &= \frac{1}{H} \sum_{h=1}^{H} \text{Var}_{d}\left(K_{h, t, :}\right) \in \mathbb{R}^{B \times L} \\
-        \mathcal{I}_{\text{keep}} &= \text{topk}\left(I, \max(1, \lfloor \rho L \rfloor), \text{dim}=-1\right) \\
-        K_{\text{pruned}} &= \text{gather}\left(K, \mathcal{I}_{\text{keep}}\right), \quad V_{\text{pruned}} = \text{gather}\left(V, \mathcal{I}_{\text{keep}}\right) \\
-        S &= \frac{Q K_{\text{pruned}}^\top}{\sqrt{d_k}} + M_{\text{mask}} \\
-        P &= \text{softmax}(S, \text{dim}=-1) \\
-        O &= \left(P V_{\text{pruned}}\right) W_O
-        \end{aligned}$$
-
-    Computational Complexity:
-        - Variance Importance: $\mathcal{O}(B \cdot H \cdot L \cdot d_k)$
-        - Pruned Attention Map: $\mathcal{O}(B \cdot H \cdot L \cdot (\rho L) \cdot d_k)$
-        - Memory Footprint: $\mathcal{O}(B \cdot H \cdot L \cdot (\rho L))$ vs $\mathcal{O}(B \cdot H \cdot L^2)$ for full attention.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: `[B, L, D]`
-        - Output: Tuple `(output, attn_weights)` where `output` is `[B, L, D]`.
+    Prunes key-value tokens based on variance importance while strictly protecting [CLS] (index 0).
     """
 
     def __init__(
         self,
-        config: Any,
+        config: Optional[Any] = None,
         rank: Optional[int] = 64,
-        fasa_keep_ratio: float = 0.189,
+        fasa_keep_ratio: float = 0.5,
+        pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.dim: int = getattr(config, "hidden_size", 768)
-        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        self.dim: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
+        self.all_head_size: int = self.num_heads * self.head_dim
         self.fasa_keep_ratio: float = fasa_keep_ratio
 
-        self.W_q: nn.Linear = nn.Linear(self.dim, self.dim, bias=False)
-        self.W_k: nn.Linear = nn.Linear(self.dim, self.dim, bias=False)
-        self.W_v: nn.Linear = nn.Linear(self.dim, self.dim, bias=False)
-        self.out_proj: nn.Linear = nn.Linear(self.dim, self.dim)
+        self.W_q = nn.Linear(self.dim, self.all_head_size, bias=False)
+        self.W_k = nn.Linear(self.dim, self.all_head_size, bias=False)
+        self.W_v = nn.Linear(self.dim, self.all_head_size, bias=False)
+        self.out_proj = nn.Linear(self.all_head_size, self.dim)
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        with torch.no_grad():
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+
+            if q_src is not None and hasattr(q_src, "weight"):
+                self.W_q.weight.copy_(q_src.weight)
+            if k_src is not None and hasattr(k_src, "weight"):
+                self.W_k.weight.copy_(k_src.weight)
+            if v_src is not None and hasattr(v_src, "weight"):
+                self.W_v.weight.copy_(v_src.weight)
+            if out_src is not None and hasattr(out_src, "weight"):
+                self.out_proj.weight.copy_(out_src.weight)
+                if out_src.bias is not None:
+                    self.out_proj.bias.copy_(out_src.bias)
 
     def _fasa_prune(
         self, k: torch.Tensor, v: torch.Tensor, mask: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Prunes key and value tensors according to token variance.
-
-        Args:
-            k: Key tensor `[B, H, L, d_k]`.
-            v: Value tensor `[B, H, L, d_k]`.
-            mask: Optional mask tensor.
-
-        Returns:
-            Tuple `(k_pruned, v_pruned, pruned_mask)`.
-        """
         B, H, L, D_h = k.shape
+        if L <= 4:
+            return k, v, mask
+
         importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
-        keep = max(1, int(L * self.fasa_keep_ratio))
+        # Always protect [CLS] token at index 0
+        importance[:, 0] = 1e6
+
+        if mask is not None:
+            if mask.dim() == 2:
+                importance = importance.masked_fill(mask == 0, -1e6)
+                importance[:, 0] = 1e6
+
+        keep = max(2, min(L, int(L * self.fasa_keep_ratio)))
         _, idx = torch.topk(importance, keep, dim=-1)
+        idx, _ = torch.sort(idx, dim=-1)
+
         idx_exp = idx.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, D_h)
         k_pruned = k.gather(2, idx_exp)
         v_pruned = v.gather(2, idx_exp)
@@ -81,7 +90,7 @@ class MixAttentionMoSKA(BaseAttention):
             if mask.dim() == 2:
                 pruned_mask = mask.gather(1, idx)
             elif mask.dim() == 4:
-                mask_2d = mask[:, 0, 0, :]
+                mask_2d = mask[:, 0, 0, :] > -10000.0 if mask.min() < -1000 else mask[:, 0, 0, :] > 0
                 pruned_mask = mask_2d.gather(1, idx)
 
         return k_pruned, v_pruned, pruned_mask
@@ -95,20 +104,6 @@ class MixAttentionMoSKA(BaseAttention):
         mask: Optional[torch.Tensor] = None,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Forward pass for MixAttentionMoSKA.
-
-        Args:
-            hidden_states: Input tensor of shape `[B, L, D]`.
-            attention_mask: Optional mask tensor.
-            head_mask: Optional head masking tensor.
-            output_attentions: Boolean flag to return attention matrix.
-            mask: Optional alias for attention_mask.
-            **kwargs: Extra keyword arguments.
-
-        Returns:
-            Tuple `(output, attn_weights)` where `output` is `[B, L, D]`.
-        """
         if attention_mask is None and mask is not None:
             attention_mask = mask
 
@@ -124,43 +119,14 @@ class MixAttentionMoSKA(BaseAttention):
         attn_scores = torch.matmul(q, k_p.transpose(-2, -1)) * scale
 
         if p_mask is not None:
-            attn_scores = attn_scores + (1.0 - p_mask[:, None, None, :].to(attn_scores.dtype)) * -10000.0
+            pad_mask = (p_mask == 0).unsqueeze(1).unsqueeze(2)
+            attn_scores = attn_scores.masked_fill(pad_mask, -10000.0)
 
         attn_weights = F.softmax(attn_scores, dim=-1)
-        out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, D)
+        attn_weights = self.dropout(attn_weights)
+        if head_mask is not None:
+            attn_weights = attn_weights * head_mask
+
+        out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         output = self.out_proj(out)
         return output, (attn_weights if output_attentions else None)
-
-
-@ATTENTION_REGISTRY.register("mixattention_moska")
-def inject_mixattention_moska(
-    layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Optional[nn.Module] = None,
-) -> MixAttentionMoSKA:
-    r"""
-    Injection hook for MixAttentionMoSKA into transformer layer.
-
-    Args:
-        layer: Target transformer layer module.
-        model_config: Model configuration.
-        comp_config: Compression configuration.
-        layer_idx: Layer index.
-        total_layers: Total number of transformer layers.
-        old_attn: Previous attention module.
-
-    Returns:
-        Instantiated `MixAttentionMoSKA` assigned to `layer.attention`.
-    """
-    fasa_keep_ratio: float = getattr(comp_config, "fasa_keep_ratio", 0.189)
-    rank: int = getattr(comp_config, "rank", 64)
-    new_attn = MixAttentionMoSKA(
-        config=model_config,
-        rank=rank,
-        fasa_keep_ratio=fasa_keep_ratio,
-    )
-    layer.attention = new_attn
-    return new_attn

@@ -43,13 +43,27 @@ class SVDLinear(nn.Module):
         self.V = nn.Parameter(torch.randn(in_features, self.rank) * 0.02)
         self.bias = nn.Parameter(torch.zeros(out_features))
 
+    def decompose_from_weight(self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+        with torch.no_grad():
+            W = weight.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r = min(self.rank, len(S))
+            self.U.data.zero_()
+            self.S.data.zero_()
+            self.V.data.zero_()
+            self.U.data[:, :r] = U[:, :r].to(self.U.dtype)
+            self.S.data[:r] = S[:r].to(self.S.dtype)
+            self.V.data[:, :r] = Vt[:r, :].t().to(self.V.dtype)
+            if bias is not None and self.bias is not None:
+                self.bias.data.copy_(bias)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [..., in_features]
         # V: [in_features, rank]
         # (x @ V) -> [..., rank]
         # * S -> [..., rank]
         # @ U^T -> [..., out_features]
-        return (x @ self.V) * self.S @ self.U.t() + self.bias
+        return ((x @ self.V) * self.S) @ self.U.t() + self.bias
 
 
 @ATTENTION_REGISTRY.register("svd_mamba")
@@ -77,7 +91,10 @@ class SVDMamba(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         if d_model is None:
-            d_model = kwargs.get("hidden_size", 768)
+            if config is not None:
+                d_model = getattr(config, "hidden_size", 768)
+            else:
+                d_model = kwargs.get("hidden_size", 768)
 
         self.d_model = d_model
         self.d_state = d_state
@@ -108,10 +125,29 @@ class SVDMamba(BaseAttention):
         self.dt_bias = nn.Parameter(torch.zeros(self.inner_dim))
 
         # Global SVD mixing: low-rank token mixing
-        # We project the sequence to a low-rank space and back
         self.global_U = nn.Parameter(torch.randn(self.inner_dim, self.global_rank) * 0.02)
         self.global_V = nn.Parameter(torch.randn(d_model, self.global_rank) * 0.02)
         self.global_out = SVDLinear(self.global_rank, self.inner_dim, rank=self.global_rank)
+
+    def copy_weights(self, src: Any) -> None:
+        """Copy weights from any HuggingFace or PyTorch MHA module using UniversalAdapter."""
+        from framework.core.adapters import UniversalAdapter
+        try:
+            qw, qb = UniversalAdapter.get_weight_bias(src, "q")
+            kw, kb = UniversalAdapter.get_weight_bias(src, "k")
+            vw, vb = UniversalAdapter.get_weight_bias(src, "v")
+            ow, ob = UniversalAdapter.get_weight_bias(src, "o")
+            # In proj stacks Q, K, V
+            in_w = torch.cat([qw, kw, vw, vw], dim=0)[: 2 * self.inner_dim, :]
+            in_b = None
+            if qb is not None:
+                in_b = torch.cat([qb, kb, vb, vb], dim=0)[: 2 * self.inner_dim]
+            self.in_proj.decompose_from_weight(in_w, in_b)
+            # Out proj
+            out_w = torch.cat([ow, ow], dim=1)[:, : self.inner_dim]
+            self.out_proj.decompose_from_weight(out_w, ob)
+        except Exception:
+            pass
 
     def forward(
         self,

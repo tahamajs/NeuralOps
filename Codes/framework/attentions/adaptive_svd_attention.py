@@ -69,12 +69,12 @@ class AdaptiveSVDLinear(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        r"""Initializes parameters using orthogonal and Kaiming uniform distributions."""
+        r"""Initializes parameters using orthogonal base and zeroed residual adapter (AB = 0 at init)."""
         nn.init.orthogonal_(self.U)
         nn.init.orthogonal_(self.V)
         if self.A is not None and self.B is not None:
             nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))
-            nn.init.kaiming_uniform_(self.B, a=math.sqrt(5))
+            nn.init.zeros_(self.B)
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 
@@ -83,6 +83,8 @@ class AdaptiveSVDLinear(nn.Module):
         with torch.no_grad():
             self.U.copy_(U)
             self.V.copy_(V)
+            if self.B is not None:
+                nn.init.zeros_(self.B)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Forward computation for low-rank SVD + residual linear layer."""
@@ -168,8 +170,9 @@ class AdaptiveSVDAttention(nn.Module):
             W = W_data.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(adap_linear.svd_rank, U.size(1), Vt.size(0))
-            U_r = (U[:, :r] * S[:r]).to(adap_linear.U.dtype)
-            V_r = Vt[:r, :].to(adap_linear.V.dtype)
+            sqrt_s = torch.sqrt(S[:r])
+            U_r = (U[:, :r] * sqrt_s).to(adap_linear.U.dtype)
+            V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(adap_linear.V.dtype)
             adap_linear.set_svd_factors(U_r, V_r)
             if adap_linear.bias is not None and bias_data is not None:
                 adap_linear.bias.data.copy_(bias_data)
