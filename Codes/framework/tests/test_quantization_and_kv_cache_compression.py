@@ -1,24 +1,28 @@
 """
 Comprehensive Unit Tests for Quantization & KV-Cache Compression Engine modules.
-Tests:
-1. astro_quantizer (AstroQuantizer, AstroLinear, STEFakeQuantize)
-2. faq_quantizer (FAQQuantizer, FAQLinear)
-3. coopq_quantizer (CoopQQuantizer)
-4. kmeans_quantize (KMeansCompressor, KMeansLinear, fast_kmeans_1d)
-5. delta_kv (DeltaKVCompressor, DeltaKVStore)
-6. hybridkv_compressor (HybridKVCompressor, HybridKVCache)
-7. kvtc_compressor (KVTCCompressor, KVTCStore, SimpleEntropyCoder)
-8. cachenotes_compressor (CacheNotesCompressor, CacheNotesKVCache, CompressionPlanningTokens)
-9. zerokv_neo (ZeroKVNeoCompressor, ZeroKVNeoCache)
-10. modegpt (MoDeGPTCompressor)
-11. huffman_coder (HuffmanCoder, HuffmanCompressor)
+Tests all 17 modules:
+1. astro_quantizer (AstroQuantizer, AstroLinear, STEFakeQuantize, astro_factory)
+2. faq_quantizer (FAQQuantizer, FAQLinear, faq_factory)
+3. coopq_quantizer (CoopQQuantizer, coopq_factory)
+4. kmeans_quantize (KMeansCompressor, KMeansLinear, fast_kmeans_1d, kmeans_factory)
+5. delta_kv (DeltaKVCompressor, DeltaKVStore, delta_kv_factory)
+6. hybridkv_compressor (HybridKVCompressor, HybridKVCache, hybridkv_factory)
+7. kvtc_compressor (KVTCCompressor, KVTCStore, SimpleEntropyCoder, kvtc_factory)
+8. cachenotes_compressor (CacheNotesCompressor, CacheNotesKVCache, CompressionPlanningTokens, cachenotes_factory)
+9. zerokv_neo & zerokv_neo_compressor (ZeroKVNeoCompressor, ZeroKVNeoCache, zerokv_neo_factory)
+10. modegpt & modegpt_compressor (MoDeGPTCompressor, modegpt_factory)
+11. huffman_coder (HuffmanCoder, HuffmanCompressor, huffman_factory)
+12. uniql_compressor (UniQLCompressor, uniql_factory)
+13. sdrm_compressor (SDRMCompressor, sdrm_compressor_factory)
+14. enlighten_compressor (ENLightenCompressor, enlighten_factory)
+15. nli_softmax (NLISoftmaxFunction, nli_softmax, NLISoftmax, NLISoftmaxCompressor, nli_softmax_factory)
 """
 from __future__ import annotations
 
 import os
 import sys
 import unittest
-from typing import Dict, Any
+from typing import Any, Dict
 
 import torch
 import torch.nn as nn
@@ -29,39 +33,79 @@ if _FRAMEWORK_PARENT not in sys.path:
     sys.path.insert(0, _FRAMEWORK_PARENT)
 
 from framework.compression_engine.astro_quantizer import (
-    AstroQuantizer,
     AstroLinear,
+    AstroQuantizer,
     STEFakeQuantize,
+    astro_factory,
     quantize_dequantize_tensor,
-)
-from framework.compression_engine.faq_quantizer import FAQQuantizer, FAQLinear
-from framework.compression_engine.coopq_quantizer import CoopQQuantizer
-from framework.compression_engine.kmeans_quantize import (
-    KMeansCompressor,
-    KMeansLinear,
-    fast_kmeans_1d,
-)
-from framework.compression_engine.delta_kv import DeltaKVCompressor, DeltaKVStore
-from framework.compression_engine.hybridkv_compressor import (
-    HybridKVCompressor,
-    HybridKVCache,
-)
-from framework.compression_engine.kvtc_compressor import (
-    KVTCCompressor,
-    KVTCStore,
-    SimpleEntropyCoder,
 )
 from framework.compression_engine.cachenotes_compressor import (
     CacheNotesCompressor,
     CacheNotesKVCache,
     CompressionPlanningTokens,
+    cachenotes_factory,
 )
-from framework.compression_engine.zerokv_neo_compressor import (
-    ZeroKVNeoCompressor,
+from framework.compression_engine.coopq_quantizer import CoopQQuantizer, coopq_factory
+from framework.compression_engine.delta_kv import (
+    DeltaKVCompressor,
+    DeltaKVStore,
+    delta_kv_factory,
+)
+from framework.compression_engine.enlighten_compressor import (
+    ENLightenCompressor,
+    enlighten_factory,
+)
+from framework.compression_engine.faq_quantizer import (
+    FAQLinear,
+    FAQQuantizer,
+    faq_factory,
+)
+from framework.compression_engine.huffman_coder import (
+    HuffmanCoder,
+    HuffmanCompressor,
+    huffman_factory,
+)
+from framework.compression_engine.hybridkv_compressor import (
+    HybridKVCache,
+    HybridKVCompressor,
+    hybridkv_factory,
+)
+from framework.compression_engine.kmeans_quantize import (
+    KMeansCompressor,
+    KMeansLinear,
+    fast_kmeans_1d,
+    kmeans_factory,
+)
+from framework.compression_engine.kvtc_compressor import (
+    KVTCCompressor,
+    KVTCStore,
+    SimpleEntropyCoder,
+    kvtc_factory,
+)
+from framework.compression_engine.modegpt import (
+    MoDeGPTCompressor,
+    modegpt_factory,
+)
+from framework.compression_engine.nli_softmax import (
+    NLISoftmax,
+    NLISoftmaxCompressor,
+    NLISoftmaxFunction,
+    nli_softmax,
+    nli_softmax_factory,
+)
+from framework.compression_engine.sdrm_compressor import (
+    SDRMCompressor,
+    sdrm_compressor_factory,
+)
+from framework.compression_engine.uniql_compressor import (
+    UniQLCompressor,
+    uniql_factory,
+)
+from framework.compression_engine.zerokv_neo import (
     ZeroKVNeoCache,
+    ZeroKVNeoCompressor,
+    zerokv_neo_factory,
 )
-from framework.compression_engine.modegpt_compressor import MoDeGPTCompressor
-from framework.compression_engine.huffman_coder import HuffmanCoder, HuffmanCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 
@@ -80,13 +124,14 @@ class ToyTransformerBlock(nn.Module):
         self.fc1 = nn.Linear(d_model, d_ff)
         self.act = nn.ReLU()
         self.fc2 = nn.Linear(d_ff, d_model)
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         q = self.q_lin(x)
         k = self.k_lin(x)
         v = self.v_lin(x)
         attn = torch.matmul(q, k.transpose(-2, -1)) / (self.d_model**0.5)
-        attn_weights = torch.softmax(attn, dim=-1)
+        attn_weights = self.softmax(attn)
         attn_out = self.out_lin(torch.matmul(attn_weights, v))
         x = x + attn_out
         mlp_out = self.fc2(self.act(self.fc1(x)))
@@ -94,7 +139,7 @@ class ToyTransformerBlock(nn.Module):
 
 
 class TestQuantizationAndKVCacheCompression(unittest.TestCase):
-    """Comprehensive test suite for all 11 compression and quantization engines."""
+    """Comprehensive test suite for all 17 compression and quantization engines."""
 
     def setUp(self):
         torch.manual_seed(42)
@@ -104,7 +149,7 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.dummy_x = torch.randn(self.batch_size, self.seq_len, self.d_model)
 
     # ----------------------------------------------------------------------
-    # 1. AstroQuantizer Tests
+    # 1. AstroQuantizer Tests (FP32 & FP16 Stability)
     # ----------------------------------------------------------------------
     def test_astro_quantizer_int8_and_int4(self):
         """Test AstroQuantizer INT8 and INT4 quantization and output tensor validity."""
@@ -120,18 +165,19 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
         self.assertFalse(torch.isnan(out).any())
 
-        # Test INT4 with ASTRO factory
+        # Test INT4 with ASTRO factory and kwargs
         model4 = ToyTransformerBlock(d_model=self.d_model)
-        factory_fn = COMPRESSOR_REGISTRY.get("astro")
-        self.assertIsNotNone(factory_fn)
-
-        class Config:
-            astro_bits = 4
-            astro_symmetric = False
-
-        comp_model4 = factory_fn(model4, Config())
+        comp_model4 = astro_factory(model4, bits=4, symmetric=False)
         out4 = comp_model4(self.dummy_x)
         self.assertEqual(out4.shape, (self.batch_size, self.seq_len, self.d_model))
+
+    def test_astro_fp16_numerical_stability(self):
+        """Test Astro quantization numerical stability in FP16."""
+        t_fp16 = torch.randn(16, 32, dtype=torch.float16)
+        q_fp16 = quantize_dequantize_tensor(t_fp16, bits=4, symmetric=False)
+        self.assertEqual(q_fp16.dtype, torch.float16)
+        self.assertFalse(torch.isnan(q_fp16).any())
+        self.assertFalse(torch.isinf(q_fp16).any())
 
     def test_astro_linear_ste_backward(self):
         """Test AstroLinear Straight-Through Estimator (STE) gradient backpropagation."""
@@ -164,6 +210,12 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
         self.assertFalse(torch.isnan(out).any())
 
+        # Test factory with kwargs
+        model_faq = ToyTransformerBlock(d_model=self.d_model)
+        comp_model_faq = faq_factory(model_faq, bits=4, alpha=0.7)
+        out_faq = comp_model_faq(self.dummy_x)
+        self.assertEqual(out_faq.shape, (self.batch_size, self.seq_len, self.d_model))
+
     def test_faq_linear_ste(self):
         """Test FAQLinear layer forward pass and STE gradient propagation."""
         base_lin = nn.Linear(32, 32)
@@ -191,6 +243,12 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertIn("average_allocated_bits", stats)
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+
+        # Test factory with kwargs
+        model_cq = ToyTransformerBlock(d_model=self.d_model)
+        comp_cq = coopq_factory(model_cq, bits=6, min_bits=4, max_bits=8)
+        out_cq = comp_cq(self.dummy_x)
+        self.assertEqual(out_cq.shape, (self.batch_size, self.seq_len, self.d_model))
 
     # ----------------------------------------------------------------------
     # 4. KMeansQuantizer Tests
@@ -226,8 +284,14 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertIsNotNone(km_lin.centroids.grad)
         self.assertGreater(km_lin.centroids.grad.abs().sum().item(), 0.0)
 
+        # Test factory with kwargs
+        model_km = ToyTransformerBlock(d_model=self.d_model)
+        comp_km = kmeans_factory(model_km, n_clusters=32)
+        out_km = comp_km(self.dummy_x)
+        self.assertEqual(out_km.shape, (self.batch_size, self.seq_len, self.d_model))
+
     # ----------------------------------------------------------------------
-    # 5. DeltaKV Tests
+    # 5. DeltaKV Tests (Dynamic Sequences & FP16/FP32)
     # ----------------------------------------------------------------------
     def test_delta_kv_dynamic_sequence_lengths(self):
         """Test DeltaKVStore handling dynamic sequence lengths (prefill + autoregressive steps)."""
@@ -264,8 +328,14 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
 
+        # Factory with kwargs
+        model_dkv = ToyTransformerBlock(d_model=self.d_model)
+        comp_dkv = delta_kv_factory(model_dkv, rank=8, sparsity=0.5)
+        out_dkv = comp_dkv(self.dummy_x)
+        self.assertEqual(out_dkv.shape, (self.batch_size, self.seq_len, self.d_model))
+
     # ----------------------------------------------------------------------
-    # 6. HybridKV Tests
+    # 6. HybridKV Tests (Dynamic Sequences & Multi-head Eviction)
     # ----------------------------------------------------------------------
     def test_hybridkv_dynamic_cache(self):
         """Test HybridKVCache dynamic eviction with attention sinks and sliding window."""
@@ -300,8 +370,14 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
 
+        # Factory with kwargs
+        model_h = ToyTransformerBlock(d_model=self.d_model)
+        comp_h = hybridkv_factory(model_h, budget=0.5, static_ratio=0.6)
+        out_h = comp_h(self.dummy_x)
+        self.assertEqual(out_h.shape, (self.batch_size, self.seq_len, self.d_model))
+
     # ----------------------------------------------------------------------
-    # 7. KVTC Tests
+    # 7. KVTC Tests (Transform Coding & PCA Calibration)
     # ----------------------------------------------------------------------
     def test_kvtc_compressor_and_store(self):
         """Test KVTCCompressor and KVTCStore runtime transform coding."""
@@ -315,6 +391,12 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertIn("mean_entropy_bits", stats)
         self.assertLessEqual(stats["mean_entropy_bits"], 5.0)
 
+        # Dynamic decoding steps (N=1)
+        k_dec = torch.randn(B, H, 1, D)
+        v_dec = torch.randn(B, H, 1, D)
+        k_hat_dec, v_hat_dec, _ = store.compress_kv_cache(k_dec, v_dec)
+        self.assertEqual(k_hat_dec.shape, (B, H, 1, D))
+
         # Test model compressor
         model = ToyTransformerBlock(d_model=self.d_model)
         compressor = KVTCCompressor(model, bits=4, pca_energy=0.95)
@@ -322,6 +404,12 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertEqual(comp_stats["compressor_name"], "kvtc")
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+
+        # Factory with kwargs
+        model_kvtc = ToyTransformerBlock(d_model=self.d_model)
+        comp_kvtc = kvtc_factory(model_kvtc, bits=8, pca_energy=0.90)
+        out_kvtc = comp_kvtc(self.dummy_x)
+        self.assertEqual(out_kvtc.shape, (self.batch_size, self.seq_len, self.d_model))
 
     # ----------------------------------------------------------------------
     # 8. CacheNotes Tests
@@ -350,6 +438,12 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
 
+        # Factory with kwargs
+        model_cn = ToyTransformerBlock(d_model=self.d_model)
+        comp_cn = cachenotes_factory(model_cn, task_type="math", keep_ratio=0.5)
+        out_cn = comp_cn(self.dummy_x)
+        self.assertEqual(out_cn.shape, (self.batch_size, self.seq_len, self.d_model))
+
     # ----------------------------------------------------------------------
     # 9. ZeroKV-Neo Tests
     # ----------------------------------------------------------------------
@@ -366,6 +460,12 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertEqual(k_c.shape, (B, H, 20, D))
         self.assertEqual(v_c.shape, (B, H, 20, D))
 
+        # Autoregressive decoding token update (N=1)
+        k_step = torch.randn(B, H, 1, D)
+        v_step = torch.randn(B, H, 1, D)
+        k_c2, v_c2 = cache.update_and_compress(k_step, v_step)
+        self.assertEqual(k_c2.shape, (B, H, 20, D))
+
         # Model compressor
         model = ToyTransformerBlock(d_model=self.d_model)
         compressor = ZeroKVNeoCompressor(model, keep_ratio=0.3, num_attention_sinks=4)
@@ -373,6 +473,12 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertEqual(stats["compressor_name"], "zerokv_neo")
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+
+        # Factory with kwargs
+        model_zk = ToyTransformerBlock(d_model=self.d_model)
+        comp_zk = zerokv_neo_factory(model_zk, keep_ratio=0.4, num_attention_sinks=2)
+        out_zk = comp_zk(self.dummy_x)
+        self.assertEqual(out_zk.shape, (self.batch_size, self.seq_len, self.d_model))
 
     # ----------------------------------------------------------------------
     # 10. MoDeGPT Tests
@@ -386,6 +492,12 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertEqual(stats["rank"], 16)
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+
+        # Factory with kwargs
+        model_mg = ToyTransformerBlock(d_model=self.d_model)
+        comp_mg = modegpt_factory(model_mg, rank=32)
+        out_mg = comp_mg(self.dummy_x)
+        self.assertEqual(out_mg.shape, (self.batch_size, self.seq_len, self.d_model))
 
     # ----------------------------------------------------------------------
     # 11. HuffmanCoder Tests
@@ -413,6 +525,114 @@ class TestQuantizationAndKVCacheCompression(unittest.TestCase):
         self.assertIn("huffman_compression_ratio", stats)
         out = comp_model(self.dummy_x)
         self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+
+        # Factory with kwargs
+        model_hf = ToyTransformerBlock(d_model=self.d_model)
+        comp_hf = huffman_factory(model_hf, quantize_bits=4)
+        out_hf = comp_hf(self.dummy_x)
+        self.assertEqual(out_hf.shape, (self.batch_size, self.seq_len, self.d_model))
+
+    # ----------------------------------------------------------------------
+    # 12. UniQL Tests
+    # ----------------------------------------------------------------------
+    def test_uniql_compressor(self):
+        """Test UniQL joint low-rank + uniform quantization compressor."""
+        model = ToyTransformerBlock(d_model=self.d_model)
+        compressor = UniQLCompressor(model, rank=16, bits=8)
+        comp_model, stats = compressor.compress()
+
+        self.assertEqual(stats["compressor_name"], "uniql")
+        out = comp_model(self.dummy_x)
+        self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+        self.assertFalse(torch.isnan(out).any())
+
+        # Factory with kwargs
+        model_u = ToyTransformerBlock(d_model=self.d_model)
+        comp_u = uniql_factory(model_u, rank=8, bits=4)
+        out_u = comp_u(self.dummy_x)
+        self.assertEqual(out_u.shape, (self.batch_size, self.seq_len, self.d_model))
+
+    # ----------------------------------------------------------------------
+    # 13. SDRM Tests
+    # ----------------------------------------------------------------------
+    def test_sdrm_compressor(self):
+        """Test SDRM budget-proportional rank allocation compressor."""
+        model = ToyTransformerBlock(d_model=self.d_model)
+        compressor = SDRMCompressor(model, total_param_ratio=0.5)
+        comp_model, stats = compressor.compress()
+
+        self.assertEqual(stats["compressor_name"], "sdrm")
+        self.assertIn("total_param_ratio", stats)
+        out = comp_model(self.dummy_x)
+        self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+        self.assertFalse(torch.isnan(out).any())
+
+        # Factory with kwargs
+        model_s = ToyTransformerBlock(d_model=self.d_model)
+        comp_s = sdrm_compressor_factory(model_s, total_param_ratio=0.6)
+        out_s = comp_s(self.dummy_x)
+        self.assertEqual(out_s.shape, (self.batch_size, self.seq_len, self.d_model))
+
+    # ----------------------------------------------------------------------
+    # 14. ENLighten Tests (Vectorized 2:4 Sparsity)
+    # ----------------------------------------------------------------------
+    def test_enlighten_compressor(self):
+        """Test ENLighten low-rank SVD + 2:4 structured sparsity compressor."""
+        model = ToyTransformerBlock(d_model=self.d_model)
+        compressor = ENLightenCompressor(model, rank=16, sparsity=0.5)
+        comp_model, stats = compressor.compress()
+
+        self.assertEqual(stats["compressor_name"], "enlighten")
+        self.assertIn("rank", stats)
+        self.assertIn("sparsity", stats)
+        out = comp_model(self.dummy_x)
+        self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+        self.assertFalse(torch.isnan(out).any())
+
+        # Factory with kwargs
+        model_e = ToyTransformerBlock(d_model=self.d_model)
+        comp_e = enlighten_factory(model_e, rank=8, sparsity=0.5)
+        out_e = comp_e(self.dummy_x)
+        self.assertEqual(out_e.shape, (self.batch_size, self.seq_len, self.d_model))
+
+    # ----------------------------------------------------------------------
+    # 15. NLI Softmax Tests
+    # ----------------------------------------------------------------------
+    def test_nli_softmax_and_compressor(self):
+        """Test NLISoftmax autograd function, backward stability, and model compressor."""
+        # Test function forward and backward
+        x = torch.randn(2, 4, 16, requires_grad=True)
+        y = nli_softmax(x, dim=-1)
+        self.assertEqual(y.shape, (2, 4, 16))
+        self.assertTrue(torch.allclose(y.sum(dim=-1), torch.ones(2, 4)))
+
+        loss = y.sum()
+        loss.backward()
+        self.assertIsNotNone(x.grad)
+        self.assertEqual(x.grad.shape, (2, 4, 16))
+        self.assertFalse(torch.isnan(x.grad).any())
+
+        # Test NLISoftmax module
+        mod = NLISoftmax(dim=-1)
+        out_mod = mod(x.detach())
+        self.assertEqual(out_mod.shape, (2, 4, 16))
+
+        # Test NLISoftmaxCompressor
+        model = ToyTransformerBlock(d_model=self.d_model)
+        compressor = NLISoftmaxCompressor(model)
+        comp_model, stats = compressor.compress()
+        self.assertEqual(stats["compressor_name"], "nli_softmax")
+        self.assertGreater(stats["softmax_modules_replaced"], 0)
+
+        out = comp_model(self.dummy_x)
+        self.assertEqual(out.shape, (self.batch_size, self.seq_len, self.d_model))
+        self.assertFalse(torch.isnan(out).any())
+
+        # Factory with kwargs
+        model_nli = ToyTransformerBlock(d_model=self.d_model)
+        comp_nli = nli_softmax_factory(model_nli)
+        out_nli = comp_nli(self.dummy_x)
+        self.assertEqual(out_nli.shape, (self.batch_size, self.seq_len, self.d_model))
 
 
 if __name__ == "__main__":

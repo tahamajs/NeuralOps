@@ -21,10 +21,8 @@ The core idea of CoMe is to reduce the number of transformer layers without disc
 
 The `concat_merge` method likely involves:
 
-- Selecting which layers to merge based on a similarity or importance criterion (the `--skip-method` flag may control this).
-- For each group of layers to merge, concatenating their weight matrices (e.g., `[W_layer_i, W_layer_i+1]` along the input dimension for projections, or along the output dimension, depending on the layer type) and adjusting the subsequent layer to accept the wider representation.
-- Using a small calibration dataset (`--calibration-dataset`) to align the scales or to compute merging coefficients.
-- The `--wo-repeat` flag possibly avoids repeating weights or ensures no overlapping merges.
+Selecting which layers to merge based on a similarity or importance criterion (the `--skip-method` flag may control this). Furthermore, For each group of layers to merge, concatenating their weight matrices (e.g., `[W_layer_i, W_layer_i+1]` along the input dimension for projections, or along the output dimension, depending on the layer type) and adjusting the subsequent layer to accept the wider representation. Concurrently, Using a small calibration dataset (`--calibration-dataset`) to align the scales or to compute merging coefficients. In this setting, The `--wo-repeat` flag possibly avoids repeating weights or ensures no overlapping merges.
+
 
 The result is a shallower but wider model that can be significantly faster during inference while maintaining much of the accuracy.
 
@@ -52,17 +50,13 @@ class CoMeCompressor:
         ...
 ```
 
-- **`model`**: The HuggingFace model (e.g., `AutoModelForSequenceClassification`).
-- **`tokenizer`**: The corresponding tokenizer.
-- **`target_layers`**: Exact number of layers to keep after merging. If `None`, it is derived from `sparsity`.
-- **`sparsity`**: Fraction of original layers to **remove** (default 0.3 → keep 70%).
-- **`device`**: Device string (currently unused in the wrapper but could be used for future in‑memory operations).
+Specifically, regarding \textbf{`model`}, the HuggingFace model (e.g., `AutoModelForSequenceClassification`). Furthermore, regarding \textbf{`tokenizer`}, the corresponding tokenizer. Concurrently, regarding \textbf{`target_layers`}, exact number of layers to keep after merging. If `None`, it is derived from `sparsity`. In this setting, regarding \textbf{`sparsity`}, fraction of original layers to **remove** (default 0.3 → keep 70%). Additionally, regarding \textbf{`device`}, device string (currently unused in the wrapper but could be used for future in‑memory operations).
+
 
 The `compress()` method accepts:
 
-- **`save_dir`**: Directory where the compressed model will be saved (default `"come_pruned"`).
-- **`calibration_dataset`**: Dataset name for calibration (e.g., `"wiki2"`, `"c4"`). Passed to the CoMe script.
-- **`nsamples`**: Number of calibration samples (default 256).
+Specifically, regarding \textbf{`save_dir`}, directory where the compressed model will be saved (default `"come_pruned"`). Furthermore, regarding \textbf{`calibration_dataset`}, dataset name for calibration (e.g., `"wiki2"`, `"c4"`). Passed to the CoMe script. Concurrently, regarding \textbf{`nsamples`}, number of calibration samples (default 256).
+
 
 ### Subprocess Command Construction
 
@@ -142,19 +136,13 @@ After compression, `compressed_model` and `compressed_tokenizer` can be used lik
 
 ### Advantages
 
-- **Significant depth reduction**: By merging layers, CoMe can drastically cut inference latency (fewer sequential layers) while keeping the model size manageable (width increases).
-- **High accuracy retention**: Layer concatenation preserves more information than simple layer dropping because no weights are thrown away—they are rearranged.
-- **One‑shot compression**: No retraining required; only a small calibration set is needed for the merging algorithm.
-- **Seamless HuggingFace integration**: The output is a standard transformers model, directly loadable.
+Specifically, regarding \textbf{Significant depth reduction}, by merging layers, CoMe can drastically cut inference latency (fewer sequential layers) while keeping the model size manageable (width increases). Furthermore, regarding \textbf{High accuracy retention}, layer concatenation preserves more information than simple layer dropping because no weights are thrown away—they are rearranged. Concurrently, regarding \textbf{One‑shot compression}, no retraining required; only a small calibration set is needed for the merging algorithm. In this setting, regarding \textbf{Seamless HuggingFace integration}, the output is a standard transformers model, directly loadable.
+
 
 ### Limitations
 
-- **External dependency**: The actual compression logic resides in the CoMe repository; this wrapper is only as good as the underlying implementation.
-- **Subprocess overhead**: Running a separate Python process adds complexity and makes debugging harder.
-- **Fixed `concat_merge` method**: Only one merging strategy is exposed. The original CoMe may offer other methods (like `bi` merging, `skip` etc.), but they are not accessible through this wrapper without modification.
-- **Width blow‑up**: Concatenating layers increases the hidden dimension of the merged layers, which may offset some speed gains if not handled efficiently. The CoMe paper likely addresses this with a re‑projection step.
-- **Tokenizer must be saved/loaded**: The tokenizer is saved and reloaded, which is unnecessary if it doesn't change. It would be more efficient to return the original tokenizer.
-- **Temporary file I/O**: Writing the whole model to disk and reading it back is slow for very large models; an in‑memory pipeline would be preferable.
+Specifically, regarding \textbf{External dependency}, the actual compression logic resides in the CoMe repository; this wrapper is only as good as the underlying implementation. Furthermore, regarding \textbf{Subprocess overhead}, running a separate Python process adds complexity and makes debugging harder. Concurrently, regarding \textbf{Fixed `concat_merge` method}, only one merging strategy is exposed. The original CoMe may offer other methods (like `bi` merging, `skip` etc.), but they are not accessible through this wrapper without modification. In this setting, regarding \textbf{Width blow‑up}, concatenating layers increases the hidden dimension of the merged layers, which may offset some speed gains if not handled efficiently. The CoMe paper likely addresses this with a re‑projection step. Additionally, regarding \textbf{Tokenizer must be saved/loaded}, the tokenizer is saved and reloaded, which is unnecessary if it doesn't change. It would be more efficient to return the original tokenizer. Moreover, regarding \textbf{Temporary file I/O}, writing the whole model to disk and reading it back is slow for very large models; an in‑memory pipeline would be preferable.
+
 
 ### Comparison with Other Layer‑Reduction Methods
 

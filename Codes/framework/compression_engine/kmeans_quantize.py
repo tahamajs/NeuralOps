@@ -56,7 +56,7 @@ class KMeansSTEFunction(torch.autograd.Function):
 
             grad_centroids = torch.zeros_like(centroids)
             flat_indices = indices.view(-1)
-            flat_grad_W = grad_W.view(-1)
+            flat_grad_W = grad_W.view(-1).to(dtype=centroids.dtype, device=centroids.device)
             grad_centroids.scatter_add_(0, flat_indices, flat_grad_W)
 
         return grad_centroids, None, grad_x, grad_bias
@@ -128,7 +128,7 @@ class KMeansLinear(nn.Module):
         self.n_clusters = n_clusters
 
         centroids, indices = fast_kmeans_1d(linear.weight.data, n_clusters=n_clusters)
-        self.centroids = nn.Parameter(centroids)
+        self.centroids = nn.Parameter(centroids.to(dtype=linear.weight.dtype))
         self.register_buffer("indices", indices)
 
         if linear.bias is not None:
@@ -138,9 +138,18 @@ class KMeansLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.training:
-            return KMeansSTEFunction.apply(self.centroids, self.indices, x, self.bias)
-        W = self.centroids[self.indices].to(dtype=x.dtype)
-        return F.linear(x, W, self.bias)
+            return KMeansSTEFunction.apply(
+                self.centroids,
+                self.indices,
+                x,
+                self.bias.to(dtype=x.dtype, device=x.device) if self.bias is not None else None,
+            )
+        W = self.centroids[self.indices].to(dtype=x.dtype, device=x.device)
+        return F.linear(
+            x,
+            W,
+            self.bias.to(dtype=x.dtype, device=x.device) if self.bias is not None else None,
+        )
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, n_clusters={self.n_clusters}"
@@ -192,10 +201,10 @@ class KMeansCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kmeans")
-def kmeans_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def kmeans_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """KMeans compressor factory function."""
-    n_clusters = getattr(comp_config, "kmeans_clusters", 256) if comp_config else 256
-    bits = getattr(comp_config, "kmeans_bits", None) if comp_config else None
-    compressor = KMeansCompressor(model, n_clusters=n_clusters, bits=bits)
+    n_clusters = kwargs.get("n_clusters", getattr(comp_config, "kmeans_clusters", 256) if comp_config is not None else 256)
+    bits = kwargs.get("bits", getattr(comp_config, "kmeans_bits", None) if comp_config is not None else None)
+    compressor = KMeansCompressor(model, n_clusters=n_clusters, bits=bits, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

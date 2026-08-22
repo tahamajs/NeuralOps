@@ -51,8 +51,8 @@ The compressed weight `W_approx` (shape M×N) directly replaces the original wei
 
 ### A. Compression Time Complexity
 
-- **Per layer**: Full SVD of an M×N matrix costs O(M·N·min(M,N)). For a 768×768 matrix, this is roughly 4.5×10⁸ operations, taking a few milliseconds on a GPU.
-- **Total**: For a model with L linear layers (e.g., ~72 in DistilBERT), compression finishes in seconds.
+Specifically, regarding \textbf{Per layer}, full SVD of an M×N matrix costs O(M·N·min(M,N)). For a 768×768 matrix, this is roughly 4.5×10⁸ operations, taking a few milliseconds on a GPU. Furthermore, regarding \textbf{Total}, for a model with L linear layers (e.g., ~72 in DistilBERT), compression finishes in seconds.
+
 
 ### B. Inference Complexity
 
@@ -60,8 +60,8 @@ After compression, the weight matrix is still a dense M×N tensor. The forward p
 
 ### C. Memory Usage
 
-- **During compression**: The weight matrix and its SVD components (U, Σ, V) require a few times the weight size temporarily.
-- **After compression**: The parameter count remains unchanged (M·N floats). The model size in memory does not decrease. To reduce memory, one would need to extract and store the factor matrices.
+Specifically, regarding \textbf{During compression}, the weight matrix and its SVD components (U, Σ, V) require a few times the weight size temporarily. Furthermore, regarding \textbf{After compression}, the parameter count remains unchanged (M·N floats). The model size in memory does not decrease. To reduce memory, one would need to extract and store the factor matrices.
+
 
 ---
 
@@ -76,7 +76,8 @@ class SwiftSVDCompressor(BaseCompressor):
         self.rank_ratio = rank_ratio
 ```
 
-- **`rank_ratio`**: Fraction of the maximum rank to keep. Must be between 0 and 1. Default 0.5 (keep 50% of the singular components).
+Specifically, regarding \textbf{`rank_ratio`}, fraction of the maximum rank to keep. Must be between 0 and 1. Default 0.5 (keep 50% of the singular components).
+
 
 **`compress()` method**:
 
@@ -127,17 +128,13 @@ Then run the compression pipeline. All linear layers will be replaced by their r
 
 ### Advantages
 
-- **Extremely simple**: Only a few lines of code; very easy to understand, debug, and integrate.
-- **No calibration data**: Works out‑of‑the‑box on any pretrained model.
-- **Uniform relative compression**: The ratio ensures consistent treatment across layers of different sizes.
-- **Fast**: SVD on GPU is rapid for typical dimensions.
+Specifically, regarding \textbf{Extremely simple}, only a few lines of code; very easy to understand, debug, and integrate. Furthermore, regarding \textbf{No calibration data}, works out‑of‑the‑box on any pretrained model. Concurrently, regarding \textbf{Uniform relative compression}, the ratio ensures consistent treatment across layers of different sizes. In this setting, regarding \textbf{Fast}, sVD on GPU is rapid for typical dimensions.
+
 
 ### Limitations
 
-- **No direct memory or speed benefit**: The weight remains a dense matrix; parameter count and inference cost are unchanged. The compression is only in the effective rank, which can be exploited later by factorisation.
-- **Fixed ratio for all layers**: All layers receive the same rank fraction, ignoring differences in singular value decay. Some layers might tolerate more compression, others less.
-- **Bias not compressed**: Biases remain full precision, but this is a minor issue.
-- **SVD cost could be high for very large matrices**: For huge layers (e.g., hidden size > 4096), full SVD may become memory‑intensive on GPU; moving to CPU or using randomized SVD would be needed.
+Specifically, regarding \textbf{No direct memory or speed benefit}, the weight remains a dense matrix; parameter count and inference cost are unchanged. The compression is only in the effective rank, which can be exploited later by factorisation. Furthermore, regarding \textbf{Fixed ratio for all layers}, all layers receive the same rank fraction, ignoring differences in singular value decay. Some layers might tolerate more compression, others less. Concurrently, regarding \textbf{Bias not compressed}, biases remain full precision, but this is a minor issue. In this setting, regarding \textbf{SVD cost could be high for very large matrices}, for huge layers (e.g., hidden size > 4096), full SVD may become memory‑intensive on GPU; moving to CPU or using randomized SVD would be needed.
+
 
 ### Comparison with Other SVD Methods
 

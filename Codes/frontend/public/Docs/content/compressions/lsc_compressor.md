@@ -61,18 +61,17 @@ Let $W \in \mathbb{R}^{N \times M}$ be a target linear weight matrix.
 ### 3.1 Dataflow & Execution Pipeline
 
 1. **Linear Layer Extraction**:
-   - Extract weight matrix $W \in \mathbb{R}^{N \times M}$ in FP32 CPU numpy format.
+Extract weight matrix $W \in \mathbb{R}^{N \times M}$ in FP32 CPU numpy format.
+
 2. **Frequency Domain Transformation**:
-   - Compute 2D FFT `W_fft = np.fft.fft2(W)`.
-   - Calculate magnitude spectrum `magnitude = np.abs(W_fft)`.
+Compute 2D FFT `W_fft = np.fft.fft2(W)`. Furthermore, Calculate magnitude spectrum `magnitude = np.abs(W_fft)`.
+
 3. **Spectral Mode Truncation**:
-   - Sort magnitude values in descending order.
-   - Extract top $r^2$ frequency mode indices: `flat_idx = np.argsort(magnitude.ravel())[::-1][: rank * rank]`.
-   - Construct binary frequency mask `mask[flat_idx] = 1`.
+Sort magnitude values in descending order. Furthermore, Extract top $r^2$ frequency mode indices: `flat_idx = np.argsort(magnitude.ravel())[::-1][: rank * rank]`. Concurrently, Construct binary frequency mask `mask[flat_idx] = 1`.
+
 4. **Spatial Domain Re-projection**:
-   - Apply mask to frequency coefficients `W_fft * mask`.
-   - Reconstruct spatial weights via inverse FFT `W_comp = np.fft.ifft2(W_fft * mask).real`.
-   - Cast $W_{\text{LSC}}$ back to original PyTorch tensor dtype and CUDA device.
+Apply mask to frequency coefficients `W_fft * mask`. Furthermore, Reconstruct spatial weights via inverse FFT `W_comp = np.fft.ifft2(W_fft * mask).real`. Concurrently, Cast $W_{\text{LSC}}$ back to original PyTorch tensor dtype and CUDA device.
+
 
 ```
 Spatial Weights W ──► Compute 2D FFT (np.fft.fft2) ──► Calculate Spectral Magnitude |W_fft|
@@ -107,7 +106,8 @@ where $\Omega_{\text{top}}$ is the set of retained top $r^2$ frequency mode coor
 
 ### 5.2 Failure Cases
 
-- **Non-Periodic Spatial Discontinuities**: High spatial frequency sharp transitions (such as isolated outlier weights) require a large number of Fourier modes ($r > 256$) to reconstruct accurately without ringing artifacts.
+Specifically, regarding \textbf{Non-Periodic Spatial Discontinuities}, high spatial frequency sharp transitions (such as isolated outlier weights) require a large number of Fourier modes ($r > 256$) to reconstruct accurately without ringing artifacts.
+
 
 ---
 

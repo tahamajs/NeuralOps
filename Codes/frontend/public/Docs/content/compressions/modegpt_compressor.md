@@ -23,8 +23,8 @@ In multi‑head self‑attention, the query, key, and value projections are usua
 
 Given:
 
-- **W_q** ∈ ℝ<sup>H×D</sup>
-- **W_k** ∈ ℝ<sup>H×D</sup>
+**W_q** ∈ ℝ<sup>H×D</sup> Furthermore, **W_k** ∈ ℝ<sup>H×D</sup>
+
 
 Construct:
 
@@ -70,8 +70,8 @@ The compressor traverses all modules. For each module that contains **both** `q_
 
 For a single pair of weight matrices of size H×D:
 
-- **SVD of joint matrix** (size 2H×D): O(2H·D·min(2H, D)). In practice, H ≈ D ≈ 768, so min is ≈ 768, giving O(H·D·H) ≈ O(H²D). For typical sizes this is ~4.5×10⁸ operations, which takes a few milliseconds on CPU.
-- The rest (splitting, copying) is O(H·D). Thus, total compression time per block is dominated by the SVD. For a model with L=6 transformer blocks, total time is a few seconds.
+**SVD of joint matrix** (size 2H×D): O(2H·D·min(2H, D)). In practice, H ≈ D ≈ 768, so min is ≈ 768, giving O(H·D·H) ≈ O(H²D). For typical sizes this is ~4.5×10⁸ operations, which takes a few milliseconds on CPU. Furthermore, The rest (splitting, copying) is O(H·D). Thus, total compression time per block is dominated by the SVD. For a model with L=6 transformer blocks, total time is a few seconds.
+
 
 ### B. Inference Complexity
 
@@ -79,8 +79,8 @@ After compression, the Q and K weight matrices are still dense (of original shap
 
 ### C. Memory Usage
 
-- **During compression**: The joint matrix (2H×D) and its SVD factors (U, Σ, Vt) require storage of several times the original weight size. This is modest (a few MB per layer).
-- **After compression**: The weight tensors remain full size; there is **no immediate reduction in model storage**. The compressed pair, however, has an effective rank of `r`, meaning that if one stores the factors explicitly (A and V^T), the number of parameters reduces from 2·H·D to r·(2H + D). For example, with H=D=768 and r=64, original parameters = 2·589,824 = 1,179,648, compressed factors = 64·(1536+768) = 147,456, a factor of 8× reduction. To realise these savings, the weights must be converted to a factorised format in a subsequent step.
+Specifically, regarding \textbf{During compression}, the joint matrix (2H×D) and its SVD factors (U, Σ, Vt) require storage of several times the original weight size. This is modest (a few MB per layer). Furthermore, regarding \textbf{After compression}, the weight tensors remain full size; there is **no immediate reduction in model storage**. The compressed pair, however, has an effective rank of `r`, meaning that if one stores the factors explicitly (A and V^T), the number of parameters reduces from 2·H·D to r·(2H + D). For example, with H=D=768 and r=64, original parameters = 2·589,824 = 1,179,648, compressed factors = 64·(1536+768) = 147,456, a factor of 8× reduction. To realise these savings, the weights must be converted to a factorised format in a subsequent step.
+
 
 ---
 
@@ -96,22 +96,16 @@ class MoDeGPTCompressor(BaseCompressor):
         self.method = method
 ```
 
-- **`rank`**: Target rank for the joint SVD (default 64). Applied uniformly to all detected pairs.
-- **`method`**: Placeholder for future decomposition strategy (`'cr'` or `'cur'`); currently unused. All compressions use SVD.
+Specifically, regarding \textbf{`rank`}, target rank for the joint SVD (default 64). Applied uniformly to all detected pairs. Furthermore, regarding \textbf{`method`}, placeholder for future decomposition strategy (`'cr'` or `'cur'`); currently unused. All compressions use SVD.
+
 
 **`compress()`**:
 
 1. Iterates over all named modules.
 2. Checks if the module has both `q_lin` and `k_lin` attributes (using `hasattr`).
 3. For each such pair:
-   - Extracts weight matrices as float32.
-   - Concatenates vertically: `W_joint = torch.cat([W_q, W_k], dim=0)`.
-   - Computes SVD: `U, S, Vt = torch.linalg.svd(W_joint, full_matrices=False)`.
-   - Determines effective rank `r = min(self.rank, min(W_joint.shape))`.
-   - Forms low‑rank factors: `U_r = U[:, :r] * S[:r].unsqueeze(0)` and `Vt_r = Vt[:r, :]`.
-   - Reconstructs `W_approx = U_r @ Vt_r`.
-   - Splits back into Q and K portions based on the original row counts.
-   - Writes the approximations back, preserving the original dtype.
+Extracts weight matrices as float32. Furthermore, Concatenates vertically: `W_joint = torch.cat([W_q, W_k], dim=0)`. Concurrently, Computes SVD: `U, S, Vt = torch.linalg.svd(W_joint, full_matrices=False)`. In this setting, Determines effective rank `r = min(self.rank, min(W_joint.shape))`. Additionally, Forms low‑rank factors: `U_r = U[:, :r] * S[:r].unsqueeze(0)` and `Vt_r = Vt[:r, :]`. Moreover, Reconstructs `W_approx = U_r @ Vt_r`. From an analytical standpoint, Splits back into Q and K portions based on the original row counts. In terms of operational dynamics, Writes the approximations back, preserving the original dtype.
+
 4. Updates the compressed parameter count and returns the model with stats.
 
 **Note**: The method does not currently process other pairs (e.g., V and out). The `method` parameter is not used, but is accepted for compatibility.
@@ -158,19 +152,13 @@ Then run the compression pipeline. The Q and K projection weights in each transf
 
 ### Advantages
 
-- **Joint compression exploits redundancy**: By sharing the right singular vectors between Q and K, MoDeGPT achieves a greater parameter reduction for a given rank compared to independent compression.
-- **Simple and calibration‑free**: Works on weights alone; no data or gradients needed.
-- **Preserves module structure**: The layers remain standard `nn.Linear`, so the model is still a valid PyTorch model without custom layers. This eases integration.
-- **Extensible**: The pair‑detection heuristic can be easily extended to other pairs (e.g., V and output) or even to all four projections simultaneously by concatenating more weight matrices.
+Specifically, regarding \textbf{Joint compression exploits redundancy}, by sharing the right singular vectors between Q and K, MoDeGPT achieves a greater parameter reduction for a given rank compared to independent compression. Furthermore, regarding \textbf{Simple and calibration‑free}, works on weights alone; no data or gradients needed. Concurrently, regarding \textbf{Preserves module structure}, the layers remain standard `nn.Linear`, so the model is still a valid PyTorch model without custom layers. This eases integration. In this setting, regarding \textbf{Extensible}, the pair‑detection heuristic can be easily extended to other pairs (e.g., V and output) or even to all four projections simultaneously by concatenating more weight matrices.
+
 
 ### Limitations
 
-- **Only Q/K pairs**: Currently only modules with `q_lin` and `k_lin` are compressed. V and output projections are left untouched, missing additional compression opportunities.
-- **Dense weight output**: Like many SVD‑based compressors, the weights are still stored as dense matrices; memory savings are only potential unless the factors are explicitly stored.
-- **Fixed rank across layers**: All compressed pairs get the same rank, which may be suboptimal; some layers may need higher rank than others.
-- **Heuristic pair detection**: Relies on specific attribute names (`q_lin`, `k_lin`). If a model uses different naming (e.g., `query`, `key`), the compressor will silently skip those layers.
-- **No fine‑tuning**: Accuracy may drop; fine‑tuning is recommended after compression.
-- **`method` parameter unused**: The presence of a method parameter that does nothing could be confusing.
+Specifically, regarding \textbf{Only Q/K pairs}, currently only modules with `q_lin` and `k_lin` are compressed. V and output projections are left untouched, missing additional compression opportunities. Furthermore, regarding \textbf{Dense weight output}, like many SVD‑based compressors, the weights are still stored as dense matrices; memory savings are only potential unless the factors are explicitly stored. Concurrently, regarding \textbf{Fixed rank across layers}, all compressed pairs get the same rank, which may be suboptimal; some layers may need higher rank than others. In this setting, regarding \textbf{Heuristic pair detection}, relies on specific attribute names (`q_lin`, `k_lin`). If a model uses different naming (e.g., `query`, `key`), the compressor will silently skip those layers. Additionally, regarding \textbf{No fine‑tuning}, accuracy may drop; fine‑tuning is recommended after compression. Moreover, regarding \textbf{`method` parameter unused}, the presence of a method parameter that does nothing could be confusing.
+
 
 ### Comparison with Other Low‑Rank Compressors
 

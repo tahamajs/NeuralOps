@@ -60,25 +60,23 @@ A Kronecker product decomposition **W = A ⊗ B** would require **W** to be repr
 
 ### A. Compression Time Complexity
 
-- **SVD**: For each linear layer of size M×N, the full SVD costs O(M·N·min(M,N)). For a 768×768 matrix, this is about 4.5×10⁸ operations, taking a few milliseconds on GPU.
-- **Layer creation**: O(1) to instantiate and assign weights.
-- Total compression time for a model with L linear layers is O(L·D³), where D is the hidden size. For DistilBERT (L≈72 layers, D=768), compression completes in a few seconds.
+Specifically, regarding \textbf{SVD}, for each linear layer of size M×N, the full SVD costs O(M·N·min(M,N)). For a 768×768 matrix, this is about 4.5×10⁸ operations, taking a few milliseconds on GPU. Furthermore, regarding \textbf{Layer creation}, o(1) to instantiate and assign weights. Concurrently, Total compression time for a model with L linear layers is O(L·D³), where D is the hidden size. For DistilBERT (L≈72 layers, D=768), compression completes in a few seconds.
+
 
 ### B. Inference Complexity
 
 **Original layer**: `y = x @ W^T + bias` costs O(batch·M·N) FLOPs per token.
 
 **SoKALinear**: `y = (x @ V^T) @ U^T + bias` costs:
-- First multiply: `x @ V^T`: O(batch·N·r)
-- Second multiply: `(xV^T) @ U^T`: O(batch·r·M)
-- Total: O(batch·r·(M+N))
+First multiply: `x @ V^T`: O(batch·N·r) Furthermore, Second multiply: `(xV^T) @ U^T`: O(batch·r·M) Concurrently, Total: O(batch·r·(M+N))
+
 
 When `r ≪ min(M,N)`, this is a substantial reduction. For example, with M=N=768, r=8, the speed‑up is roughly (768²) / (2·768·8) = 589,824 / 12,288 ≈ 48× fewer operations. In practice, the actual speed‑up is less due to kernel launch overheads and memory access patterns, but significant gains are achievable, especially for large hidden dimensions.
 
 ### C. Memory Usage
 
-- **During compression**: The weight matrix and its SVD factors (U, Σ, V^T) require a few copies of the weight size, which is modest.
-- **After compression**: The layer stores **U** (M×r), **V** (r×N), and bias (M). The parameter count drops from M·N to r·(M+N) + M. For 768×768 and r=8, original parameters = 589,824, compressed parameters = 8·1536 + 768 ≈ 13,056, a ~45× reduction. This directly reduces the model’s memory footprint.
+Specifically, regarding \textbf{During compression}, the weight matrix and its SVD factors (U, Σ, V^T) require a few copies of the weight size, which is modest. Furthermore, regarding \textbf{After compression}, the layer stores **U** (M×r), **V** (r×N), and bias (M). The parameter count drops from M·N to r·(M+N) + M. For 768×768 and r=8, original parameters = 589,824, compressed parameters = 8·1536 + 768 ≈ 13,056, a ~45× reduction. This directly reduces the model’s memory footprint.
+
 
 ---
 
@@ -92,9 +90,8 @@ class SoKALinear(nn.Module):
         ...
 ```
 
-- **U**: `nn.Parameter` of shape `(out_features, rank)`.
-- **V**: `nn.Parameter` of shape `(rank, in_features)`.
-- **bias**: `nn.Parameter` of shape `(out_features,)`, initialised to zeros.
+Specifically, regarding \textbf{U}, `nn.Parameter` of shape `(out_features, rank)`. Furthermore, regarding \textbf{V}, `nn.Parameter` of shape `(rank, in_features)`. Concurrently, regarding \textbf{bias}, `nn.Parameter` of shape `(out_features,)`, initialised to zeros.
+
 
 **Forward**: `return F.linear( F.linear(x, self.V), self.U.t() ) + self.bias`.
 
@@ -111,12 +108,8 @@ class SoKACompressor(BaseCompressor):
 **`_replace_all_linear()`**:
 
 1. For each `nn.Linear` module:
-   - Compute `U, S, Vh = torch.linalg.svd(W)`.
-   - Set `r = min(rank, min(W.shape))`.
-   - Create a new `SoKALinear` with `in_features`, `out_features`, `r`.
-   - Initialise `U` with `U[:, :r] * S[:r]`, and `V` with `Vh[:r, :]`.
-   - Copy bias if present.
-   - Replace the module in the model hierarchy using `_get_parent`.
+Compute `U, S, Vh = torch.linalg.svd(W)`. Furthermore, Set `r = min(rank, min(W.shape))`. Concurrently, Create a new `SoKALinear` with `in_features`, `out_features`, `r`. In this setting, Initialise `U` with `U[:, :r] * S[:r]`, and `V` with `Vh[:r, :]`. Additionally, Copy bias if present. Moreover, Replace the module in the model hierarchy using `_get_parent`.
+
 
 **`_get_parent(full_name)`**: navigates the module tree to replace the child.
 
@@ -162,19 +155,13 @@ Then run the compression pipeline. All linear layers will be replaced with `SoKA
 
 ### Advantages
 
-- **Significant parameter reduction**: The model size shrinks dramatically, enabling deployment on memory‑constrained devices.
-- **Inference acceleration**: The two small matrix multiplications replace one large one, often yielding a noticeable speed‑up, especially on CPUs and smaller GPUs.
-- **No calibration data**: Works immediately on any pretrained model.
-- **Fine‑tuning friendly**: The factors **U** and **V** are trainable, allowing the model to adapt to the low‑rank constraint.
-- **Simple and robust**: The SVD initialisation provides a good starting point; no iterative optimisation needed.
+Specifically, regarding \textbf{Significant parameter reduction}, the model size shrinks dramatically, enabling deployment on memory‑constrained devices. Furthermore, regarding \textbf{Inference acceleration}, the two small matrix multiplications replace one large one, often yielding a noticeable speed‑up, especially on CPUs and smaller GPUs. Concurrently, regarding \textbf{No calibration data}, works immediately on any pretrained model. In this setting, regarding \textbf{Fine‑tuning friendly}, the factors **U** and **V** are trainable, allowing the model to adapt to the low‑rank constraint. Additionally, regarding \textbf{Simple and robust}, the SVD initialisation provides a good starting point; no iterative optimisation needed.
+
 
 ### Limitations
 
-- **Not a true Kronecker product**: The name promises a structured Kronecker decomposition, but the code delivers a generic low‑rank factorisation. This may be misleading.
-- **Fixed rank for all layers**: All layers receive the same rank, which may be suboptimal. Some layers could be compressed more aggressively than others.
-- **Rank must be chosen manually**: No automatic rank selection based on energy or budget. Users need to experiment to find the best trade‑off.
-- **Loss of accuracy without fine‑tuning**: The truncated SVD loses information; the model’s performance may drop. Fine‑tuning is recommended to recover accuracy.
-- **No bias regularisation**: The bias remains unchanged, which may need adjustment to match the new weight dynamics.
+Specifically, regarding \textbf{Not a true Kronecker product}, the name promises a structured Kronecker decomposition, but the code delivers a generic low‑rank factorisation. This may be misleading. Furthermore, regarding \textbf{Fixed rank for all layers}, all layers receive the same rank, which may be suboptimal. Some layers could be compressed more aggressively than others. Concurrently, regarding \textbf{Rank must be chosen manually}, no automatic rank selection based on energy or budget. Users need to experiment to find the best trade‑off. In this setting, regarding \textbf{Loss of accuracy without fine‑tuning}, the truncated SVD loses information; the model’s performance may drop. Fine‑tuning is recommended to recover accuracy. Additionally, regarding \textbf{No bias regularisation}, the bias remains unchanged, which may need adjustment to match the new weight dynamics.
+
 
 ### Comparison with Other Low‑Rank Methods
 

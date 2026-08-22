@@ -233,8 +233,21 @@ class HybridSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-def hybrid_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def hybrid_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Hybrid SVD factory function."""
     compressor = HybridSVDCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+direct_svd_encoder_factory = hybrid_svd_factory
+hybrid_svd_compressor_factory = hybrid_svd_factory
+
+__all__ = [
+    "SVDSingleHead",
+    "DirectSVDEncoderLayer",
+    "HybridSVDCompressor",
+    "hybrid_svd_factory",
+    "direct_svd_encoder_factory",
+    "hybrid_svd_compressor_factory",
+]

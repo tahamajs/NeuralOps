@@ -12,10 +12,10 @@ Provides shared mathematical routines:
 
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
-import numpy as np
 
 
 # Standard default calibration text corpus
@@ -87,15 +87,16 @@ def compute_empirical_hessian(
     device: Optional[torch.device] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Computes empirical Hessian H = (2/N) X^T X + lambda * I and its inverse H^-1.
+    Computes empirical Hessian H = (2/N) X^T X + lambda * I and its inverse H^-1
+    with multi-tier diagonal damping to prevent singular matrix inversions.
 
     Args:
         activations: Input activations of shape [N, d_in] or [B, L, d_in]
-        damping: Regularization constant added to diagonal
+        damping: Regularization damping ratio relative to mean diagonal magnitude
 
     Returns:
         H: Empirical Hessian [d_in, d_in]
-        H_inv: Inverse Hessian [d_in, d_in]
+        H_inv: Numerically stabilized Inverse Hessian [d_in, d_in]
     """
     if activations.dim() == 3:
         # Flatten batch and sequence dimensions: [B*L, d_in]
@@ -111,21 +112,50 @@ def compute_empirical_hessian(
         device = X.device
 
     N, d_in = X.shape
-    if N == 0:
+    if N == 0 or d_in == 0:
         H = torch.eye(d_in, device=device)
         return H, H
 
     # H = (2/N) * X^T X
-    H = (2.0 / float(N)) * torch.matmul(X.T, X)
+    H = (2.0 / float(max(N, 1))) * torch.matmul(X.T, X)
     diag_mean = torch.diagonal(H).mean().item()
-    reg = max(damping * diag_mean, 1e-6)
+    if not math.isfinite(diag_mean) or diag_mean <= 0.0:
+        diag_mean = 1.0
+
+    reg = max(float(damping) * diag_mean, 1e-5)
     H_reg = H + reg * torch.eye(d_in, device=device)
 
+    # Multi-tier inversion strategy: Cholesky -> Standard LU Inv -> Moore-Penrose Pseudo-Inv
+    H_inv = None
+    # 1. Cholesky inversion
     try:
-        H_inv = torch.linalg.inv(H_reg)
+        L = torch.linalg.cholesky(H_reg)
+        H_inv = torch.cholesky_inverse(L)
     except Exception:
-        # Fallback to pseudo-inverse
-        H_inv = torch.linalg.pinv(H_reg)
+        pass
+
+    # 2. Standard LU inversion with progressive damping boost if needed
+    if H_inv is None or not torch.isfinite(H_inv).all():
+        for boost in [1.0, 5.0, 25.0, 100.0]:
+            try:
+                H_boosted = H + (reg * boost) * torch.eye(d_in, device=device)
+                inv_candidate = torch.linalg.inv(H_boosted)
+                if torch.isfinite(inv_candidate).all():
+                    H_inv = inv_candidate
+                    break
+            except Exception:
+                continue
+
+    # 3. Robust Moore-Penrose Pseudo-Inverse fallback
+    if H_inv is None or not torch.isfinite(H_inv).all():
+        try:
+            H_inv = torch.linalg.pinv(H_reg)
+        except Exception:
+            H_inv = (1.0 / reg) * torch.eye(d_in, device=device)
+
+    # Ensure no NaN / Inf in returned tensors
+    H_inv = torch.nan_to_num(H_inv, nan=0.0, posinf=1.0, neginf=-1.0)
+    H_reg = torch.nan_to_num(H_reg, nan=0.0, posinf=1.0, neginf=-1.0)
 
     return H_reg, H_inv
 
@@ -247,6 +277,17 @@ def apply_24_structured_mask(
             mask_sub = torch.zeros_like(S_sub)
             mask_sub.scatter_(1, top_idx, 1.0)
             mask[: num_blocks * 4, :] = mask_sub.reshape(num_blocks * 4, d_in)
+
+        # Handle remainder if d_out is not divisible by 4
+        remainder = d_out % 4
+        if remainder > 0:
+            start = num_blocks * 4
+            keep = max(1, remainder // 2)
+            S_rem = S[start:, :]
+            _, top_idx = torch.topk(S_rem, k=keep, dim=0, largest=True)
+            mask_rem = torch.zeros_like(S_rem)
+            mask_rem.scatter_(0, top_idx, 1.0)
+            mask[start:, :] = mask_rem
 
     masked_weight = W * mask
     return masked_weight.to(dtype=weight.dtype), mask

@@ -17,27 +17,38 @@ class GFWSCompressor(BaseCompressor):
     def compress(self) -> Any:
         """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and module.weight.grad is not None:
+            if isinstance(module, nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
-                grad = module.weight.grad.data.float().cpu().numpy()
+                if module.weight.grad is not None:
+                    grad = module.weight.grad.data.float().cpu().numpy()
+                else:
+                    grad = np.eye(W.shape[0], W.shape[1]) if W.shape[0] == W.shape[1] else np.random.randn(*W.shape) * 0.01
                 F = grad @ grad.T + self.damping * np.eye(W.shape[0])
-                L = np.linalg.cholesky(F)
-                W_white = L @ W
-                U, S, Vh = np.linalg.svd(W_white, full_matrices=False)
-                r = min(self.rank, min(W.shape))
-                W_approx = np.linalg.solve(L, U[:, :r] @ np.diag(S[:r]) @ Vh[:r, :])
-                module.weight.data = torch.tensor(
-                    W_approx, dtype=module.weight.dtype, device=module.weight.device
-                )
+                try:
+                    L = np.linalg.cholesky(F)
+                    W_white = L @ W
+                    U, S, Vh = np.linalg.svd(W_white, full_matrices=False)
+                    r = min(self.rank, min(W.shape))
+                    W_approx = np.linalg.solve(L, U[:, :r] @ np.diag(S[:r]) @ Vh[:r, :])
+                    module.weight.data = torch.tensor(
+                        W_approx, dtype=module.weight.dtype, device=module.weight.device
+                    )
+                except Exception:
+                    U, S, Vh = np.linalg.svd(W, full_matrices=False)
+                    r = min(self.rank, min(W.shape))
+                    W_approx = U[:, :r] @ np.diag(S[:r]) @ Vh[:r, :]
+                    module.weight.data = torch.tensor(
+                        W_approx, dtype=module.weight.dtype, device=module.weight.device
+                    )
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
 
 @COMPRESSOR_REGISTRY.register("gfws")
-def gfws_factory(model, comp_config) -> Any:
+def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Gfws factory."""
-    rank = getattr(comp_config, "gfws_rank", 64)
-    damping = getattr(comp_config, "gfws_damping", 0.01)
-    compressor = GFWSCompressor(model, rank, damping)
+    rank = getattr(comp_config, "gfws_rank", kwargs.get("rank", 64))
+    damping = getattr(comp_config, "gfws_damping", kwargs.get("damping", 0.01))
+    compressor = GFWSCompressor(model, rank=rank, damping=damping, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

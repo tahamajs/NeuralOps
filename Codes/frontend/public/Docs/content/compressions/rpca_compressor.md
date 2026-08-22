@@ -108,9 +108,8 @@ After $T$ iterations, the cleaned low-rank tensor $L^{(T)}$ is stored in `module
 1. **Target Slicing**: Iterate through all `nn.Linear` layers in the model graph.
 2. **Matrix Initialization**: Extract weight matrix $W$ as FP32 NumPy array. Initialize low-rank component $L = W$ and sparse outlier component $S = \mathbf{0}$.
 3. **Iterative Refinement**: Execute $T = 5$ iterations:
-   - Compute SVD on $L$, truncate to target rank $r$, re-synthesize $L$.
-   - Calculate residual $R = W - L$, apply element-wise soft-thresholding $\mathcal{S}_\mu(R)$ to isolate sparse outlier matrix $S$.
-   - Re-compute low-rank matrix $L = W - S$.
+Compute SVD on $L$, truncate to target rank $r$, re-synthesize $L$. Furthermore, Calculate residual $R = W - L$, apply element-wise soft-thresholding $\mathcal{S}_\mu(R)$ to isolate sparse outlier matrix $S$. Concurrently, Re-compute low-rank matrix $L = W - S$.
+
 4. **Parameter Storage**: Convert cleaned low-rank matrix $L$ back to PyTorch tensor format and assign to layer weights.
 
 ---
@@ -120,8 +119,8 @@ After $T$ iterations, the cleaned low-rank tensor $L^{(T)}$ is stored in `module
 ### 4.1 Memory Footprint Dynamics
 When RPCA is deployed to overwrite weight tensors in-place with low-rank component $L$, memory consumption remains identical to the base model. When deployed as factorized matrices $U_r \operatorname{diag}(\Sigma_r) V_r^T$ plus sparse matrix $S$ (in Coordinate COO format):
 
-- **Dense Weight Parameters**: $P_{\text{dense}} = d_{\text{out}} \cdot d_{\text{in}}$
-- **RPCA Factorized Parameters**: $P_{\text{RPCA}} = r(d_{\text{out}} + d_{\text{in}} + 1) + 2 \cdot \|S\|_0$
+Specifically, regarding \textbf{Dense Weight Parameters}, $P_{\text{dense}} = d_{\text{out}} \cdot d_{\text{in}}$ Furthermore, regarding \textbf{RPCA Factorized Parameters}, $P_{\text{RPCA}} = r(d_{\text{out}} + d_{\text{in}} + 1) + 2 \cdot \|S\|_0$
+
 
 where $\|S\|_0$ is the non-zero element count in sparse outlier matrix $S$.
 
