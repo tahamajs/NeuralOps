@@ -3,100 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVD Compression Hub · GPU Orchestrator Live</title>
+    <title>SVD Linear Attention · GPU Cluster Live Orchestrator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        .glass-card { background: rgba(17, 24, 39, 0.85); border: 1px solid rgba(55, 65, 81, 0.6); backdrop-filter: blur(12px); }
+        body { background-color: #080c16; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .glass-card { background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(51, 65, 85, 0.5); backdrop-filter: blur(16px); }
+        .glass-header { background: rgba(11, 17, 32, 0.85); border-bottom: 1px solid rgba(51, 65, 85, 0.4); backdrop-filter: blur(16px); }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
         ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 3px; }
+        .tab-btn.active { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border-color: rgba(6, 182, 212, 0.4); }
     </style>
 </head>
-<body class="text-slate-100 min-h-screen p-6">
+<body class="text-slate-100 min-h-screen p-4 sm:p-6 antialiased">
     <div class="max-w-7xl mx-auto space-y-6">
-        <!-- Header -->
-        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center glass-card p-5 rounded-2xl shadow-xl gap-4">
-            <div>
-                <div class="flex items-center gap-3">
-                    <div class="h-3 w-3 rounded-full bg-cyan-400 animate-ping"></div>
-                    <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                        SVD Linear Attention <span class="text-cyan-400">· GPU Cluster Live</span>
+        
+        <!-- Top Navigation & Status Bar -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center glass-card p-5 rounded-2xl shadow-2xl gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+                    <span class="w-3 h-3 rounded-full bg-cyan-400 animate-ping absolute"></span>
+                    <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                        SVD Linear Attention <span class="text-cyan-400 font-semibold text-lg">· GPU Cluster Live</span>
                     </h1>
+                    <p class="text-xs text-slate-400 mt-0.5 font-mono">126 Attention Models · GLUE Benchmark Telemetry · RTX 4070 Fast Sweep</p>
                 </div>
-                <p class="text-xs text-slate-400 mt-1">Multi-Worker SVD Kernel & Matrix Training Telemetry · 120-Run Sweep</p>
             </div>
-            <div class="flex items-center gap-4 text-xs font-mono">
-                <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800 text-slate-400">
-                    Host: <span class="text-slate-200">192.168.1.100:8080</span>
+
+            <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+                <div class="bg-slate-900/90 px-3.5 py-1.5 rounded-xl border border-slate-800 text-slate-400 flex items-center gap-2">
+                    <span class="text-slate-500">Host:</span>
+                    <span id="host-display" class="text-cyan-300 font-bold">127.0.0.1:8080</span>
                 </div>
-                <div class="flex items-center gap-2 bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-lg font-bold">
+                <div class="flex items-center gap-2 bg-emerald-950/50 border border-emerald-500/40 text-emerald-400 px-3.5 py-1.5 rounded-xl font-bold shadow-lg shadow-emerald-950/40">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="conn-status">ONLINE</span>
+                    <span id="conn-status">CONNECTED</span>
                 </div>
             </div>
         </header>
 
-        <!-- Hardware & Cluster Overview -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="glass-card p-4 rounded-xl">
+        <!-- KPI Telemetry Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- GPU Compute -->
+            <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
                 <div class="flex justify-between items-center text-xs text-slate-400 font-medium">
                     <span>GPU COMPUTE</span>
-                    <span id="gpu-name" class="text-[10px] text-cyan-400 font-mono">NVIDIA RTX 4070</span>
+                    <span class="text-[10px] text-cyan-400 font-mono">NVIDIA RTX 4070</span>
                 </div>
-                <div class="text-2xl font-black text-cyan-400 mt-2" id="gpu-util">--%</div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                    <div id="gpu-bar" class="bg-cyan-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div class="text-3xl font-black text-cyan-400 mt-2 font-mono" id="gpu-util">--%</div>
+                <div class="w-full bg-slate-800/80 h-2 rounded-full mt-3 overflow-hidden">
+                    <div id="gpu-bar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-2 flex justify-between font-mono">
+                    <span>Target: 80-100%</span>
+                    <span id="gpu-status-text" class="text-cyan-300">Active</span>
                 </div>
             </div>
 
-            <div class="glass-card p-4 rounded-xl">
+            <!-- VRAM Allocation -->
+            <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
                 <div class="flex justify-between items-center text-xs text-slate-400 font-medium">
                     <span>VRAM ALLOCATION</span>
                     <span class="text-[10px] text-purple-400 font-mono">GDDR6</span>
                 </div>
-                <div class="text-2xl font-black text-purple-400 mt-2">
-                    <span id="vram-used">--</span> <span class="text-xs font-normal text-slate-400">/ <span id="vram-total">8.0</span> GB</span>
+                <div class="text-3xl font-black text-purple-400 mt-2 font-mono">
+                    <span id="vram-used">--</span> <span class="text-sm font-normal text-slate-400">/ <span id="vram-total">8.0</span> GB</span>
                 </div>
-                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                    <div id="vram-bar" class="bg-purple-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div class="w-full bg-slate-800/80 h-2 rounded-full mt-3 overflow-hidden">
+                    <div id="vram-bar" class="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-2 flex justify-between font-mono">
+                    <span>System RAM:</span>
+                    <span id="ram-usage" class="text-purple-300">-- GB</span>
                 </div>
             </div>
 
-            <div class="glass-card p-4 rounded-xl">
+            <!-- Thermals & Power -->
+            <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
                 <div class="flex justify-between items-center text-xs text-slate-400 font-medium">
-                    <span>THERMAL & POWER</span>
-                    <span class="text-[10px] text-amber-400 font-mono">Telemetry</span>
+                    <span>THERMALS & POWER</span>
+                    <span class="text-[10px] text-amber-400 font-mono">Sensors</span>
                 </div>
-                <div class="text-2xl font-black text-amber-400 mt-2 flex items-baseline gap-2">
+                <div class="text-3xl font-black text-amber-400 mt-2 font-mono flex items-baseline gap-2">
                     <span id="gpu-temp">--°C</span>
-                    <span class="text-xs font-mono text-slate-400 font-normal" id="gpu-power">-- W</span>
+                    <span class="text-sm text-slate-400 font-normal" id="gpu-power">-- W</span>
                 </div>
-                <div class="text-[11px] text-slate-500 mt-2 font-mono">System RAM: <span id="ram-usage" class="text-slate-300">--</span> GB</div>
+                <div class="w-full bg-slate-800/80 h-2 rounded-full mt-3 overflow-hidden">
+                    <div id="temp-bar" class="bg-gradient-to-r from-amber-500 to-red-500 h-full rounded-full transition-all duration-500" style="width: 50%"></div>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-2 flex justify-between font-mono">
+                    <span>Power Cap: 138W</span>
+                    <span class="text-amber-300">Normal</span>
+                </div>
             </div>
 
-            <div class="glass-card p-4 rounded-xl">
+            <!-- Sweep Throughput & ETA -->
+            <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
                 <div class="flex justify-between items-center text-xs text-slate-400 font-medium">
-                    <span>WORKERS ACTIVE</span>
-                    <span class="text-[10px] text-emerald-400 font-mono">Multiprocess</span>
+                    <span>SWEEP PROGRESS</span>
+                    <span class="text-[10px] text-emerald-400 font-mono" id="task-badge">SST-2 Fast</span>
                 </div>
-                <div class="text-2xl font-black text-emerald-400 mt-2" id="active-workers-count">3 Active</div>
-                <div class="text-[11px] text-slate-400 mt-2 truncate font-mono" id="active-jobs-summary">Parallel GPU Orchestration</div>
+                <div class="text-3xl font-black text-emerald-400 mt-2 font-mono">
+                    <span id="completed-count">0</span> <span class="text-sm font-normal text-slate-400">/ <span id="total-count">126</span></span>
+                </div>
+                <div class="w-full bg-slate-800/80 h-2 rounded-full mt-3 overflow-hidden">
+                    <div id="progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-2 flex justify-between font-mono">
+                    <span>Speed: ~45s/run</span>
+                    <span class="text-emerald-300" id="eta-text">ETA: Calculating...</span>
+                </div>
             </div>
         </div>
 
-        <!-- Main Workspace Grid -->
+        <!-- Main Analytics & Visuals (Dual Chart Panel) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Training Loss Chart -->
+            <!-- Loss Convergence Curve (2 Columns) -->
             <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-xl flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
                     <div>
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            <span>Live Loss Trajectory</span>
-                            <span class="text-xs font-mono bg-cyan-950/80 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800/40" id="current-active-badge">Syncing...</span>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2.5">
+                            <span>Live Training Loss Curve</span>
+                            <span class="text-xs font-mono bg-cyan-950/80 text-cyan-300 px-2.5 py-0.5 rounded-lg border border-cyan-800/50" id="current-active-badge">Syncing...</span>
                         </h2>
-                        <p class="text-xs text-slate-400">Real-time convergence curves sampled directly from worker threads</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Real-time loss telemetry sampled directly from running worker</p>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400 bg-slate-900/80 px-3 py-1 rounded-lg border border-slate-800">
+                        1000 Samples · Batch Size 32
                     </div>
                 </div>
                 <div class="h-72 w-full">
@@ -104,41 +141,113 @@
                 </div>
             </div>
 
-            <!-- Pipeline Matrix -->
+            <!-- Benchmark Accuracy Comparison Bar Chart (1 Column) -->
+            <div class="lg:col-span-1 glass-card p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div class="mb-4">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <span>Top Accuracy (%)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Benchmark accuracy on SST-2 validation split</p>
+                </div>
+                <div class="h-72 w-full">
+                    <canvas id="accuracyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard & Execution Matrix Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Live Leaderboard Table (2 Columns) -->
+            <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-xl flex flex-col">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <span>🏆 Empirical Benchmark Leaderboard</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Ranked by Validation Accuracy & Macro F1 Score</p>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="leaderboard-search" placeholder="Search module..." 
+                            class="bg-slate-900/90 border border-slate-800 text-xs text-slate-200 px-3 py-1.5 rounded-xl font-mono focus:outline-none focus:border-cyan-500 transition w-44">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto flex-1 max-h-96">
+                    <table class="w-full text-left text-xs font-mono">
+                        <thead class="text-[11px] text-slate-400 uppercase bg-slate-900/60 sticky top-0 border-b border-slate-800">
+                            <tr>
+                                <th class="py-2.5 px-3">Rank</th>
+                                <th class="py-2.5 px-3">Attention Model</th>
+                                <th class="py-2.5 px-3 text-right">Accuracy</th>
+                                <th class="py-2.5 px-3 text-right">Macro F1</th>
+                                <th class="py-2.5 px-3 text-right">Loss</th>
+                                <th class="py-2.5 px-3 text-right">Time (s)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body" class="divide-y divide-slate-800/60 text-slate-300">
+                            <tr><td colspan="6" class="py-8 text-center text-slate-500">Loading benchmark results...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Execution Matrix (1 Column) -->
             <div class="lg:col-span-1 glass-card p-6 rounded-2xl shadow-xl flex flex-col">
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-bold text-white">Execution Matrix</h2>
-                    <span class="text-xs font-mono text-cyan-400 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
-                        <span id="completed-count">0</span> Completed
+                    <h2 class="text-base font-bold text-white">Execution Matrix</h2>
+                    <span class="text-xs font-mono text-cyan-400 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800" id="matrix-summary-badge">
+                        0 / 126
                     </span>
                 </div>
-                <div id="matrix-container" class="space-y-3 overflow-y-auto pr-1 flex-1 max-h-72 text-xs font-mono">
+                
+                <!-- Filter Tabs -->
+                <div class="flex items-center gap-1.5 mb-3 text-[11px] font-mono border-b border-slate-800 pb-2">
+                    <button class="tab-btn active px-2.5 py-1 rounded-lg border border-transparent text-slate-400 hover:text-white transition" onclick="setMatrixFilter('all')">All</button>
+                    <button class="tab-btn px-2.5 py-1 rounded-lg border border-transparent text-slate-400 hover:text-white transition" onclick="setMatrixFilter('completed')">Done (●)</button>
+                    <button class="tab-btn px-2.5 py-1 rounded-lg border border-transparent text-slate-400 hover:text-white transition" onclick="setMatrixFilter('running')">Active (►)</button>
+                    <button class="tab-btn px-2.5 py-1 rounded-lg border border-transparent text-slate-400 hover:text-white transition" onclick="setMatrixFilter('queued')">Queued (○)</button>
+                </div>
+
+                <div id="matrix-container" class="space-y-1 overflow-y-auto pr-1 flex-1 max-h-80 text-xs font-mono">
                     <div class="text-slate-500 text-center py-10">Loading run matrix...</div>
                 </div>
             </div>
         </div>
 
-        <!-- Terminal Output -->
+        <!-- Master Terminal Stream -->
         <div class="glass-card p-5 rounded-2xl shadow-xl">
             <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center gap-2">
-                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Master Orchestrator Console Stream</h3>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">Master Orchestrator Console Stream</h3>
                 </div>
-                <span class="text-[11px] text-slate-500 font-mono">Auto-scrolling tail (last 50 events)</span>
+                <div class="flex items-center gap-3 text-[11px] text-slate-500 font-mono">
+                    <span id="log-count">0 lines</span>
+                    <button class="hover:text-cyan-400 transition" onclick="clearLogs()">Clear</button>
+                </div>
             </div>
-            <div class="bg-slate-950/90 p-4 rounded-xl font-mono text-xs h-56 overflow-y-auto text-slate-300 space-y-1 border border-slate-900" id="terminal-out">
-                <span class="text-cyan-400">&gt; Connecting to cluster telemetry server on port 8080...</span>
+            <div class="bg-slate-950/90 p-4 rounded-xl font-mono text-xs h-60 overflow-y-auto text-slate-300 space-y-1 border border-slate-900 select-text" id="terminal-out">
+                <span class="text-cyan-400">&gt; Connecting to cluster telemetry server...</span>
             </div>
         </div>
+
     </div>
 
     <script>
         let lossChart = null;
+        let accuracyChart = null;
+        let activeMatrixFilter = 'all';
+        let cachedResults = {};
+        let cachedMatrix = [];
 
-        function initChart() {
-            const ctx = document.getElementById('lossChart').getContext('2d');
-            lossChart = new Chart(ctx, {
+        // Set dynamic host display
+        document.getElementById('host-display').innerText = window.location.host || '192.168.1.102:8080';
+
+        function initCharts() {
+            // 1. Loss Chart
+            const ctxLoss = document.getElementById('lossChart').getContext('2d');
+            lossChart = new Chart(ctxLoss, {
                 type: 'line',
                 data: {
                     labels: [],
@@ -146,17 +255,18 @@
                         label: 'Training Loss',
                         data: [],
                         borderColor: '#22d3ee',
-                        backgroundColor: 'rgba(34, 211, 238, 0.08)',
-                        borderWidth: 2,
+                        backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                        borderWidth: 2.5,
                         fill: true,
-                        tension: 0.3,
-                        pointRadius: 1
+                        tension: 0.35,
+                        pointRadius: 2,
+                        pointHoverRadius: 5
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: false,
+                    animation: { duration: 300 },
                     scales: {
                         y: {
                             grid: { color: 'rgba(51, 65, 85, 0.3)' },
@@ -168,11 +278,168 @@
                         }
                     },
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            titleFont: { family: 'monospace' },
+                            bodyFont: { family: 'monospace' }
+                        }
+                    }
+                }
+            });
+
+            // 2. Accuracy Comparison Chart
+            const ctxAcc = document.getElementById('accuracyChart').getContext('2d');
+            accuracyChart = new Chart(ctxAcc, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Accuracy (%)',
+                        data: [],
+                        backgroundColor: 'rgba(52, 211, 153, 0.8)',
+                        borderColor: '#34d399',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    animation: { duration: 400 },
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                            ticks: { color: '#94a3b8', font: { family: 'monospace', size: 10 } }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#e2e8f0', font: { family: 'monospace', size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `Accuracy: ${ctx.raw.toFixed(2)}%`
+                            }
+                        }
                     }
                 }
             });
         }
+
+        function setMatrixFilter(filter) {
+            activeMatrixFilter = filter;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(filter));
+            });
+            renderMatrix();
+        }
+
+        function renderMatrix() {
+            if (!cachedMatrix || cachedMatrix.length === 0) return;
+            const container = document.getElementById('matrix-container');
+            let html = '';
+            let total = 0;
+            let completed = 0;
+
+            cachedMatrix.forEach(t => {
+                if (t.runs && Array.isArray(t.runs)) {
+                    total = t.runs.length;
+                    t.runs.forEach(r => {
+                        if (r.status === 'completed') completed++;
+                        
+                        if (activeMatrixFilter !== 'all' && r.status !== activeMatrixFilter) return;
+
+                        let statusClass = 'text-slate-500 hover:text-slate-300';
+                        let dot = '○';
+                        let badge = 'Queued';
+
+                        if (r.status === 'completed') {
+                            statusClass = 'text-emerald-400 font-semibold';
+                            dot = '●';
+                            badge = r.metrics ? `${r.metrics.acc.toFixed(1)}%` : 'Done';
+                        } else if (r.status === 'running') {
+                            statusClass = 'text-cyan-300 font-bold bg-cyan-950/40 p-1 rounded';
+                            dot = '►';
+                            badge = 'Active';
+                        }
+
+                        html += `<div class="flex items-center justify-between py-1 px-1.5 rounded transition ${statusClass}">
+                            <span class="truncate flex items-center gap-1.5">
+                                <span class="text-[10px]">${dot}</span>
+                                <span class="truncate">${r.attn_id}</span>
+                            </span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-800/80 font-mono">${badge}</span>
+                        </div>`;
+                    });
+                }
+            });
+
+            container.innerHTML = html || '<div class="text-slate-500 text-center py-6">No runs match this filter</div>';
+            document.getElementById('matrix-summary-badge').innerText = `${completed} / ${total}`;
+            document.getElementById('completed-count').innerText = completed;
+            document.getElementById('total-count').innerText = total;
+
+            const pct = total > 0 ? (completed / total) * 100 : 0;
+            document.getElementById('progress-bar').style.width = pct + '%';
+            
+            // ETA
+            const remaining = total - completed;
+            const etaMin = Math.round((remaining * 45) / 60);
+            document.getElementById('eta-text').innerText = remaining > 0 ? `ETA: ~${etaMin} min` : 'Completed!';
+        }
+
+        function renderLeaderboard(results) {
+            const tbody = document.getElementById('leaderboard-body');
+            const search = (document.getElementById('leaderboard-search').value || '').toLowerCase();
+            
+            const entries = Object.values(results || {})
+                .filter(r => !search || r.attn.toLowerCase().includes(search))
+                .sort((a, b) => (b.acc || 0) - (a.acc || 0));
+
+            if (entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500">No completed benchmark runs found yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = entries.map((r, i) => {
+                let rankBadge = `<span class="text-slate-500 font-mono">#${i + 1}</span>`;
+                if (i === 0) rankBadge = '🥇 <span class="text-amber-400 font-bold">1st</span>';
+                else if (i === 1) rankBadge = '🥈 <span class="text-slate-300 font-bold">2nd</span>';
+                else if (i === 2) rankBadge = '🥉 <span class="text-amber-600 font-bold">3rd</span>';
+
+                const accClass = r.acc >= 80 ? 'text-emerald-400 font-bold' : (r.acc >= 60 ? 'text-cyan-400' : 'text-slate-300');
+
+                return `<tr class="hover:bg-slate-800/40 transition">
+                    <td class="py-2.5 px-3 whitespace-nowrap">${rankBadge}</td>
+                    <td class="py-2.5 px-3 font-bold text-white flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                        ${r.attn}
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-bold ${accClass}">${r.acc.toFixed(2)}%</td>
+                    <td class="py-2.5 px-3 text-right text-slate-300">${r.f1 ? r.f1.toFixed(2) + '%' : '--'}</td>
+                    <td class="py-2.5 px-3 text-right text-slate-400 font-mono">${r.loss ? r.loss.toFixed(4) : '--'}</td>
+                    <td class="py-2.5 px-3 text-right text-slate-400 font-mono">${r.time_s ? r.time_s.toFixed(1) + 's' : '--'}</td>
+                </tr>`;
+            }).join('');
+
+            // Update Accuracy Bar Chart with Top 7
+            if (accuracyChart) {
+                const top7 = entries.slice(0, 7);
+                accuracyChart.data.labels = top7.map(e => e.attn);
+                accuracyChart.data.datasets[0].data = top7.map(e => e.acc);
+                accuracyChart.update();
+            }
+        }
+
+        document.getElementById('leaderboard-search').addEventListener('input', () => renderLeaderboard(cachedResults));
 
         async function updateDashboard() {
             try {
@@ -180,20 +447,20 @@
                 if (!res.ok) throw new Error("HTTP " + res.status);
                 const data = await res.json();
 
-                document.getElementById('conn-status').innerText = 'ONLINE';
+                document.getElementById('conn-status').innerText = 'CONNECTED';
                 document.getElementById('conn-status').className = 'text-emerald-400 font-bold';
 
                 // Hardware telemetry
                 if (data.gpu) {
-                    const gpuObj = data.gpu;
-                    const util = (typeof gpuObj.gpu_util !== 'undefined') ? Math.round(gpuObj.gpu_util) : Math.round(gpuObj[0] || 0);
-                    const memMb = (typeof gpuObj.mem_used_mb !== 'undefined') ? gpuObj.mem_used_mb : (gpuObj[1] || 0);
-                    const totMb = (typeof gpuObj.mem_total_mb !== 'undefined') ? gpuObj.mem_total_mb : (gpuObj[2] || 8188);
+                    const g = data.gpu;
+                    const util = (typeof g.gpu_util !== 'undefined') ? Math.round(g.gpu_util) : Math.round(g[0] || 0);
+                    const memMb = (typeof g.mem_used_mb !== 'undefined') ? g.mem_used_mb : (g[1] || 0);
+                    const totMb = (typeof g.mem_total_mb !== 'undefined') ? g.mem_total_mb : (g[2] || 8188);
                     const memUsed = (memMb / 1024).toFixed(1);
                     const memTotal = (totMb / 1024).toFixed(1);
-                    const temp = (typeof gpuObj.temp_c !== 'undefined') ? Math.round(gpuObj.temp_c) : Math.round(gpuObj[3] || 0);
-                    const power = (typeof gpuObj.power_w !== 'undefined') ? Math.round(gpuObj.power_w) : Math.round(gpuObj[4] || 0);
-                    const ramUsed = (typeof gpuObj.sys_ram_used_gb !== 'undefined') ? gpuObj.sys_ram_used_gb : (gpuObj[5] || '--');
+                    const temp = (typeof g.temp_c !== 'undefined') ? Math.round(g.temp_c) : Math.round(g[3] || 0);
+                    const power = (typeof g.power_w !== 'undefined') ? Math.round(g.power_w) : Math.round(g[4] || 0);
+                    const ramUsed = (typeof g.sys_ram_used_gb !== 'undefined') ? g.sys_ram_used_gb : (g[5] || '--');
 
                     const gpuUtilEl = document.getElementById('gpu-util');
                     const gpuBarEl = document.getElementById('gpu-bar');
@@ -211,10 +478,10 @@
                     if (vramBarEl) vramBarEl.style.width = Math.min(100, (memMb / (totMb || 8188)) * 100) + '%';
                     if (gpuTempEl) gpuTempEl.innerText = temp + '°C';
                     if (gpuPowerEl) gpuPowerEl.innerText = power + ' W';
-                    if (ramEl) ramEl.innerText = ramUsed;
+                    if (ramEl) ramEl.innerText = ramUsed + ' GB';
                 }
 
-                // Active training curve
+                // Training curve
                 if (data.train_multi && Array.isArray(data.train_multi) && data.train_multi.length > 0) {
                     const firstActive = data.train_multi.find(w => w.loss_history && w.loss_history.length > 0) || data.train_multi[0];
                     const attn = (firstActive.active_model || 'Model').toUpperCase();
@@ -232,39 +499,22 @@
                     }
                 }
 
-                // Matrix
-                if (data.matrix && Array.isArray(data.matrix)) {
-                    let completed = 0;
-                    let html = '';
-                    data.matrix.forEach(t => {
-                        html += `<div class="mb-3"><div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">${t.task || 'TASK'}</div><div class="space-y-1">`;
-                        if (t.runs && Array.isArray(t.runs)) {
-                            t.runs.forEach(r => {
-                                let statusClass = 'text-slate-500';
-                                let dot = '○';
-                                if (r.status === 'completed') {
-                                    statusClass = 'text-emerald-400';
-                                    dot = '●';
-                                    completed++;
-                                } else if (r.status === 'running') {
-                                    statusClass = 'text-cyan-300 font-bold animate-pulse';
-                                    dot = '►';
-                                }
-                                html += `<div class="flex items-center justify-between py-0.5 ${statusClass}">
-                                    <span><span class="mr-1.5">${dot}</span>${r.attn_id}</span>
-                                    <span class="text-[10px] text-slate-500">${r.status}</span>
-                                </div>`;
-                            });
-                        }
-                        html += '</div></div>';
-                    });
-                    document.getElementById('matrix-container').innerHTML = html;
-                    document.getElementById('completed-count').innerText = completed;
+                // Results & Leaderboard
+                if (data.results) {
+                    cachedResults = data.results;
+                    renderLeaderboard(cachedResults);
                 }
 
-                // Console stream
+                // Matrix
+                if (data.matrix) {
+                    cachedMatrix = data.matrix;
+                    renderMatrix();
+                }
+
+                // Console Logs
                 if (data.logs && Array.isArray(data.logs)) {
                     const term = document.getElementById('terminal-out');
+                    document.getElementById('log-count').innerText = `${data.logs.length} lines`;
                     term.innerHTML = data.logs.map(line => {
                         let color = 'text-slate-300';
                         if (line.includes('SUCCESS')) color = 'text-emerald-400 font-bold';
@@ -285,7 +535,11 @@
             }
         }
 
-        initChart();
+        function clearLogs() {
+            document.getElementById('terminal-out').innerHTML = '<div class="text-slate-500">Console cleared. Waiting for next event...</div>';
+        }
+
+        initCharts();
         updateDashboard();
         setInterval(updateDashboard, 3000);
     </script>
