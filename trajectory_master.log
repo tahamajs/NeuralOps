@@ -612,3 +612,5 @@ ompleted)
 [2026-08-22 04:23:41] [Worker-1] [30/126] NOTICE: attn=fusion_attn | task=sst2 | Error: The size of tensor a (12) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.5s
 [2026-08-22 04:23:44] [Worker-1] [31/126] >> Launching: attn=galerkin | task=sst2 | seed=42
 [2026-08-22 04:23:45] [Worker-1] [31/126] NOTICE: attn=galerkin | task=sst2 | Error: The size of tensor a (128) must match the size of tensor b (64) at non-singleton dimension 3 | Time: 0.6s
+[2026-08-22 04:23:47] [Worker-1] [32/126] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
+[2026-08-22 04:24:50] [Worker-1] [32/126] << SUCCESS: attn=gated_delta_net | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6950 | Time: 63.0s
