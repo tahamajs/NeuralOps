@@ -378,3 +378,4 @@ ompleted)
 [2026-08-22 04:08:18] [Worker-3] [36/126] >> Launching: attn=goldfinch_ahn | task=sst2 | seed=42
 [2026-08-22 04:08:34] [Worker-2] [23/126] << SUCCESS: attn=decay_linear_attn | task=sst2 | Acc: 79.82% | F1: 79.76% | Loss: 0.4950 | Time: 19.5s
 [2026-08-22 04:08:34] [Worker-3] [36/126] << SUCCESS: attn=goldfinch_ahn | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7007 | Time: 16.3s
+[2026-08-22 04:08:34] [Worker-1] [35/126] << SUCCESS: attn=gated_linear_attn | task=sst2 | Acc: 79.82% | F1: 79.76% | Loss: 0.4950 | Time: 19.8s
