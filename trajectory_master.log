@@ -495,3 +495,5 @@ ompleted)
 [2026-08-22 04:18:37] [Worker-1] [29/126] -- SKIPPING: attn=full | task=sst2 (Already completed)
 [2026-08-22 04:18:37] [Worker-1] [30/126] >> Launching: attn=fusion_attn | task=sst2 | seed=42
 [2026-08-22 04:18:38] [Worker-1] [30/126] NOTICE: attn=fusion_attn | task=sst2 | Error: The size of tensor a (12) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 1.1s
+[2026-08-22 04:18:40] [Worker-1] [31/126] >> Launching: attn=galerkin | task=sst2 | seed=42
+[2026-08-22 04:18:41] [Worker-1] [31/126] NOTICE: attn=galerkin | task=sst2 | Error: The size of tensor a (128) must match the size of tensor b (64) at non-singleton dimension 3 | Time: 0.6s
