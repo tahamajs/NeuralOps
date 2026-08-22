@@ -1514,3 +1514,6 @@ ompleted)
 [2026-08-22 04:52:40] [Worker-1] [67/126] -- SKIPPING: attn=minimal_svd | task=sst2 (Already completed)
 [2026-08-22 04:52:41] [Worker-1] [68/126] >> Launching: attn=minimal_svd_v2 | task=sst2 | seed=42
 [2026-08-22 04:52:58] [Worker-1] [68/126] << SUCCESS: attn=minimal_svd_v2 | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.8s
+[2026-08-22 04:53:01] [Worker-1] [69/126] -- SKIPPING: attn=mixattention_moska | task=sst2 (Already completed)
+[2026-08-22 04:53:01] [Worker-1] [70/126] >> Launching: attn=mla | task=sst2 | seed=42
+[2026-08-22 04:53:01] [Worker-1] [70/126] NOTICE: attn=mla | task=sst2 | Error: CUDA out of memory. Tried to allocate 192.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.67 GiB is free. 3.20 GiB allowed; Of the allocated memory 3.14 GiB is allocated by PyTorch, and 9.02 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 0.6s
