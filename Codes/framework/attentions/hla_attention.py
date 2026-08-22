@@ -80,12 +80,14 @@ class HLAAttention(BaseAttention):
         v = v.permute(0, 2, 1, 3)
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask.unsqueeze(1).unsqueeze(-1)  # (B, 1, L, 1)
-            elif attention_mask.dim() == 4:
-                mask = (attention_mask > -1).float().permute(0, 2, 3, 1)
+            if attention_mask.dim() == 4:
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).float()
+            elif attention_mask.dim() == 3:
+                mask = attention_mask[:, 0, :]
             else:
-                mask = attention_mask
+                mask = attention_mask.float()
+            
+            mask = mask.unsqueeze(1).unsqueeze(-1)  # (B, 1, L, 1)
             k = k * mask
             v = v * mask
 
