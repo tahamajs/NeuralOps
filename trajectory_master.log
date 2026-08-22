@@ -2016,3 +2016,5 @@ ompleted)
 [2026-08-22 10:16:36] [Worker-2] [119/145] << SUCCESS: attn=tpa | task=sst2 | Acc: 75.23% | F1: 75.06% | Loss: 0.5750 | Time: 19.2s
 [2026-08-22 10:16:38] [Worker-2] [120/145] >> Launching: attn=upi_stuffed_mamba | task=sst2 | seed=42
 [2026-08-22 10:16:38] [Worker-2] [120/145] NOTICE: attn=upi_stuffed_mamba | task=sst2 | Error: mat1 and mat2 shapes cannot be multiplied (8192x768 and 1x2) | Time: 0.8s
+[2026-08-22 10:16:40] [Worker-2] [121/145] >> Launching: attn=vig | task=sst2 | seed=42
+[2026-08-22 10:16:40] [Worker-2] [121/145] NOTICE: attn=vig | task=sst2 | Error: shape '[64, 11, 12]' is invalid for input of size 1048576 | Time: 0.6s
