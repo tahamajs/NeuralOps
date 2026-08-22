@@ -174,8 +174,8 @@ class LEKAV3Attention(BaseAttention):
         attn_weights = torch.matmul(Q_features, K_land.transpose(-2, -1))
 
         # Mask query padding (landmarks already valid)
-        pad_q = (~valid_mask).unsqueeze(1).unsqueeze(-1).to(attn_weights.dtype)  # [B,1,N,1]
-        attn_weights = attn_weights.masked_fill(pad_q, float("-inf"))
+        pad_q = (~valid_mask).unsqueeze(1).unsqueeze(-1)  # [B,1,N,1]
+        attn_weights = attn_weights.masked_fill(pad_q.bool(), -10000.0)
         attn_weights = softpick(attn_weights, dim=-1)
         attn_weights = self.dropout(attn_weights)
 
@@ -189,11 +189,11 @@ class LEKAV3Attention(BaseAttention):
 
         scale = 1.0 / math.sqrt(self.head_dim)
         local_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-        local_scores = local_scores.masked_fill(~window_mask, float("-inf"))
+        local_scores = local_scores.masked_fill(~window_mask.bool(), -10000.0)
 
         # Padding mask for local keys
-        pad_k = (~valid_mask).unsqueeze(1).unsqueeze(2).to(local_scores.dtype)  # [B,1,1,N]
-        local_scores = local_scores.masked_fill(pad_k, float("-inf"))
+        pad_k = (~valid_mask).unsqueeze(1).unsqueeze(2)  # [B,1,1,N]
+        local_scores = local_scores.masked_fill(pad_k.bool(), -10000.0)
 
         local_attn = F.softmax(local_scores, dim=-1)
         context_local = torch.matmul(local_attn, V)

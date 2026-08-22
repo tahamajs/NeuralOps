@@ -312,7 +312,7 @@ class LoLAAttention(BaseAttention):
         return output, (attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("lola_attn")
+@ATTENTION_REGISTRY.register("lola_attn_inject")
 def inject_lola_attn(
     layer: nn.Module,
     model_config: Any,

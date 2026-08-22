@@ -642,7 +642,7 @@ def main() -> None:
     log.info("Training completed.")
 
 
-@ATTENTION_REGISTRY.register("svd_compressed")
+@ATTENTION_REGISTRY.register("svd_compressed_inject")
 def inject_svd_compressed(
     layer: Any,
     model_config: Any,
