@@ -33,18 +33,47 @@ class Registry:
 
         return decorator
 
+    def _try_lazy_load(self, key: str) -> None:
+        """Attempt to lazily load package modules when a key is queried."""
+        k = key.lower()
+        if k in self._dict:
+            return
+        if self.name == "compressors":
+            try:
+                import framework.compression_engine as _ce
+                # Try accessing key from compression_engine
+                _ = getattr(_ce, key, None)
+                if k not in self._dict:
+                    # Try importing module by key directly
+                    import importlib
+                    importlib.import_module(f"framework.compression_engine.{k}")
+            except Exception:
+                pass
+        elif self.name == "attentions":
+            try:
+                import framework.attentions as _att
+                _ = getattr(_att, key, None)
+                if k not in self._dict:
+                    import importlib
+                    importlib.import_module(f"framework.attentions.{k}")
+            except Exception:
+                pass
+
     def get(self, key: str) -> Optional[Callable]:
         """Safely retrieve a registered component, or None if not found."""
+        self._try_lazy_load(key)
         return self._dict.get(key.lower())
 
     def resolve(self, key: str) -> Callable:
         """Retrieve a registered component and raise a descriptive error if missing."""
-        if key.lower() not in self._dict:
+        self._try_lazy_load(key)
+        k = key.lower()
+        if k not in self._dict:
             raise KeyError(
                 f"Unknown {self.name.rstrip('s')} '{key}'. "
                 f"Available: {list(self._dict.keys())}"
             )
-        return self._dict[key.lower()]
+        return self._dict[k]
 
     def keys(self) -> List[str]:
         """Return a list of all registered keys (in original casing)."""
@@ -62,6 +91,7 @@ class Registry:
         return iter(self._dict)
 
     def __contains__(self, key: str) -> bool:
+        self._try_lazy_load(key)
         return key.lower() in self._dict
 
     def __len__(self) -> int:
