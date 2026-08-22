@@ -72,7 +72,7 @@ class FactorisedMatrixState(nn.Module):
             if attention_mask.dim() == 2:
                 mask = attention_mask.unsqueeze(-1).to(hidden_states.dtype)
             elif attention_mask.dim() == 4:
-                mask = (attention_mask > -1).float().squeeze(1).squeeze(1).unsqueeze(-1)
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).float().unsqueeze(-1).to(hidden_states.dtype)
             else:
                 mask = attention_mask.to(hidden_states.dtype)
             hidden_states = hidden_states * mask
