@@ -1723,3 +1723,17 @@ ompleted)
 [2026-08-22 05:21:12] [Worker-2] [44/126] >> Launching: attn=hgrn2_outer | task=sst2 | seed=42
 [2026-08-22 05:21:12] [Worker-2] [44/126] NOTICE: attn=hgrn2_outer | task=sst2 | Error: CUDA out of memory. Tried to allocate 18.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 390.60 MiB is free. 3.20 GiB allowed; Of the allocated memory 3.00 GiB is allocated by PyTorch, and 189.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 0.5s
 [2026-08-22 05:21:13] [Worker-1] [38/126] NOTICE: attn=granite_hybrid | task=sst2 | Error: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 330.66 MiB is free. 3.20 GiB allowed; Of the allocated memory 2.74 GiB is allocated by PyTorch, and 448.08 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 3.1s
+[2026-08-22 05:21:15] [Worker-2] [45/126] -- SKIPPING: attn=hla | task=sst2 (Already completed)
+[2026-08-22 05:21:15] [Worker-2] [46/126] -- SKIPPING: attn=hymba_transx | task=sst2 (Already completed)
+[2026-08-22 05:21:15] [Worker-2] [47/126] -- SKIPPING: attn=infini | task=sst2 (Already completed)
+[2026-08-22 05:21:15] [Worker-2] [48/126] -- SKIPPING: attn=inject_aegis_hybrid | task=sst2 (Already completed)
+[2026-08-22 05:21:15] [Worker-2] [49/126] -- SKIPPING: attn=inject_aegis_spectron_fp8 | task=sst2 (Already completed)
+[2026-08-22 05:21:15] [Worker-2] [50/126] >> Launching: attn=jamba2 | task=sst2 | seed=42
+[2026-08-22 05:21:16] [Worker-2] [50/126] NOTICE: attn=jamba2 | task=sst2 | Error: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 207.91 MiB is free. 3.20 GiB allowed; Of the allocated memory 2.88 GiB is allocated by PyTorch, and 324.44 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.8s
+[2026-08-22 05:21:16] [Worker-1] [51/126] -- SKIPPING: attn=jamba_info | task=sst2 (Already completed)
+[2026-08-22 05:21:16] [Worker-1] [52/126] -- SKIPPING: attn=kda | task=sst2 (Already completed)
+[2026-08-22 05:21:17] [Worker-1] [53/126] -- SKIPPING: attn=leka_v1 | task=sst2 (Already completed)
+[2026-08-22 05:21:17] [Worker-1] [54/126] -- SKIPPING: attn=leka_v2 | task=sst2 (Already completed)
+[2026-08-22 05:21:17] [Worker-1] [55/126] -- SKIPPING: attn=leka_v3 | task=sst2 (Already completed)
+[2026-08-22 05:21:17] [Worker-1] [56/126] -- SKIPPING: attn=linformer | task=sst2 (Already completed)
+[2026-08-22 05:21:17] [Worker-1] [57/126] >> Launching: attn=lola_attn | task=sst2 | seed=42
