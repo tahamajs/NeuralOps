@@ -178,12 +178,12 @@ class CoopQQuantizer(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("coopq")
 def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """CoopQ compressor factory function."""
-    bits = kwargs.get("bits", getattr(comp_config, "coopq_bits", 4) if comp_config is not None else 4)
-    min_bits = kwargs.get("min_bits", getattr(comp_config, "coopq_min_bits", 2) if comp_config is not None else 2)
-    max_bits = kwargs.get("max_bits", getattr(comp_config, "coopq_max_bits", 8) if comp_config is not None else 8)
-    symmetric = kwargs.get("symmetric", getattr(comp_config, "coopq_symmetric", True) if comp_config is not None else True)
-    per_channel = kwargs.get("per_channel", getattr(comp_config, "coopq_per_channel", False) if comp_config is not None else False)
-    use_ste = kwargs.get("use_ste", getattr(comp_config, "coopq_use_ste", False) if comp_config is not None else False)
+    bits = kwargs.pop("bits", getattr(comp_config, "coopq_bits", 4) if comp_config is not None else 4)
+    min_bits = kwargs.pop("min_bits", getattr(comp_config, "coopq_min_bits", 2) if comp_config is not None else 2)
+    max_bits = kwargs.pop("max_bits", getattr(comp_config, "coopq_max_bits", 8) if comp_config is not None else 8)
+    symmetric = kwargs.pop("symmetric", getattr(comp_config, "coopq_symmetric", True) if comp_config is not None else True)
+    per_channel = kwargs.pop("per_channel", getattr(comp_config, "coopq_per_channel", False) if comp_config is not None else False)
+    use_ste = kwargs.pop("use_ste", getattr(comp_config, "coopq_use_ste", False) if comp_config is not None else False)
     compressor = CoopQQuantizer(
         model,
         bits=bits,

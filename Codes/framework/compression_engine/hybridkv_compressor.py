@@ -228,8 +228,8 @@ class HybridKVCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("hybridkv")
 def hybridkv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """HybridKV compressor factory function."""
-    budget = kwargs.get("budget", getattr(comp_config, "hybridkv_budget", 0.3) if comp_config is not None else 0.3)
-    static_ratio = kwargs.get("static_ratio", getattr(comp_config, "hybridkv_static_ratio", 0.7) if comp_config is not None else 0.7)
+    budget = kwargs.pop("budget", getattr(comp_config, "hybridkv_budget", 0.3) if comp_config is not None else 0.3)
+    static_ratio = kwargs.pop("static_ratio", getattr(comp_config, "hybridkv_static_ratio", 0.7) if comp_config is not None else 0.7)
     compressor = HybridKVCompressor(model, budget=budget, static_ratio=static_ratio, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
