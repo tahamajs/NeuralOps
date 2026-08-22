@@ -1511,3 +1511,6 @@ ompleted)
 [2026-08-22 04:52:18] [Worker-1] [65/126] << SUCCESS: attn=minimal_nova | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.9s
 [2026-08-22 04:52:20] [Worker-1] [66/126] >> Launching: attn=minimal_prism | task=sst2 | seed=42
 [2026-08-22 04:52:38] [Worker-1] [66/126] << SUCCESS: attn=minimal_prism | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.8s
+[2026-08-22 04:52:40] [Worker-1] [67/126] -- SKIPPING: attn=minimal_svd | task=sst2 (Already completed)
+[2026-08-22 04:52:41] [Worker-1] [68/126] >> Launching: attn=minimal_svd_v2 | task=sst2 | seed=42
+[2026-08-22 04:52:58] [Worker-1] [68/126] << SUCCESS: attn=minimal_svd_v2 | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.8s
