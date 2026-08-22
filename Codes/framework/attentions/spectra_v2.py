@@ -285,14 +285,16 @@ class SpectraV2Attention(nn.Module):
                         token_mask[:, pos_inter].unsqueeze(1).unsqueeze(2)
                     )
                     if Li > top_k:
-                        inter_valid = inter_valid.expand(-1, -1, Bs, -1).gather(
-                            3, topk_idx.unsqueeze(0)
+                        inter_valid = inter_valid.expand(-1, H, Bs, -1).gather(
+                            3, topk_idx
                         )
-                        inter_valid = inter_valid.view(B, 1, Bs * top_k)
+                        inter_valid = inter_valid.view(B, H, Bs * top_k)
+                        intra_valid_cat = intra_valid.squeeze(-1).expand(-1, H, -1)
                     else:
                         inter_valid = inter_valid.view(B, 1, Li)
+                        intra_valid_cat = intra_valid.squeeze(-1)
                     total_valid = torch.cat(
-                        [intra_valid.squeeze(-1), inter_valid], dim=-1
+                        [intra_valid_cat, inter_valid], dim=-1
                     )
                 else:
                     total_valid = intra_valid.squeeze(-1)
