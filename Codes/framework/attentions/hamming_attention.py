@@ -1,10 +1,18 @@
+r"""
+Hamming Attention Distillation (HAD) Module.
+
+Approximates dense inner products with differentiable continuous relaxations of Hamming distances
+over sign-binarized representations with calibrated temperature scaling and exact pretrained weight transfer.
+"""
+
+from typing import Any, Optional, Tuple
 import math
-from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -14,80 +22,85 @@ class HammingAttention(BaseAttention):
     r"""
     Hamming Attention Distillation (HAD) Module.
 
-    Mathematical Mechanism:
-        Approximates dense inner products with differentiable continuous relaxations of Hamming distances:
-        $$\begin{aligned}
-        Q_b &= \tanh(5.0 \cdot \gamma_Q \odot Q) \in [-1, 1]^{B \times H \times L \times d_k} \\
-        K_b &= \tanh(5.0 \cdot \gamma_K \odot K) \in [-1, 1]^{B \times H \times L \times d_k} \\
-        D_H(Q_b, K_b) &= \frac{d_k - Q_b K_b^\top}{2} \\
-        S &= -\frac{D_H(Q_b, K_b)}{\sqrt{d_k}} = \frac{Q_b K_b^\top - d_k}{2\sqrt{d_k}} \\
-        P &= \text{softmax}(\text{TopK-Sparsify}(S, \text{ratio})) \\
-        O &= P V W_O
-        \end{aligned}$$
+    Mathematical Formulation:
+        1. Pseudo-Binarization via Tanh Relaxation:
+           $$Q_b = \tanh(5.0 \cdot \gamma_Q \odot Q) \in [-1, 1]^{B \times H \times L \times d_k}$$
+           $$K_b = \tanh(5.0 \cdot \gamma_K \odot K) \in [-1, 1]^{B \times H \times L \times d_k}$$
+        
+        2. Pairwise Continuous Hamming Distance:
+           $$D_H(Q_b, K_b) = \frac{d_k - Q_b K_b^\top}{2}$$
+        
+        3. Calibrated Logit Formulation:
+           $$S = -\tau \cdot \frac{D_H(Q_b, K_b)}{\sqrt{d_k}} = \tau \cdot \frac{Q_b K_b^\top - d_k}{2\sqrt{d_k}}$$
+           where $\tau$ is a calibrated temperature parameter restoring full attention dynamic range.
+        
+        4. Attention Context:
+           $$P = \operatorname{Softmax}(S + M)$$
+           $$O = P V W_O$$
 
-    Computational Complexity:
+    Complexity:
         - Time: $\mathcal{O}(B \cdot H \cdot L^2 \cdot d_k)$
-        - Space: $\mathcal{O}(B \cdot H \cdot L^2)$ for score matrices.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: `[B, L, D]`
-        - Output: Tuple `(output, None)` where `output` is `[B, L, D]`.
+        - Space: $\mathcal{O}(B \cdot H \cdot L^2)$
     """
 
     def __init__(
         self,
         config: Any,
         rank: Optional[int] = None,
-        distill_temperature: float = 1.0,
-        sparsity_ratio: float = 0.5,
+        distill_temperature: float = 2.0,
+        sparsity_ratio: float = 0.0,
+        pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
         self.num_heads: int = getattr(config, "num_attention_heads", 12)
         hidden_size: int = getattr(config, "hidden_size", 768)
-        self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
+        self.head_dim: int = hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
         self.distill_temperature: float = distill_temperature
         self.sparsity_ratio: float = sparsity_ratio
 
-        self.q_proj: nn.Linear = nn.Linear(hidden_size, hidden_size)
-        self.k_proj: nn.Linear = nn.Linear(hidden_size, hidden_size)
-        self.v_proj: nn.Linear = nn.Linear(hidden_size, hidden_size)
-        self.out_proj: nn.Linear = nn.Linear(hidden_size, hidden_size)
-        dropout_p: float = getattr(config, "dropout", 0.0)
-        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+        self.q_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
-        self.q_scale: nn.Parameter = nn.Parameter(torch.ones(self.num_heads, 1))
-        self.k_scale: nn.Parameter = nn.Parameter(torch.ones(self.num_heads, 1))
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        self.q_scale = nn.Parameter(torch.ones(self.num_heads, 1))
+        self.k_scale = nn.Parameter(torch.ones(self.num_heads, 1))
+        self.temp = nn.Parameter(torch.tensor(distill_temperature))
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        r"""Universal adapter weight copying."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.weight.data.copy_(w)
+                if b is not None and target.bias is not None:
+                    target.bias.data.copy_(b)
+            except Exception:
+                pass
 
     @staticmethod
     def _binarize(tensor: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
-        r"""
-        Differentiable tanh approximation of the sign/binarization operator.
-
-        Args:
-            tensor: Input tensor of shape `[B, H, L, d]`.
-            scale: Head-wise scale factor `[H, 1]`.
-
-        Returns:
-            Continuous pseudo-binary tensor of shape `[B, H, L, d]`.
-        """
+        r"""Differentiable continuous tanh relaxation of sign binarization."""
         t = tensor * scale.view(1, -1, 1, 1)
-        return torch.tanh(t * 5.0)
-
-    @staticmethod
-    def _hamming_dist(q_b: torch.Tensor, k_b: torch.Tensor) -> torch.Tensor:
-        r"""
-        Calculates pairwise relaxed Hamming distance between pseudo-binary vectors.
-
-        Args:
-            q_b: Binarized query tensor `[B, H, L, d]`.
-            k_b: Binarized key tensor `[B, H, L, d]`.
-
-        Returns:
-            Distance matrix of shape `[B, H, L, L]`.
-        """
-        dot = torch.matmul(q_b, k_b.transpose(-2, -1))
-        return (q_b.shape[-1] - dot) / 2.0
+        return torch.tanh(t * 3.0)
 
     def forward(
         self,
@@ -95,25 +108,12 @@ class HammingAttention(BaseAttention):
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
-        teacher_attention: Optional[torch.Tensor] = None,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Forward pass of HammingAttention.
-
-        Args:
-            hidden_states: Input tensor of shape `[B, L, D]`.
-            attention_mask: Optional attention mask tensor `[B, L]` or `[B, 1, L, L]`.
-            head_mask: Optional head mask tensor.
-            output_attentions: Boolean flag indicating if attention map is returned.
-            teacher_attention: Optional teacher attention matrix for distillation.
-            **kwargs: Extra keyword arguments.
-
-        Returns:
-            Tuple `(output, probs)` where `output` is `[B, L, D]`.
-        """
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
 
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
         k = self.k_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
@@ -122,27 +122,47 @@ class HammingAttention(BaseAttention):
         q_b = self._binarize(q, self.q_scale)
         k_b = self._binarize(k, self.k_scale)
 
-        scores = -self._hamming_dist(q_b, k_b) / (math.sqrt(Dh))
+        dot = torch.matmul(q_b, k_b.transpose(-2, -1))  # [B, H, L, L]
+        # Calibrated pseudo-Hamming logit formulation
+        scale = (math.sqrt(Dh))
+        scores = (dot * self.temp) / scale
 
-        # Mask handling (convert 2D mask to additive)
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask[:, None, None, :]
-            else:
-                mask = attention_mask
-            scores = scores + (1.0 - mask) * -10000.0
+        valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
+        key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
+        scores = scores.masked_fill(~key_valid_4d, -10000.0)
 
-        if self.sparsity_ratio > 0:
-            keep_k = max(1, int(L * self.sparsity_ratio))
-            _, top_idx = torch.topk(scores, k=keep_k, dim=-1)
-            sparse_mask = torch.zeros_like(scores).scatter(-1, top_idx, 1.0)
-            scores = scores * sparse_mask + (1.0 - sparse_mask) * -10000.0
+        if self.sparsity_ratio > 0.0:
+            keep_k = max(1, int(L * (1.0 - self.sparsity_ratio)))
+            top_vals, _ = torch.topk(scores, k=keep_k, dim=-1)
+            thresh = top_vals[..., -1:]
+            scores = scores.masked_fill(scores < thresh, -10000.0)
 
         probs = F.softmax(scores, dim=-1)
         probs = self.dropout(probs)
 
-        context = torch.matmul(probs, v)
-        context = context.transpose(1, 2).contiguous().view(B, L, D)
+        if head_mask is not None:
+            probs = probs * head_mask
 
+        context = torch.matmul(probs, v)
+        context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
+        context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         out = self.out_proj(context)
+
         return out, (probs if output_attentions else None)
+
+
+@ATTENTION_REGISTRY.register("hamming_inject")
+def inject_hamming(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module],
+) -> HammingAttention:
+    new_attn = HammingAttention(
+        config=model_config,
+        pretrained_attn=old_attn,
+    )
+    layer.attention = new_attn
+    return new_attn

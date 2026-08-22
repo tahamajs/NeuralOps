@@ -1,67 +1,43 @@
-r"""
+"""
 FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module.
-
-Integrates SpargeAttn subspace score prediction, SeerAttention block gating, and MoBA top-$k$ block-sparse
-attention for training-free acceleration of long-context sequence modeling.
 """
 
+import math
 from typing import Any, Optional, Tuple
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("fusion_attn")
-class FUSIONATTN(nn.Module):
+class FUSIONATTN(BaseAttention):
     r"""
     FUSIONATTN: Hybrid Sparse Attention with Block Gating and Subspace Estimation.
-
-    Mathematical Formulation:
-        1. SpargeAttn Subspace Estimation:
-           Evaluates fast approximate attention maps on low-rank channel subspace $d_{\text{sub}} = d_h / 2$:
-           $$S_{\text{approx}} = \frac{Q_{:, :d_{\text{sub}}} K_{:, :d_{\text{sub}}}^T}{\sqrt{d_{\text{sub}}}}$$
-           $$M_{\text{dense}} = \mathbb{I}\left( S_{\text{approx}} > \mu(S_{\text{approx}}) \right)$$
-
-        2. SeerAttention Block Gating:
-           Averages tokens into blocks of size $B_{\text{size}}$:
-           $$\bar{Q}_b = \frac{1}{B_{\text{size}}} \sum_{i \in \text{block}_b} Q_i, \quad \bar{K}_{b'} = \frac{1}{B_{\text{size}}} \sum_{j \in \text{block}_{b'}} K_j$$
-           $$G_{b, b'} = \frac{\text{MLP}(\bar{Q}_b) \cdot \text{MLP}(\bar{K}_{b'})^T}{\tau_{\text{gate}}}$$
-
-        3. MoBA Top-$k$ Block Sparse Computation:
-           $$\mathcal{I}_{\text{top-}k}(b) = \text{Top-}k(G_{b, :}, k_{\text{blocks}})$$
-           $$O_b = \sum_{b' \in \mathcal{I}_{\text{top-}k}(b)} \text{Softmax}\left(\frac{Q_b K_{b'}^T}{\sqrt{d_h}} + M_{\text{dense}}\right) V_{b'}$$
-
-    Complexity:
-        - Block Gating: $\mathcal{O}\left(B \cdot H \cdot \left(\frac{N}{B_{\text{size}}}\right)^2 \cdot d_h\right)$.
-        - Block Sparse Attention: $\mathcal{O}\left(B \cdot H \cdot N \cdot k_{\text{blocks}} \cdot B_{\text{size}} \cdot d_h\right) \ll \mathcal{O}(N^2)$.
-
-    Tensor Dimensions:
-        - Input: $[B, N, D]$
-        - Block Query / Key / Value: $[B, H, N_{\text{blocks}}, B_{\text{size}}, d_h]$
-        - Output: $[B, N, D]$
     """
 
     def __init__(
         self,
+        config: Optional[Any] = None,
         hidden_size: int = 768,
         num_heads: int = 12,
         block_size: int = 64,
         top_k_blocks: int = 4,
-        config: Optional[Any] = None,
+        rank: Optional[int] = 64,
+        pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
-        if config is not None and hasattr(config, "hidden_size"):
-            hidden_size = config.hidden_size
-            num_heads = config.num_attention_heads
+        super().__init__(config, rank)
+        if config is not None:
+            hidden_size = getattr(config, "hidden_size", hidden_size)
+            num_heads = getattr(config, "num_attention_heads", num_heads)
 
-        self.hidden_size: int = hidden_size
-        self.num_heads: int = num_heads
-        self.head_dim: int = hidden_size // num_heads
-        self.block_size: int = block_size
-        self.top_k_blocks: int = top_k_blocks
+        self.hidden_size = hidden_size
+        self.num_heads = num_heads
+        self.head_dim = hidden_size // num_heads
+        self.block_size = block_size
+        self.top_k_blocks = top_k_blocks
 
         self.q_proj = nn.Linear(hidden_size, hidden_size)
         self.k_proj = nn.Linear(hidden_size, hidden_size)
@@ -73,49 +49,38 @@ class FUSIONATTN(nn.Module):
             nn.GELU(),
             nn.Linear(4 * self.head_dim, 1),
         )
+        self.gate_temp = nn.Parameter(torch.ones(1) * 1.0)
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        self.dropout = nn.Dropout(dropout_p)
 
-        self.gate_temp: nn.Parameter = nn.Parameter(torch.ones(1) * 1.0)
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
 
-    def _sparge_predict(self, q: torch.Tensor, k: torch.Tensor) -> torch.Tensor:
-        r"""Evaluates approximate attention map using half-channel subspace projections."""
-        d_sub = max(1, self.head_dim // 2)
-        q_approx = q[..., :d_sub]
-        k_approx = k[..., :d_sub]
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        with torch.no_grad():
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
 
-        scores_approx = torch.matmul(q_approx, k_approx.transpose(-2, -1)) / (d_sub**0.5)
-        dense_mask = scores_approx > scores_approx.mean(dim=-1, keepdim=True)
-        return dense_mask
+            if q_src is not None and hasattr(q_src, "weight"):
+                self.q_proj.weight.copy_(q_src.weight)
+                if q_src.bias is not None:
+                    self.q_proj.bias.copy_(q_src.bias)
+            if k_src is not None and hasattr(k_src, "weight"):
+                self.k_proj.weight.copy_(k_src.weight)
+                if k_src.bias is not None:
+                    self.k_proj.bias.copy_(k_src.bias)
+            if v_src is not None and hasattr(v_src, "weight"):
+                self.v_proj.weight.copy_(v_src.weight)
+                if v_src.bias is not None:
+                    self.v_proj.bias.copy_(v_src.bias)
+            if out_src is not None and hasattr(out_src, "weight"):
+                self.out_proj.weight.copy_(out_src.weight)
+                if out_src.bias is not None:
+                    self.out_proj.bias.copy_(out_src.bias)
 
-    def _seer_gate_blocks(self, q: torch.Tensor, k: torch.Tensor) -> torch.Tensor:
-        r"""Computes SeerAttention block importance scores."""
-        B, H, N, D = q.shape
-        pad_len = (self.block_size - (N % self.block_size)) % self.block_size
-        if pad_len > 0:
-            q_padded = F.pad(q, (0, 0, 0, pad_len))
-            k_padded = F.pad(k, (0, 0, 0, pad_len))
-        else:
-            q_padded = q
-            k_padded = k
-
-        num_blocks = q_padded.size(2) // self.block_size
-        q_blocks = q_padded.reshape(B, H, num_blocks, self.block_size, D).mean(dim=-2)
-        k_blocks = k_padded.reshape(B, H, num_blocks, self.block_size, D).mean(dim=-2)
-
-        q_gate = self.attn_gate(q_blocks).squeeze(-1)  # (B, H, num_blocks)
-        k_gate = self.attn_gate(k_blocks).squeeze(-1)  # (B, H, num_blocks)
-
-        gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2)) / (self.gate_temp.abs() + 1e-5)
-        return gate_scores
-
-    def _moba_block_attention(
-        self,
-        q: torch.Tensor,
-        k: torch.Tensor,
-        v: torch.Tensor,
-        gate_scores: torch.Tensor,
-        dense_mask: Optional[torch.Tensor] = None,
-    ) -> torch.Tensor:
-        r"""Executes MoBA block-sparse attention across top-$k$ selected blocks."""
+    def _moba_block_attention(self, q, k, v, gate_scores):
         B, H, N, D = q.shape
         pad_len = (self.block_size - (N % self.block_size)) % self.block_size
         if pad_len > 0:
@@ -127,7 +92,9 @@ class FUSIONATTN(nn.Module):
 
         num_blocks = q_pad.size(2) // self.block_size
         top_k = min(self.top_k_blocks, num_blocks)
-        _, top_indices = torch.topk(gate_scores, top_k, dim=-1)  # (B, H, num_blocks, top_k)
+        _, top_indices = torch.topk(gate_scores, top_k, dim=-1)
+        # Always retain block 0 (which contains CLS token at index 0)
+        top_indices[:, :, :, 0] = 0
 
         q_blocks = q_pad.reshape(B, H, num_blocks, self.block_size, D)
         k_blocks = k_pad.reshape(B, H, num_blocks, self.block_size, D)
@@ -135,73 +102,65 @@ class FUSIONATTN(nn.Module):
 
         out_blocks = []
         for b in range(num_blocks):
-            idx_b = top_indices[:, :, b, :]  # (B, H, top_k)
-            # Gather keys and values for selected blocks
-            # idx_b expanded to (B, H, top_k, block_size, D)
+            idx_b = top_indices[:, :, b, :]
             idx_exp = idx_b.unsqueeze(-1).unsqueeze(-1).expand(B, H, top_k, self.block_size, D)
             k_sel = torch.gather(k_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
             v_sel = torch.gather(v_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
 
-            q_curr = q_blocks[:, :, b, :, :]  # (B, H, block_size, D)
+            q_curr = q_blocks[:, :, b, :, :]
             attn_b = torch.matmul(q_curr, k_sel.transpose(-2, -1)) / (D**0.5)
             attn_b = F.softmax(attn_b, dim=-1)
-            out_b = torch.matmul(attn_b, v_sel)  # (B, H, block_size, D)
+            attn_b = self.dropout(attn_b)
+            out_b = torch.matmul(attn_b, v_sel)
             out_blocks.append(out_b)
 
-        out_pad = torch.cat(out_blocks, dim=2)  # (B, H, padded_N, D)
+        out_pad = torch.cat(out_blocks, dim=2)
         return out_pad[:, :, :N, :]
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-        use_sparge: bool = True,
-        use_kascade_stability: bool = False,
+        head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Forward execution pass for FUSIONATTN.
-
-        Args:
-            hidden_states (torch.Tensor): Input representation $[B, N, D]$.
-            attention_mask (Optional[torch.Tensor]): Mask tensor $[B, N]$ or $[B, 1, 1, N]$.
-            use_sparge (bool): Whether to activate SpargeAttn dense predictor.
-            use_kascade_stability (bool): Enable Kascade stability mechanism.
-            output_attentions (bool): Whether to return attention probabilities.
-            **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]:
-                - Output context activations $[B, N, D]$.
-                - None.
-        """
         B, N, D = hidden_states.shape
 
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         k = self.k_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
 
-        dense_mask: Optional[torch.Tensor] = None
-        if use_sparge:
-            dense_mask = self._sparge_predict(q, k)
+        if N <= 128:
+            # Full attention for short sequences
+            scale = 1.0 / math.sqrt(self.head_dim)
+            scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)
+                    scores = scores.masked_fill(pad_mask, -10000.0)
+                elif attention_mask.dim() == 4:
+                    scores = scores + attention_mask
 
-        gate_scores = self._seer_gate_blocks(q, k)
-        context = self._moba_block_attention(q, k, v, gate_scores, dense_mask)
+            probs = F.softmax(scores, dim=-1)
+            probs = self.dropout(probs)
+            if head_mask is not None:
+                probs = probs * head_mask
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 4:
-                mask = (attention_mask[:, 0, 0, :] > -10000.0).float().unsqueeze(1).unsqueeze(-1)
-            elif attention_mask.dim() == 2:
-                mask = attention_mask.float().unsqueeze(1).unsqueeze(-1)
-            else:
-                mask = attention_mask.float()
-            context = context * mask.to(context.dtype)
+            context = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, D)
+            return self.out_proj(context), (probs if output_attentions else None)
 
+        pad_len = (self.block_size - (N % self.block_size)) % self.block_size
+        q_padded = F.pad(q, (0, 0, 0, pad_len)) if pad_len > 0 else q
+        k_padded = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
+        num_blocks = q_padded.size(2) // self.block_size
+        q_blocks = q_padded.reshape(B, self.num_heads, num_blocks, self.block_size, self.head_dim).mean(dim=-2)
+        k_blocks = k_padded.reshape(B, self.num_heads, num_blocks, self.block_size, self.head_dim).mean(dim=-2)
+
+        q_gate = self.attn_gate(q_blocks).squeeze(-1)
+        k_gate = self.attn_gate(k_blocks).squeeze(-1)
+        gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2)) / (self.gate_temp.abs() + 1e-5)
+
+        context = self._moba_block_attention(q, k, v, gate_scores)
         context = context.transpose(1, 2).contiguous().view(B, N, D)
-        output = self.out_proj(context)
-        return output, None
-
-    def get_ortho_loss(self) -> torch.Tensor:
-        r"""Returns orthogonality regularization loss."""
-        return torch.tensor(0.0, device=self.gate_temp.device)
+        return self.out_proj(context), None

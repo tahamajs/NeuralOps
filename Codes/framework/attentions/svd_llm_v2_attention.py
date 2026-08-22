@@ -29,6 +29,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("svd_llm_v2")
+@ATTENTION_REGISTRY.register("svd_llm_v2_attention")
 class SVDLLMV2Attention(BaseAttention):
     r"""SVD-factorized attention layer with explicit $U, \Sigma, V^H$ matrix buffers.
 
@@ -45,11 +46,16 @@ class SVDLLMV2Attention(BaseAttention):
         rank: Optional[int] = 64,
         energy_threshold: float = 0.95,
         pretrained_attn: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
-        actual_rank = rank if rank is not None else 64
+        actual_rank = getattr(
+            config,
+            "svd_rank",
+            rank if rank is not None else getattr(config, "rank", 64),
+        )
         super().__init__(config, actual_rank)
-        self.num_heads: int = config.num_attention_heads
-        self.head_dim: int = config.hidden_size // self.num_heads
+        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        self.head_dim: int = getattr(config, "hidden_size", 768) // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
         self.rank: int = actual_rank
         self.energy_threshold: float = energy_threshold
@@ -57,24 +63,28 @@ class SVDLLMV2Attention(BaseAttention):
         # Create parameter buffers
         self.query_u = nn.Parameter(torch.empty(self.all_head_size, self.rank))
         self.query_s = nn.Parameter(torch.empty(self.rank))
-        self.query_vh = nn.Parameter(torch.empty(self.rank, config.hidden_size))
+        self.query_vh = nn.Parameter(torch.empty(self.rank, getattr(config, "hidden_size", 768)))
+        self.query_bias = nn.Parameter(torch.zeros(self.all_head_size))
 
         self.key_u = nn.Parameter(torch.empty(self.all_head_size, self.rank))
         self.key_s = nn.Parameter(torch.empty(self.rank))
-        self.key_vh = nn.Parameter(torch.empty(self.rank, config.hidden_size))
+        self.key_vh = nn.Parameter(torch.empty(self.rank, getattr(config, "hidden_size", 768)))
+        self.key_bias = nn.Parameter(torch.zeros(self.all_head_size))
 
         self.value_u = nn.Parameter(torch.empty(self.all_head_size, self.rank))
         self.value_s = nn.Parameter(torch.empty(self.rank))
-        self.value_vh = nn.Parameter(torch.empty(self.rank, config.hidden_size))
+        self.value_vh = nn.Parameter(torch.empty(self.rank, getattr(config, "hidden_size", 768)))
+        self.value_bias = nn.Parameter(torch.zeros(self.all_head_size))
 
-        self.out_proj_u = nn.Parameter(torch.empty(config.hidden_size, self.rank))
+        self.out_proj_u = nn.Parameter(torch.empty(getattr(config, "hidden_size", 768), self.rank))
         self.out_proj_s = nn.Parameter(torch.empty(self.rank))
         self.out_proj_vh = nn.Parameter(torch.empty(self.rank, self.all_head_size))
+        self.out_proj_bias = nn.Parameter(torch.zeros(getattr(config, "hidden_size", 768)))
+
+        self._init_random()
 
         if pretrained_attn is not None:
-            self._init_from_pretrained(pretrained_attn)
-        else:
-            self._init_random()
+            self.copy_weights(pretrained_attn)
 
         dropout_p: float = float(
             getattr(
@@ -90,57 +100,50 @@ class SVDLLMV2Attention(BaseAttention):
         nn.init.orthogonal_(self.query_u)
         nn.init.ones_(self.query_s)
         nn.init.orthogonal_(self.query_vh)
+        nn.init.zeros_(self.query_bias)
+
         nn.init.orthogonal_(self.key_u)
         nn.init.ones_(self.key_s)
         nn.init.orthogonal_(self.key_vh)
+        nn.init.zeros_(self.key_bias)
+
         nn.init.orthogonal_(self.value_u)
         nn.init.ones_(self.value_s)
         nn.init.orthogonal_(self.value_vh)
+        nn.init.zeros_(self.value_bias)
+
         nn.init.orthogonal_(self.out_proj_u)
         nn.init.ones_(self.out_proj_s)
         nn.init.orthogonal_(self.out_proj_vh)
+        nn.init.zeros_(self.out_proj_bias)
 
-    def _init_from_pretrained(self, pretrained_attn: Any) -> None:
-        r"""Initialize SVD factors from pretrained linear layers."""
-        with torch.no_grad():
-            projections = [
-                (pretrained_attn.q_lin, self.query_u, self.query_s, self.query_vh),
-                (pretrained_attn.k_lin, self.key_u, self.key_s, self.key_vh),
-                (pretrained_attn.v_lin, self.value_u, self.value_s, self.value_vh),
-                (pretrained_attn.out_lin, self.out_proj_u, self.out_proj_s, self.out_proj_vh),
-            ]
-            for orig, u_param, s_param, vh_param in projections:
-                W = orig.weight.data.float()
-                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                r = min(self.rank, len(S))
-                u_param.data[:, :r] = (U[:, :r] * S[:r]).to(dtype=torch.float32)
-                s_param.data[:r] = torch.ones(r)
-                vh_param.data[:r, :] = Vt[:r, :].to(dtype=torch.float32)
-                if r < self.rank:
-                    self._pad_factors(u_param, s_param, vh_param, self.rank)
+    def copy_weights(self, src: Any) -> None:
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        from framework.core.adapters import UniversalAdapter
 
-    def _pad_factors(
-        self,
-        u: nn.Parameter,
-        s: nn.Parameter,
-        vh: nn.Parameter,
-        target_rank: int,
-    ) -> None:
-        r"""Pad factors to target rank with small random values."""
-        current_rank = u.shape[1]
-        if current_rank >= target_rank:
-            return
-        pad_u = torch.randn(u.shape[0], target_rank - current_rank, device=u.device) * 0.01
-        u.data = torch.cat([u.data[:, :current_rank], pad_u], dim=1)
-        pad_s = torch.ones(target_rank - current_rank, device=s.device) * 0.01
-        s.data = torch.cat([s.data[:current_rank], pad_s], dim=0)
-        pad_vh = torch.randn(target_rank - current_rank, vh.shape[1], device=vh.device) * 0.01
-        vh.data = torch.cat([vh.data[:current_rank, :], pad_vh], dim=0)
-
-    def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
-        r"""Reshape `[Batch, SeqLen, AllHeadSize]` to `[Batch, Heads, SeqLen, HeadDim]`."""
-        x = x.view(batch_size, -1, self.num_heads, self.head_dim)
-        return x.permute(0, 2, 1, 3)
+        projections = [
+            ("q", self.query_u, self.query_s, self.query_vh, self.query_bias),
+            ("k", self.key_u, self.key_s, self.key_vh, self.key_bias),
+            ("v", self.value_u, self.value_s, self.value_vh, self.value_bias),
+            ("o", self.out_proj_u, self.out_proj_s, self.out_proj_vh, self.out_proj_bias),
+        ]
+        for proj, u_param, s_param, vh_param, bias_param in projections:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                with torch.no_grad():
+                    W = w.float()
+                    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                    r = min(self.rank, len(S))
+                    u_param.data.zero_()
+                    s_param.data.zero_()
+                    vh_param.data.zero_()
+                    u_param.data[:, :r] = U[:, :r].to(dtype=u_param.dtype)
+                    s_param.data[:r] = S[:r].to(dtype=s_param.dtype)
+                    vh_param.data[:r, :] = Vt[:r, :].to(dtype=vh_param.dtype)
+                    if b is not None:
+                        bias_param.data.copy_(b)
+            except Exception:
+                pass
 
     def forward(
         self,
@@ -150,42 +153,17 @@ class SVDLLMV2Attention(BaseAttention):
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""Forward execution of SVD-LLM V2 attention layer.
-
-        Args:
-            hidden_states: Input activations `[Batch, SeqLen, HiddenDim]`.
-            attention_mask: Optional attention mask `[Batch, SeqLen]` or broadcastable.
-            head_mask: Optional head pruning tensor.
-            output_attentions: Return explicit attention weights if True.
-            **kwargs: Additional runtime arguments.
-
-        Returns:
-            Tuple of:
-                - output: Projected tensor `[Batch, SeqLen, HiddenDim]`.
-                - attention_weights: Softmax probability matrix or None.
-        """
+        r"""Forward execution of SVD-LLM V2 attention layer using factorized kernel multiplications."""
         batch_size, seq_len, _ = hidden_states.shape
 
-        W_q = (self.query_u * self.query_s) @ self.query_vh
-        W_k = (self.key_u * self.key_s) @ self.key_vh
-        W_v = (self.value_u * self.value_s) @ self.value_vh
-        W_o = (self.out_proj_u * self.out_proj_s) @ self.out_proj_vh
+        # Factorized linear projections: x @ V^T -> * S -> @ U^T + b
+        Q_act = ((hidden_states @ self.query_vh.t()) * self.query_s) @ self.query_u.t() + self.query_bias
+        K_act = ((hidden_states @ self.key_vh.t()) * self.key_s) @ self.key_u.t() + self.key_bias
+        V_act = ((hidden_states @ self.value_vh.t()) * self.value_s) @ self.value_u.t() + self.value_bias
 
-        Q = (
-            F.linear(hidden_states, W_q)
-            .view(batch_size, seq_len, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        K = (
-            F.linear(hidden_states, W_k)
-            .view(batch_size, seq_len, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        V = (
-            F.linear(hidden_states, W_v)
-            .view(batch_size, seq_len, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        Q = Q_act.view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        K = K_act.view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        V = V_act.view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
         scale = self.head_dim**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
@@ -195,9 +173,9 @@ class SVDLLMV2Attention(BaseAttention):
                 mask = attention_mask[:, None, None, :].to(scores.dtype)
                 scores = scores + (1.0 - mask) * -10000.0
             elif attention_mask.dim() == 3:
-                scores = scores + attention_mask.unsqueeze(1)
+                scores = scores + (1.0 - attention_mask[:, None, :, :].to(scores.dtype)) * -10000.0
             else:
-                scores = scores + attention_mask
+                scores = scores + (1.0 - attention_mask.to(scores.dtype)) * -10000.0
 
         probs = F.softmax(scores, dim=-1)
         probs = self.dropout(probs)
@@ -210,14 +188,14 @@ class SVDLLMV2Attention(BaseAttention):
             .contiguous()
             .view(batch_size, seq_len, self.all_head_size)
         )
-        out = F.linear(context, W_o)
+        out = ((context @ self.out_proj_vh.t()) * self.out_proj_s) @ self.out_proj_u.t() + self.out_proj_bias
 
         if output_attentions:
             return out, probs
         return out, None
 
 
-@ATTENTION_REGISTRY.register("svd_llm_v2")
+@ATTENTION_REGISTRY.register("svd_llm_v2_inject")
 def inject_svd_llm_v2(
     layer: Any,
     model_config: Any,

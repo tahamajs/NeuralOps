@@ -37,19 +37,6 @@ class LinformerAttention(nn.Module):
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
-
-        # Initialize from pretrained if available
-        if pretrained_attn is not None:
-            with torch.no_grad():
-                self.query.weight.data.copy_(pretrained_attn.q_lin.weight.data)
-                self.query.bias.data.copy_(pretrained_attn.q_lin.bias.data)
-                self.key.weight.data.copy_(pretrained_attn.k_lin.weight.data)
-                self.key.bias.data.copy_(pretrained_attn.k_lin.bias.data)
-                self.value.weight.data.copy_(pretrained_attn.v_lin.weight.data)
-                self.value.bias.data.copy_(pretrained_attn.v_lin.bias.data)
-                self.out_proj.weight.data.copy_(pretrained_attn.out_lin.weight.data)
-                self.out_proj.bias.data.copy_(pretrained_attn.out_lin.bias.data)
-
         self.E = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
         self.F = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
         nn.init.normal_(self.E, std=1.0 / math.sqrt(self.k_proj_dim))
@@ -57,6 +44,28 @@ class LinformerAttention(nn.Module):
 
         dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
         self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        """Copy weights from any HuggingFace or PyTorch MHA module using UniversalAdapter."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [
+            ("q", self.query),
+            ("k", self.key),
+            ("v", self.value),
+            ("o", self.out_proj),
+        ]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                with torch.no_grad():
+                    target.weight.data.copy_(w)
+                    if b is not None and target.bias is not None:
+                        target.bias.data.copy_(b)
+            except Exception:
+                pass
 
     def forward(
         self,

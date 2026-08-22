@@ -118,6 +118,9 @@ class FactorisedLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("orion_module")
+@ATTENTION_REGISTRY.register("orion")
+@ATTENTION_REGISTRY.register("orion_attention")
+@ATTENTION_REGISTRY.register("orion_module")
 class ORIONAttention(nn.Module):
     r"""ORION hybrid multi-head attention module.
 
@@ -299,7 +302,7 @@ class ORIONAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-@ATTENTION_REGISTRY.register("orion")
+@ATTENTION_REGISTRY.register("orion_inject")
 def inject_orion(
     layer: Any,
     model_config: Any,
