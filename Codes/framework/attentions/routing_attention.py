@@ -122,10 +122,13 @@ class RoutingAttention(nn.Module):
         V = self.v_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                valid = attention_mask.bool().to(Q.device)
+            if attention_mask.dim() == 4:
+                valid = (attention_mask[:, 0, 0, :] > -10000.0)
+            elif attention_mask.dim() == 3:
+                valid = (attention_mask[:, 0, :] > -10000.0)
             else:
-                valid = attention_mask.squeeze(1).squeeze(1).bool()
+                valid = attention_mask.bool()
+                
             valid_4d = valid.unsqueeze(1).unsqueeze(-1).to(Q.dtype)
             Q = Q * valid_4d
             K = K * valid_4d
