@@ -1949,3 +1949,5 @@ ompleted)
 [2026-08-22 07:12:01] [Worker-2] [84/145] -- SKIPPING: attn=performer | task=sst2 (Already completed)
 [2026-08-22 07:12:01] [Worker-2] [85/145] >> Launching: attn=phantom | task=sst2 | seed=42
 [2026-08-22 08:35:26] [Worker-2] [85/145] << SUCCESS: attn=phantom | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7053 | Time: 5004.9s
+[2026-08-22 08:35:28] [Worker-2] [86/145] >> Launching: attn=phantom_module | task=sst2 | seed=42
+[2026-08-22 10:00:04] [Worker-2] [86/145] << SUCCESS: attn=phantom_module | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7053 | Time: 5076.6s
