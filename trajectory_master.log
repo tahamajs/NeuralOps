@@ -1841,3 +1841,15 @@ ompleted)
 [2026-08-22 05:35:45] [Worker-2] [69/126] -- SKIPPING: attn=mixattention_moska | task=sst2 (Already completed)
 [2026-08-22 05:35:45] [Worker-2] [70/126] >> Launching: attn=mla | task=sst2 | seed=42
 [2026-08-22 05:35:46] [Worker-2] [70/126] NOTICE: attn=mla | task=sst2 | Error: mat1 and mat2 shapes cannot be multiplied (512x3072 and 768x768) | Time: 0.5s
+[2026-08-22 05:35:48] [Worker-2] [71/126] -- SKIPPING: attn=moba | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [72/126] -- SKIPPING: attn=moe_deltakv_paged | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [73/126] -- SKIPPING: attn=nasc | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [74/126] -- SKIPPING: attn=nasc_attention | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [75/126] -- SKIPPING: attn=nasc_injection | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [76/126] -- SKIPPING: attn=nexus | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [77/126] -- SKIPPING: attn=nha | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [78/126] -- SKIPPING: attn=nha_compressor | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [79/126] -- SKIPPING: attn=nsa | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [80/126] -- SKIPPING: attn=nystrom | task=sst2 (Already completed)
+[2026-08-22 05:35:48] [Worker-2] [81/126] >> Launching: attn=oha | task=sst2 | seed=42
+[2026-08-22 05:35:49] [Worker-2] [81/126] NOTICE: attn=oha | task=sst2 | Error: The size of tensor a (32) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.6s
