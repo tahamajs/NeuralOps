@@ -454,3 +454,27 @@ ompleted)
 [2026-08-22 04:17:20] [Worker-1] [14/126] -- SKIPPING: attn=asvd | task=sst2 (Already completed)
 [2026-08-22 04:17:20] [Worker-1] [15/126] >> Launching: attn=bam_umoe | task=sst2 | seed=42
 [2026-08-22 04:17:24] [Worker-1] [15/126] NOTICE: attn=bam_umoe | task=sst2 | Error: The size of tensor a (32) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 4.0s
+[2026-08-22 04:17:56] ============================================================
+[2026-08-22 04:17:56]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-22 04:17:56] ============================================================
+[2026-08-22 04:17:56] Started background telemetry sync thread.
+[2026-08-22 04:17:56] Trajectory Matrix: 126 Models x 1 Tasks = 126 Runs
+[2026-08-22 04:17:56] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-22 04:18:05] [Worker-1] [1/126] -- SKIPPING: attn=adaptive_span | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [2/126] -- SKIPPING: attn=adaptive_svd | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [3/126] -- SKIPPING: attn=adaptive_svd_attn | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [4/126] -- SKIPPING: attn=adasplash | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [5/126] -- SKIPPING: attn=aegis_hybrid | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [6/126] -- SKIPPING: attn=aegis_hybrid_attn | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [7/126] -- SKIPPING: attn=aegis_spectron_fp8 | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [8/126] -- SKIPPING: attn=aegis_spectron_fp8_attn | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [9/126] -- SKIPPING: attn=aegis_v2 | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [10/126] -- SKIPPING: attn=aegis_v3 | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [11/126] -- SKIPPING: attn=aegis_v4 | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [12/126] -- SKIPPING: attn=aegis_v5 | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [13/126] -- SKIPPING: attn=aegis_v6 | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [14/126] -- SKIPPING: attn=asvd | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [15/126] -- SKIPPING: attn=bam_umoe | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [16/126] -- SKIPPING: attn=block_transformer_hiba | task=sst2 (Already completed)
+[2026-08-22 04:18:05] [Worker-1] [17/126] >> Launching: attn=chela_slay | task=sst2 | seed=42
+[2026-08-22 04:18:06] [Worker-1] [17/126] NOTICE: attn=chela_slay | task=sst2 | Error: The size of tensor a (12) must match the size of tensor b (128) at non-singleton dimension 2 | Time: 0.7s
