@@ -193,16 +193,17 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("zerokv_neo")
-def zerokv_neo_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """ZeroKV-Neo compressor factory function."""
-    keep_ratio = getattr(comp_config, "zerokv_keep_ratio", 0.3) if comp_config else 0.3
-    num_sinks = getattr(comp_config, "zerokv_num_sinks", 4) if comp_config else 4
-    heavy_ratio = getattr(comp_config, "zerokv_heavy_ratio", 0.1) if comp_config else 0.1
+    keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "zerokv_keep_ratio", 0.3) if comp_config else 0.3)
+    num_sinks = kwargs.pop("num_attention_sinks", kwargs.pop("num_sinks", getattr(comp_config, "zerokv_num_sinks", 4) if comp_config else 4))
+    heavy_ratio = kwargs.pop("heavy_hitter_ratio", kwargs.pop("heavy_ratio", getattr(comp_config, "zerokv_heavy_ratio", 0.1) if comp_config else 0.1))
     compressor = ZeroKVNeoCompressor(
         model,
         keep_ratio=keep_ratio,
         num_attention_sinks=num_sinks,
         heavy_hitter_ratio=heavy_ratio,
+        **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model

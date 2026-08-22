@@ -215,8 +215,8 @@ class DeltaKVCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("delta_kv")
 def delta_kv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """DeltaKV compressor factory function."""
-    rank = kwargs.get("rank", getattr(comp_config, "delta_kv_rank", 16) if comp_config is not None else 16)
-    sparsity = kwargs.get("sparsity", getattr(comp_config, "delta_kv_sparsity", 0.29) if comp_config is not None else 0.29)
+    rank = kwargs.pop("rank", getattr(comp_config, "delta_kv_rank", 16) if comp_config is not None else 16)
+    sparsity = kwargs.pop("sparsity", getattr(comp_config, "delta_kv_sparsity", 0.29) if comp_config is not None else 0.29)
     compressor = DeltaKVCompressor(model, rank=rank, sparsity=sparsity, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

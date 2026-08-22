@@ -249,9 +249,9 @@ class HuffmanCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("huffman")
-def huffman_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Huffman compressor factory function."""
-    bits = getattr(comp_config, "huffman_bits", 8) if comp_config else 8
-    compressor = HuffmanCompressor(model, quantize_bits=bits)
+    bits = kwargs.pop("quantize_bits", kwargs.pop("bits", getattr(comp_config, "huffman_bits", 8) if comp_config else 8))
+    compressor = HuffmanCompressor(model, quantize_bits=bits, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

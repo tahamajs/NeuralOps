@@ -61,8 +61,8 @@ class ENLightenCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("enlighten")
 def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Enlighten compressor factory function."""
-    rank = kwargs.get("rank", getattr(comp_config, "enlighten_rank", 64) if comp_config is not None else 64)
-    sparsity = kwargs.get("sparsity", getattr(comp_config, "enlighten_sparsity", 0.5) if comp_config is not None else 0.5)
+    rank = kwargs.pop("rank", getattr(comp_config, "enlighten_rank", 64) if comp_config is not None else 64)
+    sparsity = kwargs.pop("sparsity", getattr(comp_config, "enlighten_sparsity", 0.5) if comp_config is not None else 0.5)
     compressor = ENLightenCompressor(model, rank=rank, sparsity=sparsity, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
