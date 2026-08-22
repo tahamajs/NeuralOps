@@ -1,26 +1,18 @@
 {
-  "2": {
-    "status": "running",
-    "attn": "svd",
-    "task": "sst2",
-    "idx": "2/120",
-    "pid": 26908,
-    "start_time": 1787262595.6289966
-  },
   "1": {
     "status": "running",
-    "attn": "svd_linear",
+    "attn": "compressed_attention_layer_energy",
     "task": "sst2",
-    "idx": "1/120",
-    "pid": 10252,
-    "start_time": 1787262587.8951552
+    "idx": "20/1008",
+    "pid": 21276,
+    "start_time": 1787358401.246764
   },
-  "3": {
+  "2": {
     "status": "running",
-    "attn": "full",
+    "attn": "aegis_hybrid",
     "task": "sst2",
-    "idx": "3/120",
-    "pid": 6604,
-    "start_time": 1787262602.0058265
+    "idx": "5/1008",
+    "pid": 20028,
+    "start_time": 1787292413.2307858
   }
 }
