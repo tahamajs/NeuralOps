@@ -114,7 +114,7 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
         cfg.attn_type = attn
         cfg.task = task
         cfg.epochs = 1.0
-        cfg.max_train_samples = 1000   # Fast benchmarking cropped to 1000 samples
+        cfg.max_train_samples = 25000  # Drastically increased to keep the GPU fully saturated at max wattage (100W+)
 
         cfg.output_dir = str(RESULTS_DIR)
         cfg.save_model = False
