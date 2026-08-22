@@ -738,3 +738,5 @@ ompleted)
 [2026-08-22 04:33:28] [Worker-1] [45/126] NOTICE: attn=hla | task=sst2 | Error: The size of tensor a (12) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.4s
 [2026-08-22 04:33:30] [Worker-1] [46/126] >> Launching: attn=hymba_transx | task=sst2 | seed=42
 [2026-08-22 04:34:03] [Worker-1] [46/126] << SUCCESS: attn=hymba_transx | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6930 | Time: 33.3s
+[2026-08-22 04:34:07] [Worker-1] [47/126] >> Launching: attn=infini | task=sst2 | seed=42
+[2026-08-22 04:34:12] [Worker-1] [47/126] << SUCCESS: attn=infini | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7027 | Time: 5.6s
