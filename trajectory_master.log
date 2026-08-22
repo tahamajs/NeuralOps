@@ -1,4 +1,4 @@
-[2026-08-20 22:32:54] ============================================================
+﻿[2026-08-20 22:32:54] ============================================================
 [2026-08-20 22:32:54]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
 [2026-08-20 22:32:54] ============================================================
 [2026-08-20 22:32:54] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
@@ -425,3 +425,5 @@ ompleted)
 [2026-08-22 04:12:41] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
 [2026-08-22 04:12:52] [Worker-1] [1/126] >> Launching: attn=adaptive_span | task=sst2 | seed=42
 [2026-08-22 04:12:57] [Worker-1] [1/126] << SUCCESS: attn=adaptive_span | task=sst2 | Acc: 80.39% | F1: 80.37% | Loss: 0.5177 | Time: 5.3s
+[2026-08-22 04:13:00] [Worker-1] [2/126] >> Launching: attn=adaptive_svd | task=sst2 | seed=42
+[2026-08-22 04:13:08] [Worker-1] [2/126] << SUCCESS: attn=adaptive_svd | task=sst2 | Acc: 57.11% | F1: 47.69% | Loss: 0.6605 | Time: 7.5s
