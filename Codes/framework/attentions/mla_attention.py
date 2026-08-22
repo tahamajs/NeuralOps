@@ -13,7 +13,6 @@ import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("mla")
 class MLAAttention(nn.Module):
     r"""Multi-Head Latent Attention (MLA) Mechanism.
 
@@ -114,4 +113,54 @@ class MLAAttention(nn.Module):
 
         if output_attentions:
             return out, attn_probs
-        return out, attn_probs
+        return out, None
+
+
+@ATTENTION_REGISTRY.register("mla")
+def inject_mla(
+    layer: Any,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Any,
+) -> MLAAttention:
+    r"""Dynamic bridge injecting MLAAttention into a transformer layer."""
+    rank = getattr(comp_config, "mla_rank", 128) if comp_config is not None else 128
+    
+    class ConfigWrapper:
+        def __init__(self, cfg):
+            self.hidden_size = getattr(cfg, "hidden_size", 768)
+            self.num_attention_heads = getattr(cfg, "num_attention_heads", 12)
+            self.dropout = getattr(cfg, "attention_probs_dropout_prob", getattr(cfg, "dropout", 0.1))
+            self.mla_rank = rank
+
+    wrapper = ConfigWrapper(model_config)
+    new_attn = MLAAttention(wrapper, rank=rank)
+
+    # Pretrained weight transfer
+    if old_attn is not None:
+        if hasattr(old_attn, "q_lin") and hasattr(new_attn, "q_proj"):
+            new_attn.q_proj.weight.data.copy_(old_attn.q_lin.weight.data)
+        if hasattr(old_attn, "out_lin") and hasattr(new_attn, "out_proj"):
+            new_attn.out_proj.weight.data.copy_(old_attn.out_lin.weight.data)
+            if old_attn.out_lin.bias is not None and new_attn.out_proj.bias is not None:
+                new_attn.out_proj.bias.data.copy_(old_attn.out_lin.bias.data)
+        if hasattr(old_attn, "k_lin") and hasattr(old_attn, "v_lin"):
+            # SVD decomposition of K and V to initialize low-rank latent projections
+            try:
+                k_w = old_attn.k_lin.weight.data
+                u_k, s_k, vh_k = torch.linalg.svd(k_w, full_matrices=False)
+                # Down projection: V^T, Up projection: U * S
+                r = min(rank, s_k.shape[0])
+                new_attn.kv_down.weight.data[:r, :] = vh_k[:r, :]
+                new_attn.k_up.weight.data[:, :r] = u_k[:, :r] @ torch.diag(s_k[:r])
+                
+                v_w = old_attn.v_lin.weight.data
+                u_v, s_v, vh_v = torch.linalg.svd(v_w, full_matrices=False)
+                new_attn.v_up.weight.data[:, :r] = u_v[:, :r] @ torch.diag(s_v[:r])
+            except Exception:
+                pass
+
+    layer.attention = new_attn
+    return new_attn
