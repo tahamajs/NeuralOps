@@ -78,7 +78,7 @@ def get_completed_runs():
     return completed
 
 
-def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
+def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, git_lock: mp.Lock):
     # Separate Python process running on its own CPU core & CUDA context
     import torch
     torch.backends.cudnn.benchmark = True
@@ -207,10 +207,11 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
             with open(docs_res_dir / "all_histories.json", "w", encoding="utf-8") as f:
                 json.dump(hist_res, f)
 
-            subprocess.run(["git", "add", "-f", str(RESULTS_DIR), str(MASTER_LOG), str(docs_res_dir / "all_histories.json")], cwd=str(PROJECT_DIR), check=True)
-            subprocess.run(["git", "commit", "-m", commit_msg], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
-            subprocess.run(["git", "pull", "origin", "main", "--rebase"], cwd=str(PROJECT_DIR), capture_output=True, check=False)
-            subprocess.run(["git", "push", "origin", "main"], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
+            with git_lock:
+                subprocess.run(["git", "add", "-f", str(RESULTS_DIR), str(MASTER_LOG), str(docs_res_dir / "all_histories.json")], cwd=str(PROJECT_DIR), check=True)
+                subprocess.run(["git", "commit", "-m", commit_msg], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
+                subprocess.run(["git", "pull", "origin", "main", "--rebase"], cwd=str(PROJECT_DIR), capture_output=True, check=False)
+                subprocess.run(["git", "push", "origin", "main"], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
         except Exception as e:
             logger.warning(f"Git push error: {e}")
 
@@ -445,8 +446,9 @@ def main():
 
     NUM_WORKERS = 2
     processes = []
+    git_lock = mp.Lock()
     for w_id in range(1, NUM_WORKERS + 1):
-        p = mp.Process(target=worker_process_main, args=(w_id, task_queue, total), daemon=False)
+        p = mp.Process(target=worker_process_main, args=(w_id, task_queue, total, git_lock), daemon=False)
         p.start()
         processes.append(p)
         time.sleep(3)  # Stagger GPU context initialization
