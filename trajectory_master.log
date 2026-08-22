@@ -1668,3 +1668,9 @@ ompleted)
 [2026-08-22 05:12:41] [Worker-2] [75/126] << SUCCESS: attn=nasc_injection | task=sst2 | Acc: 71.44% | F1: 69.97% | Loss: 0.5841 | Time: 30.8s
 [2026-08-22 05:12:45] [Worker-2] [76/126] >> Launching: attn=nexus | task=sst2 | seed=42
 [2026-08-22 05:13:13] [Worker-2] [76/126] << SUCCESS: attn=nexus | task=sst2 | Acc: 68.23% | F1: 68.05% | Loss: 0.7910 | Time: 27.8s
+[2026-08-22 05:13:15] [Worker-2] [77/126] -- SKIPPING: attn=nha | task=sst2 (Already completed)
+[2026-08-22 05:13:15] [Worker-2] [78/126] -- SKIPPING: attn=nha_compressor | task=sst2 (Already completed)
+[2026-08-22 05:13:15] [Worker-2] [79/126] -- SKIPPING: attn=nsa | task=sst2 (Already completed)
+[2026-08-22 05:13:15] [Worker-2] [80/126] -- SKIPPING: attn=nystrom | task=sst2 (Already completed)
+[2026-08-22 05:13:15] [Worker-2] [81/126] >> Launching: attn=oha | task=sst2 | seed=42
+[2026-08-22 05:13:16] [Worker-2] [81/126] NOTICE: attn=oha | task=sst2 | Error: The size of tensor a (64) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.5s
