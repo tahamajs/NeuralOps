@@ -328,3 +328,5 @@ ompleted)
 [2026-08-22 04:07:18] [Worker-1] [31/126] NOTICE: attn=galerkin | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.1s
 [2026-08-22 04:07:20] [Worker-1] [32/126] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
 [2026-08-22 04:07:21] [Worker-1] [32/126] NOTICE: attn=gated_delta_net | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.0s
+[2026-08-22 04:07:24] [Worker-1] [33/126] >> Launching: attn=gated_delta_net_inject | task=sst2 | seed=42
+[2026-08-22 04:07:25] [Worker-1] [33/126] NOTICE: attn=gated_delta_net_inject | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.0s
