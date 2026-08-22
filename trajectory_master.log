@@ -279,3 +279,5 @@ ompleted)
 [2026-08-22 03:56:38] [Worker-1] [19/1008] << SUCCESS: attn=compressed_attention_layer | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: nan | Time: 422.1s
 [2026-08-22 03:56:41] [Worker-1] [20/1008] >> Launching: attn=compressed_attention_layer_energy | task=sst2 | seed=42
 [2026-08-22 04:03:33] [Worker-1] [20/1008] << SUCCESS: attn=compressed_attention_layer_energy | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: nan | Time: 411.8s
+[2026-08-22 04:03:35] [Worker-1] [21/1008] >> Launching: attn=compressed_mha | task=sst2 | seed=42
+[2026-08-22 04:03:50] [Worker-1] [21/1008] NOTICE: attn=compressed_mha | task=sst2 | Error: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! | Time: 14.6s
