@@ -82,7 +82,7 @@ class MoBAAttention(BaseAttention):
                 if out_src.bias is not None:
                     self.out_proj.bias.copy_(out_src.bias)
 
-def forward(
+    def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
