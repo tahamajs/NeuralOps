@@ -113,8 +113,8 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
         cfg = fw["ExperimentConfig"]()
         cfg.attn_type = attn
         cfg.task = task
-        cfg.epochs = 1.0
-        cfg.max_train_samples = 25000  # Drastically increased to keep the GPU fully saturated at max wattage (100W+)
+        cfg.epochs = 3.0               # Increased from 1.0 to 3.0 to heavily improve training results (accuracy) on 1000 samples
+        cfg.max_train_samples = 1000   # Reverted to 1000 samples for ultra-fast benchmarking
 
         cfg.output_dir = str(RESULTS_DIR)
         cfg.save_model = False
@@ -134,7 +134,8 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
         else:
             cfg.batch_size = 64   # Optimal batch size for 2 workers
 
-        cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
+        # Aggressive learning rate for fast convergence on small dataset
+        cfg.lr = 1e-4 if attn in ("svd_linear", "full") else 2e-4
 
         # Dynamic Override from UI Settings Panel
         settings_file = PROJECT_DIR / "orchestrator_settings.json"
