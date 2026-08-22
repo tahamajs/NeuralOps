@@ -55,22 +55,21 @@ class _LinearizedAttentionWrapper(nn.Module):
             v = self.original_attn.v_lin(hidden_states)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             output = self.original_attn.out_lin(context)
-            if output_attentions:
-                return output, None
-            return (output,) if isinstance(hidden_states, torch.Tensor) else output
+            return (output, None)
         elif hasattr(self.original_attn, "query") and hasattr(self.original_attn, "value"):
             # BERT BertSelfAttention
             v = self.original_attn.value(hidden_states)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
-            if output_attentions:
-                return context, None
-            return (context,)
+            out_layer = getattr(self.original_attn, "dense", None)
+            output = out_layer(context) if out_layer is not None else context
+            return (output, None)
         else:
             # Fallback to calling original attention or identity
             try:
-                return self.original_attn(hidden_states, attention_mask=attention_mask, **kwargs)
+                res = self.original_attn(hidden_states, attention_mask=attention_mask, **kwargs)
+                return res if isinstance(res, tuple) else (res, None)
             except Exception:
-                return hidden_states
+                return (hidden_states, None)
 
 
 class LIFTRCompressor(BaseCompressor):

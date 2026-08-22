@@ -189,10 +189,10 @@ class KVTCCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kvtc")
-def kvtc_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """KVTC compressor factory function."""
-    bits = getattr(comp_config, "kvtc_bits", 4) if comp_config else 4
-    pca_energy = getattr(comp_config, "kvtc_pca_energy", 0.95) if comp_config else 0.95
-    compressor = KVTCCompressor(model, bits=bits, pca_energy=pca_energy)
+    bits = kwargs.pop("bits", getattr(comp_config, "kvtc_bits", 4) if comp_config else 4)
+    pca_energy = kwargs.pop("pca_energy", getattr(comp_config, "kvtc_pca_energy", 0.95) if comp_config else 0.95)
+    compressor = KVTCCompressor(model, bits=bits, pca_energy=pca_energy, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
