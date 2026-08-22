@@ -226,7 +226,7 @@ class ORIONAttention(nn.Module):
         scale = self.head_dim**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
         if token_valid is not None:
-            scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e5)
+            scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -10000.0)
         attn_w = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
         attn_w = self.dropout(attn_w)
         return torch.matmul(attn_w, V)
