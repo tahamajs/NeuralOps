@@ -618,3 +618,8 @@ ompleted)
 [2026-08-22 04:25:26] [Worker-1] [33/126] << SUCCESS: attn=gated_delta_net_inject | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7084 | Time: 33.2s
 [2026-08-22 04:25:28] [Worker-1] [34/126] >> Launching: attn=gated_deltanet_block | task=sst2 | seed=42
 [2026-08-22 04:25:57] [Worker-1] [34/126] << SUCCESS: attn=gated_deltanet_block | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7084 | Time: 29.2s
+[2026-08-22 04:26:00] [Worker-1] [35/126] -- SKIPPING: attn=gated_linear_attn | task=sst2 (Already completed)
+[2026-08-22 04:26:00] [Worker-1] [36/126] -- SKIPPING: attn=goldfinch_ahn | task=sst2 (Already completed)
+[2026-08-22 04:26:00] [Worker-1] [37/126] -- SKIPPING: attn=gqa | task=sst2 (Already completed)
+[2026-08-22 04:26:00] [Worker-1] [38/126] >> Launching: attn=granite_hybrid | task=sst2 | seed=42
+[2026-08-22 04:26:02] [Worker-1] [38/126] NOTICE: attn=granite_hybrid | task=sst2 | Error: CUDA out of memory. Tried to allocate 12.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 741.14 MiB is free. 6.00 GiB allowed; Of the allocated memory 5.65 GiB is allocated by PyTorch, and 353.21 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 2.4s
