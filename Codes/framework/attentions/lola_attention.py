@@ -270,15 +270,20 @@ class LoLAAttention(BaseAttention):
             V_combined = V
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask[:, None, None, :]
+            if attention_mask.dim() == 4:
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).float()
+            elif attention_mask.dim() == 3:
+                mask = attention_mask[:, 0, :]
             else:
-                mask = attention_mask
+                mask = attention_mask.float()
+                
             if K_cached is not None:
                 cache_mask = torch.ones(
-                    B, 1, 1, C, device=mask.device, dtype=mask.dtype
+                    B, C, device=mask.device, dtype=mask.dtype
                 )
                 mask = torch.cat([mask, cache_mask], dim=-1)
+            
+            mask = mask.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, L+C]
             scores = scores + (1.0 - mask.to(scores.dtype)) * -10000.0
 
         attn_weights = F.softmax(scores, dim=-1)
