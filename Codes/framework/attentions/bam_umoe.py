@@ -175,11 +175,13 @@ class BAMUMoEBlock(BaseAttention):
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
+                # (B, L) -> (B, L, 1)
                 mask = attention_mask.unsqueeze(-1).to(out.dtype)
             elif attention_mask.dim() == 4:
-                mask = (attention_mask > -1).float().squeeze(1).squeeze(1).unsqueeze(-1)
+                # HF passes (B, 1, 1, L) -> (B, L, 1)
+                mask = (attention_mask > -1).float().squeeze(1).squeeze(1).unsqueeze(-1).to(out.dtype)
             else:
-                mask = attention_mask.to(out.dtype)
+                mask = attention_mask.unsqueeze(-1).to(out.dtype) if attention_mask.dim() == 1 else attention_mask.to(out.dtype)
             out = out * mask
 
         return out, None
