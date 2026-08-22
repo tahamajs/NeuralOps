@@ -182,6 +182,7 @@ class FLAPCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("flap")
+@COMPRESSOR_REGISTRY.register("flap_compressor")
 def flap_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for FLAP compressor."""
     sparsity = getattr(comp_config, "flap_sparsity", getattr(comp_config, "sparsity", 0.2)) if comp_config else kwargs.get("sparsity", 0.2)

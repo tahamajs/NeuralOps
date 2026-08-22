@@ -57,7 +57,9 @@ from framework.compression_engine import (
     LSCCompressor,
     MambaShedderCompressor,
     OATSCompressor,
+    OptimalSubspaceProjectionCompressor,
     ProxSparsePruner,
+    RotationalSliceGPTINT4Compressor,
     SliceGPTCompressor,
     SliceGPTPCACompressor,
     SLiMCompressor,
@@ -380,6 +382,30 @@ class TestStructuralPruningAndLayerShedding(unittest.TestCase):
         self.assertEqual(stats["compressor_name"], "oats")
 
         factory = COMPRESSOR_REGISTRY.resolve("oats")
+        reg_model = factory(self._create_model())
+        with torch.no_grad():
+            self.assertEqual(reg_model(self.dummy_input_ids).shape, (self.batch_size, 2))
+
+    def test_19_rotational_slicegpt_int4(self) -> None:
+        model = self._create_model()
+        compressor = RotationalSliceGPTINT4Compressor(model, r_ratio=0.75, quant_bits=4)
+        compressed_model, stats = compressor.compress()
+        self._verify_compression_output(model, compressed_model, stats, "rotational_slicegpt_int4")
+        self.assertEqual(stats["compressor_name"], "rotational_slicegpt_int4")
+
+        factory = COMPRESSOR_REGISTRY.resolve("rotational_slicegpt_int4")
+        reg_model = factory(self._create_model())
+        with torch.no_grad():
+            self.assertEqual(reg_model(self.dummy_input_ids).shape, (self.batch_size, 2))
+
+    def test_20_optimal_subspace_projection(self) -> None:
+        model = self._create_model()
+        compressor = OptimalSubspaceProjectionCompressor(model, rank_ratio=0.5, power_iters=2)
+        compressed_model, stats = compressor.compress()
+        self._verify_compression_output(model, compressed_model, stats, "optimal_subspace_projection")
+        self.assertEqual(stats["compressor_name"], "optimal_subspace_projection")
+
+        factory = COMPRESSOR_REGISTRY.resolve("optimal_subspace_projection")
         reg_model = factory(self._create_model())
         with torch.no_grad():
             self.assertEqual(reg_model(self.dummy_input_ids).shape, (self.batch_size, 2))

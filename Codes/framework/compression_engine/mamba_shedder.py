@@ -157,6 +157,7 @@ class MambaShedderCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("mamba_shedder")
+@COMPRESSOR_REGISTRY.register("mamba_shedder_compressor")
 def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for Mamba-Shedder compressor."""
     sparsity = getattr(comp_config, "mamba_shedder_sparsity", getattr(comp_config, "sparsity", 0.2)) if comp_config else kwargs.get("sparsity", 0.2)
