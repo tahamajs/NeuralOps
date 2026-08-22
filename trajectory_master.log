@@ -740,3 +740,5 @@ ompleted)
 [2026-08-22 04:34:03] [Worker-1] [46/126] << SUCCESS: attn=hymba_transx | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6930 | Time: 33.3s
 [2026-08-22 04:34:07] [Worker-1] [47/126] >> Launching: attn=infini | task=sst2 | seed=42
 [2026-08-22 04:34:12] [Worker-1] [47/126] << SUCCESS: attn=infini | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7027 | Time: 5.6s
+[2026-08-22 04:34:15] [Worker-1] [48/126] >> Launching: attn=inject_aegis_hybrid | task=sst2 | seed=42
+[2026-08-22 04:34:26] [Worker-1] [48/126] << SUCCESS: attn=inject_aegis_hybrid | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6905 | Time: 11.1s
