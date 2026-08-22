@@ -1,132 +1,154 @@
-r"""
-Gated DeltaNet Block with HGRN-2 and Optional Full Attention Routing.
+r"""Gated DeltaNet Block with Optional Multi-Head Attention Bypass.
 
 Implements an efficient hybrid linear-recurrent block switching dynamically between standard
-multi-head self-attention and Hierarchical Gated Recurrent Network v2 (HGRN-2).
+multi-head self-attention and Bidirectional Gated DeltaNet with pretrained weight transfer.
 """
 
 from typing import Any, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from framework.core.registry import ATTENTION_REGISTRY
 
-from .hgrn2_layer import HGRN2Layer
+from framework.attentions.gated_delta_net import GatedDeltaNet
+from framework.core.adapters import UniversalAdapter
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("gated_deltanet_block")
-class GatedDeltaNetBlock(nn.Module):
-    r"""
-    Gated DeltaNet Transformer Block.
+class GatedDeltaNetBlock(BaseAttention):
+    r"""Gated DeltaNet Transformer Block with Pretrained Weight Transfer.
 
     Mathematical Formulation:
-        Given input activations $x \in \mathbb{R}^{B \times L \times D}$:
         $$\text{Output} = \begin{cases}
-            \text{LayerNorm}(x + \text{MHA}(x, x, x)), & \text{if } \text{use\_full\_attention} \\
-            \text{LayerNorm}(x + \text{HGRN2}(x)), & \text{otherwise}
+            \text{LayerNorm}(X + \text{MHA}(X, X, X)), & \text{if } \text{use\_full\_attention} \\
+            \text{LayerNorm}(X + \text{GatedDeltaNet}(X)), & \text{otherwise}
         \end{cases}$$
-        where $\text{HGRN2}(x)$ evaluates element-wise linear recurrence modulated by input and forget gates:
-        $$h_t = \text{clip}\left( \sigma(W_f x_t) \odot h_{t-1} + \sigma(W_i x_t) \odot x_t, -C, C \right)$$
-
-    Complexity:
-        - Full Attention: $\mathcal{O}(B \cdot L^2 \cdot D)$ time, $\mathcal{O}(B \cdot L^2)$ attention memory.
-        - HGRN-2 Mode: $\mathcal{O}(B \cdot L \cdot D^2)$ time, $\mathcal{O}(B \cdot D)$ recurrent state memory.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: $[B, L, D]$
-        - Output: $[B, L, D]$
     """
 
     def __init__(
         self,
-        d_model: Union[int, Any] = 768,
-        n_heads: int = 12,
+        config: Optional[Any] = None,
+        rank: Optional[int] = None,
+        d_model: Optional[Union[int, Any]] = None,
+        num_heads: Optional[int] = None,
         use_full_attention: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
-        if hasattr(d_model, "hidden_size"):
-            config = d_model
-            d_model = config.hidden_size
-            n_heads = config.num_attention_heads
+        super().__init__(config, rank)
+        if d_model is None:
+            if config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+            else:
+                d_model = kwargs.get("hidden_size", 768)
+
+        if num_heads is None:
+            if config is not None:
+                num_heads = getattr(config, "num_attention_heads", 12)
+            else:
+                num_heads = kwargs.get("num_attention_heads", 12)
 
         self.d_model: int = d_model
-        self.n_heads: int = n_heads
+        self.num_heads: int = num_heads
         self.use_full_attention: bool = use_full_attention
 
         if use_full_attention:
             self.attn: Optional[nn.MultiheadAttention] = nn.MultiheadAttention(
-                d_model, n_heads, batch_first=True
+                self.d_model, self.num_heads, batch_first=True
             )
         else:
             self.attn = None
 
-        self.hgrn = HGRN2Layer(d_model=d_model)
-        self.norm = nn.LayerNorm(d_model)
+        self.deltanet = GatedDeltaNet(
+            config=config, d_model=self.d_model, num_heads=self.num_heads, **kwargs
+        )
+        self.norm = nn.LayerNorm(self.d_model)
+
+    def copy_weights(self, old_attn: Any) -> None:
+        """Transfer pretrained weights to either MHA or GatedDeltaNet."""
+        if self.use_full_attention and self.attn is not None:
+            try:
+                adapter = UniversalAdapter()
+                w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+                w_k, b_k = adapter.get_weight_bias(old_attn, "k")
+                w_v, b_v = adapter.get_weight_bias(old_attn, "v")
+                w_o, b_o = adapter.get_weight_bias(old_attn, "o")
+                with torch.no_grad():
+                    qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
+                    self.attn.in_proj_weight.copy_(qkv_w)
+                    if b_q is not None and b_k is not None and b_v is not None and self.attn.in_proj_bias is not None:
+                        self.attn.in_proj_bias.copy_(torch.cat([b_q, b_k, b_v], dim=0))
+                    self.attn.out_proj.weight.copy_(w_o)
+                    if b_o is not None and self.attn.out_proj.bias is not None:
+                        self.attn.out_proj.bias.copy_(b_o)
+            except Exception:
+                pass
+        else:
+            if hasattr(self.deltanet, "copy_weights"):
+                self.deltanet.copy_weights(old_attn)
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Forward computation pass for GatedDeltaNetBlock.
-
-        Args:
-            hidden_states (torch.Tensor): Input representation of shape $[B, L, D]$.
-            attention_mask (Optional[torch.Tensor]): Optional attention mask $[B, L]$.
-            output_attentions (bool): Whether to return intermediate attention weights.
-            **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]:
-                - Transformed hidden activations of shape $[B, L, D]$.
-                - None (or attention weights).
-        """
+        """Forward pass for GatedDeltaNetBlock."""
         x = hidden_states
         if self.use_full_attention and self.attn is not None:
-            key_padding_mask = (
-                (attention_mask == 0)
-                if attention_mask is not None and attention_mask.dim() == 2
-                else None
+            key_padding_mask = None
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    key_padding_mask = (attention_mask == 0)
+                elif attention_mask.dim() == 4:
+                    key_padding_mask = (attention_mask[:, 0, 0, :] <= -10000.0)
+
+            attn_out, attn_weights = self.attn(
+                x, x, x, key_padding_mask=key_padding_mask, need_weights=output_attentions
             )
-            attn_out, attn_weights = self.attn(x, x, x, key_padding_mask=key_padding_mask)
-            x = self.norm(x + attn_out)
-            return x, attn_weights if output_attentions else None
+            out = self.norm(x + attn_out)
+            return out, (attn_weights if output_attentions else None)
         else:
-            hgrn_out, _ = self.hgrn(x, attention_mask=attention_mask)
-            x = self.norm(x + hgrn_out)
-            return x, None
+            delta_out, _ = self.deltanet(
+                x, attention_mask=attention_mask, head_mask=head_mask, output_attentions=output_attentions, **kwargs
+            )
+            out = self.norm(x + delta_out)
+            return out, None
 
 
-@ATTENTION_REGISTRY.register("gated_deltanet_block")
+@ATTENTION_REGISTRY.register("gated_deltanet_block_inject")
 def inject_gated_deltanet_block(
     layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Optional[nn.Module],
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 6,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
 ) -> GatedDeltaNetBlock:
-    r"""
-    Injects GatedDeltaNetBlock into a transformer layer.
+    r"""Injects GatedDeltaNetBlock into a transformer layer."""
+    d_model = 768
+    num_heads = 12
+    if model_config is not None:
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        num_heads = getattr(model_config, "num_attention_heads", 12)
+    elif hasattr(layer, "config"):
+        d_model = getattr(layer.config, "hidden_size", 768)
+        num_heads = getattr(layer.config, "num_attention_heads", 12)
 
-    Args:
-        layer (nn.Module): Host layer to patch.
-        model_config (Any): Model configuration object.
-        comp_config (Any): Compression hyperparameter configuration.
-        layer_idx (int): Current layer index.
-        total_layers (int): Total transformer layers.
-        old_attn (Optional[nn.Module]): Pretrained attention layer.
+    use_full = getattr(comp_config, "use_full_attention", False) if comp_config else False
+    new_block = GatedDeltaNetBlock(
+        config=model_config, d_model=d_model, num_heads=num_heads, use_full_attention=use_full, **kwargs
+    )
+    src_attn = old_attn if old_attn is not None else layer
+    if src_attn is not None and hasattr(new_block, "copy_weights"):
+        new_block.copy_weights(src_attn)
 
-    Returns:
-        GatedDeltaNetBlock: Initialized GatedDeltaNet block.
-    """
-    d_model = model_config.hidden_size
-    n_heads = model_config.num_attention_heads
-    use_full = getattr(comp_config, "use_full_attention", False)
-    new_block = GatedDeltaNetBlock(d_model, n_heads, use_full)
-    layer.attention = new_block
+    if hasattr(layer, "attention"):
+        layer.attention = new_block
+    elif hasattr(layer, "self"):
+        layer.self = new_block
+
     return new_block

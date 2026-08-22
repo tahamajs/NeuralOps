@@ -1,209 +1,112 @@
+r"""
+HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention.
+
+Combines multi-head linear projection with Rotary Position Embeddings (RoPE),
+rectified kernel representations, and adaptive gating for zero-shot distillation from pretrained transformers.
+"""
+
+import math
 from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
 def rotate_half(x: torch.Tensor) -> torch.Tensor:
-    r"""
-    Rotates half the hidden dimensions of the input tensor for Rotary Position Embedding (RoPE).
-
-    Mathematical Mechanism:
-        $$x = [x_1, x_2] \mapsto [-x_2, x_1]$$
-
-    Args:
-        x: Tensor of shape `[..., D]`.
-
-    Returns:
-        Rotated tensor of identical shape `[..., D]`.
-    """
     x1, x2 = x.chunk(2, dim=-1)
     return torch.cat((-x2, x1), dim=-1)
 
 
 class RotaryEmbedding(nn.Module):
-    r"""
-    Rotary Position Embedding (RoPE).
-
-    Mathematical Mechanism:
-        $$\Theta = \{\theta_i = 10000^{-2(i-1)/d}, i \in [1, d/2]\}$$
-        $$R_{\Theta, m}^d x_m = (x_m \odot \cos m\Theta) + (\text{rotate\_half}(x_m) \odot \sin m\Theta)$$
-
-    Computational Complexity:
-        - Time: $\mathcal{O}(L \cdot d)$
-        - Space: $\mathcal{O}(L_{\max} \cdot d)$ cached buffer.
-
-    Tensor Dimensions:
-        - Input $x$: `[B, H, L, d]`
-        - Output: `[B, H, L, d]`
-    """
-
     def __init__(self, dim: int, max_seq_len: int = 4096) -> None:
         super().__init__()
         self.dim: int = dim
         self.max_seq_len: int = max_seq_len
         inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
         t = torch.arange(max_seq_len).float()
-        freqs = torch.einsum("i,j->ij", t, inv_freq)  # (L, dim/2)
+        freqs = torch.einsum("i,j->ij", t, inv_freq)
         emb = torch.cat((freqs, freqs), dim=-1)
         self.register_buffer("cos_cached", emb.cos(), persistent=False)
         self.register_buffer("sin_cached", emb.sin(), persistent=False)
 
     def forward(self, x: torch.Tensor, offset: int = 0) -> torch.Tensor:
-        r"""
-        Applies rotary position embedding to input tensor.
-
-        Args:
-            x: Input tensor of shape `[B, H, L, d]`.
-            offset: Position offset along sequence dimension.
-
-        Returns:
-            RoPE-embedded tensor of shape `[B, H, L, d]`.
-        """
         L = x.shape[2]
-        cos = self.cos_cached[offset : offset + L].unsqueeze(0).unsqueeze(0)  # (1, 1, L, d)
-        sin = self.sin_cached[offset : offset + L].unsqueeze(0).unsqueeze(0)  # (1, 1, L, d)
+        cos = self.cos_cached[offset : offset + L].to(x.dtype).unsqueeze(0).unsqueeze(0)
+        sin = self.sin_cached[offset : offset + L].to(x.dtype).unsqueeze(0).unsqueeze(0)
         return (x * cos) + (rotate_half(x) * sin)
 
 
-class ReGLALayer(nn.Module):
-    r"""
-    Rectified Gated Linear Attention (ReGLA) Layer with ReLU Kernel.
-
-    Mathematical Mechanism:
-        Uses $\phi(\cdot) = \text{ReLU}(\cdot)$ feature map for $O(N)$ linear attention:
-        $$\begin{aligned}
-        Q &= \text{ReLU}(X W_Q), \quad K = \text{ReLU}(X W_K), \quad V = X W_V \\
-        S &= K^\top V = \sum_{t=1}^L K_t V_t^\top \in \mathbb{R}^{d \times d} \\
-        Z &= \sum_{t=1}^L K_t \in \mathbb{R}^{d} \\
-        O_t &= \frac{Q_t S}{Q_t Z + \epsilon}
-        \end{aligned}$$
-
-    Computational Complexity:
-        - Time: $\mathcal{O}(B \cdot H \cdot L \cdot d^2)$ — linear in sequence length $L$.
-        - Space: $\mathcal{O}(B \cdot H \cdot d^2)$ for associative state.
-
-    Tensor Dimensions:
-        - Input $x$: `[B, L, D]`
-        - Output: `[B, L, D]`
-    """
-
-    def __init__(self, dim: int, heads: int = 8) -> None:
-        super().__init__()
-        self.dim: int = dim
-        self.heads: int = heads
-        self.head_dim: int = dim // heads
-        self.q_proj: nn.Linear = nn.Linear(dim, dim)
-        self.k_proj: nn.Linear = nn.Linear(dim, dim)
-        self.v_proj: nn.Linear = nn.Linear(dim, dim)
-        self.out_proj: nn.Linear = nn.Linear(dim, dim)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        r"""
-        Forward pass for ReGLALayer.
-
-        Args:
-            x: Input tensor of shape `[B, L, D]`.
-
-        Returns:
-            Output tensor of shape `[B, L, D]`.
-        """
-        B, L, D = x.shape
-        q = F.relu(self.q_proj(x)).view(B, L, self.heads, self.head_dim).transpose(1, 2)
-        k = F.relu(self.k_proj(x)).view(B, L, self.heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(x).view(B, L, self.heads, self.head_dim).transpose(1, 2)
-
-        kv = torch.einsum("bhld,bhlm->bhldm", k, v)  # (B, H, L, d, d)
-        z = k.cumsum(dim=2)  # (B, H, L, d)
-        num = torch.einsum("bhld,bhldm->bhlm", q, kv.cumsum(dim=2))
-        den = torch.einsum("bhld,bhld->bhl", q, z) + 1e-5
-        out = (num / den.unsqueeze(-1)).transpose(1, 2).contiguous().view(B, L, D)
-        return self.out_proj(out)
-
-
-class TransformerLayer(nn.Module):
-    r"""
-    Standard Pre-Norm Transformer Layer with Multi-Head Attention and RoPE.
-
-    Computational Complexity:
-        - Time: $\mathcal{O}(B \cdot L^2 \cdot D + B \cdot L \cdot D \cdot D_{\text{ff}})$
-        - Space: $\mathcal{O}(B \cdot H \cdot L^2)$ for softmax attention map.
-    """
-
-    def __init__(self, dim: int, heads: int = 8) -> None:
-        super().__init__()
-        self.attn: nn.MultiheadAttention = nn.MultiheadAttention(dim, heads, batch_first=True)
-        self.rope: RotaryEmbedding = RotaryEmbedding(dim // heads)
-        self.ffn: nn.Sequential = nn.Sequential(
-            nn.Linear(dim, dim * 4), nn.GELU(), nn.Linear(dim * 4, dim)
-        )
-        self.norm1: nn.LayerNorm = nn.LayerNorm(dim)
-        self.norm2: nn.LayerNorm = nn.LayerNorm(dim)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        r"""
-        Forward pass for TransformerLayer.
-
-        Args:
-            x: Input tensor of shape `[B, L, D]`.
-
-        Returns:
-            Output tensor of shape `[B, L, D]`.
-        """
-        attn_out, _ = self.attn(x, x, x)
-        x = self.norm1(x + attn_out)
-        x = self.norm2(x + self.ffn(x))
-        return x
-
-
 @ATTENTION_REGISTRY.register("halo_regla")
+@ATTENTION_REGISTRY.register("halo_regla_inject")
 class HALOReGLAAttention(BaseAttention):
     r"""
     HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention.
-
-    Mathematical Mechanism:
-        Combines multi-head linear projection with Rotary Position Embeddings (RoPE) and
-        ReLU non-negative kernel representation $\phi(x) = \text{ReLU}(x)$:
-        $$\begin{aligned}
-        Q &= \text{RoPE}(X W_Q), \quad K = \text{RoPE}(X W_K), \quad V = X W_V \\
-        \tilde{Q} &= \text{ReLU}(Q), \quad \tilde{K} = \text{ReLU}(K) \\
-        KV &= \sum_{t=1}^L \tilde{K}_t^\top V_t \in \mathbb{R}^{B \times H \times d \times d} \\
-        Z &= \sum_{t=1}^L \tilde{K}_t \in \mathbb{R}^{B \times H \times d} \\
-        \text{Attn}(X) &= \frac{\tilde{Q} (KV)}{\tilde{Q} Z^\top + \epsilon} W_O
-        \end{aligned}$$
-
-    Computational Complexity:
-        - Time: $\mathcal{O}(B \cdot H \cdot L \cdot d^2)$ — strictly linear in sequence length $L$.
-        - Space: $\mathcal{O}(B \cdot H \cdot d^2)$ memory for associative matrix buffers.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: `[B, L, D]`
-        - Output: Tuple `(output, None)` where `output` is `[B, L, D]`.
     """
 
     def __init__(
         self,
-        config: Any,
+        config: Optional[Any] = None,
         rank: Optional[int] = None,
         hybrid_ratio: int = 4,
+        pretrained_attn: Optional[nn.Module] = None,
+        gate_init_bias: float = 1.8,
+        **kwargs: Any,
     ) -> None:
+        if config is None and pretrained_attn is not None:
+            class DummyConfig:
+                pass
+            config = DummyConfig()
+            config.hidden_size = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None)).out_features
+            config.num_attention_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 12))
+
         super().__init__(config, rank)
-        self.dim: int = getattr(config, "hidden_size", 768)
-        self.num_heads: int = getattr(config, "num_attention_heads", 12)
-        self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
+        self.dim: int = getattr(config, "hidden_size", 768) if config is not None else 768
+        self.num_heads: int = getattr(config, "num_attention_heads", 12) if config is not None else 12
+        self.head_dim: int = self.dim // max(1, self.num_heads)
         self.hybrid_ratio: int = hybrid_ratio
 
-        self.q_proj: nn.Linear = nn.Linear(self.dim, self.dim)
-        self.k_proj: nn.Linear = nn.Linear(self.dim, self.dim)
-        self.v_proj: nn.Linear = nn.Linear(self.dim, self.dim)
-        self.out_proj: nn.Linear = nn.Linear(self.dim, self.dim)
-        self.rope: RotaryEmbedding = RotaryEmbedding(self.head_dim)
-        dropout_p: float = getattr(config, "dropout", 0.0)
-        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+        self.q_proj = nn.Linear(self.dim, self.dim, bias=True)
+        self.k_proj = nn.Linear(self.dim, self.dim, bias=True)
+        self.v_proj = nn.Linear(self.dim, self.dim, bias=True)
+        self.out_proj = nn.Linear(self.dim, self.dim, bias=True)
+        self.rope = RotaryEmbedding(self.head_dim)
+        self.gate = nn.Linear(self.dim, self.num_heads)
+        self.gate.bias.data.fill_(gate_init_bias)
+        self.dropout = nn.Dropout(getattr(config, "dropout", 0.1) if config is not None else 0.1)
+
+        if pretrained_attn is not None:
+            self._copy_pretrained(pretrained_attn)
+
+    def _copy_pretrained(self, old_attn: nn.Module) -> None:
+        q_src = getattr(old_attn, "q_lin", getattr(old_attn, "query", None))
+        k_src = getattr(old_attn, "k_lin", getattr(old_attn, "key", None))
+        v_src = getattr(old_attn, "v_lin", getattr(old_attn, "value", None))
+        out_src = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None))
+        if q_src is not None:
+            self.q_proj.weight.data.copy_(q_src.weight.data)
+            if q_src.bias is not None:
+                self.q_proj.bias.data.copy_(q_src.bias.data)
+        if k_src is not None:
+            self.k_proj.weight.data.copy_(k_src.weight.data)
+            if k_src.bias is not None:
+                self.k_proj.bias.data.copy_(k_src.bias.data)
+        if v_src is not None:
+            self.v_proj.weight.data.copy_(v_src.weight.data)
+            if v_src.bias is not None:
+                self.v_proj.bias.data.copy_(v_src.bias.data)
+        if out_src is not None:
+            self.out_proj.weight.data.copy_(out_src.weight.data)
+            if out_src.bias is not None:
+                self.out_proj.bias.data.copy_(out_src.bias.data)
+
+    @classmethod
+    def from_distilbert_pretrained(
+        cls, old_attn: nn.Module, model_config: Optional[Any] = None, **kwargs: Any
+    ) -> "HALOReGLAAttention":
+        return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def forward(
         self,
@@ -213,39 +116,75 @@ class HALOReGLAAttention(BaseAttention):
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Forward execution of HALOReGLAAttention.
-
-        Args:
-            hidden_states: Input tensor of shape `[B, L, D]`.
-            attention_mask: Optional attention mask tensor.
-            head_mask: Optional head masking tensor.
-            output_attentions: Boolean flag indicating if attention matrices are returned.
-            **kwargs: Extra keyword arguments.
-
-        Returns:
-            Tuple `(output, None)` of shape `([B, L, D], None)`.
-        """
         B, L, D = hidden_states.shape
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         k = self.k_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
 
-        # Apply RoPE
-        q = self.rope(q)
-        k = self.rope(k)
+        # 1. Standard dense softmax stream
+        dense_scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim**-0.5)
+        mask_val = -10000.0 if dense_scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
 
-        # ReLU linear attention
-        q = F.relu(q)
-        k = F.relu(k)
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                pad_m = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).float()) * mask_val
+                dense_scores = dense_scores + pad_m
+            elif attention_mask.dim() == 4:
+                dense_scores = dense_scores + attention_mask.to(dense_scores.dtype)
 
-        kv = torch.einsum("b h n d, b h n e -> b h d e", k, v)
-        z = k.sum(dim=2, keepdim=True)
-        num = torch.einsum("b h n d, b h d e -> b h n e", q, kv)
-        den = (
-            torch.einsum("b h n d, b h d -> b h n", q, z.squeeze(2)).unsqueeze(-1)
-            + 1e-5
-        )
-        out = num / den
-        out = out.transpose(1, 2).contiguous().view(B, L, D)
+        dense_attn = F.softmax(dense_scores, dim=-1)
+        dense_attn = torch.nan_to_num(dense_attn, nan=0.0)
+        dense_attn = self.dropout(dense_attn)
+        dense_out = torch.matmul(dense_attn, v)  # (B, H, L, d)
+
+        # 2. RoPE + Linear stream
+        q_rope = self.rope(q)
+        k_rope = self.rope(k)
+
+        q_lin = F.elu(q_rope) + 1.0
+        k_lin = F.elu(k_rope) + 1.0
+
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask = attention_mask.unsqueeze(1).unsqueeze(-1).to(k_lin.dtype)
+            elif attention_mask.dim() == 4:
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).to(k_lin.dtype).unsqueeze(1).unsqueeze(-1)
+            else:
+                mask = attention_mask.to(k_lin.dtype).unsqueeze(-1)
+            k_lin = k_lin * mask
+            v_masked = v * mask
+        else:
+            v_masked = v
+
+        kv = torch.einsum("b h n d, b h n e -> b h d e", k_lin, v_masked)
+        z = k_lin.sum(dim=2, keepdim=True)
+        num = torch.einsum("b h n d, b h d e -> b h n e", q_lin, kv)
+        den = (torch.einsum("b h n d, b h d -> b h n", q_lin, z.squeeze(2)).unsqueeze(-1) + 1e-5)
+        linear_out = num / den
+
+        # 3. Adaptive fusion
+        g = torch.sigmoid(self.gate(hidden_states)).permute(0, 2, 1).unsqueeze(-1)  # (B, H, L, 1)
+        fused = g * dense_out + (1.0 - g) * linear_out
+        out = fused.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         return self.out_proj(out), None
+
+
+def inject_halo_regla(
+    layer: Any,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> HALOReGLAAttention:
+    r"""Injects HALOReGLAAttention into a transformer layer."""
+    if model_config is None and hasattr(layer, "attention"):
+        old_attn = layer.attention
+    if model_config is None and old_attn is not None:
+        new_attn = HALOReGLAAttention.from_distilbert_pretrained(old_attn)
+    else:
+        new_attn = HALOReGLAAttention(config=model_config, pretrained_attn=old_attn)
+    if hasattr(layer, "attention"):
+        layer.attention = new_attn
+    return new_attn

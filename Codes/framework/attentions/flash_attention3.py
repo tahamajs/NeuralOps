@@ -2,14 +2,14 @@ r"""
 FlashAttention-3: Fast and Memory-Efficient Exact Attention with Asynchronous Hardware Overlap.
 
 Integrates FlashAttention-3 kernels (with Hopper TMA asynchronous memory copy and FP8 precision support)
-alongside graceful fallback to PyTorch's hardware-accelerated Scaled Dot-Product Attention (SDPA).
+alongside graceful fallback to PyTorch's hardware-accelerated Scaled Dot-Product Attention (SDPA) and exact pretrained weight copying.
 """
 
 from typing import Any, Optional, Tuple
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -22,27 +22,21 @@ except ImportError:
 
 
 @ATTENTION_REGISTRY.register("flash3")
+@ATTENTION_REGISTRY.register("flash_attention3")
 class FlashAttention3(BaseAttention):
     r"""
     FlashAttention-3 Multi-Head Exact Attention.
 
     Mathematical Formulation:
-        Computes standard scaled dot-product attention without materializing intermediate attention matrices in High Bandwidth Memory (HBM):
-        $$S = \frac{Q K^T}{\sqrt{d_h}} + M$$
-        $$P = \text{Softmax}(S) = \frac{\exp(S - m)}{\sum \exp(S - m)}$$
+        $$S = \frac{Q K^\top}{\sqrt{d_h}} + M$$
+        $$P = \operatorname{Softmax}(S) = \frac{\exp(S - m)}{\sum \exp(S - m)}$$
         $$O = P V$$
         FlashAttention-3 tiles $Q, K, V$ into SRAM blocks and utilizes asynchronous hardware copy (Warp Specialization & TMA)
         to overlap GEMM operations with softmax reduction.
 
     Complexity:
-        - FLOPs: $\mathcal{O}(B \cdot H \cdot L^2 \cdot d_h)$.
-        - HBM Memory Accesses: $\mathcal{O}\left(B \cdot H \cdot L \cdot d_h + \frac{L^2 d_h^2}{M_{\text{SRAM}}}\right)$ (IO-optimal).
-        - Memory Footprint: $\mathcal{O}(B \cdot L \cdot D)$ activations in global memory.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: $[B, L, D]$
-        - FlashAttention Layout: $[B, L, H, d_h]$
-        - Output: $[B, L, D]$
+        - FLOPs: $\mathcal{O}(B \cdot H \cdot L^2 \cdot d_h)$ exact.
+        - HBM Accesses: $\mathcal{O}\left(B \cdot H \cdot L \cdot d_h + \frac{L^2 d_h^2}{M_{\text{SRAM}}}\right)$ (IO-optimal).
     """
 
     def __init__(
@@ -50,44 +44,64 @@ class FlashAttention3(BaseAttention):
         config: Any,
         rank: Optional[int] = None,
         use_fp8: bool = False,
+        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = config.num_attention_heads
-        self.head_dim: int = config.hidden_size // self.num_heads
+        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
         self.use_fp8: bool = use_fp8
 
-        self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        self.q_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, hidden_size)
+
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        r"""Universal adapter weight copying."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.weight.data.copy_(w)
+                if b is not None and target.bias is not None:
+                    target.bias.data.copy_(b)
+            except Exception:
+                pass
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Forward computation pass for FlashAttention3.
-
-        Args:
-            hidden_states (torch.Tensor): Input activations $[B, L, D]$.
-            attention_mask (Optional[torch.Tensor]): Mask tensor $[B, L]$ or $[B, 1, 1, L]$.
-            output_attentions (bool): Whether to return attention probabilities (unsupported in FlashAttention kernels).
-            **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]:
-                - Transformed context representation $[B, L, D]$.
-                - None.
-        """
         B, L, D = hidden_states.shape
-        H, D_head = self.num_heads, self.head_dim
+        H, Dh = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
 
-        q = self.q_proj(hidden_states).view(B, L, H, D_head)  # (B, L, H, D_head)
-        k = self.k_proj(hidden_states).view(B, L, H, D_head)
-        v = self.v_proj(hidden_states).view(B, L, H, D_head)
+        q = self.q_proj(hidden_states).view(B, L, H, Dh)  # (B, L, H, Dh)
+        k = self.k_proj(hidden_states).view(B, L, H, Dh)
+        v = self.v_proj(hidden_states).view(B, L, H, Dh)
 
         if FLASH_ATTN_AVAILABLE and hidden_states.is_cuda:
             q_fa = q.contiguous()
@@ -102,16 +116,12 @@ class FlashAttention3(BaseAttention):
             out = flash_attn_func(q_fa, k_fa, v_fa, causal=False)
             out = out.contiguous().view(B, L, D)
         else:
-            q_sdpa = q.transpose(1, 2)  # (B, H, L, D_head)
+            q_sdpa = q.transpose(1, 2)  # (B, H, L, Dh)
             k_sdpa = k.transpose(1, 2)
             v_sdpa = v.transpose(1, 2)
 
-            attn_mask = None
-            if attention_mask is not None:
-                if attention_mask.dim() == 2:
-                    attn_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).to(q_sdpa.dtype)) * -10000.0
-                elif attention_mask.dim() == 4:
-                    attn_mask = attention_mask.to(q_sdpa.dtype)
+            valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
+            attn_mask = (1.0 - valid_mask_2d.unsqueeze(1).unsqueeze(2).to(q_sdpa.dtype)) * -10000.0
 
             out_sdpa = F.scaled_dot_product_attention(
                 q_sdpa,

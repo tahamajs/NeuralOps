@@ -15,36 +15,67 @@ class FactorisedLinear(nn.Module):
 
     Mathematical Mechanism:
         $$W = U \Sigma V^\top \approx U_{:, :r} \Sigma_{:r} V_{:r, :}^\top = A B$$
+        $$A = U_{:, :r} \text{diag}(\sqrt{\Sigma_{:r}}) \in \mathbb{R}^{\text{out} \times r}, \quad B = \text{diag}(\sqrt{\Sigma_{:r}}) V_{:r, :}^\top \in \mathbb{R}^{r \times \text{in}}$$
         $$y = (x B^\top) A^\top + b$$
-        where $A \in \mathbb{R}^{\text{out} \times r}$ and $B \in \mathbb{R}^{r \times \text{in}}$.
     """
 
     def __init__(
         self,
-        pretrained_weight: torch.Tensor,
-        pretrained_bias: Optional[torch.Tensor],
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        bias: bool = True,
         energy: float = 0.95,
     ) -> None:
         super().__init__()
-        out_dim, in_dim = pretrained_weight.shape
-        with torch.no_grad():
-            U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
-            total = (S**2).sum()
-            cum = torch.cumsum(S**2, dim=0) / total
-            rank = int(torch.searchsorted(cum, energy).item()) + 1
-            rank = max(1, min(rank, min(out_dim, in_dim), 64))
-            self.rank: int = rank
-            A = U[:, :rank] * S[:rank].unsqueeze(0)
-            B = Vt[:rank, :]
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = min(rank, in_features, out_features)
+        self.energy = energy
 
-        self.down: nn.Linear = nn.Linear(in_dim, rank, bias=False)
-        self.up: nn.Linear = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
-        self.down.weight.data = B.float()
-        self.up.weight.data = A.float()
-        if pretrained_bias is not None:
-            self.up.bias.data = pretrained_bias.float()
-        else:
-            self.up.bias = None
+        self.down: nn.Linear = nn.Linear(in_features, self.rank, bias=False)
+        self.up: nn.Linear = nn.Linear(self.rank, out_features, bias=bias)
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        """Initialize with orthogonal factors."""
+        nn.init.orthogonal_(self.down.weight)
+        nn.init.orthogonal_(self.up.weight)
+        if self.up.bias is not None:
+            nn.init.zeros_(self.up.bias)
+
+    def decompose_from_weight(
+        self,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+        energy: Optional[float] = None,
+    ) -> None:
+        """Decompose pretrained dense weight matrix via SVD and set factor parameters."""
+        with torch.no_grad():
+            W = weight.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            target_energy = energy if energy is not None else self.energy
+            total_energy = (S**2).sum()
+            cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
+            calc_rank = int(torch.searchsorted(cum_energy, target_energy).item()) + 1
+            r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+            r = max(1, r)
+
+            sqrt_s = torch.sqrt(S[:r])
+            A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
+            B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
+
+            if r != self.rank:
+                self.up.weight.data.zero_()
+                self.down.weight.data.zero_()
+                self.up.weight.data[:, :r] = A
+                self.down.weight.data[:r, :] = B
+            else:
+                self.up.weight.data.copy_(A)
+                self.down.weight.data.copy_(B)
+
+            if bias is not None and self.up.bias is not None:
+                self.up.bias.data.copy_(bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Evaluates factorized linear transformation."""
@@ -54,7 +85,7 @@ class FactorisedLinear(nn.Module):
 @ATTENTION_REGISTRY.register("minimal_svd_v2")
 class MinimalSVDAttentionV2(BaseAttention):
     r"""
-    MinimalSVD v2: Clean SVD-Factorized Attention for DistilBERT.
+    MinimalSVD v2: Clean SVD-Factorized Attention for Transformers.
 
     Mathematical Mechanism:
         Replaces projection matrices with truncated SVD low-rank factors:
@@ -83,39 +114,64 @@ class MinimalSVDAttentionV2(BaseAttention):
         dropout: float = 0.1,
         pretrained_attn: Optional[nn.Module] = None,
         rank: Optional[int] = None,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(model_config, rank)
+        actual_rank = getattr(
+            model_config,
+            "svd_rank",
+            rank if rank is not None else getattr(model_config, "rank", 64),
+        )
+        super().__init__(model_config, actual_rank)
         self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
         hidden_size: int = getattr(model_config, "hidden_size", 768)
         self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim
         self.hidden_size: int = hidden_size
-
-        if pretrained_attn is None:
-            raise ValueError("pretrained_attn must be supplied for zero-shot init")
+        self.rank: int = actual_rank
+        self.energy: float = energy
 
         self.q_proj: FactorisedLinear = FactorisedLinear(
-            pretrained_attn.q_lin.weight.data,
-            pretrained_attn.q_lin.bias.data if pretrained_attn.q_lin.bias is not None else None,
-            energy,
+            self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy
         )
         self.k_proj: FactorisedLinear = FactorisedLinear(
-            pretrained_attn.k_lin.weight.data,
-            pretrained_attn.k_lin.bias.data if pretrained_attn.k_lin.bias is not None else None,
-            energy,
+            self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy
         )
         self.v_proj: FactorisedLinear = FactorisedLinear(
-            pretrained_attn.v_lin.weight.data,
-            pretrained_attn.v_lin.bias.data if pretrained_attn.v_lin.bias is not None else None,
-            energy,
+            self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy
         )
         self.out_proj: FactorisedLinear = FactorisedLinear(
-            pretrained_attn.out_lin.weight.data,
-            pretrained_attn.out_lin.bias.data if pretrained_attn.out_lin.bias is not None else None,
-            energy,
+            self.all_head_size, self.hidden_size, rank=self.rank, bias=True, energy=energy
         )
 
-        self.dropout: nn.Dropout = nn.Dropout(dropout)
+        dropout_p = getattr(
+            model_config,
+            "dropout",
+            getattr(
+                model_config,
+                "hidden_dropout_prob",
+                getattr(model_config, "attention_probs_dropout_prob", dropout),
+            ),
+        )
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+            ("o", self.out_proj),
+        ]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.decompose_from_weight(w, b, self.energy)
+            except Exception:
+                pass
 
     def forward(
         self,
@@ -176,6 +232,9 @@ class MinimalSVDAttentionV2(BaseAttention):
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)
 
+        if head_mask is not None:
+            attn_weights = attn_weights * head_mask
+
         context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
 
@@ -187,7 +246,7 @@ class MinimalSVDAttentionV2(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-@ATTENTION_REGISTRY.register("minimal_svd_v2")
+@ATTENTION_REGISTRY.register("minimal_svd_v2_inject")
 def inject_minimal_svd_v2(
     layer: nn.Module,
     model_config: Any,
@@ -196,20 +255,7 @@ def inject_minimal_svd_v2(
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
 ) -> MinimalSVDAttentionV2:
-    r"""
-    Injection hook for MinimalSVDAttentionV2 into transformer layer.
-
-    Args:
-        layer: Target transformer layer module.
-        model_config: Model configuration.
-        comp_config: Compression configuration.
-        layer_idx: Layer index.
-        total_layers: Total number of transformer layers.
-        old_attn: Previous attention module.
-
-    Returns:
-        Instantiated `MinimalSVDAttentionV2` assigned to `layer.attention`.
-    """
+    r"""Injection hook for MinimalSVDAttentionV2 into transformer layer."""
     energy: float = getattr(comp_config, "svd_energy", 0.95)
     dropout: float = getattr(comp_config, "dropout", 0.1)
     new_attn = MinimalSVDAttentionV2(

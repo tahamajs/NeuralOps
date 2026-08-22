@@ -2,96 +2,116 @@ r"""
 Routing Attention: Content-Based Clustering for Sparse Attention.
 
 Partitions sequence queries and keys into discrete clusters via online $k$-means,
-confining quadratic attention computations to intra-cluster token neighborhoods.
-
-Mathematical Mechanism:
-    Given queries $Q \in \mathbb{R}^{B \times H \times L \times d}$ and keys $K \in \mathbb{R}^{B \times H \times L \times d}$:
-    1. **Iterative Head-Wise $k$-Means Clustering:**
-       Initialize $K$ cluster centroids $\{\mu_k^{(0)}\}_{k=1}^K$. For $t = 1, \dots, T$:
-       $$c_i^{(t)} = \operatorname{arg\,min}_{k \in \{1, \dots, K\}} \|Q_i - \mu_k^{(t-1)}\|_2^2, \quad \forall i \in \{1, \dots, L\}$$
-       $$\mu_k^{(t)} = \frac{\sum_{i=1}^L \mathbb{I}(c_i^{(t)} = k) Q_i}{\max\left(1, \sum_{i=1}^L \mathbb{I}(c_i^{(t)} = k)\right)}$$
-    2. **Intra-Cluster Attention Evaluation:**
-       For each cluster $k \in \{1, \dots, K\}$:
-       $$A_{ij}^{(k)} = \operatorname{Softmax}\left(\frac{Q_i K_j^T}{\sqrt{d}}\right) \cdot \mathbb{I}(c_i = k)\mathbb{I}(c_j = k)$$
-       $$O_i = \sum_{j \in \mathcal{C}_{c_i}} A_{ij} V_j$$
-
-Computational Complexity:
-    - $k$-means assignment & centroid update: $\mathcal{O}(T \cdot B \cdot H \cdot L \cdot K \cdot d)$.
-    - Clustered attention: $\mathcal{O}(B \cdot H \cdot K \cdot (L / K)^2 \cdot d) = \mathcal{O}(B \cdot H \cdot \frac{L^2}{K} \cdot d)$.
-    - Overall Complexity: $\mathcal{O}(T \cdot L \cdot K \cdot d + \frac{L^2}{K} \cdot d) \ll \mathcal{O}(L^2 \cdot d)$ when choosing $K \approx \sqrt{L}$.
+confining quadratic attention computations to intra-cluster token neighborhoods with exact masking.
 """
 
 from typing import Any, Optional, Tuple
+import math
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from framework.core.attention_mask import get_token_valid_mask
+from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("routing")
-class RoutingAttention(nn.Module):
-    r"""Routing Attention layer clustering queries via online $k$-means.
+class RoutingAttention(BaseAttention):
+    r"""
+    Routing Attention layer clustering queries and keys via online $k$-means.
 
-    Args:
-        config: Model configuration specifying `hidden_size`, `num_attention_heads`, and `dropout`.
-        num_clusters: Number of geometric cluster centroids ($K$).
-        n_iters: Number of Lloyd $k$-means iterations ($T$).
-        pretrained_attn: Optional source module for weight copying.
+    Mathematical Formulation:
+        1. Online $k$-Means Cluster Assignment:
+           $$c_i = \operatorname{arg\,min}_{k \in \{1, \dots, K\}} \|Q_i - \mu_k\|_2^2, \quad \forall i \in \{1, \dots, L\}$$
+        
+        2. Masked Intra-Cluster Attention:
+           $$S_{ij} = \frac{Q_i K_j^\top}{\sqrt{d}} + \begin{cases} 0 & \text{if } c_i = c_j \\ -10000 & \text{if } c_i \ne c_j \end{cases}$$
+           $$A = \operatorname{Softmax}(S + M_{\text{pad}})$$
+           $$O = A V W_O$$
+
+    Complexity:
+        - Time: $\mathcal{O}(T \cdot B \cdot H \cdot L \cdot K + B \cdot H \cdot \frac{L^2}{K} \cdot d)$
+        - Memory: $\mathcal{O}(B \cdot H \cdot L^2)$
     """
 
     def __init__(
         self,
         config: Any,
-        num_clusters: int = 32,
+        rank: Optional[int] = None,
+        num_clusters: int = 16,
         n_iters: int = 3,
         pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
     ) -> None:
-        super().__init__()
-        self.num_heads: int = config.num_attention_heads
-        self.head_dim: int = config.hidden_size // self.num_heads
-        self.num_clusters: int = num_clusters
+        super().__init__(config, rank)
+        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.num_clusters: int = getattr(config, "routing_num_clusters", num_clusters)
         self.n_iters: int = n_iters
-        dropout_p: float = float(
+
+        self.q_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, hidden_size)
+
+        dropout_p = getattr(
+            config,
+            "dropout",
             getattr(
                 config,
-                "dropout",
+                "hidden_dropout_prob",
                 getattr(config, "attention_probs_dropout_prob", 0.1),
-            )
+            ),
         )
-
-        self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
     def copy_weights(self, src: Any) -> None:
-        r"""Copy projection weights from pretrained attention module."""
-        with torch.no_grad():
-            self.q_proj.weight.copy_(src.q_lin.weight)
-            if src.q_lin.bias is not None:
-                self.q_proj.bias.copy_(src.q_lin.bias)
-            self.k_proj.weight.copy_(src.k_lin.weight)
-            if src.k_lin.bias is not None:
-                self.k_proj.bias.copy_(src.k_lin.bias)
-            self.v_proj.weight.copy_(src.v_lin.weight)
-            if src.v_lin.bias is not None:
-                self.v_proj.bias.copy_(src.v_lin.bias)
-            self.out_proj.weight.copy_(src.out_lin.weight)
-            if src.out_lin.bias is not None:
-                self.out_proj.bias.copy_(src.out_lin.bias)
+        r"""Universal adapter weight copying."""
+        from framework.core.adapters import UniversalAdapter
 
-    def _kmeans_assign(self, Q: torch.Tensor, centroids: torch.Tensor) -> torch.Tensor:
-        r"""Assign queries to nearest centroids via Euclidean distance."""
-        # FIX: [Cast to float32 for torch.cdist execution to ensure CPU float16/bfloat16 compatibility]
-        Q_f = Q.float() if Q.dtype in (torch.float16, torch.bfloat16) else Q
-        centroids_f = centroids.float() if centroids.dtype in (torch.float16, torch.bfloat16) else centroids
-        dist = torch.cdist(Q_f, centroids_f)  # (B, H, L, K)
-        return torch.argmin(dist, dim=-1)  # (B, H, L)
+        for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.weight.data.copy_(w)
+                if b is not None and target.bias is not None:
+                    target.bias.data.copy_(b)
+            except Exception:
+                pass
+
+    def _kmeans_assign(self, Q: torch.Tensor, K_num: int, iters: int = 3) -> torch.Tensor:
+        r"""Deterministic k-means clustering assignment: returns cluster_ids of shape [B, H, L]."""
+        B, H, L, d = Q.shape
+        K = min(K_num, L)
+        
+        # Strided initialization
+        step = max(1, L // K)
+        init_idx = torch.arange(0, L, step, device=Q.device)[:K]
+        if len(init_idx) < K:
+            pad = torch.zeros(K - len(init_idx), dtype=torch.long, device=Q.device)
+            init_idx = torch.cat([init_idx, pad])
+            
+        centroids = Q[:, :, init_idx, :].clone()
+        Q_f = Q.float()
+
+        cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=Q.device)
+        for _ in range(iters):
+            centroids_f = centroids.float()
+            dist = torch.cdist(Q_f, centroids_f)  # [B, H, L, K]
+            cluster_ids = torch.argmin(dist, dim=-1)  # [B, H, L]
+
+            one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=Q.dtype)
+            counts = one_hot.sum(dim=2).clamp(min=1.0).unsqueeze(-1)
+            sum_q = torch.einsum("bhlk,bhld->bhkd", one_hot, Q)
+            centroids = sum_q / counts
+
+        return cluster_ids
 
     def forward(
         self,
@@ -101,90 +121,54 @@ class RoutingAttention(nn.Module):
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""Compute routing cluster attention.
-
-        Args:
-            hidden_states: Input tensor of shape `[Batch, SeqLen, HiddenDim]`.
-            attention_mask: Optional attention mask `[Batch, SeqLen]` or broadcastable.
-            head_mask: Optional head masking tensor.
-            output_attentions: Return explicit attention weights if True.
-            **kwargs: Additional runtime arguments.
-
-        Returns:
-            Tuple of:
-                - output: Projected tensor `[Batch, SeqLen, HiddenDim]`.
-                - attention_weights: Attention matrix or None.
-        """
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
         Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
         K = self.k_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
         V = self.v_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 4:
-                valid = (attention_mask[:, 0, 0, :] > -10000.0)
-            elif attention_mask.dim() == 3:
-                valid = (attention_mask[:, 0, :] > -10000.0)
-            else:
-                valid = attention_mask.bool()
-                
-            valid_4d = valid.unsqueeze(1).unsqueeze(-1).to(Q.dtype)
-            Q = Q * valid_4d
-            K = K * valid_4d
-            V = V * valid_4d
-        else:
-            valid = None
+        valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)  # [B, L]
+        key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)              # [B, 1, 1, L]
 
-        num_clusters = min(self.num_clusters, L)
-        centroids = Q[:, :, :num_clusters, :]
+        scale = d ** -0.5
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, L, L]
 
-        for _ in range(self.n_iters):
-            cluster_ids = self._kmeans_assign(Q, centroids)
-            new_centroids = torch.zeros_like(centroids)
-            for k in range(num_clusters):
-                mask = (cluster_ids == k).unsqueeze(-1)
-                sum_q = (Q * mask).sum(dim=2)
-                count = mask.sum(dim=2).clamp(min=1)
-                new_centroids[:, :, k, :] = sum_q / count
-            centroids = new_centroids
+        K_num = min(max(1, self.num_clusters), L)
+        cluster_ids = self._kmeans_assign(Q, K_num, self.n_iters)  # [B, H, L]
 
-        cluster_ids = self._kmeans_assign(Q, centroids)
-        out = torch.zeros_like(V)
-        scale = d**-0.5
-        # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
-        mask_val = -10000.0 if Q.dtype in (torch.float16, torch.bfloat16) else -10000.0
+        # Intra-cluster mask: True where c_i == c_j
+        cluster_mask = cluster_ids.unsqueeze(-1) == cluster_ids.unsqueeze(-2)  # [B, H, L, L]
 
-        for k in range(num_clusters):
-            mask = (cluster_ids == k).unsqueeze(-1)
-            if mask.sum() == 0:
-                continue
-            Qk = Q * mask
-            Kk = K * mask
-            Vk = V * mask
-            scores = torch.matmul(Qk, Kk.transpose(-2, -1)) * scale
-            if valid is not None:
-                key_valid = valid.unsqueeze(1).unsqueeze(-2).to(scores.dtype)
-                scores = scores.masked_fill(key_valid == 0, mask_val)
-            attn = F.softmax(scores, dim=-1)
-            attn = self.dropout(attn)
-            out += torch.matmul(attn, Vk)
+        # Combine with padding mask
+        total_mask = cluster_mask & key_valid_4d
+        scores = scores.masked_fill(~total_mask, -10000.0)
 
-        out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
-        out = self.out_proj(out)
-        return out, None
+        attn = F.softmax(scores, dim=-1)
+        attn = self.dropout(attn)
+
+        if head_mask is not None:
+            attn = attn * head_mask
+
+        context = torch.matmul(attn, V)
+        context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+        output = self.out_proj(context)
+        return output, (attn if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("routing_inject")
 def inject_routing(
-    layer: Any,
+    layer: nn.Module,
     model_config: Any,
     comp_config: Any,
     layer_idx: int,
     total_layers: int,
-    old_attn: Any,
+    old_attn: Optional[nn.Module],
 ) -> RoutingAttention:
-    r"""Bridge helper injecting RoutingAttention into a target transformer layer."""
-    num_clusters = getattr(comp_config, "num_clusters", 32)
+    num_clusters = getattr(comp_config, "num_clusters", 16)
     n_iters = getattr(comp_config, "n_iters", 3)
     new_attn = RoutingAttention(
         config=model_config,

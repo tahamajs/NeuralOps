@@ -54,7 +54,11 @@ except Exception:
     TrainingArguments = object
     def set_seed(s): pass
 
-from datasets import Dataset, DatasetDict
+try:
+    from datasets import Dataset, DatasetDict
+except Exception:
+    Dataset = object
+    DatasetDict = object
 
 warnings.filterwarnings("ignore", category=UserWarning)
 log = logging.getLogger(__name__)
@@ -153,6 +157,7 @@ def lagrangian_rank_allocation(
 
 
 @ATTENTION_REGISTRY.register("svd_compressed_module")
+@ATTENTION_REGISTRY.register("svd_compressed")
 class SVDCompressedAttention(BaseAttention):
     r"""Multi-head attention with truncated SVD projections and optional sparse residuals.
 
@@ -175,79 +180,94 @@ class SVDCompressedAttention(BaseAttention):
         ranks: Optional[Dict[str, int]] = None,
         add_sparse: bool = False,
         sparsity_level: float = 0.7,
+        **kwargs: Any,
     ) -> None:
         super().__init__(model_config)
-        self.num_heads: int = model_config.num_attention_heads
-        self.head_dim: int = model_config.hidden_size // self.num_heads
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        self.head_dim: int = getattr(model_config, "hidden_size", 768) // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
-        self.hidden_size: int = model_config.hidden_size
+        self.hidden_size: int = getattr(model_config, "hidden_size", 768)
 
-        if pretrained_attn is None:
-            raise ValueError("pretrained_attn is required for weight init.")
-        if ranks is None:
-            raise ValueError("ranks dictionary is required (containing 'q','k','v','o').")
-
-        q_w = pretrained_attn.q_lin.weight.data.cpu().numpy()
-        k_w = pretrained_attn.k_lin.weight.data.cpu().numpy()
-        v_w = pretrained_attn.v_lin.weight.data.cpu().numpy()
-        out_w = pretrained_attn.out_lin.weight.data.cpu().numpy()
-
-        self.q_down, self.q_up = self._factorise_linear(
-            q_w, pretrained_attn.q_lin.bias, ranks["q"]
-        )
-        self.k_down, self.k_up = self._factorise_linear(
-            k_w, pretrained_attn.k_lin.bias, ranks["k"]
-        )
-        self.v_down, self.v_up = self._factorise_linear(
-            v_w, pretrained_attn.v_lin.bias, ranks["v"]
-        )
-        self.o_down, self.o_up = self._factorise_linear(
-            out_w, pretrained_attn.out_lin.bias, ranks["o"]
-        )
-
+        default_r = getattr(model_config, "svd_rank", getattr(model_config, "rank", 64))
+        self.ranks: Dict[str, int] = ranks or {"q": default_r, "k": default_r, "v": default_r, "o": default_r}
         self.add_sparse: bool = add_sparse
+        self.sparsity_level: float = sparsity_level
+
+        self.q_down = nn.Linear(self.hidden_size, self.ranks["q"], bias=False)
+        self.q_up = nn.Linear(self.ranks["q"], self.all_head_size, bias=True)
+        self.k_down = nn.Linear(self.hidden_size, self.ranks["k"], bias=False)
+        self.k_up = nn.Linear(self.ranks["k"], self.all_head_size, bias=True)
+        self.v_down = nn.Linear(self.hidden_size, self.ranks["v"], bias=False)
+        self.v_up = nn.Linear(self.ranks["v"], self.all_head_size, bias=True)
+        self.o_down = nn.Linear(self.all_head_size, self.ranks["o"], bias=False)
+        self.o_up = nn.Linear(self.ranks["o"], self.hidden_size, bias=True)
+
+        for mod in [self.q_down, self.q_up, self.k_down, self.k_up, self.v_down, self.v_up, self.o_down, self.o_up]:
+            if isinstance(mod, nn.Linear):
+                nn.init.orthogonal_(mod.weight)
+                if mod.bias is not None:
+                    nn.init.zeros_(mod.bias)
+
         if add_sparse:
-            self.q_sparse_weight = self._create_pruned_residual(
-                q_w, self.q_down, self.q_up, sparsity_level
-            )
-            self.k_sparse_weight = self._create_pruned_residual(
-                k_w, self.k_down, self.k_up, sparsity_level
-            )
-            self.v_sparse_weight = self._create_pruned_residual(
-                v_w, self.v_down, self.v_up, sparsity_level
-            )
-            self.o_sparse_weight = self._create_pruned_residual(
-                out_w, self.o_down, self.o_up, sparsity_level
-            )
-
-        self.dropout = nn.Dropout(dropout)
-
-    def _factorise_linear(
-        self, W: np.ndarray, bias: Optional[torch.Tensor], rank: int
-    ) -> Tuple[nn.Linear, nn.Linear]:
-        r"""Factorize matrix $W$ via truncated SVD into down/up linear projections."""
-        d_out, d_in = W.shape
-        rank = min(rank, min(d_out, d_in))
-        rank = max(rank, 1)
-
-        U, s, VT = svd(W.astype(np.float64), full_matrices=False)
-        U_r = U[:, :rank]
-        S_r = np.diag(s[:rank])
-        VT_r = VT[:rank, :]
-
-        down_weight = torch.from_numpy(VT_r).float()
-        up_weight = torch.from_numpy(U_r @ S_r).float()
-
-        down = nn.Linear(d_in, rank, bias=False)
-        up = nn.Linear(rank, d_out, bias=True)
-
-        down.weight.data = down_weight
-        up.weight.data = up_weight
-        if bias is not None:
-            up.bias.data = bias.data.float()
+            self.q_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.all_head_size))
+            self.k_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.all_head_size))
+            self.v_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.all_head_size))
+            self.o_sparse_weight = nn.Parameter(torch.zeros(self.all_head_size, self.hidden_size))
         else:
-            up.bias.data.zero_()
-        return down, up
+            self.register_parameter("q_sparse_weight", None)
+            self.register_parameter("k_sparse_weight", None)
+            self.register_parameter("v_sparse_weight", None)
+            self.register_parameter("o_sparse_weight", None)
+
+        dropout_p = getattr(
+            model_config,
+            "dropout",
+            getattr(
+                model_config,
+                "hidden_dropout_prob",
+                getattr(model_config, "attention_probs_dropout_prob", dropout),
+            ),
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def _set_factorised_weights(
+        self, W_tensor: torch.Tensor, bias_tensor: Optional[torch.Tensor], down: nn.Linear, up: nn.Linear, rank: int
+    ) -> None:
+        with torch.no_grad():
+            W = W_tensor.float()
+            d_out, d_in = W.shape
+            r = min(rank, min(d_out, d_in))
+            r = max(r, 1)
+
+            U, s, VT = torch.linalg.svd(W, full_matrices=False)
+            sqrt_s = torch.sqrt(s[:r])
+            down_weight = (sqrt_s.unsqueeze(1) * VT[:r, :]).to(down.weight.dtype)
+            up_weight = (U[:, :r] * sqrt_s).to(up.weight.dtype)
+
+            down.weight.data.copy_(down_weight)
+            up.weight.data.copy_(up_weight)
+            if bias_tensor is not None and up.bias is not None:
+                up.bias.data.copy_(bias_tensor)
+
+    def copy_weights(self, src: Any) -> None:
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        from framework.core.adapters import UniversalAdapter
+
+        mapping = [
+            ("q", self.q_down, self.q_up, self.ranks["q"]),
+            ("k", self.k_down, self.k_up, self.ranks["k"]),
+            ("v", self.v_down, self.v_up, self.ranks["v"]),
+            ("o", self.o_down, self.o_up, self.ranks["o"]),
+        ]
+        for proj, down, up, r in mapping:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                self._set_factorised_weights(w, b, down, up, r)
+            except Exception:
+                pass
 
     def _create_pruned_residual(
         self, W: np.ndarray, down: nn.Linear, up: nn.Linear, sparsity: float

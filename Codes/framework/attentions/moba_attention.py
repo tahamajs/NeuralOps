@@ -10,6 +10,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("moba")
+@ATTENTION_REGISTRY.register("moba_attention")
 class MoBAAttention(BaseAttention):
     r"""
     MoBA: Mixture of Block Attention for Long-Context Modeling.
@@ -57,7 +58,31 @@ class MoBAAttention(BaseAttention):
         self.out_proj: nn.Linear = nn.Linear(hidden_size, hidden_size)
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
-    def forward(
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        with torch.no_grad():
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+
+            if q_src is not None and hasattr(q_src, "weight"):
+                self.q_proj.weight.copy_(q_src.weight)
+                if q_src.bias is not None:
+                    self.q_proj.bias.copy_(q_src.bias)
+            if k_src is not None and hasattr(k_src, "weight"):
+                self.k_proj.weight.copy_(k_src.weight)
+                if k_src.bias is not None:
+                    self.k_proj.bias.copy_(k_src.bias)
+            if v_src is not None and hasattr(v_src, "weight"):
+                self.v_proj.weight.copy_(v_src.weight)
+                if v_src.bias is not None:
+                    self.v_proj.bias.copy_(v_src.bias)
+            if out_src is not None and hasattr(out_src, "weight"):
+                self.out_proj.weight.copy_(out_src.weight)
+                if out_src.bias is not None:
+                    self.out_proj.bias.copy_(out_src.bias)
+
+def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
@@ -141,6 +166,7 @@ class MoBAAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("moba")
+@ATTENTION_REGISTRY.register("moba_inject")
 def inject_moba(
     layer: nn.Module,
     model_config: Any,
