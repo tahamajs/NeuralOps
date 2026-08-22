@@ -2002,3 +2002,5 @@ ompleted)
 [2026-08-22 10:14:35] [Worker-2] [112/145] -- SKIPPING: attn=svd_linear | task=sst2 (Already completed)
 [2026-08-22 10:14:35] [Worker-2] [113/145] >> Launching: attn=svd_linear_attn | task=sst2 | seed=42
 [2026-08-22 10:14:56] [Worker-2] [113/145] << SUCCESS: attn=svd_linear_attn | task=sst2 | Acc: 84.63% | F1: 84.63% | Loss: 0.4989 | Time: 20.6s
+[2026-08-22 10:14:57] [Worker-2] [114/145] >> Launching: attn=svd_linear_decay | task=sst2 | seed=42
+[2026-08-22 10:15:18] [Worker-2] [114/145] << SUCCESS: attn=svd_linear_decay | task=sst2 | Acc: 84.63% | F1: 84.63% | Loss: 0.4989 | Time: 20.5s
