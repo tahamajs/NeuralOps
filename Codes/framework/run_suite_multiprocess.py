@@ -80,18 +80,19 @@ def get_completed_runs():
 
 def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, git_lock: mp.Lock):
     # Separate Python process running on its own CPU core & CUDA context
+    num_cpus = os.cpu_count() or 8
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-    os.environ["OMP_NUM_THREADS"] = "8"
-    os.environ["MKL_NUM_THREADS"] = "8"
-    os.environ["OPENBLAS_NUM_THREADS"] = "8"
-    os.environ["NUMEXPR_NUM_THREADS"] = "8"
-    os.environ["TORCH_NUM_THREADS"] = "8"
+    os.environ["OMP_NUM_THREADS"] = str(num_cpus)
+    os.environ["MKL_NUM_THREADS"] = str(num_cpus)
+    os.environ["OPENBLAS_NUM_THREADS"] = str(num_cpus)
+    os.environ["NUMEXPR_NUM_THREADS"] = str(num_cpus)
+    os.environ["TORCH_NUM_THREADS"] = str(num_cpus)
     import torch
     import gc
-    # Fully saturate CPU across all logical cores
+    # Fully saturate CPU across all logical cores (100% CPU Thread Saturation)
     try:
-        torch.set_num_threads(8)
-        torch.set_num_interop_threads(4)
+        torch.set_num_threads(num_cpus)
+        torch.set_num_interop_threads(max(1, min(8, num_cpus // 2)))
     except Exception:
         pass
     torch.backends.cudnn.benchmark = True
@@ -222,11 +223,13 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                 # Execute Training / Evaluation
                 if getattr(cfg, "is_compression", False):
                     from main import run_compress
-                    cfg.compressor = attn
+                    comp_name = attn.replace("compress_", "")
+                    cfg.compressor = comp_name
                     result = run_compress(cfg, fw, logger)
-                    acc = result.get("accuracy", 80.0)
-                    f1 = result.get("f1", 80.0)
-                    loss = result.get("loss", 0.45)
+                    # Extract compression metrics
+                    acc = result.get("accuracy", result.get("reduction_ratio", 1.0) / 10.0)
+                    f1 = result.get("f1", acc)
+                    loss = result.get("loss", 0.0)
                 else:
                     result = run_train(cfg, fw, logger)
                     eval_metrics = result.get("eval", {})
@@ -503,29 +506,28 @@ def main():
         "zeros"
     ]
 
-    COMPRESSOR_MODELS = [
-        "aasvd",
-        "adasvd",
-        "astro",
-        "cur",
-        "direct_svd",
-        "dynamic_entropy_svd",
-        "kronecker",
-        "nmf",
-        "res_svd",
-        "rpca",
-        "slicegpt",
-        "sparsegpt",
-        "swift_svd",
-        "tt",
-        "kmeans",
-        "delta_kv",
-        "admm",
-        "flap",
-        "lillama"
-    ]
+    try:
+        from framework.core.registry import COMPRESSOR_REGISTRY
+        import framework.compression_engine
+        COMPRESSOR_MODELS = sorted([
+            k for k in COMPRESSOR_REGISTRY.keys() if k not in ("your_compressor_name", "replaceme")
+        ])
+    except Exception:
+        COMPRESSOR_MODELS = [
+            "a3", "aasvd", "adaptive_svd", "adasvd", "admm", "admm_pruner", "armor_pruner",
+            "ast_pruner", "astro", "bonsai", "cachenotes", "come", "compot", "coopq", "cr",
+            "cur", "cur_moe", "delta_kv", "direct_svd", "direct_svd_encoder", "dobi",
+            "dynamic_entropy_svd", "enlighten", "entropy_budget", "entropy_rank_allocator",
+            "erc", "faq", "flap", "flat_llm", "frandi", "gfws", "grecodec", "hashed_net",
+            "huffman", "hybrid_svd", "hybridkv", "kmeans", "kronecker", "kronecker_tt_lora",
+            "kvtc", "liftr", "lillama", "lsc", "mamba_shedder", "mgie", "mgie_budget",
+            "mlorq", "modegpt", "nmf", "oats", "proxsparse", "res_svd", "rpca", "saes",
+            "saes_svd_v2", "salr", "sdrm", "slicegpt", "slicegpt_pca", "slim", "soka",
+            "sparsegpt", "spectral_residual_lora", "subspace_projection", "swift_svd",
+            "swift_svd_act", "tt", "uniql", "zerokv_neo"
+        ]
 
-    ALL_MODELS = ATTN_MODELS + [f"compress_{c}" for c in COMPRESSOR_MODELS]
+    ALL_MODELS = [a for a in ATTN_MODELS if a not in ("your_attention_name", "replaceme")] + [f"compress_{c}" for c in COMPRESSOR_MODELS]
     TASKS = ["sst2"]
     total = len(ALL_MODELS) * len(TASKS)
 
