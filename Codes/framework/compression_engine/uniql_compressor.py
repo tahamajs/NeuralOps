@@ -44,3 +44,15 @@ class UniQLCompressor(BaseCompressor):
                     module.bias.data = self._quantize(module.bias.data, self.bits)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+
+
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+@COMPRESSOR_REGISTRY.register("uniql")
+def uniql_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
+    """UniQL factory."""
+    rank = getattr(comp_config, "uniql_rank", kwargs.get("rank", 64))
+    bits = getattr(comp_config, "uniql_bits", kwargs.get("bits", 8))
+    compressor = UniQLCompressor(model, rank=rank, bits=bits, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

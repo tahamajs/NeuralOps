@@ -139,8 +139,19 @@ class MGIECompressor(BaseCompressor):
         return self.model, stats
 
 
-def mgie_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def mgie_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """MGIE factory function."""
     compressor = MGIECompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+mgie_svd_factory = mgie_factory
+mgie_svd_compressor_factory = mgie_factory
+
+__all__ = [
+    "MGIECompressor",
+    "mgie_factory",
+    "mgie_svd_factory",
+    "mgie_svd_compressor_factory",
+]

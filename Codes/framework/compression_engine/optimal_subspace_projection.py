@@ -80,9 +80,9 @@ class SubspaceProjectionCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("subspace_projection")
-def subspace_projection_factory(model: nn.Module, comp_config) -> nn.Module:
+def subspace_projection_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Subspace projection factory."""
-    calibration_loader = getattr(comp_config, "calibration_loader", None)
+    calibration_loader = getattr(comp_config, "calibration_loader", kwargs.get("calibration_loader", None))
     if calibration_loader is None:
         # Dummy calibration loader for standalone tests if not provided
         dummy_input = {
@@ -90,8 +90,8 @@ def subspace_projection_factory(model: nn.Module, comp_config) -> nn.Module:
             "attention_mask": torch.ones(1, 10)
         }
         calibration_loader = [dummy_input]
-    rank_ratio = getattr(comp_config, "rank_ratio", 0.5)
-    power_iters = getattr(comp_config, "power_iters", 2)
+    rank_ratio = getattr(comp_config, "rank_ratio", kwargs.get("rank_ratio", 0.5))
+    power_iters = getattr(comp_config, "power_iters", kwargs.get("power_iters", 2))
     compressor = SubspaceProjectionCompressor(
         model,
         calibration_loader=calibration_loader,
