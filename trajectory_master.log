@@ -1853,3 +1853,5 @@ ompleted)
 [2026-08-22 05:35:48] [Worker-2] [80/126] -- SKIPPING: attn=nystrom | task=sst2 (Already completed)
 [2026-08-22 05:35:48] [Worker-2] [81/126] >> Launching: attn=oha | task=sst2 | seed=42
 [2026-08-22 05:35:49] [Worker-2] [81/126] NOTICE: attn=oha | task=sst2 | Error: The size of tensor a (32) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.6s
+[2026-08-22 05:35:51] [Worker-2] [82/126] >> Launching: attn=orion | task=sst2 | seed=42
+[2026-08-22 05:36:33] [Worker-2] [82/126] << SUCCESS: attn=orion | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6956 | Time: 41.8s
