@@ -1999,3 +1999,6 @@ ompleted)
 [2026-08-22 10:14:14] [Worker-2] [110/145] << SUCCESS: attn=svd_compressed | task=sst2 | Acc: 77.64% | F1: 77.59% | Loss: 0.5522 | Time: 18.5s
 [2026-08-22 10:14:15] [Worker-2] [111/145] >> Launching: attn=svd_compressed_module | task=sst2 | seed=42
 [2026-08-22 10:14:34] [Worker-2] [111/145] << SUCCESS: attn=svd_compressed_module | task=sst2 | Acc: 77.64% | F1: 77.59% | Loss: 0.5522 | Time: 18.3s
+[2026-08-22 10:14:35] [Worker-2] [112/145] -- SKIPPING: attn=svd_linear | task=sst2 (Already completed)
+[2026-08-22 10:14:35] [Worker-2] [113/145] >> Launching: attn=svd_linear_attn | task=sst2 | seed=42
+[2026-08-22 10:14:56] [Worker-2] [113/145] << SUCCESS: attn=svd_linear_attn | task=sst2 | Acc: 84.63% | F1: 84.63% | Loss: 0.4989 | Time: 20.6s
