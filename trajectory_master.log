@@ -1509,3 +1509,5 @@ ompleted)
 [2026-08-22 04:51:57] [Worker-1] [64/126] << SUCCESS: attn=minimal_aurora | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.8s
 [2026-08-22 04:52:00] [Worker-1] [65/126] >> Launching: attn=minimal_nova | task=sst2 | seed=42
 [2026-08-22 04:52:18] [Worker-1] [65/126] << SUCCESS: attn=minimal_nova | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.9s
+[2026-08-22 04:52:20] [Worker-1] [66/126] >> Launching: attn=minimal_prism | task=sst2 | seed=42
+[2026-08-22 04:52:38] [Worker-1] [66/126] << SUCCESS: attn=minimal_prism | task=sst2 | Acc: 77.52% | F1: 77.29% | Loss: 0.7056 | Time: 17.8s
