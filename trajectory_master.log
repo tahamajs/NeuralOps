@@ -1989,3 +1989,6 @@ ompleted)
 [2026-08-22 10:12:45] [Worker-2] [104/145] -- SKIPPING: attn=span_expanded | task=sst2 (Already completed)
 [2026-08-22 10:12:46] [Worker-2] [105/145] >> Launching: attn=spectra_v2 | task=sst2 | seed=42
 [2026-08-22 10:13:05] [Worker-2] [105/145] << SUCCESS: attn=spectra_v2 | task=sst2 | Acc: 77.06% | F1: 76.87% | Loss: 0.6951 | Time: 18.9s
+[2026-08-22 10:13:06] [Worker-2] [106/145] -- SKIPPING: attn=spectral_mamba | task=sst2 (Already completed)
+[2026-08-22 10:13:06] [Worker-2] [107/145] >> Launching: attn=spectron | task=sst2 | seed=42
+[2026-08-22 10:13:37] [Worker-2] [107/145] << SUCCESS: attn=spectron | task=sst2 | Acc: 76.61% | F1: 76.38% | Loss: 0.5623 | Time: 30.6s
