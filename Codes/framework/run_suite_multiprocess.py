@@ -123,11 +123,11 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
                       "aegis_hybrid", "mamba_svd_flash", "mamba_inject",
                       "spectron", "hgrn2_layer", "simple_ssm", "samba_moe"}
         if attn in heavy_attn:
-            cfg.batch_size = 16
-        elif attn in {"adasplash", "nha_compressor", "token_compressed"}:
             cfg.batch_size = 8
+        elif attn in {"adasplash", "nha_compressor", "token_compressed"}:
+            cfg.batch_size = 4
         else:
-            cfg.batch_size = 32   # RTX 4070 can handle this for most attn modules
+            cfg.batch_size = 16   # Reduced to allow 2 concurrent workers on RTX 4070
 
         cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
 
@@ -443,7 +443,7 @@ def main():
     log_master(f"Trajectory Matrix: {len(ATTN_MODELS)} Models x {len(TASKS)} Tasks = {total} Runs")
     log_master("Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.")
 
-    NUM_WORKERS = 1
+    NUM_WORKERS = 2
     processes = []
     for w_id in range(1, NUM_WORKERS + 1):
         p = mp.Process(target=worker_process_main, args=(w_id, task_queue, total), daemon=False)
