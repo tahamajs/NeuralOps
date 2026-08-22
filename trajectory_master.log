@@ -1951,3 +1951,5 @@ ompleted)
 [2026-08-22 08:35:26] [Worker-2] [85/145] << SUCCESS: attn=phantom | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7053 | Time: 5004.9s
 [2026-08-22 08:35:28] [Worker-2] [86/145] >> Launching: attn=phantom_module | task=sst2 | seed=42
 [2026-08-22 10:00:04] [Worker-2] [86/145] << SUCCESS: attn=phantom_module | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7053 | Time: 5076.6s
+[2026-08-22 10:00:07] [Worker-2] [87/145] >> Launching: attn=primal | task=sst2 | seed=42
+[2026-08-22 10:01:03] [Worker-2] [87/145] NOTICE: attn=primal | task=sst2 | Error: linalg.svd: (Batch element 12): The algorithm failed to converge because the input matrix is ill-conditioned or has too many repeated singular values (error code: 63). | Time: 56.1s
