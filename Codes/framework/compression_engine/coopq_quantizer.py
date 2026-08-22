@@ -64,7 +64,7 @@ class CoopQQuantizer(BaseCompressor):
                 W = module.weight.data.float()
                 # Frobenius norm normalized by matrix dimensions + standard deviation
                 frob_norm = torch.norm(W, p="fro").item() / (W.numel() ** 0.5 + 1e-8)
-                std_val = torch.std(W).item()
+                std_val = torch.std(W).item() if W.numel() > 1 else 0.0
                 sensitivities[name] = float(frob_norm + std_val)
         return sensitivities
 
@@ -176,18 +176,23 @@ class CoopQQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("coopq")
-def coopq_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """CoopQ compressor factory function."""
-    bits = getattr(comp_config, "coopq_bits", 4) if comp_config else 4
-    min_bits = getattr(comp_config, "coopq_min_bits", 2) if comp_config else 2
-    max_bits = getattr(comp_config, "coopq_max_bits", 8) if comp_config else 8
-    use_ste = getattr(comp_config, "coopq_use_ste", False) if comp_config else False
+    bits = kwargs.get("bits", getattr(comp_config, "coopq_bits", 4) if comp_config is not None else 4)
+    min_bits = kwargs.get("min_bits", getattr(comp_config, "coopq_min_bits", 2) if comp_config is not None else 2)
+    max_bits = kwargs.get("max_bits", getattr(comp_config, "coopq_max_bits", 8) if comp_config is not None else 8)
+    symmetric = kwargs.get("symmetric", getattr(comp_config, "coopq_symmetric", True) if comp_config is not None else True)
+    per_channel = kwargs.get("per_channel", getattr(comp_config, "coopq_per_channel", False) if comp_config is not None else False)
+    use_ste = kwargs.get("use_ste", getattr(comp_config, "coopq_use_ste", False) if comp_config is not None else False)
     compressor = CoopQQuantizer(
         model,
         bits=bits,
         min_bits=min_bits,
         max_bits=max_bits,
+        symmetric=symmetric,
+        per_channel=per_channel,
         use_ste=use_ste,
+        **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model

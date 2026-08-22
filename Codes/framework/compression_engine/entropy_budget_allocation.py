@@ -241,8 +241,17 @@ class EntropyBudgetCompressor(BaseCompressor):
         return self.model, stats
 
 
-def entropy_budget_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def entropy_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Entropy budget factory."""
     compressor = EntropyBudgetCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+entropy_budget_allocation_factory = entropy_budget_factory
+
+__all__ = [
+    "EntropyBudgetCompressor",
+    "entropy_budget_factory",
+    "entropy_budget_allocation_factory",
+]

@@ -425,3 +425,29 @@ class ResSVDCompressorRegistered(ResSVDCompressor):
 @COMPRESSOR_REGISTRY.register("spectral_residual_lora")
 class SpectralResidualLoRARegistered(SpectralResidualLoRA):
     pass
+
+
+def res_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+    """Res-SVD factory function."""
+    compressor = ResSVDCompressor(model, comp_config=comp_config, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model
+
+
+def spectral_residual_lora_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+    """Spectral Residual LoRA factory function."""
+    compressor = SpectralResidualLoRA(model, comp_config=comp_config, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model
+
+
+res_svd_compressor_factory = res_svd_factory
+
+__all__ = [
+    "ResSVDLinear",
+    "ResSVDCompressor",
+    "SpectralResidualLoRA",
+    "res_svd_factory",
+    "spectral_residual_lora_factory",
+    "res_svd_compressor_factory",
+]

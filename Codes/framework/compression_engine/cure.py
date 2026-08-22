@@ -50,10 +50,10 @@ class CURMoECompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cur_moe")
-def cur_moe_factory(model, comp_config) -> Any:
+def cur_moe_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Cur moe factory."""
-    rank = getattr(comp_config, "cur_moe_rank", 64)
-    method = getattr(comp_config, "cur_moe_method", "leverage")
-    compressor = CURMoECompressor(model, rank=rank, method=method)
+    rank = getattr(comp_config, "cur_moe_rank", kwargs.get("rank", 64))
+    method = getattr(comp_config, "cur_moe_method", kwargs.get("method", "leverage"))
+    compressor = CURMoECompressor(model, rank=rank, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

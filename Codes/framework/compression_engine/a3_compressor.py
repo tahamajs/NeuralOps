@@ -33,9 +33,9 @@ class A3Compressor(BaseCompressor):
 
 # ✅ Register a factory function, not the class
 @COMPRESSOR_REGISTRY.register("a3")
-def a3_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
+def a3_compressor_factory(model: nn.Module, comp_config: Any = None, rank: int = 64, **kwargs: Any) -> nn.Module:
     """A3 compressor factory."""
-    rank = getattr(comp_config, "a3_rank", 64)
-    compressor = A3Compressor(model, rank=rank)
+    r = getattr(comp_config, "a3_rank", rank) if comp_config is not None else kwargs.get("rank", rank)
+    compressor = A3Compressor(model, rank=r, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

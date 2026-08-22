@@ -295,3 +295,21 @@ class AASVDCompressor(BaseCompressor):
 
         logger.info("AASVD (unweighted): Structurally factorized %d linear layers into SVDLinear.", replaced_count)
         return self.model, self.get_compression_stats()
+
+
+def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+    """AASVD factory function."""
+    compressor = AASVDCompressor(model, comp_config=comp_config, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model
+
+
+aa_svd_compressor_factory = aasvd_factory
+
+__all__ = [
+    "AASVDCompressor",
+    "SVDLinear",
+    "aasvd_factory",
+    "aa_svd_compressor_factory",
+    "DEFAULT_CALIBRATION_CORPUS",
+]
