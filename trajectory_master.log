@@ -828,3 +828,5 @@ ompleted)
 [2026-08-22 04:35:35] [Worker-4] [64/126] NOTICE: attn=minimal_aurora | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 4.0s
 [2026-08-22 04:35:36] [Worker-1] [66/126] >> Launching: attn=minimal_prism | task=sst2 | seed=42
 [2026-08-22 04:35:37] [Worker-3] [65/126] NOTICE: attn=minimal_nova | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 4.0s
+[2026-08-22 04:35:38] [Worker-4] [67/126] >> Launching: attn=minimal_svd | task=sst2 | seed=42
+[2026-08-22 04:35:39] [Worker-1] [66/126] NOTICE: attn=minimal_prism | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 3.9s
