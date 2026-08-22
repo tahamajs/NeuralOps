@@ -1,56 +1,64 @@
+"""
+Kronecker-TT-LoRA Hybrid Compression Engine Adapter.
+
+Implements a hybrid parameter-efficient fine-tuning (PEFT) and compression mechanism
+by decomposing weight updates into a Kronecker product multiplied element-wise by a
+Tensor-Train (TT) core tensor with dynamic singular value entropy adaptation.
+"""
+
+from __future__ import annotations
+
+import math
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
+
+from framework.core.base import BaseCompressor
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class KroneckerTTLoRALayer(nn.Module):
     """
-    Kronecker-TT-LoRA Hybrid Compression Engine Adapter.
-    
-    Implements a hybrid parameter-efficient fine-tuning (PEFT) mechanism by decomposing
-    weight updates into a Kronecker product multiplied element-wise by a Tensor-Train (TT) core.
-    Features dynamic rank adaptation based on singular value entropy.
+    Kronecker-TT-LoRA Hybrid Compression Layer.
+    Combines Kronecker product structure (A1 ⊗ A2) with a 3-core Tensor-Train tensor T(G1, G2, G3):
+    ΔW = γ * ((A1 ⊗ A2) ⊙ T)
     """
+
     def __init__(
-        self, 
-        base_layer: nn.Linear, 
-        m1: int, n1: int, 
-        m2: int, n2: int, 
-        tt_shapes: tuple,
-        tt_ranks: tuple = (1, 4, 4, 1),
+        self,
+        base_layer: nn.Linear,
+        m1: int,
+        n1: int,
+        m2: int,
+        n2: int,
+        tt_shapes: Tuple[int, int, int],
+        tt_ranks: Tuple[int, int, int, int] = (1, 4, 4, 1),
         gamma: float = 1.0,
         r_min: int = 2,
         r_max: int = 32,
-        entropy_threshold: float = 0.75
-    ):
-        """
-        Args:
-            base_layer (nn.Linear): The frozen base linear layer to adapt.
-            m1, n1, m2, n2 (int): Dimensions for Kronecker factors A1 (m1 x n1) and A2 (m2 x n2).
-                                  Must satisfy m1 * m2 = out_features, n1 * n2 = in_features.
-            tt_shapes (tuple): 3-tuple (d1, d2, d3) for the Tensor-Train dimensions.
-                               Must satisfy d1 * d2 * d3 = out_features * in_features.
-            tt_ranks (tuple): 4-tuple (r0, r1, r2, r3) for the TT core ranks. r0 and r3 must be 1.
-            gamma (float): Scaling factor for the adapter.
-            r_min, r_max (int): Min and max bounds for dynamic rank adaptation.
-            entropy_threshold (float): Target singular value entropy threshold.
-        """
+        entropy_threshold: float = 0.75,
+    ) -> None:
         super().__init__()
         self.base_layer = base_layer
-        self.base_layer.weight.requires_grad = False  # Freeze base weights
-        
+        self.base_layer.weight.requires_grad = False
+
         self.in_features = base_layer.in_features
         self.out_features = base_layer.out_features
-        
+
         if m1 * m2 != self.out_features:
             raise ValueError(f"m1 * m2 ({m1 * m2}) must equal out_features ({self.out_features})")
         if n1 * n2 != self.in_features:
             raise ValueError(f"n1 * n2 ({n1 * n2}) must equal in_features ({self.in_features})")
         if tt_shapes[0] * tt_shapes[1] * tt_shapes[2] != self.out_features * self.in_features:
-            raise ValueError("Product of tt_shapes must equal out_features * in_features")
+            raise ValueError(
+                f"Product of tt_shapes ({tt_shapes[0]*tt_shapes[1]*tt_shapes[2]}) must equal "
+                f"out_features * in_features ({self.out_features * self.in_features})"
+            )
         if tt_ranks[0] != 1 or tt_ranks[3] != 1:
             raise ValueError("Boundary TT ranks (r0 and r3) must be 1")
-            
+
         self.m1, self.n1 = m1, n1
         self.m2, self.n2 = m2, n2
         self.tt_shapes = tt_shapes
@@ -59,20 +67,34 @@ class KroneckerTTLoRALayer(nn.Module):
         self.r_min = r_min
         self.r_max = r_max
         self.entropy_threshold = entropy_threshold
-        
-        # Kronecker factors
-        self.A1 = nn.Parameter(torch.randn(m1, n1) * math.sqrt(1.0 / n1))
-        self.A2 = nn.Parameter(torch.zeros(m2, n2))  # Initialize A2 to zero for identity map initially
-        
+
+        device = base_layer.weight.device
+        dtype = base_layer.weight.dtype
+
+        # Kronecker factor matrices
+        self.A1 = nn.Parameter(
+            torch.randn(m1, n1, device=device, dtype=dtype) * math.sqrt(1.0 / max(1, n1))
+        )
+        self.A2 = nn.Parameter(torch.zeros(m2, n2, device=device, dtype=dtype))
+
         # Tensor-Train cores
-        self.G1 = nn.Parameter(torch.randn(self.tt_ranks[0], tt_shapes[0], self.tt_ranks[1]) * math.sqrt(1.0 / tt_shapes[0]))
-        self.G2 = nn.Parameter(torch.randn(self.tt_ranks[1], tt_shapes[1], self.tt_ranks[2]) * math.sqrt(1.0 / tt_shapes[1]))
-        self.G3 = nn.Parameter(torch.randn(self.tt_ranks[2], tt_shapes[2], self.tt_ranks[3]) * math.sqrt(1.0 / tt_shapes[2]))
+        self.G1 = nn.Parameter(
+            torch.randn(self.tt_ranks[0], tt_shapes[0], self.tt_ranks[1], device=device, dtype=dtype)
+            * math.sqrt(1.0 / max(1, tt_shapes[0]))
+        )
+        self.G2 = nn.Parameter(
+            torch.randn(self.tt_ranks[1], tt_shapes[1], self.tt_ranks[2], device=device, dtype=dtype)
+            * math.sqrt(1.0 / max(1, tt_shapes[1]))
+        )
+        self.G3 = nn.Parameter(
+            torch.randn(self.tt_ranks[2], tt_shapes[2], self.tt_ranks[3], device=device, dtype=dtype)
+            * math.sqrt(1.0 / max(1, tt_shapes[2]))
+        )
 
     @staticmethod
-    def factorize_dimensions(in_features: int, out_features: int) -> dict:
+    def factorize_dimensions(in_features: int, out_features: int) -> Dict[str, Any]:
         """Find balanced factors for Kronecker and TT dimensions."""
-        def factor_pair(n: int) -> tuple:
+        def factor_pair(n: int) -> Tuple[int, int]:
             for i in range(int(math.isqrt(n)), 0, -1):
                 if n % i == 0:
                     return i, n // i
@@ -82,8 +104,10 @@ class KroneckerTTLoRALayer(nn.Module):
         n1, n2 = factor_pair(in_features)
         tt_shapes = (out_features, 1, in_features)
         return {
-            "m1": m1, "n1": n1,
-            "m2": m2, "n2": n2,
+            "m1": m1,
+            "n1": n1,
+            "m2": m2,
+            "n2": n2,
             "tt_shapes": tt_shapes,
         }
 
@@ -91,15 +115,15 @@ class KroneckerTTLoRALayer(nn.Module):
     def from_linear(
         cls,
         base_layer: nn.Linear,
-        m1: int = None,
-        n1: int = None,
-        m2: int = None,
-        n2: int = None,
-        tt_shapes: tuple = None,
-        tt_ranks: tuple = (1, 4, 4, 1),
+        m1: Optional[int] = None,
+        n1: Optional[int] = None,
+        m2: Optional[int] = None,
+        n2: Optional[int] = None,
+        tt_shapes: Optional[Tuple[int, int, int]] = None,
+        tt_ranks: Tuple[int, int, int, int] = (1, 4, 4, 1),
         gamma: float = 1.0,
-        **kwargs
-    ):
+        **kwargs: Any,
+    ) -> "KroneckerTTLoRALayer":
         """Create KroneckerTTLoRALayer directly from linear layer with auto-factorization."""
         dims = cls.factorize_dimensions(base_layer.in_features, base_layer.out_features)
         return cls(
@@ -111,95 +135,84 @@ class KroneckerTTLoRALayer(nn.Module):
             tt_shapes=tt_shapes or dims["tt_shapes"],
             tt_ranks=tt_ranks,
             gamma=gamma,
-            **kwargs
+            **kwargs,
         )
 
-    def get_tt_tensor(self):
-        """Constructs the dense tensor from TT cores."""
+    def get_tt_tensor(self) -> torch.Tensor:
+        """Construct dense tensor from TT cores."""
         # G1: (1, d1, r1) -> (d1, r1)
-        g1 = self.G1.view(-1, self.tt_ranks[1])
+        g1 = self.G1.view(self.tt_shapes[0], self.tt_ranks[1])
         # G2: (r1, d2, r2) -> (r1, d2 * r2)
-        g2 = self.G2.view(self.tt_ranks[1], -1)
+        g2 = self.G2.view(self.tt_ranks[1], self.tt_shapes[1] * self.tt_ranks[2])
         # G1 @ G2 -> (d1, d2 * r2) -> (d1 * d2, r2)
-        core12 = torch.matmul(g1, g2).view(-1, self.tt_ranks[2])
+        core12 = torch.matmul(g1, g2).view(self.tt_shapes[0] * self.tt_shapes[1], self.tt_ranks[2])
         # G3: (r2, d3, 1) -> (r2, d3)
-        g3 = self.G3.view(self.tt_ranks[2], -1)
+        g3 = self.G3.view(self.tt_ranks[2], self.tt_shapes[2])
         # core12 @ G3 -> (d1 * d2, d3) -> (d1 * d2 * d3,)
         tt_tensor = torch.matmul(core12, g3)
         return tt_tensor.view(self.out_features, self.in_features)
 
-    def get_delta_w(self):
-        """Computes the final adapter weight delta W."""
-        # A1 ⊗ A2 using einsum
-        kron = torch.einsum('ab,cd->acbd', self.A1, self.A2).reshape(self.m1 * self.m2, self.n1 * self.n2)
-        
-        # Hadamard product with TT tensor
+    def get_delta_w(self) -> torch.Tensor:
+        """Compute the final adapter weight delta W = gamma * ((A1 ⊗ A2) ⊙ TT_tensor)."""
+        kron = torch.kron(self.A1, self.A2)
         tt_tensor = self.get_tt_tensor()
-        
         delta_w = self.gamma * (kron * tt_tensor)
         return delta_w
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass with base weight + delta W."""
         base_out = self.base_layer(x)
         delta_w = self.get_delta_w()
         delta_out = F.linear(x, delta_w)
         return base_out + delta_out
 
-    def adapt_tt_ranks(self, delta_r=1):
+    def adapt_tt_ranks(self, delta_r: int = 1) -> None:
         """
         Dynamic rank adaptation based on singular value entropy of Delta W.
-        Should be called periodically during fine-tuning (e.g., every epoch).
         """
         with torch.no_grad():
             delta_w = self.get_delta_w()
-            
-            # SVD to compute singular values
-            U, S, V = torch.linalg.svd(delta_w, full_matrices=False)
-            
-            # Normalize singular values
-            S_norm = S / (S.sum() + 1e-9)
-            S_norm = S_norm[S_norm > 1e-9]
-            
-            # Compute singular value entropy
-            h_sv = -torch.sum(S_norm * torch.log(S_norm)).item()
-            
+            U, S, V = torch.linalg.svd(delta_w.float(), full_matrices=False)
+            total = S.sum().item()
+            if total > 1e-9:
+                S_norm = S / total
+                S_norm = S_norm[S_norm > 1e-9]
+                h_sv = -torch.sum(S_norm * torch.log(S_norm)).item()
+            else:
+                h_sv = 0.0
+
             if h_sv > self.entropy_threshold:
-                direction = 1  # Increase rank to capture complexity
-            elif h_sv < self.entropy_threshold:
-                direction = -1 # Decrease rank to save computation/parameters
+                direction = 1
+            elif h_sv < self.entropy_threshold * 0.5:
+                direction = -1
             else:
                 direction = 0
-                
+
             if direction != 0:
                 new_r1 = max(self.r_min, min(self.r_max, self.tt_ranks[1] + direction * delta_r))
                 new_r2 = max(self.r_min, min(self.r_max, self.tt_ranks[2] + direction * delta_r))
-                
                 if new_r1 != self.tt_ranks[1] or new_r2 != self.tt_ranks[2]:
                     self._resize_cores(new_r1, new_r2)
-                    
-    def _resize_cores(self, new_r1, new_r2):
-        """Resizes the TT cores while preserving existing values and momentum."""
+
+    def _resize_cores(self, new_r1: int, new_r2: int) -> None:
+        """Resize TT cores while preserving existing parameter values."""
         old_r1, old_r2 = self.tt_ranks[1], self.tt_ranks[2]
-        
+
         new_G1 = torch.zeros(1, self.tt_shapes[0], new_r1, device=self.G1.device, dtype=self.G1.dtype)
         new_G2 = torch.zeros(new_r1, self.tt_shapes[1], new_r2, device=self.G2.device, dtype=self.G2.dtype)
         new_G3 = torch.zeros(new_r2, self.tt_shapes[2], 1, device=self.G3.device, dtype=self.G3.dtype)
-        
-        # Initialize new parameters with small noise
-        new_G1.normal_(0, math.sqrt(1.0 / self.tt_shapes[0]))
-        new_G2.normal_(0, math.sqrt(1.0 / self.tt_shapes[1]))
-        new_G3.normal_(0, math.sqrt(1.0 / self.tt_shapes[2]))
-        
-        # Copy old values
+
+        new_G1.normal_(0, math.sqrt(1.0 / max(1, self.tt_shapes[0])))
+        new_G2.normal_(0, math.sqrt(1.0 / max(1, self.tt_shapes[1])))
+        new_G3.normal_(0, math.sqrt(1.0 / max(1, self.tt_shapes[2])))
+
         min_r1 = min(old_r1, new_r1)
         min_r2 = min(old_r2, new_r2)
-        
+
         new_G1[:, :, :min_r1] = self.G1.data[:, :, :min_r1]
         new_G2[:min_r1, :, :min_r2] = self.G2.data[:min_r1, :, :min_r2]
         new_G3[:min_r2, :, :] = self.G3.data[:min_r2, :, :]
-        
-        # Update parameters
+
         self.G1 = nn.Parameter(new_G1)
         self.G2 = nn.Parameter(new_G2)
         self.G3 = nn.Parameter(new_G3)
@@ -207,36 +220,79 @@ class KroneckerTTLoRALayer(nn.Module):
         self.tt_ranks[2] = new_r2
 
 
-class KroneckerTTLoRACompressor:
+class KroneckerTTLoRACompressor(BaseCompressor):
     """
-    Compressor wrapper to apply Kronecker-TT-LoRA to linear layers.
+    Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear layers.
+    Inherits from BaseCompressor.
     """
-    def __init__(self, rank: int = 8, gamma: float = 1.0, **kwargs):
-        self.rank = rank
-        self.gamma = gamma
-        self.kwargs = kwargs
 
-    def compress_linear(self, linear_layer: nn.Linear) -> nn.Module:
-        in_f = linear_layer.in_features
-        out_f = linear_layer.out_features
-        
-        def factor_pair(n):
-            for i in range(int(math.isqrt(n)), 0, -1):
-                if n % i == 0:
-                    return i, n // i
-            return 1, n
-            
-        m1, m2 = factor_pair(out_f)
-        n1, n2 = factor_pair(in_f)
-        
-        d1 = out_f
-        d2 = 1
-        d3 = in_f
-        
-        return KroneckerTTLoRALayer(
+    def __init__(
+        self,
+        model: Optional[nn.Module] = None,
+        rank: int = 8,
+        gamma: float = 1.0,
+        cfg: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            model if model is not None else nn.Identity(), name="kronecker_tt_lora", **kwargs
+        )
+        self.rank = rank or getattr(cfg, "tt_rank", 8) or getattr(cfg, "rank", 8)
+        self.gamma = gamma or getattr(cfg, "gamma", 1.0)
+        self.cfg = cfg
+        self.compressed_layers: List[str] = []
+
+    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Apply Kronecker-TT-LoRA adapter to all linear layers."""
+        if model is not None:
+            self.model = model
+            self._original_params = self._count_params(self.model)
+
+        self.compressed_layers = []
+        for name, module in list(self.model.named_modules()):
+            if isinstance(module, nn.Linear) and not isinstance(module, KroneckerTTLoRALayer):
+                adapted = self.compress_linear(module)
+                parent = self._get_parent(name)
+                if parent is not None:
+                    child_name = name.split(".")[-1]
+                    setattr(parent, child_name, adapted)
+                    self.compressed_layers.append(name)
+
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        stats["compressed_layer_count"] = len(self.compressed_layers)
+        return self.model, stats
+
+    def compress_linear(self, linear_layer: nn.Linear) -> KroneckerTTLoRALayer:
+        """Compress a single linear layer into KroneckerTTLoRALayer."""
+        r = max(1, min(self.rank, 32))
+        r_inner = max(1, r // 2)
+        return KroneckerTTLoRALayer.from_linear(
             base_layer=linear_layer,
-            m1=m1, n1=n1, m2=m2, n2=n2,
-            tt_shapes=(d1, d2, d3),
-            tt_ranks=(1, min(self.rank, 4), min(self.rank, 4), 1),
+            tt_ranks=(1, r_inner, r_inner, 1),
             gamma=self.gamma,
         )
+
+    def _get_parent(self, full_name: str) -> Optional[nn.Module]:
+        parts = full_name.split(".")
+        parent = self.model
+        for part in parts[:-1]:
+            parent = getattr(parent, part, None)
+            if parent is None:
+                return None
+        return parent
+
+
+@COMPRESSOR_REGISTRY.register("kronecker_tt_lora")
+def kronecker_tt_lora_factory(
+    model: nn.Module,
+    comp_config: Optional[Any] = None,
+    rank: Optional[int] = None,
+    **kwargs: Any,
+) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+    """Factory function for Kronecker-TT-LoRA compressor."""
+    rank = rank or getattr(comp_config, "tt_rank", 8) or getattr(comp_config, "rank", 8)
+    gamma = getattr(comp_config, "gamma", 1.0)
+    compressor = KroneckerTTLoRACompressor(model, rank=rank, gamma=gamma, cfg=comp_config, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

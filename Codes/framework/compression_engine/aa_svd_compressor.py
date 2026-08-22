@@ -132,6 +132,12 @@ class AASVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="aasvd", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            rank = getattr(cfg, "aasvd_rank", getattr(cfg, "rank", rank))
+            ema_beta = getattr(cfg, "aasvd_ema_beta", ema_beta)
+            tokenizer = getattr(cfg, "tokenizer", tokenizer)
+            calibration_texts = getattr(cfg, "calibration_texts", calibration_texts)
         self.tokenizer = tokenizer
         self.rank = rank
         self.ema_beta = ema_beta
@@ -243,17 +249,25 @@ class AASVDCompressor(BaseCompressor):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         # 2. Stream calibration batches through the model
-        inputs = self.tokenizer(
-            self.calibration_texts,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=512,
-        )
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
-
-        with torch.no_grad():
-            self.model(**inputs)
+        try:
+            inputs = self.tokenizer(
+                self.calibration_texts,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=512,
+            )
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            with torch.no_grad():
+                self.model(**inputs)
+        except Exception as e:
+            logger.warning(
+                "AASVD: Calibration forward failed (%s). Falling back to unweighted truncated SVD.",
+                e,
+            )
+            for h in hooks:
+                h.remove()
+            return self._compress_unweighted_svd()
 
         # 3. Clean up forward hooks
         for h in hooks:

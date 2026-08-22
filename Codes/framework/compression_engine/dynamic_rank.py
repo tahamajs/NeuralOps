@@ -407,6 +407,19 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="dynamic_entropy_svd", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            min_rank = getattr(cfg, "min_rank", min_rank)
+            max_rank = getattr(cfg, "max_rank", max_rank)
+            target_rank = getattr(cfg, "dynamic_rank", getattr(cfg, "rank", target_rank))
+            total_rank_budget = getattr(cfg, "total_rank_budget", total_rank_budget)
+            target_param_ratio = getattr(cfg, "target_param_ratio", target_param_ratio)
+
+        if "rank" in kwargs and kwargs["rank"] is not None:
+            target_rank = kwargs["rank"]
+            min_rank = min(min_rank, target_rank)
+            max_rank = max(max_rank, target_rank)
+
         self.min_rank = min_rank
         self.max_rank = max_rank
         self.target_param_ratio = target_param_ratio

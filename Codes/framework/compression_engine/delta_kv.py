@@ -1,15 +1,16 @@
 """
-DeltaKV: Residual‑Based KV Cache Compression via Long‑Range Similarity.
+DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity.
 
-Instead of discarding tokens, DeltaKV encodes semantic residuals relative
-to retrieved historical references, preserving fidelity while reducing
-storage to 29% of the original.
+Encodes semantic residuals relative to retrieved historical references,
+preserving attention fidelity while drastically compressing dynamic KV caches.
 
 Paper: "DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity"
        Hao et al., arXiv:2602.08005.
 Registered as 'delta_kv'.
 """
-from typing import Any
+from __future__ import annotations
+
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -19,132 +20,194 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 
 class DeltaKVStore:
     """
-    Maintains a reference key‑value store and compresses new K/V tensors
-    by storing only the residuals relative to the closest historical references.
+    Maintains historical reference key-value representations and compresses incoming K/V tensors
+    by storing delta residuals relative to top-k closest reference tokens.
+    Supports dynamic sequence lengths during prefill (N >= 1) and autoregressive decoding (N = 1).
     """
 
     def __init__(
-        self, max_refs: int = 128, topk: int = 4, compression_ratio: float = 0.29
-    ):
-        self.max_refs = max_refs
-        self.topk = topk
-        self.compression_ratio = compression_ratio
-        self.ref_k: torch.Tensor | None = None
-        self.ref_v: torch.Tensor | None = None
+        self,
+        max_refs: int = 128,
+        topk: int = 4,
+        compression_ratio: float = 0.29,
+        residual_threshold: float = 1e-3,
+    ) -> None:
+        self.max_refs = int(max_refs)
+        self.topk = int(topk)
+        self.compression_ratio = float(compression_ratio)
+        self.residual_threshold = float(residual_threshold)
+        self.ref_k: Optional[torch.Tensor] = None
+        self.ref_v: Optional[torch.Tensor] = None
+
+    def reset(self) -> None:
+        """Clear reference caches to avoid memory leaks across sequences."""
+        self.ref_k = None
+        self.ref_v = None
 
     @torch.no_grad()
     def update(self, k: torch.Tensor, v: torch.Tensor) -> None:
-        """Update the reference store with new K/V tensors."""
-        B, H, N, D = k.shape
-        if B == 0:
+        """
+        Append new key and value tensors to reference memory.
+        Expected shapes: (B, H, N, D) or (B, N, D) or (N, D).
+        """
+        orig_k = k.detach()
+        orig_v = v.detach()
+
+        # Normalize shape to (B, H, N, D)
+        if orig_k.ndim == 2:
+            orig_k = orig_k.unsqueeze(0).unsqueeze(0)
+            orig_v = orig_v.unsqueeze(0).unsqueeze(0)
+        elif orig_k.ndim == 3:
+            orig_k = orig_k.unsqueeze(1)
+            orig_v = orig_v.unsqueeze(1)
+
+        B, H, N, D = orig_k.shape
+        if N == 0 or B == 0:
             return
-        ks = k[0]  # (H, N, D)
-        vs = v[0]
+
         if self.ref_k is None:
-            self.ref_k = ks
-            self.ref_v = vs
+            self.ref_k = orig_k
+            self.ref_v = orig_v
         else:
-            self.ref_k = torch.cat([self.ref_k, ks], dim=1)
-            self.ref_v = torch.cat([self.ref_v, vs], dim=1)
-        # Truncate to max_refs
-        if self.ref_k.size(1) > self.max_refs:
-            self.ref_k = self.ref_k[:, -self.max_refs :, :]
-            self.ref_v = self.ref_v[:, -self.max_refs :, :]
+            # Match batch dimension if changed
+            if self.ref_k.shape[0] != B:
+                self.ref_k = self.ref_k[:1].expand(B, -1, -1, -1).clone()
+                self.ref_v = self.ref_v[:1].expand(B, -1, -1, -1).clone()
+
+            self.ref_k = torch.cat([self.ref_k, orig_k], dim=2)
+            self.ref_v = torch.cat([self.ref_v, orig_v], dim=2)
+
+        # Truncate to maximum reference token capacity
+        if self.ref_k.size(2) > self.max_refs:
+            self.ref_k = self.ref_k[:, :, -self.max_refs :, :].contiguous()
+            self.ref_v = self.ref_v[:, :, -self.max_refs :, :].contiguous()
 
     @torch.no_grad()
-    def compress(self, k: torch.Tensor, v: torch.Tensor) -> Any:
+    def compress(
+        self, k: torch.Tensor, v: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Compress K/V by computing residuals relative to the closest reference
-        tokens, keeping only the top residuals.
+        Compress K/V tensors by retrieving top-k references and returning sparse residuals.
+        Returns reconstructed/compressed (k_hat, v_hat).
         """
-        if self.ref_k is None:
+        orig_shape = k.shape
+        if self.ref_k is None or self.ref_k.size(2) == 0:
+            self.update(k, v)
             return k, v
 
-        B, H, N, D = k.shape
-        tk = min(self.topk, self.ref_k.size(1))
+        # Normalize shape to (B, H, N, D)
+        k_4d = k
+        v_4d = v
+        if k.ndim == 2:
+            k_4d = k.unsqueeze(0).unsqueeze(0)
+            v_4d = v.unsqueeze(0).unsqueeze(0)
+        elif k.ndim == 3:
+            k_4d = k.unsqueeze(1)
+            v_4d = v.unsqueeze(1)
 
-        # Compute similarities between current K and reference K
-        sim = torch.matmul(k, self.ref_k.transpose(-2, -1))  # (B, H, N, C)
-        _, idx = sim.topk(tk, dim=-1)  # (B, H, N, tk)
+        B, H, N, D = k_4d.shape
+        ref_b, ref_h, ref_n, ref_d = self.ref_k.shape
 
-        # Gather reference vectors
-        idx_expand = idx.unsqueeze(-1).expand(-1, -1, -1, -1, D)
-        ref_k_expanded = self.ref_k.unsqueeze(0).unsqueeze(2).expand(B, H, N, -1, -1)
-        ref_v_expanded = self.ref_v.unsqueeze(0).unsqueeze(2).expand(B, H, N, -1, -1)
+        # Broadcast references across batch if needed
+        ref_k_b = self.ref_k if ref_b == B else self.ref_k[:1].expand(B, -1, -1, -1)
+        ref_v_b = self.ref_v if ref_b == B else self.ref_v[:1].expand(B, -1, -1, -1)
 
-        rk = ref_k_expanded.gather(3, idx_expand).mean(dim=3)
-        rv = ref_v_expanded.gather(3, idx_expand).mean(dim=3)
+        tk = min(self.topk, ref_n)
+        if tk == 0:
+            self.update(k, v)
+            return k, v
 
-        # Residual
-        k_residual = k - rk
-        v_residual = v - rv
+        # Compute cosine-scaled similarity: (B, H, N, D) x (B, H, D, ref_N) -> (B, H, N, ref_N)
+        sim = torch.matmul(k_4d, ref_k_b.transpose(-2, -1)) / (D**0.5)
+        _, top_idx = torch.topk(sim, tk, dim=-1)  # (B, H, N, tk)
 
-        # Keep only significant residuals (L2 norm > threshold)
-        k_keep_mask = k_residual.norm(dim=-1) > 1e-3  # (B, H, N)
-        v_keep_mask = v_residual.norm(dim=-1) > 1e-3
+        # Gather reference key-value representations
+        # top_idx: (B, H, N, tk) -> expand to (B, H, N, tk, D)
+        top_idx_exp = top_idx.unsqueeze(-1).expand(B, H, N, tk, D)
+        ref_k_exp = ref_k_b.unsqueeze(2).expand(B, H, N, ref_n, D)
+        ref_v_exp = ref_v_b.unsqueeze(2).expand(B, H, N, ref_n, D)
 
-        # Apply masks: zero out negligible residuals
-        k_compressed = torch.where(
-            k_keep_mask.unsqueeze(-1), k_residual, torch.zeros_like(k_residual)
-        )
-        v_compressed = torch.where(
-            v_keep_mask.unsqueeze(-1), v_residual, torch.zeros_like(v_residual)
-        )
+        rk = ref_k_exp.gather(3, top_idx_exp).mean(dim=3)  # (B, H, N, D)
+        rv = ref_v_exp.gather(3, top_idx_exp).mean(dim=3)  # (B, H, N, D)
 
-        return k_compressed, v_compressed
+        # Compute delta residuals
+        k_residual = k_4d - rk
+        v_residual = v_4d - rv
+
+        # Residual thresholding / sparsity mask
+        k_norm = torch.norm(k_residual, dim=-1, keepdim=True)
+        v_norm = torch.norm(v_residual, dim=-1, keepdim=True)
+
+        k_mask = (k_norm > self.residual_threshold).to(dtype=k_4d.dtype)
+        v_mask = (v_norm > self.residual_threshold).to(dtype=v_4d.dtype)
+
+        k_sparse = k_residual * k_mask
+        v_sparse = v_residual * v_mask
+
+        # Reconstructed representations
+        k_hat = rk + k_sparse
+        v_hat = rv + v_sparse
+
+        # Update store with new representations
+        self.update(k, v)
+
+        return k_hat.reshape(orig_shape), v_hat.reshape(orig_shape)
 
 
 class DeltaKVCompressor(BaseCompressor):
     """
-    Compresses attention projection weights using a DeltaKV‑inspired residual
-    approach: decomposing weights into a low‑rank reference component plus
-    sparse residuals.
+    DeltaKV Compressor: Decomposes projection weights into a low-rank reference component
+    plus sparse residuals, modeling weight matrices under residual delta formulation.
 
     Args:
         model: PyTorch model.
-        rank: rank of the reference (low‑rank) component (default 16).
-        sparsity: fraction of residual entries to retain (default 0.29).
+        rank: Rank of reference low-rank matrix (default 16).
+        sparsity: Fraction of sparse residual elements to retain (default 0.29).
     """
 
-    def __init__(self, model, rank=16, sparsity=0.29, **kwargs):
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 16,
+        sparsity: float = 0.29,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="delta_kv", **kwargs)
-        self.rank = rank
-        self.sparsity = sparsity
+        self.rank = int(rank)
+        self.sparsity = float(sparsity)
 
-    def compress(self) -> Any:
-        """Compress the target module using this strategy."""
+    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Decompose linear projection weights into low-rank + sparse residual."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float()
-
-                # Step 1: Low‑rank reference (SVD)
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                r = min(self.rank, min(W.shape))
+                r = max(1, min(self.rank, min(W.shape)))
                 L = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
 
-                # Step 2: Residual
+                # Sparse residual
                 residual = W - L
-
-                # Step 3: Keep only top sparsity fraction of residual entries
                 flat_r = residual.abs().view(-1)
-                keep_n = max(1, int(flat_r.numel() * self.sparsity))
+                keep_n = max(1, min(int(flat_r.numel() * self.sparsity), flat_r.numel()))
                 threshold = torch.topk(flat_r, keep_n).values[-1]
                 mask = (residual.abs() >= threshold).float()
                 residual_sparse = residual * mask
 
-                # Step 4: Final weight = reference + sparse residual
                 W_compressed = L + residual_sparse
                 module.weight.data = W_compressed.to(dtype=module.weight.dtype)
 
-        self._compressed_params = self._count_params(self.model)
-        return self.model, self.get_compression_stats()
+        stats = self.get_compression_stats()
+        stats["rank"] = self.rank
+        stats["sparsity"] = self.sparsity
+        stats["kv_cache_storage_ratio"] = f"{self.sparsity * 100:.1f}% of full KV cache"
+        return self.model, stats
 
 
 @COMPRESSOR_REGISTRY.register("delta_kv")
-def delta_kv_factory(model, comp_config) -> Any:
-    """Delta kv factory."""
-    rank = getattr(comp_config, "delta_kv_rank", 16)
-    sparsity = getattr(comp_config, "delta_kv_sparsity", 0.29)
+def delta_kv_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+    """DeltaKV compressor factory function."""
+    rank = getattr(comp_config, "delta_kv_rank", 16) if comp_config else 16
+    sparsity = getattr(comp_config, "delta_kv_sparsity", 0.29) if comp_config else 0.29
     compressor = DeltaKVCompressor(model, rank=rank, sparsity=sparsity)
     compressed_model, _ = compressor.compress()
     return compressed_model
