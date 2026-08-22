@@ -2020,3 +2020,5 @@ ompleted)
 [2026-08-22 10:16:40] [Worker-2] [121/145] NOTICE: attn=vig | task=sst2 | Error: shape '[64, 11, 12]' is invalid for input of size 1048576 | Time: 0.6s
 [2026-08-22 10:16:42] [Worker-2] [122/145] >> Launching: attn=vspec | task=sst2 | seed=42
 [2026-08-22 10:16:46] [Worker-2] [122/145] NOTICE: attn=vspec | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 4.2s
+[2026-08-22 10:16:47] [Worker-2] [123/145] >> Launching: attn=wgqa | task=sst2 | seed=42
+[2026-08-22 10:17:06] [Worker-2] [123/145] << SUCCESS: attn=wgqa | task=sst2 | Acc: 77.98% | F1: 77.95% | Loss: 0.6020 | Time: 18.9s
