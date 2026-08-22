@@ -642,22 +642,17 @@ ompleted)
 [2026-08-22 04:29:10] [Worker-1] [13/126] -- SKIPPING: attn=aegis_v6 | task=sst2 (Already completed)
 [2026-08-22 04:29:10] [Worker-1] [14/126] -- SKIPPING: attn=asvd | task=sst2 (Already completed)
 [2026-08-22 04:29:10] [Worker-1] [15/126] >> Launching: attn=bam_umoe | task=sst2 | seed=42
-[2026-08-22 04:29:15] [Worker-1] [15/126] NOTICE: attn=bam_umoe | task=sst2 | Error: The size of tensor a (32) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 4.9s
 [2026-08-22 04:29:17] [Worker-1] [16/126] -- SKIPPING: attn=block_transformer_hiba | task=sst2 (Already completed)
 [2026-08-22 04:29:17] [Worker-1] [17/126] >> Launching: attn=chela_slay | task=sst2 | seed=42
-[2026-08-22 04:29:17] [Worker-1] [17/126] NOTICE: attn=chela_slay | task=sst2 | Error: The size of tensor a (12) must match the size of tensor b (128) at non-singleton dimension 2 | Time: 0.6s
 [2026-08-22 04:29:19] [Worker-1] [18/126] -- SKIPPING: attn=cluster | task=sst2 (Already completed)
 [2026-08-22 04:29:19] [Worker-1] [19/126] -- SKIPPING: attn=compressed_attention_layer | task=sst2 (Already completed)
 [2026-08-22 04:29:19] [Worker-1] [20/126] -- SKIPPING: attn=compressed_attention_layer_energy | task=sst2 (Already completed)
 [2026-08-22 04:29:19] [Worker-1] [21/126] >> Launching: attn=compressed_mha | task=sst2 | seed=42
-[2026-08-22 04:29:22] [Worker-1] [21/126] NOTICE: attn=compressed_mha | task=sst2 | Error: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! | Time: 2.4s
 [2026-08-22 04:29:24] [Worker-1] [22/126] -- SKIPPING: attn=compression_unified_rope | task=sst2 (Already completed)
 [2026-08-22 04:29:24] [Worker-1] [23/126] -- SKIPPING: attn=decay_linear_attn | task=sst2 (Already completed)
 [2026-08-22 04:29:24] [Worker-1] [24/126] -- SKIPPING: attn=eat | task=sst2 (Already completed)
 [2026-08-22 04:29:24] [Worker-1] [25/126] >> Launching: attn=expert_choice_moe | task=sst2 | seed=42
-[2026-08-22 04:29:26] [Worker-1] [25/126] NOTICE: attn=expert_choice_moe | task=sst2 | Error: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 678.82 MiB is free. 6.00 GiB allowed; Of the allocated memory 5.71 GiB is allocated by PyTorch, and 284.83 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.9s
 [2026-08-22 04:29:28] [Worker-1] [26/126] >> Launching: attn=factorised_matrix_state | task=sst2 | seed=42
-[2026-08-22 04:29:29] [Worker-1] [26/126] NOTICE: attn=factorised_matrix_state | task=sst2 | Error: The size of tensor a (32) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.4s
 [2026-08-22 04:29:31] [Worker-1] [27/126] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
 [2026-08-22 04:29:31] [Worker-1] [28/126] -- SKIPPING: attn=flash3_fp8 | task=sst2 (Already completed)
 [2026-08-22 04:29:31] [Worker-1] [29/126] -- SKIPPING: attn=full | task=sst2 (Already completed)
@@ -672,7 +667,6 @@ ompleted)
 [2026-08-22 04:29:46] [Worker-1] [36/126] -- SKIPPING: attn=goldfinch_ahn | task=sst2 (Already completed)
 [2026-08-22 04:29:46] [Worker-1] [37/126] -- SKIPPING: attn=gqa | task=sst2 (Already completed)
 [2026-08-22 04:29:46] [Worker-1] [38/126] >> Launching: attn=granite_hybrid | task=sst2 | seed=42
-[2026-08-22 04:29:48] [Worker-1] [38/126] NOTICE: attn=granite_hybrid | task=sst2 | Error: CUDA out of memory. Tried to allocate 12.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 658.82 MiB is free. 6.00 GiB allowed; Of the allocated memory 5.65 GiB is allocated by PyTorch, and 352.71 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 2.0s
 [2026-08-22 04:29:50] [Worker-1] [39/126] >> Launching: attn=griffin_ssd | task=sst2 | seed=42
 [2026-08-22 04:30:38] [Worker-1] [39/126] << SUCCESS: attn=griffin_ssd | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6988 | Time: 48.8s
 [2026-08-22 04:30:42] [Worker-1] [40/126] -- SKIPPING: attn=halo_regla | task=sst2 (Already completed)
@@ -681,6 +675,27 @@ ompleted)
 [2026-08-22 04:30:42] [Worker-1] [43/126] >> Launching: attn=hgrn2_layer | task=sst2 | seed=42
 [2026-08-22 04:31:37] [Worker-1] [43/126] << SUCCESS: attn=hgrn2_layer | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6936 | Time: 55.4s
 [2026-08-22 04:31:39] [Worker-1] [44/126] >> Launching: attn=hgrn2_outer | task=sst2 | seed=42
-[2026-08-22 04:31:40] [Worker-1] [44/126] NOTICE: attn=hgrn2_outer | task=sst2 | Error: CUDA out of memory. Tried to allocate 36.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 734.51 MiB is free. 6.00 GiB allowed; Of the allocated memory 5.98 GiB is allocated by PyTorch, and 3.75 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.0s
 [2026-08-22 04:31:43] [Worker-1] [45/126] >> Launching: attn=hla | task=sst2 | seed=42
-[2026-08-22 04:31:44] [Worker-1] [45/126] NOTICE: attn=hla | task=sst2 | Error: The size of tensor a (12) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.6s
+[2026-08-22 04:31:46] [Worker-1] [46/126] >> Launching: attn=hymba_transx | task=sst2 | seed=42
+[2026-08-22 04:32:18] ============================================================
+[2026-08-22 04:32:18]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-22 04:32:18] ============================================================
+[2026-08-22 04:32:18] Started background telemetry sync thread.
+[2026-08-22 04:32:18] Trajectory Matrix: 126 Models x 1 Tasks = 126 Runs
+[2026-08-22 04:32:18] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-22 04:32:26] [Worker-1] [1/126] -- SKIPPING: attn=adaptive_span | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [2/126] -- SKIPPING: attn=adaptive_svd | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [3/126] -- SKIPPING: attn=adaptive_svd_attn | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [4/126] -- SKIPPING: attn=adasplash | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [5/126] -- SKIPPING: attn=aegis_hybrid | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [6/126] -- SKIPPING: attn=aegis_hybrid_attn | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [7/126] -- SKIPPING: attn=aegis_spectron_fp8 | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [8/126] -- SKIPPING: attn=aegis_spectron_fp8_attn | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [9/126] -- SKIPPING: attn=aegis_v2 | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [10/126] -- SKIPPING: attn=aegis_v3 | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [11/126] -- SKIPPING: attn=aegis_v4 | task=sst2 (Already completed)
+[2026-08-22 04:32:26] [Worker-1] [12/126] -- SKIPPING: attn=aegis_v5 | task=sst2 (Already completed)
+[2026-08-22 04:32:27] [Worker-1] [13/126] -- SKIPPING: attn=aegis_v6 | task=sst2 (Already completed)
+[2026-08-22 04:32:27] [Worker-1] [14/126] -- SKIPPING: attn=asvd | task=sst2 (Already completed)
+[2026-08-22 04:32:27] [Worker-1] [15/126] >> Launching: attn=bam_umoe | task=sst2 | seed=42
+[2026-08-22 04:32:50] [Worker-1] [15/126] << SUCCESS: attn=bam_umoe | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6964 | Time: 23.6s
