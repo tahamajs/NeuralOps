@@ -1350,3 +1350,6 @@ ompleted)
 [2026-08-22 04:48:13] [Worker-2] [78/126] -- SKIPPING: attn=nha_compressor | task=sst2 (Already completed)
 [2026-08-22 04:48:13] [Worker-2] [79/126] >> Launching: attn=nsa | task=sst2 | seed=42
 [2026-08-22 04:48:37] [Worker-2] [79/126] << SUCCESS: attn=nsa | task=sst2 | Acc: 74.66% | F1: 74.42% | Loss: 0.5287 | Time: 24.7s
+[2026-08-22 04:48:40] [Worker-2] [80/126] -- SKIPPING: attn=nystrom | task=sst2 (Already completed)
+[2026-08-22 04:48:40] [Worker-2] [81/126] >> Launching: attn=oha | task=sst2 | seed=42
+[2026-08-22 04:48:40] [Worker-2] [81/126] NOTICE: attn=oha | task=sst2 | Error: The size of tensor a (64) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.5s
