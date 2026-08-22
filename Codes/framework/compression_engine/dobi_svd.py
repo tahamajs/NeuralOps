@@ -190,8 +190,20 @@ class DobiSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-def dobi_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Dobi factory function."""
     compressor = DobiSVDCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+dobi_svd_factory = dobi_factory
+dobi_svd_compressor_factory = dobi_factory
+
+__all__ = [
+    "DobiSVDLinearLayer",
+    "DobiSVDCompressor",
+    "dobi_factory",
+    "dobi_svd_factory",
+    "dobi_svd_compressor_factory",
+]
