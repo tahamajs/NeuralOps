@@ -136,15 +136,26 @@ class SAESSVDCompressorV2(BaseCompressor):
         return self.model, stats
 
 
-def saes_svd_v2_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def saes_svd_v2_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """SAES-SVD v2 factory function."""
     compressor = SAESSVDCompressorV2(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
 
 
+saes_factory = saes_svd_v2_factory
+saes_svd_factory = saes_svd_v2_factory
+saes_svd_compressor_factory = saes_svd_v2_factory
+
 # Backward compatibility alias
 SAESCompressor = SAESSVDCompressorV2
 
-__all__ = ["SAESSVDCompressorV2", "SAESCompressor", "saes_svd_v2_factory"]
+__all__ = [
+    "SAESSVDCompressorV2",
+    "SAESCompressor",
+    "saes_svd_v2_factory",
+    "saes_factory",
+    "saes_svd_factory",
+    "saes_svd_compressor_factory",
+]
 

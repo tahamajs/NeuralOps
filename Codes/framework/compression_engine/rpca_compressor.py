@@ -140,8 +140,17 @@ class RPCACompressor(BaseCompressor):
         return self.model, stats
 
 
-def rpca_compressor_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def rpca_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """RPCA factory function."""
     compressor = RPCACompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+rpca_factory = rpca_compressor_factory
+
+__all__ = [
+    "RPCACompressor",
+    "rpca_compressor_factory",
+    "rpca_factory",
+]
