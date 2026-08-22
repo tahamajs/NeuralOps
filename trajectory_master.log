@@ -278,3 +278,4 @@ ompleted)
 [2026-08-22 03:49:36] [Worker-1] [19/1008] >> Launching: attn=compressed_attention_layer | task=sst2 | seed=42
 [2026-08-22 03:56:38] [Worker-1] [19/1008] << SUCCESS: attn=compressed_attention_layer | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: nan | Time: 422.1s
 [2026-08-22 03:56:41] [Worker-1] [20/1008] >> Launching: attn=compressed_attention_layer_energy | task=sst2 | seed=42
+[2026-08-22 04:03:33] [Worker-1] [20/1008] << SUCCESS: attn=compressed_attention_layer_energy | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: nan | Time: 411.8s
