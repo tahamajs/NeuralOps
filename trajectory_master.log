@@ -960,3 +960,5 @@ ompleted)
 [2026-08-22 04:36:40] [Worker-3] [86/126] >> Launching: attn=phantom_module | task=sst2 | seed=42
 [2026-08-22 04:36:43] [Worker-4] [87/126] >> Launching: attn=primal | task=sst2 | seed=42
 [2026-08-22 04:36:51] [Worker-4] [87/126] NOTICE: attn=primal | task=sst2 | Error: CUDA out of memory. Tried to allocate 24.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 5.24 GiB is free. 1.60 GiB allowed; Of the allocated memory 1.58 GiB is allocated by PyTorch, and 8.48 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 8.2s
+[2026-08-22 04:36:53] [Worker-4] [88/126] >> Launching: attn=progressive_token_pruning | task=sst2 | seed=42
+[2026-08-22 04:36:54] [Worker-4] [88/126] NOTICE: attn=progressive_token_pruning | task=sst2 | Error: unsupported operand type(s) for *: 'int' and 'DistilBertConfig' | Time: 0.4s
