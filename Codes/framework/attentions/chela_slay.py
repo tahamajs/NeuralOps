@@ -118,11 +118,14 @@ class ChelaSlayAttention(BaseAttention):
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
+                # (B, L) -> (B, 1, L, 1)
                 mask = attention_mask.unsqueeze(1).unsqueeze(-1).to(k_feat.dtype)
             elif attention_mask.dim() == 4:
-                mask = (attention_mask > -10000.0).float().to(k_feat.dtype).transpose(-2, -1)
+                # HF passes (B, 1, 1, L) — reshape to (B, 1, L, 1)
+                mask = (attention_mask > -10000.0).float().to(k_feat.dtype)
+                mask = mask.squeeze(1).squeeze(1).unsqueeze(1).unsqueeze(-1)  # (B, 1, L, 1)
             else:
-                mask = attention_mask.to(k_feat.dtype)
+                mask = attention_mask.to(k_feat.dtype).unsqueeze(-1)
             k_feat = k_feat * mask
             v = v * mask
 
