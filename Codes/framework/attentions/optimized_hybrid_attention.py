@@ -78,7 +78,6 @@ class OptimizedHybridAttentionConfig:
     layer_norm_eps: float = 1e-5
 
 
-@ATTENTION_REGISTRY.register("oha")
 class OptimizedHybridAttention(BaseAttention):
     r"""Optimized Hybrid Attention (OHA) combining sliding-window local and compressed global attention.
 
@@ -249,6 +248,7 @@ class OptimizedHybridAttention(BaseAttention):
         return oha
 
 
+@ATTENTION_REGISTRY.register("oha")
 def inject_oha(
     layer: Any,
     model_config: Any,
@@ -259,12 +259,12 @@ def inject_oha(
 ) -> OptimizedHybridAttention:
     r"""Dynamic bridge injecting OptimizedHybridAttention into a target transformer layer."""
     oha_cfg = OptimizedHybridAttentionConfig(
-        hidden_size=model_config.hidden_size,
-        num_attention_heads=model_config.num_attention_heads,
-        window_size=getattr(comp_config, "block_size", 128),
-        compression_rank=getattr(comp_config, "compression_rank", 64),
-        use_gate=getattr(comp_config, "use_gate", True),
-        gate_bias=getattr(comp_config, "gate_bias", 2.0),
+        hidden_size=getattr(model_config, "hidden_size", 768),
+        num_attention_heads=getattr(model_config, "num_attention_heads", 12),
+        window_size=getattr(comp_config, "block_size", 128) if comp_config is not None else 128,
+        compression_rank=getattr(comp_config, "compression_rank", 64) if comp_config is not None else 64,
+        use_gate=getattr(comp_config, "use_gate", True) if comp_config is not None else True,
+        gate_bias=getattr(comp_config, "gate_bias", 2.0) if comp_config is not None else 2.0,
     )
     new_attn = OptimizedHybridAttention.from_distilbert_pretrained(old_attn, oha_cfg)
     layer.attention = new_attn

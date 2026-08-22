@@ -143,7 +143,7 @@ def _replace_distilbert_attention(
 
     for idx, layer in enumerate(layers):
         old_attn = layer.attention
-        inject_fn(
+        res = inject_fn(
             layer,
             model.config,
             attention_params,
@@ -151,6 +151,8 @@ def _replace_distilbert_attention(
             total_layers,
             old_attn,
         )
+        if isinstance(res, nn.Module) and getattr(layer, "attention", None) is not res:
+            layer.attention = res
 
 
 def build_attention(
