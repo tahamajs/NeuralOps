@@ -2022,3 +2022,5 @@ ompleted)
 [2026-08-22 10:16:46] [Worker-2] [122/145] NOTICE: attn=vspec | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 4.2s
 [2026-08-22 10:16:47] [Worker-2] [123/145] >> Launching: attn=wgqa | task=sst2 | seed=42
 [2026-08-22 10:17:06] [Worker-2] [123/145] << SUCCESS: attn=wgqa | task=sst2 | Acc: 77.98% | F1: 77.95% | Loss: 0.6020 | Time: 18.9s
+[2026-08-22 10:17:11] [Worker-2] [124/145] >> Launching: attn=xattention | task=sst2 | seed=42
+[2026-08-22 10:17:30] [Worker-2] [124/145] << SUCCESS: attn=xattention | task=sst2 | Acc: 79.24% | F1: 78.91% | Loss: 0.5323 | Time: 19.0s
