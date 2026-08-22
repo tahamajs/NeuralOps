@@ -178,8 +178,8 @@ class BAMUMoEBlock(BaseAttention):
                 # (B, L) -> (B, L, 1)
                 mask = attention_mask.unsqueeze(-1).to(out.dtype)
             elif attention_mask.dim() == 4:
-                # HF passes (B, 1, 1, L) -> (B, L, 1)
-                mask = (attention_mask > -1).float().squeeze(1).squeeze(1).unsqueeze(-1).to(out.dtype)
+                # Extracts [B, L] from [B, 1, 1, L] or [B, 1, L, L] -> (B, L, 1)
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).float().unsqueeze(-1).to(out.dtype)
             else:
                 mask = attention_mask.unsqueeze(-1).to(out.dtype) if attention_mask.dim() == 1 else attention_mask.to(out.dtype)
             out = out * mask
