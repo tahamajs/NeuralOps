@@ -83,8 +83,8 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
     import torch
     torch.backends.cudnn.benchmark = True
     if torch.cuda.is_available():
-        # Hard cap at 20% of 8GB = 1.6GB VRAM per worker (4 workers = 6.4GB max) to perfectly prevent Windows Shared Memory swapping
-        torch.cuda.set_per_process_memory_fraction(0.20)
+        # Hard cap at 40% of 8GB = 3.2GB VRAM per worker (2 workers = 6.4GB max) to perfectly prevent Windows Shared Memory swapping
+        torch.cuda.set_per_process_memory_fraction(0.40)
     from main import run_train, _import_framework
     fw = _import_framework()
 
@@ -127,11 +127,11 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                       "spectron", "hgrn2_layer", "simple_ssm", "samba_moe",
                       "expert_choice_moe", "granite_hybrid"}
         if attn in heavy_attn:
-            cfg.batch_size = 64
-        elif attn in {"adasplash", "nha_compressor", "token_compressed"}:
             cfg.batch_size = 32
+        elif attn in {"adasplash", "nha_compressor", "token_compressed"}:
+            cfg.batch_size = 16
         else:
-            cfg.batch_size = 128   # Massive batch size for LoRA to hit 100% GPU Compute
+            cfg.batch_size = 64   # Optimal batch size for 2 workers
 
         cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
 
@@ -448,7 +448,7 @@ def main():
     log_master(f"Trajectory Matrix: {len(ATTN_MODELS)} Models x {len(TASKS)} Tasks = {total} Runs")
     log_master("Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.")
 
-    NUM_WORKERS = 4
+    NUM_WORKERS = 2
     processes = []
     git_lock = mp.Lock()
     for w_id in range(1, NUM_WORKERS + 1):
