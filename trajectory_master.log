@@ -330,3 +330,5 @@ ompleted)
 [2026-08-22 04:07:21] [Worker-1] [32/126] NOTICE: attn=gated_delta_net | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.0s
 [2026-08-22 04:07:24] [Worker-1] [33/126] >> Launching: attn=gated_delta_net_inject | task=sst2 | seed=42
 [2026-08-22 04:07:25] [Worker-1] [33/126] NOTICE: attn=gated_delta_net_inject | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.0s
+[2026-08-22 04:07:26] [Worker-3] [34/126] >> Launching: attn=gated_deltanet_block | task=sst2 | seed=42
+[2026-08-22 04:07:27] [Worker-3] [34/126] NOTICE: attn=gated_deltanet_block | task=sst2 | Error: [Errno 22] Invalid argument | Time: 1.0s
