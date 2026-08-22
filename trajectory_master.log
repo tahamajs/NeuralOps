@@ -489,3 +489,6 @@ ompleted)
 [2026-08-22 04:18:11] [Worker-1] [21/126] NOTICE: attn=compressed_mha | task=sst2 | Error: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! | Time: 2.5s
 [2026-08-22 04:18:13] [Worker-1] [26/126] >> Launching: attn=factorised_matrix_state | task=sst2 | seed=42
 [2026-08-22 04:18:14] [Worker-1] [26/126] NOTICE: attn=factorised_matrix_state | task=sst2 | Error: The size of tensor a (16) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.4s
+[2026-08-22 04:18:17] [Worker-1] [27/126] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+[2026-08-22 04:18:17] [Worker-1] [28/126] >> Launching: attn=flash3_fp8 | task=sst2 | seed=42
+[2026-08-22 04:18:33] [Worker-1] [28/126] << SUCCESS: attn=flash3_fp8 | task=sst2 | Acc: 69.27% | F1: 68.45% | Loss: 0.6797 | Time: 16.1s
