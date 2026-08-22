@@ -81,11 +81,13 @@ class GalerkinAttention(nn.Module):
 
         # Mask handling - apply to K and V before sketching
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask_bool = attention_mask.bool()[:, None, :, None] # (B, 1, N, 1)
+            if attention_mask.dim() == 4:
+                # Assuming (B, 1, 1, N) or similar, convert to (B, 1, N, 1)
+                mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(1).unsqueeze(-1)
+            elif attention_mask.dim() == 2:
+                mask_bool = attention_mask.bool().unsqueeze(1).unsqueeze(-1) # (B, 1, N, 1)
             else:
-                # Assuming (B, 1, 1, N) from HF, convert to (B, 1, N, 1)
-                mask_bool = attention_mask.bool().squeeze(1).transpose(-1, -2)
+                mask_bool = attention_mask.bool()
             
             K = K.masked_fill(~mask_bool, 0.0)
             V = V.masked_fill(~mask_bool, 0.0)

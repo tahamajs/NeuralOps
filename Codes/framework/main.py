@@ -256,6 +256,24 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
                 cfg.attn_type,
                 fw["ATTENTION_REGISTRY"].keys(),
             )
+            
+    # --- PEFT / LoRA Injection ---
+    try:
+        from peft import get_peft_model, LoraConfig, TaskType
+        # Methods that shouldn't receive LoRA because they have natively injected adapter logic or shouldn't be touched
+        no_lora_attn = {"svd", "svd_linear", "svd_linear_attn"}
+        if cfg.attn_type not in no_lora_attn:
+            peft_config = LoraConfig(
+                task_type=TaskType.SEQ_CLS, 
+                r=8, 
+                lora_alpha=32, 
+                lora_dropout=0.1,
+                target_modules=["q_lin", "v_lin"] if "distilbert" in cfg.model_name.lower() else ["q_proj", "v_proj"]
+            )
+            model = get_peft_model(model, peft_config)
+            logger.info("Successfully injected PEFT LoRA adapter (r=8) for lightweight fine-tuning.")
+    except Exception as e:
+        logger.warning(f"Could not inject PEFT LoRA. Falling back to full fine-tuning. Reason: {e}")
 
     model.to(device)
     n_params = fw["count_parameters"](model)
