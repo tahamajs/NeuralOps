@@ -699,3 +699,6 @@ ompleted)
 [2026-08-22 04:32:27] [Worker-1] [14/126] -- SKIPPING: attn=asvd | task=sst2 (Already completed)
 [2026-08-22 04:32:27] [Worker-1] [15/126] >> Launching: attn=bam_umoe | task=sst2 | seed=42
 [2026-08-22 04:32:50] [Worker-1] [15/126] << SUCCESS: attn=bam_umoe | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6964 | Time: 23.6s
+[2026-08-22 04:32:52] [Worker-1] [16/126] -- SKIPPING: attn=block_transformer_hiba | task=sst2 (Already completed)
+[2026-08-22 04:32:52] [Worker-1] [17/126] >> Launching: attn=chela_slay | task=sst2 | seed=42
+[2026-08-22 04:33:01] [Worker-1] [17/126] << SUCCESS: attn=chela_slay | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6921 | Time: 8.6s
