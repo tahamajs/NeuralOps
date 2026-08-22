@@ -146,6 +146,8 @@ class LowRankLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("lola_attn")
+@ATTENTION_REGISTRY.register("lola_attention")
+@ATTENTION_REGISTRY.register("lola")
 class LoLAAttention(BaseAttention):
     r"""
     LoLA: Low-Rank Linear Attention with Sparse Caching.
@@ -178,30 +180,25 @@ class LoLAAttention(BaseAttention):
         dropout: float = 0.1,
         pretrained_attn: Optional[nn.Module] = None,
         comp_config: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(model_config, rank)
+        actual_rank = getattr(
+            model_config,
+            "svd_rank",
+            rank if rank is not None else getattr(model_config, "rank", 32),
+        )
+        super().__init__(model_config, actual_rank)
         self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
         hidden_size: int = getattr(model_config, "hidden_size", 768)
         self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim
         self.hidden_size: int = hidden_size
-        self.rank: int = rank
+        self.rank: int = actual_rank
 
-        has_bias = True
-        if pretrained_attn is not None and hasattr(pretrained_attn, "q_lin") and pretrained_attn.q_lin.bias is None:
-            has_bias = False
-
-        self.q_proj: LowRankLinear = LowRankLinear(self.hidden_size, self.all_head_size, rank, bias=has_bias)
-        self.k_proj: LowRankLinear = LowRankLinear(self.hidden_size, self.all_head_size, rank, bias=has_bias)
-        self.v_proj: LowRankLinear = LowRankLinear(self.hidden_size, self.all_head_size, rank, bias=has_bias)
-        self.out_proj: LowRankLinear = LowRankLinear(self.all_head_size, self.hidden_size, rank, bias=has_bias)
-
-        if pretrained_attn is not None:
-            if hasattr(pretrained_attn, "q_lin"):
-                self._init_from_linear(self.q_proj, pretrained_attn.q_lin)
-                self._init_from_linear(self.k_proj, pretrained_attn.k_lin)
-                self._init_from_linear(self.v_proj, pretrained_attn.v_lin)
-                self._init_from_linear(self.out_proj, pretrained_attn.out_lin)
+        self.q_proj: LowRankLinear = LowRankLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
+        self.k_proj: LowRankLinear = LowRankLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
+        self.v_proj: LowRankLinear = LowRankLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
+        self.out_proj: LowRankLinear = LowRankLinear(self.all_head_size, self.hidden_size, self.rank, bias=True)
 
         self.dropout: nn.Dropout = nn.Dropout(dropout)
 
@@ -211,16 +208,35 @@ class LoLAAttention(BaseAttention):
         self.LR_scale: nn.Parameter = nn.Parameter(torch.tensor(0.5))
         self.sparse_gate: nn.Parameter = nn.Parameter(torch.tensor(0.5))
 
-    def _init_from_linear(self, lowrank: LowRankLinear, orig: nn.Linear) -> None:
-        """ init from linear."""
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def _set_lowrank_factors(self, lowrank: LowRankLinear, weight: torch.Tensor, bias: Optional[torch.Tensor]) -> None:
         with torch.no_grad():
-            W = orig.weight.data.float()
+            W = weight.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(self.rank, U.size(1), Vt.size(0))
-            lowrank.U.data[:, :r] = (U[:, :r] * S[:r]).to(lowrank.U.dtype)
-            lowrank.V.data[:r, :] = Vt[:r, :].to(lowrank.V.dtype)
-            if lowrank.bias is not None and orig.bias is not None:
-                lowrank.bias.data = orig.bias.data.clone()
+            sqrt_s = torch.sqrt(S[:r])
+            lowrank.U.data[:, :r] = (U[:, :r] * sqrt_s).to(lowrank.U.dtype)
+            lowrank.V.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(lowrank.V.dtype)
+            if lowrank.bias is not None and bias is not None:
+                lowrank.bias.data.copy_(bias)
+
+    def copy_weights(self, src: Any) -> None:
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+            ("o", self.out_proj),
+        ]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                self._set_lowrank_factors(target, w, b)
+            except Exception:
+                pass
 
     def forward(
         self,

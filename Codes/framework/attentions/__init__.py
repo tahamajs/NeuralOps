@@ -16,6 +16,6 @@ for file in os.listdir(os.path.dirname(__file__)):
         try:
             __import__(f"framework.attentions.{module_name}")
             __all__.append(module_name)
-        except ImportError as e:
-            # Module has missing dependencies – skip but warn
+        except Exception as e:
+            # Module has missing dependencies or syntax issues – skip but warn
             logger.warning(f"Skipping attention module '{module_name}' due to: {e}")

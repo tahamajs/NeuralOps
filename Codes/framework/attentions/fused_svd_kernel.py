@@ -363,6 +363,20 @@ class FusedSVDLinear(nn.Module):
             self.U.copy_(U_factor)
             self.V.copy_(V_factor)
 
+    def decompose_from_weight(self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+        """Decompose dense weight matrix into symmetric SVD factors."""
+        with torch.no_grad():
+            W = weight.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r = min(self.rank, len(S))
+            sqrt_s = torch.sqrt(S[:r])
+            self.U.data.zero_()
+            self.V.data.zero_()
+            self.U.data[:, :r] = (U[:, :r] * sqrt_s).to(self.U.dtype)
+            self.V.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.V.dtype)
+            if bias is not None and self.bias is not None:
+                self.bias.data.copy_(bias)
+
     def get_orthogonality_loss(self) -> torch.Tensor:
         """
         # RESEARCH FIX: Computes Stiefel manifold penalty to prevent singular subspace collapse.

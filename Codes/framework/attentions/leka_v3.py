@@ -79,6 +79,15 @@ class LEKAV3Attention(BaseAttention):
         self.gate = nn.Parameter(torch.zeros(self.num_attention_heads))
 
     # ... (transpose_for_scores, kernel_feature_map same)
+    def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
+        new_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
+        return x.view(new_shape).permute(0, 2, 1, 3)
+
+    def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
+        proj1 = self.proj1.to(x.device)
+        f1 = torch.matmul(x, proj1)
+        return torch.cat([torch.cos(f1), torch.sin(f1)], dim=-1) / math.sqrt(self.feature_dim)
+
     def select_landmarks(
         self, K_features: torch.Tensor, V: torch.Tensor, valid_mask: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -87,11 +96,13 @@ class LEKAV3Attention(BaseAttention):
         if N <= self.num_landmarks:
             return K_features, V
 
-        # Zero out padding tokens so they are not selected
-        pad = (~valid_mask).unsqueeze(1).unsqueeze(-1).to(V.dtype)   # [B,1,N,1]
-        V_masked = V.masked_fill(pad, -float("inf"))
-        scores = self.landmark_scorer(V_masked).squeeze(-1)   # (B,H,N)
-        L = self.num_landmarks
+        # Mask padding tokens safely
+        scores = self.landmark_scorer(V).squeeze(-1)   # (B,H,N)
+        pad = ~valid_mask.unsqueeze(1)  # [B,1,N] bool
+        scores = scores.masked_fill(pad.bool(), -10000.0)
+        # Always prioritize [CLS] token at index 0
+        scores[:, :, 0] = 1e6
+        L = min(self.num_landmarks, N)
         _, idx = scores.topk(L, dim=-1)
 
         K_land = torch.gather(
@@ -99,6 +110,30 @@ class LEKAV3Attention(BaseAttention):
         )
         V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
         return K_land, V_land
+
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        with torch.no_grad():
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+
+            if q_src is not None and hasattr(q_src, "weight"):
+                self.query.weight.copy_(q_src.weight)
+                if q_src.bias is not None:
+                    self.query.bias.copy_(q_src.bias)
+            if k_src is not None and hasattr(k_src, "weight"):
+                self.key.weight.copy_(k_src.weight)
+                if k_src.bias is not None:
+                    self.key.bias.copy_(k_src.bias)
+            if v_src is not None and hasattr(v_src, "weight"):
+                self.value.weight.copy_(v_src.weight)
+                if v_src.bias is not None:
+                    self.value.bias.copy_(v_src.bias)
+            if out_src is not None and hasattr(out_src, "weight"):
+                self.out_proj.weight.copy_(out_src.weight)
+                if out_src.bias is not None:
+                    self.out_proj.bias.copy_(out_src.bias)
 
     def forward(
         self,

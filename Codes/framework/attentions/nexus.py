@@ -491,6 +491,30 @@ class NEXUSAttention(BaseAttention):
             raise ValueError(f"Unexpected mask dim: {mask.dim()}")
         return token_valid.to(device)
 
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        with torch.no_grad():
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+
+            if q_src is not None and hasattr(q_src, "weight"):
+                self.query.weight.copy_(q_src.weight)
+                if q_src.bias is not None:
+                    self.query.bias.copy_(q_src.bias)
+            if k_src is not None and hasattr(k_src, "weight"):
+                self.key.weight.copy_(k_src.weight)
+                if k_src.bias is not None:
+                    self.key.bias.copy_(k_src.bias)
+            if v_src is not None and hasattr(v_src, "weight"):
+                self.value.weight.copy_(v_src.weight)
+                if v_src.bias is not None:
+                    self.value.bias.copy_(v_src.bias)
+            if out_src is not None and hasattr(out_src, "weight"):
+                self.out_proj.weight.copy_(out_src.weight)
+                if out_src.bias is not None:
+                    self.out_proj.bias.copy_(out_src.bias)
+
     def forward(
         self,
         hidden_states: torch.Tensor,

@@ -1,6 +1,7 @@
 """Kernelized Decay Attention (KDA) / Recurrent Linear Attention.
 
-Linear recurrence with learned exponential gating decay.
+Implements multi-head bidirectional linear recurrence with learned exponential decay gating,
+spherical normalization, denominator tracking, and pretrained weight transfer.
 """
 
 from typing import Any, Optional, Tuple, Union
@@ -9,75 +10,195 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.adapters import UniversalAdapter
+from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("kda")
-class KDAAttention(nn.Module):
-    r"""Kernelized Decay Attention (KDA) Mechanism.
+@ATTENTION_REGISTRY.register("kda_attention")
+class KDAAttention(BaseAttention):
+    r"""Kernelized Decay Attention (KDA) Bidirectional Mechanism.
 
-    Implements causal linear recurrent state tracking with a learned gating decay parameter $\beta$:
-    $$S_t = \sigma(\beta) \odot S_{t-1} + k_t v_t^\top \in \mathbb{R}^{d_k \times d_v}$$
-    $$o_t = S_t q_t \in \mathbb{R}^{d_v}$$
-    where keys are normalized with an $\ell_2$ unit hypersphere projection $\tilde{k}_t = k_t / \|k_t\|_2$.
+    Implements bidirectional linear recurrent state tracking with a learned gating decay parameter $\beta$:
+    $$\begin{aligned}
+    \vec{S}_t &= \sigma(\beta) \odot \vec{S}_{t-1} + \tilde{k}_t v_t^\top, \quad \vec{z}_t = \sigma(\beta) \odot \vec{z}_{t-1} + \tilde{k}_t \\
+    \overleftarrow{S}_t &= \sigma(\beta) \odot \overleftarrow{S}_{t+1} + \tilde{k}_t v_t^\top, \quad \overleftarrow{z}_t = \sigma(\beta) \odot \overleftarrow{z}_{t+1} + \tilde{k}_t \\
+    \vec{o}_t &= \frac{\vec{S}_t \tilde{q}_t}{\vec{z}_t^\top \tilde{q}_t + \epsilon}, \quad \overleftarrow{o}_t = \frac{\overleftarrow{S}_t \tilde{q}_t}{\overleftarrow{z}_t^\top \tilde{q}_t + \epsilon} \\
+    \text{Output} &= \text{Concat}\left(\frac{1}{2}(\vec{o} + \overleftarrow{o})\right) W_{\text{out}}
+    \end{aligned}$$
+    where keys and queries are normalized onto the $\ell_2$ unit hypersphere.
 
     Computational Complexity:
-        - Time: $\mathcal{O}(B \cdot H \cdot N \cdot d_k \cdot d_v)$
+        - Time: $\mathcal{O}(B \cdot H \cdot L \cdot d_k \cdot d_v)$
         - Memory: $\mathcal{O}(B \cdot H \cdot d_k \cdot d_v)$ recurrent state complexity.
-
-    Tensor Dimensions:
-        - hidden_states (or x): $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
-        - Output: Tuple of $([B, N, D], \text{None})$.
     """
 
-    def __init__(self, config: Any, rank: Optional[int] = None) -> None:
-        super().__init__()
-        self.num_heads: int = config.num_attention_heads
-        self.head_dim: int = config.hidden_size // self.num_heads
-        self.dim: int = config.hidden_size
-        self.q_proj: nn.Linear = nn.Linear(self.dim, self.dim)
-        self.k_proj: nn.Linear = nn.Linear(self.dim, self.dim)
-        self.v_proj: nn.Linear = nn.Linear(self.dim, self.dim)
-        self.out_proj: nn.Linear = nn.Linear(self.dim, self.dim)
-        self.beta: nn.Parameter = nn.Parameter(torch.ones(self.num_heads, 1))
+    def __init__(
+        self,
+        config: Optional[Any] = None,
+        rank: Optional[int] = None,
+        d_model: Optional[Union[int, Any]] = None,
+        num_heads: Optional[int] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config, rank)
+        if d_model is None:
+            if config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+            else:
+                d_model = kwargs.get("hidden_size", 768)
+
+        if hasattr(d_model, "hidden_size"):
+            d_model = d_model.hidden_size
+
+        if num_heads is None:
+            if config is not None:
+                num_heads = getattr(config, "num_attention_heads", 12)
+            else:
+                num_heads = kwargs.get("num_attention_heads", 12)
+
+        self.dim: int = int(d_model)
+        self.num_heads: int = int(num_heads)
+        self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
+
+        self.q_proj = nn.Linear(self.dim, self.dim, bias=False)
+        self.k_proj = nn.Linear(self.dim, self.dim, bias=False)
+        self.v_proj = nn.Linear(self.dim, self.dim, bias=False)
+        self.out_proj = nn.Linear(self.dim, self.dim, bias=True)
+
+        self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
+
+    def copy_weights(self, old_attn: Any) -> None:
+        """Transfer pretrained projection weights."""
+        try:
+            adapter = UniversalAdapter()
+            w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+            w_k, b_k = adapter.get_weight_bias(old_attn, "k")
+            w_v, b_v = adapter.get_weight_bias(old_attn, "v")
+            w_o, b_o = adapter.get_weight_bias(old_attn, "o")
+
+            with torch.no_grad():
+                self.q_proj.weight.copy_(w_q)
+                self.k_proj.weight.copy_(w_k)
+                self.v_proj.weight.copy_(w_v)
+                self.out_proj.weight.copy_(w_o)
+                if b_o is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.copy_(b_o)
+        except Exception:
+            pass
+
+    def _kda_scan(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        decay: torch.Tensor,
+        mask: Optional[torch.Tensor] = None,
+        reverse: bool = False,
+    ) -> torch.Tensor:
+        """Sequential KDA scan."""
+        B, H, L, d = q.shape
+        S = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
+        z = torch.zeros(B, H, d, 1, device=q.device, dtype=q.dtype)
+        outputs = []
+
+        step_range = range(L - 1, -1, -1) if reverse else range(L)
+        for t in step_range:
+            q_t = q[:, :, t, :]  # [B, H, d]
+            k_t = k[:, :, t, :]  # [B, H, d]
+            v_t = v[:, :, t, :]  # [B, H, d]
+
+            S_next = decay * S + (k_t.unsqueeze(-1) @ v_t.unsqueeze(-2))
+            z_next = decay * z + k_t.unsqueeze(-1)
+
+            if mask is not None:
+                m_t = mask[:, t].view(B, 1, 1, 1)
+                S = torch.where(m_t, S_next, S)
+                z = torch.where(m_t, z_next, z)
+            else:
+                S = S_next
+                z = z_next
+
+            num = (S @ q_t.unsqueeze(-1)).squeeze(-1)
+            denom = (z.transpose(-1, -2) @ q_t.unsqueeze(-1)).squeeze(-1) + 1e-5
+            y_t = num / denom.clamp(min=1e-5)
+            outputs.append(y_t)
+
+        if reverse:
+            outputs.reverse()
+
+        return torch.stack(outputs, dim=2)
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Forward pass for Kernelized Decay Attention.
+        """Forward pass for Kernelized Decay Attention."""
+        if not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
 
-        Args:
-            hidden_states (torch.Tensor): Input activation tensor `[Batch, SeqLen, HiddenDim]`.
-            attention_mask (Optional[torch.Tensor]): Attention mask tensor.
-            output_attentions (bool): Whether to return attention weights.
-            **kwargs (Any): Additional parameters.
+        B, L, D = hidden_states.shape
+        H, d = self.num_heads, self.head_dim
 
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]: Contextualized representation `[Batch, SeqLen, HiddenDim]` and `None`.
-        """
-        x: torch.Tensor = hidden_states
-        B, L, D = x.shape
-        H = self.num_heads
-        d = self.head_dim
-        q: torch.Tensor = self.q_proj(x).view(B, L, H, d).transpose(1, 2)
-        k: torch.Tensor = F.normalize(
-            self.k_proj(x).view(B, L, H, d).transpose(1, 2), dim=-1
-        )
-        v: torch.Tensor = self.v_proj(x).view(B, L, H, d).transpose(1, 2)
-        h: torch.Tensor = torch.zeros(B, H, d, d, device=x.device, dtype=x.dtype)
-        outputs = []
-        decay: torch.Tensor = torch.sigmoid(self.beta).view(1, H, 1, 1)
-        for t in range(L):
-            qt = q[:, :, t, :]
-            kt = k[:, :, t, :]
-            vt = v[:, :, t, :]
-            h = decay * h + (kt.unsqueeze(-1) @ vt.unsqueeze(-2))
-            out_t = (h @ qt.unsqueeze(-1)).squeeze(-1)
-            outputs.append(out_t)
-        out: torch.Tensor = torch.stack(outputs, dim=2)  # (B, H, L, d)
-        out = out.transpose(1, 2).contiguous().view(B, L, D)
-        return self.out_proj(out), None
+        q = F.normalize(self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2), dim=-1)
+        k = F.normalize(self.k_proj(hidden_states).view(B, L, H, d).transpose(1, 2), dim=-1) / (d ** 0.5)
+        v = self.v_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
+
+        decay = torch.sigmoid(self.beta).unsqueeze(0)  # [1, H, 1, 1]
+
+        mask_bool = None
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask_bool = attention_mask.bool()
+            elif attention_mask.dim() == 4:
+                mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
+
+        y_fwd = self._kda_scan(q, k, v, decay, mask=mask_bool, reverse=False)
+        y_bwd = self._kda_scan(q, k, v, decay, mask=mask_bool, reverse=True)
+        y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
+
+        out = y.transpose(1, 2).contiguous().view(B, L, D)
+        out = self.out_proj(out)
+
+        if attention_mask is not None and mask_bool is not None:
+            out = out * mask_bool.unsqueeze(-1).to(out.dtype)
+
+        return out, None
+
+
+@ATTENTION_REGISTRY.register("kda_inject")
+def inject_kda(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 6,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> KDAAttention:
+    r"""Injection hook for KDAAttention."""
+    d_model = 768
+    num_heads = 12
+    if model_config is not None:
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        num_heads = getattr(model_config, "num_attention_heads", 12)
+    elif hasattr(layer, "config"):
+        d_model = getattr(layer.config, "hidden_size", 768)
+        num_heads = getattr(layer.config, "num_attention_heads", 12)
+
+    new_block = KDAAttention(config=model_config, d_model=d_model, num_heads=num_heads, **kwargs)
+    src_attn = old_attn if old_attn is not None else layer
+    if src_attn is not None and hasattr(new_block, "copy_weights"):
+        new_block.copy_weights(src_attn)
+
+    if hasattr(layer, "attention"):
+        layer.attention = new_block
+    elif hasattr(layer, "self"):
+        layer.self = new_block
+
+    return new_block

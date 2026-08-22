@@ -1,23 +1,20 @@
-# SAMBA-M3.py
-from typing import Any, Optional, Tuple
+"""
+SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block.
+"""
 
+from typing import Any, Optional, Tuple
+import math
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 
-# فرض: mamba.py شامل Mamba اصلاح‌شده است
-from framework.attentions.mamba import Mamba
 
 
 @ATTENTION_REGISTRY.register("spectral_mamba")
 class SpectralMamba(nn.Module):
     r"""
-    Mamba با مدولاسیون طیفی یادگیرنده.
-
-    نوآوری:
-    - گیت channel-wise با سیگموید برای فیلتر کردن کانال‌ها
-    - مقداردهی اولیه بهتر برای جلوگیری از خاموشی شاخه Mamba
+    Mamba with learnable spectral gating.
     """
 
     def __init__(self, d_model: int = 768, config: Optional[Any] = None, **kwargs: Any) -> None:
@@ -28,14 +25,12 @@ class SpectralMamba(nn.Module):
             d_model = d_model.hidden_size
 
         self.mamba = Mamba(d_model)
-        # مقدار اولیه مثبت تا سیگموید نزدیک 0.5 باشد و از خاموشی جلوگیری کند
         self.dt_scale = nn.Parameter(torch.zeros(d_model))
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         out = self.mamba(x)
         if isinstance(out, tuple):
             out = out[0]
-        # گیت سیگموید
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
         out = out * gate
         return out, None
@@ -44,12 +39,7 @@ class SpectralMamba(nn.Module):
 @ATTENTION_REGISTRY.register("samba_m3")
 class SAMBAM3Block(nn.Module):
     r"""
-    SAMBA-M3: ترکیب attention پنجره‌ای محلی و Spectral Mamba.
-
-    اصلاحات:
-    - ماسک sliding-window دیگر تنسور کامل [L, L] با float32 نمی‌سازد؛
-      از همان dtype ورودی استفاده می‌کند.
-    - attention_mask ورودی به زیرلایه‌ها منتقل می‌شود.
+    SAMBA-M3: Combination of Local Attention and Spectral Mamba.
     """
 
     def __init__(
@@ -66,72 +56,86 @@ class SAMBAM3Block(nn.Module):
             n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", n_heads))
             window = getattr(config, "window_size", window)
 
-        self.window_size = window
-        self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.head_dim = d_model // n_heads
+        self.window = window
+
+        self.q_lin = nn.Linear(d_model, d_model)
+        self.k_lin = nn.Linear(d_model, d_model)
+        self.v_lin = nn.Linear(d_model, d_model)
+        self.out_lin = nn.Linear(d_model, d_model)
+
         self.mamba = SpectralMamba(d_model)
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
+        self.alpha = nn.Parameter(torch.tensor(0.5))
+        self.norm = nn.LayerNorm(d_model)
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        self.dropout = nn.Dropout(dropout_p)
 
-    def sliding_window_mask(self, L: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
-        idx = torch.arange(L, device=device)
-        causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
-        window = (idx.unsqueeze(1) - idx.unsqueeze(0)) < self.window_size
-        valid = causal & window
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        with torch.no_grad():
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
 
-        # استفاده از dtype ورودی برای جلوگیری از mismatch
-        mask = torch.zeros(L, L, device=device, dtype=dtype)
-        mask_val = -10000.0 if dtype in (torch.float16, torch.bfloat16) else float("-inf")
-        mask = mask.masked_fill(~valid, mask_val)
-        return mask
+            if q_src is not None and hasattr(q_src, "weight"):
+                self.q_lin.weight.copy_(q_src.weight)
+                if q_src.bias is not None:
+                    self.q_lin.bias.copy_(q_src.bias)
+            if k_src is not None and hasattr(k_src, "weight"):
+                self.k_lin.weight.copy_(k_src.weight)
+                if k_src.bias is not None:
+                    self.k_lin.bias.copy_(k_src.bias)
+            if v_src is not None and hasattr(v_src, "weight"):
+                self.v_lin.weight.copy_(v_src.weight)
+                if v_src.bias is not None:
+                    self.v_lin.bias.copy_(v_src.bias)
+            if out_src is not None and hasattr(out_src, "weight"):
+                self.out_lin.weight.copy_(out_src.weight)
+                if out_src.bias is not None:
+                    self.out_lin.bias.copy_(out_src.bias)
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        x = hidden_states
-        B, L, D = x.shape
+        B, L, D = hidden_states.shape
 
-        # ماسک پنجره‌ای با dtype صحیح
-        window_mask = self.sliding_window_mask(L, device=x.device, dtype=x.dtype)
+        q = self.q_lin(hidden_states).view(B, L, self.n_heads, self.head_dim).transpose(1, 2)
+        k = self.k_lin(hidden_states).view(B, L, self.n_heads, self.head_dim).transpose(1, 2)
+        v = self.v_lin(hidden_states).view(B, L, self.n_heads, self.head_dim).transpose(1, 2)
 
-        # اگر attention_mask خارجی وجود دارد، ترکیب می‌کنیم (اختیاری)
-        if attention_mask is not None and attention_mask.dim() == 4:
-            pad_mask = attention_mask[:, 0, 0, :]  # [B, L] -> 0/1
-            # تبدیل به ماسک additive برای MultiheadAttention
-            # برای سادگی، فعلاً فقط از window mask استفاده می‌کنیم.
-            # در صورت نیاز، می‌توان pad_mask را نیز اضافه کرد.
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
 
-        attn_out, attn_w = self.attn(x, x, x, attn_mask=window_mask)
-        x = self.norm1(x + attn_out)
+        # Bidirectional window mask
+        idx = torch.arange(L, device=q.device)
+        dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
+        window_mask = dist > self.window
+        scores = scores.masked_fill(window_mask.unsqueeze(0).unsqueeze(0), -10000.0)
 
-        m_out = self.mamba(x)
-        if isinstance(m_out, tuple):
-            m_out = m_out[0]
-        x = self.norm2(x + m_out)
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)
+                scores = scores.masked_fill(pad_mask, -10000.0)
+            elif attention_mask.dim() == 4:
+                scores = scores + attention_mask
 
-        return x, attn_w
+        probs = F.softmax(scores, dim=-1)
+        probs = self.dropout(probs)
+        if head_mask is not None:
+            probs = probs * head_mask
 
+        attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, D)
+        attn_proj = self.out_lin(attn_out)
 
-@ATTENTION_REGISTRY.register("samba_m3_inject")
-def inject_samba_m3(
-    layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Optional[nn.Module] = None,
-) -> SAMBAM3Block:
-    d_model = model_config.hidden_size
-    n_heads = getattr(model_config, "num_attention_heads", 12)
-    window = getattr(comp_config, "window_size", 128)
+        mamba_out, _ = self.mamba(hidden_states)
+        alpha = torch.sigmoid(self.alpha)
+        out = self.norm(hidden_states + alpha * attn_proj + (1.0 - alpha) * mamba_out)
 
-    new_block = SAMBAM3Block(
-        d_model=d_model,
-        n_heads=n_heads,
-        window=window,
-        config=model_config,
-    )
-    layer.attention = new_block
-    return new_block
+        return out, (probs if output_attentions else None)

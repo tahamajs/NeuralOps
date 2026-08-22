@@ -61,7 +61,7 @@ class SVDProjectionLinear(nn.Module):
             nn.init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Project input using reconstructed low-rank weight.
+        """Project input using sequentially factorized low-rank projections.
 
         Args:
             x (torch.Tensor): Input activations of shape `[*, in_features]`.
@@ -69,16 +69,25 @@ class SVDProjectionLinear(nn.Module):
         Returns:
             torch.Tensor: Output activations of shape `[*, out_features]`.
         """
-        weight: torch.Tensor = self.U @ self.V
-        return F.linear(x, weight, self.bias)
+        Vx = F.linear(x, self.V)
+        return F.linear(Vx, self.U, self.bias)
+
+    def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor) -> None:
+        """Set precomputed U and V factors."""
+        with torch.no_grad():
+            self.U.copy_(U)
+            self.V.copy_(V)
 
 
+@ATTENTION_REGISTRY.register("svd_proj_attn")
+@ATTENTION_REGISTRY.register("svd_projection_attention")
+@ATTENTION_REGISTRY.register("svd_projection")
 class SVDProjectionAttention(nn.Module):
-    r"""Multi-Head Attention using Reconstructed SVD Linear Projections.
+    r"""Multi-Head Attention using Factorized SVD Linear Projections.
 
-    Constructs dense projection operators from low-rank singular subspaces with zero-shot
+    Constructs low-rank projection operators from singular subspaces with zero-shot
     initialization from pretrained checkpoints:
-    $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{(X (U_q V_q)^\top)(X (U_k V_k)^\top)^\top}{\sqrt{d_k}} + M\right) (X (U_v V_v)^\top)$$
+    $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{(X V_q^\top U_q^\top)(X V_k^\top U_k^\top)^\top}{\sqrt{d_k}} + M\right) (X V_v^\top U_v^\top)$$
 
     Computational Complexity:
         - Parameter Compression: $4 \cdot r(d + d_{\text{all}})$ vs $4 \cdot d \cdot d_{\text{all}}$
@@ -92,64 +101,91 @@ class SVDProjectionAttention(nn.Module):
     def __init__(
         self,
         model_config: Any,
-        rank: int = 32,
+        rank: Optional[int] = None,
         dropout: float = 0.1,
         pretrained_attn: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
-        if pretrained_attn is None:
-            raise ValueError("pretrained_attn required for zero‑shot init")
-
-        self.num_heads: int = model_config.num_attention_heads
-        self.head_dim: int = model_config.hidden_size // self.num_heads
+        actual_rank = getattr(
+            model_config,
+            "svd_rank",
+            rank if rank is not None else getattr(model_config, "rank", 32),
+        )
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        hidden_size: int = getattr(model_config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim
-        self.hidden_size: int = model_config.hidden_size
-        self.rank: int = rank
+        self.hidden_size: int = hidden_size
+        self.rank: int = actual_rank
 
         self.q_proj: SVDProjectionLinear = SVDProjectionLinear(
             self.hidden_size,
             self.all_head_size,
-            rank,
-            bias=pretrained_attn.q_lin.bias is not None,
+            self.rank,
+            bias=True,
         )
         self.k_proj: SVDProjectionLinear = SVDProjectionLinear(
             self.hidden_size,
             self.all_head_size,
-            rank,
-            bias=pretrained_attn.k_lin.bias is not None,
+            self.rank,
+            bias=True,
         )
         self.v_proj: SVDProjectionLinear = SVDProjectionLinear(
             self.hidden_size,
             self.all_head_size,
-            rank,
-            bias=pretrained_attn.v_lin.bias is not None,
+            self.rank,
+            bias=True,
         )
         self.out_proj: SVDProjectionLinear = SVDProjectionLinear(
             self.all_head_size,
             self.hidden_size,
-            rank,
-            bias=pretrained_attn.out_lin.bias is not None,
+            self.rank,
+            bias=True,
         )
 
-        self._init_from_linear(self.q_proj, pretrained_attn.q_lin)
-        self._init_from_linear(self.k_proj, pretrained_attn.k_lin)
-        self._init_from_linear(self.v_proj, pretrained_attn.v_lin)
-        self._init_from_linear(self.out_proj, pretrained_attn.out_lin)
+        dropout_p = getattr(
+            model_config,
+            "dropout",
+            getattr(
+                model_config,
+                "hidden_dropout_prob",
+                getattr(model_config, "attention_probs_dropout_prob", dropout),
+            ),
+        )
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
-        self.dropout: nn.Dropout = nn.Dropout(dropout)
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
 
-    def _init_from_linear(
-        self, svd_linear: SVDProjectionLinear, orig_linear: nn.Linear
+    def _decompose_and_set(
+        self, target: SVDProjectionLinear, weight: torch.Tensor, bias: Optional[torch.Tensor]
     ) -> None:
-        """ init from linear."""
         with torch.no_grad():
-            W = orig_linear.weight.data.float()
+            W = weight.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(self.rank, U.size(1), Vt.size(0))
-            svd_linear.U.data[:, :r] = (U[:, :r] * S[:r]).to(svd_linear.U.dtype)
-            svd_linear.V.data[:r, :] = Vt[:r, :].to(svd_linear.V.dtype)
-            if svd_linear.bias is not None and orig_linear.bias is not None:
-                svd_linear.bias.data = orig_linear.bias.data.clone()
+            sqrt_s = torch.sqrt(S[:r])
+            target.U.data[:, :r] = (U[:, :r] * sqrt_s).to(target.U.dtype)
+            target.V.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(target.V.dtype)
+            if target.bias is not None and bias is not None:
+                target.bias.data.copy_(bias)
+
+    def copy_weights(self, src: Any) -> None:
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+            ("o", self.out_proj),
+        ]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                self._decompose_and_set(target, w, b)
+            except Exception:
+                pass
 
     def forward(
         self,
@@ -190,12 +226,18 @@ class SVDProjectionAttention(nn.Module):
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 mask = attention_mask[:, None, None, :]
+            elif attention_mask.dim() == 3:
+                mask = attention_mask[:, None, :, :]
             else:
                 mask = attention_mask
-            scores = scores + (1.0 - mask) * -10000.0
+            scores = scores + (1.0 - mask.to(scores.dtype)) * -10000.0
 
         attn_weights: torch.Tensor = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)
+
+        if head_mask is not None:
+            attn_weights = attn_weights * head_mask
+
         context: torch.Tensor = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, -1)
         output: torch.Tensor = self.out_proj(context)
@@ -203,7 +245,7 @@ class SVDProjectionAttention(nn.Module):
         return output, attn_weights if output_attentions else None
 
 
-@ATTENTION_REGISTRY.register("svd_proj_attn")
+@ATTENTION_REGISTRY.register("svd_proj_attn_inject")
 def inject_svd_proj_attn(
     layer: Any,
     model_config: Any,
