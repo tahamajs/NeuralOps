@@ -1,167 +1,93 @@
-# SliceGPT: Post-Training Subspace Slicing and Dynamic Weight Truncation Engine
+# SliceGPT: Post-Training Slicing with Orthogonal Transformation
 
-## 1. Executive Abstract & Theoretical Motivation
+## 1. Overview & Architecture
 
-Traditional structural pruning physically alters tensor dimensions, breaking optimized CUDA kernels and requiring complex specialized software support. **SliceGPT** replaces traditional mask-based pruning by exploiting the rotational invariance of Transformer architectures.
-
-By inserting orthogonal transformations $Q \in \mathbb{O}(D)$ (where $Q^T Q = I$) into Transformer residual connections and attention signals, SliceGPT rotates activation spaces into principal bases where total variance is heavily concentrated in a small subset of dimensions. Truncating (slicing) the least significant dimensions reduces matrix dimensions $D \to D' = (1 - S) \cdot D$ across all linear layers, producing smaller dense matrices that deliver immediate hardware speedups on standard GEMM libraries.
+SliceGPT is a post-training structural pruning algorithm that compresses transformer architectures by physically deleting full rows and columns from weight matrices. By applying an orthogonal matrix $Q \in \mathbb{R}^{d \times d}$ (where $Q^\top Q = I$) derived from empirical activation covariances, SliceGPT rotates residual stream representations so that parameter variance is concentrated into the first $r$ principal coordinates.
 
 ```
-Original Transformer Layer:  X ───────► [ Linear W ] ───────► Y
-
-Orthogonal Rotation Insertion: X ──► [ Q ] ──► [ Q^T W ] ──► Y
-
-Dimension Slicing (D -> D'):  X_sliced [D'] ──► [ W_sliced (D' x D') ] ──► Y_sliced [D']
-```
-
----
-
-## 2. Mathematical Formulations & Matrix Decompositions
-
-### 2.1 Computational Equivalence of Rotations
-
-Consider a sequence of two linear layers $Y = X W_1 W_2$. For any orthogonal matrix $Q \in \mathbb{R}^{D \times D}$ ($Q^T Q = I$):
-
-$$Y = X (Q Q^T) W_1 W_2 = (X Q) (Q^T W_1) W_2$$
-
-Because RMSNorm / LayerNorm operations are invariant to orthogonal rotations under appropriate gain scaling, $Q$ can be propagated through entire Transformer blocks.
-
-### 2.2 Principal Component Analysis & Covariance Eigen-Decomposition
-
-1. **Activation Covariance Matrix Computation**:
-   Using calibration activations $X \in \mathbb{R}^{N \times D}$, compute the sample covariance matrix $C$:
-   $$C = \frac{1}{N} X^T X \in \mathbb{R}^{D \times D}$$
-
-2. **Eigen-Decomposition**:
-   Perform symmetric eigen-decomposition on $C$:
-   $$C = Q \Lambda Q^T$$
-   where $\Lambda = \text{diag}(\lambda_1, \lambda_2, \dots, \lambda_D)$ contains sorted eigenvalues $\lambda_1 \ge \lambda_2 \ge \dots \ge \lambda_D \ge 0$, and $Q$ is the orthogonal matrix of eigenvectors.
-
-3. **Subspace Projection & Slicing**:
-   Define slicing matrix $R_{D'} \in \mathbb{R}^{D \times D'}$ selecting the top $D' = \lfloor (1 - S) \cdot D \rfloor$ eigenvectors:
-   $$W_{\text{sliced}} = R_{D'}^T Q^T W Q R_{D'} \in \mathbb{R}^{D' \times D'}$$
-
----
-
-## 3. Step-by-Step Calibration & Execution Trace
-
-### 3.1 Dataflow & Slicing Pipeline
-
-1. **Model Export & Subprocess Execution**:
-Save temporary model checkpoint and tokenizer to disk. Furthermore, Launch external `slicegpt` module with specified target sparsity $S$.
-
-2. **Covariance Accumulation**:
-Run forward pass on calibration data to collect layer inputs $X_l$. Furthermore, Compute covariance $C_l = X_l^T X_l$.
-
-3. **Eigen-Decomposition & Rotation**:
-Compute $Q_l$ from $C_l = Q_l \Lambda_l Q_l^T$. Furthermore, Rotate linear layer weights: $W_l \leftarrow Q_l^T W_l Q_{l+1}$.
-
-4. **Physical Matrix Slicing**:
-Crop transformed weights from $[D, D]$ down to $[D', D']$.
-
-5. **Optional Post-Slicing Fine-Tuning**:
-Execute LoRA or full parameter fine-tuning on sliced dense model.
-
-
-```
-Model Checkpoint ──► Calibration Passes ──► Accumulate Covariance C
-                                                       │
-                                                       ▼
-Sliced Model Loading ◄── Slice Weight Matrices ◄── Eigen-Decompose C = Q Λ Q^T
+                    [ Input Activation X ]
+                              │
+                              ▼
+            [ Empirical Covariance C = X^T X / N ]
+                              │
+                              ▼
+            [ Eigendecomposition C = Q Λ Q^T ]
+                              │
+                              ▼
+     [ Orthogonal Weight Transformation W_tilde = W Q ]
+                              │
+                              ▼
+     [ Non-Uniform Slicing Operator P_r: Keep Top-r ]
+                              │
+                              ▼
+      [ Sliced Weights W_sliced = W_tilde P_r P_r^T Q^T ]
 ```
 
 ---
 
-## 4. Parameter Savings & Memory Footprint Profiling
+## 2. Pruning Saliency Metric Formulas (LaTeX)
 
-### 4.1 Memory Footprint Profiling
+### 2.1 Empirical Covariance & Orthogonal Rotation
+Given calibration activations $X \in \mathbb{R}^{N \times d_{\text{in}}}$, the empirical second-moment covariance matrix $C_X$ is computed as:
+$$C_X = \frac{1}{N} X^\top X + \epsilon I \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$$
 
-| Metric | Formula | Example (LLaMA-7B: $D=4096, 32 \text{ Layers}$) |
-| :--- | :--- | :--- |
-| **Dense Weights (Full Model)** | $L \times 4 \times D^2 \times 2 \text{ bytes}$ | $4.29 \text{ GB}$ (Linear layers only) |
-| **Sliced Weights ($S=0.25$)** | $L \times 4 \times (0.75 \cdot D)^2 \times 2 \text{ bytes}$ | $2.41 \text{ GB}$ |
-| **FLOP Reduction** | $1 - (1 - S)^2$ | $\mathbf{43.75\%}$ FLOP Elimination |
-| **Memory Footprint Reduction** | $1 - (1 - S)^2$ | $\mathbf{43.75\%}$ VRAM Reduction |
+The orthogonal transformation matrix $Q$ is obtained via spectral eigendecomposition:
+$$C_X = Q \Lambda Q^\top, \quad \Lambda = \operatorname{diag}(\lambda_1, \lambda_2, \dots, \lambda_{d_{\text{in}}}), \quad \lambda_1 \ge \lambda_2 \ge \dots \ge \lambda_{d_{\text{in}}}$$
 
----
+### 2.2 Slicing Projection Operator
+The orthogonal projection operator $P_r \in \mathbb{R}^{d_{\text{in}} \times r}$ selects the $r$ coordinates containing the highest cumulative variance:
+$$P_r = [e_1, e_2, \dots, e_r] \in \mathbb{R}^{d_{\text{in}} \times r}$$
+where $r = \lfloor d_{\text{in}} \cdot (1 - \text{sparsity}) \rfloor$.
 
-## 5. Precision Loss, Perplexity & Sensitivity Bounds
-
-### 5.1 Error Bounds via Eigenvalue Tail Energy
-
-The output reconstruction error caused by slicing $D - D'$ dimensions is bounded by the sum of discarded eigenvalues:
-
-$$\| X W - X_{\text{sliced}} W_{\text{sliced}} \|_F^2 \le \| W \|_2^2 \cdot \sum_{i=D'+1}^{D} \lambda_i$$
-
-### 5.2 Failure Cases
-
-Specifically, regarding \textbf{Non-Rotational Layers}, architectures with non-linear activation functions in residual streams (without LayerNorm resets) break orthogonal invariance. Furthermore, regarding \textbf{Extreme Slicing Ratios}, slicing beyond $S = 0.35$ removes essential semantic channels, causing severe perplexity breakdown.
-
+### 2.3 Non-Uniform Head Slicing
+For multi-head attention projections ($W_Q, W_K, W_V, W_O$), non-uniform slicing retains higher capacity in attention routing heads while aggressively pruning feed-forward MLP projections:
+$$r_h = \max\left(1, \left\lfloor d_{\text{head}} \cdot \left(1 - \alpha_{\text{attn}} \cdot \text{sparsity}\right) \right\rfloor\right), \quad \alpha_{\text{attn}} \in [0.5, 0.75]$$
 
 ---
 
-## 6. Production CUDA / Triton Execution Blueprint
+## 3. Structural vs. Unstructured Sparsity Comparison
+
+| Metric | Unstructured Sparsity | 2:4 Semi-Structured | SliceGPT Structural Slicing |
+| :--- | :--- | :--- | :--- |
+| **Non-Zero Pattern** | Irregular (any index) | 2 non-zeros per 4 entries | Dense continuous submatrix |
+| **Weight Tensor Shape** | Unchanged $[d_{\text{out}}, d_{\text{in}}]$ | Unchanged $[d_{\text{out}}, d_{\text{in}}]$ | Reduced $[d_{\text{out}}, r]$ |
+| **Physical Parameter Reduction** | 0% (requires sparse mask) | 0% (compressed storage) | **Up to 40% True Parameter Deletion** |
+| **Standard CuBLAS GEMM Support** | No (requires custom SpMM) | Requires Sparse Tensor Cores | **Yes (Direct Standard GEMM)** |
+| **Inference Memory Bandwidth** | Unreduced without sparse runtime | $2\times$ memory compression | **Direct $1.33\times - 1.6\times$ reduction** |
+
+---
+
+## 4. Hardware Matrix Core Speedup Analysis
+
+- **Ampere / Hopper / Blackwell Tensor Cores:** Because SliceGPT changes the physical matrix dimensions from $[M \times K]$ to $[M \times r]$, standard `cublasGemmEx` and CUTLASS kernels operate on smaller tile sizes with $100\%$ arithmetic density.
+- **Roofline Model Speedup:** In memory-bound autoregressive decoding (batch size = 1), decoding time scales linearly with parameter footprint:
+  $$\text{Speedup} = \frac{T_{\text{dense}}}{T_{\text{sliced}}} \approx \frac{d_{\text{in}}}{r} = \frac{1}{1 - \text{sparsity}} \approx 1.33\times - 1.45\times$$
+
+---
+
+## 5. Usage Example
 
 ```python
 import torch
-import triton
-import triton.language as tl
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from framework.compression_engine.slicegpt import SliceGPTCompressor
 
-@triton.jit
-def sliced_gemm_kernel(
-    A_ptr, B_ptr, C_ptr,
-    M, N, K_sliced,
-    stride_am, stride_ak,
-    stride_bk, stride_bn,
-    stride_cm, stride_cn,
-    BLOCK_SIZE_M: tl.constexpr,
-    BLOCK_SIZE_N: tl.constexpr,
-    BLOCK_SIZE_K: tl.constexpr
-):
-    pid_m = tl.program_id(0)
-    pid_n = tl.program_id(1)
+# 1. Load model and calibration data
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
-    rm = pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)
-    rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
+# 2. Instantiate SliceGPT Compressor
+compressor = SliceGPTCompressor(
+    model=model,
+    tokenizer=tokenizer,
+    sparsity=0.25,
+    non_uniform=True,
+)
 
-    acc = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.float32)
+# 3. Compress model
+compressed_model, stats = compressor.compress()
 
-    # Standard dense GEMM over sliced inner dimension K_sliced
-    for k in range(0, K_sliced, BLOCK_SIZE_K):
-        rk = k + tl.arange(0, BLOCK_SIZE_K)
-        a = tl.load(A_ptr + rm[:, None] * stride_am + rk[None, :] * stride_ak, mask=(rm[:, None] < M) & (rk[None, :] < K_sliced), other=0.0)
-        b = tl.load(B_ptr + rk[:, None] * stride_bk + rn[None, :] * stride_bn, mask=(rk[:, None] < K_sliced) & (rn[None, :] < N), other=0.0)
-        acc += tl.dot(a, b)
-
-    tl.store(C_ptr + rm[:, None] * stride_cm + rn[None, :] * stride_cn, acc, mask=(rm[:, None] < M) & (rn[None, :] < N))
+print(f"Original Parameters:   {stats['original_parameters']:,}")
+print(f"Compressed Parameters: {stats['compressed_parameters']:,}")
+print(f"Reduction:             {stats['reduction_percentage']:.2f}%")
 ```
-
----
-
-## 7. Hybrid Synthesis & Next-Generation Enhancements
-
-1. **SliceGPT + INT4 Quantization**: Quantize sliced dense weight matrices to 4 bits for multiplicative memory savings ($1.77\times \text{ Slicing} \times 4\times \text{ INT4} \approx 7.08\times$ total reduction).
-2. **Layer-Adaptive Slicing Ratios**: Assign variable slicing ratios $S_l$ across layers based on the decay rates of covariance eigenvalue spectrums $\Lambda_l$.
-3. **Rotational KV Cache Slicing**: Propagate orthogonal rotation $Q$ into Query-Key projection matrices to permanently slice the key-value cache dimension.
-
-## 8. Empirical Benchmark Results & Comparative Profiling
-
-The empirical evaluation of `slicegpt` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
-
-### 8.1 Language Modeling Quality & Throughput
-| Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Relative Delta |
-| :--- | :--- | :--- | :--- |
-| **WikiText-2 Perplexity ($PPL \downarrow$)** | **11.2** | 11.20 | $+0.00$ |
-| **C4 Perplexity ($PPL \downarrow$)** | **14.6** | 14.60 | $+0.00$ |
-| **Inference Throughput ($tok/sec \uparrow$)** | **1,250 tok/s** | 1,250 tok/s | **1,250 tok/s** |
-| **Triton Hardware Acceleration** | ✅ Native PyTorch SDPA / Flash-2 | PyTorch SDPA | High Tensor Core Occupancy |
-
-### 8.2 Sequence Length Scaling Profiling ($L=512 \to 8192$)
-| Context Length ($L$) | Inference Latency ($ms$) | Peak VRAM ($MB$) | Speedup vs Dense MHA |
-| :--- | :--- | :--- | :--- |
-| **$L = 512$** | 0.32 ms | 95 MB | $1.14\times$ |
-| **$L = 1024$** | 0.54 ms | 150 MB | $1.85\times$ |
-| **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
-| **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
-| **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-
