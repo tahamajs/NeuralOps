@@ -20,9 +20,13 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+BENCHMARK_DIR = Path(__file__).resolve().parent
 CODES_DIR = PROJECT_ROOT / "Codes"
-if str(CODES_DIR) not in sys.path:
-    sys.path.insert(0, str(CODES_DIR))
+
+for p in [str(PROJECT_ROOT), str(BENCHMARK_DIR), str(CODES_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 
 # Framework and Benchmark imports
 from benchmark.core.model_factory import build_model_with_attention

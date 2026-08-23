@@ -1,0 +1,26 @@
+{
+  "full": {
+    "model_name": "full",
+    "status": "FAIL_SANITY",
+    "timestamp": "2026-08-23 07:53:49",
+    "glue_tasks": {},
+    "profiling": {},
+    "stability": {},
+    "diagnostics": {},
+    "num_params": 66955010,
+    "avg_glue": 0.0,
+    "error": "FAIL_SANITY: The size of tensor a (64) must match the size of tensor b (4) at non-singleton dimension 2\nTraceback (most recent call last):\n  File \"/Users/tahamajs/Documents/uni/Project/benchmark/runners/sanity.py\", line 48, in run_sanity_check\n    outputs = attn(hidden_states, attention_mask=mask)\n  File \"/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/torch/nn/modules/module.py\", line 1779, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/torch/nn/modules/module.py\", line 1790, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/models/distilbert/modeling_distilbert.py\", line 195, in forward\n    attn_output, attn_weights = attention_interface(\n                                ~~~~~~~~~~~~~~~~~~~^\n        self,\n        ^^^^^\n    ...<6 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/integrations/sdpa_attention.py\", line 92, in sdpa_attention_forward\n    attn_output = torch.nn.functional.scaled_dot_product_attention(\n        query,\n    ...<6 lines>...\n        **sdpa_kwargs,\n    )\nRuntimeError: The size of tensor a (64) must match the size of tensor b (4) at non-singleton dimension 2\n"
+  },
+  "svd_linear": {
+    "model_name": "svd_linear",
+    "status": "FAIL_BUILD",
+    "timestamp": "2026-08-23 07:53:51",
+    "glue_tasks": {},
+    "profiling": {},
+    "stability": {},
+    "diagnostics": {},
+    "num_params": 0,
+    "avg_glue": 0.0,
+    "error": "FAIL_BUILD: 'Registry' object is not subscriptable\nTraceback (most recent call last):\n  File \"/Users/tahamajs/Documents/uni/Project/benchmark/core/model_factory.py\", line 83, in build_model_with_attention\n    inject_fn = get_inject_function(model_key)\n  File \"/Users/tahamajs/Documents/uni/Project/benchmark/core/registry_utils.py\", line 59, in get_inject_function\n    candidate = ATTENTION_REGISTRY[model_name]\n                ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^\nTypeError: 'Registry' object is not subscriptable\n"
+  }
+}
