@@ -49,7 +49,7 @@ from framework.core.attention_mask import (
     get_token_valid_mask,
 )
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from framework.core.replace_attention import replace_attention_layer
+from framework.utils.replace_attention import replace_attention, UniversalAttentionWrapper
 from framework.trainer.metrics import compute_accuracy, compute_f1
 from framework.utils.profiler import ModelProfiler
 
@@ -234,7 +234,7 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         out_before = model(dummy_input)
         self.assertEqual(out_before.logits.shape, (2, 2))
 
-        model_injected = replace_attention_layer(model, attn_type="svd_linear_attn", rank=16)
+        model_injected = replace_attention(model, attn_type="svd_linear_attn", rank=16)
         out_after = model_injected(dummy_input)
         self.assertEqual(out_after.logits.shape, (2, 2))
 
@@ -251,7 +251,8 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         compressor_fn = COMPRESSOR_REGISTRY.get("direct_svd")
         self.assertIsNotNone(compressor_fn)
 
-        compressed_model = compressor_fn(model, rank=16)
+        compressor = compressor_fn(rank=16)
+        compressed_model, stats = compressor.compress(model)
         dummy_input = torch.randint(0, 100, (2, 16))
         out = compressed_model(dummy_input)
         self.assertEqual(out.logits.shape, (2, 2))
