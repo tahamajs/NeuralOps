@@ -1,8 +1,6 @@
 {
-  "status": "running",
-  "attn": "compressed_attention_layer_energy",
-  "task": "sst2",
-  "idx": "20/1008",
-  "pid": 21276,
-  "start_time": 1787358401.246764
+  "status": "finished",
+  "attn": "-",
+  "task": "-",
+  "pid": 13276
 }
