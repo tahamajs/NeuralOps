@@ -31,6 +31,66 @@ class BaseAttention(nn.Module):
         """Must return (output, attention_weights_or_None)."""
         pass
 
+    def copy_weights(self, old_attn: Any) -> None:
+        """Universal fallback: copy pretrained weights from old attention layer."""
+        if old_attn is None:
+            return
+        import torch
+        from framework.core.adapters import UniversalAdapter
+        adapter = UniversalAdapter()
+        
+        try:
+            w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+            w_k, b_k = adapter.get_weight_bias(old_attn, "k")
+            w_v, b_v = adapter.get_weight_bias(old_attn, "v")
+            w_o, b_o = adapter.get_weight_bias(old_attn, "o")
+            
+            with torch.no_grad():
+                dim = self.hidden_size
+                for q_name in ["W_q", "q_proj", "q_lin", "Wq", "query", "q"]:
+                    if hasattr(self, q_name):
+                        mod = getattr(self, q_name)
+                        if hasattr(mod, "weight") and mod.weight.shape == w_q.shape:
+                            mod.weight.copy_(w_q)
+                            if b_q is not None and getattr(mod, "bias", None) is not None:
+                                mod.bias.copy_(b_q)
+                                
+                for k_name in ["W_k", "k_proj", "k_lin", "Wk", "key", "k"]:
+                    if hasattr(self, k_name):
+                        mod = getattr(self, k_name)
+                        if hasattr(mod, "weight") and mod.weight.shape == w_k.shape:
+                            mod.weight.copy_(w_k)
+                            if b_k is not None and getattr(mod, "bias", None) is not None:
+                                mod.bias.copy_(b_k)
+
+                for v_name in ["W_v", "v_proj", "v_lin", "Wv", "value", "v"]:
+                    if hasattr(self, v_name):
+                        mod = getattr(self, v_name)
+                        if hasattr(mod, "weight") and mod.weight.shape == w_v.shape:
+                            mod.weight.copy_(w_v)
+                            if b_v is not None and getattr(mod, "bias", None) is not None:
+                                mod.bias.copy_(b_v)
+
+                for o_name in ["out", "out_proj", "o_proj", "out_lin", "proj", "dense"]:
+                    if hasattr(self, o_name):
+                        mod = getattr(self, o_name)
+                        if hasattr(mod, "weight") and mod.weight.shape == w_o.shape:
+                            mod.weight.copy_(w_o)
+                            if b_o is not None and getattr(mod, "bias", None) is not None:
+                                mod.bias.copy_(b_o)
+                                
+                # Handle fused in_proj
+                if hasattr(self, "in_proj") and hasattr(self.in_proj, "weight"):
+                    if self.in_proj.weight.shape == torch.Size([dim * 2, dim]):
+                        self.in_proj.weight[:dim].copy_(w_v[:dim])
+                        self.in_proj.weight[dim:].copy_(w_q[:dim])
+                    elif self.in_proj.weight.shape == torch.Size([dim * 3, dim]):
+                        self.in_proj.weight[:dim].copy_(w_q[:dim])
+                        self.in_proj.weight[dim:2*dim].copy_(w_k[:dim])
+                        self.in_proj.weight[2*dim:].copy_(w_v[:dim])
+        except Exception:
+            pass
+
     def extra_repr(self) -> str:
         """Extra repr."""
         return f"num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}"
