@@ -1,4 +1,237 @@
 {
+    "guides": [
+        {
+            "id": "Attention_Mechanisms_For_Paper.md",
+            "title": "Comprehensive Survey and Mathematical Taxonomy of Attention Mechanisms for Transformer Architectures",
+            "path": "Attention_Mechanisms_For_Paper.md"
+        },
+        {
+            "id": "DEPLOYMENT.md",
+            "title": "Research Hub deployment",
+            "path": "DEPLOYMENT.md"
+        },
+        {
+            "id": "Kaggle_Deployment_Guide.md",
+            "title": "🏆 Kaggle & Cloud GPU Deployment Guide",
+            "path": "Kaggle_Deployment_Guide.md"
+        },
+        {
+            "id": "START_HERE.md",
+            "title": "SVD Linear Attention Documentation",
+            "path": "START_HERE.md"
+        }
+    ],
+    "verification": [
+        {
+            "id": "attention_verification.md",
+            "title": "Attention Architectures Verification Report",
+            "path": "attention_verification.md"
+        },
+        {
+            "id": "compression_verification.md",
+            "title": "Compression Engine Verification Report",
+            "path": "compression_verification.md"
+        },
+        {
+            "id": "core_verification.md",
+            "title": "Core Utilities Verification Report",
+            "path": "core_verification.md"
+        },
+        {
+            "id": "forward_pass_verification.md",
+            "title": "Attention Module Forward Pass Verification",
+            "path": "forward_pass_verification.md"
+        },
+        {
+            "id": "kernel_quantization_validation_report.md",
+            "title": "Comprehensive Validation & Audit Report: Kernel, Sparse & Quantization Engines",
+            "path": "content/kernel_quantization_validation_report.md"
+        },
+        {
+            "id": "moe_pruning_validation_report.md",
+            "title": "Comprehensive Validation & Audit Report: MoE, Token Pruning & Structural Compression Engines",
+            "path": "content/moe_pruning_validation_report.md"
+        },
+        {
+            "id": "spectral_ssm_validation_report.md",
+            "title": "Comprehensive Validation & Audit Report: Spectral & Recurrent SSM Attention Engines",
+            "path": "content/spectral_ssm_validation_report.md"
+        },
+        {
+            "id": "svd_lowrank_validation_report.md",
+            "title": "Comprehensive Validation & Audit Report: SVD & Low-Rank Attention / Compression Engines",
+            "path": "content/svd_lowrank_validation_report.md"
+        },
+        {
+            "id": "training_verification.md",
+            "title": "Training Orchestration Verification Report",
+            "path": "training_verification.md"
+        }
+    ],
+    "reports": [
+        {
+            "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
+            "title": "📊 SVD Linear Attention & Compression Framework: Master Empirical Benchmark Report",
+            "path": "reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
+        },
+        {
+            "id": "README.md",
+            "title": "Benchmark and verification reports",
+            "path": "reports/README.md"
+        },
+        {
+            "id": "master_empirical_benchmark_report.md",
+            "title": "🏆 Master Empirical Benchmark Report: SVD Linear Attention & Compression",
+            "path": "results/master_empirical_benchmark_report.md"
+        },
+        {
+            "id": "README.md",
+            "title": "Experiment results",
+            "path": "results/README.md"
+        },
+        {
+            "id": "master_empirical_benchmark_report.md",
+            "title": "Master Empirical Benchmark Report: All Attention Models & Compression Engines",
+            "path": "content/master_empirical_benchmark_report.md"
+        }
+    ],
+    "studios": [
+        {
+            "id": "Attention_Visualization_Dashboard.md",
+            "title": "🧠 NeuralOps Attention Visualization Dashboard — Complete Aggregated Design",
+            "path": "Attention_Visualization_Dashboard/Attention_Visualization_Dashboard.md"
+        },
+        {
+            "id": "Attention_Visualization_Dashboard_Features.md",
+            "title": "🧠 Complete Attention Visualization Suite — React + 3D + Interactive",
+            "path": "Attention_Visualization_Dashboard/Attention_Visualization_Dashboard_Features.md"
+        },
+        {
+            "id": "Zone_1_Global_Navigation_&_Context_Bar.md",
+            "title": "🧭 Zone 1: Global Navigation & Context Bar — Complete Implementation Specification",
+            "path": "Attention_Visualization_Dashboard/Zone_1_Global_Navigation_&_Context_Bar.md"
+        },
+        {
+            "id": "Zone_2_Attention_Canvas.md",
+            "title": "🎨 Zone 2: Attention Canvas — Complete Advanced Implementation Specification",
+            "path": "Attention_Visualization_Dashboard/Zone_2_Attention_Canvas.md"
+        },
+        {
+            "id": "Zone_3_Live_Math_Panel.md",
+            "title": "📐 Zone 3: Live Math Panel — 3Blue1Brown‑Style Complete Implementation Specification",
+            "path": "Attention_Visualization_Dashboard/Zone_3_Live_Math_Panel.md"
+        },
+        {
+            "id": "Zone_4_Control_Panel.md",
+            "title": "🎛️ Zone 4: Control Panel — Complete Implementation Specification",
+            "path": "Attention_Visualization_Dashboard/Zone_4_Control_Panel.md"
+        },
+        {
+            "id": "Zone_5_Analytics_&_Diagnostics_Dashboard.md",
+            "title": "📈 Zone 5: Analytics & Diagnostics Dashboard — Complete Implementation Specification",
+            "path": "Attention_Visualization_Dashboard/Zone_5_Analytics_&_Diagnostics_Dashboard.md"
+        },
+        {
+            "id": "Zone_6_Interpretability_Tools.md",
+            "title": "🔬 Zone 6: Interpretability Tools — Complete Implementation Specification",
+            "path": "Attention_Visualization_Dashboard/Zone_6_Interpretability_Tools.md"
+        },
+        {
+            "id": "Zone_7_Social_&_Community_Layer.md",
+            "title": "🧠 Zone 7: Social & Community Layer — Complete Implementation Specification",
+            "path": "Attention_Visualization_Dashboard/Zone_7_Social_&_Community_Layer.md"
+        },
+        {
+            "id": "Zone_8_Gamification_&_Progress.md",
+            "title": "🎮 Zone 8: Gamification & Progress — Complete Implementation Specification",
+            "path": "Attention_Visualization_Dashboard/Zone_8_Gamification_&_Progress.md"
+        },
+        {
+            "id": "Zone_9_Additiona_Cross_Platform_Integration_Features.md",
+            "title": "🔗 Features 39‑50: Complete Implementation Specifications",
+            "path": "Attention_Visualization_Dashboard/Zone_9_Additiona_Cross_Platform_Integration_Features.md"
+        },
+        {
+            "id": "CIRCUIT_TRACER.md",
+            "title": "Circuit Tracer — QK & OV Circuit Explorer",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/CIRCUIT_TRACER.md"
+        },
+        {
+            "id": "COMPRESSION_STUDIO.md",
+            "title": "🏗️ Compression Studio — Complete Implementation Specification",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/COMPRESSION_STUDIO.md"
+        },
+        {
+            "id": "Embedding_Explorer.md",
+            "title": "🧬 Embedding Explorer — Complete Implementation Specification",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/Embedding_Explorer.md"
+        },
+        {
+            "id": "FNN_&_MLP_EXPLORER.md",
+            "title": "🧠 FFN/MLP EXPLORER — Complete Implementation Blueprint",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/FNN_&_MLP_EXPLORER.md"
+        },
+        {
+            "id": "FULL_PIPELINE_STUDIO.md",
+            "title": "🧠 Full Pipeline Studio — Complete Implementation Architecture",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/FULL_PIPELINE_STUDIO.md"
+        },
+        {
+            "id": "KV_CACHE_MONITOR.md",
+            "title": "🧠 KV Cache Monitor — Complete Implementation Specification",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/KV_CACHE_MONITOR.md"
+        },
+        {
+            "id": "LAYER_NORMALIZATION_DYNAMICS.md",
+            "title": "🧪 LAYER NORMALIZATION DYNAMICS — \"The Stabilizer Lab\"",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LAYER_NORMALIZATION_DYNAMICS.md"
+        },
+        {
+            "id": "LoRA_ADAPTER_STUDIO.md",
+            "title": "🧩 LoRA ADAPTER STUDIO — Complete Implementation Specifications",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LoRA_ADAPTER_STUDIO.md"
+        },
+        {
+            "id": "LOSS_LANDSCAPE_EXPLORER.md",
+            "title": "🏔️ Loss Landscape Explorer — Complete Implementation Specifications",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LOSS_LANDSCAPE_EXPLORER.md"
+        },
+        {
+            "id": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components.md",
+            "title": "🧠 Complete Mapping: Apply the Attention-Style Interactive Dashboard to ALL Transformer Components",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components.md"
+        },
+        {
+            "id": "OUTPUT_LOGITS_PREDICTOR.md",
+            "title": "🧠 Output Logits Predictor — Complete Implementation Guide",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/OUTPUT_LOGITS_PREDICTOR.md"
+        },
+        {
+            "id": "POSITIONAL_ENCODING_STUDIO.md",
+            "title": "🧭 POSITIONAL ENCODING STUDIO — Complete Implementation Blueprint",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/POSITIONAL_ENCODING_STUDIO.md"
+        },
+        {
+            "id": "RESIDUAL_STREAM_TRACER.md",
+            "title": "🧠 Residual Stream Tracer — Complete Implementation Specification",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/RESIDUAL_STREAM_TRACER.md"
+        },
+        {
+            "id": "TRAINING_DYNAMICS_SANDBOX.md",
+            "title": "Zone 11: Training Dynamics Sandbox — Complete Implementation Specifications",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/TRAINING_DYNAMICS_SANDBOX.md"
+        },
+        {
+            "id": "VR_IMMERSION_ROOM.md",
+            "title": "🥽 VR Immersion Room — \"Step Inside the Transformer\"",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/VR_IMMERSION_ROOM.md"
+        },
+        {
+            "id": "WEIGHT_MATRIX_DECOMPOSER.md",
+            "title": "🧮 Weight Matrix Decomposer — Complete Implementation Specification",
+            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/WEIGHT_MATRIX_DECOMPOSER.md"
+        }
+    ],
     "attentions": [
         {
             "id": "adaptive_span_attention.md",
