@@ -62,10 +62,11 @@ loads local files first and can display telemetry when a compatible API is
 available; without telemetry it must remain usable as an offline documentation
 browser.
 
-To serve the dashboard locally:
+To serve the dashboard and its source Markdown locally:
 
 ```bash
-python -m http.server 8080 --directory web
+python -m http.server 8080 --directory .
+# open http://127.0.0.1:8080/web/
 ```
 
 Do not open `web/index.html` directly with `file://`; browsers intentionally

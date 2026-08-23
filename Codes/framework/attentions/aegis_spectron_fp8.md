@@ -17,3 +17,15 @@
 
 ## 3. Empirical Performance
 - **SST-2 Accuracy**: **83.72%** (restored from 50.92% / 70.53%).\n
+
+## Implementation status
+
+The implementation for this page is [aegis_spectron_fp8.py](./aegis_spectron_fp8.py). Its constructor and forward contract are exercised by the framework attention compatibility suite. Treat performance, compression ratio, and accuracy as experiment-dependent; this page does not claim a universal benchmark result.
+
+## Reproducibility notes
+
+Use the registered attention key shown in the Python module, pass tensors with shape `(batch, sequence, hidden)`, and validate the selected model architecture before injection. Optional CUDA, Triton, FP8, or pretrained-weight paths require their corresponding runtime dependencies.
+
+## Verification
+
+Run `pytest -q tests/test_attention_modules.py tests/test_attentions.py` from `Codes/framework` before reporting experiment results.

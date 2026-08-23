@@ -10,3 +10,15 @@
 - **Pretrained Transfer:** Truncated SVD initialized via `UniversalAdapter` preserving singular spectrum energy.
 
 See [`svd_llm_v2_attention.md`](svd_llm_v2_attention.md) for full mathematical derivations, tensor trace, and benchmark analyses.
+
+## Implementation status
+
+The implementation for this page is [svd_llm_v2.py](./svd_llm_v2.py). Its constructor and forward contract are exercised by the framework attention compatibility suite. Treat performance, compression ratio, and accuracy as experiment-dependent; this page does not claim a universal benchmark result.
+
+## Reproducibility notes
+
+Use the registered attention key shown in the Python module, pass tensors with shape `(batch, sequence, hidden)`, and validate the selected model architecture before injection. Optional CUDA, Triton, FP8, or pretrained-weight paths require their corresponding runtime dependencies.
+
+## Verification
+
+Run `pytest -q tests/test_attention_modules.py tests/test_attentions.py` from `Codes/framework` before reporting experiment results.
