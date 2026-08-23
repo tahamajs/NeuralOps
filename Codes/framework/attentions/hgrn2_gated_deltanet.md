@@ -23,3 +23,15 @@ Y &= \gamma \odot Y_{\text{hgrn}} + (1 - \gamma) \odot Y_{\text{deltanet}} \\
 - **Time Complexity**: $\mathcal{O}(B \cdot L \cdot (D + H \cdot d_k \cdot d_v))$ — strictly linear in sequence length.
 - **Memory Complexity**: $\mathcal{O}(B \cdot (D + H \cdot d_k \cdot d_v))$.
 - **SST-2 Performance**: Seamless bidirectional recurrence and full pretrained weight transfer prevent representational collapse.
+
+## Implementation status
+
+The implementation for this page is [hgrn2_gated_deltanet.py](./hgrn2_gated_deltanet.py). Its constructor and forward contract are exercised by the framework attention compatibility suite. Treat performance, compression ratio, and accuracy as experiment-dependent; this page does not claim a universal benchmark result.
+
+## Reproducibility notes
+
+Use the registered attention key shown in the Python module, pass tensors with shape `(batch, sequence, hidden)`, and validate the selected model architecture before injection. Optional CUDA, Triton, FP8, or pretrained-weight paths require their corresponding runtime dependencies.
+
+## Verification
+
+Run `pytest -q tests/test_attention_modules.py tests/test_attentions.py` from `Codes/framework` before reporting experiment results.
