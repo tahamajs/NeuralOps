@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.2+](https://img.shields.io/badge/pytorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation 100% Pass](https://img.shields.io/badge/Docs-452%20Modules-emerald.svg)](../catalog.json)
+[![Documentation 100% Pass](https://img.shields.io/badge/Docs-454%20Modules-emerald.svg)](../catalog.json)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type Checked: Mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](http://mypy-lang.org/)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
@@ -3009,7 +3009,7 @@ pytest Codes/framework/tests/ --cov=Codes/framework/ --cov-report=term-missing
 ## 14. Changelog, Release History & Roadmap
 
 ### Version 2.5.0 (Current Release — August 2026)
-- ✨ **Unified Documentation Catalog**: 452 related guides, reports, studios, architectures, and masterclasses indexed in `../catalog.json`.
+- ✨ **Unified Documentation Catalog**: 454 related guides, reports, studios, architectures, and masterclasses indexed in `../catalog.json`.
 - ⚡ **Hopper & Blackwell WGMMA Kernel Suite**: Asynchronous TMA double-buffering with FP8 tensor cores.
 - 🧬 **Rotational SliceGPT + INT4 Integration**: Unitary basis transformations preventing outlier channel clipping.
 - 📊 **Interactive Research Hub SPA**: Dynamic document explorer with live LaTeX rendering and search.
