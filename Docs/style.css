@@ -93,6 +93,10 @@ body {
 a { color: var(--accent-hover); text-decoration: none; }
 a:hover { text-decoration: underline; }
 button { cursor: pointer; border: none; background: none; font: inherit; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
+    outline: 2px solid var(--accent-hover);
+    outline-offset: 3px;
+}
 
 /* ── Scrollbars ─────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -192,7 +196,13 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
     display: flex; align-items: center; gap: 12px;
     padding: 9px 20px;
     cursor: pointer; transition: background var(--dur-fast);
+    animation: cmdItemIn 240ms var(--ease-out) both;
 }
+.cmd-item:nth-child(2) { animation-delay: 18ms; }
+.cmd-item:nth-child(3) { animation-delay: 36ms; }
+.cmd-item:nth-child(4) { animation-delay: 54ms; }
+.cmd-item:nth-child(5) { animation-delay: 72ms; }
+.cmd-item:nth-child(6) { animation-delay: 90ms; }
 .cmd-item:hover, .cmd-item.selected {
     background: var(--bg-hover);
 }
@@ -411,6 +421,8 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
     cursor: pointer; transition: all var(--dur-fast);
     position: relative; margin-bottom: 1px;
     text-decoration: none; color: var(--tx-secondary); font-size: .8rem;
+    animation: navItemIn 360ms var(--ease-out) both;
+    animation-delay: calc(var(--nav-index, 0) * 14ms);
 }
 .nav-item:hover {
     background: var(--bg-hover); color: var(--tx-primary);
@@ -476,6 +488,7 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     flex-shrink: 0; position: sticky; top: 0; z-index: 100;
+    animation: topbarIn 420ms var(--ease-out) both;
 }
 .topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
@@ -867,8 +880,14 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
     background: var(--bg-surface); border: 1px solid var(--bd-subtle);
     border-radius: 12px; padding: 20px 18px;
     transition: all var(--dur-fast); cursor: pointer;
-    position: relative; overflow: hidden;
+    position: relative; overflow: hidden; isolation: isolate;
 }
+.stat-card::after, .arch-card::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.08) 48%, transparent 70%);
+    transform: translateX(-130%); transition: transform 600ms var(--ease-out);
+}
+.stat-card:hover::after, .arch-card:hover::after { transform: translateX(130%); }
 .stat-card::before {
     content: ''; position: absolute;
     top: 0; left: 0; right: 0; height: 2px;
@@ -915,6 +934,9 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
     border-radius: 10px; padding: 14px 16px;
     cursor: pointer; transition: all var(--dur-fast);
     display: flex; flex-direction: column; gap: 6px;
+    position: relative; overflow: hidden;
+    animation: cardIn 440ms var(--ease-out) both;
+    animation-delay: calc(var(--card-index, 0) * 38ms + 110ms);
 }
 .arch-card:hover {
     border-color: var(--bd-accent); background: var(--bg-elevated);
@@ -1004,6 +1026,33 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast-icon { color: var(--accent-3); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM
+══════════════════════════════════════════════════════════════════════════ */
+.fade-in { animation: contentIn 460ms var(--ease-out) both; }
+.fade-in .home-hero { animation: heroIn 620ms var(--ease-out) both; }
+.fade-in .stats-grid { animation: sectionIn 520ms var(--ease-out) 90ms both; }
+.fade-in .arch-grid-section { animation: sectionIn 520ms var(--ease-out) 150ms both; }
+.fade-in .category-ribbon { animation: sectionIn 520ms var(--ease-out) 210ms both; }
+.fade-in .leaderboard-panel { animation: sectionIn 520ms var(--ease-out) 120ms both; }
+
+@keyframes contentIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes heroIn { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes sectionIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes navItemIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+@keyframes topbarIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes cmdItemIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+#telemetry-status { transition: color var(--dur-med), opacity var(--dur-med); }
+#telemetry-status[data-state="connected"] { color: var(--accent-3); }
+#telemetry-status[data-state="connected"]::before {
+    content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 5px 1px 0;
+    border-radius: 50%; background: currentColor; animation: telemetryPulse 1.8s ease-in-out infinite;
+}
+#telemetry-status[data-state="unavailable"] { color: var(--accent-4); }
+@keyframes telemetryPulse { 0%,100% { opacity: .45; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
 
 /* ══════════════════════════════════════════════════════════════════════════
    LIGHT THEME OVERRIDES (markdown)
@@ -1121,5 +1170,6 @@ button { cursor: pointer; border: none; background: none; font: inherit; }
         animation-duration: 0.01ms !important;
         transition-duration: 0.01ms !important;
     }
+    html { scroll-behavior: auto; }
+    .stat-card::after, .arch-card::after { display: none; }
 }
-

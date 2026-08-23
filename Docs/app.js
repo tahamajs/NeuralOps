@@ -140,10 +140,25 @@ function showToast(msg, icon = '✓') {
     toast._timer = setTimeout(() => toast.classList.remove('show'), 2400);
 }
 
+function replayContentMotion() {
+    if (!mdContainer) return;
+    mdContainer.classList.remove('fade-in');
+    void mdContainer.offsetWidth;
+    mdContainer.classList.add('fade-in');
+}
+
+function setTelemetryState(state, label) {
+    const el = document.getElementById('telemetry-status');
+    if (!el) return;
+    el.dataset.state = state;
+    el.textContent = label;
+}
+
 // ── Copy Link Button ─────────────────────────────────────────
 if (copyLinkBtn) {
     copyLinkBtn.addEventListener('click', () => {
-        const url = activeItem ? `${location.href.split('#')[0]}#${activeItem.id}` : location.href;
+        const anchor = activeItem ? (activeItem.path || activeItem.id) : '';
+        const url = activeItem ? `${location.href.split('#')[0]}#${encodeURIComponent(anchor)}` : location.href;
         navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard'));
     });
 }
@@ -157,8 +172,8 @@ async function loadCatalog() {
         catalogData = await res.json();
     } catch (e) {
         catalogData = {
-            attentions: [], compressions: [], attentions_blog: [], compressions_blog: [],
-            framework: [], blog_series: []
+        guides: [], verification: [], reports: [], studios: [], attentions: [],
+        compressions: [], attentions_blog: [], compressions_blog: [], framework: [], blog_series: []
         };
         console.warn('catalog.json not found, using empty catalog:', e);
     }
@@ -166,6 +181,10 @@ async function loadCatalog() {
 
     // Flatten all items
     allItems = [
+        ...(catalogData.guides        || []).map(i => ({ ...i, category: 'guides' })),
+        ...(catalogData.verification  || []).map(i => ({ ...i, category: 'verification' })),
+        ...(catalogData.reports       || []).map(i => ({ ...i, category: 'reports' })),
+        ...(catalogData.studios       || []).map(i => ({ ...i, category: 'studios' })),
         ...(catalogData.attentions   || []).map(i => ({ ...i, category: 'attentions' })),
         ...(catalogData.compressions || []).map(i => ({ ...i, category: 'compressions' })),
         ...(catalogData.attentions_blog || []).map(i => ({ ...i, category: 'attentions_blog' })),
@@ -209,8 +228,7 @@ async function refreshLiveTelemetry() {
         const sRes = await fetch(apiUrl('/api/stats'));
         if (sRes.ok) {
             const stats = await sRes.json();
-            const telemetryStatus = document.getElementById('telemetry-status');
-            if (telemetryStatus) telemetryStatus.textContent = 'Telemetry: connected';
+            setTelemetryState('connected', 'Telemetry: connected');
             if (stats.gpu && (Array.isArray(stats.gpu) || typeof stats.gpu === 'object')) {
                 const utilEl = document.getElementById('gpu-util');
                 const memEl = document.getElementById('gpu-mem');
@@ -234,8 +252,7 @@ async function refreshLiveTelemetry() {
             }
         }
     } catch (e) {
-        const telemetryStatus = document.getElementById('telemetry-status');
-        if (telemetryStatus) telemetryStatus.textContent = API_BASE ? 'Telemetry: unavailable' : 'Telemetry: offline';
+        setTelemetryState(API_BASE ? 'unavailable' : 'offline', API_BASE ? 'Telemetry: unavailable' : 'Telemetry: offline');
     }
 
     // If current page contains active charts, dynamically update them
@@ -273,6 +290,7 @@ function matchesFilter(item, filter) {
     if (filter === 'all') return true;
     if (filter === 'attentions') return item.category === 'attentions';
     if (filter === 'compressions') return item.category === 'compressions';
+    if (['guides', 'verification', 'reports', 'studios', 'framework'].includes(filter)) return item.category === filter;
     if (filter === 'deep_dives') return item.category === 'attentions_blog' || item.category === 'compressions_blog';
     if (filter === 'blog_series') return item.category === 'blog_series';
     return getTags(item).includes(filter);
@@ -283,6 +301,10 @@ function renderNav(query = '', filter = activeFilter) {
     if (navSkeleton) navSkeleton.remove();
 
     const sections = [
+        { key: 'guides',       label: 'Guides & Setup',         icon: '🧭' },
+        { key: 'verification', label: 'Verification Reports',   icon: '✅' },
+        { key: 'reports',      label: 'Benchmarks & Results',   icon: '📊' },
+        { key: 'studios',      label: 'Interactive Studios',    icon: '🧪' },
         { key: 'attentions',   label: 'Attention Mechanisms', icon: '⚡' },
         { key: 'compressions', label: 'Compression Engines',  icon: '🗜' },
         { key: 'attentions_blog', label: 'Attention Deep Dives', icon: '🔬' },
@@ -305,13 +327,13 @@ function renderNav(query = '', filter = activeFilter) {
 
         if (!items.length) return;
 
-        const tags = items.map(i => {
+        const tags = items.map((i, index) => {
             const itags = getTags(i);
             const tagHtml = itags.slice(0,2).map(t =>
                 `<span class="nav-item-tag tag-${t}">${t.toUpperCase()}</span>`
             ).join('');
             const highlight = q ? i.title.replace(new RegExp(`(${q})`, 'gi'), '<mark>$1</mark>') : i.title;
-            return `<div class="nav-item" data-id="${i.id}" data-cat="${sec.key}" role="button" tabindex="0">
+            return `<div class="nav-item" style="--nav-index:${Math.min(index, 18)}" data-id="${i.id}" data-path="${encodeURIComponent(i.path)}" data-cat="${sec.key}" role="button" tabindex="0">
                 <span class="nav-item-icon">${sec.icon}</span>
                 <span class="nav-item-text">${highlight}</span>
                 ${tagHtml}
@@ -353,7 +375,8 @@ function attachNavEvents() {
     // Nav items
     navContent.querySelectorAll('.nav-item').forEach(el => {
         el.addEventListener('click', () => {
-            const item = allItems.find(i => i.id === el.dataset.id && i.category === el.dataset.cat);
+            const item = allItems.find(i => i.path === decodeURIComponent(el.dataset.path || '')
+                || (i.id === el.dataset.id && i.category === el.dataset.cat));
             if (item) loadArticle(item);
         });
         el.addEventListener('keydown', e => {
@@ -368,7 +391,8 @@ function attachNavEvents() {
 function markActive() {
     navContent.querySelectorAll('.nav-item').forEach(el => {
         el.classList.toggle('active',
-            activeItem && el.dataset.id === activeItem.id && el.dataset.cat === activeItem.category);
+            activeItem && (el.dataset.path === encodeURIComponent(activeItem.path)
+                || (el.dataset.id === activeItem.id && el.dataset.cat === activeItem.category)));
     });
 }
 
@@ -428,6 +452,10 @@ function updateBreadcrumb(item) {
         attentions_blog: 'Attention Deep Dives',
         compressions_blog: 'Compression Deep Dives',
         blog_series: 'Research Blog Series',
+        guides: 'Guides & Setup',
+        verification: 'Verification Reports',
+        reports: 'Benchmarks & Results',
+        studios: 'Interactive Studios',
         framework: 'Framework'
     };
     if (bcCurrent) bcCurrent.textContent = sectionMap[item.category] || item.category;
@@ -442,6 +470,7 @@ function updateBreadcrumb(item) {
 // ── Load Article ──────────────────────────────────────────────
 async function loadArticle(item) {
     activeItem = item;
+    history.replaceState(null, '', `#${encodeURIComponent(item.path || item.id)}`);
     markActive();
     updateBreadcrumb(item);
 
@@ -698,7 +727,7 @@ function renderMarkdown(md, item) {
     }
 
     mdContainer.innerHTML = html;
-    mdContainer.classList.add('fade-in');
+    replayContentMotion();
 
     if (plotMatches.length > 0 && window.Chart) {
         plotMatches.forEach(k => {
@@ -851,6 +880,7 @@ window.copyCode = (btn) => {
 // ── Render Home / Dashboard ──────────────────────────────────
 function renderHome() {
     activeItem = null;
+    history.replaceState(null, '', window.location.pathname + window.location.search);
     markActive();
     updateBreadcrumb(null);
     if (tocNav) tocNav.innerHTML = '';
@@ -860,6 +890,8 @@ function renderHome() {
     const compCount = (catalogData.compressions || []).length;
     const totalCount = allItems.length;
     const ssmCount = allItems.filter(item => getTags(item).includes('ssm')).length;
+    const evidenceCount = (catalogData.guides || []).length + (catalogData.verification || []).length
+        + (catalogData.reports || []).length + (catalogData.studios || []).length;
 
     // Featured Architectures
     const featured = [
@@ -933,6 +965,16 @@ function renderHome() {
                 <div class="stat-card-label">SSM & Recurrent Hybrids</div>
                 <div class="stat-card-icon" style="background:rgba(245,158,11,.12);color:var(--accent-4);">🔄</div>
             </div>
+            <div class="stat-card" style="--card-accent: #ec4899;" onclick="document.querySelector('.fchip[data-filter=all]').click()">
+                <div class="stat-card-num">${totalCount}</div>
+                <div class="stat-card-label">Unified Documentation Items</div>
+                <div class="stat-card-icon" style="background:rgba(236,72,153,.12);color:#ec4899;">◈</div>
+            </div>
+            <div class="stat-card" style="--card-accent: #8b5cf6;" onclick="document.querySelector('.fchip[data-filter=reports]').click()">
+                <div class="stat-card-num">${evidenceCount}</div>
+                <div class="stat-card-label">Guides, Evidence & Studios</div>
+                <div class="stat-card-icon" style="background:rgba(139,92,246,.12);color:#8b5cf6;">◌</div>
+            </div>
         </div>
 `;
     // LEADERBOARD INJECTION
@@ -964,7 +1006,7 @@ function renderHome() {
         if (rows.length > 0) {
             rows.sort((a,b) => b.acc - a.acc); // sort by accuracy desc
             leaderboardHtml = `
-            <div class="mt-12 mb-8 p-6 glass rounded-xl border border-[var(--border-color)]">
+            <div class="leaderboard-panel mt-12 mb-8 p-6 glass rounded-xl border border-[var(--border-color)]">
                 <div class="flex items-center gap-3 mb-4">
                     <span class="relative flex h-3 w-3">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
@@ -1050,6 +1092,8 @@ PYTHONPATH=Codes python3 -m unittest discover -s Codes/framework/tests -v</code>
         </div>
     `;
 
+    replayContentMotion();
+
     // Render KaTeX on home page formulas
     if (window.renderMathInElement) {
         try {
@@ -1064,7 +1108,8 @@ PYTHONPATH=Codes python3 -m unittest discover -s Codes/framework/tests -v</code>
     }
 
     // Attach card click handlers
-    mdContainer.querySelectorAll('.arch-card').forEach(card => {
+    mdContainer.querySelectorAll('.arch-card').forEach((card, index) => {
+        card.style.setProperty('--card-index', Math.min(index, 12));
         card.addEventListener('click', () => {
             const item = allItems.find(i => i.id === card.dataset.id && i.category === card.dataset.cat);
             if (item) loadArticle(item);
@@ -1240,12 +1285,12 @@ window.addEventListener('keydown', e => {
 
 // ── Hash Routing ─────────────────────────────────────────────
 function handleHash() {
-    const hash = window.location.hash.slice(1);
+    const hash = decodeURIComponent(window.location.hash.slice(1));
     if (!hash) {
         renderHome();
         return;
     }
-    const item = allItems.find(i => i.id === hash || i.id.replace('.md','') === hash);
+    const item = allItems.find(i => i.path === hash || i.id === hash || i.id.replace('.md','') === hash);
     if (item) {
         loadArticle(item);
     } else {

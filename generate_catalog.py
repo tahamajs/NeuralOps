@@ -36,8 +36,32 @@ def entries(directory: Path, public_prefix: str) -> list[dict[str, str]]:
     ]
 
 
+def entries_for_paths(paths: list[Path]) -> list[dict[str, str]]:
+    """Create catalog entries for files that live across a documentation area."""
+    return [
+        {"id": path.name, "title": title_for(path), "path": path.relative_to(DOCS).as_posix()}
+        for path in sorted(paths, key=lambda p: p.name.lower())
+    ]
+
+
 def main() -> None:
     catalog = {
+        "guides": entries_for_paths([
+            path for path in DOCS.glob("*.md")
+            if path.name not in {"README.md"}
+            and "verification" not in path.stem
+        ]),
+        "verification": entries_for_paths(
+            list(DOCS.glob("*_verification.md"))
+            + list(CONTENT.glob("*_validation_report.md"))
+        ),
+        "reports": entries(DOCS / "reports", "reports") + entries(DOCS / "results", "results")
+        + entries_for_paths(list(CONTENT.glob("*benchmark_report.md"))),
+        "studios": entries(DOCS / "Attention_Visualization_Dashboard", "Attention_Visualization_Dashboard")
+        + entries(
+            DOCS / "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components",
+            "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components",
+        ),
         "attentions": entries(CONTENT / "attentions", "content/attentions"),
         "compressions": entries(CONTENT / "compressions", "content/compressions"),
         "attentions_blog": entries(CONTENT / "attentions_blog", "content/attentions_blog"),
