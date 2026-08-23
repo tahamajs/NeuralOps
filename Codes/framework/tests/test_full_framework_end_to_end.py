@@ -228,13 +228,19 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
     # --------------------------------------------------------------------------
     def test_05_attention_injection_pipeline(self) -> None:
         """Verify dynamic injection of custom attention modules into transformer backbones."""
+        class DummyConfig:
+            num_attention_heads = 4
+            hidden_size = 64
+        
         model = ToyClassifierModel(hidden_size=64, num_layers=2)
+        model.config = DummyConfig()
+        
         dummy_input = torch.randint(0, 100, (2, 16))
-
+    
         out_before = model(dummy_input)
         self.assertEqual(out_before.logits.shape, (2, 2))
-
-        model_injected = replace_attention(model, attn_type="svd_linear_attn", rank=16)
+    
+        model_injected = replace_attention(model, attention_key="svd_linear_attn", rank=16)
         out_after = model_injected(dummy_input)
         self.assertEqual(out_after.logits.shape, (2, 2))
 
@@ -251,8 +257,8 @@ class TestFullFrameworkEndToEnd(unittest.TestCase):
         compressor_fn = COMPRESSOR_REGISTRY.get("direct_svd")
         self.assertIsNotNone(compressor_fn)
 
-        compressor = compressor_fn(rank=16)
-        compressed_model, stats = compressor.compress(model)
+        compressor = compressor_fn(model, rank=16)
+        compressed_model, stats = compressor.compress()
         dummy_input = torch.randint(0, 100, (2, 16))
         out = compressed_model(dummy_input)
         self.assertEqual(out.logits.shape, (2, 2))
