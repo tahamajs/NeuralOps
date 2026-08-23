@@ -12,6 +12,7 @@ from __future__ import annotations
 import importlib
 import logging
 from typing import Any, Dict
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 

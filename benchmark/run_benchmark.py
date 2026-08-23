@@ -115,6 +115,7 @@ def main() -> None:
         config["selected_tasks"] = ["sst2", "mrpc"]
 
     if args.smoke_test:
+        config["smoke_test"] = True
         config["selected_tasks"] = config["selected_tasks"][:2]
         config["max_train_samples"] = 64
         config["max_eval_samples"] = 32
