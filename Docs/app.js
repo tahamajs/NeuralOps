@@ -156,10 +156,10 @@ async function loadCatalog() {
         if (!res.ok) throw new Error('Network response not ok');
         catalogData = await res.json();
     } catch (e) {
-    catalogData = {
-        attentions: [], compressions: [], attentions_blog: [], compressions_blog: [],
-        framework: [], blog_series: []
-    };
+        catalogData = {
+            attentions: [], compressions: [], attentions_blog: [], compressions_blog: [],
+            framework: [], blog_series: []
+        };
         console.warn('catalog.json not found, using empty catalog:', e);
     }
     await refreshLiveTelemetry();
@@ -274,7 +274,7 @@ function matchesFilter(item, filter) {
     if (filter === 'attentions') return item.category === 'attentions';
     if (filter === 'compressions') return item.category === 'compressions';
     if (filter === 'deep_dives') return item.category === 'attentions_blog' || item.category === 'compressions_blog';
-    if (filter === 'blog_series') return item.category === 'blog_series' || item.category.endsWith('_blog');
+    if (filter === 'blog_series') return item.category === 'blog_series';
     return getTags(item).includes(filter);
 }
 
