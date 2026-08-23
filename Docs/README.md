@@ -3,15 +3,17 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.2+](https://img.shields.io/badge/pytorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation 100% Pass](https://img.shields.io/badge/Docs-408%20Modules-emerald.svg)](./catalog.json)
+[![Documentation 100% Pass](https://img.shields.io/badge/Docs-452%20Modules-emerald.svg)](./catalog.json)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type Checked: Mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](http://mypy-lang.org/)
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
-[![Coverage: 98%](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)](./Codes/framework/tests/)
+[![Coverage: 98%](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)](../Codes/framework/tests/)
 
 > **Module Identifier**: `./Docs/README.md`  
 > **Subsystem Classification**: `Docs`  
 > **Publication Standard**: Exhaustive Masterclass Technical Specification (2,000+ Lines)
+
+> **Canonical navigation:** Start with [`START_HERE.md`](./START_HERE.md), or open the [interactive Research Hub](./index.html). This document remains the detailed technical reference; the catalog and landing page are the source of truth for discoverability.
 
 ---
 
@@ -2960,7 +2962,7 @@ pytest Codes/framework/tests/ --cov=Codes/framework/ --cov-report=term-missing
 ## 14. Changelog, Release History & Roadmap
 
 ### Version 2.5.0 (Current Release — August 2026)
-- ✨ **Unified Masterclass Documentation**: 408 exhaustive technical documents indexed in `Docs/catalog.json`.
+- ✨ **Unified Documentation Catalog**: 452 guides, reports, studios, architectures, and masterclasses indexed in `Docs/catalog.json`.
 - ⚡ **Hopper & Blackwell WGMMA Kernel Suite**: Asynchronous TMA double-buffering with FP8 tensor cores.
 - 🧬 **Rotational SliceGPT + INT4 Integration**: Unitary basis transformations preventing outlier channel clipping.
 - 📊 **Interactive Research Hub SPA**: Dynamic document explorer with live LaTeX rendering and search.

@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.2+](https://img.shields.io/badge/pytorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://img.shields.io/badge/Docs-408%20Modules-emerald.svg)](./Docs/catalog.json)
+[![Documentation](https://img.shields.io/badge/Docs-452%20Modules-emerald.svg)](./Docs/catalog.json)
 [![Dashboard](https://img.shields.io/badge/UI-React%2018%20+%20Vite-61dafb.svg)](./Codes/frontend/)
 [![Backend](https://img.shields.io/badge/API-Django%20REST-092e20.svg)](./Codes/django_api/)
 

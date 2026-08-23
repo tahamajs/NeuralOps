@@ -185,6 +185,9 @@ experiments/
 **/experiments/
 results/
 **/results/
+!Docs/results/
+Docs/results/*
+!Docs/results/README.md
 test_experiments/
 **/test_experiments/
 test_results/
