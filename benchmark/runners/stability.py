@@ -33,7 +33,12 @@ def evaluate_stability(
         Dictionary detailing seed variance, hyperparameter coefficients of variation, and stability verdict.
     """
     seeds: List[int] = config.get("seeds", [42, 123, 777])
-    learning_rates: List[float] = config.get("learning_rates", [2e-5, 3e-5, 5e-5])
+    if config.get("smoke_test", False):
+        seeds = [42]
+    learning_rates: List[float] = [float(x) for x in config.get("learning_rates", [2e-5, 3e-5, 5e-5])]
+    if config.get("smoke_test", False):
+        learning_rates = [float(learning_rates[0])]
+        batch_sizes = [32]
     batch_sizes: List[int] = [16, 32]
 
     seed_accuracies: List[float] = []
