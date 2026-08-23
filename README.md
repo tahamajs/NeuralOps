@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.2+](https://img.shields.io/badge/pytorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://img.shields.io/badge/Docs-384%20Modules-emerald.svg)](./Docs/catalog.json)
+[![Documentation](https://img.shields.io/badge/Docs-408%20Modules-emerald.svg)](./Docs/catalog.json)
 [![Dashboard](https://img.shields.io/badge/UI-React%2018%20+%20Vite-61dafb.svg)](./Codes/frontend/)
 [![Backend](https://img.shields.io/badge/API-Django%20REST-092e20.svg)](./Codes/django_api/)
 
@@ -27,8 +27,8 @@ An open-source research and engineering platform for **Linear Attention Algorith
 
 ## 🌟 Key Capabilities
 
-- **106 Attention Architectures**: Includes Low-Rank SVD ($O(N)$), FlashAttention-3 (FP8), DeepSeek-style Multi-Head Latent Attention (MLA), GQA, Performer, and Mamba-SSM hybrids.
-- **84 Compression Strategies**: Activation-Aware SVD (AASVD), Rotational SliceGPT INT4, DeltaKV differential cache compression, SmoothQuant, and structured pruning (ARMOR/AST).
+- **123 Attention Architectures**: Includes Low-Rank SVD ($O(N)$), FlashAttention-3 (FP8), DeepSeek-style Multi-Head Latent Attention (MLA), GQA, Performer, and Mamba-SSM hybrids.
+- **86 Compression Strategies**: Activation-Aware SVD (AASVD), Rotational SliceGPT INT4, DeltaKV differential cache compression, SmoothQuant, and structured pruning (ARMOR/AST).
 - **Zero-Shot HuggingFace Integration**: Inject any custom attention or compression pipeline into existing models (`AutoModelForSequenceClassification`, `AutoModelForCausalLM`) with a single function call.
 - **Enterprise-Grade Tooling**: Asynchronous Django REST API, WebSocket telemetry, Slurm/Celery distributed job execution, and an Overleaf-style LaTeX paper writing studio.
 - **Interactive Web UI**: Modern React 18 + Vite dashboard with live training monitors, attention heatmaps, 3D latent space visualizers, and a masterclass document browser.
@@ -105,8 +105,8 @@ SVD_linear_Attention/
 │   ├── run_all.py           # Multi-model batch evaluation suite
 │   └── main.py              # Unified launcher
 ├── Docs/
-│   ├── catalog.json         # Master index of 384 technical specifications & masterclasses
-│   ├── content/             # 106 Attention blogs + 84 Compression blogs
+│   ├── catalog.json         # Master index of 408 technical specifications & masterclasses
+│   ├── content/             # 123 Attention + 86 Compression specs, plus deep dives
 │   └── results/             # Benchmark summaries, Pareto data & CSV exports
 └── datasets/                # Benchmark evaluation datasets (GLUE, WikiText, C4, etc.)
 ```
