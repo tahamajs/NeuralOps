@@ -410,12 +410,19 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     """Apply a registered compressor to the base model and report size reduction."""
     from framework.core.registry import COMPRESSOR_REGISTRY
 
-    compressor_name = getattr(cfg, "compressor", None) or "svd"
+    raw_name = getattr(cfg, "compressor", None) or getattr(cfg, "attn_type", "svd")
+    compressor_name = str(raw_name).lower().strip()
+    if compressor_name.startswith("compress_"):
+        compressor_name = compressor_name[len("compress_"):]
+
     if compressor_name not in COMPRESSOR_REGISTRY:
-        raise ValueError(
-            f"Unknown compressor '{compressor_name}'. "
-            f"Available: {COMPRESSOR_REGISTRY.keys()}"
-        )
+        if f"compress_{compressor_name}" in COMPRESSOR_REGISTRY:
+            compressor_name = f"compress_{compressor_name}"
+        else:
+            raise ValueError(
+                f"Unknown compressor '{compressor_name}' (raw='{raw_name}'). "
+                f"Available: {sorted(COMPRESSOR_REGISTRY.keys())}"
+            )
 
     fw["set_seed"](cfg.seed)
     torch = fw["torch"]
