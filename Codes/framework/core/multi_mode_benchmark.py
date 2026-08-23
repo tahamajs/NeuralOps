@@ -996,7 +996,6 @@ class MultiModeBenchmarkRunner:
     ) -> Dict[str, Any]:
         """Directly benchmark a registered attention module forward pass."""
         import time
-        from framework.attentions import ATTENTION_REGISTRY
         
         cls = (
             ATTENTION_REGISTRY.get(attention_type)

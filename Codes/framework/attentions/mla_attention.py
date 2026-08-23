@@ -13,6 +13,7 @@ import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 
 
+@ATTENTION_REGISTRY.register("mla")
 class MLAAttention(nn.Module):
     r"""Multi-Head Latent Attention (MLA) Mechanism.
 
@@ -116,7 +117,6 @@ class MLAAttention(nn.Module):
         return out, None
 
 
-@ATTENTION_REGISTRY.register("mla")
 def inject_mla(
     layer: Any,
     model_config: Any,
