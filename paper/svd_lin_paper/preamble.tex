@@ -6,7 +6,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage{microtype}        % Professional typography (kerning, spacing)
+\usepackage{microtype}        % Professional typography
 
 % --- Mathematics ---
 \usepackage{amsmath, amssymb, amsthm}
@@ -20,16 +20,21 @@
 \usepackage{subcaption}
 \usepackage{multirow}         % Multi-row tables
 \usepackage{array}
+\usepackage{tikz}             % In-line vector diagrams
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
 
 % --- Code Listings ---
 \usepackage{listings}
 \usepackage{xcolor}
 
-% Color Definitions for Code Listings
+% Color Definitions for Code Listings & Plots
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codeblue}{rgb}{0,0,0.95}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{primaryblue}{RGB}{37, 99, 235}
+\definecolor{alertred}{RGB}{220, 38, 38}
+\definecolor{emeraldgreen}{RGB}{16, 185, 129}
 
 % Code Style Configuration
 \lstdefinestyle{mystyle}{
@@ -54,7 +59,7 @@
 
 % --- Hyperlinks & References ---
 \usepackage{url}
-\usepackage[colorlinks=true, linkcolor=codeblue, citecolor=codegreen, urlcolor=codeblue]{hyperref}
+\usepackage[colorlinks=true, linkcolor=primaryblue, citecolor=emeraldgreen, urlcolor=primaryblue]{hyperref}
 
 % --- Custom Environments & Commands ---
 \newtheorem{theorem}{Theorem}[section]
