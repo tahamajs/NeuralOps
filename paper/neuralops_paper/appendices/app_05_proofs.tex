@@ -88,3 +88,12 @@ M = (U_1 P) S^2 (U_1 P)^\top.
 Since $U_1 \in \operatorname{St}(r, d)$ and $P \in \mathcal{O}(r)$, the matrix $\tilde{U} = U_1 P$ satisfies $\tilde{U}^\top \tilde{U} = P^\top U_1^\top U_1 P = P^\top I_r P = I_r$, which is an orthonormal basis.
 The matrix square root is $M^{1/2} = \tilde{U} S \tilde{U}^\top$.
 Taking the trace:
+\begin{equation}
+\operatorname{Tr}(M^{1/2}) = \operatorname{Tr}(\tilde{U} S \tilde{U}^\top) = \operatorname{Tr}(S \tilde{U}^\top \tilde{U}) = \operatorname{Tr}(S) = \sum_{i=1}^r s_i.
+\end{equation}
+By definition, the sum of the singular values of $K$ is the nuclear norm $\|K\|_*$. Thus:
+\begin{equation}
+\operatorname{Tr}\left(\left(\Sigma_1^{1/2} \Sigma_2 \Sigma_1^{1/2}\right)^{1/2}\right) = \left\| \Lambda_1^{1/2} U_1^\top U_2 \Lambda_2^{1/2} \right\|_*,
+\end{equation}
+reducing the computational complexity from $\mathcal{O}(d^3)$ full matrix square roots to an $\mathcal{O}(r^2 d + r^3)$ SVD on the $r \times r$ core matrix $K$.
+\end{proof}
