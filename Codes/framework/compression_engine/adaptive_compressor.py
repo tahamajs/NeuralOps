@@ -144,8 +144,8 @@ class AdaptiveTransformerCompressor(BaseCompressor):
 
 def adaptive_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Adaptive SVD factory function."""
-    energy_threshold = getattr(comp_config, "energy_threshold", kwargs.get("energy_threshold", 0.95))
-    min_rank = getattr(comp_config, "min_rank", kwargs.get("min_rank", kwargs.get("rank", 16)))
+    energy_threshold = getattr(comp_config, "energy_threshold", kwargs.pop("energy_threshold", 0.92))
+    min_rank = getattr(comp_config, "min_rank", kwargs.pop("min_rank", kwargs.pop("rank", 16)))
     compressor = AdaptiveTransformerCompressor(
         model, energy_threshold=energy_threshold, min_rank=min_rank, **kwargs
     )
