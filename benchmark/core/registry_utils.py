@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 from typing import Callable, Optional, List, Any
 
-# Ensure Codes directory is on sys.path to access framework modules
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 CODES_DIR = PROJECT_ROOT / "Codes"
 if str(CODES_DIR) not in sys.path:
@@ -38,12 +37,12 @@ def has_inject_function(model_name: str) -> bool:
     """
     Check if ATTENTION_REGISTRY contains an injection function for the given model_name.
     """
-    if f"{model_name}_inject" in ATTENTION_REGISTRY:
-        candidate = ATTENTION_REGISTRY[f"{model_name}_inject"]
-        return callable(candidate) and not isinstance(candidate, type)
-    if model_name in ATTENTION_REGISTRY:
-        candidate = ATTENTION_REGISTRY[model_name]
-        return callable(candidate) and not isinstance(candidate, type)
+    candidate = ATTENTION_REGISTRY.get(f"{model_name}_inject")
+    if candidate is not None and callable(candidate) and not isinstance(candidate, type):
+        return True
+    candidate = ATTENTION_REGISTRY.get(model_name)
+    if candidate is not None and callable(candidate) and not isinstance(candidate, type):
+        return True
     return False
 
 
@@ -51,12 +50,10 @@ def get_inject_function(model_name: str) -> Optional[Callable[..., Any]]:
     """
     Return the registered injection function for the given model_name if available, else None.
     """
-    if f"{model_name}_inject" in ATTENTION_REGISTRY:
-        candidate = ATTENTION_REGISTRY[f"{model_name}_inject"]
-        if callable(candidate) and not isinstance(candidate, type):
-            return candidate
-    if model_name in ATTENTION_REGISTRY:
-        candidate = ATTENTION_REGISTRY[model_name]
-        if callable(candidate) and not isinstance(candidate, type):
-            return candidate
+    candidate = ATTENTION_REGISTRY.get(f"{model_name}_inject")
+    if candidate is not None and callable(candidate) and not isinstance(candidate, type):
+        return candidate
+    candidate = ATTENTION_REGISTRY.get(model_name)
+    if candidate is not None and callable(candidate) and not isinstance(candidate, type):
+        return candidate
     return None
