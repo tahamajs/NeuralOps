@@ -184,7 +184,9 @@ def main() -> None:
         # -------------------------------------------------------------
         base_model, build_status = build_model_with_attention(
             model_name=model_name,
-            base_model_name=config.get("model_name", "distilbert-base-uncased"),
+            base_model_name=config.get("model_name", "distilbert-base-uncased")
+        if base_model is not None:
+            base_model = base_model.to(device),
             num_labels=2,
             pretrained=True,
         )
@@ -257,6 +259,8 @@ def main() -> None:
         if not args.skip_profiling:
             logger.info("  ⚡ Running Layer 2 Efficiency & Scaling Profiling...")
             prof_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=False)
+            if prof_model is not None:
+                prof_model = prof_model.to(device)
             prof_res = profile_model(
                 model=prof_model,
                 seq_lengths=config.get("profile_seq_lengths", [128, 256, 512]),
@@ -291,9 +295,11 @@ def main() -> None:
         if not args.skip_diagnostics:
             logger.info("  🔬 Running Layer 4 Structural & Gradient Diagnostics...")
             diag_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=True)
+            if diag_model is not None:
+                diag_model = diag_model.to(device)
             dummy_inputs = {
-                "input_ids": torch.randint(0, 1000, (4, 64)),
-                "attention_mask": torch.ones((4, 64)),
+                "input_ids": torch.randint(0, 1000, (4, 64)).to(device),
+                "attention_mask": torch.ones((4, 64)).to(device),
             }
             grad_stats = compute_gradient_norm_stats(diag_model, dummy_inputs)
             moe_stats = compute_moe_load_balance(diag_model, dummy_inputs)

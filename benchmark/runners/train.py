@@ -111,7 +111,7 @@ def train_model(
             optimizer.zero_grad()
 
             if use_cuda_amp:
-                with torch.cuda.amp.autocast(dtype=amp_dtype):
+                with torch.autocast(device_type="cuda", dtype=amp_dtype) if torch.cuda.is_available() else torch.autocast(device_type="cpu", dtype=torch.bfloat16):
                     outputs = model(**inputs)
                     loss = outputs.loss
             else:
