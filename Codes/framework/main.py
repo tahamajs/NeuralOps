@@ -57,7 +57,7 @@ if str(_HERE) not in sys.path:
 
 # Mirror and cache defaults
 if "HF_ENDPOINT" not in os.environ:
-    os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
+    os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "300")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
