@@ -24,6 +24,8 @@ let activeFilter = 'all';
 let activeItem   = null;
 let cmdSelectedIdx = -1;
 let cmdFilteredItems = [];
+const API_BASE = (window.FRAMEWORK_API_BASE || localStorage.getItem('framework-api-base') || '').replace(/\/$/, '');
+const apiUrl = path => `${API_BASE}${path}`;
 
 // ── DOM ─────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -154,7 +156,10 @@ async function loadCatalog() {
         if (!res.ok) throw new Error('Network response not ok');
         catalogData = await res.json();
     } catch (e) {
-        catalogData = { attentions: [], compressions: [], framework: [], blog_series: [] };
+    catalogData = {
+        attentions: [], compressions: [], attentions_blog: [], compressions_blog: [],
+        framework: [], blog_series: []
+    };
         console.warn('catalog.json not found, using empty catalog:', e);
     }
     await refreshLiveTelemetry();
@@ -163,6 +168,8 @@ async function loadCatalog() {
     allItems = [
         ...(catalogData.attentions   || []).map(i => ({ ...i, category: 'attentions' })),
         ...(catalogData.compressions || []).map(i => ({ ...i, category: 'compressions' })),
+        ...(catalogData.attentions_blog || []).map(i => ({ ...i, category: 'attentions_blog' })),
+        ...(catalogData.compressions_blog || []).map(i => ({ ...i, category: 'compressions_blog' })),
         ...(catalogData.framework    || []).map(i => ({ ...i, category: 'framework' })),
         ...(catalogData.blog_series  || []).map(i => ({ ...i, category: 'blog_series' })),
     ];
@@ -170,6 +177,8 @@ async function loadCatalog() {
     // Stats
     if (statAttn) statAttn.textContent = (catalogData.attentions || []).length;
     if (statComp) statComp.textContent = (catalogData.compressions || []).length;
+    const searchInput = document.getElementById('cmd-input');
+    if (searchInput) searchInput.placeholder = `Search ${allItems.length} architectures, compressors, and papers...`;
 
     // Update filter chip counts
     document.querySelectorAll('.fchip[data-filter="all"]').forEach(c => {
@@ -188,8 +197,7 @@ async function loadCatalog() {
 async function refreshLiveTelemetry() {
     let updated = false;
     try {
-        const API_BASE = (window.location.hostname === '192.168.1.100') ? '' : 'http://192.168.1.100:8080';
-        const hRes = await fetch(API_BASE + '/results/all_histories.json?t=' + Date.now());
+        const hRes = await fetch(apiUrl('/results/all_histories.json?t=' + Date.now()));
         if (hRes.ok) {
             plotHistories = await hRes.json();
             updated = true;
@@ -198,15 +206,18 @@ async function refreshLiveTelemetry() {
 
     // If local API stats available, merge real-time active worker loss histories
     try {
-        const API_BASE = (window.location.hostname === '192.168.1.100') ? '' : 'http://192.168.1.100:8080';
-        const sRes = await fetch(API_BASE + '/api/stats');
+        const sRes = await fetch(apiUrl('/api/stats'));
         if (sRes.ok) {
             const stats = await sRes.json();
-            if (stats.gpu && stats.gpu.length >= 2) {
+            const telemetryStatus = document.getElementById('telemetry-status');
+            if (telemetryStatus) telemetryStatus.textContent = 'Telemetry: connected';
+            if (stats.gpu && (Array.isArray(stats.gpu) || typeof stats.gpu === 'object')) {
                 const utilEl = document.getElementById('gpu-util');
                 const memEl = document.getElementById('gpu-mem');
-                if (utilEl) utilEl.innerText = 'GPU: ' + stats.gpu[0] + '%';
-                if (memEl) memEl.innerText = 'VRAM: ' + (stats.gpu[1] / 1024).toFixed(1) + ' GB';
+                const util = typeof stats.gpu.gpu_util !== 'undefined' ? stats.gpu.gpu_util : stats.gpu[0];
+                const memory = typeof stats.gpu.mem_used_mb !== 'undefined' ? stats.gpu.mem_used_mb : stats.gpu[1];
+                if (utilEl && Number.isFinite(Number(util))) utilEl.innerText = 'GPU: ' + Math.round(util) + '%';
+                if (memEl && Number.isFinite(Number(memory))) memEl.innerText = 'VRAM: ' + (memory / 1024).toFixed(1) + ' GB';
             }
             if (stats.train_multi) {
                 if (!plotHistories) plotHistories = {};
@@ -222,7 +233,10 @@ async function refreshLiveTelemetry() {
                 }
             }
         }
-    } catch (e) { /* non-local environment, ignore */ }
+    } catch (e) {
+        const telemetryStatus = document.getElementById('telemetry-status');
+        if (telemetryStatus) telemetryStatus.textContent = API_BASE ? 'Telemetry: unavailable' : 'Telemetry: offline';
+    }
 
     // If current page contains active charts, dynamically update them
     if (updated && window.Chart) {
@@ -259,6 +273,8 @@ function matchesFilter(item, filter) {
     if (filter === 'all') return true;
     if (filter === 'attentions') return item.category === 'attentions';
     if (filter === 'compressions') return item.category === 'compressions';
+    if (filter === 'deep_dives') return item.category === 'attentions_blog' || item.category === 'compressions_blog';
+    if (filter === 'blog_series') return item.category === 'blog_series' || item.category.endsWith('_blog');
     return getTags(item).includes(filter);
 }
 
@@ -269,6 +285,8 @@ function renderNav(query = '', filter = activeFilter) {
     const sections = [
         { key: 'attentions',   label: 'Attention Mechanisms', icon: '⚡' },
         { key: 'compressions', label: 'Compression Engines',  icon: '🗜' },
+        { key: 'attentions_blog', label: 'Attention Deep Dives', icon: '🔬' },
+        { key: 'compressions_blog', label: 'Compression Deep Dives', icon: '📐' },
         { key: 'blog_series',  label: 'Research Blog Series', icon: '📝' },
         { key: 'framework',    label: 'Framework Docs',        icon: '📖' },
     ];
@@ -404,7 +422,14 @@ function updateBreadcrumb(item) {
         if (bcSep2) bcSep2.classList.add('hidden');
         return;
     }
-    const sectionMap = { attentions: 'Attentions', compressions: 'Compressions', framework: 'Framework' };
+    const sectionMap = {
+        attentions: 'Attentions',
+        compressions: 'Compressions',
+        attentions_blog: 'Attention Deep Dives',
+        compressions_blog: 'Compression Deep Dives',
+        blog_series: 'Research Blog Series',
+        framework: 'Framework'
+    };
     if (bcCurrent) bcCurrent.textContent = sectionMap[item.category] || item.category;
     if (bcPage) {
         bcPage.textContent = item.title;
@@ -437,7 +462,9 @@ async function loadArticle(item) {
     contentViewport.scrollTo({ top: 0, behavior: 'instant' });
 
     // Multi-candidate path resolution
-    const cat = item.category === 'compressions' ? 'compressions' : (item.category === 'framework' ? 'framework' : 'attentions');
+    const cat = item.category === 'compressions' || item.category === 'compressions_blog'
+        ? 'compressions'
+        : (item.category === 'framework' ? 'framework' : (item.category === 'attentions_blog' ? 'attentions_blog' : 'attentions'));
     const candidates = [
         item.path,
         `./${item.path}`,
@@ -832,6 +859,7 @@ function renderHome() {
     const attnCount = (catalogData.attentions || []).length;
     const compCount = (catalogData.compressions || []).length;
     const totalCount = allItems.length;
+    const ssmCount = allItems.filter(item => getTags(item).includes('ssm')).length;
 
     // Featured Architectures
     const featured = [
@@ -865,8 +893,8 @@ function renderHome() {
             </div>
             <h1 class="home-title">SVD Linear <span>Attention</span> & Compression Hub</h1>
             <p class="home-subtitle">
-                An advanced research compendium exploring <strong>${attnCount || 108}+ Attention Architectures</strong>, 
-                <strong>${compCount || 85}+ Neural Compression Engines</strong>, Triton GPU kernels, and mathematical proofs for sub-quadratic sequence modeling.
+                An advanced research compendium exploring <strong>${attnCount} Attention Architectures</strong>, 
+                <strong>${compCount} Neural Compression Engines</strong>, experiment telemetry, and mathematical references for efficient sequence modeling.
             </p>
             <div class="home-actions">
                 <button class="hero-btn hero-btn-primary" id="hero-explore-btn">
@@ -886,12 +914,12 @@ function renderHome() {
 
         <div class="stats-grid">
             <div class="stat-card" style="--card-accent: var(--accent);" onclick="document.querySelector('.fchip[data-filter=attentions]').click()">
-                <div class="stat-card-num">${attnCount || 108}</div>
+                <div class="stat-card-num">${attnCount}</div>
                 <div class="stat-card-label">Attention Mechanisms</div>
                 <div class="stat-card-icon" style="background:rgba(59,130,246,.12);color:var(--accent);">⚡</div>
             </div>
             <div class="stat-card" style="--card-accent: var(--accent-2);" onclick="document.querySelector('.fchip[data-filter=compressions]').click()">
-                <div class="stat-card-num">${compCount || 85}</div>
+                <div class="stat-card-num">${compCount}</div>
                 <div class="stat-card-label">Compression Engines</div>
                 <div class="stat-card-icon" style="background:rgba(6,182,212,.12);color:var(--accent-2);">🗜</div>
             </div>
@@ -901,7 +929,7 @@ function renderHome() {
                 <div class="stat-card-icon" style="background:rgba(168,85,247,.12);color:#a855f7;">📝</div>
             </div>
             <div class="stat-card" style="--card-accent: var(--accent-4);" onclick="document.querySelector('.fchip[data-filter=ssm]').click()">
-                <div class="stat-card-num">18+</div>
+                <div class="stat-card-num">${ssmCount}</div>
                 <div class="stat-card-label">SSM & Recurrent Hybrids</div>
                 <div class="stat-card-icon" style="background:rgba(245,158,11,.12);color:var(--accent-4);">🔄</div>
             </div>
@@ -969,7 +997,7 @@ function renderHome() {
                         </tbody>
                     </table>
                 </div>
-                <div class="text-[10px] text-gray-500 mt-3 text-right">Top 15 Runs · Auto-synced directly from GPU cluster</div>
+                <div class="text-[10px] text-gray-500 mt-3 text-right">${rows.length} available runs · synchronized when telemetry is connected</div>
             </div>`;
         }
     }
@@ -1575,4 +1603,3 @@ window.addEventListener('hashchange', handleHash);
     handleHash();
 
 });
-
