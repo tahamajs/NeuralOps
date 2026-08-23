@@ -139,6 +139,8 @@ def train_model(
     """
     cleanup_gpu_memory(force=True)
     model.to(device)
+    if device.type == "cuda":
+        torch.backends.cudnn.benchmark = True
     model.train()
 
     use_amp = bool(getattr(config, "fp16", False) or getattr(config, "amp", True))
