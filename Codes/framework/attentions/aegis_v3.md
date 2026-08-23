@@ -23,3 +23,15 @@
 | Sequence Scaling | $\mathcal{O}(N^2)$ | $\mathcal{O}(N \cdot (W + F))$ |
 | SST-2 Accuracy | 50.92% (stalled) | **84.02%** |
 | SST-2 F1 Score | 50.90% | **84.00%** |\n
+
+## Implementation status
+
+The implementation for this page is [aegis_v3.py](./aegis_v3.py). Its constructor and forward contract are exercised by the framework attention compatibility suite. Treat performance, compression ratio, and accuracy as experiment-dependent; this page does not claim a universal benchmark result.
+
+## Reproducibility notes
+
+Use the registered attention key shown in the Python module, pass tensors with shape `(batch, sequence, hidden)`, and validate the selected model architecture before injection. Optional CUDA, Triton, FP8, or pretrained-weight paths require their corresponding runtime dependencies.
+
+## Verification
+
+Run `pytest -q tests/test_attention_modules.py tests/test_attentions.py` from `Codes/framework` before reporting experiment results.
