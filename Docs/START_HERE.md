@@ -2,6 +2,8 @@
 
 This is the canonical map for the `Docs/` knowledge base. The [Research Hub](./index.html) loads the same categories from [`catalog.json`](./catalog.json), so every guide, experiment report, architecture, and studio specification has one discoverable entry point.
 
+For the broad end-to-end explanation, read the [Complete Research Guide](./COMPLETE_RESEARCH_GUIDE.md). It connects architecture theory, framework code, verification, experiments, results, studios, and deployment.
+
 ## Choose a path
 
 | Goal | Start here | What follows |
