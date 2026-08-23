@@ -19,3 +19,15 @@ For source Multi-Head Attention layer with weights $W_q, W_k, W_v, W_o \in \math
 
 ## 3. Empirical SST-2 Recovery Analysis
 Without weight injection, random initialization causes gradient shock in fine-tuning, resulting in 50.92% accuracy. With automated weight transfer and bidirectional scanning, the replaced layers preserve semantic feature spaces and converge rapidly.
+
+## Implementation status
+
+The implementation for this page is [mamba_inject.py](./mamba_inject.py). Its constructor and forward contract are exercised by the framework attention compatibility suite. Treat performance, compression ratio, and accuracy as experiment-dependent; this page does not claim a universal benchmark result.
+
+## Reproducibility notes
+
+Use the registered attention key shown in the Python module, pass tensors with shape `(batch, sequence, hidden)`, and validate the selected model architecture before injection. Optional CUDA, Triton, FP8, or pretrained-weight paths require their corresponding runtime dependencies.
+
+## Verification
+
+Run `pytest -q tests/test_attention_modules.py tests/test_attentions.py` from `Codes/framework` before reporting experiment results.

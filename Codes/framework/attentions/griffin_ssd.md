@@ -29,3 +29,15 @@ $$\text{Output} = (Y_{\text{local}} + Y_{\text{global}}) W_{\text{out}} + b_{\te
 ## 3. Complexity & Empirical SST-2 Analysis
 - **Complexity**: $\mathcal{O}(B \cdot H \cdot L \cdot (W \cdot d_k + d_k \cdot d_v))$ linear in sequence length $L$.
 - **SST-2 Analysis**: Bidirectional sliding windows capture local syntactic context while global SSD aggregates long-range context without quadratic scaling.
+
+## Implementation status
+
+The implementation for this page is [griffin_ssd.py](./griffin_ssd.py). Its constructor and forward contract are exercised by the framework attention compatibility suite. Treat performance, compression ratio, and accuracy as experiment-dependent; this page does not claim a universal benchmark result.
+
+## Reproducibility notes
+
+Use the registered attention key shown in the Python module, pass tensors with shape `(batch, sequence, hidden)`, and validate the selected model architecture before injection. Optional CUDA, Triton, FP8, or pretrained-weight paths require their corresponding runtime dependencies.
+
+## Verification
+
+Run `pytest -q tests/test_attention_modules.py tests/test_attentions.py` from `Codes/framework` before reporting experiment results.
