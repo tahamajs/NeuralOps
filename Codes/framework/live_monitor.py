@@ -301,11 +301,21 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if req_path in ("/", "/index.html"):
-            html_file = WEB_DIR / "index.html"
-            if html_file.exists():
-                content = html_file.read_bytes()
-            else:
-                content = b"<h1>Dashboard loading...</h1>"
+            html_candidates = [
+                WEB_DIR / "index.html",
+                WORKDIR / "web" / "index.html",
+                PROJECT_DIR / "Codes" / "framework" / "web" / "index.html",
+                Path("Codes/framework/web/index.html").resolve(),
+                Path("web/index.html").resolve(),
+                Path("index.html").resolve(),
+            ]
+            content = None
+            for cand in html_candidates:
+                if cand.exists():
+                    content = cand.read_bytes()
+                    break
+            if content is None:
+                content = b"<!DOCTYPE html><html><body><h1>Dashboard Initializing...</h1><p>Please refresh in 3 seconds.</p></body></html>"
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
