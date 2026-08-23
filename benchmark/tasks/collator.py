@@ -41,3 +41,5 @@ class DataCollatorForGLUE:
                 batch["labels"] = torch.tensor(raw_labels, dtype=torch.long)
 
         return batch
+
+DataCollatorForClassification = DataCollatorForGLUE

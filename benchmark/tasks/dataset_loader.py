@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from typing import Tuple, Optional, Any
 from datasets import load_dataset, Dataset
-from transformers import PreTrainedTokenizerBase
+from transformers import AutoTokenizer, PreTrainedTokenizerBase
 from .glue_tasks import get_task_info
 
 
@@ -49,15 +49,6 @@ def load_glue_dataset(
 ) -> Tuple[Dataset, Dataset, int]:
     """
     Load and tokenize a GLUE benchmark dataset.
-
-    Args:
-        task_name: Identifier ('sst2', 'mrpc', 'qnli', 'rte', 'cola', 'stsb', etc.).
-        tokenizer: HuggingFace tokenizer instance.
-        max_seq_len: Maximum token sequence truncation length.
-        max_samples: Optional cap on train/eval sample counts for rapid testing.
-
-    Returns:
-        Tuple of (tokenized_train_dataset, tokenized_eval_dataset, num_labels).
     """
     info = get_task_info(task_name)
     hf_task = info["hf_name"]
@@ -75,7 +66,7 @@ def load_glue_dataset(
 
     if max_samples is not None:
         train_split = train_split.select(range(min(len(train_split), max_samples)))
-        eval_split = eval_split.select(range(min(len(eval_split), max_samples // 2)))
+        eval_split = eval_split.select(range(min(len(eval_split), max(max_samples // 2, 1))))
 
     def preprocess_function(examples):
         if key2 is None:
@@ -105,3 +96,23 @@ def load_glue_dataset(
     )
 
     return tokenized_train, tokenized_eval, num_labels
+
+
+def load_and_tokenize_glue_task(
+    task_name: str,
+    tokenizer_name: str = "distilbert-base-uncased",
+    max_seq_length: int = 128,
+    max_train_samples: Optional[int] = None,
+    max_eval_samples: Optional[int] = None,
+) -> Tuple[Dataset, Dataset, int]:
+    """
+    Convenience wrapper to instantiate tokenizer and tokenize a GLUE benchmark task.
+    """
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    max_samples = max_train_samples if max_train_samples is not None else None
+    return load_glue_dataset(
+        task_name=task_name,
+        tokenizer=tokenizer,
+        max_seq_len=max_seq_length,
+        max_samples=max_samples,
+    )

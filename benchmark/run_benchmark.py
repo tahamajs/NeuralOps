@@ -1,130 +1,95 @@
-#!/usr/bin/env python3
 """
-Master Attention Benchmark Orchestrator
-Executes Layer 0 (Sanity), Layer 1 (GLUE Evaluation), Layer 2 (Profiling),
-Layer 3 (Stability), and Layer 4 (Diagnostics) across registered attention architectures.
+Main CLI entrypoint and orchestrator for the Attention Benchmark Suite.
 """
 
 from __future__ import annotations
-import os
 import sys
-import json
-import yaml
+import os
 import time
-import logging
+import json
 import argparse
-import traceback
+import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
+import yaml
+import torch
 from tqdm import tqdm
-from transformers import AutoTokenizer
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BENCHMARK_DIR = Path(__file__).resolve().parent
 CODES_DIR = PROJECT_ROOT / "Codes"
+if str(CODES_DIR) not in sys.path:
+    sys.path.insert(0, str(CODES_DIR))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-for p in [str(PROJECT_ROOT), str(BENCHMARK_DIR), str(CODES_DIR)]:
-    if p not in sys.path:
-        sys.path.insert(0, p)
-
-
-# Framework and Benchmark imports
 from benchmark.core.model_factory import build_model_with_attention
-from benchmark.core.registry_utils import get_all_registered_models
-from benchmark.tasks.dataset_loader import load_glue_dataset
-from benchmark.tasks.glue_tasks import GLUE_TASK_CONFIGS
+from benchmark.core.seed import set_seed
+from benchmark.tasks.glue_tasks import load_and_tokenize_glue_task
 from benchmark.runners.sanity import run_sanity_check
 from benchmark.runners.train import train_model
 from benchmark.runners.profile import profile_model
 from benchmark.runners.stability import evaluate_stability
-from benchmark.diagnostics.attention_analysis import compute_attention_entropy, compute_attention_sparsity
-from benchmark.diagnostics.moe_analysis import compute_moe_load_balance
 from benchmark.diagnostics.gradient_analysis import compute_gradient_norm_stats
+from benchmark.diagnostics.moe_analysis import compute_moe_load_balance
 from benchmark.report_generator import generate_all_reports
 
-
-def setup_logging(output_dir: Path) -> logging.Logger:
-    """Configure multi-sink logging to console and persistent log files."""
-    logs_dir = output_dir / "logs"
-    logs_dir.mkdir(parents=True, exist_ok=True)
-
-    logger = logging.getLogger("benchmark")
-    logger.setLevel(logging.INFO)
-    logger.handlers.clear()
-
-    formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-
-    # Console handler
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.INFO)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
-    # Master file handler
-    fh = logging.FileHandler(logs_dir / "benchmark.log")
-    fh.setLevel(logging.INFO)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    # Error file handler
-    eh = logging.FileHandler(logs_dir / "errors.log")
-    eh.setLevel(logging.WARNING)
-    eh.setFormatter(formatter)
-    logger.addHandler(eh)
-
-    return logger
+logger = logging.getLogger("benchmark")
 
 
-def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Multi-Model Attention Benchmark Framework")
-    parser.add_argument("--config", type=str, default="benchmark/configs/default.yaml", help="Path to default YAML config")
-    parser.add_argument("--models-config", type=str, default="benchmark/configs/models_to_benchmark.yaml", help="Path to models list YAML")
+def setup_logging(output_dir: Path) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    log_file = output_dir / "logs" / "benchmark.log"
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(str(log_file), mode="a"),
+        ],
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Multi-Layer Attention Benchmark Suite")
+    parser.add_argument("--config", type=str, default="benchmark/configs/default.yaml", help="Path to config YAML")
     parser.add_argument("--models", type=str, default=None, help="Comma-separated list of model names to benchmark")
-    parser.add_argument("--tasks", type=str, default=None, help="Comma-separated list of GLUE tasks (e.g. 'sst2,mrpc')")
-    parser.add_argument("--max-samples", type=int, default=None, help="Cap train samples per task for rapid testing")
-    parser.add_argument("--skip-profiling", action="store_true", help="Skip Layer 2 efficiency profiling")
-    parser.add_argument("--skip-stability", action="store_true", help="Skip Layer 3 multi-seed stability testing")
-    parser.add_argument("--skip-diagnostics", action="store_true", help="Skip Layer 4 structural diagnostics")
-    parser.add_argument("--smoke-test", action="store_true", help="Run ultra-fast smoke test with synthetic subset")
+    parser.add_argument("--tasks", type=str, default=None, help="Comma-separated list of GLUE tasks to evaluate")
+    parser.add_argument("--output-dir", type=str, default=None, help="Directory to save benchmark results")
+    parser.add_argument("--smoke-test", action="store_true", help="Run in fast smoke test mode (1 epoch, few steps)")
+    parser.add_argument("--skip-profiling", action="store_true", help="Skip Layer 2 profiling")
+    parser.add_argument("--skip-stability", action="store_true", help="Skip Layer 3 stability audit")
+    parser.add_argument("--skip-diagnostics", action="store_true", help="Skip Layer 4 diagnostics")
+    parser.add_argument("--report-only", type=str, default=None, help="Generate report from existing results.json")
     return parser.parse_args()
 
 
-def load_configurations(args: argparse.Namespace) -> Dict[str, Any]:
-    with open(args.config, "r") as f:
-        config = yaml.safe_load(f)
-
-    if args.models is not None:
-        model_list = [m.strip() for m in args.models.split(",") if m.strip()]
-    elif os.path.exists(args.models_config):
-        with open(args.models_config, "r") as f:
-            models_data = yaml.safe_load(f)
-            model_list = models_data.get("models", ["full"])
-    else:
-        model_list = ["full", "svd_linear", "performer"]
-
-    config["selected_models"] = model_list
-
-    if args.tasks is not None:
-        config["selected_tasks"] = [t.strip().lower() for t in args.tasks.split(",") if t.strip()]
-    else:
-        config["selected_tasks"] = ["sst2", "mrpc"] if args.smoke_test else ["sst2", "mrpc", "qnli", "rte", "cola", "stsb"]
-
-    if args.smoke_test:
-        config["max_samples"] = 64
-        config["profile_seq_lengths"] = [128, 256]
-        config["profile_batch_sizes"] = [1, 8]
-        config["seeds"] = [42]
-        config["learning_rates"] = [3e-5]
-    elif args.max_samples is not None:
-        config["max_samples"] = args.max_samples
-
-    return config
+def load_config(config_path: str) -> Dict[str, Any]:
+    p = Path(config_path)
+    if p.exists():
+        with open(p, "r") as f:
+            return yaml.safe_load(f)
+    return {}
 
 
 def main() -> None:
-    args = parse_arguments()
-    config = load_configurations(args)
+    args = parse_args()
+
+    if args.report_only:
+        res_p = Path(args.report_only)
+        out_p = res_p.parent
+        generate_all_reports(str(res_p), str(out_p))
+        print(f"✓ Reports generated successfully in {out_p}")
+        return
+
+    config = load_config(args.config)
+    if args.output_dir:
+        config["output_dir"] = args.output_dir
+
     output_dir = Path(config.get("output_dir", "benchmark_output"))
+    setup_logging(output_dir)
 
     # Setup Target Execution Device
     if torch.cuda.is_available():
@@ -136,9 +101,24 @@ def main() -> None:
     else:
         device = torch.device("cpu")
         logger.info("Target Device: CPU")
-    output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger = setup_logging(output_dir)
+    set_seed(config.get("seed", 42))
+
+    if args.models:
+        config["selected_models"] = [m.strip() for m in args.models.split(",") if m.strip()]
+    elif "selected_models" not in config:
+        config["selected_models"] = ["full", "svd_linear"]
+
+    if args.tasks:
+        config["selected_tasks"] = [t.strip().lower() for t in args.tasks.split(",") if t.strip()]
+    elif "selected_tasks" not in config:
+        config["selected_tasks"] = ["sst2", "mrpc"]
+
+    if args.smoke_test:
+        config["selected_tasks"] = config["selected_tasks"][:2]
+        config["max_train_samples"] = 64
+        config["max_eval_samples"] = 32
+
     logger.info("=" * 70)
     logger.info("🚀 INITIALIZING ATTENTION BENCHMARK FRAMEWORK")
     logger.info(f"Backbone: {config.get('model_name', 'distilbert-base-uncased')}")
@@ -146,18 +126,17 @@ def main() -> None:
     logger.info(f"Target Models ({len(config['selected_models'])}): {config['selected_models']}")
     logger.info("=" * 70)
 
-    tokenizer = AutoTokenizer.from_pretrained(config.get("model_name", "distilbert-base-uncased"))
-
-    # Preload datasets
+    # Preload and tokenize GLUE datasets
     logger.info("📦 Pre-loading and tokenizing GLUE datasets...")
     datasets_cache: Dict[str, Any] = {}
     for task in config["selected_tasks"]:
         try:
-            train_ds, eval_ds, num_labels = load_glue_dataset(
+            train_ds, eval_ds, num_labels = load_and_tokenize_glue_task(
                 task_name=task,
-                tokenizer=tokenizer,
-                max_seq_len=int(config.get("max_seq_len", 128)),
-                max_samples=config.get("max_samples"),
+                tokenizer_name=config.get("model_name", "distilbert-base-uncased"),
+                max_seq_length=config.get("max_seq_length", 128),
+                max_train_samples=config.get("max_train_samples", None),
+                max_eval_samples=config.get("max_eval_samples", None),
             )
             datasets_cache[task] = (train_ds, eval_ds, num_labels)
             logger.info(f"  ✓ Loaded task {task.upper()} (train: {len(train_ds)}, eval: {len(eval_ds)}, labels: {num_labels})")
@@ -195,13 +174,7 @@ def main() -> None:
         # -------------------------------------------------------------
         base_model, build_status = build_model_with_attention(
             model_name=model_name,
-            base_model_name=config.get("model_name", "distilbert-base-uncased")
-        if base_model is not None:
-            base_model = base_model.to(device)
-        if base_model is not None:
-            base_model = base_model.to(device)
-        if base_model is not None:
-            base_model = base_model.to(device),
+            base_model_name=config.get("model_name", "distilbert-base-uncased"),
             num_labels=2,
             pretrained=True,
         )
@@ -215,6 +188,7 @@ def main() -> None:
                 json.dump(results, f, indent=2)
             continue
 
+        base_model = base_model.to(device)
         model_record["num_params"] = sum(p.numel() for p in base_model.parameters() if p.requires_grad)
         logger.info(f"  ✓ Model built successfully ({model_record['num_params'] / 1e6:.2f}M trainable parameters)")
 
@@ -249,6 +223,8 @@ def main() -> None:
                 num_labels=num_labels,
                 pretrained=True,
             )
+            if task_model is not None:
+                task_model = task_model.to(device)
 
             train_res = train_model(
                 model=task_model,
@@ -274,10 +250,6 @@ def main() -> None:
         if not args.skip_profiling:
             logger.info("  ⚡ Running Layer 2 Efficiency & Scaling Profiling...")
             prof_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=False)
-            if prof_model is not None:
-                prof_model = prof_model.to(device)
-            if prof_model is not None:
-                prof_model = prof_model.to(device)
             if prof_model is not None:
                 prof_model = prof_model.to(device)
             prof_res = profile_model(
@@ -316,13 +288,9 @@ def main() -> None:
             diag_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=True)
             if diag_model is not None:
                 diag_model = diag_model.to(device)
-            if diag_model is not None:
-                diag_model = diag_model.to(device)
-            if diag_model is not None:
-                diag_model = diag_model.to(device)
             dummy_inputs = {
-                "input_ids": torch.randint(0, 1000, (4, 64)).to(device),
-                "attention_mask": torch.ones((4, 64)).to(device),
+                "input_ids": torch.randint(0, 1000, (4, 64), device=device),
+                "attention_mask": torch.ones((4, 64), device=device),
             }
             grad_stats = compute_gradient_norm_stats(diag_model, dummy_inputs)
             moe_stats = compute_moe_load_balance(diag_model, dummy_inputs)
