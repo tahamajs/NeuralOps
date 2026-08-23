@@ -173,7 +173,7 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
         elif attn in {"adasplash", "nha_compressor", "token_compressed"}:
             cfg.batch_size = 16
         else:
-            cfg.batch_size = 64   # Optimal batch size for 2 workers
+            cfg.batch_size = 128   # Maximize RTX 4070 8GB Tensor Core utilization
 
         # Aggressive learning rate for fast convergence on small dataset
         cfg.lr = 1e-4 if attn in ("svd_linear", "full") else 2e-4
@@ -552,7 +552,7 @@ def main():
     log_master(f"Trajectory Matrix: {len(ATTN_MODELS)} Attns + {len(COMPRESSOR_MODELS)} Compressors x {len(TASKS)} Tasks = {total} Runs")
     log_master("Targeting 90-100% GPU Compute Utilization via Isolated OS Processes with Automatic OOM Auto-Recovery.")
 
-    NUM_WORKERS = 2
+    NUM_WORKERS = 3
     processes = []
     git_lock = mp.Lock()
     for w_id in range(1, NUM_WORKERS + 1):
