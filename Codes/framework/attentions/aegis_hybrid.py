@@ -29,6 +29,8 @@ class AegisHybridConfig:
     gate_init_bias: float = 1.8
 
 
+@ATTENTION_REGISTRY.register("aegis_hybrid")
+@ATTENTION_REGISTRY.register("aegis_hybrid_attn")
 class AegisHybridAttention(nn.Module):
     r"""
     Aegis-Hybrid Attention combining Local Windowed Attention and Global Linear Attention.
@@ -248,9 +250,6 @@ class AegisHybridAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj2.weight.device)
 
 
-@ATTENTION_REGISTRY.register("aegis_hybrid")
-@ATTENTION_REGISTRY.register("aegis_hybrid_attn")
-@ATTENTION_REGISTRY.register("inject_aegis_hybrid")
 def inject_aegis_hybrid(
     layer: Any,
     model_config: Any = None,

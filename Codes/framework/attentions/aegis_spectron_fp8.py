@@ -79,6 +79,8 @@ def fp8_cast_simulate(x: torch.Tensor) -> torch.Tensor:
     return x
 
 
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8")
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8_attn")
 class AegisSpectronFP8Attention(BaseAttention):
     r"""
     Aegis-Spectron-FP8 Hybrid Architecture.
@@ -253,9 +255,6 @@ class AegisSpectronFP8Attention(BaseAttention):
         return final_out, None
 
 
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8")
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8_attn")
-@ATTENTION_REGISTRY.register("inject_aegis_spectron_fp8")
 def inject_aegis_spectron_fp8(
     layer: Any,
     model_config: Any = None,
