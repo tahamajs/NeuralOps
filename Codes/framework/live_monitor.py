@@ -65,18 +65,34 @@ TASKS = ["sst2"]
 
 def get_gpu_stats():
     gpu_util, mem_used, mem_total, temp, power = 0.0, 0.0, 8188.0, 0.0, 0.0
-    try:
-        cmd = ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw", "--format=csv,noheader,nounits"]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
-        if res.returncode == 0:
-            parts = [p.strip() for p in res.stdout.strip().split(",")]
-            gpu_util = float(parts[0]) if len(parts) > 0 else 0.0
-            mem_used = float(parts[1]) if len(parts) > 1 else 0.0
-            mem_total = float(parts[2]) if len(parts) > 2 else 8188.0
-            temp = float(parts[3]) if len(parts) > 3 else 0.0
-            power = float(parts[4]) if len(parts) > 4 else 0.0
-    except Exception:
-        pass
+    
+    nvsmi_candidates = [
+        "nvidia-smi",
+        r"C:\Windows\System32\nvidia-smi.exe",
+        r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe",
+    ]
+    
+    for smi in nvsmi_candidates:
+        try:
+            cmd = [smi, "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw", "--format=csv,noheader,nounits"]
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+            if res.returncode == 0 and res.stdout.strip():
+                parts = [p.strip() for p in res.stdout.strip().split(",")]
+                gpu_util = float(parts[0]) if len(parts) > 0 else 0.0
+                mem_used = float(parts[1]) if len(parts) > 1 else 0.0
+                mem_total = float(parts[2]) if len(parts) > 2 else 8188.0
+                temp = float(parts[3]) if len(parts) > 3 else 0.0
+                power = float(parts[4]) if len(parts) > 4 else 0.0
+                break
+        except Exception:
+            continue
+
+    if mem_used == 0.0 and torch and torch.cuda.is_available():
+        try:
+            mem_used = round(torch.cuda.memory_allocated() / (1024 * 1024), 1)
+            mem_total = round(torch.cuda.get_device_properties(0).total_memory / (1024 * 1024), 1)
+        except Exception:
+            pass
 
     ram_used, ram_total = 0.0, 0.0
     if psutil:
