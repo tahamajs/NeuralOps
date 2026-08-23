@@ -1,5 +1,6 @@
 """Drift visualisation – overlapping histograms + dashboard summary."""
 
+import os
 from pathlib import Path
 from typing import Dict
 

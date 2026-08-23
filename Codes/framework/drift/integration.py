@@ -6,7 +6,7 @@ from typing import Dict, Optional
 import numpy as np
 
 from .config import DriftConfig
-from .detectors import DriftDetector
+from .detectors import DriftDetector, DriftReport
 
 
 def auto_drift_check(

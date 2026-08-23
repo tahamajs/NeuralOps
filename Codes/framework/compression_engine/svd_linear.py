@@ -4,7 +4,7 @@ SVD-based low-rank linear layer replacement with optional Fused SVD kernel accel
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Any
 
 import numpy as np
 import torch
