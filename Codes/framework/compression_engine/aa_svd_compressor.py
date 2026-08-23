@@ -90,10 +90,23 @@ class SVDLinear(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        nn.init.orthogonal_(self.U)
-        nn.init.orthogonal_(self.V)
-        if self.bias is not None:
-            nn.init.zeros_(self.bias)
+        with torch.no_grad():
+            if self.U.dtype in (torch.float16, torch.bfloat16):
+                u_fp32 = torch.empty_like(self.U, dtype=torch.float32, device="cpu")
+                nn.init.orthogonal_(u_fp32)
+                self.U.copy_(u_fp32.to(dtype=self.U.dtype, device=self.U.device))
+            else:
+                nn.init.orthogonal_(self.U)
+
+            if self.V.dtype in (torch.float16, torch.bfloat16):
+                v_fp32 = torch.empty_like(self.V, dtype=torch.float32, device="cpu")
+                nn.init.orthogonal_(v_fp32)
+                self.V.copy_(v_fp32.to(dtype=self.V.dtype, device=self.V.device))
+            else:
+                nn.init.orthogonal_(self.V)
+
+            if self.bias is not None:
+                nn.init.zeros_(self.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.use_fused_kernel:

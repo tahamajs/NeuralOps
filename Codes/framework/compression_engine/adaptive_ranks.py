@@ -1,5 +1,10 @@
 """
 Adaptive Ranks SVD Compressor: dynamic rank selection per layer based on singular value energy spectra.
+
+Dynamic cumulative singular value energy thresholding:
+    $$\\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)$$
+with symmetrical $\\sqrt{\\Sigma}$ singular value distribution:
+    $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = \\sqrt{\\Sigma_r} V^\\top_{:r, :}$$
 Registered as 'adaptive_ranks' and 'adaptive_svd'.
 """
 
@@ -22,18 +27,19 @@ logger = logging.getLogger(__name__)
 
 @COMPRESSOR_REGISTRY.register("adaptive_ranks")
 class AdaptiveRanksCompressor(BaseCompressor):
-    """
+    r"""
     Adaptive Ranks SVD Compressor.
 
-    Dynamically determines ranks per layer according to cumulative singular value energy threshold
+    Dynamically determines ranks per layer according to cumulative singular value energy threshold:
+        $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)$$
     and symmetrically distributes singular values:
-        U_factor = U_r * sqrt(Sigma_r), V_factor = sqrt(Sigma_r) * V_r^T.
+        $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = \sqrt{\Sigma_r} V^\top_{:r, :}$$
     """
 
     def __init__(
         self,
         model: nn.Module,
-        energy_threshold: float = 0.95,
+        energy_threshold: float = 0.92,
         min_rank: int = 16,
         target_modules: Optional[list[str]] = None,
         **kwargs: Any,
@@ -61,7 +67,10 @@ class AdaptiveRanksCompressor(BaseCompressor):
         return any(t in name for t in self.target_modules)
 
     def _compute_energy_rank(self, S: torch.Tensor, max_rank: int) -> int:
-        """Find smallest rank satisfying cumulative singular energy ratio >= threshold."""
+        r"""
+        Find smallest rank $r$ satisfying cumulative singular energy ratio $\ge$ threshold:
+        $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)$$
+        """
         s_squared = S ** 2
         total_energy = s_squared.sum()
         if total_energy <= 1e-12:
@@ -85,7 +94,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
 
         r = self._compute_energy_rank(S, max_r)
 
-        # Symmetrical square-root singular value distribution
+        # Symmetrical square-root singular value distribution:
+        # U_r = U[:, :r] * sqrt(Sigma_r), V_r = sqrt(Sigma_r) * V_r^T
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
@@ -146,8 +156,8 @@ AdaptiveTransformerCompressor = AdaptiveRanksCompressor
 
 def adaptive_ranks_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Adaptive ranks factory function."""
-    energy_threshold = getattr(comp_config, "energy_threshold", kwargs.get("energy_threshold", 0.95))
-    min_rank = getattr(comp_config, "min_rank", kwargs.get("min_rank", kwargs.get("rank", 16)))
+    energy_threshold = getattr(comp_config, "energy_threshold", kwargs.pop("energy_threshold", 0.92))
+    min_rank = getattr(comp_config, "min_rank", kwargs.pop("min_rank", kwargs.pop("rank", 16)))
     compressor = AdaptiveRanksCompressor(
         model, energy_threshold=energy_threshold, min_rank=min_rank, **kwargs
     )
@@ -163,3 +173,4 @@ __all__ = [
     "adaptive_ranks_factory",
     "adaptive_svd_factory",
 ]
+
