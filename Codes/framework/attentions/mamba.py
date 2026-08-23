@@ -66,7 +66,6 @@ class Mamba(BaseAttention):
         self.d_model: int = d_model
         # Projects input to 2× width then splits into two gating branches.
         self.in_proj: nn.Linear = nn.Linear(d_model, d_model * 2)
-        self.conv1d: nn.Conv1d = nn.Conv1d(d_model, d_model, kernel_size=4, groups=d_model, padding=2)
         self.out_proj: nn.Linear = nn.Linear(d_model, d_model)
 
     def forward(
@@ -100,13 +99,12 @@ class Mamba(BaseAttention):
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
-        B, L, D = hidden_states.shape
+        # in_proj: [B, L, D] -> [B, L, 2D]
         proj = self.in_proj(hidden_states)
+        # Split along last dim: each branch is [B, L, D]
         p1, p2 = proj.chunk(2, dim=-1)
-        
-        # Sequence mixing via depthwise 1D convolution
-        p1_conv = self.conv1d(p1.transpose(1, 2)).transpose(1, 2)[:, :L, :]
-        out = self.out_proj(F.silu(p1_conv) * p2)
+        # Gated product: SiLU(p1) * p2 then project back to D
+        out = self.out_proj(F.silu(p1) * p2)
 
         # Apply padding mask if provided
         if attention_mask is not None:
