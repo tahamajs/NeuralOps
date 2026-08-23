@@ -64,7 +64,7 @@ def get_completed_runs():
         try:
             with open(MASTER_LOG, "r", encoding="utf-8", errors="ignore") as f:
                 for line in f:
-                    if "<< SUCCESS:" in line or "NOTICE:" in line:
+                    if "<< SUCCESS:" in line:
                         if "attn=" in line and "task=" in line:
                             parts = line.split(" | ")
                             a = [p for p in parts if "attn=" in p]
