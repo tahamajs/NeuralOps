@@ -258,23 +258,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
                 fw["ATTENTION_REGISTRY"].keys(),
             )
             
-    # --- PEFT / LoRA Injection ---
-    try:
-        from peft import get_peft_model, LoraConfig, TaskType
-        # Methods that shouldn't receive LoRA because they have natively injected adapter logic or shouldn't be touched
-        no_lora_attn = {"svd", "svd_linear", "svd_linear_attn"}
-        if cfg.attn_type not in no_lora_attn:
-            peft_config = LoraConfig(
-                task_type=TaskType.SEQ_CLS, 
-                r=8, 
-                lora_alpha=32, 
-                lora_dropout=0.1,
-                target_modules=["q_lin", "v_lin"] if "distilbert" in cfg.model_name.lower() else ["q_proj", "v_proj"]
-            )
-            model = get_peft_model(model, peft_config)
-            logger.info("Successfully injected PEFT LoRA adapter (r=8) for lightweight fine-tuning.")
-    except Exception as e:
-        logger.warning(f"Could not inject PEFT LoRA. Falling back to full fine-tuning. Reason: {e}")
+    # Full end-to-end parameter fine-tuning enabled for all attention mechanisms
 
     model.to(device)
     n_params = fw["count_parameters"](model)
@@ -471,9 +455,39 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     comp_mb = sum(p.numel() * p.element_size() for p in compressed_model.parameters()) / 1024**2
     ratio = orig_mb / comp_mb if comp_mb > 0 else 1.0
 
-    model_dir = out_dir / "model"
-    compressed_model.save_pretrained(str(model_dir))
-    tokenizer.save_pretrained(str(model_dir))
+    # Evaluate compressed model on task validation split
+    eval_acc = 0.0
+    eval_f1 = 0.0
+    eval_loss = 0.0
+    try:
+        dataset, num_labels, _ = load_data(cfg, tokenizer)
+        eval_args = fw["TrainingArguments"](
+            output_dir=str(out_dir / "tmp_eval"),
+            per_device_eval_batch_size=cfg.batch_size * 2,
+            remove_unused_columns=False,
+            report_to="none",
+            save_strategy="no",
+        )
+        eval_trainer = fw["Trainer"](
+            model=compressed_model,
+            args=eval_args,
+            eval_dataset=dataset.get("validation", dataset.get("validation_matched")),
+            data_collator=fw["DataCollatorWithPadding"](tokenizer),
+            compute_metrics=fw["get_task_metrics"](cfg.task),
+        )
+        eval_res = eval_trainer.evaluate()
+        eval_acc = eval_res.get("eval_accuracy", eval_res.get("eval_score", 0.0))
+        eval_f1 = eval_res.get("eval_f1_macro", eval_acc)
+        eval_loss = eval_res.get("eval_loss", 0.0)
+        import shutil
+        shutil.rmtree(out_dir / "tmp_eval", ignore_errors=True)
+    except Exception as e:
+        logger.warning("Could not evaluate compressed model on validation set: %s", e)
+
+    if getattr(cfg, "save_model", False):
+        model_dir = out_dir / "model"
+        compressed_model.save_pretrained(str(model_dir))
+        tokenizer.save_pretrained(str(model_dir))
 
     stats = {
         "compressor": compressor_name,
@@ -481,6 +495,9 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
         "compressed_size_mb": round(comp_mb, 2),
         "reduction_ratio": round(ratio, 3),
         "compression_rank": rank,
+        "accuracy": eval_acc,
+        "f1": eval_f1,
+        "loss": eval_loss,
     }
     logger.info("Compression stats: %s", stats)
 

@@ -226,8 +226,8 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                     comp_name = attn.replace("compress_", "")
                     cfg.compressor = comp_name
                     result = run_compress(cfg, fw, logger)
-                    # Extract compression metrics
-                    acc = result.get("accuracy", result.get("reduction_ratio", 1.0) / 10.0)
+                    # Extract real compression metrics
+                    acc = result.get("accuracy", 0.0)
                     f1 = result.get("f1", acc)
                     loss = result.get("loss", 0.0)
                 else:
@@ -241,6 +241,17 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                 # Save final metrics
                 with open(exp_dir / "metrics.json", "w", encoding="utf-8") as f:
                     json.dump({"accuracy": round(acc*100, 2), "f1": round(f1*100, 2), "loss": round(loss, 4), "time_seconds": round(elapsed, 1)}, f)
+                
+                # Clean all heavy model binaries to prevent disk space exhaustion (os error 112)
+                import shutil
+                shutil.rmtree(exp_dir / "checkpoints", ignore_errors=True)
+                shutil.rmtree(exp_dir / "model", ignore_errors=True)
+                for _p in exp_dir.glob("*.safetensors"):
+                    _p.unlink(missing_ok=True)
+                for _p in exp_dir.glob("*.bin"):
+                    _p.unlink(missing_ok=True)
+                for _p in exp_dir.glob("*.pt"):
+                    _p.unlink(missing_ok=True)
 
                 log_master(f"[Worker-{worker_id}] [{idx}/{total_tasks}] << SUCCESS: attn={attn} | task={task} | Acc: {acc*100:.2f}% | F1: {f1*100:.2f}% | Loss: {loss:.4f} | Time: {elapsed:.1f}s")
                 update_worker_status_file(worker_id, {
