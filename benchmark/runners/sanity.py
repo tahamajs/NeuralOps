@@ -13,7 +13,7 @@ def run_sanity_check(model: nn.Module, attention_model_name: str) -> Dict[str, A
     Perform structural and gradient integrity checks on the instantiated model.
 
     Validation steps:
-    1. Pass synthetic batch (B=4, L=64) through the first attention layer and full model.
+    1. Pass synthetic batch through the attention layer and full model.
     2. Assert tensor output shapes [B, L, D] and correct floating-point dtypes.
     3. Verify backward pass produces non-zero, finite, non-NaN gradients across all trainable weights.
     4. Validate attention matrix output formats when output_attentions=True.
@@ -43,11 +43,15 @@ def run_sanity_check(model: nn.Module, attention_model_name: str) -> Dict[str, A
                 mask[:, -12:] = False  # ~20% padding zeros
 
                 attn.eval()
-                # Direct layer forward
+                # Try standard custom attention call first, then standard HF Multi-Head attention signature
                 try:
                     outputs = attn(hidden_states, attention_mask=mask)
                 except TypeError:
-                    outputs = attn(hidden_states)
+                    try:
+                        # HuggingFace standard DistilBertAttention format
+                        outputs = attn(query=hidden_states, key=hidden_states, value=hidden_states, mask=mask.float())
+                    except Exception:
+                        outputs = attn(hidden_states)
 
                 if isinstance(outputs, tuple):
                     out_tensor = outputs[0]
