@@ -1,0 +1,24 @@
+{
+  "attentions": [
+    {
+      "id": "find: -printf: unknown primary or operator",
+      "title": "Find:  Printf: Unknown Primary Or Operator",
+      "path": "attentions/find: -printf: unknown primary or operator"
+    }
+  ],
+  "compressions": [
+    {
+      "id": "find: -printf: unknown primary or operator",
+      "title": "Find:  Printf: Unknown Primary Or Operator",
+      "path": "compression_engine/find: -printf: unknown primary or operator"
+    }
+  ],
+  "framework": [
+    {
+      "id": "find: -printf: unknown primary or operator",
+      "title": "Find:  Printf: Unknown Primary Or Operator",
+      "path": "find: -printf: unknown primary or operator"
+    }
+  ],
+  "blog_series": []
+}
