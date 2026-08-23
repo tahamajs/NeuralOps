@@ -24,6 +24,8 @@ let activeFilter = 'all';
 let activeItem   = null;
 let cmdSelectedIdx = -1;
 let cmdFilteredItems = [];
+const telemetryBase = (window.FRAMEWORK_API_BASE || localStorage.getItem('framework-api-base') || '').replace(/\/$/, '');
+const telemetryUrl = path => `${telemetryBase}${path}`;
 
 // ── DOM ─────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -188,8 +190,7 @@ async function loadCatalog() {
 async function refreshLiveTelemetry() {
     let updated = false;
     try {
-        const API_BASE = (window.location.hostname === '192.168.1.100') ? '' : 'http://192.168.1.100:8080';
-        const hRes = await fetch(API_BASE + '/results/all_histories.json?t=' + Date.now());
+        const hRes = await fetch(telemetryUrl('/results/all_histories.json?t=' + Date.now()));
         if (hRes.ok) {
             plotHistories = await hRes.json();
             updated = true;
@@ -198,8 +199,7 @@ async function refreshLiveTelemetry() {
 
     // If local API stats available, merge real-time active worker loss histories
     try {
-        const API_BASE = (window.location.hostname === '192.168.1.100') ? '' : 'http://192.168.1.100:8080';
-        const sRes = await fetch(API_BASE + '/api/stats');
+        const sRes = await fetch(telemetryUrl('/api/stats'));
         if (sRes.ok) {
             const stats = await sRes.json();
             if (stats.gpu && stats.gpu.length >= 2) {
@@ -441,6 +441,7 @@ async function loadArticle(item) {
     const candidates = [
         item.path,
         `./${item.path}`,
+        `../${item.path}`,
         `content/${cat}/${item.id}`,
         `./content/${cat}/${item.id}`,
         `../Codes/framework/${item.category === 'compressions' ? 'compression_engine' : cat}/${item.id}`,
@@ -1575,4 +1576,3 @@ window.addEventListener('hashchange', handleHash);
     handleHash();
 
 });
-
