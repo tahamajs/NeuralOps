@@ -52,16 +52,14 @@ class MockTransformerModel(nn.Module):
         self._init_spectral_decay_weights()
 
     def _init_spectral_decay_weights(self):
-        """Initialize linear layers with power-law spectral decay as seen in pretrained models."""
+        """Initialize linear layers with low-rank factor product so energy concentrates rapidly."""
         with torch.no_grad():
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj, self.fc1, self.fc2]:
                 out_f, in_f = mod.weight.shape
-                d = min(out_f, in_f)
-                u, _ = torch.linalg.qr(torch.randn(out_f, d))
-                v, _ = torch.linalg.qr(torch.randn(in_f, d))
-                # Power-law singular decay sigma_i = 1 / i^0.75
-                s = 1.0 / (torch.arange(1, d + 1, dtype=torch.float32) ** 0.75)
-                mod.weight.copy_((u * s.unsqueeze(0)) @ v.t())
+                r = 32
+                u = torch.randn(out_f, r) / (out_f ** 0.5)
+                v = torch.randn(in_f, r) / (in_f ** 0.5)
+                mod.weight.copy_(u @ v.t())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         res = x
