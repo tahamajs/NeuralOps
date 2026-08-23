@@ -60,7 +60,6 @@ def build_model_with_attention(
 
     try:
         config = AutoConfig.from_pretrained(base_model_name, num_labels=num_labels)
-        # Regression flag for STS-B
         if num_labels == 1:
             config.problem_type = "regression"
 
@@ -96,12 +95,12 @@ def build_model_with_attention(
                 )
                 layer.attention = new_attn
             else:
-                # Direct class lookup in registry
                 candidate_keys = [model_key, f"{model_key}_attention", f"{model_key}_layer", f"{model_key}_module"]
                 attn_cls = None
                 for ck in candidate_keys:
-                    if ck in ATTENTION_REGISTRY and isinstance(ATTENTION_REGISTRY[ck], type):
-                        attn_cls = ATTENTION_REGISTRY[ck]
+                    candidate = ATTENTION_REGISTRY.get(ck)
+                    if candidate is not None and isinstance(candidate, type):
+                        attn_cls = candidate
                         break
 
                 if attn_cls is None:
