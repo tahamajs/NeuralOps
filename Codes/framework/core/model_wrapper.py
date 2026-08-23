@@ -206,14 +206,9 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
             has_custom = os.path.exists(
                 os.path.join(model_id, "unified_attention_config.json")
             )
-        else:
-            # Assume Hub – we'll let the mixin handle it
-            has_custom = True
 
         if has_custom:
-            return cls.from_pretrained(
-                model_id, **kwargs
-            )  # calls mixin, then _from_pretrained
+            return cls._from_pretrained(model_id, **kwargs)
         else:
             # Fresh model – no custom attention yet
             if task == "sequence_classification":
