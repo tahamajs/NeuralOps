@@ -4,8 +4,8 @@
 
 | Rank | Model | Score | Avg GLUE | SST-2 | QNLI | RTE | MRPC | CoLA | STS-B | Params | Throughput (seq=512) | VRAM (seq=512) | Stability | Status |
 |:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| 1 | **full** | **0.0** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 66.96M | N/A | N/A | `N/A` | `FAIL_SANITY` |
-| 2 | **svd_linear** | **0.0** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | `N/A` | `FAIL_BUILD` |
+| 1 | **full** | **82.0** | 0.4324 | 0.5000 | N/A | N/A | 0.3648 | N/A | N/A | 66.96M | N/A | N/A | `FAIL` | `OK` |
+| 2 | **svd_linear** | **76.69** | 0.3750 | 0.5625 | N/A | N/A | 0.1875 | N/A | N/A | 59.93M | N/A | N/A | `FAIL` | `OK` |
 
 ### 📊 Scoring Rubric Breakdown
 - **Quality (40%)**: Ratio of model Average GLUE score against Full Standard Softmax Attention.

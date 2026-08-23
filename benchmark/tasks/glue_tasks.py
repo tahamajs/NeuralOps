@@ -70,3 +70,5 @@ def get_task_info(task_name: str) -> Dict[str, Any]:
         return GLUE_TASK_CONFIGS[clean_name]
     # Default fallback to SST-2 schema
     return GLUE_TASK_CONFIGS["sst2"]
+
+from .dataset_loader import load_and_tokenize_glue_task  # re-export for backwards compatibility
