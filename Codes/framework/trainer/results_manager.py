@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -8,6 +9,17 @@ import yaml
 
 from .callbacks import GradientNormCallback, MemoryCallback, TimeCallback
 from .utils import plot_training_curves
+
+
+def _sanitize_json_value(value: Any) -> Any:
+    """Make training logs strict JSON without hiding non-finite metrics."""
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {str(k): _sanitize_json_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_sanitize_json_value(v) for v in value]
+    return value
 
 
 class ResultsManager:
@@ -68,9 +80,10 @@ class ResultsManager:
         record = {"step": step} if step is not None else {}
         record.update(metrics)
         record["timestamp"] = datetime.now().isoformat()
+        record = _sanitize_json_value(record)
         self.history.append(record)
         with open(self.metrics_path, "a") as f:
-            f.write(json.dumps(record) + "\n")
+            f.write(json.dumps(record, allow_nan=False) + "\n")
 
     def save_plots(self) -> None:
         """Persist plots to disk."""
@@ -122,12 +135,12 @@ class ResultsManager:
             "run_dir": str(self.run_dir),
             "total_steps": len(self.history),
             "config": _make_serializable(self.config),
-            "final_metrics": _make_serializable(final_metrics or (self.history[-1] if self.history else {})),
+            "final_metrics": _sanitize_json_value(_make_serializable(final_metrics or (self.history[-1] if self.history else {}))),
             "timestamp": datetime.now().isoformat(),
         }
         summary_path = self.run_dir / "run_summary.json"
         with open(summary_path, "w") as f:
-            json.dump(summary, f, indent=2)
+            json.dump(summary, f, indent=2, allow_nan=False)
 
         card_path = self.run_dir / "run_summary.md"
         with open(card_path, "w") as f:

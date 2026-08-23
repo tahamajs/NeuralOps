@@ -12,10 +12,23 @@ def get_device(device_str: str = "auto") -> torch.device:
     if device_str == "auto":
         if torch.cuda.is_available():
             return torch.device("cuda")
-        if torch.backends.mps.is_available():
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return torch.device("mps")
         return torch.device("cpu")
-    return torch.device(device_str)
+    device = torch.device(device_str)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but no CUDA device is available")
+    if device.type == "mps" and (
+        not hasattr(torch.backends, "mps") or not torch.backends.mps.is_available()
+    ):
+        raise RuntimeError("MPS was requested, but MPS is not available")
+    if device.type == "cuda" and device.index is not None:
+        count = torch.cuda.device_count()
+        if device.index >= count:
+            raise RuntimeError(
+                f"CUDA device index {device.index} is unavailable; {count} device(s) detected"
+            )
+    return device
 
 
 def set_seed(seed: int, deterministic: bool = False) -> None:
@@ -88,4 +101,3 @@ def ste_round(x: torch.Tensor) -> torch.Tensor:
 def ste_clamp(x: torch.Tensor, min_val: float, max_val: float) -> torch.Tensor:
     r"""Straight-Through Estimator (STE) for clamping."""
     return x + (torch.clamp(x, min_val, max_val) - x).detach()
-
