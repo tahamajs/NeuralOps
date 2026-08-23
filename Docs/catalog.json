@@ -6,6 +6,11 @@
             "path": "Attention_Mechanisms_For_Paper.md"
         },
         {
+            "id": "COMPLETE_RESEARCH_GUIDE.md",
+            "title": "Complete SVD Linear Attention Research Guide",
+            "path": "COMPLETE_RESEARCH_GUIDE.md"
+        },
+        {
             "id": "DEPLOYMENT.md",
             "title": "Research Hub deployment",
             "path": "DEPLOYMENT.md"
