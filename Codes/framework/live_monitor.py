@@ -128,6 +128,8 @@ def get_active_workers():
 
 def get_completed_results():
     results = {}
+    
+    # 1. Read from MASTER_LOG
     if MASTER_LOG.exists():
         try:
             lines = MASTER_LOG.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -147,6 +149,38 @@ def get_completed_results():
                         }
         except Exception:
             pass
+
+    # 2. Also scan RESULTS_DIR for any experiment metrics.json
+    if RESULTS_DIR.exists():
+        try:
+            import glob
+            for mf in glob.glob(str(RESULTS_DIR / "*_*_s*" / "metrics.json")):
+                p = Path(mf)
+                dir_name = p.parent.name
+                if dir_name not in results:
+                    try:
+                        data = json.loads(p.read_text(encoding="utf-8", errors="ignore"))
+                        parts = dir_name.rsplit("_", 2)
+                        attn_name = parts[0] if len(parts) >= 3 else dir_name
+                        task_name = parts[1] if len(parts) >= 3 else "sst2"
+                        acc_val = float(data.get("accuracy", data.get("acc", 0.0)))
+                        f1_val = float(data.get("f1", data.get("eval_f1_macro", acc_val)))
+                        loss_val = float(data.get("loss", data.get("eval_loss", 0.0)))
+                        time_val = float(data.get("time_seconds", data.get("time_s", 0.0)))
+                        results[dir_name] = {
+                            "attn": attn_name,
+                            "task": task_name,
+                            "acc": acc_val,
+                            "f1": f1_val,
+                            "loss": loss_val,
+                            "time_s": time_val,
+                            "status": "completed"
+                        }
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     return results
 
 
