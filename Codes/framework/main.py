@@ -67,14 +67,19 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 _potential_caches = [
     _CODES.parent / "cache",
     Path.home() / ".cache" / "huggingface" / "hub",
+    Path.home() / ".cache" / "huggingface",
+    Path("D:/huggingface_cache"),
+    Path("C:/huggingface_cache"),
     Path("C:/Users/Hadi Schumacher/SVD_Project/cache"),
     Path("C:/Users/Hadi Schumacher/.cache/huggingface/hub"),
+    Path("C:/Users/Hadi Schumacher/.cache/huggingface"),
+    Path("D:/SVD_Project/cache"),
 ]
 for pc in _potential_caches:
     if pc.exists():
-        os.environ.setdefault("HF_HOME", str(pc))
-        os.environ.setdefault("HF_HUB_CACHE", str(pc))
-        os.environ.setdefault("TRANSFORMERS_CACHE", str(pc))
+        os.environ["HF_HOME"] = str(pc)
+        os.environ["HF_HUB_CACHE"] = str(pc)
+        os.environ["TRANSFORMERS_CACHE"] = str(pc)
         break
 
 # ---------------------------------------------------------------------------
