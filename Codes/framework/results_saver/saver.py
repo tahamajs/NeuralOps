@@ -459,15 +459,15 @@ class ResultsSaver:
 
             if opts.get("loss_curve", True):
                 try:
-                    plot_loss_curve(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                    plot_loss_curves(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
                 except Exception as e:
-                    logger.debug(f"plot_loss_curve error: {e}")
+                    logger.debug(f"plot_loss_curves error: {e}")
 
             if opts.get("accuracy_curve", True):
                 try:
-                    plot_accuracy_curve(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                    plot_accuracy_curves(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
                 except Exception as e:
-                    logger.debug(f"plot_accuracy_curve error: {e}")
+                    logger.debug(f"plot_accuracy_curves error: {e}")
 
             if opts.get("lr_schedule", True):
                 try:

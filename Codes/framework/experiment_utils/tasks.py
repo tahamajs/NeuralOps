@@ -8,6 +8,9 @@ import threading
 import traceback
 from pathlib import Path
 
+import psutil
+from django.conf import settings
+
 try:
     from asgiref.sync import async_to_sync
     from channels.layers import get_channel_layer
