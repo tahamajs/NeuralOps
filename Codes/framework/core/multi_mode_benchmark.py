@@ -462,7 +462,14 @@ class MultiModeBenchmarkRunner:
     ):
         self.model_name_or_path = model_name_or_path
         self.device = self._resolve_device(device)
-        self.dtype = getattr(torch, dtype) if isinstance(dtype, str) else dtype
+        requested_dtype = getattr(torch, dtype) if isinstance(dtype, str) else dtype
+        # CPU kernels do not consistently support half precision.  Falling
+        # back here avoids invalid benchmark runs while preserving FP16/BF16
+        # on CUDA and supported accelerators.
+        if self.device.type == "cpu" and requested_dtype in (torch.float16, torch.bfloat16):
+            logger.warning("%s is not portable for CPU benchmarking; using float32.", requested_dtype)
+            requested_dtype = torch.float32
+        self.dtype = requested_dtype
         self.batch_size = batch_size
         self.seq_len = seq_len
         self.num_samples = num_samples
@@ -770,6 +777,34 @@ class MultiModeBenchmarkRunner:
         # Metrics calculation
         peak_vram, allocated_vram = self._measure_memory()
         avg_loss = total_loss / max(steps_executed, 1)
+        if not math.isfinite(avg_loss):
+            error = f"non-finite evaluation loss ({avg_loss!r}); result is invalid"
+            logger.error("Mode %s produced %s", mode, error)
+            del model
+            del base_model
+            cleanup_gpu_memory()
+            return ModeBenchmarkResult(
+                mode=mode,
+                model_name=self.model_name_or_path,
+                dataset=dataset_name,
+                device=str(self.device),
+                dtype=str(self.dtype),
+                batch_size=self.batch_size,
+                seq_len=self.seq_len,
+                num_samples=self.num_samples,
+                perplexity=float("nan"),
+                loss=float("nan"),
+                peak_vram_mb=0.0,
+                allocated_vram_mb=0.0,
+                latency_ms_per_token=0.0,
+                latency_ms_per_step=0.0,
+                throughput_tokens_per_sec=0.0,
+                num_parameters=num_params,
+                compression_ratio=1.0,
+                memory_savings_pct=0.0,
+                execution_status="FAILED",
+                error_message=error,
+            )
         try:
             ppl = math.exp(min(avg_loss, 20.0))  # Cap exponential overflow
         except OverflowError:
