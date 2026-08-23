@@ -110,6 +110,7 @@ class MegaOrchestrator:
                 compute_metrics=get_task_metrics(self.cfg.training.task),
             )
             # Add basic callbacks
+            from framework.trainer.callbacks import MemoryCallback, TimeCallback
             trainer.add_callback(MemoryCallback())
             trainer.add_callback(TimeCallback())
 
