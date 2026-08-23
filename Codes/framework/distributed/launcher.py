@@ -16,6 +16,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple
 
+import torch
+
 from .config import DistributedConfig
 from framework.core.memory import cleanup_gpu_memory
 
@@ -99,9 +101,19 @@ def launch_distributed(
     # FIX: Registers SIGTERM and SIGINT signal handlers to terminate all child processes
     # and free GPU memory if rank 0 OOMs or user interrupts.
     """
-    # Single GPU — no launcher
-    if config.num_nodes == 1 and config.num_gpus == 1 and not config.elastic:
-        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, config.gpu_ids or [0]))
+    # num_gpus=0 means "all visible GPUs".  On CPU-only hosts there is still
+    # one inline worker, which keeps local/server smoke tests portable.
+    available_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    requested_gpus = config.num_gpus or available_gpus or 1
+    if config.gpu_ids is not None:
+        requested_gpus = len(config.gpu_ids)
+    if requested_gpus < 1:
+        raise ValueError("num_gpus must be positive, or 0 to use all available GPUs")
+
+    # Single worker — no torchrun process tree is needed.
+    if config.num_nodes == 1 and requested_gpus == 1 and not config.elastic:
+        if config.gpu_ids and torch.cuda.is_available():
+            os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, config.gpu_ids))
         try:
             train_fn()
             return 0
@@ -119,7 +131,7 @@ def launch_distributed(
             "-m",
             "torch.distributed.run",
             f"--nnodes={config.elastic_min_nodes}:{config.elastic_max_nodes}",
-            f"--nproc_per_node={config.num_gpus}",
+            f"--nproc_per_node={requested_gpus}",
             f"--rdzv_backend={config.elastic_rdzv_backend}",
             f"--rdzv_endpoint={config.elastic_rdzv_endpoint}",
             f"--rdzv_id={config.elastic_run_id}",
@@ -132,7 +144,7 @@ def launch_distributed(
             "-m",
             "torch.distributed.run",
             f"--nnodes={config.num_nodes}",
-            f"--nproc_per_node={config.num_gpus}",
+            f"--nproc_per_node={requested_gpus}",
             f"--master_addr={config.master_addr}",
             f"--master_port={config.master_port}",
             f"--node_rank={config.node_rank}",
@@ -232,4 +244,3 @@ def _cleanup_temp_files(paths: List[Path]) -> None:
                 p.unlink()
         except Exception:
             pass
-
