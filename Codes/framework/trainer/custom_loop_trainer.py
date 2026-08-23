@@ -60,16 +60,20 @@ class CustomLoopTrainer(BaseTrainer):
     def _make_loader(self, dataset: Any, shuffle: bool = False) -> DataLoader:
         """Make DataLoader optimized for high-throughput GPU training."""
         pin = self.device.type in ["cuda", "mps"]
-        num_workers = int(self.config.get("num_workers", 0))
-        batch_size = int(self.config.get("batch_size", 16))
-        return DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            pin_memory=pin,
-            num_workers=num_workers,
-            collate_fn=dataset.collate_fn if hasattr(dataset, "collate_fn") else None,
-        )
+        num_workers = int(self.config.get("num_workers", 4 if self.device.type == "cuda" else 0))
+        batch_size = int(self.config.get("batch_size", 128))
+        loader_kwargs = {
+            "batch_size": batch_size,
+            "shuffle": shuffle,
+            "pin_memory": pin,
+            "num_workers": num_workers,
+            "collate_fn": dataset.collate_fn if hasattr(dataset, "collate_fn") else None,
+        }
+        if num_workers > 0:
+            loader_kwargs["prefetch_factor"] = 2
+        if torch.cuda.is_available():
+            torch.backends.cudnn.benchmark = True
+        return DataLoader(dataset, **loader_kwargs)
 
     def train_epoch(
         self,
