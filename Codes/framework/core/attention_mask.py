@@ -132,7 +132,18 @@ def get_token_valid_mask(
                 return last_dim_mask
             elif torch.is_floating_point(last_dim_mask) and (last_dim_mask < 0).any():
                 return last_dim_mask >= -1.0
-            else:
-                return last_dim_mask > 0.5
-
     return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
+
+
+def create_causal_mask(seq_len: int, device: Optional[torch.device] = None) -> torch.Tensor:
+    r"""Create a lower-triangular causal attention mask [SeqLen, SeqLen] where True = attend, False = mask."""
+    mask = torch.tril(torch.ones((seq_len, seq_len), dtype=torch.bool, device=device))
+    return mask
+
+
+def create_band_mask(seq_len: int, window_size: int, device: Optional[torch.device] = None) -> torch.Tensor:
+    r"""Create a sliding window band attention mask [SeqLen, SeqLen] where positions |i - j| <= window_size are True."""
+    idx = torch.arange(seq_len, device=device)
+    diff = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
+    return diff <= window_size
+
