@@ -56,7 +56,7 @@ def train_model(
     is_regression = task_info["is_regression"]
 
     # Resolve training hyperparameters
-    lr_val = lr if lr is not None else float(config.get("learning_rates", [3e-5])[0])
+    lr_val = float(lr) if lr is not None else float(config.get("learning_rates", [3e-5])[0])
     bs_val = batch_size if batch_size is not None else int(config.get("batch_size", 32))
     task_epochs = config.get("epochs", {}).get(task_name.lower(), 3)
     epochs_val = epochs if epochs is not None else task_epochs
