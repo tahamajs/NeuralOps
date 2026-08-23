@@ -24,6 +24,8 @@ _MODULE_MAP: Dict[str, str] = {
     "get_transformer_layers": "architecture",
     "apply_attention_mask": "attention_mask",
     "get_token_valid_mask": "attention_mask",
+    "create_causal_mask": "attention_mask",
+    "create_band_mask": "attention_mask",
     "available_attention_types": "attention_utils",
     "inject_attention": "attention_utils",
     "softpick": "attention_utils",
