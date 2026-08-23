@@ -1,0 +1,8 @@
+\section{Broader Impacts \& Limitations}
+\label{sec:impacts}
+
+\subsection{Broader Impacts}
+The ability to process infinitely long sequences with bounded state memory and accelerated hardware profiles opens new frontiers for LLM deployment on edge devices and scientific applications involving massive continuous data streams (e.g., genome sequencing, high-frequency trading logs).
+
+\subsection{Limitations \& Future Work}
+Despite its efficiency, the linear formulation strictly prohibits causal masking over arbitrary non-contiguous token spans (e.g., block-causal structures). Future work will explore adapting the decay gating mechanism to support hierarchical sparse retrieval within the compressed state matrix.

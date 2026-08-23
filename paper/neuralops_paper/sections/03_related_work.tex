@@ -1,0 +1,8 @@
+\section{Related Work}
+\label{sec:related}
+
+\textbf{Linear and Kernelized Attention:} Seminal works such as Linear Transformers~\cite{katharopoulos2020transformers}, Performer~\cite{choromanski2020rethinking}, and CosFormer~\cite{qin2022cosformer} replaced softmax normalization with positive definite kernel feature maps. Recent advancements in linear state-space models (SSMs) including Mamba~\cite{gu2023mamba}, RWKV~\cite{peng2023rwkv}, and RetNet~\cite{sun2023retentive} introduced decay mechanisms, yet remain decoupled from hardware-native SVD projection hierarchies.
+
+\textbf{Low-Rank Compression and SVD:} SVD-based parameter reduction (e.g., ASVD~\cite{yuan2023asvd}, SliceGPT~\cite{ashkboos2024slicegpt}) projects dense weights onto dominant singular subspaces. However, standard SVD compression introduces catastrophic zero-shot degradation unless calibrated with empirical covariance matrices or adapted with LoRA~\cite{hu2021lora}.
+
+\textbf{Riemannian Optimization in Deep Learning:} Optimization on matrix manifolds (e.g., Stiefel and Grassmann manifolds) has been studied theoretically~\cite{absil2008optimization,edelman1998geometry}. NeuralOps applies Stiefel optimization directly to factorized transformer projection matrices with automated parameter partitioning and hybrid Riemannian-Euclidean gradient clipping.
