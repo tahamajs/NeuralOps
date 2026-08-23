@@ -2,7 +2,7 @@
   "full": {
     "model_name": "full",
     "status": "FAIL_SANITY",
-    "timestamp": "2026-08-23 07:53:49",
+    "timestamp": "2026-08-23 07:58:02",
     "glue_tasks": {},
     "profiling": {},
     "stability": {},
