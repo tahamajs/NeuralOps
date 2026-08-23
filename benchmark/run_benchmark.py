@@ -125,6 +125,17 @@ def main() -> None:
     args = parse_arguments()
     config = load_configurations(args)
     output_dir = Path(config.get("output_dir", "benchmark_output"))
+
+    # Setup Target Execution Device
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        logger.info(f"Target Device: CUDA ({torch.cuda.get_device_name()})")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+        logger.info("Target Device: Apple MPS")
+    else:
+        device = torch.device("cpu")
+        logger.info("Target Device: CPU")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = setup_logging(output_dir)
@@ -185,6 +196,10 @@ def main() -> None:
         base_model, build_status = build_model_with_attention(
             model_name=model_name,
             base_model_name=config.get("model_name", "distilbert-base-uncased")
+        if base_model is not None:
+            base_model = base_model.to(device)
+        if base_model is not None:
+            base_model = base_model.to(device)
         if base_model is not None:
             base_model = base_model.to(device),
             num_labels=2,
@@ -261,6 +276,10 @@ def main() -> None:
             prof_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=False)
             if prof_model is not None:
                 prof_model = prof_model.to(device)
+            if prof_model is not None:
+                prof_model = prof_model.to(device)
+            if prof_model is not None:
+                prof_model = prof_model.to(device)
             prof_res = profile_model(
                 model=prof_model,
                 seq_lengths=config.get("profile_seq_lengths", [128, 256, 512]),
@@ -295,6 +314,10 @@ def main() -> None:
         if not args.skip_diagnostics:
             logger.info("  🔬 Running Layer 4 Structural & Gradient Diagnostics...")
             diag_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=True)
+            if diag_model is not None:
+                diag_model = diag_model.to(device)
+            if diag_model is not None:
+                diag_model = diag_model.to(device)
             if diag_model is not None:
                 diag_model = diag_model.to(device)
             dummy_inputs = {
