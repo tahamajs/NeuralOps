@@ -92,7 +92,7 @@ def train_model(
 
     # Mixed precision context
     use_cuda_amp = torch.cuda.is_available() and config.get("mixed_precision") in ("bf16", "fp16")
-    scaler = torch.cuda.amp.GradScaler(enabled=(config.get("mixed_precision") == "fp16" and use_cuda_amp))
+    scaler = torch.amp.GradScaler("cuda", enabled=(config.get("mixed_precision") == "fp16" and use_cuda_amp)) if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler") else torch.cuda.amp.GradScaler(enabled=(config.get("mixed_precision") == "fp16" and use_cuda_amp))
     amp_dtype = torch.bfloat16 if config.get("mixed_precision") == "bf16" else torch.float16
 
     start_time = time.time()
