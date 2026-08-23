@@ -27,7 +27,7 @@ To compress sequence length, head-specific or parameter-shared linear projection
 The scaled dot-product score matrix $S_h \in \mathbb{R}^{B 	imes H 	imes L 	imes k}$ is computed as:
 
 \[
-S_h = rac{Q_h \widetilde{K}_h^	op}{\sqrt{d_k}} \in \mathbb{R}^{B 	imes H 	imes L 	imes k}
+S_h =  rac{Q_h \widetilde{K}_h^	op}{\sqrt{d_k}} \in \mathbb{R}^{B 	imes H 	imes L 	imes k}
 \]
 
 Applying row-wise Softmax along the compressed dimension $k$:
@@ -39,7 +39,7 @@ A_h = 	ext{Softmax}_k (S_h) \in \mathbb{R}^{B 	imes H 	imes L 	imes k}
 Context aggregation yields head representation $O_h \in \mathbb{R}^{B 	imes H 	imes L 	imes d_k}$:
 
 \[
-O_h = A_h \widetilde{V}_h = 	ext{Softmax}\left( rac{Q_h (E_h K_h)^	op}{\sqrt{d_k}} 
+O_h = A_h \widetilde{V}_h = 	ext{Softmax}\left(  rac{Q_h (E_h K_h)^	op}{\sqrt{d_k}} 
 ight) (F_h V_h)
 \]
 
@@ -92,7 +92,7 @@ Input: hidden_states [B, L, D]
 - **Input Projections ($W_Q, W_K, W_V$)**: $3 	imes (2 B L D^2) = 6 B L D^2$ FLOPs
 - **Sequence Linear Projections ($E K, F V$)**: $2 	imes (2 B H \cdot k \cdot L \cdot d_k) = 4 B L k D$ FLOPs
 - **Score Matrix Computation ($Q \widetilde{K}^	op$)**: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
-- **Softmax Normalization**: $pprox 5 B H L k$ FLOPs
+- **Softmax Normalization**: $ pprox 5 B H L k$ FLOPs
 - **Context Matrix Multiplication ($A \widetilde{V}$)**: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
 - **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
 
