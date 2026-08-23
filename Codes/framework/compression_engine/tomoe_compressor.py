@@ -32,7 +32,7 @@ class ToMoELinear(nn.Module):
             mask = torch.tensor(assignments == e)  # (out_features,)
             self.masks.append(mask)
             expert = nn.Linear(
-                in_features, mask.sum().item(), bias=original.bias is not None
+                self.in_features, mask.sum().item(), bias=original.bias is not None
             )
             # Copy the relevant rows of the original weight
             expert.weight.data = original.weight.data[mask].clone()
@@ -41,7 +41,7 @@ class ToMoELinear(nn.Module):
             self.experts.append(expert)
 
         # Router (learned)
-        self.router = nn.Linear(in_features, num_experts)
+        self.router = nn.Linear(self.in_features, num_experts)
 
     def forward(self, x):
         # x: (..., in_features)
