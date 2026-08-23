@@ -23,11 +23,18 @@ logger = logging.getLogger(__name__)
 class OptunaOptimizer(BaseOptimizer):
     """Optuna hyperparameter optimization with distributed NCCL deadlock prevention."""
 
-    SAMPLER_MAP = {
-        "tpe": optuna.samplers.TPESampler,
-        "random": optuna.samplers.RandomSampler,
-        "cma_es": optuna.samplers.CmaEsSampler,
-    }
+    # Keep the backend importable when Optuna is not installed.  Optuna is an
+    # optional HPO dependency and importing the framework should not fail just
+    # because a caller is using another backend.
+    SAMPLER_MAP = (
+        {
+            "tpe": optuna.samplers.TPESampler,
+            "random": optuna.samplers.RandomSampler,
+            "cma_es": optuna.samplers.CmaEsSampler,
+        }
+        if optuna is not None
+        else {}
+    )
 
     def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)
@@ -38,6 +45,7 @@ class OptunaOptimizer(BaseOptimizer):
         **kwargs: Any,
     ) -> Tuple[Dict[str, Any], float]:
         """Optimize hyperparameters with synchronous distributed trial pruning."""
+        self._require_optuna()
         direction = "maximize" if self.config.direction == "maximize" else "minimize"
         sampler_cls = self.SAMPLER_MAP.get(
             self.config.algorithm.value, optuna.samplers.TPESampler
@@ -117,6 +125,7 @@ class OptunaOptimizer(BaseOptimizer):
 
     def _create_pruner(self) -> Any:
         """Create Optuna pruner instance based on configuration."""
+        self._require_optuna()
         if self.config.pruning == "median":
             return optuna.pruners.MedianPruner(
                 n_startup_trials=self.config.pruner_n_startup_trials,
@@ -129,3 +138,10 @@ class OptunaOptimizer(BaseOptimizer):
             return optuna.pruners.ThresholdPruner(lower=0.0)
         return None
 
+    @staticmethod
+    def _require_optuna() -> None:
+        if optuna is None:
+            raise ImportError(
+                "Optuna is required for the 'optuna' HPO backend. "
+                "Install it with `pip install optuna`."
+            )

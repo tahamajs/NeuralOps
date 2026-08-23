@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import math
 import os
 import sqlite3
 import tarfile
@@ -19,6 +20,22 @@ from typing import Any, Dict, List, Optional, Union
 from .config import SaveConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_json_value(value: Any) -> Any:
+    """Convert runtime values to strict JSON-safe values.
+
+    JSON permits neither NaN nor Infinity.  Persisting either makes results
+    silently invalid for downstream dashboards and experiment aggregation, so
+    non-finite numeric values are represented as null instead.
+    """
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {str(k): _sanitize_json_value(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_sanitize_json_value(v) for v in value]
+    return value
 
 
 @contextlib.contextmanager
@@ -156,8 +173,8 @@ class ResultsSaver:
         lock_path = target_db.with_suffix(".db.lock")
 
         cfg_dict = self._flatten_config(config) if config is not None else {}
-        metrics_dict = metrics or {}
-        meta_dict = extra_metadata or {}
+        metrics_dict = _sanitize_json_value(metrics or {})
+        meta_dict = _sanitize_json_value(extra_metadata or {})
 
         # FIX: Wrap database transaction in cross-process file lock
         with sqlite_file_lock(lock_path):
@@ -192,9 +209,9 @@ class ResultsSaver:
                         now_str,
                         task_name,
                         model_name,
-                        json.dumps(cfg_dict),
-                        json.dumps(metrics_dict),
-                        json.dumps(meta_dict),
+                        json.dumps(_sanitize_json_value(cfg_dict), allow_nan=False),
+                        json.dumps(metrics_dict, allow_nan=False),
+                        json.dumps(meta_dict, allow_nan=False),
                     ),
                 )
                 conn.commit()
@@ -343,7 +360,13 @@ class ResultsSaver:
         fp = self.run_dir / rel_path
         fp.parent.mkdir(exist_ok=True)
         with open(fp, "w") as f:
-            json.dump(obj, f, indent=2, default=_default_serializer)
+            json.dump(
+                _sanitize_json_value(obj),
+                f,
+                indent=2,
+                default=_default_serializer,
+                allow_nan=False,
+            )
 
     def _write_text(self, rel_path: str, text: str) -> None:
         """ write text."""
@@ -374,7 +397,7 @@ class ResultsSaver:
         """ save metrics log."""
         with open(self.run_dir / "logs" / "metrics.jsonl", "w") as f:
             for entry in history:
-                f.write(json.dumps(entry) + "\n")
+                f.write(json.dumps(_sanitize_json_value(entry), allow_nan=False) + "\n")
 
     def _save_model(self, model, tokenizer=None) -> None:
         """ save model."""
