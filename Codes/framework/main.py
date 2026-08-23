@@ -228,7 +228,10 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
 
     # ── Tokeniser ──────────────────────────────────────────────────────────
     logger.info("Loading tokeniser: %s", cfg.model_name)
-    tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True)
+    try:
+        tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True)
+    except Exception:
+        tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True, local_files_only=True)
 
     # ── Data ───────────────────────────────────────────────────────────────
     logger.info("Loading data for task: %s", cfg.task)
@@ -241,9 +244,14 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
 
     # ── Model ──────────────────────────────────────────────────────────────
     logger.info("Loading model: %s  (num_labels=%d)", cfg.model_name, num_labels)
-    model = fw["AutoModelForSequenceClassification"].from_pretrained(
-        cfg.model_name, num_labels=num_labels
-    )
+    try:
+        model = fw["AutoModelForSequenceClassification"].from_pretrained(
+            cfg.model_name, num_labels=num_labels
+        )
+    except Exception:
+        model = fw["AutoModelForSequenceClassification"].from_pretrained(
+            cfg.model_name, num_labels=num_labels, local_files_only=True
+        )
 
     # Optional: swap attention layers
     if cfg.attn_type not in ("full", "baseline", "default", "none"):
@@ -432,8 +440,12 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("Loading model for compression: %s", cfg.model_name)
-    model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name)
-    tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name)
+    try:
+        model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name)
+        tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name)
+    except Exception:
+        model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name, local_files_only=True)
+        tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, local_files_only=True)
     model.to(device)
     model.tokenizer = tokenizer
 
