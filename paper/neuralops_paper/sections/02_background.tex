@@ -1,0 +1,8 @@
+\section{Extended Background \& Preliminaries}
+\label{sec:background}
+
+\subsection{Formal Problem Definition}
+Let $\mathcal{X} = \{x_1, x_2, \dots, x_N\}$ represent an input sequence of $N$ tokens, where each token is embedded as a vector $x_i \in \mathbb{R}^{d_{\text{model}}}$. The standard Transformer architecture processes $\mathcal{X}$ through multiple layers of multi-head self-attention and position-wise feed-forward networks. The core computational bottleneck arises from the attention matrix $A \in \mathbb{R}^{N \times N}$, defined by the pairwise affinities $A_{ij} = \exp(q_i^\top k_j / \sqrt{d})$. As $N \to \infty$, the memory required to instantiate $A$ grows quadratically, posing a hard scalability limit.
+
+\subsection{Hardware Memory Hierarchy Constraints}
+Modern GPUs possess a tiered memory hierarchy comprising High-Bandwidth Memory (HBM, large capacity but high latency) and Static Random Access Memory (SRAM, small capacity but low latency). Arithmetic intensity ($\mathcal{I}$), defined as the ratio of floating-point operations to bytes transferred from HBM, is the primary metric dictating execution efficiency. Standard linear attention implementations suffer from low $\mathcal{I}$ because intermediate low-rank representations must be written to and read from HBM repeatedly, bound by memory bandwidth rather than compute limits.
