@@ -196,6 +196,13 @@ def create_trainer(
     dataloader_num_workers = training_args_kwargs.pop("dataloader_num_workers", 0)
     _ = training_args_kwargs.pop("remove_unused_columns", None)  # handled below
 
+    # Precision & Linear-Time Scalability Features
+    fp16 = training_args_kwargs.pop("fp16", False)
+    bf16 = training_args_kwargs.pop("bf16", False)
+    gradient_checkpointing = training_args_kwargs.pop("gradient_checkpointing", False)
+    optim = training_args_kwargs.pop("optim", "adamw_hf")
+    lr_scheduler_type = training_args_kwargs.pop("lr_scheduler_type", "linear")
+
     # Build only the kwargs that TrainingArguments actually supports
     import inspect as _inspect
     _ta_params = set(_inspect.signature(TrainingArguments.__init__).parameters)
@@ -226,6 +233,11 @@ def create_trainer(
         disable_tqdm=False,
         report_to=training_args_kwargs.pop("report_to", "none"),
         remove_unused_columns=False,
+        fp16=fp16,
+        bf16=bf16,
+        gradient_checkpointing=gradient_checkpointing,
+        optim=optim,
+        lr_scheduler_type=lr_scheduler_type,
         **optional_ta_kwargs,
         **training_args_kwargs,
     )
