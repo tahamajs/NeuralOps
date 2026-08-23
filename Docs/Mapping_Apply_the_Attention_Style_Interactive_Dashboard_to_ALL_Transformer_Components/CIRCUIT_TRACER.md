@@ -1,3 +1,5 @@
+# Circuit Tracer — QK & OV Circuit Explorer
+
 Here is a **fully detailed implementation blueprint** for the **Circuit Tracer — QK & OV Circuit Explorer**, covering technologies, architectures, and implementation strategies.
 
 ---

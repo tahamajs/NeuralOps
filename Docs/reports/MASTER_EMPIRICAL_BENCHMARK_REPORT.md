@@ -121,8 +121,8 @@ The framework provides native GPU execution blueprints in Triton:
 
 ## 6. Artifact & File References
 
-- **Consolidated Metrics (CSV)**: [`results/master_benchmark_summary.csv`](file:///Users/tahamajs/Documents/uni/Project/results/master_benchmark_summary.csv)
-- **Consolidated Metrics (JSON)**: [`results/master_benchmark_summary.json`](file:///Users/tahamajs/Documents/uni/Project/results/master_benchmark_summary.json)
-- **Interactive Research Hub Web UI**: [`Docs/index.html`](file:///Users/tahamajs/Documents/uni/Project/Docs/index.html)
-- **Master Compendium**: [`Docs/content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md`](file:///Users/tahamajs/Documents/uni/Project/Docs/content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md)
-- **Django REST API Schema**: [`Codes/django_api/ConfigurationSchema.json`](file:///Users/tahamajs/Documents/uni/Project/Codes/django_api/ConfigurationSchema.json)
+- **Consolidated Metrics (CSV)**: [`../results/master_benchmark_summary.csv`](../results/master_benchmark_summary.csv)
+- **Consolidated Metrics (JSON)**: [`../results/master_benchmark_summary.json`](../results/master_benchmark_summary.json)
+- **Interactive Research Hub Web UI**: [`../index.html`](../index.html)
+- **Master Compendium**: [`../content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md`](../content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md)
+- **Django REST API Schema**: [`../../Codes/django_api/ConfigurationSchema.json`](../../Codes/django_api/ConfigurationSchema.json)

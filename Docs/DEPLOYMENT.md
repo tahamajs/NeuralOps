@@ -1,6 +1,6 @@
 # Research Hub deployment
 
-The GitHub Pages site is the static `Docs/` application. The deployment workflow also builds the optional frontend studio into `Docs/app/` and copies the framework Markdown sources so every catalog entry remains readable after publishing.
+The GitHub Pages site is the static `Docs/` application. Its generated catalog unifies guides, verification reports, benchmark results, interactive studios, architecture specifications, research deep dives, and framework references. The deployment workflow also builds the optional frontend studio into `Docs/app/` and copies the framework Markdown sources so every catalog entry remains readable after publishing.
 
 ## Local preview
 

@@ -844,12 +844,12 @@ Below are the empirical benchmarks measured across structural compression scheme
 ---
 
 *Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*  
-*Next in Series: [Part 5: Quantization, Pruning & Cache Engines](file:///Users/tahamajs/Documents/uni/Project/Docs/blog/05_quantization_pruning_distillation_compressions.md)*omponents that eliminate destructive signal cancellation.
+*Next in Series: [Part 5: Quantization, Pruning & Cache Engines](./05_quantization_pruning_distillation_compressions.md)*omponents that eliminate destructive signal cancellation.
 
 ---
 
 *Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*  
-*Next in Series: [Part 5: Quantization, Pruning & Cache Engines](file:///Users/tahamajs/Documents/uni/Project/Docs/blog/05_quantization_pruning_distillation_compressions.md)*ion Augmented Lagrangian Proximal | Compounded error from sequential prune-then-factorize | 60% – 80% | **ADMM Training Loop** | Joint structured pruning and low-rank optimization |
+*Next in Series: [Part 5: Quantization, Pruning & Cache Engines](./05_quantization_pruning_distillation_compressions.md)*ion Augmented Lagrangian Proximal | Compounded error from sequential prune-then-factorize | 60% – 80% | **ADMM Training Loop** | Joint structured pruning and low-rank optimization |
 | **NMF** | Non-Negative Lee-Seung Multiplicative Updates | Destructive signed signal cancellation in INT4 | 50% – 70% | **Iterative Lee-Seung** | INT4 quantization resilience & ReLU/SwiGLU models |
 | **RPCA** | Principal Component Pursuit ($W = L + S$) | Outlier parameter distortion in low-rank bases | 60% – 75% | **None (PCP Calibration)** | Heavy-tailed models (LLaMA-3, Mistral, Qwen) |
 
@@ -879,4 +879,4 @@ Below are the empirical benchmarks measured across structural compression scheme
 ---
 
 *Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*  
-*Next in Series: [Part 5: Quantization, Pruning & Cache Engines](file:///Users/tahamajs/Documents/uni/Project/Docs/blog/05_quantization_pruning_distillation_compressions.md)*
+*Next in Series: [Part 5: Quantization, Pruning & Cache Engines](./05_quantization_pruning_distillation_compressions.md)*
