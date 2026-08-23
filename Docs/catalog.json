@@ -2,98 +2,108 @@
     "attentions": [
         {
             "id": "adaptive_span_attention.md",
-            "title": "Adaptive Span Attention",
+            "title": "Adaptive Span Attention: Dynamic Head-Specific Context Window Gating",
             "path": "content/attentions/adaptive_span_attention.md"
         },
         {
             "id": "adaptive_svd_attention.md",
-            "title": "Adaptive SVD Attention",
+            "title": "Adaptive SVD Attention: Low-Rank SVD Projections with Parallel Residual Adapters",
             "path": "content/attentions/adaptive_svd_attention.md"
         },
         {
             "id": "adasplash_attention.md",
-            "title": "AdaSplash Attention",
+            "title": "AdaSplash Attention: Adaptive Sparse-Splash Top-k Dynamic Context Routing",
             "path": "content/attentions/adasplash_attention.md"
         },
         {
-            "id": "aegis_v2.md",
-            "title": "Aegis-Attention V2",
-            "path": "content/attentions/aegis_v2.md"
-        },
-        {
-            "id": "aegis_v3.md",
-            "title": "AEGIS-Attention V3",
-            "path": "content/attentions/aegis_v3.md"
-        },
-        {
-            "id": "aegis_v4.md",
-            "title": "AEGIS-Attention V4",
-            "path": "content/attentions/aegis_v4.md"
-        },
-        {
-            "id": "aegis_v5.md",
-            "title": "AEGIS-Attention V5",
-            "path": "content/attentions/aegis_v5.md"
-        },
-        {
-            "id": "aegis_v6.md",
-            "title": "AEGIS-Attention V6",
-            "path": "content/attentions/aegis_v6.md"
-        },
-        {
             "id": "aegis_hybrid.md",
-            "title": "Aegis-Hybrid Attention",
+            "title": "AEGIS-Hybrid Attention: Local Sliding-Window + Global Linear Attention",
             "path": "content/attentions/aegis_hybrid.md"
         },
         {
             "id": "aegis_spectron_fp8.md",
-            "title": "Aegis-Spectron-FP8",
+            "title": "AEGIS-Spectron-FP8: Tri-Branch Architecture with Spectral Entropy Routing",
             "path": "content/attentions/aegis_spectron_fp8.md"
         },
         {
+            "id": "aegis_v1.md",
+            "title": "AEGIS-Attention V1: Adaptive Enhanced Global-Local Integrated Sparse Attention Baseline",
+            "path": "content/attentions/aegis_v1.md"
+        },
+        {
+            "id": "aegis_v2.md",
+            "title": "AEGIS-Attention V2: Low-Rank Factorized Hybrid Attention with Soft-Pruning",
+            "path": "content/attentions/aegis_v2.md"
+        },
+        {
+            "id": "aegis_v3.md",
+            "title": "AEGIS-Attention V3: Energy-Constrained SVD & Softpick Rectified Sparse Attention",
+            "path": "content/attentions/aegis_v3.md"
+        },
+        {
+            "id": "aegis_v4.md",
+            "title": "AEGIS-Attention V4: Adaptive Enhanced Global-Local Integrated Sparse Attention",
+            "path": "content/attentions/aegis_v4.md"
+        },
+        {
+            "id": "aegis_v5.md",
+            "title": "AEGIS-Attention V5: Hybrid Multi-Head Attention with Safe Masking",
+            "path": "content/attentions/aegis_v5.md"
+        },
+        {
+            "id": "aegis_v6.md",
+            "title": "AEGIS-Attention V6: Unified SVD-LoRA Hybrid Attention",
+            "path": "content/attentions/aegis_v6.md"
+        },
+        {
             "id": "asvd_attention.md",
-            "title": "ASVD Attention",
+            "title": "ASVD Attention: Activation-Aware Singular Value Decomposition Architecture",
             "path": "content/attentions/asvd_attention.md"
         },
         {
-            "id": "replace.md",
-            "title": "Attention Surgery Engine",
-            "path": "content/attentions/replace.md"
-        },
-        {
             "id": "bam_umoe.md",
-            "title": "BAM-UMoE",
+            "title": "BAM-uMoE: Bidirectional Attentive Mixture-of-Unified-Experts",
             "path": "content/attentions/bam_umoe.md"
         },
         {
             "id": "block_transformer_hiba.md",
-            "title": "Block Transformer HIBA",
+            "title": "Block Transformer HIBA: Hierarchical Intra/Inter-Block Attention",
             "path": "content/attentions/block_transformer_hiba.md"
         },
         {
             "id": "chela_slay.md",
-            "title": "CHELA-SLAY",
+            "title": "CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel",
             "path": "content/attentions/chela_slay.md"
         },
         {
             "id": "cluster_attention.md",
-            "title": "ClusterFormer",
+            "title": "ClusterFormer: Dynamic Token-Clustering Attention via Batch Iterative K-Means",
             "path": "content/attentions/cluster_attention.md"
         },
         {
-            "id": "compressed_mha_attention.md",
-            "title": "Compressed Multi-Head Attention",
-            "path": "content/attentions/compressed_mha_attention.md"
-        },
-        {
             "id": "compressed_attention.md",
-            "title": "Compressed Multi-Head Attention (SVD & Energy-Thresholded Low-Rank Approximations)",
+            "title": "Compressed Attention via Truncated SVD",
             "path": "content/attentions/compressed_attention.md"
         },
         {
+            "id": "compressed_mha_attention.md",
+            "title": "Compressed Multi-Head Attention (Compressed-MHA)",
+            "path": "content/attentions/compressed_mha_attention.md"
+        },
+        {
+            "id": "decay_linear_attention.md",
+            "title": "Decay Linear Attention (DecayLinearAttention)",
+            "path": "content/attentions/decay_linear_attention.md"
+        },
+        {
             "id": "eat.md",
-            "title": "EAT",
+            "title": "EAT: Efficient Attention Transformer with Progressive Token Pruning",
             "path": "content/attentions/eat.md"
+        },
+        {
+            "id": "expert_choice_moe.md",
+            "title": "Expert Choice Mixture of Experts (EC-MoE)",
+            "path": "content/attentions/expert_choice_moe.md"
         },
         {
             "id": "factorised_matrix_state.md",
@@ -102,87 +112,102 @@
         },
         {
             "id": "flash_attention3.md",
-            "title": "FlashAttention-3",
+            "title": "FlashAttention-3: Fast and Memory-Efficient Exact Attention with Asynchronous Hardware Overlap",
             "path": "content/attentions/flash_attention3.md"
         },
         {
             "id": "flash_attention3_fp8.md",
-            "title": "FlashAttention-3 FP8",
+            "title": "FlashAttention-3 FP8: Low-Precision 8-Bit Float Transformer Attention for Hopper Architectures",
             "path": "content/attentions/flash_attention3_fp8.md"
         },
         {
             "id": "full_attention.md",
-            "title": "Full Attention",
+            "title": "Full Attention: Standard Multi-Head Scaled Dot-Product Attention Architecture",
             "path": "content/attentions/full_attention.md"
         },
         {
+            "id": "fused_svd_kernel.md",
+            "title": "Fused SVD-Linear Kernel: SRAM-Resident RMSNorm & Dual-Projection",
+            "path": "content/attentions/fused_svd_kernel.md"
+        },
+        {
             "id": "fusion_attn.md",
-            "title": "Full Attention",
+            "title": "FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention",
             "path": "content/attentions/fusion_attn.md"
         },
         {
+            "id": "galerkin_attention.md",
+            "title": "Petrov-Galerkin Projection Attention: Energy-Preserving Spectral Operator Discretization",
+            "path": "content/attentions/galerkin_attention.md"
+        },
+        {
             "id": "gated_delta_net.md",
-            "title": "Gated DeltaNet",
+            "title": "Gated DeltaNet: Multi-Head Bidirectional Delta Rule Linear Recurrent Attention",
             "path": "content/attentions/gated_delta_net.md"
         },
         {
             "id": "gated_deltanet_block.md",
-            "title": "Gated DeltaNet Block",
+            "title": "Gated DeltaNet Block: Hybrid Multi-Head Attention and Recurrent DeltaNet Layer",
             "path": "content/attentions/gated_deltanet_block.md"
         },
         {
+            "id": "gated_linear_attention.md",
+            "title": "Gated Linear Attention (GatedLinearAttention)",
+            "path": "content/attentions/gated_linear_attention.md"
+        },
+        {
             "id": "goldfinch_ahn.md",
-            "title": "GoldFinch-AHN",
+            "title": "GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated DeltaNet",
             "path": "content/attentions/goldfinch_ahn.md"
         },
         {
+            "id": "gqa_attention.md",
+            "title": "Grouped-Query Attention (GQA): Memory-Efficient Shared Key-Value Subspace Architecture",
+            "path": "content/attentions/gqa_attention.md"
+        },
+        {
             "id": "granite_hybrid.md",
-            "title": "Granite-Hybrid Attention",
+            "title": "Granite-Hybrid Attention: Interleaved Mamba-2 State Space Architecture with Multi-Head Attention and Mixture-of-Experts",
             "path": "content/attentions/granite_hybrid.md"
         },
         {
             "id": "griffin_ssd.md",
-            "title": "Griffin SSD",
+            "title": "Griffin SSD: Hybrid Sliding-Window Attention & State Space Duality (SSD)",
             "path": "content/attentions/griffin_ssd.md"
         },
         {
-            "id": "gqa_attention.md",
-            "title": "Grouped-Query Attention (GQA)",
-            "path": "content/attentions/gqa_attention.md"
-        },
-        {
             "id": "halo_regla.md",
-            "title": "HALO-ReGLA",
+            "title": "HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention",
             "path": "content/attentions/halo_regla.md"
         },
         {
             "id": "hamming_attention.md",
-            "title": "Hamming Attention",
+            "title": "Hamming Attention: Continuous Relaxed Binarization & Distance Distillation",
             "path": "content/attentions/hamming_attention.md"
         },
         {
             "id": "hgrn2_gated_deltanet.md",
-            "title": "HGRN-2 Gated DeltaNet",
+            "title": "HGRN-2 Gated DeltaNet Hybrid Architecture",
             "path": "content/attentions/hgrn2_gated_deltanet.md"
         },
         {
             "id": "hgrn2_layer.md",
-            "title": "HGRN-2 Layer",
+            "title": "Hierarchically Gated Recurrent Network V2 (HGRN-2) Layer",
             "path": "content/attentions/hgrn2_layer.md"
         },
         {
             "id": "hgrn2_outer.md",
-            "title": "HGRN-2 Outer",
+            "title": "HGRN-2 Outer-Product Recurrent Linear Attention",
             "path": "content/attentions/hgrn2_outer.md"
         },
         {
             "id": "hla_attention.md",
-            "title": "HLA Attention",
+            "title": "Hadamard Linear Attention (HLA)",
             "path": "content/attentions/hla_attention.md"
         },
         {
             "id": "hymba_transx.md",
-            "title": "Hymba TransX",
+            "title": "HymbaTransX: Hybrid Differential Attention & SSM",
             "path": "content/attentions/hymba_transx.md"
         },
         {
@@ -191,114 +216,129 @@
             "path": "content/attentions/infini_attention.md"
         },
         {
+            "id": "jamba.md",
+            "title": "Jamba-2 Hybrid Transformer",
+            "path": "content/attentions/jamba.md"
+        },
+        {
             "id": "jamba2.md",
-            "title": "Jamba-2 Architecture",
+            "title": "Jamba-2 Architecture: Hybrid Mamba-Attention-MoE Block with Expert-Choice Routing",
             "path": "content/attentions/jamba2.md"
         },
         {
             "id": "jamba_info.md",
-            "title": "Jamba-Info",
+            "title": "Jamba-Info: Information-Bottlenecked Hybrid Transformer",
             "path": "content/attentions/jamba_info.md"
         },
         {
             "id": "kda_attention.md",
-            "title": "KDA Attention",
+            "title": "Kernelized Decay Attention (KDA)",
             "path": "content/attentions/kda_attention.md"
         },
         {
             "id": "leka_v1.md",
-            "title": "LEKAv1",
+            "title": "LEKA v1: Linear Exact Kernel Attention",
             "path": "content/attentions/leka_v1.md"
         },
         {
             "id": "leka_v2.md",
-            "title": "LEKAv2",
+            "title": "LEKA v2: Landmark-Enhanced Kernel Attention",
             "path": "content/attentions/leka_v2.md"
         },
         {
             "id": "leka_v3.md",
-            "title": "LEKAv3",
+            "title": "LEKA v3: Value-Aware Landmark Kernel Attention",
             "path": "content/attentions/leka_v3.md"
         },
         {
             "id": "linformer_attention.md",
-            "title": "Linformer Attention",
+            "title": "Linformer Attention: Linear-Complexity Sequence Projection via Low-Rank Matrix Factorization",
             "path": "content/attentions/linformer_attention.md"
         },
         {
-            "id": "lsh_attention.md",
-            "title": "Locality-Sensitive Hashing Attention",
-            "path": "content/attentions/lsh_attention.md"
-        },
-        {
             "id": "lola_attention.md",
-            "title": "Lola Attention",
+            "title": "Lola Attention: Low-Rank Localized Attention via Three-Memory System Caching",
             "path": "content/attentions/lola_attention.md"
         },
         {
             "id": "lora_attention.md",
-            "title": "LoRA Attention",
+            "title": "LoRA Attention: Parameter-Efficient Low-Rank Adaptation",
             "path": "content/attentions/lora_attention.md"
         },
         {
+            "id": "lsh_attention.md",
+            "title": "Locality-Sensitive Hashing Attention: Angular Random Hyperplane Bucket Partitioning",
+            "path": "content/attentions/lsh_attention.md"
+        },
+        {
             "id": "mamba.md",
-            "title": "Mamba",
+            "title": "Bidirectional Selective State Space Model (Bi-Mamba) Attention",
             "path": "content/attentions/mamba.md"
         },
         {
+            "id": "mamba_inject.md",
+            "title": "Mamba Inject: Layer Replacement and Weight Adaptation Engine",
+            "path": "content/attentions/mamba_inject.md"
+        },
+        {
             "id": "mamba_svd_flash.md",
-            "title": "MambaSVD-Flash",
+            "title": "MambaSVD-Flash: Hybrid Bidirectional SSM-FlashAttention Architecture",
             "path": "content/attentions/mamba_svd_flash.md"
         },
         {
             "id": "minimal_aurora.md",
-            "title": "MinimalAURORA Attention",
+            "title": "MinimalAURORA Attention: Energy-Preserving SVD-Factorized Attention with Cumulative Spectral Truncation",
             "path": "content/attentions/minimal_aurora.md"
         },
         {
             "id": "minimal_nova.md",
-            "title": "MinimalNOVA Attention",
+            "title": "MinimalNOVA Attention: SVD-Factorized Low-Rank Projection Attention for Efficient Transformer Compression",
             "path": "content/attentions/minimal_nova.md"
         },
         {
             "id": "minimal_prism.md",
-            "title": "MinimalPRISM Attention",
+            "title": "MinimalPRISM Attention: Singular Spectrum Energy-Factorized Low-Rank Projection Attention",
             "path": "content/attentions/minimal_prism.md"
         },
         {
             "id": "minimal_svd.md",
-            "title": "MinimalSVD",
+            "title": "MinimalSVD: Cumulative Energy-Budgeted SVD Factorization Attention",
             "path": "content/attentions/minimal_svd.md"
         },
         {
             "id": "minimal_svd_v2.md",
-            "title": "MinimalSVD v2",
+            "title": "MinimalSVD v2: Refined SVD Low-Rank Attention with Flexible Attention Mask Handling",
             "path": "content/attentions/minimal_svd_v2.md"
         },
         {
             "id": "mixattention_moska.md",
-            "title": "MixAttention-MoSKA",
+            "title": "MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention",
             "path": "content/attentions/mixattention_moska.md"
         },
         {
+            "id": "mla_attention.md",
+            "title": "Multi-Head Latent Attention (MLA): Low-Rank Latent Bottleneck Compression (DeepSeek-V2)",
+            "path": "content/attentions/mla_attention.md"
+        },
+        {
             "id": "moba_attention.md",
-            "title": "MoBA Attention",
+            "title": "MoBA Attention: Mixture-of-Block Attention via Centroid Cosine Routing",
             "path": "content/attentions/moba_attention.md"
         },
         {
             "id": "moe_deltakv_paged.md",
-            "title": "MoE-DeltaKV-Paged",
+            "title": "MoE-DeltaKV Paged: Quantized & Paged KV-Cache Mixture-of-Experts Attention",
             "path": "content/attentions/moe_deltakv_paged.md"
         },
         {
-            "id": "mla_attention.md",
-            "title": "Multi-Head Latent Attention (MLA)",
-            "path": "content/attentions/mla_attention.md"
+            "id": "nasc_attention.md",
+            "title": "NASC: NEXUS-AEGIS Spectral Cascade Attention",
+            "path": "content/attentions/nasc_attention.md"
         },
         {
-            "id": "nasc_attention.md",
-            "title": "NASC",
-            "path": "content/attentions/nasc_attention.md"
+            "id": "nexus.md",
+            "title": "NEXUS: Non-linear EXpert Unified Sparse Attention",
+            "path": "content/attentions/nexus.md"
         },
         {
             "id": "nha_attention.md",
@@ -306,204 +346,259 @@
             "path": "content/attentions/nha_attention.md"
         },
         {
-            "id": "nsa_attention.md",
-            "title": "Native Sparse Attention",
-            "path": "content/attentions/nsa_attention.md"
-        },
-        {
-            "id": "nexus.md",
-            "title": "NEXUS",
-            "path": "content/attentions/nexus.md"
-        },
-        {
             "id": "nha_compressor.md",
             "title": "NHA Compressor",
             "path": "content/attentions/nha_compressor.md"
         },
         {
+            "id": "nsa_attention.md",
+            "title": "Native Sparse Attention: Hybrid Local Sliding-Window and Dynamic Top-k Global Routing",
+            "path": "content/attentions/nsa_attention.md"
+        },
+        {
             "id": "nystrom_attention.md",
-            "title": "Nystr\u00f6m Attention",
+            "title": "Nyström Attention: Low-Rank Landmark Approximation via Matrix Pseudoinverse Decomposition",
             "path": "content/attentions/nystrom_attention.md"
         },
         {
             "id": "optimized_hybrid_attention.md",
-            "title": "Optimized Hybrid Attention (OHA)",
+            "title": "Optimized Hybrid Attention (OHA): Fused Sliding-Window Local Self-Attention and Sequence-Compressed Low-Rank Global Attention",
             "path": "content/attentions/optimized_hybrid_attention.md"
         },
         {
             "id": "orion.md",
-            "title": "ORION",
+            "title": "ORION: Optimized Rectified Input-Aware Orthogonal Network with Energy-Preserving SVD Projections and Bifurcated Multi-Head Attention",
             "path": "content/attentions/orion.md"
         },
         {
             "id": "performer_attention.md",
-            "title": "Performer Attention (FAVOR+)",
+            "title": "Performer Attention (FAVOR+): Fast Attention via Positive Orthogonal Random Features",
             "path": "content/attentions/performer_attention.md"
         },
         {
             "id": "phantom.md",
-            "title": "PHANTOM",
+            "title": "PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH",
             "path": "content/attentions/phantom.md"
         },
         {
             "id": "primal_attention.md",
-            "title": "Primal Attention",
+            "title": "Primal Attention: Asymmetric Kernel SVD via Segment-Pooled Landmark Decomposition",
             "path": "content/attentions/primal_attention.md"
         },
         {
             "id": "progressive_token_pruning.md",
-            "title": "Progressive Token Pruning",
+            "title": "Progressive Token Pruning (PTP)",
             "path": "content/attentions/progressive_token_pruning.md"
         },
         {
+            "id": "projection_factorized_attn.md",
+            "title": "Projection Factorized Attention (projectionfactorizedattn)",
+            "path": "content/attentions/projection_factorized_attn.md"
+        },
+        {
             "id": "qcqa_attention.md",
-            "title": "Quality and Capacity-Aware Grouped Query Attention (QCQA)",
+            "title": "Quality and Capacity-Aware Grouped Query Attention (QCQA): Dynamic Soft-Routing Mixture over Compressed KV Subspaces",
             "path": "content/attentions/qcqa_attention.md"
         },
         {
-            "id": "rala_compressor.md",
-            "title": "RALA Compressor",
-            "path": "content/attentions/rala_compressor.md"
-        },
-        {
             "id": "rala_attention.md",
-            "title": "Rank-Augmented Linear Attention (RALA)",
+            "title": "Rank-Augmented Linear Attention (RALA): Low-Rank Parametric Head Interaction Augmentation",
             "path": "content/attentions/rala_attention.md"
         },
         {
+            "id": "rala_compressor.md",
+            "title": "RALA Compressor: Rank-Augmented Linear Attention Layer Architecture & Masking Specifications",
+            "path": "content/attentions/rala_compressor.md"
+        },
+        {
+            "id": "reap_moe.md",
+            "title": "REAP-MoE: Robust Expert Allocation and Pruning Mixture-of-Experts",
+            "path": "content/attentions/reap_moe.md"
+        },
+        {
             "id": "regla_attention.md",
-            "title": "Refined Gated Linear Attention (ReGLA)",
+            "title": "Refined Gated Linear Attention (ReGLA): Element-Wise Key Gating & Depthwise Convolutional Fusion",
             "path": "content/attentions/regla_attention.md"
         },
         {
+            "id": "replace.md",
+            "title": "Attention Surgery Engine: Dynamic In-Place Model Grafting & Layer Replacement",
+            "path": "content/attentions/replace.md"
+        },
+        {
             "id": "routing_attention.md",
-            "title": "Routing Attention",
+            "title": "Routing Attention: Content-Adaptive Query-Centric Clustering via Head-Wise Online K-Means",
             "path": "content/attentions/routing_attention.md"
         },
         {
             "id": "rpc_attention.md",
-            "title": "RPC Attention",
+            "title": "RPC Attention: Randomized Phase Cluster Attention via Fixed Random Subspace Sketching",
             "path": "content/attentions/rpc_attention.md"
         },
         {
             "id": "salt.md",
-            "title": "SALT Attention",
+            "title": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Transformer Fine-Tuning",
             "path": "content/attentions/salt.md"
         },
         {
+            "id": "salt_attention.md",
+            "title": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Transformer Fine-Tuning",
+            "path": "content/attentions/salt_attention.md"
+        },
+        {
             "id": "samba_m3.md",
-            "title": "SAMBA-M3",
+            "title": "SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba State-Space Model",
             "path": "content/attentions/samba_m3.md"
         },
         {
             "id": "samba_moe.md",
-            "title": "SambaMoE",
+            "title": "Samba-MoE: Selective State Space (SAMBA-M3) + REAP-MoE Architecture",
             "path": "content/attentions/samba_moe.md"
         },
         {
-            "id": "soa_attn.md",
-            "title": "Shared Orthogonal Attention (SOA)",
-            "path": "content/attentions/soa_attn.md"
-        },
-        {
             "id": "simple_ssm.md",
-            "title": "Simple SSM",
+            "title": "Simple State Space Model (SimpleSSM)",
             "path": "content/attentions/simple_ssm.md"
         },
         {
-            "id": "weighted_ensemble.md",
-            "title": "Smart Weighted Ensemble",
-            "path": "content/attentions/weighted_ensemble.md"
+            "id": "soa_attn.md",
+            "title": "SOA Attention: Shared Orthogonal Attention with Latent Bottlenecks",
+            "path": "content/attentions/soa_attn.md"
         },
         {
             "id": "SOAFusedAttention.md",
-            "title": "SOA Fused Attention",
+            "title": "SOA-Fused Attention: Low-Rank Latent Space Multi-Head Attention",
             "path": "content/attentions/SOAFusedAttention.md"
         },
         {
             "id": "span_expanded_attention.md",
-            "title": "Span-Expanded Attention",
+            "title": "Span-Expanded Attention: Receptive Field Extension with Parallel HyLoRA Adaptation",
             "path": "content/attentions/span_expanded_attention.md"
         },
         {
             "id": "spectra_v2.md",
-            "title": "SPECTRA-v2",
+            "title": "SPECTRA-v2: Sparse Per-Head Efficient Context Transformer with Rectified Attention",
             "path": "content/attentions/spectra_v2.md"
         },
         {
+            "id": "spectral_mamba.md",
+            "title": "Spectral-Mamba: Hybrid Attention-State Space Module with Spectral Modulation",
+            "path": "content/attentions/spectral_mamba.md"
+        },
+        {
             "id": "spectron.md",
-            "title": "SpectronAttention",
+            "title": "Spectron: Importance-Aware Low-Rank + Sparse Attention",
             "path": "content/attentions/spectron.md"
         },
         {
             "id": "squeezing_heads_distill.md",
-            "title": "Squeezing Heads Distillation",
+            "title": "Squeezing Heads Distillation: Multi-Head Receptive Field Distillation & Capacity Compression",
             "path": "content/attentions/squeezing_heads_distill.md"
         },
         {
+            "id": "SVD-Mamba.md",
+            "title": "SVD-Mamba: SVD-Factorized Selective State Space Model with Global Spectral Mixing",
+            "path": "content/attentions/SVD-Mamba.md"
+        },
+        {
             "id": "svd_attention.md",
-            "title": "SVD Attention",
+            "title": "SVD Attention: Sequence-Dimension Singular Subspace Projection Architecture",
             "path": "content/attentions/svd_attention.md"
         },
         {
-            "id": "svd_linear_attention.md",
-            "title": "SVD Linear Attention",
-            "path": "content/attentions/svd_linear_attention.md"
-        },
-        {
-            "id": "svd_projection_attention.md",
-            "title": "SVD Projection Attention",
-            "path": "content/attentions/svd_projection_attention.md"
-        },
-        {
             "id": "svd_compressed.md",
-            "title": "SVD-Compressed Attention",
+            "title": "SVD-Compressed Attention: Importance-Aware Lagrangian Rank Allocation Architecture",
             "path": "content/attentions/svd_compressed.md"
         },
         {
+            "id": "svd_linear_attention.md",
+            "title": "SVD Linear Attention: Semi-Orthogonal Low-Rank Projection Factorization",
+            "path": "content/attentions/svd_linear_attention.md"
+        },
+        {
+            "id": "svd_linear_decay.md",
+            "title": "SVD Linear Decay Gated Attention (svdlineardecay)",
+            "path": "content/attentions/svd_linear_decay.md"
+        },
+        {
+            "id": "svd_llm_v2.md",
+            "title": "SVD-LLM V2 Attention (svdllmv2)",
+            "path": "content/attentions/svd_llm_v2.md"
+        },
+        {
             "id": "svd_llm_v2_attention.md",
-            "title": "SVD-LLM V2 Attention",
+            "title": "SVD-LLM V2 Attention: Truncation-Aware Explicit Factor Buffer Architecture",
             "path": "content/attentions/svd_llm_v2_attention.md"
         },
         {
+            "id": "svd_proj_attn.md",
+            "title": "SVD Projection Attention (svdprojattn)",
+            "path": "content/attentions/svd_proj_attn.md"
+        },
+        {
+            "id": "svd_projection_attention.md",
+            "title": "SVD Projection Attention: Explicit Low-Rank Matrix Reconstruction Paradigm",
+            "path": "content/attentions/svd_projection_attention.md"
+        },
+        {
             "id": "template_attention.md",
-            "title": "Template Attention",
+            "title": "Template Attention: Extensible Base Architecture with Global Latent Modulation",
             "path": "content/attentions/template_attention.md"
         },
         {
+            "id": "template_compressor.md",
+            "title": "YourCustomCompressor: A Modular Compressor Template for Flexible Transformer Compression",
+            "path": "content/attentions/template_compressor.md"
+        },
+        {
             "id": "token_compressed.md",
-            "title": "Token-Compressed Attention Wrapper",
+            "title": "Token-Compressed Attention Wrapper: Structural Abstraction & Pass-Through Layer-Wise Delegator",
             "path": "content/attentions/token_compressed.md"
         },
         {
-            "id": "tt.md",
-            "title": "TokenCompressedAttention",
-            "path": "content/attentions/tt.md"
+            "id": "token_compressed_attention.md",
+            "title": "Token Compressed Attention",
+            "path": "content/attentions/token_compressed_attention.md"
         },
         {
             "id": "tpa_attention.md",
-            "title": "TPAttention",
+            "title": "TPAttention: Tensor Product Attention with Factorised Query-Key Projections",
             "path": "content/attentions/tpa_attention.md"
         },
         {
+            "id": "tt.md",
+            "title": "TokenCompressedAttention: A No‑Compression Baseline Wrapper for Attention",
+            "path": "content/attentions/tt.md"
+        },
+        {
             "id": "unified_rope.md",
-            "title": "Universal Rotary Position Embedding (UnifiedRoPE)",
+            "title": "Universal Rotary Position Embedding (UnifiedRoPE): Positional Invariance across Attention & SSM Branches",
             "path": "content/attentions/unified_rope.md"
         },
         {
             "id": "upi_stuffed_mamba.md",
-            "title": "UPI-Stuffed Mamba",
+            "title": "UPI-Stuffed Mamba: Uncertainty-Penalized Interpolated Mamba SSM",
             "path": "content/attentions/upi_stuffed_mamba.md"
         },
         {
             "id": "vig_attention.md",
-            "title": "ViG Attention",
+            "title": "ViG Attention: Bidirectional Row-Column ELU Linear Recurrent Grid Attention",
             "path": "content/attentions/vig_attention.md"
         },
         {
             "id": "vspec.md",
-            "title": "VSpec++ Attention",
+            "title": "VSpec++ Attention: Variational Spectral Token-Adaptive Attention with SVD-Gated Projections and Dynamic Top-k Routing",
             "path": "content/attentions/vspec.md"
+        },
+        {
+            "id": "vspec_attention.md",
+            "title": "VSpec++ Attention: Variational Spectral Token-Adaptive Attention",
+            "path": "content/attentions/vspec_attention.md"
+        },
+        {
+            "id": "weighted_ensemble.md",
+            "title": "Smart Weighted Ensemble: Task-Aware Attention & Dynamic Confidence Fusion",
+            "path": "content/attentions/weighted_ensemble.md"
         },
         {
             "id": "wgqa_attention.md",
@@ -512,269 +607,274 @@
         },
         {
             "id": "xattention.md",
-            "title": "XAttention",
+            "title": "XAttention: Block-Sparse Coarse-to-Fine Routing with Unified Softmax Normalization",
             "path": "content/attentions/xattention.md"
         },
         {
-            "id": "template_compressor.md",
-            "title": "YourCustomCompressor",
-            "path": "content/attentions/template_compressor.md"
-        },
-        {
             "id": "zeros_attention.md",
-            "title": "ZeroS Attention",
+            "title": "ZeroS Attention: Zero-Mean Normalized Linear Attention",
             "path": "content/attentions/zeros_attention.md"
         }
     ],
     "compressions": [
         {
             "id": "a3_compressor.md",
-            "title": "A3 Compression",
+            "title": "A3 Compression: Low‑Rank Approximation via SVD",
             "path": "content/compressions/a3_compressor.md"
         },
         {
             "id": "aa_svd_compressor.md",
-            "title": "AASVDCompressor",
+            "title": "AASVDCompressor: Anchored Adaptive SVD via Input Activation Subspace Projection",
             "path": "content/compressions/aa_svd_compressor.md"
         },
         {
             "id": "adaptive_compressor.md",
-            "title": "AdaptiveTransformerCompressor",
+            "title": "AdaptiveTransformerCompressor: Dynamic Energy-Threshold Attention Subspace Compression Engine",
             "path": "content/compressions/adaptive_compressor.md"
         },
         {
             "id": "adaptive_ranks.md",
-            "title": "AdaptiveTransformerCompressor (Ranks)",
+            "title": "AdaptiveTransformerCompressor (Ranks): Dynamic Subspace Allocation & Sensitivity-Guided Rank Profiling",
             "path": "content/compressions/adaptive_ranks.md"
         },
         {
             "id": "adasvd_compressor.md",
-            "title": "AdaSVDCompressor",
+            "title": "AdaSVDCompressor: Adaptive SVD via Nuclear-Norm Layer Importance & Iterative Matrix Refinement",
             "path": "content/compressions/adasvd_compressor.md"
         },
         {
             "id": "admm_compressor.md",
-            "title": "ADMM Compressor",
+            "title": "ADMM Compressor: Joint Alternating Direction Pruning and Low-Bit Quantization Engine",
             "path": "content/compressions/admm_compressor.md"
         },
         {
             "id": "admm_pruner.md",
-            "title": "ADMM Pruner",
+            "title": "ADMM Pruner: Alternating Direction Method of Multipliers for Soft-Thresholded Pruning",
             "path": "content/compressions/admm_pruner.md"
         },
         {
             "id": "armor_pruner.md",
-            "title": "ARMOR Pruner",
+            "title": "ARMOR Pruner: Semi-Structured 2:4 Block Sparsity with SVD Low-Rank Error Correction",
             "path": "content/compressions/armor_pruner.md"
         },
         {
             "id": "ast_pruner.md",
-            "title": "AST Pruner",
+            "title": "AST Pruner: Adaptive Semi-Structured 2:4 Pattern Pruning Engine",
             "path": "content/compressions/ast_pruner.md"
         },
         {
             "id": "astro_quantizer.md",
-            "title": "AstroQuantizer",
+            "title": "AstroQuantizer: Dynamic Uniform Range Quantization Engine with Straight-Through Estimator (STE)",
             "path": "content/compressions/astro_quantizer.md"
         },
         {
             "id": "bonsai_pruner.md",
-            "title": "Bonsai Pruner",
+            "title": "Bonsai Pruner: Iterative Magnitude Pruning with Progressive Sparsity Schedules",
             "path": "content/compressions/bonsai_pruner.md"
         },
         {
             "id": "cachenotes_compressor.md",
-            "title": "CacheNotes Compressor",
+            "title": "CacheNotes Compressor: Task-Aware Reasoning Token Guidance for KV Cache Compression",
             "path": "content/compressions/cachenotes_compressor.md"
         },
         {
             "id": "come.md",
-            "title": "CoMe",
+            "title": "CoMe: Layer Concatenation Compression",
             "path": "content/compressions/come.md"
         },
         {
             "id": "compot_compressor.md",
-            "title": "COMPOT",
+            "title": "COMPOT: Compressed Orthogonal Dictionary Learning",
             "path": "content/compressions/compot_compressor.md"
         },
         {
             "id": "coopq_quantizer.md",
-            "title": "CoopQ Quantizer",
+            "title": "CoopQ Quantizer: Cooperative Shapley-Inspired Adaptive Bit Allocation Engine",
             "path": "content/compressions/coopq_quantizer.md"
         },
         {
             "id": "cr_compressor.md",
-            "title": "CR Compressor",
+            "title": "CR Compressor: Interpolative Decomposition for Weight Compression",
             "path": "content/compressions/cr_compressor.md"
         },
         {
             "id": "cur_compressor.md",
-            "title": "CURCompressor",
+            "title": "CURCompressor: Leverage Score Sampled Column-Row CUR Decomposition Engine",
             "path": "content/compressions/cur_compressor.md"
         },
         {
-            "id": "cure.md",
-            "title": "CURE",
-            "path": "content/compressions/cure.md"
-        },
-        {
             "id": "cur_linear.md",
-            "title": "CURLinear",
+            "title": "CURLinear: Drop-In Leverage-Sampled Subspace Replacement Layer for nn.Linear",
             "path": "content/compressions/cur_linear.md"
         },
         {
             "id": "cur_moe_compressor.md",
-            "title": "CURMoECompressor",
+            "title": "CURMoECompressor: Sparse Expert Layer CUR Decomposition Engine for Mixture-of-Experts",
             "path": "content/compressions/cur_moe_compressor.md"
         },
         {
+            "id": "cure.md",
+            "title": "CURE: CUR Expert Compression Engine with Randomized Subspace Approximation",
+            "path": "content/compressions/cure.md"
+        },
+        {
             "id": "delta_kv.md",
-            "title": "DeltaKV",
+            "title": "DeltaKV: Residual-Based Key-Value Cache Compression via Long-Range Reference Matching",
             "path": "content/compressions/delta_kv.md"
         },
         {
+            "id": "direct_svd.md",
+            "title": "DirectSVDCompressor: Closed-Form Truncated SVD Low-Rank Factorization",
+            "path": "content/compressions/direct_svd.md"
+        },
+        {
             "id": "dobi_svd.md",
-            "title": "DobiSVDLinearLayer & Compressor",
+            "title": "DobiSVDLinearLayer & Compressor: Differentiable SVD with Learnable Rank Ratios",
             "path": "content/compressions/dobi_svd.md"
         },
         {
+            "id": "dynamic_rank.md",
+            "title": "DynamicEntropySVDCompressor: Singular Entropy-Budgeted Rank Allocation",
+            "path": "content/compressions/dynamic_rank.md"
+        },
+        {
             "id": "enlighten_compressor.md",
-            "title": "ENLighten",
+            "title": "ENLighten: Low‑Rank SVD + 2:4 Structured Sparsity",
             "path": "content/compressions/enlighten_compressor.md"
         },
         {
             "id": "entropy_budget_allocation.md",
-            "title": "EntropyBudgetAllocation",
+            "title": "EntropyBudgetAllocation: Global Rank Assignment via Whitened Activation Entropy",
             "path": "content/compressions/entropy_budget_allocation.md"
         },
         {
             "id": "erc_svd.md",
-            "title": "ERCCompressor",
+            "title": "ERCCompressor: Error-Controlled Singular Value Energy Thresholding Engine",
             "path": "content/compressions/erc_svd.md"
         },
         {
             "id": "faq_quantizer.md",
-            "title": "FAQ Quantizer",
+            "title": "FAQ: Feature-Activation-Aware Quantization Engine",
             "path": "content/compressions/faq_quantizer.md"
         },
         {
             "id": "flap.md",
-            "title": "FLAP",
+            "title": "FLAP: Fluctuation-Based Adaptive Structured Pruning Engine",
             "path": "content/compressions/flap.md"
         },
         {
             "id": "flat_llm.md",
-            "title": "FLAT-LLM",
+            "title": "FLAT-LLM: Activation-Aware Dimensionality Pruning via Covariance Eigendecomposition",
             "path": "content/compressions/flat_llm.md"
         },
         {
             "id": "frandi_compressor.md",
-            "title": "FRanDI",
+            "title": "FRanDI: Feature‑Regression Aligned Low‑Rank Compression",
             "path": "content/compressions/frandi_compressor.md"
         },
         {
             "id": "galerkin_attention.md",
-            "title": "Galerkin Transformer",
+            "title": "Galerkin Transformer: Petrov-Galerkin Subspace Projection Attention",
             "path": "content/compressions/galerkin_attention.md"
         },
         {
             "id": "gfws_d_compressor.md",
-            "title": "GFWSVD",
+            "title": "GFWSVD: Fisher‑Weighted SVD Compression",
             "path": "content/compressions/gfws_d_compressor.md"
         },
         {
             "id": "grecodec_compressor.md",
-            "title": "GRECODeC",
+            "title": "GRECODeC: Greedy Coordinate Descent Low-Rank Compression",
             "path": "content/compressions/grecodec_compressor.md"
         },
         {
             "id": "hashed_linear.md",
-            "title": "Hashed Linear",
+            "title": "Hashed Linear: Vectorized Hash-Based Weight Sharing Engine (HashedNets)",
             "path": "content/compressions/hashed_linear.md"
         },
         {
             "id": "hashed_net_compressor.md",
-            "title": "HashedNet Compressor",
+            "title": "HashedNet Compressor: Weight Sharing via Hash Tables",
             "path": "content/compressions/hashed_net_compressor.md"
         },
         {
             "id": "huffman_coder.md",
-            "title": "Huffman Coder",
+            "title": "Huffman Coder: Frequency-Optimal Prefix Entropy Coding Engine",
             "path": "content/compressions/huffman_coder.md"
         },
         {
             "id": "hybrid_svd_layer.md",
-            "title": "Hybrid SVD Layer",
+            "title": "Hybrid SVD Layer: Single‑Head SVD Approximation with Positional Encoding for Attention‑Free Encoding",
             "path": "content/compressions/hybrid_svd_layer.md"
         },
         {
             "id": "hybridkv_compressor.md",
-            "title": "HybridKV Compressor",
+            "title": "HybridKV Compressor: Dual Static-Dynamic Head-Specific Hierarchical KV Cache Compression",
             "path": "content/compressions/hybridkv_compressor.md"
         },
         {
             "id": "kmeans_quantize.md",
-            "title": "KMeans Quantizer",
+            "title": "KMeans Quantizer: Codebook-Based Centroid Weight Clustering Engine",
             "path": "content/compressions/kmeans_quantize.md"
         },
         {
-            "id": "kronecker_tt_lora.md",
-            "title": "Kronecker-TT-LoRA",
-            "path": "content/compressions/kronecker_tt_lora.md"
-        },
-        {
             "id": "kronecker_compressor.md",
-            "title": "KroneckerCompressor",
+            "title": "KroneckerCompressor: Automated Kronecker Subspace Decomposer for Deep Neural Networks",
             "path": "content/compressions/kronecker_compressor.md"
         },
         {
             "id": "kronecker_linear.md",
-            "title": "KroneckerLinear",
+            "title": "KroneckerLinear: Kronecker Product Factorized Linear Operator",
             "path": "content/compressions/kronecker_linear.md"
         },
         {
+            "id": "kronecker_tt_lora.md",
+            "title": "Kronecker-TT-LoRA: Hybrid Compression Engine for Parameter-Efficient Fine-Tuning",
+            "path": "content/compressions/kronecker_tt_lora.md"
+        },
+        {
             "id": "kvtc_compressor.md",
-            "title": "KVTC Compressor",
+            "title": "KVTC Compressor: Key-Value Transform Coding via PCA Decorrelation and Adaptive Quantization",
             "path": "content/compressions/kvtc_compressor.md"
         },
         {
             "id": "liftr.md",
-            "title": "LIFTR \u2013 Linearized Function Trick Compressor",
+            "title": "LIFTR – Linearized Function Trick Compressor",
             "path": "content/compressions/liftr.md"
         },
         {
             "id": "lillama_compressor.md",
-            "title": "LiLLaMA",
+            "title": "LiLLaMA: Local Distillation via Cross‑Covariance",
             "path": "content/compressions/lillama_compressor.md"
         },
         {
             "id": "lsc_compressor.md",
-            "title": "LSC Compressor",
+            "title": "LSC Compressor: Low-Rank Spectral Fourier Compression Engine",
             "path": "content/compressions/lsc_compressor.md"
         },
         {
             "id": "mamba_shedder.md",
-            "title": "Mamba-Shedder",
+            "title": "Mamba-Shedder: Fisher-Sensitivity-Guided Structured Column Shedding Engine",
             "path": "content/compressions/mamba_shedder.md"
         },
         {
             "id": "mgie_svd.md",
-            "title": "MGIE-SVD",
+            "title": "MGIE-SVD: Information Entropy SVD Rank Preservation",
             "path": "content/compressions/mgie_svd.md"
         },
         {
             "id": "mgie_svd_compressor.md",
-            "title": "MGIESVDBudgetCompressor",
+            "title": "MGIESVDBudgetCompressor: Information Entropy SVD Rank Allocation under Global Budget Constraints",
             "path": "content/compressions/mgie_svd_compressor.md"
         },
         {
             "id": "mlorq_compressor.md",
-            "title": "MLoRQ Compressor",
+            "title": "MLoRQ Compressor: Multi-Layer Optimal Rank SVD and Joint Low-Bit Quantization Engine",
             "path": "content/compressions/mlorq_compressor.md"
         },
         {
             "id": "modegpt_compressor.md",
-            "title": "MoDeGPT",
+            "title": "MoDeGPT: Modular Decomposition of Transformer Blocks",
             "path": "content/compressions/modegpt_compressor.md"
         },
         {
@@ -784,1150 +884,1170 @@
         },
         {
             "id": "nmf_compressor.md",
-            "title": "NMFCompressor",
+            "title": "NMFCompressor: Non-Negative Matrix Factorization Compression Engine",
             "path": "content/compressions/nmf_compressor.md"
         },
         {
             "id": "oats.md",
-            "title": "OATS",
+            "title": "OATS: Outlier‑Aware Training Sparsification",
             "path": "content/compressions/oats.md"
         },
         {
+            "id": "optimal_subspace_projection.md",
+            "title": "Subspace Projection: Activation‑Aware Low‑Rank Compression via Randomized SVD",
+            "path": "content/compressions/optimal_subspace_projection.md"
+        },
+        {
             "id": "padre_attention.md",
-            "title": "PADRe \u2013 Polynomial Attention with Dropout Regularization",
+            "title": "PADRe – Polynomial Attention with Dropout Regularization",
             "path": "content/compressions/padre_attention.md"
         },
         {
             "id": "proxsparse_pruner.md",
-            "title": "ProxSparse Pruner",
+            "title": "ProxSparse Pruner: Proximal Gradient Regularized Semi-Structured Pruning Engine",
             "path": "content/compressions/proxsparse_pruner.md"
         },
         {
             "id": "replaceme_compressor.md",
-            "title": "ReplaceMe",
+            "title": "ReplaceMe: Naive Layer Removal with Linear Replacement",
             "path": "content/compressions/replaceme_compressor.md"
         },
         {
+            "id": "res_svd.md",
+            "title": "ResSVDCompressor: Spectral Residual Low-Rank Adaptation (Spectral Residual LoRA)",
+            "path": "content/compressions/res_svd.md"
+        },
+        {
             "id": "roast_hashed_linear.md",
-            "title": "ROAST",
+            "title": "ROAST: Hardware‑Aware Weight Sharing with Tiling",
             "path": "content/compressions/roast_hashed_linear.md"
         },
         {
             "id": "rotational_slicegpt_int4.md",
-            "title": "Rotational-SliceGPT-INT4",
+            "title": "Rotational-SliceGPT-INT4: Hybrid Compression Engine",
             "path": "content/compressions/rotational_slicegpt_int4.md"
         },
         {
             "id": "rpc_attention.md",
-            "title": "RPC Attention",
+            "title": "RPC Attention: Kernel PCA Perspective on Self‑Attention",
             "path": "content/compressions/rpc_attention.md"
         },
         {
             "id": "rpca_compressor.md",
-            "title": "RPCACompressor",
+            "title": "RPCACompressor: Robust Principal Component Analysis Low-Rank & Sparse Matrix Decomposition Engine",
             "path": "content/compressions/rpca_compressor.md"
         },
         {
-            "id": "saes_svd_compressor.md",
-            "title": "SAESCompressor",
-            "path": "content/compressions/saes_svd_compressor.md"
-        },
-        {
             "id": "saes_svd.md",
-            "title": "SAES\u2011SVD v2",
+            "title": "SAES‑SVD v2: Error Suppression with Fixed Rank Ratio",
             "path": "content/compressions/saes_svd.md"
         },
         {
+            "id": "saes_svd_compressor.md",
+            "title": "SAESCompressor: Subspace Adaptation & Error Stabilization SVD Engine",
+            "path": "content/compressions/saes_svd_compressor.md"
+        },
+        {
+            "id": "saes_svd_v2.md",
+            "title": "SAESSVDCompressorV2: Spectrum-Aware Error Suppression SVD (SAES-SVD v2)",
+            "path": "content/compressions/saes_svd_v2.md"
+        },
+        {
             "id": "salr.md",
-            "title": "SALR",
+            "title": "SALR: Unified Low‑Rank and Sparse Pruning",
             "path": "content/compressions/salr.md"
         },
         {
             "id": "sdrm_compressor.md",
-            "title": "SDRM",
+            "title": "SDRM: Rank Assignment Proportional to Parameter Budget for Edge Inference",
             "path": "content/compressions/sdrm_compressor.md"
         },
         {
             "id": "slicegpt.md",
-            "title": "SliceGPT",
+            "title": "SliceGPT: Post-Training Slicing with Orthogonal Transformation",
             "path": "content/compressions/slicegpt.md"
         },
         {
             "id": "slicegpt_compressor.md",
-            "title": "SliceGPT PCA",
+            "title": "SliceGPT PCA: Calibration-Guided Activation Principal Component Slicing",
             "path": "content/compressions/slicegpt_compressor.md"
         },
         {
+            "id": "slicegpt_pca.md",
+            "title": "SliceGPT PCA Compressor",
+            "path": "content/compressions/slicegpt_pca.md"
+        },
+        {
             "id": "slim_compressor.md",
-            "title": "SLiM",
+            "title": "SLiM: One‑Shot Quantization, 2:4 Structured Sparsity, and Low‑Rank Correction",
             "path": "content/compressions/slim_compressor.md"
         },
         {
             "id": "soka_compressor.md",
-            "title": "SoKA (Kronecker Product) Compressor \u2013 Low\u2011Rank SVD Placeholder",
+            "title": "SoKA (Kronecker Product) Compressor – Low‑Rank SVD Placeholder",
             "path": "content/compressions/soka_compressor.md"
         },
         {
             "id": "sparsegpt.md",
-            "title": "SparseGPT",
+            "title": "SparseGPT: One-Shot Second-Order Hessian-Guided Weight Pruning for Large Language Models",
             "path": "content/compressions/sparsegpt.md"
         },
         {
             "id": "spectraformer_attention.md",
-            "title": "Spectraformer",
+            "title": "Spectraformer: Random Feature Linearisation with Flexible Kernel Approximation",
             "path": "content/compressions/spectraformer_attention.md"
         },
         {
-            "id": "optimal_subspace_projection.md",
-            "title": "Subspace Projection",
-            "path": "content/compressions/optimal_subspace_projection.md"
-        },
-        {
             "id": "svd_linear.md",
-            "title": "SVDLinearLayer",
+            "title": "SVDLinearLayer: Low-Rank Factorized Linear Layer Replacement",
             "path": "content/compressions/svd_linear.md"
         },
         {
-            "id": "swift_svd_compressor.md",
-            "title": "SwiftSVDActivationCompressor",
-            "path": "content/compressions/swift_svd_compressor.md"
-        },
-        {
             "id": "swift_svd.md",
-            "title": "Swift\u2011SVD",
+            "title": "Swift‑SVD: Closed‑Form SVD Compression with Rank Ratio",
             "path": "content/compressions/swift_svd.md"
         },
         {
+            "id": "swift_svd_act.md",
+            "title": "SwiftSVDActivationCompressor: Activation-Aware SVD via Cross-Covariance Projection",
+            "path": "content/compressions/swift_svd_act.md"
+        },
+        {
+            "id": "swift_svd_compressor.md",
+            "title": "SwiftSVDActivationCompressor: Activation-Aware SVD via Input-Output Cross-Covariance Factorization",
+            "path": "content/compressions/swift_svd_compressor.md"
+        },
+        {
             "id": "tlinformer_attention.md",
-            "title": "TLinFormer Attention",
+            "title": "TLinFormer Attention: Sequence-Dimension Projected Linear Attention",
             "path": "content/compressions/tlinformer_attention.md"
         },
         {
             "id": "tomoe_compressor.md",
-            "title": "ToMoE",
+            "title": "ToMoE: Converting Dense MLP into Mixture of Experts via Dynamic Structural Pruning",
             "path": "content/compressions/tomoe_compressor.md"
         },
         {
             "id": "tt_compressor.md",
-            "title": "TTCompressor",
+            "title": "TTCompressor: Global Tensor-Train Factorization Framework Engine",
             "path": "content/compressions/tt_compressor.md"
         },
         {
             "id": "tt_linear.md",
-            "title": "TTLinearLayer",
+            "title": "TTLinearLayer: Tensor-Train Core Decomposition Matrix Layer Engine",
             "path": "content/compressions/tt_linear.md"
         },
         {
             "id": "uniql_compressor.md",
-            "title": "UniQL",
+            "title": "UniQL: Joint Low‑Rank + Quantisation via SVD and Uniform Quantisation",
             "path": "content/compressions/uniql_compressor.md"
         },
         {
             "id": "zerokv_neo_compressor.md",
-            "title": "ZeroKV-Neo",
+            "title": "ZeroKV-Neo: L2-Norm KV Cache Eviction with Preserved Attention Sinks and Heavy Hitters",
             "path": "content/compressions/zerokv_neo_compressor.md"
         }
     ],
     "attentions_blog": [
         {
             "id": "adaptive_span_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Adaptive Span Attention (AdaptiveSpanAttention)",
             "path": "content/attentions_blog/adaptive_span_attention_blog.md"
         },
         {
             "id": "adaptive_svd_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Adaptive SVD Attention (AdaptiveSVDLinear)",
             "path": "content/attentions_blog/adaptive_svd_attention_blog.md"
         },
         {
             "id": "adasplash_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Adasplash Attention (AdaSplashAttention)",
             "path": "content/attentions_blog/adasplash_attention_blog.md"
         },
         {
             "id": "aegis_hybrid_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AEGIS Hybrid (AegisHybridAttention)",
             "path": "content/attentions_blog/aegis_hybrid_blog.md"
         },
         {
             "id": "aegis_spectron_fp8_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AEGIS Spectron FP8 (SpectronSpectralEntropyRouter)",
             "path": "content/attentions_blog/aegis_spectron_fp8_blog.md"
         },
         {
             "id": "aegis_v2_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AEGIS V2 (AegisAttentionV2)",
             "path": "content/attentions_blog/aegis_v2_blog.md"
         },
         {
             "id": "aegis_v3_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AEGIS V3 (FactorisedLinear)",
             "path": "content/attentions_blog/aegis_v3_blog.md"
         },
         {
             "id": "aegis_v4_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AEGIS V4 (FactorisedLinear)",
             "path": "content/attentions_blog/aegis_v4_blog.md"
         },
         {
             "id": "aegis_v5_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AEGIS V5 (FactorisedLinear)",
             "path": "content/attentions_blog/aegis_v5_blog.md"
         },
         {
             "id": "aegis_v6_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AEGIS V6 (FactorisedLowRankProjection)",
             "path": "content/attentions_blog/aegis_v6_blog.md"
         },
         {
             "id": "asvd_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: ASVD Attention (ASVDLinear)",
             "path": "content/attentions_blog/asvd_attention_blog.md"
         },
         {
             "id": "bam_umoe_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Bam Umoe (UnifiedMoE)",
             "path": "content/attentions_blog/bam_umoe_blog.md"
         },
         {
             "id": "block_transformer_hiba_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Block Transformer Hiba (BlockTransformerHIBA)",
             "path": "content/attentions_blog/block_transformer_hiba_blog.md"
         },
         {
             "id": "chela_slay_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Chela Slay (ChelaSlayAttention)",
             "path": "content/attentions_blog/chela_slay_blog.md"
         },
         {
             "id": "cluster_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Cluster Attention (ClusterAttention)",
             "path": "content/attentions_blog/cluster_attention_blog.md"
         },
         {
             "id": "compressed_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Compressed Attention (CompressedAttentionLayer)",
             "path": "content/attentions_blog/compressed_attention_blog.md"
         },
         {
             "id": "compressed_mha_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Compressed Mha Attention (CompressedDistilBertAttention)",
             "path": "content/attentions_blog/compressed_mha_attention_blog.md"
         },
         {
             "id": "eat_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Eat (EATBlock)",
             "path": "content/attentions_blog/eat_blog.md"
         },
         {
             "id": "factorised_matrix_state_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Factorised Matrix State (FactorisedMatrixState)",
             "path": "content/attentions_blog/factorised_matrix_state_blog.md"
         },
         {
             "id": "flash_attention3_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Flash Attention3 (FlashAttention3)",
             "path": "content/attentions_blog/flash_attention3_blog.md"
         },
         {
             "id": "flash_attention3_fp8_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Flash Attention3 FP8 (FlashAttention3FP8)",
             "path": "content/attentions_blog/flash_attention3_fp8_blog.md"
         },
         {
             "id": "full_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Full Attention (FullAttention)",
             "path": "content/attentions_blog/full_attention_blog.md"
         },
         {
             "id": "fusion_attn_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Fusion Attn (FUSIONATTN)",
             "path": "content/attentions_blog/fusion_attn_blog.md"
         },
         {
             "id": "gated_delta_net_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Gated Delta Net (HGRN2Layer)",
             "path": "content/attentions_blog/gated_delta_net_blog.md"
         },
         {
             "id": "gated_deltanet_block_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Gated Deltanet Block (GatedDeltaNetBlock)",
             "path": "content/attentions_blog/gated_deltanet_block_blog.md"
         },
         {
             "id": "goldfinch_ahn_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Goldfinch Ahn (GatedDeltaNetLayer)",
             "path": "content/attentions_blog/goldfinch_ahn_blog.md"
         },
         {
             "id": "gqa_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: GQA Attention (GroupedQueryAttention)",
             "path": "content/attentions_blog/gqa_attention_blog.md"
         },
         {
             "id": "granite_hybrid_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Granite Hybrid (Mamba2)",
             "path": "content/attentions_blog/granite_hybrid_blog.md"
         },
         {
             "id": "griffin_ssd_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Griffin SSD (GriffinSSDBlock)",
             "path": "content/attentions_blog/griffin_ssd_blog.md"
         },
         {
             "id": "halo_regla_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Halo Regla (RotaryEmbedding)",
             "path": "content/attentions_blog/halo_regla_blog.md"
         },
         {
             "id": "hamming_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Hamming Attention (HammingAttention)",
             "path": "content/attentions_blog/hamming_attention_blog.md"
         },
         {
             "id": "hgrn2_gated_deltanet_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: HGRN2 Gated Deltanet (HGRN2GatedDeltaNet)",
             "path": "content/attentions_blog/hgrn2_gated_deltanet_blog.md"
         },
         {
             "id": "hgrn2_layer_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: HGRN2 Layer (HGRN2Layer)",
             "path": "content/attentions_blog/hgrn2_layer_blog.md"
         },
         {
             "id": "hgrn2_outer_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: HGRN2 Outer (HGRN2OuterBlock)",
             "path": "content/attentions_blog/hgrn2_outer_blog.md"
         },
         {
             "id": "hla_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Hla Attention (HLAAttention)",
             "path": "content/attentions_blog/hla_attention_blog.md"
         },
         {
             "id": "hymba_transx_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Hymba Transx (UnifiedRoPE)",
             "path": "content/attentions_blog/hymba_transx_blog.md"
         },
         {
             "id": "infini_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Infini Attention (InfiniAttention)",
             "path": "content/attentions_blog/infini_attention_blog.md"
         },
         {
             "id": "jamba2_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Jamba2 (ExpertChoiceMoE)",
             "path": "content/attentions_blog/jamba2_blog.md"
         },
         {
             "id": "jamba_info_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Jamba Info (InfoMambaConceptBottleneck)",
             "path": "content/attentions_blog/jamba_info_blog.md"
         },
         {
             "id": "kda_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: KDA Attention (KDAAttention)",
             "path": "content/attentions_blog/kda_attention_blog.md"
         },
         {
             "id": "leka_v1_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: LEKA V1 (LEKAV1Attention)",
             "path": "content/attentions_blog/leka_v1_blog.md"
         },
         {
             "id": "leka_v2_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: LEKA V2 (LEKAv2Attention)",
             "path": "content/attentions_blog/leka_v2_blog.md"
         },
         {
             "id": "leka_v3_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: LEKA V3 (LEKAV3Attention)",
             "path": "content/attentions_blog/leka_v3_blog.md"
         },
         {
             "id": "linformer_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Linformer Attention (LinformerAttention)",
             "path": "content/attentions_blog/linformer_attention_blog.md"
         },
         {
             "id": "lola_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Lola Attention (LowRankCache)",
             "path": "content/attentions_blog/lola_attention_blog.md"
         },
         {
             "id": "lora_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: LoRA Attention (LoRALinear)",
             "path": "content/attentions_blog/lora_attention_blog.md"
         },
         {
             "id": "lsh_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: LSH Attention (LSHAttention)",
             "path": "content/attentions_blog/lsh_attention_blog.md"
         },
         {
             "id": "mamba_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Mamba (Mamba)",
             "path": "content/attentions_blog/mamba_blog.md"
         },
         {
             "id": "mamba_svd_flash_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Mamba SVD Flash (MambaSVDFlash)",
             "path": "content/attentions_blog/mamba_svd_flash_blog.md"
         },
         {
             "id": "minimal_aurora_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Minimal Aurora (FactorisedLinear)",
             "path": "content/attentions_blog/minimal_aurora_blog.md"
         },
         {
             "id": "minimal_nova_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Minimal Nova (FactorisedLinear)",
             "path": "content/attentions_blog/minimal_nova_blog.md"
         },
         {
             "id": "minimal_prism_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Minimal Prism (FactorisedLinear)",
             "path": "content/attentions_blog/minimal_prism_blog.md"
         },
         {
             "id": "minimal_svd_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Minimal SVD (FactorisedLinear)",
             "path": "content/attentions_blog/minimal_svd_blog.md"
         },
         {
             "id": "minimal_svd_v2_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Minimal SVD V2 (FactorisedLinear)",
             "path": "content/attentions_blog/minimal_svd_v2_blog.md"
         },
         {
             "id": "mixattention_moska_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Mixattention Moska (MixAttentionMoSKA)",
             "path": "content/attentions_blog/mixattention_moska_blog.md"
         },
         {
             "id": "mla_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: MLA Attention (MLAAttention)",
             "path": "content/attentions_blog/mla_attention_blog.md"
         },
         {
             "id": "moba_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Moba Attention (MoBAAttention)",
             "path": "content/attentions_blog/moba_attention_blog.md"
         },
         {
             "id": "moe_deltakv_paged_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Moe DeltaKV Paged (MoEDeltaKVPagedAttention)",
             "path": "content/attentions_blog/moe_deltakv_paged_blog.md"
         },
         {
             "id": "nasc_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: NASC Attention (FactorisedSVDLoRAProjection)",
             "path": "content/attentions_blog/nasc_attention_blog.md"
         },
         {
             "id": "nexus_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Nexus (SeerGating)",
             "path": "content/attentions_blog/nexus_blog.md"
         },
         {
             "id": "nha_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: NHA Attention (NHAAttention)",
             "path": "content/attentions_blog/nha_attention_blog.md"
         },
         {
             "id": "nha_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: NHA Compressor (NHACompressor)",
             "path": "content/attentions_blog/nha_compressor_blog.md"
         },
         {
             "id": "nsa_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: NSA Attention (NativeSparseAttention)",
             "path": "content/attentions_blog/nsa_attention_blog.md"
         },
         {
             "id": "nystrom_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Nystrom Attention (NystromAttention)",
             "path": "content/attentions_blog/nystrom_attention_blog.md"
         },
         {
             "id": "optimized_hybrid_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Optimized Hybrid Attention (OptimizedHybridAttention)",
             "path": "content/attentions_blog/optimized_hybrid_attention_blog.md"
         },
         {
             "id": "orion_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Orion (FactorisedLinear)",
             "path": "content/attentions_blog/orion_blog.md"
         },
         {
             "id": "performer_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Performer Attention (PerformerAttention)",
             "path": "content/attentions_blog/performer_attention_blog.md"
         },
         {
             "id": "phantom_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Phantom (FactorisedLinearCUR)",
             "path": "content/attentions_blog/phantom_blog.md"
         },
         {
             "id": "primal_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Primal Attention (PrimalAttention)",
             "path": "content/attentions_blog/primal_attention_blog.md"
         },
         {
             "id": "progressive_token_pruning_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Progressive Token Pruning (ProgressiveTokenPruning)",
             "path": "content/attentions_blog/progressive_token_pruning_blog.md"
         },
         {
             "id": "qcqa_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: QCQA Attention (QCQAAttention)",
             "path": "content/attentions_blog/qcqa_attention_blog.md"
         },
         {
             "id": "rala_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: RALA Attention (RALALinearAttention)",
             "path": "content/attentions_blog/rala_attention_blog.md"
         },
         {
             "id": "rala_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: RALA Compressor (RALALinearAttention)",
             "path": "content/attentions_blog/rala_compressor_blog.md"
         },
         {
             "id": "regla_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Regla Attention (ReGLAAttention)",
             "path": "content/attentions_blog/regla_attention_blog.md"
         },
         {
             "id": "replace_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Replace (Replace)",
             "path": "content/attentions_blog/replace_blog.md"
         },
         {
             "id": "routing_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Routing Attention (RoutingAttention)",
             "path": "content/attentions_blog/routing_attention_blog.md"
         },
         {
             "id": "rpc_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: RPC Attention (RPCAttention)",
             "path": "content/attentions_blog/rpc_attention_blog.md"
         },
         {
             "id": "rwkv_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: RWKV (RWKVAttention)",
             "path": "content/attentions_blog/rwkv_blog.md"
         },
         {
             "id": "salt_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Salt (SALTLinear)",
             "path": "content/attentions_blog/salt_blog.md"
         },
         {
             "id": "samba_m3_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Samba M3 (SpectralMamba)",
             "path": "content/attentions_blog/samba_m3_blog.md"
         },
         {
             "id": "samba_moe_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Samba Moe (REAPMoE)",
             "path": "content/attentions_blog/samba_moe_blog.md"
         },
         {
             "id": "simple_ssm_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Simple SSM (SimpleSSM)",
             "path": "content/attentions_blog/simple_ssm_blog.md"
         },
         {
             "id": "soa_attn_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SOA Attn (SOAAttention)",
             "path": "content/attentions_blog/soa_attn_blog.md"
         },
         {
             "id": "SOAFusedAttention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Soafusedattention (SOAFusedAttention)",
             "path": "content/attentions_blog/SOAFusedAttention_blog.md"
         },
         {
             "id": "span_expanded_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Span Expanded Attention (SpanExpandedAttention)",
             "path": "content/attentions_blog/span_expanded_attention_blog.md"
         },
         {
             "id": "spectra_v2_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Spectra V2 (SimpleRFFKernel)",
             "path": "content/attentions_blog/spectra_v2_blog.md"
         },
         {
             "id": "spectron_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Spectron (LowRankSparseLinear)",
             "path": "content/attentions_blog/spectron_blog.md"
         },
         {
             "id": "squeezing_heads_distill_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Squeezing Heads Distill (SqueezingHeadsDistiller)",
             "path": "content/attentions_blog/squeezing_heads_distill_blog.md"
         },
         {
             "id": "svd_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SVD Attention (SVDLinearAttention)",
             "path": "content/attentions_blog/svd_attention_blog.md"
         },
         {
             "id": "svd_compressed_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SVD Compressed (SVDCompressedAttention)",
             "path": "content/attentions_blog/svd_compressed_blog.md"
         },
         {
             "id": "svd_linear_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SVD Linear Attention (SVDLinear)",
             "path": "content/attentions_blog/svd_linear_attention_blog.md"
         },
         {
             "id": "svd_llm_v2_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SVD LLM V2 Attention (SVDLLMV2Attention)",
             "path": "content/attentions_blog/svd_llm_v2_attention_blog.md"
         },
         {
             "id": "svd_projection_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SVD Projection Attention (SVDProjectionLinear)",
             "path": "content/attentions_blog/svd_projection_attention_blog.md"
         },
         {
             "id": "template_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Template Attention (YourCustomAttention)",
             "path": "content/attentions_blog/template_attention_blog.md"
         },
         {
             "id": "template_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Template Compressor (SVDLinearLayer)",
             "path": "content/attentions_blog/template_compressor_blog.md"
         },
         {
             "id": "token_compressed_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Token Compressed (TokenCompressedAttention)",
             "path": "content/attentions_blog/token_compressed_blog.md"
         },
         {
             "id": "tpa_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: TPA Attention (TPAttention)",
             "path": "content/attentions_blog/tpa_attention_blog.md"
         },
         {
             "id": "tt_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Tensor-Train (TokenCompressedAttention)",
             "path": "content/attentions_blog/tt_blog.md"
         },
         {
             "id": "unified_rope_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Unified Rope (UnifiedRoPE)",
             "path": "content/attentions_blog/unified_rope_blog.md"
         },
         {
             "id": "upi_stuffed_mamba_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Upi Stuffed Mamba (UPIMambaBlock)",
             "path": "content/attentions_blog/upi_stuffed_mamba_blog.md"
         },
         {
             "id": "vig_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Vig Attention (ViGAttention)",
             "path": "content/attentions_blog/vig_attention_blog.md"
         },
         {
             "id": "vspec_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Vspec (VariationalSpectralGate)",
             "path": "content/attentions_blog/vspec_blog.md"
         },
         {
             "id": "weighted_ensemble_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Weighted Ensemble (TaskAwareAttention)",
             "path": "content/attentions_blog/weighted_ensemble_blog.md"
         },
         {
             "id": "wgqa_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: WGQA Attention (WeightedGroupedQueryAttention)",
             "path": "content/attentions_blog/wgqa_attention_blog.md"
         },
         {
             "id": "xattention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Xattention (XAttention)",
             "path": "content/attentions_blog/xattention_blog.md"
         },
         {
             "id": "zeros_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Zeros Attention (ZeroSAttention)",
             "path": "content/attentions_blog/zeros_attention_blog.md"
         }
     ],
     "compressions_blog": [
         {
             "id": "a3_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: A3 Compressor (A3Compressor)",
             "path": "content/compressions_blog/a3_compressor_blog.md"
         },
         {
             "id": "aa_svd_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Aa SVD Compressor (AASVDCompressor)",
             "path": "content/compressions_blog/aa_svd_compressor_blog.md"
         },
         {
             "id": "aasvd_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AASVD Compressor (AASVDCompressor)",
             "path": "content/compressions_blog/aasvd_compressor_blog.md"
         },
         {
             "id": "adaptive_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Adaptive Compressor (AdaptiveTransformerCompressor)",
             "path": "content/compressions_blog/adaptive_compressor_blog.md"
         },
         {
             "id": "adaptive_ranks_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Adaptive Ranks (AdaptiveTransformerCompressor)",
             "path": "content/compressions_blog/adaptive_ranks_blog.md"
         },
         {
             "id": "adasvd_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AdaSVD Compressor (AdaSVDCompressor)",
             "path": "content/compressions_blog/adasvd_compressor_blog.md"
         },
         {
             "id": "admm_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: ADMM Compressor (ADMMCompressor)",
             "path": "content/compressions_blog/admm_compressor_blog.md"
         },
         {
             "id": "admm_pruner_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: ADMM Pruner (ADMMPruner)",
             "path": "content/compressions_blog/admm_pruner_blog.md"
         },
         {
             "id": "armor_pruner_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: ARMOR Pruner (ARMORPruner)",
             "path": "content/compressions_blog/armor_pruner_blog.md"
         },
         {
             "id": "ast_pruner_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Ast Pruner (ASTPruner)",
             "path": "content/compressions_blog/ast_pruner_blog.md"
         },
         {
             "id": "astro_quantizer_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Astro Quantizer (AstroQuantizer)",
             "path": "content/compressions_blog/astro_quantizer_blog.md"
         },
         {
             "id": "asvd_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: ASVD Compressor (ASVDCompressor)",
             "path": "content/compressions_blog/asvd_compressor_blog.md"
         },
         {
             "id": "awq_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: AWQ (AWQQuantizer)",
             "path": "content/compressions_blog/awq_blog.md"
         },
         {
             "id": "bonsai_pruner_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Bonsai Pruner (BonsaiPruner)",
             "path": "content/compressions_blog/bonsai_pruner_blog.md"
         },
         {
             "id": "cachenotes_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: CacheNotes Compressor (CacheNotesCompressor)",
             "path": "content/compressions_blog/cachenotes_compressor_blog.md"
         },
         {
             "id": "come_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Come (CoMeCompressor)",
             "path": "content/compressions_blog/come_blog.md"
         },
         {
             "id": "compot_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: ComPOT Compressor (COMPOTCompressor)",
             "path": "content/compressions_blog/compot_compressor_blog.md"
         },
         {
             "id": "coopq_quantizer_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: CoOpQ Quantizer (CoopQQuantizer)",
             "path": "content/compressions_blog/coopq_quantizer_blog.md"
         },
         {
             "id": "cr_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Cr Compressor (CRCompressor)",
             "path": "content/compressions_blog/cr_compressor_blog.md"
         },
         {
             "id": "cur_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: CUR Compressor (CURLinear)",
             "path": "content/compressions_blog/cur_compressor_blog.md"
         },
         {
             "id": "cur_linear_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: CUR Linear (CURLinear)",
             "path": "content/compressions_blog/cur_linear_blog.md"
         },
         {
             "id": "cur_moe_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: CUR Moe Compressor (CURMoECompressor)",
             "path": "content/compressions_blog/cur_moe_compressor_blog.md"
         },
         {
             "id": "cure_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Cure (CURMoECompressor)",
             "path": "content/compressions_blog/cure_blog.md"
         },
         {
             "id": "delta_kv_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Delta KV (DeltaKVCompressor)",
             "path": "content/compressions_blog/delta_kv_blog.md"
         },
         {
             "id": "dobi_svd_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: DOBI SVD (DobiSVDLinearLayer)",
             "path": "content/compressions_blog/dobi_svd_blog.md"
         },
         {
             "id": "enlighten_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Enlighten Compressor (ENLightenCompressor)",
             "path": "content/compressions_blog/enlighten_compressor_blog.md"
         },
         {
             "id": "entropy_budget_allocation_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Entropy Budget Allocation (EntropyBudgetCompressor)",
             "path": "content/compressions_blog/entropy_budget_allocation_blog.md"
         },
         {
             "id": "erc_svd_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Erc SVD (ERCCompressor)",
             "path": "content/compressions_blog/erc_svd_blog.md"
         },
         {
             "id": "faq_quantizer_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Faq Quantizer (FAQQuantizer)",
             "path": "content/compressions_blog/faq_quantizer_blog.md"
         },
         {
             "id": "flap_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: FLAP (FLAPCompressor)",
             "path": "content/compressions_blog/flap_blog.md"
         },
         {
             "id": "flat_llm_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Flat LLM (FLATLLMCompressor)",
             "path": "content/compressions_blog/flat_llm_blog.md"
         },
         {
             "id": "frandi_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Frandi Compressor (FRanDICompressor)",
             "path": "content/compressions_blog/frandi_compressor_blog.md"
         },
         {
             "id": "galerkin_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Galerkin Attention (GalerkinAttention)",
             "path": "content/compressions_blog/galerkin_attention_blog.md"
         },
         {
             "id": "gfws_d_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Gfws D Compressor (GFWSCompressor)",
             "path": "content/compressions_blog/gfws_d_compressor_blog.md"
         },
         {
             "id": "grecodec_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: GreCodec Compressor (FRanDICompressor)",
             "path": "content/compressions_blog/grecodec_compressor_blog.md"
         },
         {
             "id": "hashed_linear_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Hashed Linear (HashedLinear)",
             "path": "content/compressions_blog/hashed_linear_blog.md"
         },
         {
             "id": "hashed_net_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Hashed Net Compressor (HashedNetCompressor)",
             "path": "content/compressions_blog/hashed_net_compressor_blog.md"
         },
         {
             "id": "huffman_coder_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Huffman Coder (HuffmanCoder)",
             "path": "content/compressions_blog/huffman_coder_blog.md"
         },
         {
             "id": "hybrid_svd_layer_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Hybrid SVD Layer (SVDSingleHead)",
             "path": "content/compressions_blog/hybrid_svd_layer_blog.md"
         },
         {
             "id": "hybridkv_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Hybridkv Compressor (HybridKVCompressor)",
             "path": "content/compressions_blog/hybridkv_compressor_blog.md"
         },
         {
             "id": "kmeans_quantize_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Kmeans Quantize (KMeansLinear)",
             "path": "content/compressions_blog/kmeans_quantize_blog.md"
         },
         {
             "id": "kronecker_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Kronecker Compressor (KroneckerCompressor)",
             "path": "content/compressions_blog/kronecker_compressor_blog.md"
         },
         {
             "id": "kronecker_linear_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Kronecker Linear (KroneckerLinear)",
             "path": "content/compressions_blog/kronecker_linear_blog.md"
         },
         {
             "id": "kronecker_tt_lora_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Kronecker Tensor-Train LoRA (KroneckerTTLoRALayer)",
             "path": "content/compressions_blog/kronecker_tt_lora_blog.md"
         },
         {
             "id": "kvtc_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: KVTC Compressor (KVTCCompressor)",
             "path": "content/compressions_blog/kvtc_compressor_blog.md"
         },
         {
             "id": "liftr_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Liftr (LinearizedGELU)",
             "path": "content/compressions_blog/liftr_blog.md"
         },
         {
             "id": "lillama_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Lillama Compressor (LiLLaMACompressor)",
             "path": "content/compressions_blog/lillama_compressor_blog.md"
         },
         {
             "id": "lsc_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: LSC Compressor (LSCCompressor)",
             "path": "content/compressions_blog/lsc_compressor_blog.md"
         },
         {
             "id": "mamba_shedder_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Mamba Shedder (MambaShedderCompressor)",
             "path": "content/compressions_blog/mamba_shedder_blog.md"
         },
         {
             "id": "mgie_svd_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: MGIE SVD (MGIECompressor)",
             "path": "content/compressions_blog/mgie_svd_blog.md"
         },
         {
             "id": "mgie_svd_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: MGIE SVD Compressor (MGIESVDBudgetCompressor)",
             "path": "content/compressions_blog/mgie_svd_compressor_blog.md"
         },
         {
             "id": "mlorq_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Mlorq Compressor (MLoRQCompressor)",
             "path": "content/compressions_blog/mlorq_compressor_blog.md"
         },
         {
             "id": "modegpt_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Modegpt Compressor (MoDeGPTCompressor)",
             "path": "content/compressions_blog/modegpt_compressor_blog.md"
         },
         {
             "id": "nli_softmax_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Nli Softmax (NLISoftmaxFunction)",
             "path": "content/compressions_blog/nli_softmax_blog.md"
         },
         {
             "id": "nmf_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: NMF Compressor (NMFCompressor)",
             "path": "content/compressions_blog/nmf_compressor_blog.md"
         },
         {
             "id": "oats_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Oats (OATSCompressor)",
             "path": "content/compressions_blog/oats_blog.md"
         },
         {
             "id": "optimal_subspace_projection_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Optimal Subspace Projection (SubspaceProjectionCompressor)",
             "path": "content/compressions_blog/optimal_subspace_projection_blog.md"
         },
         {
             "id": "padre_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Padre Attention (PADReAttention)",
             "path": "content/compressions_blog/padre_attention_blog.md"
         },
         {
             "id": "proxsparse_pruner_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Proxsparse Pruner (ProxSparsePruner)",
             "path": "content/compressions_blog/proxsparse_pruner_blog.md"
         },
         {
             "id": "replaceme_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Replaceme Compressor (ReplaceMeCompressor)",
             "path": "content/compressions_blog/replaceme_compressor_blog.md"
         },
         {
             "id": "roast_hashed_linear_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Roast Hashed Linear (ROASTLinear)",
             "path": "content/compressions_blog/roast_hashed_linear_blog.md"
         },
         {
             "id": "rotational_slicegpt_int4_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Rotational Slicegpt INT4 (RotationalSliceGPTINT4Linear)",
             "path": "content/compressions_blog/rotational_slicegpt_int4_blog.md"
         },
         {
             "id": "rpc_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: RPC Attention (RPCAttention)",
             "path": "content/compressions_blog/rpc_attention_blog.md"
         },
         {
             "id": "rpca_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: RPCA Compressor (RPCACompressor)",
             "path": "content/compressions_blog/rpca_compressor_blog.md"
         },
         {
             "id": "saes_svd_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SAES SVD (SAESSVDCompressorV2)",
             "path": "content/compressions_blog/saes_svd_blog.md"
         },
         {
             "id": "saes_svd_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SAES SVD Compressor (SAESCompressor)",
             "path": "content/compressions_blog/saes_svd_compressor_blog.md"
         },
         {
             "id": "salr_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Salr (SALRLayer)",
             "path": "content/compressions_blog/salr_blog.md"
         },
         {
             "id": "sdrm_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Sdrm Compressor (SDRMCompressor)",
             "path": "content/compressions_blog/sdrm_compressor_blog.md"
         },
         {
             "id": "slicegpt_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Slicegpt (SliceGPTCompressor)",
             "path": "content/compressions_blog/slicegpt_blog.md"
         },
         {
             "id": "slicegpt_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Slicegpt Compressor (SliceGPTPCACompressor)",
             "path": "content/compressions_blog/slicegpt_compressor_blog.md"
         },
         {
             "id": "slim_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Slim Compressor (SLiMCompressor)",
             "path": "content/compressions_blog/slim_compressor_blog.md"
         },
         {
             "id": "smoothquant_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Smoothquant (SmoothQuantCompressor)",
             "path": "content/compressions_blog/smoothquant_blog.md"
         },
         {
             "id": "soka_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SOKA Compressor (LowRankLinear)",
             "path": "content/compressions_blog/soka_compressor_blog.md"
         },
         {
             "id": "sparsegpt_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Sparsegpt (SparseGPTCompressor)",
             "path": "content/compressions_blog/sparsegpt_blog.md"
         },
         {
             "id": "spectraformer_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Spectraformer Attention (SpectraformerAttention)",
             "path": "content/compressions_blog/spectraformer_attention_blog.md"
         },
         {
             "id": "svd_linear_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: SVD Linear (SVDLinearLayer)",
             "path": "content/compressions_blog/svd_linear_blog.md"
         },
         {
             "id": "swift_svd_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Swift SVD (SwiftSVDCompressor)",
             "path": "content/compressions_blog/swift_svd_blog.md"
         },
         {
             "id": "swift_svd_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Swift SVD Compressor (SwiftSVDActivationCompressor)",
             "path": "content/compressions_blog/swift_svd_compressor_blog.md"
         },
         {
             "id": "tlinformer_attention_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Tlinformer Attention (TLinFormerAttention)",
             "path": "content/compressions_blog/tlinformer_attention_blog.md"
         },
         {
             "id": "tomoe_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Tomoe Compressor (ToMoELinear)",
             "path": "content/compressions_blog/tomoe_compressor_blog.md"
         },
         {
             "id": "tt_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Tensor-Train Compressor (TTCompressor)",
             "path": "content/compressions_blog/tt_compressor_blog.md"
         },
         {
             "id": "tt_linear_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: Tensor-Train Linear (TTLinearLayer)",
             "path": "content/compressions_blog/tt_linear_blog.md"
         },
         {
             "id": "uniql_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: UniQL Compressor (UniQLCompressor)",
             "path": "content/compressions_blog/uniql_compressor_blog.md"
         },
         {
             "id": "zerokv_neo_compressor_blog.md",
-            "title": "\ud83c\udf1f Deep Dive",
+            "title": "🌟 Deep Dive: ZeroKV Neo Compressor (ZeroKVNeoCompressor)",
             "path": "content/compressions_blog/zerokv_neo_compressor_blog.md"
         }
     ],
     "blog_series": [
         {
+            "id": "01_spectral_svd_lowrank_attentions.md",
+            "title": "🌟 Part 1: Spectral, SVD, Low-Rank & Factorized Attention Architectures",
+            "path": "blog/01_spectral_svd_lowrank_attentions.md"
+        },
+        {
             "id": "02_linear_kernel_recurrent_ssm_attentions.md",
-            "title": "\u26a1 Part 2",
+            "title": "⚡ Part 2: Linear, Kernelized, Recurrent & State Space (SSM) Attentions",
             "path": "blog/02_linear_kernel_recurrent_ssm_attentions.md"
         },
         {
             "id": "03_sparse_multiscale_latent_paged_attentions.md",
-            "title": "\u26a1 Part 3",
+            "title": "⚡ Part 3: Sparse, Multi-Scale, Latent & Paged Attention Architectures",
             "path": "blog/03_sparse_multiscale_latent_paged_attentions.md"
         },
         {
-            "id": "05_quantization_pruning_distillation_compressions.md",
-            "title": "\u26a1 Part 5",
-            "path": "blog/05_quantization_pruning_distillation_compressions.md"
-        },
-        {
-            "id": "01_spectral_svd_lowrank_attentions.md",
-            "title": "\ud83c\udf1f Part 1",
-            "path": "blog/01_spectral_svd_lowrank_attentions.md"
-        },
-        {
             "id": "04_svd_lowrank_structural_compressions.md",
-            "title": "\ud83c\udf1f Part 4",
+            "title": "🌟 Part 4: SVD, Low-Rank & Structural Compression Engines",
             "path": "blog/04_svd_lowrank_structural_compressions.md"
         },
         {
+            "id": "05_quantization_pruning_distillation_compressions.md",
+            "title": "⚡ Part 5: Quantization, Pruning, Distillation & Cache Engines",
+            "path": "blog/05_quantization_pruning_distillation_compressions.md"
+        },
+        {
             "id": "README.md",
-            "title": "\ud83d\ude80 NeuralOps Masterclass Blog Series Compendium",
+            "title": "🚀 NeuralOps Masterclass Blog Series Compendium",
             "path": "blog/README.md"
         }
     ],
     "framework": [
         {
-            "id": "NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md",
-            "title": "Next-Gen Master Compendium",
-            "path": "content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md"
-        },
-        {
             "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
-            "title": "Master Empirical Benchmark Report",
+            "title": "📊 SVD Linear Attention & Compression Framework: Master Empirical Benchmark Report",
             "path": "content/framework/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
         },
         {
+            "id": "NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md",
+            "title": "Next-Generation Architectural Synthesis & Innovation Master Compendium",
+            "path": "content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md"
+        },
+        {
             "id": "README.md",
-            "title": "Framework Documentation",
+            "title": "🚀 SVD Linear Attention Framework Core Architecture",
             "path": "content/framework/README.md"
         }
     ]
