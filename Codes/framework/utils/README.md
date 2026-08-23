@@ -38,7 +38,7 @@
 The **High-Performance Linear Algebra, CUDA & Tensor Utilities** is a mission-critical subsystem within the NeuralOps research framework, engineered to eliminate memory bandwidth stalls, quadratic attention bottlenecks, and deployment overhead in next-generation Foundation Models.
 
 ### Key Architectural Pillars:
-- **Zero-Accuracy Loss Compression**: Combines activation-aware coordinate smoothing with truncated Singular Value Decomposition ($W pprox U_r \Sigma_r V_r^T$), recovering $>99.5\%$ of baseline language modeling accuracy.
+- **Zero-Accuracy Loss Compression**: Combines activation-aware coordinate smoothing with truncated Singular Value Decomposition ($W  pprox U_r \Sigma_r V_r^T$), recovering $>99.5\%$ of baseline language modeling accuracy.
 - **Hardware-Aligned Execution**: Custom Triton and CUDA kernels align tensor layouts directly with NVIDIA Hopper (H100/H200) and Blackwell (B200) Tensor Memory Accelerators (TMA) and Warpgroup GEMM instructions.
 - **Modular Extensibility**: Decoupled registries (`ATTENTION_REGISTRY`, `COMPRESSOR_REGISTRY`, `DATASET_REGISTRY`, `TRAINER_REGISTRY`) allow researchers to inject custom architectures zero-shot.
 - **Enterprise-Grade Observability**: Real-time WebSocket telemetry, automated Bayesian hyperparameter sweeps, Overleaf-style collaborative LaTeX paper drafting, and interactive 3D manifold visualizers.
@@ -101,11 +101,11 @@ Given a dense transformer weight matrix $W \in \mathbb{R}^{d_{out} 	imes d_{in}}
 $$Y = X W^T \quad 	ext{requiring } \mathcal{O}(d_{in} \cdot d_{out}) 	ext{ parameters and memory bandwidth.}$$
 
 Under the low-rank spectral approximation with rank $r \ll \min(d_{in}, d_{out})$:
-$$W pprox U_r \Sigma_r V_r^T = W_{down} W_{up}^T \quad 	ext{where } W_{down} = U_r \sqrt{\Sigma_r} \in \mathbb{R}^{d_{out} 	imes r}, \; W_{up} = V_r \sqrt{\Sigma_r} \in \mathbb{R}^{d_{in} 	imes r}$$
+$$W  pprox U_r \Sigma_r V_r^T = W_{down} W_{up}^T \quad 	ext{where } W_{down} = U_r \sqrt{\Sigma_r} \in \mathbb{R}^{d_{out} 	imes r}, \; W_{up} = V_r \sqrt{\Sigma_r} \in \mathbb{R}^{d_{in} 	imes r}$$
 
 The forward pass is reformulated as a cascaded projection:
 $$Z = X W_{up} \in \mathbb{R}^{B 	imes N 	imes r}, \quad Y = Z W_{down}^T \in \mathbb{R}^{B 	imes N 	imes d_{out}}$$
-$$	ext{Parameter Reduction: } rac{r(d_{in} + d_{out})}{d_{in} \cdot d_{out}} \ll 1$$
+$$	ext{Parameter Reduction: }  rac{r(d_{in} + d_{out})}{d_{in} \cdot d_{out}} \ll 1$$
 
 ### 2. Activation Outlier Scaling & Covariance Preconditioning
 To prevent severe quantization error from kurtosis outliers in deep layers, activation covariance scaling is applied:

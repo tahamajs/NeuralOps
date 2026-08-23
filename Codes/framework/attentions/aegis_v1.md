@@ -3,7 +3,7 @@
 ## 1. Mathematical Formulation & Architecture
 AEGIS-Attention V1 integrates low-rank singular value decomposition (SVD) with a dual-branch hybrid attention mechanism:
 1. **Truncated SVD Factorized Linear Projections**:
-   $$W pprox U_{:, :r} \Sigma_{:r, :r} V_{:, :r}^T = W_{	ext{up}} W_{	ext{down}}$$
+   $$W  pprox U_{:, :r} \Sigma_{:r, :r} V_{:, :r}^T = W_{	ext{up}} W_{	ext{down}}$$
    where rank $r$ is dynamically determined by singular value energy threshold $	au_{	ext{energy}} = 0.95$:
    $$\frac{\sum_{k=1}^r \sigma_k^2}{\sum_{k=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_k^2} \ge \tau_{\text{energy}}$$
 
