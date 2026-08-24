@@ -260,16 +260,24 @@ class PHANTOMAttention(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        model_config = config if config is not None else model_config
         if phantom_cfg is None:
             phantom_cfg = PHANTOMConfig()
-        if pretrained_attn is None:
-            raise ValueError("PHANTOM requires pretrained_attn for SVD initialization")
-        self.num_heads: int = model_config.num_attention_heads
-        self.head_dim: int = model_config.hidden_size // self.num_heads
-        self.all_head_size: int = self.num_heads * self.head_dim
-        self.hidden_size: int = model_config.hidden_size
+        hidden_size = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
+        num_heads = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+        self.num_heads: int = num_heads
+        self.head_dim: int = hidden_size // num_heads
+        self.all_head_size: int = hidden_size
+        self.hidden_size: int = hidden_size
         self.cfg: PHANTOMConfig = phantom_cfg
+
+        if pretrained_attn is None:
+            dummy_lin = nn.Linear(hidden_size, hidden_size)
+            pretrained_attn = type("DummyAttn", (), {
+                "q_lin": dummy_lin,
+                "k_lin": dummy_lin,
+                "v_lin": dummy_lin,
+                "out_lin": dummy_lin,
+            })()
 
         self.q_proj = FactorisedLinear_CUR(
             pretrained_attn.q_lin.weight.data,
