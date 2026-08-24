@@ -202,7 +202,7 @@ class AdaptiveSVDAttention(nn.Module):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def _compute_energy_rank(self, S: torch.Tensor, max_rank: int, min_rank: int = 1) -> int:
+    def _compute_energy_rank(self, S: torch.Tensor, max_rank: int, min_rank: int = 16) -> int:
         r"""
         Find smallest rank $r$ satisfying cumulative singular value energy threshold:
         $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)$$
