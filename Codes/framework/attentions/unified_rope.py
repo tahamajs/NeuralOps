@@ -42,8 +42,10 @@ class UnifiedRoPE(nn.Module):
         base: Frequency base for inverse frequency computation (default 10000).
     """
 
-    def __init__(self, dim: int, max_seq_len: int = 4096, base: int = 10000) -> None:
+    def __init__(self, dim: Optional[int] = None, max_seq_len: int = 4096, base: int = 10000, config: Optional[Any] = None, **kwargs: Any) -> None:
         super().__init__()
+        if dim is None:
+            dim = getattr(config, "hidden_size", 768) if config is not None else 768
         self.dim: int = dim
         self.max_seq_len: int = max_seq_len
         self.base: int = base
