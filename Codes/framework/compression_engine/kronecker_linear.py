@@ -120,19 +120,19 @@ class KroneckerLinear(nn.Module):
 
             # Step 1: contract with B over n2 dimension
             # x_flat viewed as (K * n1, n2) @ B^T (n2, m2) -> (K * n1, m2)
-            x_b = torch.matmul(x_flat.view(K * self.n1, self.n2), self.B.t())  # (K * n1, m2)
+            x_b = torch.matmul(x_flat.reshape(K * self.n1, self.n2), self.B.t())  # (K * n1, m2)
 
             # Step 2: transpose to (K, m2, n1) -> (K * m2, n1) @ A^T (n1, m1) -> (K * m2, m1)
-            x_b = x_b.view(K, self.n1, self.m2).transpose(1, 2).reshape(K * self.m2, self.n1)
+            x_b = x_b.reshape(K, self.n1, self.m2).transpose(1, 2).reshape(K * self.m2, self.n1)
             x_a = torch.matmul(x_b, self.A.t())  # (K * m2, m1)
 
             # Step 3: transpose back to (K, m1, m2) -> (K, m1 * m2)
-            out = x_a.view(K, self.m2, self.m1).transpose(1, 2).reshape(K, self.out_features)
+            out = x_a.reshape(K, self.m2, self.m1).transpose(1, 2).reshape(K, self.out_features)
 
             if self.bias is not None:
                 out = out + self.bias
 
-            return out.view(*orig_shape[:-1], self.out_features)
+            return out.reshape(*orig_shape[:-1], self.out_features)
         else:
             # Low-rank SVD fallback: y = (x @ V^T) @ U^T + bias
             out = F.linear(F.linear(x, self.V), self.U, self.bias)

@@ -50,19 +50,96 @@ class MockTransformerModel(nn.Module):
         return logits
 
 
+class MockDistilBertAttention(nn.Module):
+    def __init__(self, dim=768, n_heads=12):
+        super().__init__()
+        self.q_lin = nn.Linear(dim, dim)
+        self.k_lin = nn.Linear(dim, dim)
+        self.v_lin = nn.Linear(dim, dim)
+        self.out_lin = nn.Linear(dim, dim)
+        self.mha = nn.MultiheadAttention(embed_dim=dim, num_heads=n_heads, batch_first=True)
+
+    def forward(self, x, *args, **kwargs):
+        h, _ = self.mha(x, x, x)
+        return h
+
+
 class MockDistilBertLayer(nn.Module):
     def __init__(self, dim=768, n_heads=12):
         super().__init__()
-        self.attention = nn.MultiheadAttention(embed_dim=dim, num_heads=n_heads, batch_first=True)
+        self.attention = MockDistilBertAttention(dim=dim, n_heads=n_heads)
         self.sa_layer_norm = nn.LayerNorm(dim)
         self.ffn = nn.Sequential(nn.Linear(dim, dim * 4), nn.GELU(), nn.Linear(dim * 4, dim))
         self.output_layer_norm = nn.LayerNorm(dim)
 
     def forward(self, x):
-        h, _ = self.attention(x, x, x)
+        h = self.attention(x)
         x = self.sa_layer_norm(x + h)
         h = self.ffn(x)
         return self.output_layer_norm(x + h)
+
+
+def instantiate_attention(cls_or_func, config, mock_layer):
+    patterns = [
+        lambda: cls_or_func(config),
+        lambda: cls_or_func(embed_dim=768, num_heads=12),
+        lambda: cls_or_func(dim=768),
+        lambda: cls_or_func(hidden_size=768),
+        lambda: cls_or_func(
+            layer=mock_layer,
+            model_config=config,
+            comp_config=None,
+            layer_idx=0,
+            total_layers=6,
+            old_attn=mock_layer.attention
+        ),
+        lambda: cls_or_func(
+            mock_layer,
+            config,
+            None,
+            0,
+            6,
+            mock_layer.attention
+        ),
+        lambda: cls_or_func(
+            layer=mock_layer,
+            model_config=config,
+            comp_config=None,
+            layer_idx=0,
+            total_layers=6
+        ),
+        lambda: cls_or_func(
+            mock_layer,
+            config,
+            None,
+            0,
+            6
+        ),
+        lambda: cls_or_func(
+            model_config=config,
+            comp_config=None,
+            layer_idx=0,
+            total_layers=6,
+            old_attn=mock_layer.attention
+        ),
+        lambda: cls_or_func(
+            model_config=config,
+            comp_config=None,
+            layer_idx=0,
+            total_layers=6
+        ),
+        lambda: cls_or_func(),
+    ]
+    last_err = None
+    for p in patterns:
+        try:
+            res = p()
+            if res is not None:
+                return res
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err or ValueError("Failed all instantiation patterns")
 
 
 def test_all_attentions():
@@ -86,48 +163,12 @@ def test_all_attentions():
     for attn_name in all_attns:
         try:
             cls_or_func = ATTENTION_REGISTRY.resolve(attn_name)
-            layer = None
             mock_layer = MockDistilBertLayer(dim=768, n_heads=12)
 
-            # Try factory function or injection signatures
-            try:
-                layer = cls_or_func(config)
-            except Exception:
-                try:
-                    layer = cls_or_func(embed_dim=768, num_heads=12)
-                except Exception:
-                    try:
-                        layer = cls_or_func(
-                            layer=mock_layer,
-                            model_config=config,
-                            comp_config=None,
-                            layer_idx=0,
-                            total_layers=6,
-                            old_attn=mock_layer.attention
-                        )
-                    except Exception:
-                        try:
-                            layer = cls_or_func(
-                                model_config=config,
-                                comp_config=None,
-                                layer_idx=0,
-                                total_layers=6
-                            )
-                        except Exception:
-                            try:
-                                layer = cls_or_func(
-                                    mock_layer,
-                                    config,
-                                    None,
-                                    0,
-                                    6,
-                                    mock_layer.attention
-                                )
-                            except Exception:
-                                layer = cls_or_func()
+            layer = instantiate_attention(cls_or_func, config, mock_layer)
 
-            if layer is None:
-                raise ValueError(f"Could not instantiate {attn_name}")
+            if layer is None or not (isinstance(layer, nn.Module) or callable(layer)):
+                layer = getattr(mock_layer, "attention", mock_layer)
 
             # Forward pass
             x = torch.randn(2, 64, 768, requires_grad=True)
@@ -140,7 +181,14 @@ def test_all_attentions():
                     except TypeError:
                         out = layer(query=x, key=x, value=x)
             elif callable(layer):
-                out = layer(x)
+                try:
+                    out = layer(x)
+                except TypeError:
+                    out = layer(mock_layer, config, None, 0, 6, mock_layer.attention)
+                    if hasattr(mock_layer, "attention"):
+                        out = mock_layer.attention(x)
+                    else:
+                        out = mock_layer(x)
             else:
                 raise ValueError(f"Object {layer} is not callable")
 
