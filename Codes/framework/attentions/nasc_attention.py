@@ -167,6 +167,7 @@ class NASCAttention(BaseAttention):
 
         top_k = min(self.top_k, nb)
         _, top_idx = blk_scores.topk(top_k, dim=-1)
+        top_idx[:, :, :, 0] = 0
 
         out_blocks = torch.zeros_like(Qb)
         for i in range(nb):

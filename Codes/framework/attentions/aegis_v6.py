@@ -38,7 +38,7 @@ class AegisConfigV3:
     kernel_clamp_max: float = 20.0
     kernel_use_float64: bool = False
     kernel_seed: Optional[int] = None
-    fusion_gate_bias: float = -1.8
+    fusion_gate_bias: float = 1.8
 
     def __post_init__(self):
         self.num_attention_heads = self.num_heads
@@ -67,6 +67,7 @@ class FactorisedLowRankProjection(nn.Module):
         if pretrained_weight is not None:
             W = pretrained_weight.detach().float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            S = torch.clamp(S, min=1e-6)
             effective_rank = min(svd_rank, U.size(1), Vt.size(0))
             U_init = U[:, :effective_rank].clone()
             S_init = S[:effective_rank].clone()
@@ -176,7 +177,7 @@ class GatingModule(nn.Module):
 
 
 class ContextFusionGate(nn.Module):
-    def __init__(self, hidden_size: int, num_heads: int, head_dim: int, init_bias: float = -1.8):
+    def __init__(self, hidden_size: int, num_heads: int, head_dim: int, init_bias: float = 1.8):
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = head_dim
@@ -405,7 +406,7 @@ def inject_aegis_v6(
         low_rank_update=getattr(comp_config, "low_rank_update", 16),
         kernel_feature_dim=getattr(comp_config, "kernel_feature_dim", 128),
         dropout=getattr(comp_config, "dropout", 0.1),
-        fusion_gate_bias=getattr(comp_config, "fusion_gate_bias", -1.8),
+        fusion_gate_bias=getattr(comp_config, "fusion_gate_bias", 1.8),
     )
     if model_config is None and old_attn is not None:
         new_attn = AegisAttentionV3.from_distilbert_pretrained(old_attn, config=cfg)
