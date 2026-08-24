@@ -36,6 +36,7 @@ class ExpertChoiceMoE(nn.Module):
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
         # Router matrix [d_model, n_experts] initialized uniformly for balanced initial gating
+        self.router_ln = nn.LayerNorm(dim if "dim" in locals() else (d_model if "d_model" in locals() else self.hidden_size))
         self.router = nn.Linear(d_model, n_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
@@ -55,7 +56,7 @@ class ExpertChoiceMoE(nn.Module):
         T = x_flat.size(0)
 
         # Routing scores [T, E]
-        logits = self.router(x_flat)
+        logits = self.router(self.router_ln(x_flat))
         if self.training and self.noise_std > 0:
             logits = logits + torch.randn_like(logits) * self.noise_std
 
@@ -78,7 +79,7 @@ class ExpertChoiceMoE(nn.Module):
             out_flat.index_add_(0, topk_indices, expert_out * topk_vals.unsqueeze(-1))
 
         # Auxiliary entropy / balance loss
-        prob_mean = F.softmax(logits, dim=-1).mean(dim=0)
+        prob_mean = F.softmax(logits / 1.0, dim=-1).mean(dim=0)
         self.aux_loss = self.n_experts * torch.sum(prob_mean ** 2)
 
         return out_flat.view(B, L, D)
