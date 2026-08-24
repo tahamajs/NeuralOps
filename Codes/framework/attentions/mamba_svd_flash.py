@@ -197,7 +197,7 @@ class MambaSVDFlash(BaseAttention):
         # 1. Bidirectional SVD-SSM Path
         # ---------------------------------------------------------
         U = self.proj_u(hidden_states).view(B, L, D, self.rank)
-        Sigma = torch.sigmoid(self.proj_sigma(hidden_states)) * 0.95
+        Sigma = torch.sigmoid(self.proj_sigma(hidden_states)).clamp(min=1e-6) * 0.95
         V = self.proj_v(hidden_states).view(B, L, self.rank, D)
         B_t_seq = self.proj_b(hidden_states)
         C_t_seq = self.proj_c(hidden_states)

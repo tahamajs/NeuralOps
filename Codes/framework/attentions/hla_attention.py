@@ -68,7 +68,7 @@ class HLAAttention(BaseAttention):
         self.v_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
         self.out_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
 
-        self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
+        self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)  # Safe log-decay init
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights."""

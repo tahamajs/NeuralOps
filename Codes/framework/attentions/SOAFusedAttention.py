@@ -70,6 +70,7 @@ class SOAFusedAttention(nn.Module):
                     continue
                 W = orig.weight.data.float()
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                S = S.clamp(min=1e-6)
                 r = min(self.k_rank, U.size(1), Vt.size(0))
                 down.weight.data.zero_()
                 up.weight.data.zero_()

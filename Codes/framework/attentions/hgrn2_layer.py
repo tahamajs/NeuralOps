@@ -65,7 +65,7 @@ class HGRN2Layer(BaseAttention):
         self.out_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
         # Initialize forget gate bias to -3.0 so softplus(-3) ~ 0.048 => f_t ~ exp(-0.048) ~ 0.95
-        nn.init.constant_(self.forget_gate.bias, -3.0)
+        nn.init.constant_(self.forget_gate.bias, 1.5)
         nn.init.constant_(self.input_gate.bias, 0.0)
 
     def copy_weights(self, old_attn: Any) -> None:

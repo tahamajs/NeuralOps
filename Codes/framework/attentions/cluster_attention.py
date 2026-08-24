@@ -58,6 +58,7 @@ class ClusterAttention(BaseAttention):
         self.num_clusters: int = getattr(config, "cluster_num_clusters", num_clusters)
         self.n_iters: int = n_iters
         self.window_size: int = window_size
+        self.local_residual = nn.Parameter(torch.tensor(0.5))
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
         self.k_proj = nn.Linear(hidden_size, self.all_head_size)
@@ -122,9 +123,11 @@ class ClusterAttention(BaseAttention):
             # Recompute centroids
             # One-hot mask [B, H, L, K]
             one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=Q.dtype)  # [B, H, L, K]
-            counts = one_hot.sum(dim=2).clamp(min=1.0).unsqueeze(-1)  # [B, H, K, 1]
+            counts = one_hot.sum(dim=2).unsqueeze(-1)  # [B, H, K, 1]
             sum_q = torch.einsum("bhlk,bhld->bhkd", one_hot, Q)       # [B, H, K, d]
-            centroids = sum_q / counts
+            
+            # Retain previous centroid if cluster is empty
+            centroids = torch.where(counts > 0, sum_q / counts.clamp(min=1.0), centroids)
         
         return centroids, cluster_ids
 
@@ -178,8 +181,9 @@ class ClusterAttention(BaseAttention):
             attn_loc = F.softmax(scores_loc, dim=-1)
             attn_loc = self.dropout(attn_loc)
             local_context = torch.matmul(attn_loc, V)
-            # Balanced fusion
-            out_context = 0.5 * global_context + 0.5 * local_context
+            # Balanced fusion with soft residual
+            alpha = torch.sigmoid(self.local_residual)
+            out_context = (1.0 - alpha) * global_context + alpha * local_context
         else:
             out_context = global_context
 
