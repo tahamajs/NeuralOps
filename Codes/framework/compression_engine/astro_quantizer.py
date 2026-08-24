@@ -37,16 +37,9 @@ class STEFakeQuantize(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
-        x, scale, zero_point = ctx.saved_tensors
-        qmin = ctx.qmin
-        qmax = ctx.qmax
-
-        # Scaled values in quantization grid
-        scaled_x = (x / scale) + zero_point
-        # Zero out gradients outside quantization range
-        mask = (scaled_x >= qmin) & (scaled_x <= qmax)
-        grad_x = grad_output * mask.to(dtype=grad_output.dtype)
-
+        # Vanilla Straight-Through Estimator (STE) passes gradients directly
+        # without masking, allowing weights outside quantization bounds to recover.
+        grad_x = grad_output.clone()
         return grad_x, None, None, None, None
 
 
