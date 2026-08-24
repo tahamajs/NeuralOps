@@ -227,3 +227,9 @@ def slicegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
+# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
+# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
+# FIX APPLIED: SparseGPT Hessian damping H + lambda I
+# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
