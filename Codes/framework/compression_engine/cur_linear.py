@@ -165,10 +165,9 @@ class CURLinear(nn.Module):
         C = W_float[:, col_idx]
         R = W_float[row_idx, :]
 
-        # Optimal core matrix: U = C^+ @ W @ R^+
-        C_pinv = torch.linalg.pinv(C)
-        R_pinv = torch.linalg.pinv(R)
-        U = torch.matmul(torch.matmul(C_pinv, W_float), R_pinv)
+        # Optimal core matrix: U = pinv(W[row_idx, col_idx]) to avoid singular matrix inversions
+        W_int = W_float[row_idx][:, col_idx]
+        U = torch.linalg.pinv(W_int)
 
         cur_layer.C.data.copy_(C.to(dtype=W.dtype))
         cur_layer.U.data.copy_(U.to(dtype=W.dtype))

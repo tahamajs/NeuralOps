@@ -102,7 +102,8 @@ class KroneckerTTLoRALayer(nn.Module):
 
         m1, m2 = factor_pair(out_features)
         n1, n2 = factor_pair(in_features)
-        tt_shapes = (out_features, 1, in_features)
+        # Fix inner dimension factoring (d_in = d1 x d2)
+        tt_shapes = (out_features, n1, n2)
         return {
             "m1": m1,
             "n1": n1,
