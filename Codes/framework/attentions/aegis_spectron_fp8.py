@@ -33,7 +33,7 @@ class AegisSpectronFP8Config:
     c_glob: float = 0.8
     c_lin: float = 1.0
     dropout: float = 0.1
-    router_init_bias: Tuple[float, float, float] = (2.5, -0.5, -1.0)
+    router_init_bias: Tuple[float, float, float] = (2.5, 1.5, 1.5)
 
 
 class SpectronSpectralEntropyRouter(nn.Module):
@@ -59,6 +59,7 @@ class SpectronSpectralEntropyRouter(nn.Module):
         with torch.no_grad():
             try:
                 S = torch.linalg.svdvals(svd_input)
+                S = torch.clamp(S, min=1e-6)
                 S_sq = S.pow(2)
                 S_sum = S_sq.sum(dim=-1, keepdim=True) + 1e-5
                 p = S_sq / S_sum
@@ -123,6 +124,8 @@ class AegisSpectronFP8Attention(BaseAttention):
         self.linear_A = nn.Parameter(torch.ones(config.hidden_size))
         self.linear_B = nn.Parameter(torch.ones(config.hidden_size))
         self.linear_C = nn.Parameter(torch.ones(config.hidden_size))
+        self.decay_param = nn.Parameter(torch.full((config.hidden_size,), 4.5951))
+        self.bidir_gate = nn.Parameter(torch.zeros(config.hidden_size))
 
         self.svd_U = nn.Parameter(torch.randn(config.hidden_size, config.svd_rank) * 0.02)
 
@@ -209,20 +212,27 @@ class AegisSpectronFP8Attention(BaseAttention):
 
         out_lr = torch.matmul(attn, V_flat)
         return out_lr.view(B, N, h, d).transpose(1, 2)
-
     def _linear_branch(self, X: torch.Tensor) -> torch.Tensor:
         B, N, D = X.shape
-
-        h_state = torch.zeros(B, D, device=X.device, dtype=X.dtype)
-        out = []
+        gamma_t = torch.sigmoid(getattr(self, 'decay_param', self.linear_A))
+        h_fwd = torch.zeros(B, D, device=X.device, dtype=X.dtype)
+        h_bwd = torch.zeros(B, D, device=X.device, dtype=X.dtype)
+        out_fwd = []
         for t in range(N):
-            x_t = X[:, t, :]
-            h_state = self.linear_A * h_state + self.linear_B * x_t
-            y_t = self.linear_C * h_state
-            out.append(y_t.unsqueeze(1))
-
-        out_tensor = torch.cat(out, dim=1)
+            h_fwd = gamma_t * h_fwd + self.linear_B * X[:, t, :]
+            out_fwd.append((self.linear_C * h_fwd).unsqueeze(1))
+        out_bwd = []
+        for t in range(N - 1, -1, -1):
+            h_bwd = gamma_t * h_bwd + self.linear_B * X[:, t, :]
+            out_bwd.insert(0, (self.linear_C * h_bwd).unsqueeze(1))
+        
+        gate = torch.sigmoid(getattr(self, 'bidir_gate', torch.tensor(0.0, device=X.device, dtype=X.dtype)))
+        out_fwd_tensor = torch.cat(out_fwd, dim=1)
+        out_bwd_tensor = torch.cat(out_bwd, dim=1)
+        out_tensor = gate * out_fwd_tensor + (1 - gate) * out_bwd_tensor
         return out_tensor.view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
+
+
 
     def forward(
         self,

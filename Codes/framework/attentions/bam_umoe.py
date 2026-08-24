@@ -37,6 +37,7 @@ class UnifiedMoE(nn.Module):
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
         # Router initialized with small uniform weights for balanced expert participation
+        self.router_ln = nn.LayerNorm(dim if "dim" in locals() else (d_model if "d_model" in locals() else self.hidden_size))
         self.router = nn.Linear(dim, num_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
@@ -53,7 +54,7 @@ class UnifiedMoE(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Forward execution pass for top-k Unified MoE with load balancing."""
         B, L, D = x.shape
-        logits = self.router(x)  # (B, L, E)
+        logits = self.router(self.router_ln(x))  # (B, L, E)
 
         if self.training and self.noise_std > 0:
             noise = torch.randn_like(logits) * self.noise_std
@@ -65,7 +66,7 @@ class UnifiedMoE(nn.Module):
         scores = F.softmax(topk_vals, dim=-1)  # (B, L, k)
 
         # Auxiliary load balancing loss (Switch Transformer formulation)
-        router_probs = F.softmax(logits, dim=-1).view(-1, self.num_experts)  # (B*L, E)
+        router_probs = F.softmax(logits / 1.0, dim=-1).view(-1, self.num_experts)  # (B*L, E)
         expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()  # (B, L, k, E)
         density = expert_mask.sum(dim=2).view(-1, self.num_experts).mean(dim=0)  # (E,)
         prob_mean = router_probs.mean(dim=0)  # (E,)

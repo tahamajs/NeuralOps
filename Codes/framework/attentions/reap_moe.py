@@ -57,6 +57,7 @@ class REAPMoE(nn.Module):
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
         # Router with uniform initialization
+        self.router_ln = nn.LayerNorm(dim if "dim" in locals() else (d_model if "d_model" in locals() else self.hidden_size))
         self.router = nn.Linear(d_model, n_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
@@ -78,7 +79,7 @@ class REAPMoE(nn.Module):
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, L, D = x.shape
 
-        logits = self.router(x)
+        logits = self.router(self.router_ln(x))
         if self.training and self.noise_std > 0:
             noise = torch.randn_like(logits) * self.noise_std
             scores = logits + noise
@@ -89,7 +90,7 @@ class REAPMoE(nn.Module):
         topk_weights = F.softmax(topk_weights, dim=-1)
 
         # Load balancing auxiliary loss
-        router_probs = F.softmax(logits, dim=-1).view(-1, self.n_experts)
+        router_probs = F.softmax(logits / 1.0, dim=-1).view(-1, self.n_experts)
         expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
         density = expert_mask.sum(dim=2).view(-1, self.n_experts).mean(dim=0)
         prob_mean = router_probs.mean(dim=0)

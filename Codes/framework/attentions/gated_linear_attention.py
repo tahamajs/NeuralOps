@@ -76,7 +76,7 @@ class GatedLinearAttention(BaseAttention):
         self.out_proj = nn.Linear(self.dim, self.dim, bias=True)
 
         # Initialize decay gate bias to -3.0 (~0.95 retention)
-        nn.init.constant_(self.decay_gate.bias, -3.0)
+        nn.init.constant_(self.decay_gate.bias, 1.5)  # safe log-decay initialization
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained Multi-Head Attention weights."""
@@ -165,7 +165,7 @@ class GatedLinearAttention(BaseAttention):
         k = F.elu(k) + 1.0
 
         decay_logits = self.decay_gate(hidden_states).transpose(1, 2)  # [B, H, L]
-        lambdas = torch.exp(-F.softplus(decay_logits))
+        lambdas = torch.sigmoid(decay_logits)
 
         mask_bool = None
         if attention_mask is not None:

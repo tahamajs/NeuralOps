@@ -128,7 +128,7 @@ class BlockTransformerHIBA(BaseAttention):
             v_select.append(v_all[:, :, :start_b, :])
             valid_select.append(valid_mask[:, :start_b])
 
-        if (block_idx + 1) * self.block_size < total_len:
+        if (block_idx + 1) * self.block_size < total_len and not getattr(self, 'is_causal', False):
             k_select.append(k_all[:, :, end_b:, :])
             v_select.append(v_all[:, :, end_b:, :])
             valid_select.append(valid_mask[:, end_b:])
@@ -181,6 +181,9 @@ class BlockTransformerHIBA(BaseAttention):
             scores = torch.matmul(q, k.transpose(-2, -1)) * scale
             pad_mask = ~valid_mask.unsqueeze(1).unsqueeze(2)
             scores = scores.masked_fill(pad_mask, -10000.0)
+            if getattr(self, 'is_causal', False):
+                c_m = torch.tril(torch.ones(scores.size(-2), scores.size(-1), device=scores.device, dtype=torch.bool))
+                scores = scores.masked_fill(~c_m.unsqueeze(0).unsqueeze(0), -10000.0)
             attn_probs = F.softmax(scores, dim=-1)
             attn_probs = self.dropout(attn_probs)
             out = torch.matmul(attn_probs, v)

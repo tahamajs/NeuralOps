@@ -105,10 +105,11 @@ class PerformerAttention(BaseAttention):
     def _feature_map(self, x: torch.Tensor) -> torch.Tensor:
         r"""x: (B, H, N, d) -> phi: (B, H, N, m)"""
         proj = torch.matmul(x, self.omega.to(dtype=x.dtype, device=x.device).t())
-        x_norm_sq = torch.sum(x ** 2, dim=-1, keepdim=True) / 2.0
-        logits = proj - x_norm_sq
-        max_val = logits.amax(dim=-1, keepdim=True).detach()
-        phi = torch.exp(logits - max_val) / math.sqrt(self.num_features)
+        # Positive kernel projection: using ReLU to ensure strict non-negativity
+        # and prevent variance issues from exponential growth.
+        phi = F.relu(proj) + self.eps
+        # Normalize sum of features
+        phi = phi / (math.sqrt(self.num_features) + self.eps)
         return phi
 
     def forward(

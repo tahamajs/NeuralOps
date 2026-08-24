@@ -129,7 +129,11 @@ class OptimizedHybridAttention(BaseAttention):
 
         # 1. Local sliding-window attention
         idx = torch.arange(N, device=device)
-        band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
+        is_causal = getattr(self, "is_causal", False)
+        if is_causal:
+            band_mask = (idx.unsqueeze(0) - idx.unsqueeze(1) >= 0) & (idx.unsqueeze(0) - idx.unsqueeze(1) <= self.window_size)
+        else:
+            band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
 
         local_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale

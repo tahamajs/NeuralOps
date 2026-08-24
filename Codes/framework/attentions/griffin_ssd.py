@@ -74,7 +74,7 @@ class GriffinSSDBlock(BaseAttention):
         self.out_proj = nn.Linear(self.dim, self.dim, bias=True)
 
         # Learnable decay gate for global SSD branch
-        self.decay_param = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
+        self.decay_param = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)  # Safe log-decay init
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights."""
