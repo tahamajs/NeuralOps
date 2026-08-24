@@ -65,7 +65,6 @@ class FactorisedLinear(nn.Module):
         out_dim, in_dim = pretrained_weight.shape
         with torch.no_grad():
             U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
-            S = torch.clamp(S, min=1e-6), full_matrices=False)
             total = (S**2).sum()
             cum = torch.cumsum(S**2, dim=0) / (total + 1e-5)
             rank = int(torch.searchsorted(cum, energy).item()) + 1
