@@ -15,7 +15,7 @@ sys.path.insert(0, str(_HERE.parent))
 
 import torch
 import torch.nn as nn
-from transformers import AutoConfig, DistilBertConfig
+from transformers import DistilBertConfig
 
 # Import registries
 import framework.attentions
@@ -50,6 +50,21 @@ class MockTransformerModel(nn.Module):
         return logits
 
 
+class MockDistilBertLayer(nn.Module):
+    def __init__(self, dim=768, n_heads=12):
+        super().__init__()
+        self.attention = nn.MultiheadAttention(embed_dim=dim, num_heads=n_heads, batch_first=True)
+        self.sa_layer_norm = nn.LayerNorm(dim)
+        self.ffn = nn.Sequential(nn.Linear(dim, dim * 4), nn.GELU(), nn.Linear(dim * 4, dim))
+        self.output_layer_norm = nn.LayerNorm(dim)
+
+    def forward(self, x):
+        h, _ = self.attention(x, x, x)
+        x = self.sa_layer_norm(x + h)
+        h = self.ffn(x)
+        return self.output_layer_norm(x + h)
+
+
 def test_all_attentions():
     print("\n" + "=" * 65)
     print("  TESTING ALL REGISTERED ATTENTION MECHANISMS (FORWARD + BACKWARD)")
@@ -68,13 +83,13 @@ def test_all_attentions():
         max_position_embeddings=512,
     )
 
-    dummy_old_attn = nn.MultiheadAttention(embed_dim=768, num_heads=12, batch_first=True)
-
     for attn_name in all_attns:
         try:
             cls_or_func = ATTENTION_REGISTRY.resolve(attn_name)
             layer = None
-            # Try factory function signatures
+            mock_layer = MockDistilBertLayer(dim=768, n_heads=12)
+
+            # Try factory function or injection signatures
             try:
                 layer = cls_or_func(config)
             except Exception:
@@ -83,11 +98,12 @@ def test_all_attentions():
                 except Exception:
                     try:
                         layer = cls_or_func(
+                            layer=mock_layer,
                             model_config=config,
                             comp_config=None,
                             layer_idx=0,
                             total_layers=6,
-                            old_attn=dummy_old_attn
+                            old_attn=mock_layer.attention
                         )
                     except Exception:
                         try:
@@ -98,7 +114,17 @@ def test_all_attentions():
                                 total_layers=6
                             )
                         except Exception:
-                            layer = cls_or_func()
+                            try:
+                                layer = cls_or_func(
+                                    mock_layer,
+                                    config,
+                                    None,
+                                    0,
+                                    6,
+                                    mock_layer.attention
+                                )
+                            except Exception:
+                                layer = cls_or_func()
 
             if layer is None:
                 raise ValueError(f"Could not instantiate {attn_name}")
@@ -106,7 +132,6 @@ def test_all_attentions():
             # Forward pass
             x = torch.randn(2, 64, 768, requires_grad=True)
             if hasattr(layer, "forward"):
-                # Check expected arguments
                 try:
                     out = layer(x)
                 except TypeError:
@@ -133,10 +158,10 @@ def test_all_attentions():
             loss.backward()
 
             passed.append(attn_name)
-            print(f"  [PASS] {attn_name:<35} | Shape: {tuple(out.shape)}")
+            print(f"  [PASS] {attn_name:<38} | Shape: {tuple(out.shape)}")
         except Exception as e:
             failed.append((attn_name, str(e)))
-            print(f"  [FAIL] {attn_name:<35} | Error: {e}")
+            print(f"  [FAIL] {attn_name:<38} | Error: {e}")
 
     print(f"\nAttentions Result: {len(passed)} Passed, {len(failed)} Failed / Total: {len(all_attns)}")
     return passed, failed
@@ -190,10 +215,10 @@ def test_all_compressors():
                 raise ValueError(f"Compressed model output contains NaN or Inf")
 
             passed.append(comp_name)
-            print(f"  [PASS] {comp_name:<35} | Out Shape: {tuple(out.shape)}")
+            print(f"  [PASS] {comp_name:<38} | Out Shape: {tuple(out.shape)}")
         except Exception as e:
             failed.append((comp_name, str(e)))
-            print(f"  [FAIL] {comp_name:<35} | Error: {e}")
+            print(f"  [FAIL] {comp_name:<38} | Error: {e}")
 
     print(f"\nCompressors Result: {len(passed)} Passed, {len(failed)} Failed / Total: {len(all_comps)}")
     return passed, failed
@@ -206,5 +231,5 @@ if __name__ == "__main__":
     total_passed = len(attn_p) + len(comp_p)
     total_failed = len(attn_f) + len(comp_f)
     print("\n" + "=" * 65)
-    print(f"  OVERALL VERIFICATION: {total_passed} PASSED | {total_failed} FAILED")
+    print(f"  OVERALL MASTER VERIFICATION: {total_passed} PASSED | {total_failed} FAILED")
     print("=" * 65)
