@@ -131,3 +131,7 @@ def get_num_labels_and_is_regression(task_name: str) -> Tuple[int, bool]:
         "mnli": 3, "qnli": 2, "rte": 2, "wnli": 2,
     }
     return mapping.get(t, 2), False
+
+
+# Backward-compatibility alias
+load_glue_task = load_glue_local
