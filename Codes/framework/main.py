@@ -649,16 +649,26 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: L
 # List registries
 # ---------------------------------------------------------------------------
 
-def run_list(fw: dict) -> None:
-    """Print all registered components."""
-    components = fw["list_all_components"]()
-    for registry_name, keys in components.items():
-        print(f"\n{'='*50}")
-        print(f"  {registry_name.upper()} ({len(keys)} registered)")
-        print(f"{'-'*50}")
-        for k in sorted(keys):
-            print(f"    - {k}")
-    print()
+def run_list(fw: Optional[dict] = None) -> None:
+    """Print all registered components grouped by track."""
+    import framework.compression_engine
+    import framework.attentions
+    from framework.eval_all_models_datasets import TRACK_MODULES
+    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
+    print(f"\n=== ATTENTION MODULES ({len(ATTENTION_REGISTRY)} total) ===")
+    for track, data in TRACK_MODULES.items():
+        attns = data.get("attentions", [])
+        if attns:
+            print(f"\n  {track}:")
+            for i, a in enumerate(attns):
+                print(f"    {a}", end="\n" if (i+1) % 5 == 0 else "  ")
+            print()
+
+    print(f"\n=== COMPRESSION ENGINES ({len(COMPRESSOR_REGISTRY)} total) ===")
+    for key in sorted(COMPRESSOR_REGISTRY.keys()):
+        print(f"  {key}")
+
 
 
 # ---------------------------------------------------------------------------
@@ -730,8 +740,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "list":
-        fw = _import_framework()
-        run_list(fw)
+        run_list()
         return
 
     # ── Optional YAML config override ──────────────────────────────────────

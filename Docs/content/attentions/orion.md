@@ -575,14 +575,14 @@ def inject_orion(
 
 ---
 
-## Theoretical Invariants & Numerical Stability Proofs
+## 4. Known Limitations & Future Work
+- **Static Energy Thresholding**: $\eta=0.95$ provides a strong default, but per-layer adaptive thresholding could prune deeper layers more aggressively.
+- **RFF Projection Dimension**: $F=256$ features per head require careful memory scaling when deploying to extremely wide models ($D > 4096$).
 
-> [!NOTE]
-> **Mathematical Invariants for `orion`**:
-> 1. **Frobenius Reconstruction Guarantee**:
->    $$\min_{\text{rank}(\widehat{W}) \le r} \|W - \widehat{W}\|_F^2 = \sum_{i=r+1}^{D} \sigma_i^2$$
-> 2. **Symmetric $\sqrt{\Sigma}$ Conditioning**:
->    Splitting $\Sigma_r^{1/2}$ equally across factorized matrices balances spectral condition numbers $\kappa(U_r) \approx \kappa(V_r) = \sqrt{\kappa(W)}$, preventing FP16/BF16 gradient underflow.
-> 3. **Lyapunov Stability**:
->    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
+---
+
+## 5. Empirical Benchmarks
+> Benchmarks Pending — run `bash run_on_gpu_server.sh suite` to populate results.
+> See [Empirical Validation Protocol](../empirical_validation_protocol.md).
+
 

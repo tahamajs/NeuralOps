@@ -55,18 +55,27 @@ class Mamba(BaseAttention):
 
     def __init__(
         self,
-        d_model: Optional[int] = None,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
+        d_model: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
+        if isinstance(config, (int, float)):
+            d_model = int(config)
+            config = None
         super().__init__(config, rank)
         if d_model is None:
-            d_model = kwargs.get("hidden_size", 768)
-        self.d_model: int = d_model
+            if config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", 768))))
+            else:
+                d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
+        elif not isinstance(d_model, int) and hasattr(d_model, "hidden_size"):
+            d_model = getattr(d_model, "hidden_size", getattr(d_model, "d_model", 768))
+        self.d_model: int = int(d_model)
+        self.hidden_size: int = self.d_model
         # Projects input to 2× width then splits into two gating branches.
-        self.in_proj: nn.Linear = nn.Linear(d_model, d_model * 2)
-        self.out_proj: nn.Linear = nn.Linear(d_model, d_model)
+        self.in_proj: nn.Linear = nn.Linear(self.d_model, self.d_model * 2)
+        self.out_proj: nn.Linear = nn.Linear(self.d_model, self.d_model)
 
     def forward(
         self,
@@ -79,7 +88,7 @@ class Mamba(BaseAttention):
         r"""Execute the forward Mamba gated-SSM pass.
 
         Args:
-            hidden_states: Input tensor of shape ``[B, L, D]``.
+            hidden_states: Input tensor of shape ``[B, L, D]`` or ``[B, H, L, Dh]``.
             attention_mask: Optional mask tensor; if provided, applies
                 zero-masking for padded tokens.
             head_mask: Optional per-head mask; not used in this module.
@@ -95,8 +104,10 @@ class Mamba(BaseAttention):
             - Input:  ``[B, L, D]``
             - Output: ``[B, L, D]``
         """
-        # Ensure contiguous layout
-        if not hidden_states.is_contiguous():
+        if hidden_states.dim() == 4:
+            B, H, L, Dh = hidden_states.shape
+            hidden_states = hidden_states.view(B, L, H * Dh)
+        elif not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
         # in_proj: [B, L, D] -> [B, L, 2D]

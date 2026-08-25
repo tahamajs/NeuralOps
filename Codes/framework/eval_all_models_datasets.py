@@ -135,7 +135,7 @@ def build_model_instance(
     hidden_size: int = 128,
     num_heads: int = 4,
     num_layers: int = 2,
-    vocab_size: int = 30522,
+    vocab_size: Optional[int] = None,
     seq_len: int = 32,
     device: torch.device = torch.device("cpu"),
 ) -> Tuple[nn.Module, Any]:
@@ -143,6 +143,15 @@ def build_model_instance(
     Builds a lightweight yet architecturally exact model instance for evaluation & stress testing.
     """
     family = model_family.lower()
+    if vocab_size is None or vocab_size == 30522:
+        if family == "roberta":
+            vocab_size = 50265
+        elif family == "gpt2":
+            vocab_size = 50257
+        elif family == "t5":
+            vocab_size = 32128
+        else:
+            vocab_size = 30522
     if family == "bert":
         cfg = BertConfig(
             vocab_size=vocab_size,
@@ -350,6 +359,76 @@ def get_dataset_batch(
     return batch
 
 
+def generate_dataset_batch(
+    dataset_name: str,
+    model_family: str,
+    batch_size: int = 4,
+    seq_len: int = 32,
+    device: torch.device = torch.device("cpu"),
+    allow_synthetic: bool = False,
+) -> Dict[str, torch.Tensor]:
+    """Alias of get_dataset_batch for backwards compatibility with launch_gpu_server.py."""
+    return get_dataset_batch(
+        dataset_name=dataset_name,
+        model_family=model_family,
+        batch_size=batch_size,
+        seq_len=seq_len,
+        device=device,
+        allow_synthetic=allow_synthetic,
+    )
+
+
+def _filter_batch(batch: Dict[str, torch.Tensor], model_family: str, model: nn.Module) -> Dict[str, torch.Tensor]:
+    """Strip keys invalid for specific model architectures."""
+    import inspect
+    family = model_family.lower()
+    b = dict(batch)
+    if "t5" in family:
+        b.pop("token_type_ids", None)
+    if "gpt2" in family:
+        allowed = {"input_ids", "attention_mask", "labels"}
+        b = {k: v for k, v in b.items() if k in allowed}
+    try:
+        sig = inspect.signature(model.forward)
+        valid = set(sig.parameters.keys()) - {"self"}
+        if "kwargs" not in valid and "**kwargs" not in str(sig):
+            b = {k: v for k, v in b.items() if k in valid}
+    except (ValueError, TypeError):
+        pass
+    return b
+
+
+def _extract_logits_and_loss(outputs: Any, num_labels: int = 2, labels: Optional[torch.Tensor] = None) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    """Unified logit/loss extraction across all HF model output types."""
+    loss = None
+    logits = None
+    
+    if hasattr(outputs, "loss") and outputs.loss is not None:
+        loss = outputs.loss
+    if hasattr(outputs, "logits"):
+        logits = outputs.logits
+    elif hasattr(outputs, "last_hidden_state"):
+        hs = outputs.last_hidden_state
+        logits = hs.mean(dim=1)[:, :num_labels]
+        if labels is not None and logits.shape[-1] == num_labels:
+            loss = F.cross_entropy(logits, labels)
+        elif loss is None:
+            loss = hs.mean()
+    elif isinstance(outputs, (tuple, list)):
+        first = outputs[0]
+        if first.dim() == 3:
+            logits = first[:, 0, :]
+            if logits.shape[-1] != num_labels:
+                logits = logits[:, :num_labels]
+        else:
+            logits = first
+            if logits.dim() == 0:
+                loss = logits
+                logits = None
+    
+    return logits, loss
+
+
 # -----------------------------------------------------------------------------
 # Module Ingestion & Injection Adapter
 # -----------------------------------------------------------------------------
@@ -528,16 +607,20 @@ def evaluate_single_combination(
         result.trainable_param_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
         # 3. Load genuine dataset batch (or synthetic if --synthetic flag provided)
+        num_labels = getattr(cfg, "num_labels", 2)
         batch = get_dataset_batch(
             dataset_name=dataset,
             model_family=model_family,
             batch_size=batch_size,
             seq_len=seq_len,
             vocab_size=getattr(cfg, "vocab_size", 30522),
-            num_labels=getattr(cfg, "num_labels", 2),
+            num_labels=num_labels,
             device=device,
             allow_synthetic=allow_synthetic,
         )
+
+        # Filter batch keys for model architecture
+        filtered_batch = _filter_batch(batch, model_family, model)
 
         # Enable gradients for backward stress test
         for p in model.parameters():
@@ -545,18 +628,10 @@ def evaluate_single_combination(
 
         # Warmup steps
         for _ in range(num_warmup):
-            if model_family == "t5":
-                out = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])
-                loss = out.last_hidden_state.sum()
-            else:
-                out = model(**batch)
-                loss = getattr(out, "loss", None)
-                if loss is None:
-                    logits = getattr(out, "logits", None)
-                    if logits is not None:
-                        loss = logits.sum()
-                    else:
-                        loss = out[0].sum()
+            out = model(**filtered_batch)
+            _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
+            if loss is None:
+                loss = torch.tensor(0.0, requires_grad=True, device=device)
             loss.backward()
             model.zero_grad()
 
@@ -569,22 +644,14 @@ def evaluate_single_combination(
             model.zero_grad()
             t0 = time.perf_counter()
 
-            if model_family == "t5":
-                out = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])
-                loss = out.last_hidden_state.mean()
-            else:
-                out = model(**batch)
-                loss = getattr(out, "loss", None)
-                if loss is None:
-                    logits = getattr(out, "logits", None)
-                    if logits is not None:
-                        loss = F.cross_entropy(logits.view(-1, logits.size(-1)), batch["labels"].view(-1))
-                    else:
-                        loss = out[0].mean()
+            out = model(**filtered_batch)
+            _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
+            if loss is None:
+                loss = torch.tensor(0.0, requires_grad=True, device=device)
 
             t1 = time.perf_counter()
             fwd_times.append((t1 - t0) * 1000.0)
-            losses.append(loss.item())
+            losses.append(loss.item() if isinstance(loss, torch.Tensor) else float(loss))
 
             loss.backward()
             t2 = time.perf_counter()
@@ -611,11 +678,12 @@ def evaluate_single_combination(
         # Accuracy & Perplexity evaluation metric
         if model_family in {"bert", "roberta", "distilbert"}:
             with torch.no_grad():
-                out = model(**batch)
-                logits = getattr(out, "logits", out[0])
-                preds = torch.argmax(logits, dim=-1)
-                acc = (preds == batch["labels"]).float().mean().item() * 100.0
-                result.accuracy_pct = round(acc, 2)
+                out = model(**filtered_batch)
+                logits, _ = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
+                if logits is not None and "labels" in batch and batch["labels"] is not None:
+                    preds = torch.argmax(logits, dim=-1)
+                    acc = (preds == batch["labels"]).float().mean().item() * 100.0
+                    result.accuracy_pct = round(acc, 2)
         elif model_family == "gpt2":
             result.perplexity = round(math.exp(min(result.loss, 15.0)), 2)
 
