@@ -109,8 +109,10 @@
     <!-- Live Execution Table -->
     <section class="table-section">
       <div class="table-header">
-        <h2>Recent Execution Stream</h2>
-        <span class="table-sub">Live stream of last 15 module evaluations</span>
+        <div>
+          <h2>Recent Execution Stream</h2>
+          <span class="table-sub">Click any row to inspect full execution details & error stack traces</span>
+        </div>
       </div>
       <div class="table-wrapper">
         <table class="live-table">
@@ -140,6 +142,65 @@
       <span>NeuralOps Universal Benchmark Matrix (720 Total Combos)</span>
       <span>Hardware: NVIDIA GeForce RTX 4070 Laptop GPU</span>
     </footer>
+  </div>
+
+  <!-- Interactive Detail & Error Modal -->
+  <div id="detail-modal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span id="modal-status-badge" class="tag-status tag-pass">PASS</span>
+          <h3 id="modal-module-title">svd_linear_attention</h3>
+        </div>
+        <button class="modal-close-btn" onclick="hideModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-meta-grid">
+          <div class="meta-item">
+            <span class="meta-label">Track</span>
+            <span class="meta-val" id="modal-track">track1_svd</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Model Architecture</span>
+            <span class="meta-val" id="modal-model">BERT</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Dataset</span>
+            <span class="meta-val" id="modal-dataset">SST2</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Execution Time</span>
+            <span class="meta-val" id="modal-time">01:42:15</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Forward Latency</span>
+            <span class="meta-val" id="modal-fwd">12.5 ms</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Backward Latency</span>
+            <span class="meta-val" id="modal-bwd">16.8 ms</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Peak VRAM</span>
+            <span class="meta-val" id="modal-mem">1034 MB</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Precision / AMP</span>
+            <span class="meta-val">BF16 / Autocast</span>
+          </div>
+        </div>
+
+        <div class="modal-section-title">Execution Diagnostics & Error Stack Trace</div>
+        <div id="modal-error-box" class="error-detail-box success-box">
+          None / Success
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="hideModal()">Close</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>
