@@ -1,9 +1,9 @@
 # GPU Server Benchmark: Partial Sweep Snapshot Summary
 
-**Snapshot Date:** 2026-08-26 02:41:38  
-**Total Completed Combinations:** 263 / 720  
+**Snapshot Date:** 2026-08-26 02:56:43  
+**Total Completed Combinations:** 281 / 720  
 **Status Breakdown:**
-- **PASS:** 247
+- **PASS:** 265
 - **TIMEOUT:** 12
 - **FAIL:** 4
 
@@ -276,3 +276,21 @@
 | `track2_ssm` | `simple_ssm` | ROBERTA | SST2 | **PASS** | 974.34 ms | 2441.66 ms |
 | `track2_ssm` | `simple_ssm` | ROBERTA | MRPC | **PASS** | 990.80 ms | 2439.88 ms |
 | `track2_ssm` | `simple_ssm` | T5 | SST2 | **PASS** | 995.47 ms | 2453.31 ms |
+| `track2_ssm` | `simple_ssm` | T5 | MRPC | **PASS** | 1024.24 ms | 2476.03 ms |
+| `track2_ssm` | `gated_delta_net` | BERT | SST2 | **PASS** | 1768.44 ms | 5235.00 ms |
+| `track2_ssm` | `gated_delta_net` | BERT | MRPC | **PASS** | 1771.03 ms | 5290.97 ms |
+| `track2_ssm` | `gated_delta_net` | ROBERTA | SST2 | **PASS** | 1817.40 ms | 5384.84 ms |
+| `track2_ssm` | `gated_delta_net` | ROBERTA | MRPC | **PASS** | 1757.88 ms | 5320.18 ms |
+| `track2_ssm` | `gated_delta_net` | T5 | SST2 | **PASS** | 1764.39 ms | 5429.23 ms |
+| `track2_ssm` | `gated_delta_net` | T5 | MRPC | **PASS** | 1761.19 ms | 5266.91 ms |
+| `track2_ssm` | `gated_deltanet_block` | BERT | SST2 | **PASS** | 1771.29 ms | 5364.04 ms |
+| `track2_ssm` | `gated_deltanet_block` | BERT | MRPC | **PASS** | 1793.95 ms | 5292.18 ms |
+| `track2_ssm` | `gated_deltanet_block` | ROBERTA | SST2 | **PASS** | 1783.87 ms | 5538.99 ms |
+| `track2_ssm` | `gated_deltanet_block` | ROBERTA | MRPC | **PASS** | 1768.34 ms | 5422.52 ms |
+| `track2_ssm` | `gated_deltanet_block` | T5 | SST2 | **PASS** | 1793.19 ms | 5278.60 ms |
+| `track2_ssm` | `gated_deltanet_block` | T5 | MRPC | **PASS** | 1751.57 ms | 5285.00 ms |
+| `track2_ssm` | `gated_linear_attention` | BERT | SST2 | **PASS** | 1965.89 ms | 5128.73 ms |
+| `track2_ssm` | `gated_linear_attention` | BERT | MRPC | **PASS** | 1889.61 ms | 5037.52 ms |
+| `track2_ssm` | `gated_linear_attention` | ROBERTA | SST2 | **PASS** | 1883.62 ms | 5098.99 ms |
+| `track2_ssm` | `gated_linear_attention` | ROBERTA | MRPC | **PASS** | 1980.41 ms | 5195.78 ms |
+| `track2_ssm` | `gated_linear_attention` | T5 | SST2 | **PASS** | 1905.92 ms | 5083.81 ms |
