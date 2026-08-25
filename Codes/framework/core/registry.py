@@ -79,6 +79,10 @@ class Registry:
         """Return a list of all registered keys (in original casing)."""
         return list(self._dict.keys())
 
+    def list_available(self) -> List[str]:
+        """Return a list of all registered keys."""
+        return list(self._dict.keys())
+
     def items(self):
         """Return registered key-value pairs."""
         return self._dict.items()
