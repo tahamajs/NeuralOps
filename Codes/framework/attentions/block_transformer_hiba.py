@@ -116,18 +116,13 @@ class BlockTransformerHIBA(BaseAttention):
         v_select = []
         valid_select = []
 
-        # Always include block 0 (which contains CLS token at index 0)
-        if block_idx != 0:
-            end_0 = min(self.block_size, total_len)
-            k_select.append(k_all[:, :, :end_0, :])
-            v_select.append(v_all[:, :, :end_0, :])
-            valid_select.append(valid_mask[:, :end_0])
-
-        if block_idx > 0 and block_idx != 1:
+        # Previous tokens: includes block 0 (CLS at index 0)
+        if block_idx > 0:
             k_select.append(k_all[:, :, :start_b, :])
             v_select.append(v_all[:, :, :start_b, :])
             valid_select.append(valid_mask[:, :start_b])
 
+        # Subsequent tokens (for bidirectional non-causal encoder)
         if (block_idx + 1) * self.block_size < total_len and not getattr(self, 'is_causal', False):
             k_select.append(k_all[:, :, end_b:, :])
             v_select.append(v_all[:, :, end_b:, :])
@@ -146,8 +141,12 @@ class BlockTransformerHIBA(BaseAttention):
         pad_mask = ~valid_neighbors.unsqueeze(1).unsqueeze(2)
         scores = scores.masked_fill(pad_mask, -10000.0)
 
+        scores_for_topk = scores.clone()
+        if block_idx > 0:
+            scores_for_topk[:, :, :, 0] = scores_for_topk[:, :, :, 0] + 1e4
+
         top_k = min(self.top_k_inter, k_neighbors.size(2))
-        _, topk_idx = torch.topk(scores, top_k, dim=-1)
+        _, topk_idx = torch.topk(scores_for_topk, top_k, dim=-1)
         mask = torch.zeros_like(scores).scatter_(-1, topk_idx, 1.0)
         scores = scores.masked_fill(mask == 0, -10000.0)
 

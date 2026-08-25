@@ -220,6 +220,7 @@ class LEKAv2Attention(BaseAttention):
         mask = attention_mask
         if mask is None:
             mask = kwargs.get("attn_mask", None)
+        token_valid = None
         if mask is not None:
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
                 token_valid = mask[:, 0, 0, :] > -10000.0
@@ -249,6 +250,8 @@ class LEKAv2Attention(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
         local_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
         local_scores = local_scores.masked_fill(~window_mask, float("-10000.0"))
+        if token_valid is not None:
+            local_scores = local_scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), float("-10000.0"))
         local_attn = F.softmax(local_scores, dim=-1)
         context_local = torch.matmul(local_attn, V)
 

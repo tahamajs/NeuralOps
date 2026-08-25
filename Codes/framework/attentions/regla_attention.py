@@ -32,6 +32,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("regla")
+@ATTENTION_REGISTRY.register("regla_attention")
 class ReGLAAttention(BaseAttention):
     r"""Refined Gated Linear Attention module (ReGLA).
 

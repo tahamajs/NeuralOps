@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -83,7 +84,7 @@ class FactorisedLinear_CUR(nn.Module):
     ) -> None:
         super().__init__()
         out_dim, in_dim = pretrained_weight.shape
-        self.rank: int = rank
+        self.rank: int = max(1, min(rank, out_dim, in_dim))
         device = pretrained_weight.device
         dtype = pretrained_weight.dtype
 
@@ -95,16 +96,16 @@ class FactorisedLinear_CUR(nn.Module):
             row_leverage = (U_full**2).sum(dim=1)
             row_leverage = row_leverage / torch.clamp(row_leverage.sum(), min=1e-5)
 
-            _, col_idx = torch.topk(col_leverage, k=rank, largest=True)
-            _, row_idx = torch.topk(row_leverage, k=rank, largest=True)
+            _, col_idx = torch.topk(col_leverage, k=self.rank, largest=True)
+            _, row_idx = torch.topk(row_leverage, k=self.rank, largest=True)
 
             C = W[:, col_idx]
             R = W[row_idx, :]
             W_intersection = W[row_idx][:, col_idx]
             U_int = torch.linalg.pinv(W_intersection)
 
-            self.down = nn.Linear(in_dim, rank, bias=False, device=device, dtype=dtype)
-            self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None), device=device, dtype=dtype)
+            self.down = nn.Linear(in_dim, self.rank, bias=False, device=device, dtype=dtype)
+            self.up = nn.Linear(self.rank, out_dim, bias=(pretrained_bias is not None), device=device, dtype=dtype)
 
             self.down.weight.data = R.to(dtype=dtype, device=device)
             self.up.weight.data = (C @ U_int).to(dtype=dtype, device=device)
@@ -204,34 +205,41 @@ def lsh_attention(
     return accum_out / float(max(1, rounds))
 
 
+@ATTENTION_REGISTRY.register("phantom")
 @ATTENTION_REGISTRY.register("phantom_module")
-class PHANTOMAttention(nn.Module):
+class PHANTOMAttention(BaseAttention):
     r"""PHANTOM Attention module with CUR factorized projections and multi-round LSH attention.
 
     Args:
-        model_config (Any): Transformer configuration object.
-        phantom_cfg (PHANTOMConfig): PHANTOMConfig instance.
+        config (Optional[Any]): Transformer configuration object.
+        rank (Optional[int]): Compression rank.
+        phantom_cfg (Optional[PHANTOMConfig]): PHANTOMConfig instance.
         pretrained_attn (Optional[Any]): Pretrained attention module for CUR parameter initialization.
         bert_mode (bool): Flag indicating bidirectional sequence mode.
     """
 
     def __init__(
         self,
-        model_config: Optional[Any] = None,
+        config: Optional[Any] = None,
+        rank: Optional[int] = 16,
         phantom_cfg: Optional[PHANTOMConfig] = None,
         pretrained_attn: Optional[Any] = None,
         bert_mode: bool = False,
-        config: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
+        super().__init__(config, rank)
         if phantom_cfg is None:
-            phantom_cfg = PHANTOMConfig()
-        hidden_size = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
-        num_heads = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+            cur_rank = rank or getattr(config, "cur_rank", getattr(config, "svd_rank", 16))
+            phantom_cfg = PHANTOMConfig(cur_rank=cur_rank)
+        elif rank is not None:
+            phantom_cfg.cur_rank = rank
+
+        model_config = config or kwargs.get("model_config", None)
+        hidden_size = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
+        num_heads = getattr(model_config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         self.num_heads: int = num_heads
-        self.head_dim: int = hidden_size // num_heads
-        self.all_head_size: int = hidden_size
+        self.head_dim: int = hidden_size // num_heads if num_heads > 0 else 64
+        self.all_head_size: int = self.num_heads * self.head_dim
         self.hidden_size: int = hidden_size
         self.cfg: PHANTOMConfig = phantom_cfg
 
@@ -266,6 +274,39 @@ class PHANTOMAttention(nn.Module):
         )
 
         self.dropout = nn.Dropout(phantom_cfg.dropout)
+
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        r"""Transfer and re-factorize weights from pretrained multi-head attention module."""
+        with torch.no_grad():
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+
+            if q_src is not None and hasattr(q_src, "weight"):
+                self.q_proj = FactorisedLinear_CUR(
+                    q_src.weight.data,
+                    q_src.bias.data if q_src.bias is not None else None,
+                    self.cfg.cur_rank,
+                )
+            if k_src is not None and hasattr(k_src, "weight"):
+                self.k_proj = FactorisedLinear_CUR(
+                    k_src.weight.data,
+                    k_src.bias.data if k_src.bias is not None else None,
+                    self.cfg.cur_rank,
+                )
+            if v_src is not None and hasattr(v_src, "weight"):
+                self.v_proj = FactorisedLinear_CUR(
+                    v_src.weight.data,
+                    v_src.bias.data if v_src.bias is not None else None,
+                    self.cfg.cur_rank,
+                )
+            if out_src is not None and hasattr(out_src, "weight"):
+                self.out_proj = FactorisedLinear_CUR(
+                    out_src.weight.data,
+                    out_src.bias.data if out_src.bias is not None else None,
+                    self.cfg.cur_rank,
+                )
 
     def forward(
         self,
@@ -345,7 +386,7 @@ class PHANTOMAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-@ATTENTION_REGISTRY.register("phantom")
+@ATTENTION_REGISTRY.register("phantom_inject")
 def inject_phantom(
     layer: Any,
     model_config: Any,
@@ -374,6 +415,7 @@ def inject_phantom(
         softpick_enabled=True,
         dropout=getattr(comp_config, "dropout", 0.1),
     )
-    new_attn = PHANTOMAttention(model_config, cfg, pretrained_attn=old_attn)
+    new_attn = PHANTOMAttention(model_config, phantom_cfg=cfg, pretrained_attn=old_attn)
     layer.attention = new_attn
     return new_attn
+

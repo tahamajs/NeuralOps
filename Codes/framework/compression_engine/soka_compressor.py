@@ -135,7 +135,10 @@ class LowRankCompressor(BaseCompressor):
                 if module.bias is not None:
                     new_layer.bias.data.copy_(module.bias.data)
 
-                replace_module(self.model, name, new_layer)
+                if name == "":
+                    self.model = new_layer
+                else:
+                    replace_module(self.model, name, new_layer)
                 self.compressed_layers.append({
                     "name": name,
                     "original_shape": (d_out, d_in),
