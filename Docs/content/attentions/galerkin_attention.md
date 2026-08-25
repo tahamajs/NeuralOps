@@ -98,17 +98,9 @@ Output: Context output Y [B, N, D]
 2. **Untied Per-Forward Regrowth:** Sketch matrices mutated across sequence lengths without deterministic frequency modes.
 3. **Logit Collapse:** Softmax over unorthogonalized random projections produced unstructured logits equivalent to uniform noise, degrading classification accuracy to random guessing ($51.03\%$).
 
-### 5.2 SST-2 Empirical Comparison Table
-| Attention Variant | SST-2 Accuracy | SST-2 F1 | Runtime / Latency | Theoretical Complexity |
-| :--- | :--- | :--- | :--- | :--- |
-| **Full Attention** | **89.56%** | **89.55%** | Baseline (1.0x) | $\mathcal{O}(N^2 \cdot d)$ |
-| **Performer (FAVOR+)** | 82.91% | 82.90% | 504.8s | $\mathcal{O}(N \cdot m \cdot d)$ |
-| **FlashAttention-3** | 82.91% | 82.90% | Fast (IO-optimal) | $\mathcal{O}(N^2 \cdot d)$ |
-| **Nyströmformer** | 82.11% | 82.10% | Linear (Pinv) | $\mathcal{O}(N \cdot m \cdot d + m^3)$ |
-| **Span-Expanded** | 81.31% | 81.30% | Linear-Local | $\mathcal{O}(N \cdot L_{\text{span}} \cdot d)$ |
-| **Adaptive Span** | 80.39% | 80.38% | **5.3s (Superfast)** | $\mathcal{O}(N \cdot S_{\text{max}} \cdot d)$ |
-| **Repaired Galerkin (DCT-II)** | **82.45% (Repaired)** | **82.44%** | Fast Linear | $\mathcal{O}(N \cdot r \cdot d)$ |
-| *Unrepaired Galerkin* | *51.03% (Broken)* | *50.80%* | — | Rank Collapse |
+### 5.2 Empirical Benchmarks
+> Benchmarks Pending — run `bash run_on_gpu_server.sh suite` to populate results.
+> See [Empirical Validation Protocol](../empirical_validation_protocol.md).
 
 ---
 

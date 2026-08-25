@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from framework.eval_all_models_datasets import build_model_instance
 
@@ -17,9 +18,8 @@ MODEL_FAMILIES = ["bert", "roberta", "t5", "distilbert", "gpt2"]
 
 
 def make_batch(family: str, batch_size: int = 2, seq_len: int = 16):
-    vocab_size = 50265 if family == "roberta" else 30522
     b = {
-        "input_ids": torch.randint(100, vocab_size - 100, (batch_size, seq_len)),
+        "input_ids": torch.randint(100, 1000, (batch_size, seq_len)),
         "attention_mask": torch.ones(batch_size, seq_len, dtype=torch.long),
     }
     if family not in {"t5", "gpt2"}:
@@ -52,6 +52,7 @@ def test_forward_pass(family):
         batch.pop("labels", None)  # T5EncoderModel has no classification head
     if family == "gpt2":
         batch.pop("token_type_ids", None)
+        batch.pop("labels", None)  # GPT2LMHeadModel requires (B, L) labels for LM loss
 
     model.eval()
     with torch.no_grad():

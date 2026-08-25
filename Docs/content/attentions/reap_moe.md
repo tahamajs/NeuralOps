@@ -364,3 +364,16 @@ class REAPMoEAttention(BaseAttention):
 
         return out, (probs if output_attentions else None)
 ```
+
+---
+
+## 4. Known Limitations & Future Work
+- **Routing Imbalance on Small Batches**: Load-balancing auxiliary loss requires sufficient token diversity per batch ($B \times L \ge 512$) to avoid expert collapse.
+- **SVD Expert Rank Trade-off**: Aggressive expert rank reduction ($r < 16$) reduces feed-forward expressive capacity on complex GLUE tasks.
+
+---
+
+## 5. Empirical Benchmarks
+> Benchmarks Pending — run `bash run_on_gpu_server.sh suite` to populate results.
+> See [Empirical Validation Protocol](../empirical_validation_protocol.md).
+

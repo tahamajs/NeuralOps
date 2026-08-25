@@ -1,6 +1,9 @@
 # Spectron: Importance-Aware Low-Rank + Sparse Attention
 
-## 1. Mathematical Formulation & Architecture
+## 1. Overview
+Spectron dynamically allocates non-uniform low-rank capacities across attention projection matrices under a global parameter budget via Lagrangian spectral entropy optimization, optionally augmented by trainable magnitude-pruned sparse residuals.
+
+## 2. Mathematical Formulation
 1. **Lagrangian Spectral Allocation**:
    $$\min_{\{r_i\}} \sum_{i=1}^M \left(1 - \frac{\sum_{k=1}^{r_i} \sigma_{i, k}^2}{\sum_k \sigma_{i, k}^2}\right) \quad \text{s.t.} \quad \sum_{i=1}^M r_i (d_{i, \text{in}} + d_{i, \text{out}}) \le B_{\text{target}}$$
 
@@ -8,17 +11,22 @@
    $$W = W_{\text{up}} W_{\text{down}} + S, \quad \|S\|_0 \le (1 - \rho) \cdot \operatorname{numel}(W)$$
    $$y = x W_{\text{down}}^T W_{\text{up}}^T + x S^T + b$$
 
-## 2. Repair & Stability Upgrades
-- Added default rank configurations ($r=64$).
-- Implemented `from_distilbert_pretrained` and `inject_spectron_layer`.
-- Standardized FP16 safe masking.
+3. **Computational Complexity**:
+   - Projection FLOPs: $\mathcal{O}(B \cdot N \cdot (d_{\text{in}} r_i + r_i d_{\text{out}}))$.
+   - Scaled Dot-Product Attention: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$.
 
-## 3. Empirical Performance
-- **SST-2 Accuracy**: **83.94%**\n
+## 3. Implementation Notes
+- Inject via `inject_spectron` or `inject_attention(model, 'spectron')`.
+- Compatible with BERT, RoBERTa, DistilBERT, T5.
+- Standardized FP16-safe attention masking.
 
----
+## 4. Known Limitations & Future Work
+- Sparse residual updates require specialized sparse tensor GEMM accelerators for real hardware speedups.
+- Lagrangian rank allocation adds initialization latency during SVD profiling phase.
 
-## Complete Source Code Implementation (`spectron.py`)
+## 5. Empirical Benchmarks
+> Benchmarks Pending — run `bash run_on_gpu_server.sh suite` to populate results.
+> See [Empirical Validation Protocol](../empirical_validation_protocol.md).
 
 ```python
 r"""
