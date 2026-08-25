@@ -28,9 +28,11 @@ Codes/framework/data/
 
 ## 🚀 Usage Guide
 
-### 1. Preparing Benchmark Datasets
-Download and tokenize datasets for multiple target model architectures:
+### 1. `load_glue_split()` vs `prepare_glue_dataset()`
+- **`prepare_glue_dataset()`**: Downloads raw splits from HF Hub, applies tokenizer, and persists tokenized tensors or Arrow tables to disk.
+- **`load_glue_split()`**: First inspects `glue_data/<task>` on local disk for instant offline zero-download loading; falls back to HF Hub if absent, then applies tokenizer and formats tensors.
 
+### 2. Dataset Preparation via CLI
 ```bash
 # Prepare specific tasks with custom tokenizers
 python prepare_datasets.py --tasks sst2,mrpc --models bert,roberta,t5 --save_dir ./prepared_data
@@ -39,9 +41,7 @@ python prepare_datasets.py --tasks sst2,mrpc --models bert,roberta,t5 --save_dir
 python prepare_datasets.py --all --models bert,roberta,t5,distilbert --save_dir /mnt/data
 ```
 
-### 2. Loading Datasets in Python
-Use `glue_loader.py` to seamlessly load pre-cached or online datasets with tokenizer-specific formatting:
-
+### 3. Loading in Python
 ```python
 from framework.data.glue_loader import load_glue_split
 
