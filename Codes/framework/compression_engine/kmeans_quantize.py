@@ -139,7 +139,16 @@ class KMeansLinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix for compatibility."""
-        return self.centroids[self.indices]
+        if hasattr(self, "centroids") and hasattr(self, "indices"):
+            return self.centroids[self.indices]
+        raise AttributeError("'KMeansLinear' object has no centroids/indices initialized")
+
+    @weight.setter
+    def weight(self, value: torch.Tensor) -> None:
+        if isinstance(value, torch.Tensor):
+            centroids, indices = fast_kmeans_1d(value.data, n_clusters=self.n_clusters)
+            self.centroids = nn.Parameter(centroids.to(dtype=value.dtype, device=value.device))
+            self.register_buffer("indices", indices.to(device=value.device))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.training:
