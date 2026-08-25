@@ -41,6 +41,13 @@ MASTER_CSV_COLUMNS: List[str] = [
     "loss",
     "accuracy_pct",
     "f1_score",
+    "mcc",
+    "pearson",
+    "spearman",
+    "fidelity_score",
+    "flops_macs",
+    "throughput_tokens_sec",
+    "latency_variance_ms",
     "perplexity",
     "grad_norm",
 ]
