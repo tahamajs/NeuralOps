@@ -1,69 +1,56 @@
 #!/usr/bin/env python3
 """
-Zero-Bloat Modular Live Experiment Monitor & Dashboard
-Serves modular static files (web/index.html, web/app.js, web/styles.css)
-and provides real-time JSON API /api/stats.
-Background cache thread: stats refreshed every 3s so HTTP requests are instant.
+Real-Time Live Dashboard & Monitoring Server for GPU Benchmark Sweep.
+Serves static frontend assets (web/index.html, web/app.js, web/styles.css)
+and provides real-time JSON API endpoints (/api/stats, /api/action).
 """
+
+from __future__ import annotations
+
 import http.server
 import json
 import os
 import re
 import socketserver
 import subprocess
+import sys
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 try:
     import psutil
 except ImportError:
     psutil = None
 
-# ── Global response cache ─────────────────────────────────────────────────────
-_cache_lock = threading.Lock()
-_cached_response: str = "{}"
-_cache_ready = threading.Event()
-
 PORT = 8080
 WORKDIR = Path(__file__).resolve().parent
 PROJECT_DIR = WORKDIR.parent.parent
 WEB_DIR = WORKDIR / "web"
-MASTER_LOG = PROJECT_DIR / "trajectory_master.log"
-RESULTS_DIR = WORKDIR / "experiments"
-WORKER_STATE_FILE = WORKDIR / "worker_status.json"
+MASTER_LOG = PROJECT_DIR / "comprehensive_run_detached.log"
+RESULTS_DIR = WORKDIR / "results" / "gpu_server"
 
-try:
-    import sys
-    if str(PROJECT_DIR / "Codes") not in sys.path:
-        sys.path.insert(0, str(PROJECT_DIR / "Codes"))
-    if str(WORKDIR) not in sys.path:
-        sys.path.insert(0, str(WORKDIR))
-    from framework.attentions import ATTENTION_REGISTRY
-    ATTN_MODELS = [(k, k.replace('_', ' ').title()) for k in sorted(ATTENTION_REGISTRY.keys())]
-except Exception:
-    ATTN_MODELS = [
-        ("svd_linear", "SVD Linear Attention"),
-        ("svd", "SVD Base Attention"),
-        ("full", "Standard Multi-Head Attention"),
-        ("lora_attn", "LoRA Low-Rank Attention"),
-        ("performer", "Performer (FAVOR+)"),
-        ("nystrom", "Nyströmformer"),
-        ("linformer", "Linformer"),
-        ("flash3", "FlashAttention-3"),
-        ("mamba", "Mamba SSM Attention"),
-        ("gated_delta_net", "Gated DeltaNet"),
-        ("adasplash", "AdaSplash Attention"),
-        ("aegis_v3", "Aegis-v3 Attention"),
-        ("griffin_ssd", "Griffin SSD"),
-        ("spectra_v2", "Spectra-v2 Attention"),
-        ("samba_m3", "Samba-M3"),
-    ]
+# Cache synchronization
+_cache_lock = threading.Lock()
+_cached_response: str = "{}"
+_cache_ready = threading.Event()
 
-TASKS = ["sst2"]
+# -----------------------------------------------------------------------------
+# Regex Matchers for Benchmark Logs
+# -----------------------------------------------------------------------------
+RESULT_REGEX = re.compile(
+    r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s+\[(?:INFO|WARNING|ERROR)\]\s+GPUServerLauncher:\s+\[(track\d+_[a-zA-Z0-9_]+)\]\s+([a-zA-Z0-9_\-]+)\s+\|\s+([a-zA-Z0-9_\-]+)\s+\|\s+([a-zA-Z0-9_\-]+)\s+->\s+(\w+)\s+\((.*?)\)'
+)
+
+TIMEOUT_REGEX = re.compile(
+    r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s+\[ERROR\]\s+GPUServerLauncher:\s+TIMEOUT:\s+([a-zA-Z0-9_\-]+)\s+on\s+([a-zA-Z0-9_\-]+)/([a-zA-Z0-9_\-]+)\s+exceeded'
+)
 
 
-def get_gpu_stats():
+def get_gpu_stats() -> Dict[str, Any]:
+    """Queries nvidia-smi for real-time hardware telemetry."""
     gpu_util, mem_used, mem_total, temp, power = 0.0, 0.0, 8188.0, 0.0, 0.0
     
     nvsmi_candidates = [
@@ -74,7 +61,11 @@ def get_gpu_stats():
     
     for smi in nvsmi_candidates:
         try:
-            cmd = [smi, "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw", "--format=csv,noheader,nounits"]
+            cmd = [
+                smi,
+                "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw",
+                "--format=csv,noheader,nounits"
+            ]
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
             if res.returncode == 0 and res.stdout.strip():
                 parts = [p.strip() for p in res.stdout.strip().split(",")]
@@ -87,25 +78,19 @@ def get_gpu_stats():
         except Exception:
             continue
 
-    if mem_used == 0.0 and torch and torch.cuda.is_available():
-        try:
-            mem_used = round(torch.cuda.memory_allocated() / (1024 * 1024), 1)
-            mem_total = round(torch.cuda.get_device_properties(0).total_memory / (1024 * 1024), 1)
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-            pass
-
     ram_used, ram_total = 0.0, 0.0
     if psutil:
         try:
             ram_used = round(psutil.virtual_memory().used / (1024**3), 1)
             ram_total = round(psutil.virtual_memory().total / (1024**3), 1)
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+        except Exception:
             pass
 
     return {
         "gpu_util": gpu_util,
         "mem_used_mb": mem_used,
         "mem_total_mb": mem_total,
+        "mem_pct": round((mem_used / max(1.0, mem_total)) * 100, 1),
         "temp_c": temp,
         "power_w": power,
         "sys_ram_used_gb": ram_used,
@@ -113,198 +98,189 @@ def get_gpu_stats():
     }
 
 
-def get_storage_stats():
-    total_bytes = 0
-    file_count = 0
-    if RESULTS_DIR.exists():
-        for p in RESULTS_DIR.rglob("*"):
-            if p.is_file():
-                file_count += 1
-                total_bytes += p.stat().st_size
-    return {
-        "used_mb": round(total_bytes / (1024 * 1024), 2),
-        "file_count": file_count,
-        "policy": "Zero-Bloat (Metrics Only)",
-    }
-
-
-def get_active_workers():
-    workers = {}
-    if WORKER_STATE_FILE.exists():
-        try:
-            with open(WORKER_STATE_FILE, "r", encoding="utf-8", errors="ignore") as f:
-                workers = json.load(f)
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-            pass
-    if not workers:
-        for i in (1, 2, 3):
-            workers[str(i)] = {"status": "idle", "attn": "-", "task": "-", "idx": "--"}
-    return workers
-
-
-def get_completed_results():
-    results = {}
+def get_completed_results() -> List[Dict[str, Any]]:
+    """Parses comprehensive_run_detached.log and returns structured results and timestamps."""
+    results = []
     
-    # 1. Read from MASTER_LOG
-    if MASTER_LOG.exists():
-        try:
-            lines = MASTER_LOG.read_text(encoding="utf-8", errors="ignore").splitlines()
-            for line in lines:
-                if "<< SUCCESS:" in line and "attn=" in line and "task=" in line:
-                    m = re.search(r"attn=(\w+) \| task=(\w+) \| Acc: ([\d\.]+)% \| F1: ([\d\.]+)% \| Loss: ([\d\.]+) \| Time: ([\d\.]+)s", line)
-                    if m:
-                        k = f"{m.group(1)}_{m.group(2)}_s42"
-                        results[k] = {
-                            "attn": m.group(1),
-                            "task": m.group(2),
-                            "acc": float(m.group(3)),
-                            "f1": float(m.group(4)),
-                            "loss": float(m.group(5)),
-                            "time_s": float(m.group(6)),
-                            "status": "completed"
-                        }
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-            pass
+    # Try project root or fallback to direct name
+    log_candidates = [MASTER_LOG, Path("comprehensive_run_detached.log"), PROJECT_DIR / "comprehensive_run_detached.log"]
+    target_log = None
+    for p in log_candidates:
+        if p.exists():
+            target_log = p
+            break
 
-    # 2. Also scan RESULTS_DIR for any experiment metrics.json
-    if RESULTS_DIR.exists():
-        try:
-            import glob
-            for mf in glob.glob(str(RESULTS_DIR / "*_*_s*" / "metrics.json")):
-                p = Path(mf)
-                dir_name = p.parent.name
-                if dir_name not in results:
-                    try:
-                        data = json.loads(p.read_text(encoding="utf-8", errors="ignore"))
-                        parts = dir_name.rsplit("_", 2)
-                        attn_name = parts[0] if len(parts) >= 3 else dir_name
-                        task_name = parts[1] if len(parts) >= 3 else "sst2"
-                        acc_val = float(data.get("accuracy", data.get("acc", 0.0)))
-                        f1_val = float(data.get("f1", data.get("eval_f1_macro", acc_val)))
-                        loss_val = float(data.get("loss", data.get("eval_loss", 0.0)))
-                        time_val = float(data.get("time_seconds", data.get("time_s", 0.0)))
-                        results[dir_name] = {
-                            "attn": attn_name,
-                            "task": task_name,
-                            "acc": acc_val,
-                            "f1": f1_val,
-                            "loss": loss_val,
-                            "time_s": time_val,
-                            "status": "completed"
-                        }
-                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-                        pass
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-            pass
+    if not target_log:
+        return results
+
+    try:
+        lines = target_log.read_text(encoding="utf-8", errors="ignore").splitlines()
+        for line in lines:
+            line_str = line.strip()
+            
+            # Standard result match
+            m = RESULT_REGEX.match(line_str)
+            if m:
+                ts_str, track, module, model, dataset, status, details = m.groups()
+                try:
+                    dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S,%f")
+                except Exception:
+                    dt = datetime.now()
+                
+                fwd, bwd, mem = "-", "-", "-"
+                fwd_m = re.search(r'fwd:\s*([\d\.]+)ms', details)
+                bwd_m = re.search(r'bwd:\s*([\d\.]+)ms', details)
+                mem_m = re.search(r'mem:\s*([\d\.]+)MB', details)
+                
+                if fwd_m: fwd = fwd_m.group(1)
+                if bwd_m: bwd = bwd_m.group(1)
+                if mem_m: mem = mem_m.group(1)
+
+                results.append({
+                    "timestamp": dt,
+                    "track": track,
+                    "module": module,
+                    "model": model.upper(),
+                    "dataset": dataset.upper(),
+                    "status": status,
+                    "fwd_ms": fwd,
+                    "bwd_ms": bwd,
+                    "mem_mb": mem,
+                })
+                continue
+
+            # Timeout match
+            tm = TIMEOUT_REGEX.match(line_str)
+            if tm:
+                ts_str, module, model, dataset = tm.groups()
+                try:
+                    dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S,%f")
+                except Exception:
+                    dt = datetime.now()
+
+                results.append({
+                    "timestamp": dt,
+                    "track": "track1_svd",
+                    "module": module,
+                    "model": model.upper(),
+                    "dataset": dataset.upper(),
+                    "status": "TIMEOUT",
+                    "fwd_ms": ">120s",
+                    "bwd_ms": "-",
+                    "mem_mb": "-",
+                })
+    except Exception:
+        pass
 
     return results
 
 
-def get_trajectory_matrix(completed_results, active_workers):
-    running_keys = set()
-    for w in active_workers.values():
-        if w.get("status") == "running" and w.get("attn") != "-" and w.get("task") != "-":
-            running_keys.add(f"{w['attn']}_{w['task']}_s42")
+def compute_eta_and_progress(results: List[Dict[str, Any]], total_combos: int = 720, window_size: int = 50) -> Dict[str, Any]:
+    """Calculates moving average seconds/combo over the last 50 entries and projects remaining time."""
+    completed = len(results)
+    remaining = max(0, total_combos - completed)
+    pct = round((completed / max(1, total_combos)) * 100, 1)
 
-    matrix = []
-    for task in TASKS:
-        runs = []
-        for attn_id, attn_name in ATTN_MODELS:
-            key = f"{attn_id}_{task}_s42"
-            status = "queued"
-            metrics = None
-            if key in completed_results:
-                status = "completed"
-                metrics = completed_results[key]
-            elif key in running_keys:
-                status = "running"
-            runs.append({
-                "attn_id": attn_id,
-                "attn_name": attn_name,
-                "task": task,
-                "key": key,
-                "status": status,
-                "metrics": metrics,
-            })
-        matrix.append({"task": task, "runs": runs})
-    return matrix
+    if completed < 2:
+        return {
+            "completed": completed,
+            "total": total_combos,
+            "percent": pct,
+            "avg_sec": 0.0,
+            "eta_formatted": "Calculating...",
+            "eta_seconds": 0
+        }
 
-
-def get_all_active_loss_histories(workers):
-    histories = []
+    window = min(window_size, completed - 1)
+    recent = results[-(window + 1):]
     
-    for wid, w in workers.items():
-        if w.get("status") == "running":
-            attn = w.get("attn", "")
-            task = w.get("task", "")
-            import glob
-            target_pattern = str(RESULTS_DIR / f"{attn}_{task}_*" / "history" / "log_history.json")
-            matches = glob.glob(target_pattern)
-            
-            if matches:
-                # Sort by mtime to get the most recent one if multiple exist
-                matches.sort(key=os.path.getmtime, reverse=True)
-                hist_file = Path(matches[0])
-                try:
-                    data = json.loads(hist_file.read_text(encoding="utf-8", errors="ignore"))
-                    histories.append({
-                        "worker_id": wid,
-                        "active_model": attn,
-                        "active_task": task,
-                        "loss_history": data[-30:] if len(data) > 30 else data
-                    })
-                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-                    pass
-    return histories
+    t_start = recent[0]["timestamp"]
+    t_end = recent[-1]["timestamp"]
+    elapsed_sec = (t_end - t_start).total_seconds()
+
+    if elapsed_sec <= 0 or window == 0:
+        return {
+            "completed": completed,
+            "total": total_combos,
+            "percent": pct,
+            "avg_sec": 0.0,
+            "eta_formatted": "Calculating...",
+            "eta_seconds": 0
+        }
+
+    avg_sec = elapsed_sec / window
+    eta_sec = remaining * avg_sec
+
+    hrs = int(eta_sec // 3600)
+    mins = int((eta_sec % 3600) // 60)
+    secs = int(eta_sec % 60)
+
+    if hrs > 0:
+        eta_str = f"{hrs}h {mins}m"
+    elif mins > 0:
+        eta_str = f"{mins}m {secs}s"
+    else:
+        eta_str = f"{secs}s"
+
+    return {
+        "completed": completed,
+        "total": total_combos,
+        "percent": pct,
+        "avg_sec": round(avg_sec, 2),
+        "eta_formatted": eta_str,
+        "eta_seconds": round(eta_sec, 1)
+    }
+
+
+def is_sweep_running() -> bool:
+    """Checks if the python benchmark launcher is actively running."""
+    try:
+        cmd = ["powershell", "-Command", "Get-Process python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id"]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+        return bool(res.stdout.strip())
+    except Exception:
+        return False
 
 
 def _build_stats_response() -> str:
-    """Build the full stats JSON response. Called by background thread only."""
+    """Build the full stats JSON response."""
     gpu = get_gpu_stats()
-    storage = get_storage_stats()
-    workers = get_active_workers()
     results = get_completed_results()
-    matrix = get_trajectory_matrix(results, workers)
-    train_multi = get_all_active_loss_histories(workers)
+    progress = compute_eta_and_progress(results, total_combos=720, window_size=50)
+    is_running = is_sweep_running()
 
-    logs = []
-    if MASTER_LOG.exists():
-        try:
-            logs = MASTER_LOG.read_text(encoding="utf-8", errors="ignore").splitlines()[-25:]
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-            pass
-
-    gpu["0"] = gpu.get("gpu_util", 0.0)
-    gpu["1"] = gpu.get("mem_used_mb", 0.0)
-    gpu["2"] = gpu.get("mem_total_mb", 8188.0)
-    gpu["3"] = gpu.get("temp_c", 0.0)
-    gpu["4"] = gpu.get("power_w", 0.0)
-    gpu["5"] = gpu.get("sys_ram_used_gb", 0.0)
-
-    total_completed = len(results)
-    first_active = train_multi[0] if (train_multi and len(train_multi) > 0) else {}
-    train_obj = {
-        "active_model": first_active.get("active_model", "SVD"),
-        "active_task": first_active.get("active_task", "SST2"),
-        "active_index": f"{total_completed}/1008",
-        "loss_history": first_active.get("loss_history", [])
-    }
+    serializable_results = [
+        {
+            "track": r["track"],
+            "module": r["module"],
+            "model": r["model"],
+            "dataset": r["dataset"],
+            "status": r["status"],
+            "fwd_ms": r["fwd_ms"],
+            "bwd_ms": r["bwd_ms"],
+            "mem_mb": r["mem_mb"],
+            "time": r["timestamp"].strftime("%H:%M:%S") if isinstance(r["timestamp"], datetime) else str(r["timestamp"]),
+        }
+        for r in results
+    ]
 
     response = {
         "gpu": gpu,
-        "train": train_obj,
-        "storage": storage,
-        "workers": workers,
-        "results": results,
-        "matrix": matrix,
-        "train_multi": train_multi,
-        "logs": logs,
+        "progress": progress,
+        "is_running": is_running,
+        "recent_results": serializable_results[-15:][::-1],
+        "counts": {
+            "pass": sum(1 for r in results if r["status"] == "PASS"),
+            "timeout": sum(1 for r in results if r["status"] == "TIMEOUT"),
+            "fail": sum(1 for r in results if r["status"] == "FAIL"),
+            "total": len(results),
+        }
     }
-    return json.dumps(response).replace("NaN", "null").replace("Infinity", "null")
+    return json.dumps(response)
 
 
-def _cache_refresh_loop():
-    """Background thread: refresh cached stats every 3 seconds."""
+def _cache_refresh_loop() -> None:
+    """Background thread refreshing cached stats every 2 seconds."""
     global _cached_response
     while True:
         try:
@@ -312,34 +288,35 @@ def _cache_refresh_loop():
             with _cache_lock:
                 _cached_response = data
             _cache_ready.set()
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+        except Exception:
             pass
-        time.sleep(3)
+        time.sleep(2)
 
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(WEB_DIR), **kwargs)
+
     def log_message(self, format, *args):
-        pass  # suppress per-request stdout noise
+        pass
 
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "*")
         self.end_headers()
 
     def do_GET(self):
         req_path = self.path.split('?')[0]
 
-        if self.path == "/api/stats":
-            _cache_ready.wait(timeout=10)
+        if req_path == "/api/stats":
+            _cache_ready.wait(timeout=5)
             with _cache_lock:
                 payload = _cached_response.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "*")
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
             self.wfile.write(payload)
@@ -350,127 +327,65 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
-        if req_path in ("/", "/index.html"):
-            html_candidates = [
-                WEB_DIR / "index.html",
-                WORKDIR / "web" / "index.html",
-                PROJECT_DIR / "Codes" / "framework" / "web" / "index.html",
-                Path("Codes/framework/web/index.html").resolve(),
-                Path("web/index.html").resolve(),
-                Path("index.html").resolve(),
-            ]
-            content = None
-            for cand in html_candidates:
-                if cand.exists():
-                    content = cand.read_bytes()
-                    break
-            if content is None:
-                content = b"<!DOCTYPE html><html><body><h1>Dashboard Initializing...</h1><p>Please refresh in 3 seconds.</p></body></html>"
-            self.send_response(200)
-            self.send_header("Content-type", "text/html; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Content-Length", str(len(content)))
-            self.end_headers()
-            self.wfile.write(content)
-            return
-
-        if req_path in ("/styles.css", "/style.css"):
-            for candidate in [WEB_DIR / "style.css", WEB_DIR / "styles.css", PROJECT_DIR / "Docs" / "style.css"]:
-                if candidate.exists():
-                    self.send_response(200)
-                    self.send_header("Content-type", "text/css; charset=utf-8")
-                    self.send_header("Access-Control-Allow-Origin", "*")
-                    self.end_headers()
-                    self.wfile.write(candidate.read_bytes())
-                    return
-
-        # Universal static files lookup across WEB_DIR, Docs, and PROJECT_DIR
-        for base in (WEB_DIR, PROJECT_DIR / "Docs", PROJECT_DIR):
-            target = base / req_path.lstrip('/')
-            if target.is_file():
-                self.send_response(200)
-                ct = "text/plain; charset=utf-8"
-                if req_path.endswith(".md"): ct = "text/markdown; charset=utf-8"
-                elif req_path.endswith(".json"): ct = "application/json; charset=utf-8"
-                elif req_path.endswith(".html"): ct = "text/html; charset=utf-8"
-                elif req_path.endswith(".js"): ct = "application/javascript; charset=utf-8"
-                elif req_path.endswith(".css"): ct = "text/css; charset=utf-8"
-                elif req_path.endswith(".svg"): ct = "image/svg+xml"
-                elif req_path.endswith(".png"): ct = "image/png"
-                elif req_path.endswith(".ico"): ct = "image/x-icon"
-                self.send_header("Content-type", ct)
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(target.read_bytes())
-                return
-
-        super().do_GET()
+        return super().do_GET()
 
     def do_POST(self):
-        if self.path == "/api/action":
-            content_length = int(self.headers.get('Content-Length', 0))
-            post_data = self.rfile.read(content_length)
+        req_path = self.path.split('?')[0]
+        if req_path == "/api/action":
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length) if length > 0 else b"{}"
             try:
-                req = json.loads(post_data.decode("utf-8"))
-                action = req.get("action")
-                msg = "Unknown action"
-                if action == "stop":
-                    # Kill only the orchestrator and its workers (avoid killing this monitor)
-                    kill_cmd = "Get-WmiObject Win32_Process | Where-Object { $_.CommandLine -match 'run_suite_multiprocess.py' } | ForEach-Object { $_.Terminate() }"
-                    subprocess.run(["powershell", "-Command", kill_cmd])
-                    # Update worker status to stopped
-                    with open(WORKER_STATE_FILE, "w", encoding="utf-8") as f:
-                        json.dump({str(i): {"status": "stopped", "attn": "-", "task": "-", "idx": "--"} for i in (1, 2, 3)}, f)
-                    msg = "Orchestrator successfully stopped. All GPU workers terminated."
-                elif action == "start":
-                    # Run the scheduled task to restart the orchestrator
-                    subprocess.run(["schtasks", "/run", "/tn", "RunOrchestrator"])
-                    msg = "Orchestrator triggered successfully via schtasks."
-                
-                self.send_response(200)
-                self.send_header("Content-type", "application/json; charset=utf-8")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "ok", "message": msg}).encode("utf-8"))
-            except Exception as e:
-                self.send_response(500)
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode("utf-8"))
+                data = json.loads(body.decode("utf-8"))
+            except Exception:
+                data = {}
+
+            action = data.get("action", "")
+            success = False
+            msg = ""
+
+            if action == "stop":
+                try:
+                    cmd = 'powershell -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match \\"run_comprehensive\\" -or $_.CommandLine -match \\"launch_gpu_server\\" } | Invoke-CimMethod -MethodName Terminate; Stop-Process -Name python -Force -ErrorAction SilentlyContinue"'
+                    subprocess.run(cmd, shell=True, capture_output=True, timeout=5)
+                    success = True
+                    msg = "Sweep terminated."
+                except Exception as e:
+                    msg = f"Failed to stop: {e}"
+
+            elif action == "start":
+                try:
+                    bat_path = PROJECT_DIR / "run_comprehensive.bat"
+                    cmd = f'wmic process call create "cmd.exe /c \\"{bat_path}\\""'
+                    subprocess.run(cmd, shell=True, capture_output=True, timeout=5)
+                    success = True
+                    msg = "Sweep started in detached mode."
+                except Exception as e:
+                    msg = f"Failed to start: {e}"
+
+            resp = json.dumps({"success": success, "message": msg}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(resp)))
+            self.end_headers()
+            self.wfile.write(resp)
             return
 
-        if self.path == "/api/settings":
-            content_length = int(self.headers.get('Content-Length', 0))
-            post_data = self.rfile.read(content_length)
-            try:
-                req = json.loads(post_data.decode("utf-8"))
-                with open(PROJECT_DIR / "orchestrator_settings.json", "w", encoding="utf-8") as f:
-                    json.dump(req, f)
-                self.send_response(200)
-                self.send_header("Content-type", "application/json; charset=utf-8")
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "ok", "message": "Settings updated!"}).encode("utf-8"))
-            except Exception as e:
-                self.send_response(500)
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode("utf-8"))
-            return
-        
         self.send_response(404)
         self.end_headers()
 
 
 def main():
-    # Start background cache thread so /api/stats responds instantly
+    os.makedirs(WEB_DIR, exist_ok=True)
     t = threading.Thread(target=_cache_refresh_loop, daemon=True)
     t.start()
 
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("0.0.0.0", PORT), DashboardHandler) as httpd:
-        print(f"Modular Live Analytics Hub active on http://0.0.0.0:{PORT}")
-        try:
-            httpd.serve_forever()
-        except KeyboardInterrupt:
-            pass
+    class DualStackServer(socketserver.ThreadingTCPServer):
+        allow_reuse_address = True
+
+    with DualStackServer(("0.0.0.0", PORT), DashboardHandler) as httpd:
+        print(f"[*] NeuralOps Live Dashboard running at http://0.0.0.0:{PORT}")
+        httpd.serve_forever()
 
 
 if __name__ == "__main__":
