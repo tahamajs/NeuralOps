@@ -395,10 +395,27 @@ class FusedSVDLinear(nn.Module):
         )
 
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.U, self.V)
+
+
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("fused_svd_kernel")
+def fused_svd_kernel_factory(config: Any, **kwargs: Any) -> nn.Module:
+    """Factory creating SVDLinearAttention with fused SVD kernel execution."""
+    from framework.attentions.svd_linear_attention import SVDLinearAttention
+    return SVDLinearAttention(config, use_fused_kernel=True, **kwargs)
+
+
 __all__ = [
     "_fused_svd_linear_fwd_kernel",
     "_FusedSVDLinearAutogradFunction",
     "fused_svd_linear",
     "FusedSVDLinear",
+    "fused_svd_kernel_factory",
     "HAS_TRITON",
 ]

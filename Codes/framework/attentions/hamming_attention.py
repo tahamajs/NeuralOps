@@ -18,6 +18,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("hamming")
+@ATTENTION_REGISTRY.register("hamming_attention")
 class HammingAttention(BaseAttention):
     r"""
     Hamming Attention Distillation (HAD) Module.

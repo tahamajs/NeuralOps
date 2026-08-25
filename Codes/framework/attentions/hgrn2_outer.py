@@ -40,30 +40,40 @@ class HGRN2OuterBlock(BaseAttention):
 
     def __init__(
         self,
-        dim: Optional[Union[int, Any]] = None,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
+        dim: Optional[Union[int, Any]] = None,
         num_heads: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        
+        # Resolve dim
         if dim is None:
-            if config is not None:
-                dim = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            else:
-                dim = kwargs.get("hidden_size", 768)
+            if isinstance(config, int):
+                dim = config
+            elif config is not None:
+                dim = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
+        if dim is None:
+            dim = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
         if hasattr(dim, "hidden_size"):
             dim = dim.hidden_size
 
+        # Resolve num_heads
         if num_heads is None:
-            if config is not None:
-                num_heads = getattr(config, "num_attention_heads", 12)
-            else:
-                num_heads = kwargs.get("num_attention_heads", 12)
+            if config is not None and not isinstance(config, int):
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", None))))
+        if num_heads is None:
+            num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
 
         self.dim: int = int(dim)
         self.num_heads: int = int(num_heads)
+        
+        # Ensure num_heads divides dim
+        while self.num_heads > 1 and (self.dim % self.num_heads != 0):
+            self.num_heads -= 1
+            
         self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
 
         self.q_proj = nn.Linear(self.dim, self.dim, bias=False)

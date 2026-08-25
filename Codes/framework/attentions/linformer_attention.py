@@ -16,6 +16,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("linformer")
+@ATTENTION_REGISTRY.register("linformer_attention")
 class LinformerAttention(nn.Module):
     def __init__(
         self,
