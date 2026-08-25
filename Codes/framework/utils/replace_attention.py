@@ -118,6 +118,24 @@ def _try_instantiate(attn_fn: Any, config: Any, layer_idx: int, total_layers: in
     # Build a default ranks dict for spectron/svd_compressed which require it
     _default_ranks = {"q": 64, "k": 64, "v": 64, "o": 64}
 
+    if isinstance(attn_fn, type) and issubclass(attn_fn, nn.Module):
+        class_attempts = [
+            lambda: attn_fn(config=config, pretrained_attn=old_attn, **kwargs),
+            lambda: attn_fn(config=config, **kwargs),
+            lambda: attn_fn(config, pretrained_attn=old_attn),
+            lambda: attn_fn(config, layer_idx=layer_idx, total_layers=total_layers),
+            lambda: attn_fn(config),
+            lambda: attn_fn(config.hidden_size, getattr(config, 'num_attention_heads', 12)),
+            lambda: attn_fn(config, config.hidden_size, getattr(config, 'num_attention_heads', 12)),
+        ]
+        for attempt in class_attempts:
+            try:
+                result = attempt()
+                if isinstance(result, nn.Module):
+                    return result
+            except Exception:
+                continue
+
     attempts = [
         # Pattern A: full positional (layer, model_config, comp_config, layer_idx, total_layers, old_attn)
         lambda: attn_fn(old_attn, config, None, layer_idx, total_layers, old_attn),
@@ -127,8 +145,6 @@ def _try_instantiate(attn_fn: Any, config: Any, layer_idx: int, total_layers: in
         lambda: attn_fn(old_attn, config, comp_config=None, layer_idx=layer_idx, total_layers=total_layers),
         # Pattern A4: layer + model_config only
         lambda: attn_fn(old_attn, config),
-        # Pattern A5: layer only (with defaults)
-        lambda: attn_fn(old_attn),
         # Pattern B: full inject keyword (comp_config + old_attn + layer aware)
         lambda: attn_fn(config, comp_config=None, old_attn=old_attn, layer_idx=layer_idx, total_layers=total_layers),
         # Pattern B2: inject with layer only
@@ -158,6 +174,8 @@ def _try_instantiate(attn_fn: Any, config: Any, layer_idx: int, total_layers: in
         lambda: attn_fn(old_attn, 32, 32),
         # Pattern L: compressed_attention_layer_energy(original_layer, energy_threshold)
         lambda: attn_fn(old_attn, 0.95),
+        # Pattern A5: layer only (with defaults)
+        lambda: attn_fn(old_attn),
         # Pattern M: no-arg fallback
         lambda: attn_fn(),
     ]

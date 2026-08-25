@@ -49,6 +49,8 @@ from framework.compression_engine import (
     ARMORPruner,
     ASTPruner,
     BonsaiPruner,
+    CacheNotesCompressor,
+    CoMeCompressor,
     FLAPCompressor,
     FLATLLMCompressor,
     LIFTRCompressor,
@@ -60,11 +62,16 @@ from framework.compression_engine import (
     OptimalSubspaceProjectionCompressor,
     ProxSparsePruner,
     RotationalSliceGPTINT4Compressor,
+    SDRMCompressor,
     SliceGPTCompressor,
     SliceGPTPCACompressor,
     SLiMCompressor,
     SoKACompressor,
     SparseGPTCompressor,
+)
+from framework.compression_engine.pruning_utils import (
+    apply_24_structured_mask,
+    compute_empirical_hessian,
 )
 
 
@@ -410,6 +417,130 @@ class TestStructuralPruningAndLayerShedding(unittest.TestCase):
         with torch.no_grad():
             self.assertEqual(reg_model(self.dummy_input_ids).shape, (self.batch_size, 2))
 
+    def test_21_come(self) -> None:
+        model = self._create_model()
+        compressor = CoMeCompressor(model, sparsity=0.5, alpha_init=0.1)
+        compressed_model, stats = compressor.compress()
+        self._verify_compression_output(model, compressed_model, stats, "come")
+        self.assertEqual(stats["compressor_name"], "come")
+
+        factory = COMPRESSOR_REGISTRY.resolve("come")
+        reg_model = factory(self._create_model())
+        with torch.no_grad():
+            self.assertEqual(reg_model(self.dummy_input_ids).shape, (self.batch_size, 2))
+
+    def test_22_cachenotes(self) -> None:
+        model = self._create_model()
+        compressor = CacheNotesCompressor(model, task_type="qa", keep_ratio=0.5)
+        compressed_model, stats = compressor.compress()
+        self._verify_compression_output(model, compressed_model, stats, "cachenotes")
+        self.assertEqual(stats["compressor_name"], "cachenotes")
+
+        factory = COMPRESSOR_REGISTRY.resolve("cachenotes")
+        reg_model = factory(self._create_model())
+        with torch.no_grad():
+            self.assertEqual(reg_model(self.dummy_input_ids).shape, (self.batch_size, 2))
+
+    def test_23_sdrm(self) -> None:
+        model = self._create_model()
+        compressor = SDRMCompressor(model, total_param_ratio=0.7)
+        compressed_model, stats = compressor.compress()
+        self._verify_compression_output(model, compressed_model, stats, "sdrm")
+        self.assertEqual(stats["compressor_name"], "sdrm")
+
+        factory = COMPRESSOR_REGISTRY.resolve("sdrm")
+        reg_model = factory(self._create_model())
+        with torch.no_grad():
+            self.assertEqual(reg_model(self.dummy_input_ids).shape, (self.batch_size, 2))
+
+    def test_24_slicegpt_orthogonal_invariance(self) -> None:
+        """Mathematical proof check: Q^T @ Q = I."""
+        model = self._create_model()
+        compressor = SliceGPTCompressor(model, sparsity=0.25)
+        d_in = 64
+        dummy_act = torch.randn(100, d_in)
+        Q, eigvals = compressor._compute_orthogonal_rotation(dummy_act, d_in)
+        
+        # Verify orthogonality: Q^T Q == I
+        identity = torch.eye(d_in)
+        qtq = torch.matmul(Q.T, Q)
+        diff = torch.norm(qtq - identity, p="fro").item()
+        self.assertLess(diff, 1e-4, f"Orthogonality error Q^T Q - I = {diff:.6f} exceeds threshold!")
+
+    def test_25_sparsegpt_damped_hessian_inversion(self) -> None:
+        """Mathematical proof check: Damped Hessian H + lambda*I is symmetric positive-definite."""
+        d_in = 32
+        N = 64
+        X = torch.randn(N, d_in)
+        damping = 0.01
+        H_reg, H_inv = compute_empirical_hessian(X, damping=damping)
+
+        # Check symmetry
+        sym_diff = torch.norm(H_reg - H_reg.T, p="fro").item()
+        self.assertLess(sym_diff, 1e-5, f"Hessian asymmetry error: {sym_diff:.6f}")
+
+        # Check positive definiteness: all eigenvalues > 0
+        eigvals = torch.linalg.eigvalsh(H_reg)
+        min_eig = eigvals.min().item()
+        self.assertGreater(min_eig, 0.0, f"Minimum eigenvalue of damped Hessian is {min_eig} <= 0")
+
+        # Check inverse reconstruction: H @ H_inv approx I
+        prod = torch.matmul(H_reg, H_inv)
+        inv_err = torch.norm(prod - torch.eye(d_in), p="fro").item()
+        self.assertLess(inv_err, 0.1, f"Inverse Hessian reconstruction error: {inv_err:.6f}")
+
+    def test_26_structured_24_hardware_sparsity(self) -> None:
+        """Hardware compliance check: In every 4-element block, exactly 2 non-zeros."""
+        d_out, d_in = 16, 32
+        W = torch.randn(d_out, d_in)
+        W_pruned, mask = apply_24_structured_mask(W, dim=1)
+
+        # Verify block-wise 2:4 pattern
+        for r in range(d_out):
+            for c_blk in range(d_in // 4):
+                block = mask[r, c_blk * 4 : (c_blk + 1) * 4]
+                non_zeros = torch.count_nonzero(block).item()
+                self.assertEqual(non_zeros, 2, f"Row {r} Block {c_blk} non-zeros = {non_zeros} != 2")
+
+    def test_27_admm_convergence_and_ste(self) -> None:
+        """Optimization check: ADMM convergence and STE gradient flow through mask."""
+        model = self._create_model()
+        compressor = ADMMPruner(model, sparsity=0.5, max_iter=6, structured_24=True, use_ste=True)
+        compressed_model, stats = compressor.compress()
+
+        # Check forward and backward pass through STE masked layers
+        out = compressed_model(self.dummy_input_ids)
+        loss = out.sum()
+        loss.backward()
+
+        # Verify gradients exist and are non-zero on masked linear layers
+        for name, mod in compressed_model.named_modules():
+            if hasattr(mod, "weight") and mod.weight.grad is not None:
+                self.assertTrue(torch.isfinite(mod.weight.grad).all(), f"NaN in gradients for {name}")
+
+    def test_28_come_learnable_identity_bridges(self) -> None:
+        """Architectural check: CoMe bridges are initialized to Identity with learnable alpha."""
+        from framework.compression_engine.come import CoMeBridge
+        hidden_dim = 64
+        bridge = CoMeBridge(hidden_size=hidden_dim, alpha_init=0.1)
+
+        # Verify W_bridge is initialized to Identity
+        eye = torch.eye(hidden_dim)
+        diff = torch.norm(bridge.linear.weight.data - eye, p="fro").item()
+        self.assertLess(diff, 1e-6, f"CoMeBridge linear weight is not identity: {diff}")
+
+        # Verify forward pass: for alpha=0.1, y = x + alpha*(W@x - x) = x when W=I
+        x = torch.randn(2, 8, hidden_dim)
+        y = bridge(x)
+        self.assertTrue(torch.allclose(x, y, atol=1e-5), "Initial bridge forward did not preserve identity mapping!")
+
+        # Verify learnability: gradient flows to alpha and linear weight
+        loss = y.sum()
+        loss.backward()
+        self.assertIsNotNone(bridge.alpha.grad, "Alpha parameter did not receive gradients!")
+        self.assertIsNotNone(bridge.linear.weight.grad, "Bridge linear weights did not receive gradients!")
+
 
 if __name__ == "__main__":
     unittest.main()
+

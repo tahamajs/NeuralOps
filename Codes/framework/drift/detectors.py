@@ -11,6 +11,7 @@ import numpy as np
 from scipy import stats
 
 from framework.core.registry import Registry
+from .report import DriftReport, FeatureDriftReport
 
 METHOD_REGISTRY = Registry("drift_methods")
 
