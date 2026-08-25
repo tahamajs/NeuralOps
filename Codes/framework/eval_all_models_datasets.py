@@ -1,3 +1,5 @@
+from __future__ import annotations
+import contextlib
 """
 Universal Evaluation Engine for NeuralOps Framework.
 Optimized Features:
@@ -7,7 +9,6 @@ Optimized Features:
 4. Full Support for all 5 Model Families and 5 Tracks.
 """
 
-from __future__ import annotations
 
 import copy
 import gc
@@ -582,7 +583,7 @@ def _generate_synthetic_batch(
 def get_dataset_batch(
     dataset_name: str,
     model_family: str,
-    batch_size: int = 64,
+    batch_size: int = 128,
     seq_len: int = 256,
     vocab_size: int = 30522,
     num_labels: int = 2,
@@ -715,7 +716,7 @@ def evaluate_single_combination_opt(
     rank: int = 16,
     num_warmup: int = 2,
     num_steps: int = 5,
-    batch_size: int = 64,
+    batch_size: int = 128,
     seq_len: int = 256,
     device: torch.device = torch.device("cpu"),
     results_dir: str = "./results/gpu_server",
@@ -769,15 +770,27 @@ def evaluate_single_combination_opt(
         for p in model.parameters():
             p.requires_grad = True
 
+        is_cuda = (device.type == "cuda")
+        scaler = torch.amp.GradScaler('cuda') if is_cuda else None
+
+        # Warmup passes with AMP
         for _ in range(num_warmup):
-            out = model(**filtered_batch)
-            _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
-            if loss is None:
-                loss = torch.tensor(0.0, requires_grad=True, device=device)
-            loss.backward()
+            if is_cuda:
+                with torch.amp.autocast('cuda'):
+                    out = model(**filtered_batch)
+                    _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
+                if loss is None:
+                    loss = torch.tensor(0.0, requires_grad=True, device=device)
+                scaler.scale(loss).backward()
+                scaler.update()
+            else:
+                out = model(**filtered_batch)
+                _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
+                if loss is None:
+                    loss = torch.tensor(0.0, requires_grad=True, device=device)
+                loss.backward()
             model.zero_grad()
 
-        is_cuda = (device.type == "cuda")
         fwd_times: List[float] = []
         bwd_times: List[float] = []
 
@@ -790,15 +803,18 @@ def evaluate_single_combination_opt(
 
             for i in range(num_steps):
                 fwd_start_events[i].record()
-                out = model(**filtered_batch)
+                with torch.amp.autocast('cuda'):
+                    out = model(**filtered_batch)
                 fwd_end_events[i].record()
 
-                _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
+                with torch.amp.autocast('cuda'):
+                    _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
                 if loss is None:
                     loss = torch.tensor(0.0, requires_grad=True, device=device)
 
                 bwd_start_events[i].record()
-                loss.backward()
+                scaler.scale(loss).backward()
+                scaler.update()
                 bwd_end_events[i].record()
                 model.zero_grad()
 
