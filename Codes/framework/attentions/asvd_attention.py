@@ -89,6 +89,7 @@ class ASVDLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("asvd")
+@ATTENTION_REGISTRY.register("asvd_attention")
 class ASVDAttention(nn.Module):
     r"""ASVD Attention with Factored Low-Rank Matrix Decomposition.
 

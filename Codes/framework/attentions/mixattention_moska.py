@@ -12,6 +12,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("mixattention_moska")
+@ATTENTION_REGISTRY.register("fasa")
 class MixAttentionMoSKA(BaseAttention):
     r"""
     MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).

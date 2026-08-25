@@ -36,31 +36,36 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
     def __init__(
         self,
-        d_model: Optional[Union[int, Any]] = None,
-        num_heads: Optional[int] = None,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
+        d_model: Optional[Union[int, Any]] = None,
+        num_heads: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        
+        # Resolve d_model
         if d_model is None:
-            if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            else:
-                d_model = kwargs.get("hidden_size", 768)
+            if isinstance(config, int):
+                d_model = config
+            elif config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
+        if d_model is None:
+            d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
+        # Resolve num_heads
         if num_heads is None:
-            if config is not None:
-                num_heads = getattr(config, "num_attention_heads", 12)
-            else:
-                num_heads = kwargs.get("num_attention_heads", 12)
+            if config is not None and not isinstance(config, int):
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", None))))
+        if num_heads is None:
+            num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
 
         self.d_model: int = int(d_model)
         self.num_heads: int = int(num_heads)
 
-        self.hgrn = HGRN2Layer(d_model=self.d_model, config=config, rank=rank)
+        self.hgrn = HGRN2Layer(config=config, rank=rank, d_model=self.d_model)
         self.deltanet = GatedDeltaNet(
-            d_model=self.d_model, num_heads=self.num_heads, config=config, rank=rank
+            config=config, rank=rank, d_model=self.d_model, num_heads=self.num_heads
         )
         self.gate = nn.Linear(self.d_model, self.d_model)
         self.out_proj = nn.Linear(self.d_model, self.d_model)

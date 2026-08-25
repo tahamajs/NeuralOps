@@ -191,18 +191,26 @@ class GraniteHybridBlock(BaseAttention):
 
     def __init__(
         self,
-        dim: int,
+        config: Optional[Any] = None,
+        rank: Optional[int] = None,
+        dim: Optional[int] = None,
         num_experts: int = 8,
         top_k: int = 2,
         ratio: int = 9,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        if dim is None:
+            if config is not None:
+                dim = getattr(config, "hidden_size", getattr(config, "d_model", 768))
+            else:
+                dim = kwargs.get("hidden_size", 768)
         self.dim: int = dim
         self.mamba: Mamba2 = Mamba2(d_model=dim)
+        num_heads = getattr(config, "num_attention_heads", 8) if config else 8
         self.attn: nn.MultiheadAttention = nn.MultiheadAttention(
-            dim, 8, batch_first=True
+            dim, num_heads, batch_first=True
         )
         self.moe: MixtureOfExperts = MixtureOfExperts(
             dim, dim * 4, num_experts, top_k
@@ -247,7 +255,7 @@ class GraniteHybridBlock(BaseAttention):
         return x, (attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("granite_hybrid")
+@ATTENTION_REGISTRY.register("granite_hybrid_inject")
 def inject_granite_hybrid(
     layer: nn.Module,
     model_config: Any,

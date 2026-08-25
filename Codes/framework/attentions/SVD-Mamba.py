@@ -67,6 +67,9 @@ class SVDLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("svd_mamba")
+@ATTENTION_REGISTRY.register("SVD-Mamba")
+@ATTENTION_REGISTRY.register("svd-mamba")
+@ATTENTION_REGISTRY.register("SVD_Mamba")
 class SVDMamba(BaseAttention):
     r"""SVD-Mamba module.
 
@@ -79,9 +82,9 @@ class SVDMamba(BaseAttention):
 
     def __init__(
         self,
-        d_model: Optional[int] = None,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
+        d_model: Optional[int] = None,
         d_state: int = 16,
         d_conv: int = 4,
         expand: int = 2,
@@ -90,23 +93,27 @@ class SVDMamba(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        
+        # Resolve d_model
         if d_model is None:
-            if config is not None:
-                d_model = getattr(config, "hidden_size", 768)
-            else:
-                d_model = kwargs.get("hidden_size", 768)
+            if isinstance(config, int):
+                d_model = config
+            elif config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
+        if d_model is None:
+            d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
-        self.d_model = d_model
+        self.d_model = int(d_model)
         self.d_state = d_state
         self.d_conv = d_conv
         self.expand = expand
-        self.inner_dim = expand * d_model
-        self.dt_rank = dt_rank if dt_rank is not None else ceil(d_model / 16)
-        self.global_rank = global_rank
+        self.inner_dim = expand * self.d_model
+        self.dt_rank = dt_rank if dt_rank is not None else max(1, ceil(self.d_model / 16))
+        self.global_rank = min(global_rank, self.d_model, self.inner_dim)
 
         # SVD-factorized projections
-        self.in_proj = SVDLinear(d_model, 2 * self.inner_dim, rank=min(d_model, self.inner_dim)//2)
-        self.out_proj = SVDLinear(self.inner_dim, d_model, rank=min(self.inner_dim, d_model)//2)
+        self.in_proj = SVDLinear(self.d_model, 2 * self.inner_dim, rank=max(1, min(self.d_model, self.inner_dim) // 2))
+        self.out_proj = SVDLinear(self.inner_dim, self.d_model, rank=max(1, min(self.inner_dim, self.d_model) // 2))
         self.x_proj = SVDLinear(self.inner_dim, self.dt_rank + 2 * self.d_state, rank=self.dt_rank)
         self.dt_proj = SVDLinear(self.dt_rank, self.inner_dim, rank=self.dt_rank)
 
