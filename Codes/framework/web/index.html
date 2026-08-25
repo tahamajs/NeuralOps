@@ -3,21 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NeuralOps GPU Benchmark Live Dashboard</title>
+  <title>NeuralOps Live View & Comparative Analytics Studio</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js for High Performance Animated Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="dashboard-container">
-    <!-- Header -->
+    <!-- Top Navigation Header -->
     <header class="top-nav">
       <div class="brand">
         <div class="logo-icon">⚡</div>
         <div>
-          <h1>NeuralOps Live View</h1>
-          <p class="subtitle">Real-time SVD & Attention GPU Benchmark Sweep</p>
+          <div class="brand-title-wrap">
+            <h1>NeuralOps Live View</h1>
+            <span class="version-tag">v2.4 Analytics Studio</span>
+          </div>
+          <p class="subtitle">Real-time SVD & Attention GPU Benchmark Suite (NeurIPS/ICLR Rigor)</p>
         </div>
       </div>
       <div class="nav-controls">
@@ -30,117 +35,255 @@
       </div>
     </header>
 
-    <!-- GPU Hardware Telemetry Cards -->
-    <section class="telemetry-grid">
-      <div class="telemetry-card">
-        <div class="card-header">
-          <span class="card-label">GPU Utilization</span>
-          <span class="card-icon">📊</span>
-        </div>
-        <div class="card-value" id="val-gpu-util">0%</div>
-        <div class="progress-track">
-          <div class="progress-fill" id="bar-gpu-util" style="width: 0%;"></div>
-        </div>
-        <div class="card-sub" id="sub-gpu-util">NVIDIA RTX 4070 (8GB)</div>
-      </div>
+    <!-- Studio Navigation Tabs -->
+    <nav class="view-tabs">
+      <button class="tab-btn active" id="tab-telemetry-btn" onclick="switchTab('telemetry')">
+        <span class="tab-icon">📊</span> Telemetry & Live Stream
+      </button>
+      <button class="tab-btn" id="tab-analytics-btn" onclick="switchTab('analytics')">
+        <span class="tab-icon">🔬</span> Comparative Analytics Lab
+        <span class="tab-pill-badge" id="tab-module-count">0 Modules</span>
+      </button>
+    </nav>
 
-      <div class="telemetry-card">
-        <div class="card-header">
-          <span class="card-label">VRAM Usage</span>
-          <span class="card-icon">🧠</span>
+    <!-- VIEW 1: Telemetry & Live Stream -->
+    <div id="view-telemetry" class="tab-content active">
+      <!-- GPU Hardware Telemetry Cards -->
+      <section class="telemetry-grid">
+        <div class="telemetry-card">
+          <div class="card-header">
+            <span class="card-label">GPU Utilization</span>
+            <span class="card-icon">⚡</span>
+          </div>
+          <div class="card-value" id="val-gpu-util">0%</div>
+          <div class="progress-track">
+            <div class="progress-fill" id="bar-gpu-util" style="width: 0%;"></div>
+          </div>
+          <div class="card-sub" id="sub-gpu-util">NVIDIA RTX 4070 (8GB)</div>
         </div>
-        <div class="card-value" id="val-vram">0 / 8188 MB</div>
-        <div class="progress-track">
-          <div class="progress-fill fill-accent" id="bar-vram" style="width: 0%;"></div>
-        </div>
-        <div class="card-sub" id="sub-vram">0.0% Allocated</div>
-      </div>
 
-      <div class="telemetry-card">
-        <div class="card-header">
-          <span class="card-label">Board Power Draw</span>
-          <span class="card-icon">⚡</span>
+        <div class="telemetry-card">
+          <div class="card-header">
+            <span class="card-label">VRAM Allocation</span>
+            <span class="card-icon">🧠</span>
+          </div>
+          <div class="card-value" id="val-vram">0 / 8188 MB</div>
+          <div class="progress-track">
+            <div class="progress-fill fill-accent" id="bar-vram" style="width: 0%;"></div>
+          </div>
+          <div class="card-sub" id="sub-vram">0.0% Allocated</div>
         </div>
-        <div class="card-value" id="val-power">0.0 W</div>
-        <div class="progress-track">
-          <div class="progress-fill fill-warning" id="bar-power" style="width: 0%;"></div>
-        </div>
-        <div class="card-sub" id="sub-power">TGP Cap: 140W</div>
-      </div>
 
-      <div class="telemetry-card">
-        <div class="card-header">
-          <span class="card-label">GPU Temperature</span>
-          <span class="card-icon">🔥</span>
+        <div class="telemetry-card">
+          <div class="card-header">
+            <span class="card-label">Board Power Draw</span>
+            <span class="card-icon">🔋</span>
+          </div>
+          <div class="card-value" id="val-power">0.0 W</div>
+          <div class="progress-track">
+            <div class="progress-fill fill-warning" id="bar-power" style="width: 0%;"></div>
+          </div>
+          <div class="card-sub" id="sub-power">TGP Limit: 140W</div>
         </div>
-        <div class="card-value" id="val-temp">0 °C</div>
-        <div class="progress-track">
-          <div class="progress-fill fill-temp" id="bar-temp" style="width: 0%;"></div>
+
+        <div class="telemetry-card">
+          <div class="card-header">
+            <span class="card-label">Core Temperature</span>
+            <span class="card-icon">🔥</span>
+          </div>
+          <div class="card-value" id="val-temp">0 °C</div>
+          <div class="progress-track">
+            <div class="progress-fill fill-temp" id="bar-temp" style="width: 0%;"></div>
+          </div>
+          <div class="card-sub" id="sub-temp">Thermal Margin OK</div>
         </div>
-        <div class="card-sub" id="sub-temp">Thermal Margin OK</div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Progress & ETA Section -->
-    <section class="progress-section">
-      <div class="progress-header">
-        <div>
-          <h2>Benchmark Sweep Progress</h2>
-          <p class="section-desc" id="progress-desc">Evaluating combination 0 of 720...</p>
+      <!-- Progress & ETA Section -->
+      <section class="progress-section">
+        <div class="progress-header">
+          <div>
+            <h2>Benchmark Matrix Progress</h2>
+            <p class="section-desc" id="progress-desc">Evaluating combination 0 of 720...</p>
+          </div>
+          <div class="eta-pill">
+            <span class="eta-label">ESTIMATED TIME REMAINING</span>
+            <span class="eta-value" id="val-eta">Calculating...</span>
+          </div>
         </div>
-        <div class="eta-pill">
-          <span class="eta-label">ESTIMATED TIME REMAINING</span>
-          <span class="eta-value" id="val-eta">Calculating...</span>
+
+        <div class="main-progress-track">
+          <div class="main-progress-fill" id="main-progress-bar" style="width: 0%;"></div>
         </div>
-      </div>
 
-      <div class="main-progress-track">
-        <div class="main-progress-fill" id="main-progress-bar" style="width: 0%;"></div>
-      </div>
-
-      <div class="progress-stats">
-        <div class="stat-pill"><span class="pill-dot dot-pass"></span> PASS: <strong id="count-pass">0</strong></div>
-        <div class="stat-pill"><span class="pill-dot dot-timeout"></span> TIMEOUT: <strong id="count-timeout">0</strong></div>
-        <div class="stat-pill"><span class="pill-dot dot-fail"></span> FAIL: <strong id="count-fail">0</strong></div>
-        <div class="stat-pill">Avg Pace: <strong id="val-pace">-</strong> s/combo</div>
-      </div>
-    </section>
-
-    <!-- Live Execution Table -->
-    <section class="table-section">
-      <div class="table-header">
-        <div>
-          <h2>Recent Execution Stream</h2>
-          <span class="table-sub">Click any row to inspect full execution details & error stack traces</span>
+        <div class="progress-stats">
+          <div class="stat-pill"><span class="pill-dot dot-pass"></span> PASS: <strong id="count-pass">0</strong></div>
+          <div class="stat-pill"><span class="pill-dot dot-timeout"></span> TIMEOUT: <strong id="count-timeout">0</strong></div>
+          <div class="stat-pill"><span class="pill-dot dot-fail"></span> FAIL: <strong id="count-fail">0</strong></div>
+          <div class="stat-pill">Avg Pace: <strong id="val-pace">-</strong> s/combo</div>
         </div>
-      </div>
-      <div class="table-wrapper">
-        <table class="live-table">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Track</th>
-              <th>Module</th>
-              <th>Model</th>
-              <th>Dataset</th>
-              <th>Status</th>
-              <th>Fwd Latency</th>
-              <th>Bwd Latency</th>
-              <th>Peak VRAM</th>
-            </tr>
-          </thead>
-          <tbody id="results-tbody">
-            <tr>
-              <td colspan="9" class="loading-cell">Waiting for live data stream...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+      </section>
 
+      <!-- Live Execution Table -->
+      <section class="table-section">
+        <div class="table-header-flex">
+          <div>
+            <h2>Recent Execution Stream</h2>
+            <span class="table-sub">Click any row to inspect execution trajectories and diagnostic stack traces</span>
+          </div>
+          <!-- Filter Controls -->
+          <div class="filter-group">
+            <span class="filter-label">Filter:</span>
+            <button class="filter-pill active" onclick="setFilter('status', 'ALL', this)">All</button>
+            <button class="filter-pill" onclick="setFilter('status', 'PASS', this)">Pass</button>
+            <button class="filter-pill" onclick="setFilter('status', 'TIMEOUT', this)">Timeout</button>
+            <button class="filter-pill" onclick="setFilter('status', 'FAIL', this)">Fail</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="live-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Track</th>
+                <th>Module</th>
+                <th>Model</th>
+                <th>Dataset</th>
+                <th>Status</th>
+                <th>Fwd Latency</th>
+                <th>Bwd Latency</th>
+                <th>Peak VRAM</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody">
+              <tr>
+                <td colspan="9" class="loading-cell">Waiting for live data stream...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- VIEW 2: Comparative Analytics Lab -->
+    <div id="view-analytics" class="tab-content">
+      <!-- Section A: Head-to-Head Comparison Card -->
+      <section class="analytics-card comparison-studio-card">
+        <div class="card-header-flex">
+          <div>
+            <h2>⚔️ Head-to-Head Module Comparison Studio</h2>
+            <p class="section-desc">Select any two evaluated modules to generate an interactive side-by-side efficiency and VRAM radar/bar visualizer.</p>
+          </div>
+          <div class="module-selectors">
+            <div class="select-wrapper">
+              <label for="select-mod1">Module A (Baseline):</label>
+              <select id="select-mod1" onchange="updateComparison()"></select>
+            </div>
+            <div class="vs-divider">VS</div>
+            <div class="select-wrapper">
+              <label for="select-mod2">Module B (Novel/Candidate):</label>
+              <select id="select-mod2" onchange="updateComparison()"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-grid">
+          <!-- Side-by-side Metrics Summary -->
+          <div class="comp-summary-pane">
+            <div class="comp-stat-box" id="box-mod1">
+              <h4 id="comp-mod1-title">Module A</h4>
+              <div class="metric-row"><span>Avg Fwd:</span> <strong id="comp-mod1-fwd">-</strong></div>
+              <div class="metric-row"><span>Avg Bwd:</span> <strong id="comp-mod1-bwd">-</strong></div>
+              <div class="metric-row"><span>Total Step:</span> <strong id="comp-mod1-total">-</strong></div>
+              <div class="metric-row"><span>Peak VRAM:</span> <strong id="comp-mod1-mem">-</strong></div>
+              <div class="metric-row"><span>Pass Rate:</span> <strong id="comp-mod1-pass">-</strong></div>
+            </div>
+
+            <div class="speedup-delta-box" id="box-speedup-delta">
+              <span class="delta-label">EFFICIENCY DELTA</span>
+              <div class="delta-value" id="val-comp-delta">-</div>
+              <span class="delta-sub" id="sub-comp-delta">Select two modules to compare</span>
+            </div>
+
+            <div class="comp-stat-box" id="box-mod2">
+              <h4 id="comp-mod2-title">Module B</h4>
+              <div class="metric-row"><span>Avg Fwd:</span> <strong id="comp-mod2-fwd">-</strong></div>
+              <div class="metric-row"><span>Avg Bwd:</span> <strong id="comp-mod2-bwd">-</strong></div>
+              <div class="metric-row"><span>Total Step:</span> <strong id="comp-mod2-total">-</strong></div>
+              <div class="metric-row"><span>Peak VRAM:</span> <strong id="comp-mod2-mem">-</strong></div>
+              <div class="metric-row"><span>Pass Rate:</span> <strong id="comp-mod2-pass">-</strong></div>
+            </div>
+          </div>
+
+          <!-- Chart.js Visualizer Canvas -->
+          <div class="comp-chart-pane">
+            <canvas id="chart-comparison"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section B: Performance Distribution Charts -->
+      <section class="charts-dual-grid">
+        <div class="analytics-card">
+          <div class="card-header">
+            <h3>📈 Track-Wide Latency Breakdown</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-tracks"></canvas>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="card-header">
+            <h3>🤖 Model Architecture Latency (BERT vs RoBERTa vs T5)</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-models"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section C: Top Efficiency Leaderboard -->
+      <section class="table-section">
+        <div class="table-header-flex">
+          <div>
+            <h2>🏆 Universal Module Efficiency Leaderboard</h2>
+            <span class="table-sub">Ranked by fastest forward-pass latency across all models & datasets</span>
+          </div>
+          <div class="search-wrap">
+            <input type="text" id="leaderboard-search" placeholder="Search modules..." onkeyup="filterLeaderboard()">
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="live-table sortable-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Module Name</th>
+                <th>Track</th>
+                <th>Avg Fwd (ms)</th>
+                <th>Avg Bwd (ms)</th>
+                <th>Total Latency (ms)</th>
+                <th>Peak VRAM (MB)</th>
+                <th>Success Rate</th>
+                <th>Runs</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody">
+              <tr>
+                <td colspan="10" class="loading-cell">Aggregating leaderboard metrics...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
     <footer class="dashboard-footer">
       <span>NeuralOps Universal Benchmark Matrix (720 Total Combos)</span>
-      <span>Hardware: NVIDIA GeForce RTX 4070 Laptop GPU</span>
+      <span>Hardware: NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace)</span>
     </footer>
   </div>
 
