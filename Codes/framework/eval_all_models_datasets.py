@@ -883,6 +883,47 @@ def evaluate_single_combination_opt(
             "bwd_latency_ms": traj_bwd_ms,
         }
 
+        # ==== STRICT EVALUATION PHASE ====
+        model.eval()
+        all_preds = []
+        all_labels = []
+        try:
+            tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
+            dataset_cache_key = (dataset.lower(), tok_name, seq_len)
+            if dataset_cache_key in _PREPARED_DATASET_CACHE:
+                val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
+                loader = torch.utils.data.DataLoader(
+                    val_tokenized, batch_size=batch_size, shuffle=False, pin_memory=(device.type == "cuda")
+                )
+                with torch.no_grad():
+                    for val_batch in loader:
+                        inputs = {
+                            ("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v)
+                            for k, v in val_batch.items()
+                        }
+                        filtered_inputs = {k: v for k, v in inputs.items() if k in ["input_ids", "attention_mask", "labels", "decoder_input_ids"]}
+                        
+                        # Use AMP if on CUDA
+                        if device.type == "cuda":
+                            with torch.amp.autocast('cuda'):
+                                out = model(**filtered_inputs)
+                        else:
+                            out = model(**filtered_inputs)
+                            
+                        logits, _ = _extract_logits_and_loss(out, num_labels=num_labels, labels=inputs.get("labels"))
+                        if logits is not None and inputs.get("labels") is not None:
+                            preds = torch.argmax(logits, dim=-1)
+                            all_preds.extend(preds.cpu().numpy())
+                            all_labels.extend(inputs["labels"].cpu().numpy())
+                            
+                if all_labels:
+                    from sklearn.metrics import accuracy_score, f1_score
+                    result.accuracy_pct = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
+                    result.f1_score = round(float(f1_score(all_labels, all_preds, average='macro' if num_labels > 2 else 'binary')), 4)
+        except Exception as eval_e:
+            logger.warning("Validation phase failed: %s", eval_e)
+
+
     except Exception as e:
         logger.error("Evaluation FAILED for %s on %s/%s: %s", module_name, model_family, dataset, e)
         result.status = "FAIL"
