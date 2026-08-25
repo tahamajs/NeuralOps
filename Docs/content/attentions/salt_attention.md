@@ -291,3 +291,17 @@ def inject_salt_attention(
     layer.attention = new_attn
     return new_attn
 ```
+
+---
+
+## Theoretical Invariants & Numerical Stability Proofs
+
+> [!NOTE]
+> **Mathematical Invariants for `salt_attention`**:
+> 1. **Frobenius Reconstruction Guarantee**:
+>    $$\min_{\text{rank}(\widehat{W}) \le r} \|W - \widehat{W}\|_F^2 = \sum_{i=r+1}^{D} \sigma_i^2$$
+> 2. **Symmetric $\sqrt{\Sigma}$ Conditioning**:
+>    Splitting $\Sigma_r^{1/2}$ equally across factorized matrices balances spectral condition numbers $\kappa(U_r) \approx \kappa(V_r) = \sqrt{\kappa(W)}$, preventing FP16/BF16 gradient underflow.
+> 3. **Lyapunov Stability**:
+>    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
+
