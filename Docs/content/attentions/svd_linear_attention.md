@@ -1105,3 +1105,30 @@ class SVDLinearAttention(BaseAttention):
             base_loss = base_loss + self.decay_gate.get_orthogonality_loss()
         return base_loss
 ```
+
+
+
+## GPU Server Execution & Production Deployment
+
+### Single-GPU Execution
+```bash
+python3 -m framework.main \
+    --model_name "bert-base-uncased" \
+    --attention_type "svd_linear_attention" \
+    --dataset "glue/sst2" \
+    --rank 32 \
+    --batch_size 32 \
+    --device "cuda:0"
+```
+
+### Multi-GPU Distributed Execution with `torchrun`
+```bash
+torchrun --nproc_per_node=4 -m framework.main \
+    --model_name "roberta-base" \
+    --attention_type "svd_linear_attention" \
+    --dataset "glue/mnli" \
+    --rank 32 \
+    --batch_size 16 \
+    --distributed \
+    --mixed_precision "fp16"
+```
