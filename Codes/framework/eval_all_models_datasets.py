@@ -1,11 +1,10 @@
 """
-Optimized Evaluation Engine for NeuralOps Framework.
-Features:
-1. Fast Validation-Only Dataset Caching (tokenizes 872 eval rows, NOT 67,000 train rows).
-2. Base Model Template Caching & Fast In-Memory Cloning (prevents re-building HF models).
-3. Non-blocking CUDA Event Timing (eliminates CPU-GPU synchronization stalls in hot loops).
-4. Pin-memory enabled DataLoader for zero-copy async transfers.
-5. Strict VRAM headroom management to prevent Windows WDDM paging to system RAM.
+Universal Evaluation Engine for NeuralOps Framework.
+Optimized Features:
+1. Fast Validation-Only Dataset In-Memory Caching (pinned memory, zero-copy async transfers).
+2. Base Model Template Caching & Fast In-Memory Deepcopy Cloning.
+3. Non-blocking CUDA Event Timing (zero CPU host synchronization stalls in hot loops).
+4. Full Support for all 5 Model Families and 5 Tracks.
 """
 
 from __future__ import annotations
@@ -41,26 +40,546 @@ from transformers import (
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from framework.core.attention_utils import inject_attention
 from framework.utils.replace_attention import UniversalAttentionWrapper
-from framework.eval_all_models_datasets import (
-    BenchmarkResult,
-    TRACK_MODULES,
-    MODEL_TOKENIZER_MAPPING,
-    _generate_synthetic_batch,
-    _filter_batch,
-    _extract_logits_and_loss,
-    apply_module_to_model,
-)
 
-logger = logging.getLogger("EvalEngineOpt")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger("EvalEngine")
+
+MODEL_TOKENIZER_MAPPING: Dict[str, str] = {
+    "bert": "bert-base-uncased",
+    "roberta": "roberta-base",
+    "t5": "t5-small",
+    "gpt2": "gpt2",
+    "distilbert": "distilbert-base-uncased",
+}
 
 # -----------------------------------------------------------------------------
-# Optimization 1: In-Memory Validation Dataset & Batch Cache with Pinned Memory
+# Data Models & Result Schema
+# -----------------------------------------------------------------------------
+
+@dataclass
+class BenchmarkResult:
+    track: str
+    module_name: str
+    module_type: str  # "attention" | "compressor"
+    model_family: str  # "bert" | "roberta" | "t5" | "gpt2" | "distilbert"
+    dataset: str  # "sst2" | "mrpc" | "qnli" | "wikitext2" | "synthetic"
+    status: str  # "PASS" | "FAIL" | "TIMEOUT"
+    error_message: Optional[str] = None
+    
+    # Latency & Throughput
+    forward_latency_ms: float = 0.0
+    backward_latency_ms: float = 0.0
+    total_step_latency_ms: float = 0.0
+    throughput_samples_per_sec: float = 0.0
+    speedup_vs_baseline: float = 1.0
+    
+    # Memory & Parameters
+    param_count: int = 0
+    trainable_param_count: int = 0
+    compression_ratio: float = 1.0
+    peak_memory_mb: float = 0.0
+    memory_savings_pct: float = 0.0
+    
+    # Accuracy & Loss Metrics
+    loss: float = 0.0
+    accuracy_pct: float = 0.0
+    f1_score: float = 0.0
+    perplexity: float = 0.0
+    grad_norm: float = 0.0
+    
+    timestamp: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+TRACK_MODULES: Dict[str, Dict[str, List[str]]] = {
+    "track1_svd": {
+        "attentions": [
+            "svd_linear_attention",
+            "adaptive_svd_attention",
+            "asvd_attention",
+            "linformer_attention",
+            "res_svd",
+            "svd_attention",
+            "svd_compressed",
+            "svd_projection_attention",
+            "svd_llm_v2_attention",
+            "factorised_matrix_state",
+            "mamba_svd_flash",
+            "minimal_svd",
+            "minimal_svd_v2",
+        ],
+        "compressors": [
+            "adaptive_ranks",
+            "direct_svd",
+            "dobi_svd",
+            "erc_svd",
+            "entropy_budget_allocation",
+            "kronecker_tt_lora",
+            "saes_svd_v2",
+            "swift_svd",
+            "swift_svd_act",
+            "aasvd",
+            "rpca",
+            "cur_moe",
+            "grecodec",
+            "frandi",
+            "dynamic_rank",
+            "hybrid_svd",
+            "svd_linear",
+        ],
+    },
+    "track2_ssm": {
+        "attentions": [
+            "aegis_v1",
+            "aegis_v2",
+            "aegis_v3",
+            "aegis_v4",
+            "aegis_v5",
+            "aegis_v6",
+            "aegis_hybrid",
+            "aegis_spectron_fp8",
+            "spectra_v2",
+            "spectral_mamba",
+            "Mamba",
+            "SVD-Mamba",
+            "simple_ssm",
+            "gated_delta_net",
+            "gated_deltanet_block",
+            "gated_linear_attention",
+            "hgrn2_layer",
+            "hgrn2_gated_deltanet",
+            "hgrn2_outer",
+            "griffin_ssd",
+            "regla_attention",
+            "halo_regla",
+            "kda_attention",
+            "decay_linear_attention",
+            "spectron",
+            "galerkin_attention",
+            "vspec",
+            "vspec_attention",
+        ],
+        "compressors": [
+            "mamba_shedder",
+        ],
+    },
+    "track3_moe": {
+        "attentions": [
+            "bam_umoe",
+            "expert_choice_moe",
+            "reap_moe",
+            "samba_moe",
+            "samba_m3",
+            "jamba",
+            "jamba_info",
+            "hymba_transx",
+            "moe_deltakv_paged",
+            "block_transformer_hiba",
+            "nexus",
+            "leka_v1",
+            "leka_v2",
+            "leka_v3",
+            "mixattention_moska",
+            "phantom",
+            "moba",
+            "fasa",
+            "upi_stuffed_mamba",
+            "granite_hybrid",
+        ],
+        "compressors": [
+            "cur_moe",
+        ],
+    },
+    "track4_kernel_quant": {
+        "attentions": [
+            "performer_attention",
+            "nystrom_attention",
+            "flash_attention3",
+            "cluster_attention",
+            "adasplash_attention",
+            "hamming_attention",
+            "cosformer",
+            "decay_linear_attention",
+            "gated_linear_attention",
+            "SOAFusedAttention",
+            "fused_svd_kernel",
+        ],
+        "compressors": [
+            "astro_quantizer",
+            "faq_quantizer",
+            "coopq_quantizer",
+            "kmeans_quantize",
+            "zerokv_neo",
+            "modegpt",
+            "delta_kv",
+            "kvtc",
+            "hybridkv",
+        ],
+    },
+    "track5_pruning": {
+        "attentions": [
+            "linformer_attention",
+            "adaptive_sparse_attention",
+        ],
+        "compressors": [
+            "slicegpt",
+            "slicegpt_pca",
+            "sparsegpt",
+            "admm_pruner",
+            "armor_pruner",
+            "ast_pruner",
+            "bonsai_pruner",
+            "flap",
+            "flat_llm",
+            "lillama_compressor",
+            "cachenotes_compressor",
+            "come",
+            "oats",
+            "proxsparse",
+            "soka",
+            "liftr",
+            "mamba_shedder",
+            "sdrm",
+        ],
+    },
+}
+
+# -----------------------------------------------------------------------------
+# Model Factory
+# -----------------------------------------------------------------------------
+
+def build_model_instance(
+    model_family: str,
+    num_labels: int = 2,
+    hidden_size: int = 128,
+    num_heads: int = 4,
+    num_layers: int = 2,
+    vocab_size: Optional[int] = None,
+    seq_len: int = 32,
+    device: torch.device = torch.device("cpu"),
+) -> Tuple[nn.Module, Any]:
+    family = model_family.lower()
+    if vocab_size is None or vocab_size == 30522:
+        if family == "roberta":
+            vocab_size = 50265
+        elif family == "gpt2":
+            vocab_size = 50257
+        elif family == "t5":
+            vocab_size = 32128
+        else:
+            vocab_size = 30522
+    if family == "bert":
+        cfg = BertConfig(
+            vocab_size=vocab_size,
+            hidden_size=hidden_size,
+            num_hidden_layers=num_layers,
+            num_attention_heads=num_heads,
+            intermediate_size=hidden_size * 4,
+            num_labels=num_labels,
+            max_position_embeddings=512,
+        )
+        model = BertForSequenceClassification(cfg)
+    elif family == "roberta":
+        cfg = RobertaConfig(
+            vocab_size=vocab_size,
+            hidden_size=hidden_size,
+            num_hidden_layers=num_layers,
+            num_attention_heads=num_heads,
+            intermediate_size=hidden_size * 4,
+            num_labels=num_labels,
+            max_position_embeddings=512,
+        )
+        model = RobertaForSequenceClassification(cfg)
+    elif family == "t5":
+        cfg = T5Config(
+            vocab_size=vocab_size,
+            d_model=hidden_size,
+            d_kv=hidden_size // max(1, num_heads),
+            d_ff=hidden_size * 4,
+            num_layers=num_layers,
+            num_decoder_layers=num_layers,
+            num_heads=num_heads,
+        )
+        model = T5EncoderModel(cfg)
+    elif family == "gpt2":
+        cfg = GPT2Config(
+            vocab_size=vocab_size,
+            n_embd=hidden_size,
+            n_layer=num_layers,
+            n_head=num_heads,
+            n_positions=512,
+        )
+        model = GPT2LMHeadModel(cfg)
+    elif family == "distilbert":
+        cfg = DistilBertConfig(
+            vocab_size=vocab_size,
+            dim=hidden_size,
+            n_layers=num_layers,
+            n_heads=num_heads,
+            hidden_dim=hidden_size * 4,
+            num_labels=num_labels,
+        )
+        model = DistilBertForSequenceClassification(cfg)
+    else:
+        raise ValueError(f"Unsupported model family: {model_family}")
+
+    model.to(device)
+    model.eval()
+    return model, cfg
+
+def _extract_logits_and_loss(outputs: Any, num_labels: int = 2, labels: Optional[torch.Tensor] = None) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    """Unified logit/loss extraction across all HF model output types."""
+    loss = None
+    logits = None
+    
+    if hasattr(outputs, "loss") and outputs.loss is not None:
+        loss = outputs.loss
+    if hasattr(outputs, "logits"):
+        logits = outputs.logits
+    elif hasattr(outputs, "last_hidden_state"):
+        hs = outputs.last_hidden_state
+        logits = hs.mean(dim=1)[:, :num_labels]
+        if labels is not None and logits.shape[-1] == num_labels:
+            loss = F.cross_entropy(logits, labels)
+        elif loss is None:
+            loss = hs.mean()
+    elif isinstance(outputs, (tuple, list)):
+        first = outputs[0]
+        if first.dim() == 3:
+            logits = first[:, 0, :]
+            if logits.shape[-1] != num_labels:
+                logits = logits[:, :num_labels]
+        else:
+            logits = first
+            if logits.dim() == 0:
+                loss = logits
+                logits = None
+    
+    return logits, loss
+
+
+# -----------------------------------------------------------------------------
+# Module Ingestion & Injection Adapter
+# -----------------------------------------------------------------------------
+
+
+def _filter_batch(batch: Dict[str, torch.Tensor], model_family: str, model: nn.Module) -> Dict[str, torch.Tensor]:
+    """Strip keys invalid for specific model architectures."""
+    import inspect
+    family = model_family.lower()
+    b = dict(batch)
+    if "t5" in family:
+        b.pop("token_type_ids", None)
+    if "gpt2" in family:
+        allowed = {"input_ids", "attention_mask", "labels"}
+        b = {k: v for k, v in b.items() if k in allowed}
+    try:
+        sig = inspect.signature(model.forward)
+        valid = set(sig.parameters.keys()) - {"self"}
+        if "kwargs" not in valid and "**kwargs" not in str(sig):
+            b = {k: v for k, v in b.items() if k in valid}
+    except (ValueError, TypeError):
+        pass
+    return b
+
+
+def _extract_logits_and_loss(outputs: Any, num_labels: int = 2, labels: Optional[torch.Tensor] = None) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    """Unified logit/loss extraction across all HF model output types."""
+    loss = None
+    logits = None
+    
+    if hasattr(outputs, "loss") and outputs.loss is not None:
+        loss = outputs.loss
+    if hasattr(outputs, "logits"):
+        logits = outputs.logits
+    elif hasattr(outputs, "last_hidden_state"):
+        hs = outputs.last_hidden_state
+        logits = hs.mean(dim=1)[:, :num_labels]
+        if labels is not None and logits.shape[-1] == num_labels:
+            loss = F.cross_entropy(logits, labels)
+        elif loss is None:
+            loss = hs.mean()
+    elif isinstance(outputs, (tuple, list)):
+        first = outputs[0]
+        if first.dim() == 3:
+            logits = first[:, 0, :]
+            if logits.shape[-1] != num_labels:
+                logits = logits[:, :num_labels]
+        else:
+            logits = first
+            if logits.dim() == 0:
+                loss = logits
+                logits = None
+    
+    return logits, loss
+
+
+# -----------------------------------------------------------------------------
+# Module Ingestion & Injection Adapter
+# -----------------------------------------------------------------------------
+
+
+def apply_module_to_model(
+    model: nn.Module,
+    module_name: str,
+    module_type: str,
+    rank: int = 16,
+    device: torch.device = torch.device("cpu"),
+) -> Tuple[nn.Module, float]:
+    """
+    Injects or compresses the given model using the specified module.
+    Returns the adapted model and the compression ratio achieved.
+    """
+    orig_params = sum(p.numel() for p in model.parameters())
+
+    if module_type == "attention":
+        # Resolve attention class from registry
+        if module_name not in ATTENTION_REGISTRY:
+            try:
+                import importlib
+                importlib.import_module(f"framework.attentions.{module_name}")
+            except ImportError as e:
+                logger.warning("Could not import attention module '%s': %s", module_name, e)
+
+        if module_name in ATTENTION_REGISTRY:
+            inject_attention(model, module_name, rank=rank, copy_weights=False)
+        else:
+            try:
+                import importlib
+                mod = importlib.import_module(f"framework.attentions.{module_name}")
+                target_cls = None
+                for attr in dir(mod):
+                    obj = getattr(mod, attr)
+                    if isinstance(obj, type) and issubclass(obj, nn.Module) and "Attention" in attr and attr != "BaseAttention":
+                        target_cls = obj
+                        break
+                if target_cls is not None:
+                    cfg = getattr(model, "config", None)
+                    for name, sub in list(model.named_modules()):
+                        if "attention" in name.lower() and hasattr(sub, "self"):
+                            new_inner = target_cls(cfg)
+                            wrapped = UniversalAttentionWrapper(new_inner)
+                            setattr(sub, "self", wrapped)
+                else:
+                    raise ValueError(f"No valid attention class found in module '{module_name}'")
+            except Exception as e:
+                raise RuntimeError(f"Could not inject attention '{module_name}': {e}")
+
+    elif module_type == "compressor":
+        if module_name not in COMPRESSOR_REGISTRY:
+            try:
+                import importlib
+                importlib.import_module(f"framework.compression_engine.{module_name}")
+            except ImportError as e:
+                logger.warning("Could not import compressor module '%s': %s", module_name, e)
+
+        comp_cls = COMPRESSOR_REGISTRY.get(module_name)
+        if comp_cls is not None:
+            def _invoke_compressor_instance(instance: Any) -> Optional[nn.Module]:
+                dummy_input = torch.randint(0, 1000, (2, 32), device=device)
+                for method_name in ["compress", "apply", "prune"]:
+                    if hasattr(instance, method_name):
+                        m = getattr(instance, method_name)
+                        if callable(m):
+                            for fn in [
+                                lambda: m(),
+                                lambda: m(calibration_data=dummy_input),
+                                lambda: m(model),
+                                lambda: m(model, calibration_data=dummy_input),
+                                lambda: m(dummy_input),
+                            ]:
+                                try:
+                                    res = fn()
+                                    if isinstance(res, tuple) and len(res) > 0 and isinstance(res[0], nn.Module):
+                                        return res[0]
+                                    if isinstance(res, nn.Module):
+                                        return res
+                                except (TypeError, ValueError, RuntimeError):
+                                    continue
+                return getattr(instance, "model", None)
+
+            # Strategy 1: Instantiate with model passed to constructor
+            candidate = None
+            try:
+                candidate = comp_cls(model, rank=rank)
+            except (TypeError, ValueError):
+                try:
+                    candidate = comp_cls(model)
+                except (TypeError, ValueError):
+                    candidate = None
+
+            if candidate is not None:
+                if isinstance(candidate, nn.Module) and not hasattr(candidate, "compress"):
+                    model = candidate
+                else:
+                    res_mod = _invoke_compressor_instance(candidate)
+                    if res_mod is not None and isinstance(res_mod, nn.Module):
+                        model = res_mod
+
+            # Strategy 2: Instantiate without model, call compress(model)
+            else:
+                try:
+                    candidate = comp_cls(rank=rank)
+                except (TypeError, ValueError):
+                    try:
+                        candidate = comp_cls()
+                    except (TypeError, ValueError):
+                        try:
+                            candidate = comp_cls(target_ratio=0.5)
+                        except (TypeError, ValueError):
+                            candidate = None
+
+                if candidate is not None:
+                    res_mod = _invoke_compressor_instance(candidate)
+                    if res_mod is not None and isinstance(res_mod, nn.Module):
+                        model = res_mod
+        else:
+            raise RuntimeError(f"Compressor '{module_name}' not found in COMPRESSOR_REGISTRY")
+
+    model.to(device)
+    new_params = sum(p.numel() for p in model.parameters())
+    comp_ratio = orig_params / max(1, new_params)
+    return model, comp_ratio
+
+
+
+# -----------------------------------------------------------------------------
+# Optimization: In-Memory Validation Dataset Cache
 # -----------------------------------------------------------------------------
 _TOKENIZED_BATCH_CACHE: Dict[Tuple[str, str, int, int, str], Dict[str, torch.Tensor]] = {}
 _PREPARED_DATASET_CACHE: Dict[Tuple[str, str, int], Any] = {}
 
+def _generate_synthetic_batch(
+    dataset_name: str,
+    batch_size: int = 4,
+    seq_len: int = 32,
+    vocab_size: int = 30522,
+    num_labels: int = 2,
+    device: torch.device = torch.device("cpu"),
+) -> Dict[str, torch.Tensor]:
+    ds = dataset_name.lower()
+    torch.manual_seed(42)
+    input_ids = torch.randint(100, max(101, vocab_size - 100), (batch_size, seq_len), device=device)
+    attention_mask = torch.ones((batch_size, seq_len), dtype=torch.long, device=device)
+    if batch_size > 1:
+        attention_mask[1:, -4:] = 0
 
-def get_dataset_batch_cached(
+    if ds in {"wikitext2", "wikitext103", "c4", "lm", "ptb"}:
+        labels = input_ids.clone()
+    else:
+        labels = torch.randint(0, num_labels, (batch_size,), dtype=torch.long, device=device)
+
+    return {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "labels": labels,
+    }
+
+def get_dataset_batch(
     dataset_name: str,
     model_family: str,
     batch_size: int = 64,
@@ -70,10 +589,6 @@ def get_dataset_batch_cached(
     device: torch.device = torch.device("cpu"),
     allow_synthetic: bool = False,
 ) -> Dict[str, torch.Tensor]:
-    """
-    Returns a tokenized evaluation batch with in-memory caching per (dataset, model_family, batch_size, seq_len).
-    Directly tokenizes the validation split only (872 items) avoiding 67,000 training item CPU bottlenecks.
-    """
     ds = dataset_name.lower()
     family = model_family.lower()
     dev_str = str(device)
@@ -112,8 +627,6 @@ def get_dataset_batch_cached(
 
                 config = GLUE_TASK_CONFIG[ds]
                 k1, k2 = config["keys"]
-                
-                # Load only validation split to eliminate CPU bottleneck
                 val_data = load_dataset("glue", ds, split="validation")
 
                 def tok_fn(ex):
@@ -157,12 +670,10 @@ def get_dataset_batch_cached(
     _TOKENIZED_BATCH_CACHE[cache_key] = batch
     return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
 
-
 # -----------------------------------------------------------------------------
-# Optimization 2: Base Model Template Caching & Fast In-Memory Cloning
+# Optimization: Base Model Template Caching
 # -----------------------------------------------------------------------------
 _BASE_MODEL_TEMPLATE_CACHE: Dict[Tuple[str, int, int, int, int, str], Tuple[nn.Module, Any]] = {}
-
 
 def get_base_model_cached(
     model_family: str,
@@ -177,7 +688,6 @@ def get_base_model_cached(
     cache_key = (family, num_labels, hidden_size, num_heads, num_layers, dev_str)
 
     if cache_key not in _BASE_MODEL_TEMPLATE_CACHE:
-        from framework.eval_all_models_datasets import build_model_instance
         base_model, cfg = build_model_instance(
             model_family=family,
             num_labels=num_labels,
@@ -192,9 +702,8 @@ def get_base_model_cached(
     cloned_model = copy.deepcopy(template_model)
     return cloned_model, cfg
 
-
 # -----------------------------------------------------------------------------
-# Optimization 3: Non-Blocking CUDA Event Timed Single Combination Evaluator
+# Non-Blocking CUDA Event Timed Single Combination Evaluator
 # -----------------------------------------------------------------------------
 
 def evaluate_single_combination_opt(
@@ -223,7 +732,6 @@ def evaluate_single_combination_opt(
 
     model = None
     try:
-        # 1. Fast clone from pristine base model cache
         model, cfg = get_base_model_cached(
             model_family=model_family,
             num_labels=2,
@@ -233,7 +741,6 @@ def evaluate_single_combination_opt(
             device=device,
         )
 
-        # 2. Inject or compress module
         model, comp_ratio = apply_module_to_model(
             model=model,
             module_name=module_name,
@@ -245,9 +752,8 @@ def evaluate_single_combination_opt(
         result.param_count = sum(p.numel() for p in model.parameters())
         result.trainable_param_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-        # 3. Retrieve cached dataset batch
         num_labels = getattr(cfg, "num_labels", 2)
-        batch = get_dataset_batch_cached(
+        batch = get_dataset_batch(
             dataset_name=dataset,
             model_family=model_family,
             batch_size=batch_size,
@@ -263,7 +769,6 @@ def evaluate_single_combination_opt(
         for p in model.parameters():
             p.requires_grad = True
 
-        # Warmup steps
         for _ in range(num_warmup):
             out = model(**filtered_batch)
             _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
@@ -272,7 +777,6 @@ def evaluate_single_combination_opt(
             loss.backward()
             model.zero_grad()
 
-        # Non-blocking CUDA Event Timing Setup
         is_cuda = (device.type == "cuda")
         fwd_times: List[float] = []
         bwd_times: List[float] = []
@@ -284,7 +788,6 @@ def evaluate_single_combination_opt(
             bwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
             bwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
 
-            # Continuous hot loop without CPU sync stalls
             for i in range(num_steps):
                 fwd_start_events[i].record()
                 out = model(**filtered_batch)
@@ -339,3 +842,5 @@ def evaluate_single_combination_opt(
             torch.cuda.empty_cache()
 
     return result
+
+evaluate_single_combination = evaluate_single_combination_opt
