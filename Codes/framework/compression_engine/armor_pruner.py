@@ -121,6 +121,11 @@ class ARMORLinear(nn.Module):
             layer.bias.data.copy_(linear.bias.data)
         return layer
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Effective weight for compatibility with standard PyTorch / HuggingFace layers."""
+        return self.sparse_weight * self.sparse_mask + torch.matmul(self.lora_B, self.lora_A)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # 1. Sparse Core Forward
         w_eff = self.sparse_weight * self.sparse_mask

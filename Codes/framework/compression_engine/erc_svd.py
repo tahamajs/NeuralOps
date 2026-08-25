@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @COMPRESSOR_REGISTRY.register("erc")
+@COMPRESSOR_REGISTRY.register("erc_svd")
 class ERCCompressor(BaseCompressor):
     """
     Error-Controlled SVD (ERC-SVD) Compressor.

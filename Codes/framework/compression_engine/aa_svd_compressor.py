@@ -326,11 +326,13 @@ def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Modu
 
 
 aa_svd_compressor_factory = aasvd_factory
+aa_svd_factory = aasvd_factory
 
 __all__ = [
     "AASVDCompressor",
     "SVDLinear",
     "aasvd_factory",
+    "aa_svd_factory",
     "aa_svd_compressor_factory",
     "DEFAULT_CALIBRATION_CORPUS",
 ]
