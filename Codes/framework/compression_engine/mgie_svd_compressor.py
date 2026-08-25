@@ -6,6 +6,7 @@ Registered as 'mgie_budget'.
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
@@ -70,14 +71,19 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
     @staticmethod
     def _compute_entropy(W: torch.Tensor) -> Tuple[float, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Compute singular entropy and return SVD components in FP32."""
+        """Compute singular entropy on squared singular values (energy distribution),
+        normalized by layer parameter count sqrt(d_in * d_out), returning SVD components in FP32."""
+        d_out, d_in = W.shape
         U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
-        total_s = S.sum()
-        if total_s <= 1e-12:
+        energy = S ** 2
+        total_energy = energy.sum()
+        if total_energy <= 1e-12:
             return 0.0, U, S, Vt
-        p = torch.clamp(S / total_s, min=1e-12, max=1.0)
+        p = torch.clamp(energy / total_energy, min=1e-12, max=1.0)
         entropy = -torch.sum(p * torch.log(p)).item()
-        return max(0.0, float(entropy)), U, S, Vt
+        norm_factor = math.sqrt(float(d_in * d_out))
+        normalized_entropy = entropy / max(1e-6, norm_factor)
+        return max(0.0, float(normalized_entropy)), U, S, Vt
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all linear layers according to global entropy budget."""
@@ -133,6 +139,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
             replace_module(self.model, name, svd_layer)
 
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats["allocated_ranks"] = allocated_ranks
         return self.model, stats

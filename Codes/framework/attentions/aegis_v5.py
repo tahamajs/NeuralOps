@@ -290,8 +290,8 @@ class AegisAttention(nn.Module):
             token_valid=token_valid,
         )
 
-        Q_feat = torch.einsum("bhnd,hdf->bhnf", Q_global, self.rff_proj)
-        K_feat = torch.einsum("bhnd,hdf->bhnf", K_global, self.rff_proj)
+        Q_feat = F.elu(torch.einsum("bhnd,hdf->bhnf", Q_global, self.rff_proj)) + 1.0
+        K_feat = F.elu(torch.einsum("bhnd,hdf->bhnf", K_global, self.rff_proj)) + 1.0
 
         if token_valid is not None:
             mask_g = token_valid.unsqueeze(1).unsqueeze(-1)
@@ -300,7 +300,7 @@ class AegisAttention(nn.Module):
 
         KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_global)
         K_sum = K_feat.sum(dim=2, keepdim=True)
-        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-5
+        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)).clamp(min=1e-5)
         ctx_global = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
 
         if self.blend_logits is not None:

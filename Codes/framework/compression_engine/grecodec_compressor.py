@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 
@@ -38,7 +39,7 @@ class GreCoDeCLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.rank = min(rank, in_features, out_features)
+        self.rank = max(1, min(rank, in_features, out_features))
 
         self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
         self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
@@ -74,10 +75,11 @@ class GreCoDeCLinear(nn.Module):
         cls,
         linear: nn.Linear,
         rank: int = 16,
-        max_iter: int = 5,
+        max_iter: int = 15,
     ) -> "GreCoDeCLinear":
         """
-        Decompose linear layer weight matrix via Greedy Coordinate Descent (GreCoDeC).
+        Decompose linear layer weight matrix via Greedy Coordinate Descent (GreCoDeC)
+        with 15 ALS iterations and Gram-Schmidt re-orthogonalization, with SVD fallback.
         """
         W = linear.weight.data
         bias = linear.bias.data if linear.bias is not None else None
@@ -97,34 +99,59 @@ class GreCoDeCLinear(nn.Module):
         U_factors = torch.zeros(out_f, r, dtype=torch.float32, device=W.device)
         V_factors = torch.zeros(r, in_f, dtype=torch.float32, device=W.device)
 
-        for k in range(r):
-            # 1. Initialize v from column with highest residual norm
-            col_norms = (R ** 2).sum(dim=0)
-            best_col = torch.argmax(col_norms).item()
-            v = R[:, best_col].clone()
-            v_norm = v.norm().clamp_min(1e-8)
-            v = v / v_norm  # (out_f,) -> actually we initialize v as (in_f,)
+        success = True
+        try:
+            for k in range(r):
+                # 1. Initialize v_k from row of R with highest residual norm
+                row_norms = (R ** 2).sum(dim=1)
+                best_row = torch.argmax(row_norms).item()
+                v_k = R[best_row, :].clone()
+                v_norm = v_k.norm().clamp_min(1e-8)
+                v_k = (v_k / v_norm).unsqueeze(1)  # (in_f, 1)
 
-            # Better: initialize v_k in R^{in_f} as row with highest norm or projection
-            row_norms = (R ** 2).sum(dim=1)
-            best_row = torch.argmax(row_norms).item()
-            v_k = R[best_row, :].clone()
-            v_norm = v_k.norm().clamp_min(1e-8)
-            v_k = (v_k / v_norm).unsqueeze(1)  # (in_f, 1)
+                # 2. ALS coordinate descent with Gram-Schmidt re-orthogonalization
+                u_k = torch.zeros(out_f, 1, dtype=torch.float32, device=W.device)
+                for _ in range(max(1, max_iter)):
+                    # u = R @ v / ||v||^2
+                    v_sq = (v_k ** 2).sum().clamp_min(1e-10)
+                    u_k = torch.matmul(R, v_k) / v_sq
 
-            # 2. Greedy coordinate descent updates
-            u_k = torch.zeros(out_f, 1, dtype=torch.float32, device=W.device)
-            for _ in range(max_iter):
-                # u = R @ v / ||v||^2
-                u_k = torch.matmul(R, v_k) / ((v_k ** 2).sum().clamp_min(1e-10))
-                # v = R^T @ u / ||u||^2
-                v_k = torch.matmul(R.t(), u_k) / ((u_k ** 2).sum().clamp_min(1e-10))
+                    # Gram-Schmidt re-orthogonalization on u_k against prior columns U_factors[:, :k]
+                    if k > 0:
+                        prior_U = U_factors[:, :k]  # (out_f, k)
+                        u_proj = torch.matmul(prior_U, torch.matmul(prior_U.t(), u_k) / (prior_U.norm(dim=0, keepdim=True) ** 2).clamp_min(1e-10).t())
+                        u_k = u_k - u_proj
 
-            # 3. Deflate residual: R = R - u @ v^T
-            R = R - torch.matmul(u_k, v_k.t())
+                    u_sq = (u_k ** 2).sum().clamp_min(1e-10)
+                    # v = R^T @ u / ||u||^2
+                    v_k = torch.matmul(R.t(), u_k) / u_sq
 
-            U_factors[:, k] = u_k.squeeze(1)
-            V_factors[k, :] = v_k.squeeze(1)
+                    # Gram-Schmidt re-orthogonalization on v_k against prior rows V_factors[:k, :]
+                    if k > 0:
+                        prior_V = V_factors[:k, :].t()  # (in_f, k)
+                        v_proj = torch.matmul(prior_V, torch.matmul(prior_V.t(), v_k) / (prior_V.norm(dim=0, keepdim=True) ** 2).clamp_min(1e-10).t())
+                        v_k = v_k - v_proj
+
+                # Check for degenerate vector
+                if u_k.norm() < 1e-8 or v_k.norm() < 1e-8 or torch.isnan(u_k).any() or torch.isnan(v_k).any():
+                    success = False
+                    break
+
+                # 3. Deflate residual: R = R - u @ v^T
+                R = R - torch.matmul(u_k, v_k.t())
+
+                U_factors[:, k] = u_k.squeeze(1)
+                V_factors[k, :] = v_k.squeeze(1)
+
+        except Exception:
+            success = False
+
+        if not success or torch.isnan(U_factors).any() or torch.isnan(V_factors).any():
+            # Robust SVD fallback to guarantee orthogonal singular components
+            U_svd, S_svd, Vh_svd = torch.linalg.svd(W.float(), full_matrices=False)
+            sqrt_S = torch.sqrt(torch.clamp(S_svd[:r], min=1e-12))
+            U_factors = U_svd[:, :r] * sqrt_S.unsqueeze(0)
+            V_factors = sqrt_S.unsqueeze(1) * Vh_svd[:r, :]
 
         grecodec_layer.U.data.copy_(U_factors.to(dtype=W.dtype))
         grecodec_layer.V.data.copy_(V_factors.to(dtype=W.dtype))
@@ -143,7 +170,7 @@ class GreCoDeCCompressor(BaseCompressor):
     Args:
         model: PyTorch model.
         rank: Target rank for decomposition.
-        max_iter: Coordinate descent iterations per rank component (default 5).
+        max_iter: Coordinate descent iterations per rank component (default 15).
         cfg: Optional configuration object.
         target_layers: Optional target layer filter.
     """
@@ -152,14 +179,14 @@ class GreCoDeCCompressor(BaseCompressor):
         self,
         model: Optional[nn.Module] = None,
         rank: int = 16,
-        max_iter: int = 5,
+        max_iter: int = 15,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="grecodec", **kwargs)
         self.rank = rank or getattr(cfg, "grecodec_rank", None) or getattr(cfg, "rank", 16)
-        self.max_iter = max_iter or getattr(cfg, "grecodec_max_iter", 5)
+        self.max_iter = max_iter or getattr(cfg, "grecodec_max_iter", 15)
         self.cfg = cfg
         self.target_layers = target_layers or getattr(cfg, "target_layers", None)
         self.compressed_layers: List[str] = []
@@ -184,11 +211,8 @@ class GreCoDeCCompressor(BaseCompressor):
                 grecodec_layer = GreCoDeCLinear.from_linear(
                     module, rank=r, max_iter=self.max_iter
                 )
-                parent = self._get_parent_module(name)
-                if parent is not None:
-                    child_name = name.split(".")[-1]
-                    setattr(parent, child_name, grecodec_layer)
-                    self.compressed_layers.append(name)
+                replace_module(self.model, name, grecodec_layer)
+                self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -205,15 +229,6 @@ class GreCoDeCCompressor(BaseCompressor):
         """Compress a single linear layer into GreCoDeCLinear."""
         return GreCoDeCLinear.from_linear(linear, rank=self.rank, max_iter=self.max_iter)
 
-    def _get_parent_module(self, full_name: str) -> Optional[nn.Module]:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part, None)
-            if parent is None:
-                return None
-        return parent
-
 
 @COMPRESSOR_REGISTRY.register("grecodec")
 def grecodec_compressor_factory(
@@ -224,7 +239,8 @@ def grecodec_compressor_factory(
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for GreCoDeC compressor."""
     effective_rank = rank or getattr(comp_config, "grecodec_rank", None) or getattr(comp_config, "rank", 16)
-    max_iter = getattr(comp_config, "grecodec_max_iter", 5)
+    max_iter = getattr(comp_config, "grecodec_max_iter", 15)
     compressor = GreCoDeCCompressor(model, rank=effective_rank, max_iter=max_iter, cfg=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

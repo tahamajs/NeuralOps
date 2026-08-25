@@ -223,13 +223,15 @@ class AegisAttentionV2(nn.Module):
         else:
             Kg, Vg = K, V
 
-        if mask_2d is not None:
-            m4 = mask_2d.unsqueeze(-1).unsqueeze(-1)
-            Kg = Kg * m4
-            Vg = Vg * m4
-
         phi_K = phi(Kg)
         phi_Q = phi(Q)
+
+        # Mask phi_K and Vg after applying ELU+1 non-linearity so padding tokens don't accumulate 1s in denominator
+        if mask_2d is not None:
+            m4 = mask_2d.unsqueeze(-1).unsqueeze(-1).to(phi_K.dtype)
+            phi_K = phi_K * m4
+            Vg = Vg * m4
+
         phi_K_t = phi_K.permute(0, 2, 3, 1)
         Vg_t = Vg.permute(0, 2, 1, 3)
 
@@ -241,7 +243,7 @@ class AegisAttentionV2(nn.Module):
         norm_eps = 1e-4 if Kg.dtype in (torch.float16, torch.bfloat16) else 1e-5
         global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2)
         norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)
-        global_out = global_out / (norm + norm_eps)
+        global_out = global_out / (norm.clamp(min=norm_eps))
         global_out = global_out.permute(0, 2, 1, 3)
 
         if mask_2d is not None:

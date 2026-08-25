@@ -33,10 +33,10 @@ class MixAttentionMoSKA(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.fasa_keep_ratio: float = fasa_keep_ratio
 
-        self.W_q = nn.Linear(self.dim, self.all_head_size, bias=False)
-        self.W_k = nn.Linear(self.dim, self.all_head_size, bias=False)
-        self.W_v = nn.Linear(self.dim, self.all_head_size, bias=False)
-        self.out_proj = nn.Linear(self.all_head_size, self.dim)
+        self.W_q = nn.Linear(self.dim, self.all_head_size, bias=True)
+        self.W_k = nn.Linear(self.dim, self.all_head_size, bias=True)
+        self.W_v = nn.Linear(self.dim, self.all_head_size, bias=True)
+        self.out_proj = nn.Linear(self.all_head_size, self.dim, bias=True)
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
@@ -52,13 +52,19 @@ class MixAttentionMoSKA(BaseAttention):
 
             if q_src is not None and hasattr(q_src, "weight"):
                 self.W_q.weight.copy_(q_src.weight)
+                if q_src.bias is not None and self.W_q.bias is not None:
+                    self.W_q.bias.copy_(q_src.bias)
             if k_src is not None and hasattr(k_src, "weight"):
                 self.W_k.weight.copy_(k_src.weight)
+                if k_src.bias is not None and self.W_k.bias is not None:
+                    self.W_k.bias.copy_(k_src.bias)
             if v_src is not None and hasattr(v_src, "weight"):
                 self.W_v.weight.copy_(v_src.weight)
+                if v_src.bias is not None and self.W_v.bias is not None:
+                    self.W_v.bias.copy_(v_src.bias)
             if out_src is not None and hasattr(out_src, "weight"):
                 self.out_proj.weight.copy_(out_src.weight)
-                if out_src.bias is not None:
+                if out_src.bias is not None and self.out_proj.bias is not None:
                     self.out_proj.bias.copy_(out_src.bias)
 
     def _fasa_prune(
@@ -69,13 +75,16 @@ class MixAttentionMoSKA(BaseAttention):
             return k, v, mask
 
         importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
-        # Always protect [CLS] token at index 0
-        importance[:, 0] = 1e6
-
         if mask is not None:
             if mask.dim() == 2:
-                importance = importance.masked_fill(mask == 0, -1e6)
-                importance[:, 0] = 1e6
+                mask_2d = mask.bool() if mask.dtype == torch.bool else mask > 0
+                importance = importance.masked_fill(~mask_2d, -1e6)
+            elif mask.dim() == 4:
+                mask_2d = mask[:, 0, 0, :] > -10000.0 if mask.min() < -1000 else mask[:, 0, 0, :] > 0
+                importance = importance.masked_fill(~mask_2d, -1e6)
+
+        # Always protect [CLS] token at index 0 unconditionally
+        importance[:, 0] = 1e9
 
         keep = max(2, min(L, int(L * self.fasa_keep_ratio)))
         _, idx = torch.topk(importance, keep, dim=-1)

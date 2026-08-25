@@ -64,6 +64,11 @@ class ERCCompressor(BaseCompressor):
             return False
         if isinstance(module, SVDLinear):
             return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if min(module.in_features, module.out_features) < 16:
+            return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
@@ -94,8 +99,8 @@ class ERCCompressor(BaseCompressor):
             idx = torch.where(cum_energy >= target_retention)[0]
             r = int(idx[0].item()) + 1 if len(idx) > 0 else max_r
 
-        if self.rank is not None:
-            r = min(r, self.rank)
+        # Dynamic rank expansion up to max_r = min(d_in, d_out) strictly satisfying Frobenius error bound
+        # (Artificial rank ceiling override removed)
         r = max(1, min(r, max_r))
 
         # Symmetrical square-root singular value distribution

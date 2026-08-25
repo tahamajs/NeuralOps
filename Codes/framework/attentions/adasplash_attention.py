@@ -26,6 +26,7 @@ def entmax15_bisect(
     r"""
     Compute 1.5-entmax via stabilized bisection strictly over valid tokens.
     Solves $\sum_j \max(0, \alpha' s_j - \tau)^{1/(\alpha-1)} = 1$ for $\alpha = 1.5$.
+    Includes softmax fallback when support is empty, preserving gradient flow.
     """
     alpha = 1.5
     alpha_minus_1 = alpha - 1.0  # 0.5
@@ -72,9 +73,20 @@ def entmax15_bisect(
     if valid_mask is not None:
         p = p.masked_fill(~valid_mask, 0.0)
     
-    # Safe normalization to guard against any residual tolerance error
-    denom = p.sum(dim=dim, keepdim=True).clamp(min=1e-9)
-    p = p / denom
+    denom = p.sum(dim=dim, keepdim=True)
+
+    # Softmax fallback for numerical stabilization when support is empty or ill-conditioned
+    if valid_mask is not None:
+        scores_for_sm = scores.masked_fill(~valid_mask, -10000.0)
+        sf = F.softmax(scores_for_sm, dim=dim).masked_fill(~valid_mask, 0.0)
+        sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
+        sf = sf / sf_denom
+    else:
+        sf = F.softmax(scores, dim=dim)
+
+    is_empty = (denom < 1e-7) | torch.isnan(denom)
+    p_normalized = p / denom.clamp(min=1e-9)
+    p = torch.where(is_empty, sf, p_normalized)
     return p
 
 

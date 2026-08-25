@@ -18,7 +18,7 @@ def compute_leverage_scores(W: torch.Tensor, rank: int) -> Tuple[torch.Tensor, t
     Compute exact statistical leverage scores from the top-k singular vectors of W.
     W: shape (out_features, in_features)
     Returns:
-        (col_scores, row_scores)
+        (col_scores, row_scores) normalized to valid probability distributions summing to 1.0.
     """
     m, n = W.shape
     k = max(1, min(rank, m, n))
@@ -27,6 +27,9 @@ def compute_leverage_scores(W: torch.Tensor, rank: int) -> Tuple[torch.Tensor, t
     row_scores = (U[:, :k] ** 2).sum(dim=1) / float(k)
     # Column leverage scores: norm of cols of V_k (rows of Vt_k)
     col_scores = (Vt[:k, :] ** 2).sum(dim=0) / float(k)
+    # Normalize leverage scores
+    row_scores = row_scores / row_scores.sum().clamp_min(1e-12)
+    col_scores = col_scores / col_scores.sum().clamp_min(1e-12)
     return col_scores, row_scores
 
 
@@ -165,9 +168,17 @@ class CURLinear(nn.Module):
         C = W_float[:, col_idx]
         R = W_float[row_idx, :]
 
-        # Optimal core matrix: U = pinv(W[row_idx, col_idx]) to avoid singular matrix inversions
-        W_int = W_float[row_idx][:, col_idx]
-        U = torch.linalg.pinv(W_int)
+        # Optimal core matrix: Tikhonov regularized pseudo-inverse (W_int^T W_int + eps * I)^{-1} W_int^T
+        W_int = W_float[row_idx][:, col_idx]  # (r, r)
+        r_dim = W_int.shape[1]
+        WtW = torch.matmul(W_int.T, W_int)
+        diag_mean = torch.trace(WtW) / max(1, r_dim)
+        eps = max(1e-4 * diag_mean.item(), 1e-4)
+        reg_eye = eps * torch.eye(r_dim, device=W_int.device, dtype=W_int.dtype)
+        try:
+            U = torch.linalg.solve(WtW + reg_eye, W_int.T)
+        except Exception:
+            U = torch.linalg.pinv(W_int, rcond=1e-4)
 
         cur_layer.C.data.copy_(C.to(dtype=W.dtype))
         cur_layer.U.data.copy_(U.to(dtype=W.dtype))

@@ -43,6 +43,7 @@ class DirectSVDCompressor(BaseCompressor):
         self,
         model: nn.Module,
         rank: Optional[int] = 32,
+        min_rank: int = 16,
         rank_ratio: Optional[float] = None,
         target_modules: Optional[list[str]] = None,
         **kwargs: Any,
@@ -51,12 +52,14 @@ class DirectSVDCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             rank = getattr(cfg, "direct_svd_rank", getattr(cfg, "svd_rank", getattr(cfg, "rank", rank)))
+            min_rank = getattr(cfg, "min_rank", min_rank)
             rank_ratio = getattr(cfg, "direct_svd_rank_ratio", getattr(cfg, "rank_ratio", rank_ratio))
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
 
         self.rank = rank
+        self.min_rank = max(16, int(min_rank))
         self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
         self.target_modules = target_modules
 
@@ -64,6 +67,11 @@ class DirectSVDCompressor(BaseCompressor):
         if not isinstance(module, nn.Linear):
             return False
         if isinstance(module, SVDLinear):
+            return False
+        # Exclude classifier and language model prediction heads
+        name_lower = name.lower()
+        skip_keywords = ["lm_head", "classifier", "head", "output_layer", "score", "embed_out", "logits_processor"]
+        if any(skip in name_lower for skip in skip_keywords):
             return False
         if self.target_modules is None:
             return True
@@ -74,19 +82,23 @@ class DirectSVDCompressor(BaseCompressor):
         layer: nn.Linear,
         rank: Optional[int] = None,
     ) -> SVDLinear:
-        """Decompose a single linear layer via direct SVD and return SVDLinear."""
+        """Decompose a single linear layer via direct SVD with proportional rank scaling and min rank floor."""
         out_f = layer.out_features
         in_f = layer.in_features
         max_r = min(out_f, in_f)
+        r_floor = max(1, min(self.min_rank, max_r))
 
-        if rank is not None:
-            r = max(1, min(rank, max_r))
-        elif self.rank_ratio is not None:
-            r = max(1, min(int(round(max_r * self.rank_ratio)), max_r))
-        elif self.rank is not None:
-            r = max(1, min(self.rank, max_r))
+        target_r = rank if rank is not None else self.rank
+        if self.rank_ratio is not None:
+            r = int(round(max_r * self.rank_ratio))
+        elif target_r is not None:
+            # Proportional rank scaling relative to reference hidden dimension 768
+            r = int(round(target_r * (max_r / 768.0)))
         else:
-            r = max(1, min(32, max_r))
+            r = int(round(32 * (max_r / 768.0)))
+
+        # Enforce minimum rank floor r_min >= 16 and physical bounds
+        r = max(r_floor, min(r, max_r))
 
         device = layer.weight.device
         dtype = layer.weight.dtype
