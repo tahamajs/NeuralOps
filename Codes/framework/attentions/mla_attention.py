@@ -159,7 +159,7 @@ def inject_mla(
                 v_w = old_attn.v_lin.weight.data
                 u_v, s_v, vh_v = torch.linalg.svd(v_w, full_matrices=False)
                 new_attn.v_up.weight.data[:, :r] = u_v[:, :r] @ torch.diag(s_v[:r])
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
     layer.attention = new_attn

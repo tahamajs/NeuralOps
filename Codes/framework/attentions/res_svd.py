@@ -127,7 +127,7 @@ class ResSVDAttention(nn.Module):
                     freeze_base=False,
                 )
                 target.load_state_dict(new_layer.state_dict())
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def forward(

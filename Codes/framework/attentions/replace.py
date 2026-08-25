@@ -80,7 +80,7 @@ def _replace_bert_attention(
                     # Some injectors replace the whole layer.attention; others just return the module.
                     layer.attention.self = new_attn
                 continue
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
             
         # Fallback to build_attention
@@ -117,7 +117,7 @@ def _replace_gpt_attention(
                 if getattr(block, "attn", None) is not new_attn:
                     block.attn = new_attn
                 continue
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
             
         hidden_size = old_attn.embed_dim

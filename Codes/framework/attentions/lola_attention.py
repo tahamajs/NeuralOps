@@ -240,7 +240,7 @@ class LoLAAttention(BaseAttention):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 self._set_lowrank_factors(target, w, b)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def forward(

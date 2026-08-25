@@ -171,7 +171,7 @@ class RemoteWorkerAgent:
                     json={"worker_id": self.worker_id, "auth_token": self.auth_token},
                     timeout=5,
                 )
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
     def _unregister(self) -> None:
@@ -182,7 +182,7 @@ class RemoteWorkerAgent:
                 json={"worker_id": self.worker_id, "auth_token": self.auth_token},
                 timeout=5,
             )
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     def _get_public_ip(self) -> Any:

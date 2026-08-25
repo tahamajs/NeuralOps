@@ -51,6 +51,11 @@ class COMPOTLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.B, self.A)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass."""
         orig_shape = x.shape
@@ -204,7 +209,7 @@ class COMPOTCompressor(BaseCompressor):
             inputs = {k: v.to(device) for k, v in inputs.items() if isinstance(v, torch.Tensor)}
             with torch.no_grad():
                 _ = self.model(**inputs)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
         finally:
             for h in hooks:

@@ -50,6 +50,21 @@ class ROASTLinear(nn.Module):
             ((tile_idx_i * 10007 + tile_idx_j * 10009) % n_buckets).long(),
         )
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        out_padded = self.tiles_out * self.tile_size
+        in_padded = self.tiles_in * self.tile_size
+        W = torch.zeros(out_padded, in_padded, device=self.weight_table.device, dtype=self.weight_table.dtype)
+        for i in range(self.tiles_out):
+            for j in range(self.tiles_in):
+                val = self.weight_table[self.tile_hash_idx[i, j]]
+                W[
+                    i * self.tile_size : (i + 1) * self.tile_size,
+                    j * self.tile_size : (j + 1) * self.tile_size,
+                ] = val
+        return W[: self.out_features, : self.in_features]
+
     def forward(self, x):
         # Build weight matrix from tiles
         # Start with a zero matrix of padded size

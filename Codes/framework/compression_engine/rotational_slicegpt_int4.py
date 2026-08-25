@@ -87,7 +87,12 @@ class RotationalSliceGPTINT4Linear(nn.Module):
             self.bias = nn.Parameter(bias.clone())
         else:
             self.register_parameter("bias", None)
-        
+
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.W_quant, self.Q_P_r.T)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Args:

@@ -45,7 +45,7 @@ def log_master(msg: str):
     try:
         with open(MASTER_LOG, "a", encoding="utf-8", errors="ignore") as f:
             f.write(line)
-    except Exception:
+    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
         pass
 
 
@@ -54,7 +54,7 @@ def update_worker_status_file(worker_id: int, status_dict: dict):
         worker_file = BASE_DIR / f"worker_status_{worker_id}.json"
         with open(worker_file, "w", encoding="utf-8") as f:
             json.dump(status_dict, f, indent=2)
-    except Exception:
+    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
         pass
 
 
@@ -73,7 +73,7 @@ def get_completed_runs():
                                 attn_val = a[0].split("=")[1].strip()
                                 task_val = t[0].split("=")[1].strip()
                                 completed.add((attn_val, task_val))
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
     return completed
 
@@ -93,14 +93,14 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
     try:
         torch.set_num_threads(num_cpus)
         torch.set_num_interop_threads(max(1, min(8, num_cpus // 2)))
-    except Exception:
+    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
         pass
     torch.backends.cudnn.benchmark = True
     if torch.cuda.is_available():
         # Hard cap at 45% of 8GB = 3.6GB VRAM per worker (2 workers = 7.2GB max) to perfectly prevent Windows Shared Memory swapping
         try:
             torch.cuda.set_per_process_memory_fraction(0.45)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
         torch.cuda.empty_cache()
     gc.collect()
@@ -194,7 +194,7 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int, 
                     cfg.epochs = user_settings["epochs"]
                 if "seed" in user_settings and user_settings["seed"]:
                     cfg.seed = user_settings["seed"]
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
         t0 = time.time()
@@ -324,13 +324,13 @@ def telemetry_sync_thread():
                     try:
                         with open(w_file, "r", encoding="utf-8") as f:
                             combined_status[str(i)] = json.load(f)
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
             if combined_status:
                 try:
                     with open(BASE_DIR / "worker_status.json", "w", encoding="utf-8") as f:
                         json.dump(combined_status, f, indent=2)
-                except Exception:
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                     pass
 
             hist_res = {}
@@ -376,7 +376,7 @@ def main():
     # Set multiprocessing start method for Windows
     try:
         mp.set_start_method("spawn", force=True)
-    except Exception:
+    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
         pass
 
     log_master("=" * 60)

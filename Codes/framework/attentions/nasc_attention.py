@@ -60,6 +60,13 @@ class FactorisedSVDLoRAProjection(nn.Module):
         self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
         self.bias = nn.Parameter(torch.zeros(out_features))
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        svd_w = (self.U * self.S.unsqueeze(0)) @ self.V
+        lora_w = self.lora_B @ self.lora_A
+        return svd_w + lora_w
+
     def forward(self, x):
         svd_term = torch.matmul(x, self.V.t())
         svd_term = svd_term * self.S

@@ -93,7 +93,7 @@ class GriffinSSDBlock(BaseAttention):
                 self.out_proj.weight.copy_(w_o)
                 if b_o is not None and self.out_proj.bias is not None:
                     self.out_proj.bias.copy_(b_o)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
     def _ssd_scan(

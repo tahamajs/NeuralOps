@@ -51,6 +51,11 @@ class SubspaceLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.B, self.A)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Sub-quadratic forward pass.
