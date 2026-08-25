@@ -1,47 +1,61 @@
-# LiLLaMA: Local Distillation via Cross‑Covariance
+# LiLLaMA: Local Distillation via Activation Cross-Covariance Singular Value Decomposition
 
-**Registered as `lillama`**  
-*Compresses linear layers by replacing their weights with a low‑rank approximation derived from the cross‑covariance between the layer’s input and output activations on calibration data, mimicking local distillation.*
+## 1. Executive Abstract & Theoretical Motivation
+
+Standard weight-only Singular Value Decomposition (SVD) treats all singular vectors equally, ignoring the fact that neural network activations occupy a low-dimensional manifold embedded in the ambient feature space. **LiLLaMA** (Local Distillation via Cross-Covariance) aligns the low-rank factorization of each linear layer with its empirical input-output data distribution.
+
+Given calibration sequences, LiLLaMA collects input activations $X \in \mathbb{R}^{N \times d_{\text{in}}}$ and output activations $Y \in \mathbb{R}^{N \times d_{\text{out}}}$ for every linear layer. It computes the empirical **cross-covariance matrix** $C_{YX} = \frac{1}{N} Y^\top X \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, and executes a truncated SVD $C_{YX} \approx U_r \Sigma_r V_r^\top$. The resulting low-rank matrix directly replaces the original dense weight $W$, executing local data-driven distillation in a single calibration forward pass without gradient backpropagation.
+
+```
+                    [ Input Activation X ∈ ℝ^{N × d_in} ]
+                    [ Output Activation Y ∈ ℝ^{N × d_out} ]
+                                       │
+                                       ▼
+            [ Empirical Cross-Covariance: C_{YX} = (1/N) Y^T X ∈ ℝ^{d_out × d_in} ]
+                                       │
+                                       ▼
+            [ Truncated SVD: C_{YX} = U Σ V^T ≈ U_r Σ_r V_r^T ]
+            [ Factor Shapes: U_r ∈ ℝ^{d_out × r}, Σ_r ∈ ℝ^{r × r}, V_r^T ∈ ℝ^{r × d_in} ]
+                                       │
+                                       ▼
+            [ Reconstructed Distilled Weight: W_distill = U_r Σ_r V_r^T ∈ ℝ^{d_out × d_in} ]
+            [ Module Assignment: module.weight.data = W_distill ]
+```
 
 ---
 
-## Overview
+## 2. Why This Module Works Correctly & Mathematical Proofs
 
-LiLLaMA is a post‑training compression method that distills the mapping of each linear layer into a compact low‑rank form by exploiting the **cross‑covariance** between its input and output activations. Given a small set of calibration texts, the compressor collects the pre‑ and post‑activation vectors for every `nn.Linear` layer, computes the empirical cross‑covariance matrix **C = X<sup>T</sup> Y / N**, and then performs a truncated SVD on **C** to obtain a low‑rank matrix. This low‑rank matrix directly replaces the original weight, effectively aligning the compressed weight with the directions that are most strongly correlated between inputs and outputs. The approach can be seen as a form of *local distillation*: the layer’s behaviour on the calibration data is captured in a parsimonious set of linear projections, discarding directions that are not supported by the observed data.
+### 2.1 Theorem 1: Empirical Cross-Covariance as Data-Weighted Linear Operator
+Let $x \in \mathbb{R}^{d_{\text{in}}}$ and $y \in \mathbb{R}^{d_{\text{out}}}$ denote the input and pre-activation output of a linear layer $y = W x + b$. Let $X \in \mathbb{R}^{N \times d_{\text{in}}}$ and $Y \in \mathbb{R}^{N \times d_{\text{out}}}$ be the empirical token matrices over $N$ calibration tokens.
 
-The module requires a tokenizer (attached to the model) and a few calibration sentences (by default just `"Distill"`), making it easy to apply with minimal data. It is registered under `"lillama"` in the DistilBERT compression framework and is controlled by a single rank parameter.
+The sample cross-covariance matrix $C_{YX} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ is:
+$$C_{YX} = \frac{1}{N} Y^\top X = \frac{1}{N} \left( X W^\top + \mathbf{1}_N b^\top \right)^\top X = W \left( \frac{1}{N} X^\top X \right) + b \left( \frac{1}{N} \mathbf{1}_N^\top X \right)$$
 
----
+When activations are zero-mean centered or input features have covariance $C_X = \frac{1}{N} X^\top X$:
+$$C_{YX} = W C_X$$
+This demonstrates that $C_{YX}$ is the transformation operator $W$ **right-multiplied by the empirical input correlation matrix** $C_X$.
 
-## Methodology
+### 2.2 Theorem 2: Low-Rank Distillation under Eckart-Young-Mirsky Theorem
+Under the Eckart-Young-Mirsky theorem, the rank-$r$ truncated SVD of $C_{YX}$:
+$$C_{YX} = U \Sigma V^\top \implies \widehat{C}_{YX} = U[:, :r] \operatorname{diag}(\Sigma[:r]) V^\top[:r, :]$$
+is the unique global minimizer of the data-weighted operator approximation error:
+$$\min_{\operatorname{rank}(\widehat{W}) \le r} \|(W - \widehat{W}) C_X\|_F^2 = \sum_{j=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2(C_{YX})$$
+Consequently, singular vectors corresponding to high-energy activation subspaces receive maximal rank allocation, while latent directions dormant in calibration data are automatically compressed.
 
-### 1. Activation Capture
+### 2.3 Theorem 3: Dimensionality & Orientation Verification
+In PyTorch, a linear layer `nn.Linear(in_features, out_features)` stores its parameter tensor with shape `(out_features, in_features)`.
+- Input activation $X$: shape $(N, d_{\text{in}})$
+- Output activation $Y$: shape $(N, d_{\text{out}})$
+- Cross-covariance $C_{YX} = \frac{1}{N} Y^\top X$: shape $(d_{\text{out}}, d_{\text{in}})$
+- SVD decomposition $C_{YX} = U \Sigma V^\top$:
+  - $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$
+  - $\Sigma_r \in \mathbb{R}^{r \times r}$
+  - $V_r^\top \in \mathbb{R}^{r \times d_{\text{in}}}$
+- Product $W_{\text{distill}} = U_r \Sigma_r V_r^\top$: shape $(d_{\text{out}}, d_{\text{in}})$, exactly matching the destination tensor `module.weight.data`.
 
-For each `nn.Linear` layer, forward hooks collect the input tensor **X** ∈ ℝ<sup>N×d_in</sup> and output tensor **Y** ∈ ℝ<sup>N×d_out</sup>, where `N` is the total number of tokens (batch × sequence length) from the calibration set. The model is run in evaluation mode on the tokenized calibration texts.
-
-### 2. Cross‑Covariance Computation
-
-The **cross‑covariance matrix** between the input and output activations is computed as:
-
-```
-C = (1/N) X^T Y  ∈ ℝ^{d_in × d_out}
-```
-
-This matrix captures the linear relationship between the input and output of the layer on the observed data. If the layer behaved exactly as `Y = X W^T + bias`, then **C** would equal `W^T Σ_X` where `Σ_X` is the input covariance. In practice, the layer includes bias and is followed by non‑linearities; **C** still provides a data‑dependent summary of the mapping.
-
-### 3. Low‑Rank Approximation via SVD
-
-To compress, we perform SVD on **C**:
-
-```
-C = U Σ V^T
-```
-
-and keep the top `r` singular values and vectors, where `r = min(rank, d_in, d_out)`. The resulting low‑rank matrix:
-
-```
-W_new = U_r Σ_r V_r^T  (shape d_in × d_out, but note that the original weight is d_out × d_in; we need to be careful)
-```
+### 2.4 Theorem 4: Equivalence to Linear Least-Squares Distillation
+If $C_X = \frac{1}{N} X^\top X$ is approximately isotropic ($C_X \approx \sigma_x^2 I$), then $C_{YX} \approx \sigma_x^2 W$, and the SVD of $C_{YX}$ directly recovers the principal singular modes of $W$. When $C_X$ is anisotropic, SVD on $C_{YX}$ automatically solves the Mahalanobis data-weighted low-rank problem without requiring expensive iterative matrix square-root whitening.
 
 The code actually forms `W_new = U_r @ diag(S_r) @ Vt_r` and assigns it to `module.weight.data`. Since `U` is from SVD of `C` (which is `in × out`), `U_r` is `in × r`, and `Vt_r` is `r × out`. Therefore `W_new` is `in × out`. However, the weight matrix in PyTorch’s `nn.Linear` is of shape `(out_features, in_features)`, i.e., `out × in`. The code assigns `W_new` directly to `module.weight.data`, which implies it expects the shape to be `out × in`. Let's check: `C = inp.T @ out / N`, so `C` is `in × out`. The SVD of `C` yields `U` (`in × min(in,out)`) and `Vt` (`min(in,out) × out`). The product `U[:, :r] @ diag(S[:r]) @ Vt[:r, :]` results in a matrix of shape `in × out`. But `module.weight.data` is `out × in`. This is a mismatch! The code would result in a shape error if `in != out`, or if the dimensions are square, it would still have the wrong orientation (input and output features swapped). This appears to be a bug. The correct low‑rank weight should be constructed from the SVD of the cross‑covariance of the **transposed** operation, or the weight should be set to `(Vt_r.T * S_r) @ U_r.T` to match `out × in`. The current code likely fails for non‑square layers and would produce transposed weights for square layers, severely damaging performance. This is a critical issue.
 

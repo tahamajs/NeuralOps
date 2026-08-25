@@ -1,23 +1,88 @@
-# AEGIS-Attention V5: Hybrid Multi-Head Attention with Safe Masking
+# AEGIS-Attention V5: Hybrid Multi-Head Attention with ELU+1 Feature Maps & Safe Masking
 
-## 1. Mathematical Formulation & Architecture
-Divides $H$ attention heads into $H_l = 8$ local sliding-window heads and $H_g = 4$ global RFF linear heads.
-Projections utilize truncated SVD factorizations:
-$$W = W_{\text{up}} W_{\text{down}}, \quad r \le 64$$
-Global features are normalized through additive denominator stabilization:
-$$O^{\text{global}} = \frac{\phi_Q(Q) (\phi_K(K)^T V)}{\phi_Q(Q) (\sum \phi_K(K)^T) + 10^{-5}}$$
+## 1. Executive Abstract & Theoretical Foundations
 
-## 2. Repair & Stability Upgrades
-- Added `from_distilbert_pretrained` helper.
-- Initialized per-head blending gate bias to $+1.8$.
-- Standardized FP16 safe masking across 2D, 3D, and 4D mask tensors.
+**AEGIS-Attention V5** is a hybrid efficient attention module that decouples multi-head attention into $H_l = 8$ local sliding-window heads with Softpick rectified sparse non-linearities and $H_g = 4$ global linear kernel attention heads with **learnable ELU+1 feature maps** and safe mask propagation.
 
-## 3. Performance Characteristics
-- **SST-2 Accuracy**: **83.83%**\n
+Key architectural highlights:
+1. **Low-Rank SVD Projections**: Factorizes linear projections $W \approx W_{\text{up}} W_{\text{down}}$ with energy threshold $\tau_{\text{energy}} = 0.95$.
+2. **Global ELU+1 Feature Mapping**: Computes global kernel attention via $\phi(u) = \operatorname{ELU}(u) + 1.0 > 0$, guaranteeing strictly positive kernel evaluations without exponential overflow risks.
+3. **Robust Masking**: Standardizes padding masks across 2D, 3D, and 4D configurations, zeroing out padding positions after non-linear mapping.
+4. **Adaptive Blending**: Dynamically fuses local and global channels via per-head learned gating.
 
 ---
 
-## Complete Source Code Implementation (`aegis_v5.py`)
+## 2. Mathematical Formulations & Architecture
+
+```
+                    Input Representation X ∈ ℝ^{B × L × D}
+                                       │
+        ┌──────────────────────────────┴──────────────────────────────┐
+        ▼                                                             ▼
+ FactorisedLinear Projections (Q, K, V)                Energy-Preserving Truncated SVD
+        │
+        ├──────────────────────────────┬──────────────────────────────┐
+        ▼                              ▼                              ▼
+  Local Heads (H_l = 8)         Global Heads (H_g = 4)          Adaptive Blending Gate
+  Window W = 64                 Learnable RFF Projection Ω      g = σ(blend_logits + 1.5)
+  Softpick Activation           φ(Q) = ELU(Q Ω) + 1 > 0               │
+  O_local ∈ ℝ^{B×H_l×L×d}       φ(K) = ELU(K Ω) + 1 > 0               │
+        │                       KV = φ(K)^T V, Z = φ(K)^T 1           │
+        │                       O_global = (φ(Q) KV) / (φ(Q) Z + ε)   │
+        │                              │                              │
+        └───────────────┬──────────────┘                              │
+                        ▼                                             │
+                   Gated Fusion: O = g ⊙ O_local_full + (1 - g) ⊙ O_global_mean ◄┘
+                        │
+                        ▼
+            Output: Y = FactorisedLinear_out(O)
+```
+
+### 2.1 Mathematical Formulation of ELU+1 Global Attention
+
+For global heads $Q_g, K_g, V_g \in \mathbb{R}^{B \times H_g \times L \times d_h}$ and learnable Fourier tensor $\Omega \in \mathbb{R}^{H_g \times d_h \times F}$:
+$$Q_{\text{feat}} = \operatorname{ELU}(Q_g \Omega) + 1.0 \in \mathbb{R}^{B \times H_g \times L \times F}$$
+$$K_{\text{feat}} = \operatorname{ELU}(K_g \Omega) + 1.0 \in \mathbb{R}^{B \times H_g \times L \times F}$$
+
+Padding mask $M_{\text{valid}} \in \{0, 1\}^{B \times 1 \times L \times 1}$ is applied to prevent accumulation of padding tokens:
+$$\widetilde{K}_{\text{feat}} = K_{\text{feat}} \odot M_{\text{valid}}, \quad \widetilde{V}_g = V_g \odot M_{\text{valid}}$$
+
+Associative linear attention evaluates as:
+$$KV = \widetilde{K}_{\text{feat}}^\top \widetilde{V}_g \in \mathbb{R}^{B \times H_g \times F \times d_h}, \quad K_{\text{sum}} = \sum_{j=1}^L \widetilde{K}_{\text{feat}, j} \in \mathbb{R}^{B \times H_g \times 1 \times F}$$
+$$\text{Den} = \operatorname{clamp}(Q_{\text{feat}} K_{\text{sum}}^\top, \min=10^{-5}) \in \mathbb{R}^{B \times H_g \times L \times 1}$$
+$$O^{\text{global}} = \frac{Q_{\text{feat}} KV}{\text{Den}} \in \mathbb{R}^{B \times H_g \times L \times d_h}$$
+
+---
+
+## 3. Rigorous Theoretical Proofs & Stability Analysis
+
+### 3.1 Proof of Strict Positivity of ELU+1 Kernel Normalizer
+
+**Theorem 1 (ELU+1 Positivity and Bounded Normalizer)**:
+*Let $\phi(x) = \operatorname{ELU}(x) + 1.0$. For any query $Q$ and key $K$, the normalizer denominator $\text{Den}_i = \phi(Q_i) \left(\sum_{j=1}^L \phi(K_j)^\top\right) + \epsilon$ satisfies $\text{Den}_i \ge \epsilon > 0$.*
+
+*Proof*:
+1. Since $\operatorname{ELU}(u) = u$ for $u > 0$ and $\operatorname{ELU}(u) = e^u - 1$ for $u \le 0$, we have:
+   $$\phi(u) = \begin{cases} u + 1.0 > 1.0 & \text{if } u > 0 \\ e^u > 0 & \text{if } u \le 0 \end{cases}$$
+   Thus $\phi(u) > 0$ strictly for all $u \in \mathbb{R}$.
+2. For unmasked keys, $\widetilde{K}_{\text{feat}} > 0$. For masked keys, $\widetilde{K}_{\text{feat}} = 0$.
+3. The denominator evaluates to the sum of positive products:
+   $$\text{Den}_i = \sum_{f=1}^F \phi(Q_{i, f}) \left(\sum_{j=1}^L \widetilde{K}_{\text{feat}, j, f}\right) \ge 0$$
+   With clamping at $\epsilon = 10^{-5}$, $\text{Den}_i \ge 10^{-5} > 0$.
+4. Hence, $\text{Den}_i^{-1} \le 10^5 < \infty$, strictly preventing division-by-zero singularities. $\blacksquare$
+
+---
+
+## 4. Complexity & Empirical SST-2 Performance Profile
+
+| Metric | Full Softmax Attention | AEGIS-V5 Layer |
+| :--- | :--- | :--- |
+| **Time Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D \cdot r + B \cdot H_l \cdot L \cdot W \cdot d_h + B \cdot H_g \cdot L \cdot F \cdot d_h)$ |
+| **SST-2 Classification Accuracy** | 84.06% | **83.83%** |
+
+---
+
+## 5. Complete Source Code Implementation (`aegis_v5.py`)
 
 ```python
 r"""

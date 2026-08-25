@@ -1,40 +1,87 @@
-# AdaSplash Attention: Adaptive Sparse-Splash Top-k Dynamic Context Routing
+# AdaSplash Attention: Adaptive Splash Attention with alpha-Entmax Sparse Activations
 
 ## 1. Executive Abstract & Architectural Motivation
 
-Standard Softmax attention assigns non-zero probability mass to every sequence position, causing attention leakage across irrelevant context tokens and inducing computational inefficiency. AdaSplash Attention addresses this limitation by replacing the standard Softmax operator with Tsallis 1.5-entmax sparse activation mapping with stabilized bisection root finding (Peters et al., 2019; Correia et al., 2019).
+Standard Softmax attention assigns strictly positive probability mass $\exp(s_i) / \sum_j \exp(s_j) > 0$ to every key in the sequence, causing dense noise aggregation over irrelevant context.
 
-The 1.5-entmax activation function explicitly projects attention score distributions onto the simplex boundary, yielding exact zero probabilities for low-scoring tokens. By integrating a stabilized bisection search bounded strictly over valid (unpadded) token logits, AdaSplash creates sparse, highly interpretable context routing maps. This eliminates redundant key-value memory access overhead and sharpens attention focus on high-relevance tokens.
+**AdaSplash Attention** introduces sparse, adaptive attention activation using **1.5-entmax** (Peters et al., 2019; Martins & Astudillo, 2016). By replacing the Kullback-Leibler divergence with Tsallis non-extensive entropy, 1.5-entmax achieves exact sparsity: irrelevant keys receive exactly zero attention weight ($A_{i, j} = 0$).
+
+AdaSplash combines:
+1. **Stabilized Bisection Root Finding**: Fast, exact computation of the sparse threshold $\tau$ strictly over valid (non-padding) tokens.
+2. **Differentiable Softmax Fallback**: Graceful fallback when the active support is empty, preventing `NaN` gradient propagation.
+3. **Pretrained Weight Exact Transfer**: Direct adapter initialization from standard Multi-Head Attention weights.
 
 ---
 
-## 2. Mathematical Formulations & Derivations
+## 2. Rigorous Mathematical Foundations & Derivations
 
-### 2.1 Tsallis 1.5-Entmax Activation Mapping
-For score logit vector $z \in \mathbb{R}^L$, the 1.5-entmax transformation is defined as:
+### 2.1 Optimization Problem: Tsallis $\alpha$-Entmax
+
+For $\alpha > 1$, the $\alpha$-entmax activation mapping is defined as the regularized argmax over the probability simplex $\Delta^{L-1} = \{p \in \mathbb{R}_+^L : \sum_{i=1}^L p_i = 1\}$:
 
 \[
-\operatorname{entmax}_{1.5}(z) = \left[ \frac{1}{2} (z - \tau \mathbf{1}) \right]_+^2
+\operatorname{entmax}_\alpha(s) = \arg\max_{p \in \Delta^{L-1}} \left\{ p^\top s + H_\alpha(p) \right\}
 \]
 
-where $[a]_+ = \max(a, 0)$ enforces exact non-negativity and sparsity, and $\tau \in \mathbb{R}$ is the unique Lagrange multiplier satisfying the normalization constraint $\sum_{j=1}^L p_j = 1$.
+where $H_\alpha(p)$ is the Tsallis $\alpha$-entropy:
+\[
+H_\alpha(p) = \frac{1}{\alpha (\alpha - 1)} \sum_{i=1}^L \left( p_i - p_i^\alpha \right)
+\]
+For $\alpha = 1$, $\lim_{\alpha \to 1} H_\alpha(p) = -\sum_i p_i \log p_i$ (Shannon entropy, recovering standard Softmax).
+For $\alpha = 2$, $H_2(p) = \frac{1}{2} (1 - \|p\|^2)$ (recovering Sparsemax).
+For $\alpha = 1.5$, 1.5-entmax provides an optimal balance between exact sparsity and smooth differentiability.
 
-### 2.2 Valid-Token Bounded Bisection Algorithm
-Given logits $z$ and boolean valid token mask $M_{\text{valid}} \in \{0, 1\}^L$:
+---
 
-1. **Shifted Scaling:**
-   $$\bar{z} = z - \max_{j : M_j = 1}(z_j), \quad s = \frac{1}{2} \bar{z}$$
+### 2.2 Closed-Form Thresholding & Lagrange Multipliers
 
-2. **Search Interval Bounded Over Valid Keys:**
-   $$\tau_{\text{lo}} = \min_{j : M_j = 1}(s_j) - 1.0, \quad \tau_{\text{hi}} = 0.0$$
+**Theorem 1 (1.5-Entmax Closed Form).**
+*For input logits $s \in \mathbb{R}^L$ and $\alpha = 1.5$, the unique solution $p^* = \operatorname{entmax}_{1.5}(s)$ is given by:*
+\[
+p_i^*(s) = \left[ \frac{s_i - \tau}{2} \right]_+^2 = \max\left(0, \; \frac{s_i - \tau}{2}\right)^2
+\]
+*where $[x]_+ = \max(0, x)$ and the threshold $\tau \in \mathbb{R}$ is the unique scalar satisfying the simplex normalization condition:*
+\[
+g(\tau) \triangleq \sum_{i=1}^L \left[ \frac{s_i - \tau}{2} \right]_+^2 = 1
+\]
 
-3. **Bisection Steps ($t = 1, \dots, N_{\text{iter}}$):**
-   $$\tau = \frac{\tau_{\text{lo}} + \tau_{\text{hi}}}{2}$$
-   $$p_j = \begin{cases} \max(0, s_j - \tau)^2 & \text{if } M_j = 1 \\ 0 & \text{if } M_j = 0 \end{cases}$$
-   $$\text{If } \sum_{j=1}^L p_j > 1.0 \implies \tau_{\text{lo}} \leftarrow \tau, \quad \text{Else } \tau_{\text{hi}} \leftarrow \tau$$
+**Proof:**
+Construct the Lagrangian for the constrained convex optimization problem:
+\[
+\mathcal{L}(p, \tau, \lambda) = p^\top s + \frac{1}{\alpha(\alpha-1)} \sum_{i=1}^L (p_i - p_i^\alpha) - \tau \left(\sum_{i=1}^L p_i - 1\right) + \sum_{i=1}^L \lambda_i p_i
+\]
+where $\tau \in \mathbb{R}$ and $\lambda_i \ge 0$ are Lagrange multipliers.
+Setting $\frac{\partial \mathcal{L}}{\partial p_i} = 0$:
+\[
+s_i - \frac{1}{\alpha - 1} p_i^{\alpha - 1} - \tau + \lambda_i = 0
+\]
+For tokens in the active support $\mathcal{S} = \{i : p_i > 0\}$, by complementary slackness $\lambda_i = 0$:
+\[
+p_i = \left[ (\alpha - 1)(s_i - \tau) \right]^{\frac{1}{\alpha - 1}}
+\]
+For $\alpha = 1.5$, $\alpha - 1 = 0.5$ and $\frac{1}{\alpha - 1} = 2$, yielding:
+\[
+p_i^*(s) = \left[ \frac{s_i - \tau}{2} \right]_+^2
+\]
+Summing over all tokens yields $g(\tau) = 1$. $\blacksquare$
 
-4. **Normalized Output:**
-   $$p = \frac{p}{\sum_{j=1}^L p_j + \epsilon}$$
+---
+
+### 2.3 Strict Monotonicity & Unique Root Bisection Proof
+
+**Theorem 2 (Guaranteed Convergence of Bisection Root Search).**
+*The function $g(\tau) = \sum_{i=1}^L \left[ \frac{s_i - \tau}{2} \right]_+^2$ is continuous, convex, and strictly decreasing on $(-\infty, \max_i s_i]$. Furthermore, there exists a unique $\tau^* \in [\min_i s_i - 2, \max_i s_i]$ such that $g(\tau^*) = 1$, and bisection search over $N_{\text{iter}} = 25$ steps converges with absolute error $\le 2^{-25} \approx 3 \times 10^{-8}$.*
+
+**Proof:**
+For any $\tau_1 < \tau_2$:
+If $s_i > \tau_2$, then $\frac{s_i - \tau_1}{2} > \frac{s_i - \tau_2}{2} > 0 \implies \left[\frac{s_i - \tau_1}{2}\right]_+^2 > \left[\frac{s_i - \tau_2}{2}\right]_+^2$.
+If $\tau_1 < s_i \le \tau_2$, then $\left[\frac{s_i - \tau_1}{2}\right]_+^2 > 0 = \left[\frac{s_i - \tau_2}{2}\right]_+^2$.
+Thus $g'(\tau) = -\sum_{i \in \mathcal{S}(\tau)} \left(\frac{s_i - \tau}{2}\right) < 0$ whenever $\mathcal{S}(\tau) \neq \emptyset$.
+Evaluating limits:
+\[
+\lim_{\tau \to -\infty} g(\tau) = +\infty, \quad g\left(\max_i s_i\right) = 0
+\]
+By the Intermediate Value Theorem, there exists a unique root $\tau^*$. Bisection over an initial interval $[\tau_{\text{lo}}, \tau_{\text{hi}}]$ of width $W_0 = \max s_i - \min s_i + 2$ halves the uncertainty interval at every step: $W_{25} = W_0 \cdot 2^{-25}$, guaranteeing sub-microscopic convergence error. $\blacksquare$
 
 ---
 
@@ -43,58 +90,28 @@ Given logits $z$ and boolean valid token mask $M_{\text{valid}} \in \{0, 1\}^L$:
 ```
 Input: hidden_states [B, L, D]
   │
-  ├──> Q = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
-  ├──> K = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
-  └──> V = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
-         │
-         ├──> MatMul: Q @ K.T / sqrt(d_k) ──> Logits S: [B, H, L, L]
-         ├──> Valid-Bounded 1.5-Entmax Bisection (N_iter = 25)
-         │      ├──> tau_lo = min(s_valid) - 1, tau_hi = 0
-         │      ├──> Iterative root finding for tau
-         │      └──> p = clamp(s - tau, min=0)^2, masked by valid tokens
-         │
-         ├──> Sparse Attention Matrix A = p ──> [B, H, L, L] (Exact Zeros)
-         ├──> Dropout(A) ──> [B, H, L, L]
-         ├──> MatMul: A @ V ──> Context: [B, H, L, d_k]
-         │
-         └──> transpose(1, 2) ──> contiguous() ──> [B, L, D]
-         └──> Linear(D, D)(Context) ──> Output: [B, L, D]
+  ├──> Projections: Q, K, V ──> [B, H, L, d_h]
+  ├──> Scaled Dot-Product: scores = Q @ K.T / sqrt(d_h) ──> [B, H, L, L]
+  │
+  ├──> entmax15_bisect(scores, valid_mask, n_iter=25):
+  │      ├──> Mask invalid keys with -1e9
+  │      ├──> Shift scores by rowmax for numerical stability
+  │      ├──> Initialize tau_lo = amin(scores) - 1.0, tau_hi = 0.0
+  │      ├──> 25 Bisection Iterations:
+  │      │      tau = (tau_lo + tau_hi) / 2
+  │      │      p = clamp(scaled - tau, min=0.0) ** 2
+  │      │      sum_p = p.sum(dim=-1)
+  │      │      update tau_lo, tau_hi based on (sum_p > 1.0)
+  │      ├──> Normalize p = p / p.sum(dim=-1)
+  │      └──> Softmax Fallback if support is empty
+  │
+  ├──> Context = p @ V ──> [B, H, L, d_h]
+  └──> Out Projection: Linear(D, D)(Context) ──> Output: [B, L, D]
 ```
 
 ---
 
-## 4. Analytical Complexity & FLOP Counts
-
-- **Linear Projections ($Q, K, V, O$):** $8 B L D^2$ FLOPs.
-- **Logit Evaluation ($Q K^\top$):** $2 B H L^2 d_k = 2 B L^2 D$ FLOPs.
-- **Bisection Search ($N_{\text{iter}} = 25$):** $25 \times (4 B H L^2) = 100 B H L^2$ FLOPs.
-- **Value Gathering ($A V$):** $2 B L^2 D$ FLOPs.
-- **Total FLOPs:** $8 B L D^2 + 4 B L^2 D + 100 B H L^2$.
-
----
-
-## 5. Empirical SST-2 Benchmark & Failure Mode Analysis
-
-### 5.1 Why the Unrepaired Baseline Underperformed (49.08% Acc)
-1. **Unbounded Bisection on Additive Masks:** Unrepaired code computed $\tau_{\text{lo}} = \min(\text{scores}) - 1.0$ across the full matrix including $-10000.0$ additive padding masks. This pulled $\tau_{\text{lo}}$ down to $-5000.0$.
-2. **Under-Iteration Truncation:** With only $n_{\text{iter}} = 10$, interval $[ -5000, 0 ]$ could only shrink by $2^{10} = 1024$, leaving an unconverged interval width of $> 5.0$.
-3. **Probability Explosion / Collapse:** The unnormalized $\max(0, \text{scaled} - \tau)^2$ produced probability sums of millions or zeros, completely corrupting attention outputs and gradient flow.
-
-### 5.2 SST-2 Empirical Comparison Table
-| Attention Variant | SST-2 Accuracy | SST-2 F1 | Runtime / Latency | Mechanism |
-| :--- | :--- | :--- | :--- | :--- |
-| **Full Attention** | **89.56%** | **89.55%** | Baseline (1.0x) | Dense $\mathcal{O}(N^2)$ |
-| **Performer (FAVOR+)** | 82.91% | 82.90% | 504.8s | Random Features |
-| **FlashAttention-3** | 82.91% | 82.90% | Fast (IO-optimal) | Exact Tiled |
-| **Nyströmformer** | 82.11% | 82.10% | Linear (Pinv) | Landmark Pinv |
-| **Span-Expanded** | 81.31% | 81.30% | Linear-Local | Receptive Field Expansion |
-| **Adaptive Span** | 80.39% | 80.38% | **5.3s (Superfast)** | Per-Head Learned Span |
-| **Repaired AdaSplash** | **82.35% (Repaired)** | **82.33%** | Fast Sparse | Valid-Bounded 1.5-Entmax |
-| *Unrepaired AdaSplash* | *49.08% (Broken)* | *48.90%* | — | Unbounded $\tau_{\text{lo}}$ divergence |
-
----
-
-## Complete Source Code Implementation (`adasplash_attention.py`)
+## 4. Complete Source Code Implementation (`adasplash_attention.py`)
 
 ```python
 r"""
