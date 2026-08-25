@@ -91,6 +91,7 @@ class BenchmarkResult:
     perplexity: float = 0.0
     grad_norm: float = 0.0
     
+    trajectories: Dict[str, List[float]] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -787,8 +788,11 @@ def evaluate_single_combination_opt(
             loss.backward()
             model.zero_grad()
 
-        fwd_times: List[float] = []
-        bwd_times: List[float] = []
+        # Initialize Trajectory Tracking
+        traj_loss: List[float] = []
+        traj_grad_norm: List[float] = []
+        traj_fwd_ms: List[float] = []
+        traj_bwd_ms: List[float] = []
 
         if is_cuda:
             torch.cuda.reset_peak_memory_stats(device)
@@ -808,16 +812,31 @@ def evaluate_single_combination_opt(
                 if loss is None:
                     loss = torch.tensor(0.0, requires_grad=True, device=device)
 
+                loss_val = float(loss.detach().item())
+                traj_loss.append(round(loss_val, 4))
+
                 bwd_start_events[i].record()
                 loss.backward()
                 bwd_end_events[i].record()
+
+                # Calculate L2 gradient norm
+                total_norm_sq = 0.0
+                for p in model.parameters():
+                    if p.grad is not None:
+                        param_norm = p.grad.detach().data.norm(2)
+                        total_norm_sq += float(param_norm.item() ** 2)
+                grad_norm = float(total_norm_sq ** 0.5)
+                traj_grad_norm.append(round(grad_norm, 4))
+
                 model.zero_grad()
 
             bwd_end_events[-1].synchronize()
 
             for i in range(num_steps):
-                fwd_times.append(fwd_start_events[i].elapsed_time(fwd_end_events[i]))
-                bwd_times.append(bwd_start_events[i].elapsed_time(bwd_end_events[i]))
+                fwd_ms = fwd_start_events[i].elapsed_time(fwd_end_events[i])
+                bwd_ms = bwd_start_events[i].elapsed_time(bwd_end_events[i])
+                traj_fwd_ms.append(round(float(fwd_ms), 4))
+                traj_bwd_ms.append(round(float(bwd_ms), 4))
 
             result.peak_memory_mb = round(torch.cuda.max_memory_allocated(device) / (1024 ** 2), 1)
         else:
@@ -825,21 +844,44 @@ def evaluate_single_combination_opt(
                 t0 = time.perf_counter()
                 out = model(**filtered_batch)
                 t1 = time.perf_counter()
-                fwd_times.append((t1 - t0) * 1000.0)
+                fwd_ms = (t1 - t0) * 1000.0
+                traj_fwd_ms.append(round(float(fwd_ms), 4))
 
                 _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
                 if loss is None:
                     loss = torch.tensor(0.0, requires_grad=True, device=device)
 
+                loss_val = float(loss.detach().item())
+                traj_loss.append(round(loss_val, 4))
+
                 t2 = time.perf_counter()
                 loss.backward()
                 t3 = time.perf_counter()
-                bwd_times.append((t3 - t2) * 1000.0)
+                bwd_ms = (t3 - t2) * 1000.0
+                traj_bwd_ms.append(round(float(bwd_ms), 4))
+
+                # Calculate L2 gradient norm
+                total_norm_sq = 0.0
+                for p in model.parameters():
+                    if p.grad is not None:
+                        param_norm = p.grad.detach().data.norm(2)
+                        total_norm_sq += float(param_norm.item() ** 2)
+                grad_norm = float(total_norm_sq ** 0.5)
+                traj_grad_norm.append(round(grad_norm, 4))
+
                 model.zero_grad()
 
-        result.forward_latency_ms = round(float(torch.tensor(fwd_times).mean().item()), 2)
-        result.backward_latency_ms = round(float(torch.tensor(bwd_times).mean().item()), 2)
+        result.forward_latency_ms = round(float(torch.tensor(traj_fwd_ms).mean().item()), 2) if traj_fwd_ms else 0.0
+        result.backward_latency_ms = round(float(torch.tensor(traj_bwd_ms).mean().item()), 2) if traj_bwd_ms else 0.0
         result.total_step_latency_ms = round(result.forward_latency_ms + result.backward_latency_ms, 2)
+        result.loss = round(float(torch.tensor(traj_loss).mean().item()), 4) if traj_loss else 0.0
+        result.grad_norm = round(float(torch.tensor(traj_grad_norm).mean().item()), 4) if traj_grad_norm else 0.0
+        result.trajectories = {
+            "loss": traj_loss,
+            "grad_norm": traj_grad_norm,
+            "fwd_latency_ms": traj_fwd_ms,
+            "bwd_latency_ms": traj_bwd_ms,
+        }
 
     except Exception as e:
         logger.error("Evaluation FAILED for %s on %s/%s: %s", module_name, model_family, dataset, e)

@@ -740,3 +740,35 @@ class ResultsSaver:
         from .backends.notification import notify
 
         notify(self.run_id, success, metrics, self.cfg)
+
+
+def save_result_json(
+    result: Union[Dict[str, Any], Any],
+    results_dir: Union[str, Path] = "benchmark_results",
+    filename: Optional[str] = None,
+) -> str:
+    """
+    Save complete benchmark result including fine-grained trajectories to JSON.
+    Used for generating conference-grade loss curves and variance plots.
+    """
+    target_dir = Path(results_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    if hasattr(result, "to_dict") and callable(result.to_dict):
+        data = result.to_dict()
+    elif hasattr(result, "__dict__"):
+        data = vars(result)
+    else:
+        data = dict(result)
+
+    if not filename:
+        mod = data.get("module_name", "unknown")
+        fam = data.get("model_family", "unknown")
+        ds = data.get("dataset", "unknown")
+        filename = f"{mod}_{fam}_{ds}.json"
+
+    json_path = target_dir / filename
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(_sanitize_json_value(data), f, indent=2, allow_nan=False)
+
+    return str(json_path)
