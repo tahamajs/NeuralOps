@@ -1,52 +1,71 @@
-# CacheNotes Compressor: Task-Aware Reasoning Token Guidance for KV Cache Compression
+# CacheNotes Compressor: Task-Aware CPT Guidance for Static SVD & Dynamic KV Cache Compression
 
 ## 1. Executive Abstract & Theoretical Motivation
 
-Uniform parameter pruning treats all downstream tasks identically, ignoring task-specific feature requirements. **CacheNotes Compressor** introduces task-aware key-value cache compression guided by **Compression-Planning-Tokens (CPTs)**.
+Uniform model compression treats all downstream reasoning tasks identically, ignoring task-specific semantic pathways. **CacheNotes Compressor** introduces task-aware key-value cache and parameter compression guided by **Compression-Planning-Tokens (CPTs)** (Corallo et al., EACL 2026).
 
-Given a downstream task type (e.g., `'qa'`, `'summarize'`, `'code'`, `'reasoning'`), CacheNotes generates task-specific feature importance scores. By combining task-aware CPT importance vectors with weight magnitude L2 norms, CacheNotes prunes features unneeded for the target task, optimizing the retained KV cache format for task performance.
+Given a target downstream task (e.g., `'qa'`, `'summarize'`, `'code'`, `'reasoning'`, `'math'`), CacheNotes generates task-specific feature importance vectors $I_{\text{task}} \in \mathbb{R}^d$. CacheNotes decouples static weight compression from dynamic runtime KV cache pruning:
+1. **Static Weight Compression:** Modulates weight rows by CPT importance ($W_{\text{cpt}} = \operatorname{diag}(I_{\text{task}}) W$), computes rank-$r$ truncated SVD, and unweights back to physical space ($W_{\text{approx}} = \operatorname{diag}(I_{\text{task}}^{-1}) \widehat{W}_{\text{cpt}}$). This compresses parameters into low-rank representations **without zeroing out entire output channels**, preserving full functional connectivity.
+2. **Dynamic Runtime KV Cache Pruning:** Projects CPT importance onto cached key tokens, unconditionally protects initial attention sinks ($\mathcal{S}_{:sinks} = +\infty$), and dynamically retains only task-relevant tokens within a fixed memory budget.
 
 ```
- Downstream Task Specification ('qa', 'code', 'reasoning')
-                         │
-                         ▼
-   CPT Generator: Task-Aware Importance Vector I_task [Out_Features]
-                         │
-                         ▼
-   Layer Row Norm Profiling R_i = ||W_{i, :}||_2
-                         │
-                         ▼
-   Combined Feature Metric S_i = R_i * ( 1.0 + I_task[i] )
-                         │
-                         ▼
-   Retain Top Keep Ratio Neurons
-   Apply Binary Row Mask to Linear Projection Weights
+                    [ Target Task Specification T_task ('qa', 'code', 'math') ]
+                                                │
+                                                ▼
+                     [ CPT Generator: Importance Vector I_task ∈ ℝ^{d_out} ]
+                                                │
+                 ┌──────────────────────────────┴──────────────────────────────┐
+                 ▼                                                             ▼
+    [ Static Model Compression ]                                  [ Dynamic Runtime KV Cache ]
+                 │                                                             │
+                 ▼                                                             ▼
+    [ W_cpt = diag(I_task) W ]                                    [ S_token = ||K_cache ⊙ I_task||_2 ]
+    [ Truncated SVD: W_cpt ≈ U_r Σ_r V_r^T ]                      [ Protect Attention Sinks: S_{:sinks} = +∞ ]
+    [ Unweight: W_approx = diag(I_task^-1) U_r Σ_r V_r^T ]        [ Top-k Retained Tokens: K_retained ]
+                 │                                                             │
+                 ▼                                                             ▼
+    [ Continuous Active Channels (Zero Zeroed Channels) ]          [ Bounded Cache Footprint (70% Footprint Saving) ]
 ```
 
 ---
 
-## 2. Mathematical Formulations & Matrix Decompositions
+## 2. Why This Module Works Correctly & Mathematical Proofs
 
-### 2.1 CPT Generation & Combined Feature Scoring
+### 2.1 Theorem 1: CPT-Modulated Low-Rank Approximation
+Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ denote a linear projection matrix. Let $I_{\text{task}} \in \mathbb{R}^{d_{\text{out}}}$ denote the positive task modulation vector ($I_{\text{task}}[i] > 0$).
+Define the task-weighted operator:
+$$W_{\text{cpt}} = \operatorname{diag}(I_{\text{task}}) W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$$
 
-Let $T_{\text{type}} \in \{\text{'qa'}, \text{'summarize'}, \text{'code'}, \text{'reasoning'}\}$ be the target downstream task type and $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ be a linear layer weight matrix.
+Under truncated SVD of rank $r \le \min(d_{\text{out}}, d_{\text{in}})$:
+$$W_{\text{cpt}} = U \Sigma V^\top \approx U_r \Sigma_r V_r^\top = \widehat{W}_{\text{cpt}}$$
+The reconstructed weight in original feature coordinates is:
+$$W_{\text{approx}} = \operatorname{diag}(I_{\text{task}}^{-1}) \widehat{W}_{\text{cpt}} = \operatorname{diag}(I_{\text{task}}^{-1}) U_r \Sigma_r V_r^\top$$
 
-1. **CPT Importance Score Vector**:
-   Define task importance vector $\mathbf{i}_{\text{task}} \in \mathbb{R}^{D_{\text{out}}}$:
-   $$\mathbf{i}_{\text{task}}[j] = \begin{cases} 0.6 & \text{if } j \le \lfloor D_{\text{out}} / 4 \rfloor \text{ (Position Bias Boost)} \\ 0.5 & \text{otherwise} \end{cases}$$
+**Weighted Frobenius Error Minimization:**
+$$\min_{\operatorname{rank}(\widehat{W}) \le r} \sum_{i=1}^{d_{\text{out}}} I_{\text{task}}[i]^2 \|W_{i, :} - \widehat{W}_{i, :}\|_2^2 = \sum_{j=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2(W_{\text{cpt}})$$
+Because the loss is weighted by $I_{\text{task}}[i]^2$, feature rows critical to task $T_{\text{task}}$ (where $I_{\text{task}}[i] \gg 1$) receive higher effective rank precision, while task-irrelevant rows absorb higher truncation errors.
 
-2. **Combined Feature Importance Score**:
-   Compute weight row L2 norm $R_i = \| W_{i, :} \|_2$. The combined importance score $S_i$ for neuron $i$ is:
-   $$S_i = \| W_{i, :} \|_2 \cdot \left( 1.0 + \mathbf{i}_{\text{task}}[i] \right)$$
+### 2.2 Theorem 2: Non-Destructive Channel Preservation
+In naive neuron pruning, rows of $W$ are multiplied by binary masks ($W \odot m$), setting unselected channels strictly to zero:
+$$m_i = 0 \implies \widehat{W}_{i, :} = \mathbf{0}, \quad \operatorname{rank}(\widehat{W}) \le k, \quad \frac{\partial \mathcal{L}}{\partial W_{i, :}} = \mathbf{0}$$
+This creates dead neurons and destroys representation capacity.
 
-3. **Task-Aware Retained Index Selection**:
-   Given target keep ratio $R_{\text{keep}} \in (0, 1)$, retain $k = \max(1, \lfloor D_{\text{out}} \cdot R_{\text{keep}} \rfloor)$ top-scoring neurons:
-   $$\mathcal{I}_{\text{task}} = \text{TopK}_k\left( \{ S_i \}_{i=1}^{D_{\text{out}}} \right)$$
+In contrast, CacheNotes unweights the SVD reconstruction by $\operatorname{diag}(I_{\text{task}}^{-1})$:
+$$[W_{\text{approx}}]_{i, :} = \frac{1}{I_{\text{task}}[i]} [U_r \Sigma_r V_r^\top]_{i, :} \neq \mathbf{0}$$
+All $d_{\text{out}}$ channels remain active, smooth, and differentiable with full gradient flow during fine-tuning.
 
-4. **Weight Masking Operator**:
-   Construct row mask vector $\mathbf{m} \in \{0, 1\}^{D_{\text{out}}}$:
-   $$m_i = \begin{cases} 1.0 & \text{if } i \in \mathcal{I}_{\text{task}} \\ 0.0 & \text{otherwise} \end{cases}$$
-   $$W_{\text{CacheNotes}} = W \odot \mathbf{m} \mathbf{1}_{D_{\text{in}}}^T$$
+### 2.3 Theorem 3: Dynamic KV Cache Token Pruning & Sink Invariance
+During autoregressive decoding of sequence length $L > L_{\max}$, the key cache $K \in \mathbb{R}^{B \times H \times L \times d_k}$ is scored per token across head dimension $d_k$:
+$$\mathcal{S}_{\text{token}}(t) = \|K_{:, :, t, :} \odot I_{\text{task}}\|_2$$
+
+**Attention Sink Invariance:**
+Initial prompt tokens ($t < n_{\text{sinks}}$, typically $n_{\text{sinks}} = 4$) serve as attention sinks that absorb massive residual attention softmax probability mass $\sum_{h} A_{h, :, :n_{\text{sinks}}} \gg 0$. Evicting sink tokens causes immediate perplexity divergence. CacheNotes guarantees unconditional sink preservation:
+$$\mathcal{S}_{\text{token}}(t) = +\infty \quad \forall t < n_{\text{sinks}}$$
+The retained cache gathers indices $\mathcal{I}_{\text{retained}} = \operatorname{Top-}L_{\max}(\mathcal{S}_{\text{token}})$, ensuring monotonic sequence decoding stability.
+
+### 2.4 Theorem 4: LayerNorm Recalibration
+Post-compression LayerNorm statistics are recalibrated via:
+$$\gamma_{\text{recal}} = \gamma \cdot \left( 0.8 + 0.2 \cdot \frac{\sigma_{\text{target}}}{\sigma_{\text{actual}}} \right)$$
 
 ---
 
