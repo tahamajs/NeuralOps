@@ -189,7 +189,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         cls,
         model_id: str,
         task: str = "sequence_classification",
-        num_labels: Optional[int] = 2,
+        num_labels: Optional[int] = None,
         **kwargs,
     ) -> "UnifiedTransformerModel":
         """
@@ -212,8 +212,11 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         else:
             # Fresh model – no custom attention yet
             if task == "sequence_classification":
+                sc_kwargs = dict(kwargs)
+                if num_labels is not None:
+                    sc_kwargs["num_labels"] = num_labels
                 base = AutoModelForSequenceClassification.from_pretrained(
-                    model_id, num_labels=num_labels, **kwargs
+                    model_id, **sc_kwargs
                 )
             else:
                 base = AutoModel.from_pretrained(model_id, **kwargs)

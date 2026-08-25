@@ -2,12 +2,15 @@
 Compression pipeline – orchestrates multiple compressors sequentially.
 """
 
+import logging
 from typing import Any, Dict
 
 import torch.nn as nn
 
 from .registry import COMPRESSOR_REGISTRY
 from .utils import set_seed
+
+logger = logging.getLogger(__name__)
 
 
 class CompressionPipeline:
@@ -29,7 +32,7 @@ class CompressionPipeline:
         """Execute the run operation and return results."""
         compressors_cfg = self.config.get("compressors", [])
         if not compressors_cfg:
-            print("No compressors specified. Returning original model.")
+            logger.info("No compressors specified. Returning original model.")
             return self.model
 
         seed = self.config.get("seed")
@@ -38,14 +41,14 @@ class CompressionPipeline:
 
         for i, comp_cfg in enumerate(compressors_cfg):
             method = comp_cfg.pop("method")
-            print(f"\n🔧 Step {i+1}: Applying compressor '{method}'")
+            logger.info("Step %d: Applying compressor '%s'", i + 1, method)
             compressor_cls = COMPRESSOR_REGISTRY.resolve(method)
             merged_cfg = {**self.config, **comp_cfg}
             merged_cfg.pop("compressors", None)
             compressor = compressor_cls(self.model, **merged_cfg)
             self.model, stats = compressor.compress()
             if stats:
-                print(compressor.summary())
+                logger.info("%s", compressor.summary())
 
         return self.model
 

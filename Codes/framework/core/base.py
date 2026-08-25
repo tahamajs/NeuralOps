@@ -2,10 +2,13 @@
 Base classes for attention modules and compressors.
 """
 
+import logging
 from abc import abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 class BaseAttention(nn.Module):
@@ -29,7 +32,7 @@ class BaseAttention(nn.Module):
         **kwargs,
     ) -> Tuple[Any, Optional[Any]]:
         """Must return (output, attention_weights_or_None)."""
-        pass
+        raise NotImplementedError("Subclasses of BaseAttention must implement forward()")
 
     def copy_weights(self, old_attn: Any) -> None:
         """Universal fallback: copy pretrained weights from old attention layer."""
@@ -88,8 +91,10 @@ class BaseAttention(nn.Module):
                         self.in_proj.weight[:dim].copy_(w_q[:dim])
                         self.in_proj.weight[dim:2*dim].copy_(w_k[:dim])
                         self.in_proj.weight[2*dim:].copy_(w_v[:dim])
-        except Exception:
-            pass
+        except (AttributeError, RuntimeError, ValueError) as e:
+            logger.debug("BaseAttention.copy_weights failed: %s", e)
+        except Exception as e:
+            logger.warning("Unexpected error in BaseAttention.copy_weights: %s", e)
 
     def extra_repr(self) -> str:
         """Extra repr."""
@@ -108,7 +113,7 @@ class BaseCompressor:
     @abstractmethod
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Return (compressed_model, statistics)."""
-        pass
+        raise NotImplementedError("Subclasses of BaseCompressor must implement compress()")
 
     def _count_params(self, model: nn.Module) -> int:
         """ count params."""

@@ -263,14 +263,18 @@ def inject_attention(
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     config = getattr(model, "config", None)
     if config is not None:
-        hidden_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", 768))))
-        num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", 12))))
-        head_dim = getattr(config, "head_dim", getattr(config, "d_kv", hidden_size // max(1, num_heads)))
+        hidden_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
+        num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", None))))
+        head_dim = getattr(config, "head_dim", getattr(config, "d_kv", (hidden_size // max(1, num_heads) if (hidden_size and num_heads) else None)))
         num_kv_heads = getattr(config, "num_key_value_heads", num_heads)
-        setattr(config, "hidden_size", hidden_size)
-        setattr(config, "num_attention_heads", num_heads)
-        setattr(config, "head_dim", head_dim)
-        setattr(config, "num_key_value_heads", num_kv_heads)
+        if hidden_size is not None:
+            setattr(config, "hidden_size", hidden_size)
+        if num_heads is not None:
+            setattr(config, "num_attention_heads", num_heads)
+        if head_dim is not None:
+            setattr(config, "head_dim", head_dim)
+        if num_kv_heads is not None:
+            setattr(config, "num_key_value_heads", num_kv_heads)
         if not hasattr(config, "dropout"):
             dropout_val = getattr(
                 config,
@@ -279,47 +283,67 @@ def inject_attention(
             )
             setattr(config, "dropout", dropout_val)
     else:
-        hidden_size = 768
-        num_heads = 12
-        head_dim = 64
-        num_kv_heads = 12
+        hidden_size = getattr(model, "hidden_size", None)
+        num_heads = getattr(model, "num_attention_heads", None)
+        head_dim = getattr(model, "head_dim", None)
+        num_kv_heads = getattr(model, "num_key_value_heads", num_heads)
 
     arch = detect_architecture(model)
     adapter = get_adapter(arch)
 
     replaced = 0
-    for name, old_attn in get_attention_modules(model):
-        new_attn = None
-        signatures_to_try = [
-            lambda: attn_class(config, rank=rank, pretrained_attn=old_attn, **kwargs),
-            lambda: attn_class(config, rank=rank, **kwargs),
-            lambda: attn_class(config, pretrained_attn=old_attn, **kwargs),
-            lambda: attn_class(config, **kwargs),
-            lambda: attn_class(config),
-            lambda: attn_class(rank=rank, pretrained_attn=old_attn, **kwargs),
-            lambda: attn_class(rank=rank, **kwargs),
-            lambda: attn_class(**kwargs),
-            lambda: attn_class(),
-        ]
+    modules_list = list(get_attention_modules(model))
+    if not modules_list:
+        logger.warning("No attention modules found to replace for architecture '%s'", arch)
 
-        for fn in signatures_to_try:
+    for name, old_attn in modules_list:
+        # Dynamically infer dimensions from old_attn if not already determined
+        if hidden_size is None or num_heads is None:
+            for _, child in old_attn.named_children():
+                if hasattr(child, "weight") and isinstance(child.weight, torch.Tensor) and child.weight.ndim == 2:
+                    if hidden_size is None:
+                        hidden_size = child.weight.shape[1]
+                    break
+            if num_heads is None:
+                num_heads = getattr(old_attn, "num_heads", getattr(old_attn, "num_attention_heads", None))
+            if head_dim is None and hidden_size is not None and num_heads is not None:
+                head_dim = hidden_size // max(1, num_heads)
+
+        # Ensure config exists or construct minimal namespace config
+        if config is None:
+            from types import SimpleNamespace
+            config = SimpleNamespace(
+                hidden_size=hidden_size,
+                num_attention_heads=num_heads,
+                head_dim=head_dim,
+                num_key_value_heads=num_kv_heads or num_heads,
+                dropout=0.1,
+            )
+
+        effective_rank = rank if rank is not None else getattr(config, "rank", 32)
+
+        # Standardized instantiation: (config, rank=32, **kwargs)
+        try:
+            new_attn = attn_class(config, rank=effective_rank, **kwargs)
+        except TypeError:
             try:
-                new_attn = fn()
-                break
-            except (TypeError, ValueError):
-                continue
-
-        if new_attn is None:
-            new_attn = attn_class(config) if config is not None else attn_class()
+                new_attn = attn_class(config, **kwargs)
+            except TypeError:
+                try:
+                    new_attn = attn_class(rank=effective_rank, **kwargs)
+                except TypeError:
+                    new_attn = attn_class(**kwargs)
 
         if copy_weights:
             if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
                 try:
                     new_attn.copy_weights(old_attn)
-                except Exception as e:
+                except (AttributeError, RuntimeError, ValueError) as e:
                     logger.debug("Custom copy_weights failed on %s: %s", name, e)
+                except Exception as e:
+                    logger.warning("Unexpected error in custom copy_weights on %s: %s", name, e)
 
-            # FIX: Detect fused QKV projection modules via regex and slice parameters
+            # Detect fused QKV projection modules via regex and slice parameters
             fused_mod = None
             for child_name, child_mod in old_attn.named_children():
                 if FUSED_QKV_REGEX.match(child_name) and hasattr(child_mod, "weight"):
@@ -331,8 +355,8 @@ def inject_attention(
                 sliced = _slice_fused_qkv_weights(
                     fused_mod.weight.data,
                     fused_mod.bias.data if hasattr(fused_mod, "bias") and fused_mod.bias is not None else None,
-                    num_heads=num_heads,
-                    num_kv_heads=num_kv_heads,
+                    num_heads=num_heads if num_heads is not None else 12,
+                    num_kv_heads=num_kv_heads or num_heads,
                     head_dim=head_dim,
                 )
                 for proj_key in ["q", "k", "v"]:
@@ -347,14 +371,15 @@ def inject_attention(
                     target_o = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
                     if target_o is not None:
                         _copy_projection_weights(target_o, src_w_o, src_b_o)
-                except ValueError:
-                    pass
+                except (ValueError, AttributeError) as e:
+                    logger.debug("Could not copy output projection for %s: %s", name, e)
             else:
                 # Standard decoupled Q, K, V, O projections
                 for proj_key in ["q", "k", "v", "o"]:
                     try:
                         src_weight, src_bias = adapter.get_weight_bias(old_attn, proj_key)
-                    except ValueError:
+                    except (ValueError, AttributeError) as e:
+                        logger.debug("Could not get %s projection weights for %s: %s", proj_key, name, e)
                         continue
 
                     target_proj = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS[proj_key])
