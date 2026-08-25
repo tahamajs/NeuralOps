@@ -96,7 +96,7 @@ class GalerkinAttention(BaseAttention):
                 target.weight.data.copy_(w)
                 if b is not None and target.bias is not None:
                     target.bias.data.copy_(b)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def _get_orthonormal_basis(self, N: int, r: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:

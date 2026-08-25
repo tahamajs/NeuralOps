@@ -91,7 +91,7 @@ class GroupedQueryAttention(nn.Module):
                 self.query.weight.data.copy_(w_q)
                 if b_q is not None and self.query.bias is not None:
                     self.query.bias.data.copy_(b_q)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
             try:
@@ -99,7 +99,7 @@ class GroupedQueryAttention(nn.Module):
                 self.out_proj.weight.data.copy_(w_o)
                 if b_o is not None and self.out_proj.bias is not None:
                     self.out_proj.bias.data.copy_(b_o)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
             repeat = self.num_heads // self.num_kv_heads
@@ -115,7 +115,7 @@ class GroupedQueryAttention(nn.Module):
                         b_reshaped = b.view(self.num_heads, self.head_dim)
                         b_grouped = b_reshaped.view(self.num_kv_heads, repeat, self.head_dim).mean(dim=1)
                         target.bias.data.copy_(b_grouped.view(self.num_kv_heads * self.head_dim))
-                except Exception:
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                     pass
 
     def forward(

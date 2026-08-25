@@ -142,7 +142,7 @@ class SVDLLMV2Attention(BaseAttention):
                     vh_param.data[:r, :] = Vt[:r, :].to(dtype=vh_param.dtype)
                     if b is not None:
                         bias_param.data.copy_(b)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def forward(

@@ -91,7 +91,7 @@ def get_gpu_stats():
         try:
             mem_used = round(torch.cuda.memory_allocated() / (1024 * 1024), 1)
             mem_total = round(torch.cuda.get_device_properties(0).total_memory / (1024 * 1024), 1)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     ram_used, ram_total = 0.0, 0.0
@@ -99,7 +99,7 @@ def get_gpu_stats():
         try:
             ram_used = round(psutil.virtual_memory().used / (1024**3), 1)
             ram_total = round(psutil.virtual_memory().total / (1024**3), 1)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     return {
@@ -134,7 +134,7 @@ def get_active_workers():
         try:
             with open(WORKER_STATE_FILE, "r", encoding="utf-8", errors="ignore") as f:
                 workers = json.load(f)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
     if not workers:
         for i in (1, 2, 3):
@@ -163,7 +163,7 @@ def get_completed_results():
                             "time_s": float(m.group(6)),
                             "status": "completed"
                         }
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     # 2. Also scan RESULTS_DIR for any experiment metrics.json
@@ -192,9 +192,9 @@ def get_completed_results():
                             "time_s": time_val,
                             "status": "completed"
                         }
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     return results
@@ -253,7 +253,7 @@ def get_all_active_loss_histories(workers):
                         "active_task": task,
                         "loss_history": data[-30:] if len(data) > 30 else data
                     })
-                except Exception:
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                     pass
     return histories
 
@@ -271,7 +271,7 @@ def _build_stats_response() -> str:
     if MASTER_LOG.exists():
         try:
             logs = MASTER_LOG.read_text(encoding="utf-8", errors="ignore").splitlines()[-25:]
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     gpu["0"] = gpu.get("gpu_util", 0.0)
@@ -312,7 +312,7 @@ def _cache_refresh_loop():
             with _cache_lock:
                 _cached_response = data
             _cache_ready.set()
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
         time.sleep(3)
 

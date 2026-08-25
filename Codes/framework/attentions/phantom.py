@@ -113,6 +113,11 @@ class FactorisedLinear_CUR(nn.Module):
             if pretrained_bias is not None:
                 self.up.bias.data = pretrained_bias.to(dtype=dtype, device=device)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.up.weight, self.down.weight)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Project input through CUR factorized down- and up-projections.
 

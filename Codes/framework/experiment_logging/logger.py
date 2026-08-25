@@ -48,7 +48,7 @@ def get_rank(configured_rank: Optional[int] = None) -> int:
 
         if dist.is_available() and dist.is_initialized():
             return dist.get_rank()
-    except Exception:
+    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
         pass
 
     return 0
@@ -85,7 +85,7 @@ def shutdown_logging() -> None:
     for listener in _ACTIVE_LISTENERS:
         try:
             listener.stop()
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
     _ACTIVE_LISTENERS.clear()
 

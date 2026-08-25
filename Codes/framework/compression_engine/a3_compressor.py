@@ -75,11 +75,10 @@ class A3FactorizedLinear(nn.Module):
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
 
-    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
-        """Sets precomputed low-rank factors."""
-        with torch.no_grad():
-            self.U.copy_(U_factor)
-            self.V.copy_(V_factor)
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.U, self.V)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Two-stage linear transformation: (..., in_features) -> (..., rank) -> (..., out_features)

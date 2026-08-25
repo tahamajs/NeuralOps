@@ -124,7 +124,7 @@ class MambaSVDFlash(BaseAttention):
                 self.proj_c.weight.copy_(w_v)
                 if b_v is not None and self.proj_c.bias is not None:
                     self.proj_c.bias.copy_(b_v)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
     def _svd_ssm_scan(

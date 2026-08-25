@@ -160,6 +160,11 @@ class LowRankSparseLinear(nn.Module):
         self.out_features: int = up.out_features
         self.in_features: int = down.in_features
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.up.weight, self.down.weight) + self.sparse_weight
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Compute low-rank plus sparse forward projection."""
         x_lr = self.up(self.down(x))

@@ -192,9 +192,9 @@ class FAQQuantizer(BaseCompressor):
                         dummy_x = torch.randn(2, 16, first_linear.in_features, device=dev)
                         try:
                             self.model(dummy_x)
-                        except Exception:
+                        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                             pass
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
         for h in hooks:

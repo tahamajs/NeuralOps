@@ -179,7 +179,7 @@ class MinimalSVDAttentionV2(BaseAttention):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 target.decompose_from_weight(w, b, self.energy)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def forward(

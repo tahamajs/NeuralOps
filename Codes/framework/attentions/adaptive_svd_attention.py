@@ -256,7 +256,7 @@ class AdaptiveSVDAttention(nn.Module):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 self._init_svd_part(target, w, b)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def forward(

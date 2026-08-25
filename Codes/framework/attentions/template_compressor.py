@@ -49,6 +49,11 @@ class SVDLinearLayer(nn.Module):
         if original_layer.bias is not None:
             self.bias = nn.Parameter(original_layer.bias.data.clone())
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.U.weight, self.V.weight)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Compute low-rank linear projection: $x \to V(x) \to U(V(x)) + b$."""
         x = self.V(x)

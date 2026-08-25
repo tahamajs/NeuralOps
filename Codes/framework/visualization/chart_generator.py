@@ -81,7 +81,7 @@ class ChartGenerator:
                 try:
                     fig.clf()
                     plt.close(fig)
-                except Exception:
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                     pass
             gc.collect()
 

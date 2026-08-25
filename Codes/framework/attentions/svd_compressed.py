@@ -268,7 +268,7 @@ class SVDCompressedAttention(BaseAttention):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 self._set_factorised_weights(w, b, down, up, r)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def _create_pruned_residual(

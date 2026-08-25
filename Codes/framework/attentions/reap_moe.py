@@ -25,6 +25,11 @@ class SVDLinear(nn.Module):
         self.V = nn.Parameter(torch.randn(in_features, self.rank) * 0.02)
         self.bias = nn.Parameter(torch.zeros(out_features))
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return (self.U * self.S.unsqueeze(0)) @ self.V.t()
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return (x @ self.V) * self.S @ self.U.t() + self.bias
 

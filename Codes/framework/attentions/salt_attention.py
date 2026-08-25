@@ -59,6 +59,14 @@ class SALTLinear(nn.Module):
         else:
             self.bias = nn.Parameter(torch.zeros(out_features))
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        adapted_S = self.S * self.gamma
+        W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
+        W_lora = self.A @ self.B
+        return W_svd + W_lora
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Compute adapted linear projection."""
         adapted_S = self.S * self.gamma

@@ -191,7 +191,7 @@ class TestAllCompressorsExhaustive:
             except Exception:
                 try:
                     out = compressed(dummy_x[:, 0, :])
-                except Exception:
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                     pass
 
             if out is not None and isinstance(out, torch.Tensor):

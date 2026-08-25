@@ -82,7 +82,7 @@ class NystromAttention(BaseAttention):
                 target.weight.data.copy_(w)
                 if b is not None and target.bias is not None:
                     target.bias.data.copy_(b)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def _iterative_pinv(self, A: torch.Tensor, iters: int = 6) -> torch.Tensor:
