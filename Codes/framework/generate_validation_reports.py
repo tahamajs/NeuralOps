@@ -12,7 +12,7 @@ for root, dirs, files in os.walk(exp_dir):
         try:
             with open(os.path.join(root, 'metrics.json')) as f:
                 runs[run_name] = json.load(f)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
 # 1. SVD & Low-Rank Report

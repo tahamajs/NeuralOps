@@ -59,7 +59,7 @@ def update_worker_state(worker_id: int, **kwargs):
             try:
                 with open(WORKER_STATE_FILE, "w", encoding="utf-8") as f:
                     json.dump(active_workers_state, f, indent=2)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
 
@@ -71,7 +71,7 @@ def log_master(msg: str):
         try:
             with open(MASTER_LOG, "a", encoding="utf-8", errors="ignore") as f:
                 f.write(line)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
 
@@ -90,7 +90,7 @@ def get_completed_runs():
                                 attn_val = a[0].split("=")[1].strip()
                                 task_val = t[0].split("=")[1].strip()
                                 completed.add((attn_val, task_val))
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
     return completed
 

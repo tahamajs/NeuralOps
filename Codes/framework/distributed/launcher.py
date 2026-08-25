@@ -50,7 +50,7 @@ def _terminate_process_tree(proc: subprocess.Popen, timeout: float = 5.0) -> Non
         logger.debug("Process group SIGTERM ignored/failed: %s", e)
         try:
             proc.terminate()
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     # 2. Wait up to timeout for processes to exit
@@ -72,11 +72,11 @@ def _terminate_process_tree(proc: subprocess.Popen, timeout: float = 5.0) -> Non
         except (ProcessLookupError, PermissionError, OSError):
             try:
                 proc.kill()
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         try:
             proc.wait(timeout=2.0)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
 
@@ -242,5 +242,5 @@ def _cleanup_temp_files(paths: List[Path]) -> None:
         try:
             if p.exists():
                 p.unlink()
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass

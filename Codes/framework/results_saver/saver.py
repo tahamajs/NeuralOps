@@ -66,7 +66,7 @@ def sqlite_file_lock(lock_file_path: Union[str, Path], timeout: float = 30.0):
             try:
                 import fcntl
                 fcntl.flock(lock_fd, fcntl.LOCK_EX)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
         yield
@@ -75,11 +75,11 @@ def sqlite_file_lock(lock_file_path: Union[str, Path], timeout: float = 30.0):
             try:
                 import fcntl
                 fcntl.flock(lock_fd, fcntl.LOCK_UN)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
             try:
                 os.close(lock_fd)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
 

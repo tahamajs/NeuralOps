@@ -94,7 +94,7 @@ class FactorisedMatrixState(BaseAttention):
                 self.W_res.weight.copy_(w_o)
                 if b_o is not None and self.W_res.bias is not None:
                     self.W_res.bias.copy_(b_o)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
     def _matrix_scan(

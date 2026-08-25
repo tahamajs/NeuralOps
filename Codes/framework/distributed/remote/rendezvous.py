@@ -59,7 +59,7 @@ class InternetRendezvous:
                         return {
                             int(k): (v["host"], v["port"]) for k, v in peers.items()
                         }
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
             time.sleep(2)
         return None

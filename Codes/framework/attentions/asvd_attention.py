@@ -165,7 +165,7 @@ class ASVDAttention(nn.Module):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 self._decompose_and_set(target, w, b)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
     def forward(

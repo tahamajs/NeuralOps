@@ -138,6 +138,11 @@ class KroneckerLinear(nn.Module):
             out = F.linear(F.linear(x, self.V), self.U, self.bias)
             return out
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return self.get_weight()
+
     def get_weight(self) -> torch.Tensor:
         """Materialize full reconstructed weight matrix."""
         if self.can_decompose:

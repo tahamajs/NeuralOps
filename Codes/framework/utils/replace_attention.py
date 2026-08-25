@@ -257,7 +257,7 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
         if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
             try:
                 new_attn.copy_weights(old_module)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
         # Wrap in universal adapter

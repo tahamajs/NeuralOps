@@ -81,7 +81,7 @@ def check_custom_linear_weight_properties() -> List[str]:
                         dummy = obj(64, 64) if "in_features" in inspect.signature(obj.__init__).parameters else None
                         if dummy is not None and not hasattr(dummy, "weight"):
                             missing_weight_prop.append(f"{obj.__name__} in {obj.__module__}")
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
 
     return missing_weight_prop

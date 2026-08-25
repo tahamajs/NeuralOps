@@ -62,7 +62,7 @@ def get_calibration_tensors(
         try:
             encoded = tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=seq_len)
             return {k: v.to(device) for k, v in encoded.items()}
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     # Synthetic fallback
@@ -134,7 +134,7 @@ def compute_empirical_hessian(
     try:
         L = torch.linalg.cholesky(H_reg)
         H_inv = torch.cholesky_inverse(L)
-    except Exception:
+    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
         pass
 
     # 2. Standard LU inversion with progressive damping boost if needed
@@ -404,7 +404,7 @@ def recalibrate_layernorms(
                 model(calibration_inputs)
             elif isinstance(calibration_inputs, (list, tuple)):
                 model(*calibration_inputs)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     for h in hooks:

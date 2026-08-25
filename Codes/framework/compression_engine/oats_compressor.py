@@ -170,7 +170,7 @@ class OATSCompressor(BaseCompressor):
                 U, S, Vh = torch.linalg.svd(W_scaled - S_mat, full_matrices=False)
                 r = min(rank, len(S))
                 L = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
             R = W_scaled - L

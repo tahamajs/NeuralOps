@@ -62,7 +62,7 @@ def _async_process_attention_heatmap(
                 try:
                     fig.clf()
                     plt.close(fig)
-                except Exception:
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                     pass
             gc.collect()
     except Exception as e:

@@ -101,7 +101,7 @@ def test_svd_module_forward_backward(key, dummy_config):
             mod = attempt()
             if isinstance(mod, nn.Module):
                 break
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
     assert mod is not None, f"Failed to instantiate {key}"
