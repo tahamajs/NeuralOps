@@ -136,7 +136,7 @@ def run_gpu_benchmark_sweep_opt(
     models: List[str],
     datasets: List[str],
     precision: str = "bf16",
-    batch_size: int = 64,
+    batch_size: int = 128,
     seq_len: int = 256,
     max_steps: int = 5,
     timeout: int = 120,
@@ -227,7 +227,7 @@ def main() -> None:
     parser.add_argument("--models", type=str, default="bert,roberta,t5")
     parser.add_argument("--datasets", type=str, default="sst2,mrpc")
     parser.add_argument("--precision", type=str, default="bf16")
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--seq_len", type=int, default=256)
     parser.add_argument("--max_steps", type=int, default=5)
     parser.add_argument("--timeout", type=int, default=120)
