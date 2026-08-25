@@ -607,3 +607,21 @@ torchrun --nproc_per_node=4 -m framework.main \
     --batch_size 8 \
     --distributed
 ```
+
+---
+## 8. Computational Complexity Analysis
+
+| Stage | Computational Complexity | Peak Memory Complexity |
+| :--- | :--- | :--- |
+| **Activation Covariance Calibration** | $\mathcal{O}(B_{\text{calib}} \cdot N_{\text{calib}} \cdot d_{\text{in}}^2)$ | $\mathcal{O}(d_{\text{in}}^2)$ in FP32 |
+| **Whitened Weight SVD** | $\mathcal{O}(d_{\text{out}} \cdot d_{\text{in}}^2)$ | $\mathcal{O}(d_{\text{out}} \cdot d_{\text{in}})$ |
+| **De-whitened Matrix Reconstruction** | $\mathcal{O}(r \cdot d_{\text{in}}^2)$ | $\mathcal{O}(r \cdot d_{\text{in}})$ |
+| **Compressed Inference GEMM** | $\mathcal{O}(B \cdot N \cdot r (d_{\text{in}} + d_{\text{out}}))$ | $\mathcal{O}(B \cdot N \cdot r)$ |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Yuan, Z., Shang, Y., Song, Y., Wu, Q., Yan, Y., & Dong, G. (2023)**. *ASVD: Activation-aware Singular Value Decomposition for Compressing Large Language Models*. arXiv preprint [arXiv:2310.13545](https://arxiv.org/abs/2310.13545).
+2. **Xiao, G., Lin, J., Seznec, J., Wu, H., Demouth, J., & Han, S. (2023)**. *SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models*. In International Conference on Machine Learning (ICML 2023). [arXiv:2211.10438](https://arxiv.org/abs/2211.10438).
+3. **Frantar, E., & Alistarh, D. (2023)**. *SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot*. In ICML 2023.

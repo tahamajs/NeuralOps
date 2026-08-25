@@ -77,6 +77,15 @@ class FactorisedLinear(nn.Module):
             if bias is not None and self.up.bias is not None:
                 self.up.bias.data.copy_(bias)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.up.weight, self.down.weight)
+
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return self.up.bias
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Evaluates factorized linear transformation."""
         return self.up(self.down(x))

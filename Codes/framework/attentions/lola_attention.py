@@ -136,6 +136,11 @@ class LowRankLinear(nn.Module):
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.U, self.V)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward."""
         Vx = F.linear(x, self.V)

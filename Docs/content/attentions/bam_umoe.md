@@ -398,3 +398,20 @@ class BAMUMoEBlock(BaseAttention):
 
         return out, (probs if output_attentions else None)
 ```
+
+---
+## 8. Computational Complexity Analysis
+
+| Component | Time Complexity | Active Parameters | Total Parameters |
+| :--- | :--- | :--- | :--- |
+| **Top-$k$ Routing Gate** | $\mathcal{O}(B \cdot N \cdot D \cdot E)$ | $\mathcal{O}(D \cdot E)$ | $D \cdot E$ |
+| **Active Expert Computation** | $\mathcal{O}(B \cdot N \cdot k \cdot d_{\text{expert}})$ | $k \cdot d_{\text{expert}}$ | $E \cdot d_{\text{expert}}$ |
+| **Auxiliary Load-Balancing Loss** | $\mathcal{O}(E)$ | $0$ | $0$ (training only) |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Shazeer, N., Mirhoseini, A., Maziarz, K., et al. (2017)**. *Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer*. In International Conference on Learning Representations (ICLR 2017). [arXiv:1701.06538](https://arxiv.org/abs/1701.06538).
+2. **Fedus, W., Zoph, B., & Shazeer, N. (2022)**. *Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity*. Journal of Machine Learning Research (JMLR 2022).
+3. **Lepikhin, D., et al. (2021)**. *GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding*. In ICLR 2021.

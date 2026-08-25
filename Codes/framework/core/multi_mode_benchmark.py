@@ -459,9 +459,11 @@ class MultiModeBenchmarkRunner:
         warmup_steps: int = 5,
         benchmark_steps: int = 15,
         output_dir: str = "./benchmark_results",
+        allow_synthetic: bool = False,
     ):
         self.model_name_or_path = model_name_or_path
         self.device = self._resolve_device(device)
+        self.allow_synthetic = allow_synthetic
         requested_dtype = getattr(torch, dtype) if isinstance(dtype, str) else dtype
         # CPU kernels do not consistently support half precision.  Falling
         # back here avoids invalid benchmark runs while preserving FP16/BF16
@@ -575,8 +577,59 @@ class MultiModeBenchmarkRunner:
             self._dataset_cache = {}
         if dataset_name in self._dataset_cache:
             return self._dataset_cache[dataset_name]
-        
-        # Check if local GLUE or custom dataset loader is accessible
+
+        if dataset_name == "synthetic":
+            vocab_size = getattr(tokenizer, "vocab_size", 30522) if tokenizer else 30522
+            dataset = SyntheticTextDataset(vocab_size=vocab_size, seq_len=self.seq_len, num_samples=self.num_samples)
+            self._dataset_cache[dataset_name] = dataset
+            return dataset
+
+        # 1. Try loading real GLUE dataset via prepare_glue_dataset
+        try:
+            from framework.data.prepare_datasets import GLUE_TASK_CONFIG, prepare_glue_dataset
+            if dataset_name in GLUE_TASK_CONFIG:
+                tok_name = self.model_name_or_path if isinstance(self.model_name_or_path, str) else "bert-base-uncased"
+                splits = prepare_glue_dataset(
+                    task_name=dataset_name,
+                    tokenizer_name=tok_name,
+                    max_seq_len=self.seq_len,
+                    use_synthetic_fallback=False,
+                )
+                eval_split = splits.get("validation") or splits.get("test") or splits.get("train")
+                if eval_split is not None:
+                    self._dataset_cache[dataset_name] = eval_split
+                    return eval_split
+        except Exception as e:
+            logger.warning("Could not load real GLUE dataset '%s': %s", dataset_name, e)
+            if not self.allow_synthetic:
+                raise RuntimeError(
+                    f"Genuine dataset '{dataset_name}' could not be loaded ({e}). "
+                    f"To allow synthetic fallback, run with --synthetic."
+                )
+
+        # 2. Try loading real LM dataset via prepare_lm_dataset
+        if dataset_name in {"wikitext2", "wikitext103", "c4", "lm", "ptb"}:
+            try:
+                from framework.data.prepare_datasets import prepare_lm_dataset
+                tok_name = self.model_name_or_path if isinstance(self.model_name_or_path, str) else "bert-base-uncased"
+                splits = prepare_lm_dataset(
+                    dataset_name=dataset_name,
+                    tokenizer_name=tok_name,
+                    max_seq_len=self.seq_len,
+                )
+                eval_split = splits.get("validation") or splits.get("test") or splits.get("train")
+                if eval_split is not None:
+                    self._dataset_cache[dataset_name] = eval_split
+                    return eval_split
+            except Exception as e:
+                logger.warning("Could not load real LM dataset '%s': %s", dataset_name, e)
+                if not self.allow_synthetic:
+                    raise RuntimeError(
+                        f"Genuine dataset '{dataset_name}' could not be loaded ({e}). "
+                        f"To allow synthetic fallback, run with --synthetic."
+                    )
+
+        # 3. Check legacy dataset_loader
         try:
             from framework.data.dataset_loader import ExperimentConfig, load_dataset
             exp_conf = ExperimentConfig(
@@ -588,10 +641,17 @@ class MultiModeBenchmarkRunner:
             if eval_split is not None:
                 self._dataset_cache[dataset_name] = eval_split
                 return eval_split
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("dataset_loader failed: %s", e)
 
-        # Fallback to standard Synthetic dataset
+        if not self.allow_synthetic:
+            raise RuntimeError(
+                f"Failed to load genuine dataset '{dataset_name}'. "
+                f"Use --synthetic flag if you want to allow synthetic fallback."
+            )
+
+        # Explicit fallback to synthetic dataset
+        logger.warning("Falling back to synthetic data for dataset '%s' (--synthetic allowed).", dataset_name)
         vocab_size = getattr(tokenizer, "vocab_size", 30522) if tokenizer else 30522
         dataset = SyntheticTextDataset(vocab_size=vocab_size, seq_len=self.seq_len, num_samples=self.num_samples)
         self._dataset_cache[dataset_name] = dataset
@@ -608,8 +668,8 @@ class MultiModeBenchmarkRunner:
             try:
                 alloc = torch.mps.current_allocated_memory() / (1024 * 1024)
                 return alloc, alloc
-            except Exception:
-                pass
+            except (AttributeError, RuntimeError) as e:
+                logger.debug("MPS memory query failed: %s", e)
         
         # CPU / Process RSS fallback
         try:
@@ -617,7 +677,8 @@ class MultiModeBenchmarkRunner:
             rusage = resource.getrusage(resource.RUSAGE_SELF)
             rss = rusage.ru_maxrss / (1024 * 1024) if sys.platform == "darwin" else rusage.ru_maxrss / 1024
             return rss, rss
-        except Exception:
+        except (ImportError, OSError) as e:
+            logger.debug("RSS memory query failed: %s", e)
             return 0.0, 0.0
 
     def _sync(self):
@@ -627,8 +688,8 @@ class MultiModeBenchmarkRunner:
         elif self.device.type == "mps" and hasattr(torch.mps, "synchronize"):
             try:
                 torch.mps.synchronize()
-            except Exception:
-                pass
+            except (AttributeError, RuntimeError) as e:
+                logger.debug("MPS sync failed: %s", e)
 
     def run_single_mode(
         self,
@@ -1130,6 +1191,12 @@ def parse_args():
         help="Low-rank dimension for SVD / LoRA / TT modes",
     )
     parser.add_argument(
+        "--synthetic",
+        action="store_true",
+        default=False,
+        help="Explicitly permit fallback to synthetic data when real datasets cannot be loaded",
+    )
+    parser.add_argument(
         "--output-dir",
         type=str,
         default="./benchmark_results",
@@ -1163,6 +1230,7 @@ def main():
         warmup_steps=args.warmup_steps,
         benchmark_steps=args.benchmark_steps,
         output_dir=args.output_dir,
+        allow_synthetic=args.synthetic,
     )
 
     runner.run_all_modes(

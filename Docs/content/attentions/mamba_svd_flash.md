@@ -328,14 +328,55 @@ def inject_mamba_svd_flash(
 
 ---
 
-## Empirical Benchmark Results
+## 6. Empirical Benchmark Results & Verification
 
-| Model Architecture | Benchmark Dataset | Baseline Score | `mamba_svd_flash` Score | Speedup | Memory Reduction | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **BERT-Base** | SST-2 (Acc) | 84.10% | **83.65%** | **2.14x** | **44.2%** | ✅ PASS |
-| **BERT-Base** | MRPC (F1) | 88.20% | **87.90%** | **2.08x** | **43.8%** | ✅ PASS |
-| **RoBERTa-Base** | SST-2 (Acc) | 94.80% | **94.20%** | **2.21x** | **45.6%** | ✅ PASS |
-| **RoBERTa-Base** | MRPC (F1) | 90.10% | **89.70%** | **2.15x** | **45.1%** | ✅ PASS |
-| **T5-Base** | SST-2 (Acc) | 85.50% | **85.10%** | **1.95x** | **38.4%** | ✅ PASS |
-| **T5-Base** | MRPC (F1) | 89.40% | **89.05%** | **1.91x** | **37.9%** | ✅ PASS |
+> [!NOTE]
+> **GPU Benchmark Evaluation Protocol**: Standardized evaluation on GLUE benchmarks (SST-2, MRPC, QNLI, MNLI) and LongBench is executed via distributed GPU cluster runs. Benchmark execution scripts and diagnostic verification harnesses are provided below.
 
+To execute reproducible benchmark evaluations:
+
+```bash
+# Run single-module GLUE evaluation on GPU
+python Codes/framework/eval_all_models_datasets.py \
+    --model bert-base-uncased \
+    --dataset sst2 \
+    --attn_type mamba_svd_flash \
+    --rank 32 \
+    --device cuda
+```
+
+---
+
+## 7. Verification & Diagnostic Commands
+
+```bash
+# Verify attention replacement and shape invariants
+python -c "
+import torch
+from framework.core.attention_utils import inject_attention
+from transformers import AutoModelForSequenceClassification
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+model = inject_attention(model, attn_type='mamba_svd_flash', rank=32)
+sample_input = torch.randint(0, 1000, (2, 128))
+out = model(sample_input)
+assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
+print('Verification successful: logits shape', out.logits.shape)
+"
+```
+
+---
+## 8. Computational Complexity Analysis
+
+| Sub-Module | Time Complexity | Space Complexity | Latency Scaling vs Standard MHA |
+| :--- | :--- | :--- | :---: |
+| **Low-Rank SVD-SSM Scan** | $\mathcal{O}(B \cdot N \cdot D \cdot d_{\text{state}})$ | $\mathcal{O}(B \cdot D \cdot d_{\text{state}})$ | $\mathcal{O}(N)$ strictly linear |
+| **FlashAttention Kernel Path** | $\mathcal{O}(B \cdot N^2 \cdot d_k)$ | $\mathcal{O}(M_{\text{SRAM}})$ IO-aware | $2\times - 4\times$ speedup via SRAM tiling |
+| **Fused Gated Output Mixer** | $\mathcal{O}(B \cdot N \cdot D)$ | $\mathcal{O}(B \cdot N \cdot D)$ | Memory bandwidth bound |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Gu, A., & Dao, T. (2023)**. *Mamba: Linear-Time Sequence Modeling with Selective State Spaces*. arXiv preprint [arXiv:2312.00752](https://arxiv.org/abs/2312.00752).
+2. **Dao, T., & Gu, A. (2024)**. *Transformers are SSMs: Generalized Models and Efficient Algorithms Through Structured State Space Duality*. In International Conference on Machine Learning (ICML 2024). [arXiv:2405.21060](https://arxiv.org/abs/2405.21060).
+3. **Dao, T. (2023)**. *FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning*. In ICLR 2024.
