@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 Real-Time Live Dashboard & Monitoring Server for GPU Benchmark Sweep.
-Serves static frontend assets (web/index.html, web/app.js, web/styles.css)
-and provides real-time JSON API endpoints (/api/stats, /api/action).
+Supports interactive error inspection, detail inspection modal, and real-time telemetry.
 """
 
 from __future__ import annotations
@@ -45,7 +44,11 @@ RESULT_REGEX = re.compile(
 )
 
 TIMEOUT_REGEX = re.compile(
-    r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s+\[ERROR\]\s+GPUServerLauncher:\s+TIMEOUT:\s+([a-zA-Z0-9_\-]+)\s+on\s+([a-zA-Z0-9_\-]+)/([a-zA-Z0-9_\-]+)\s+exceeded'
+    r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s+\[ERROR\]\s+GPUServerLauncher:\s+TIMEOUT:\s+([a-zA-Z0-9_\-]+)\s+on\s+([a-zA-Z0-9_\-]+)/([a-zA-Z0-9_\-]+)\s+exceeded\s+(\d+s)?'
+)
+
+FAIL_ERROR_REGEX = re.compile(
+    r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s+\[ERROR\]\s+EvalEngine:\s+Evaluation FAILED for\s+([a-zA-Z0-9_\-]+)\s+on\s+([a-zA-Z0-9_\-]+)/([a-zA-Z0-9_\-]+):\s+(.*)'
 )
 
 
@@ -99,10 +102,10 @@ def get_gpu_stats() -> Dict[str, Any]:
 
 
 def get_completed_results() -> List[Dict[str, Any]]:
-    """Parses comprehensive_run_detached.log and returns structured results and timestamps."""
+    """Parses comprehensive_run_detached.log and returns structured results with error details."""
     results = []
+    error_map = {}
     
-    # Try project root or fallback to direct name
     log_candidates = [MASTER_LOG, Path("comprehensive_run_detached.log"), PROJECT_DIR / "comprehensive_run_detached.log"]
     target_log = None
     for p in log_candidates:
@@ -117,6 +120,13 @@ def get_completed_results() -> List[Dict[str, Any]]:
         lines = target_log.read_text(encoding="utf-8", errors="ignore").splitlines()
         for line in lines:
             line_str = line.strip()
+
+            # Catch explicit failure error messages
+            fe_match = FAIL_ERROR_REGEX.match(line_str)
+            if fe_match:
+                _, mod, model, dataset, err_msg = fe_match.groups()
+                error_map[(mod.lower(), model.lower(), dataset.lower())] = err_msg
+                continue
             
             # Standard result match
             m = RESULT_REGEX.match(line_str)
@@ -136,6 +146,13 @@ def get_completed_results() -> List[Dict[str, Any]]:
                 if bwd_m: bwd = bwd_m.group(1)
                 if mem_m: mem = mem_m.group(1)
 
+                key = (module.lower(), model.lower(), dataset.lower())
+                err_detail = "None / Success"
+                if status == "FAIL":
+                    err_detail = error_map.get(key, "Evaluation failed during forward/backward pass (Check log).")
+                elif status == "TIMEOUT":
+                    err_detail = "Execution exceeded hard time limit (>120s)."
+
                 results.append({
                     "timestamp": dt,
                     "track": track,
@@ -146,18 +163,20 @@ def get_completed_results() -> List[Dict[str, Any]]:
                     "fwd_ms": fwd,
                     "bwd_ms": bwd,
                     "mem_mb": mem,
+                    "error_detail": err_detail,
                 })
                 continue
 
             # Timeout match
             tm = TIMEOUT_REGEX.match(line_str)
             if tm:
-                ts_str, module, model, dataset = tm.groups()
+                ts_str, module, model, dataset, timeout_len = tm.groups()
                 try:
                     dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S,%f")
                 except Exception:
                     dt = datetime.now()
 
+                to_str = timeout_len or "120s"
                 results.append({
                     "timestamp": dt,
                     "track": "track1_svd",
@@ -165,9 +184,10 @@ def get_completed_results() -> List[Dict[str, Any]]:
                     "model": model.upper(),
                     "dataset": dataset.upper(),
                     "status": "TIMEOUT",
-                    "fwd_ms": ">120s",
+                    "fwd_ms": f">{to_str}",
                     "bwd_ms": "-",
                     "mem_mb": "-",
+                    "error_detail": f"Execution exceeded hard timeout ({to_str}). Task was killed safely to prevent sweep stall.",
                 })
     except Exception:
         pass
@@ -243,7 +263,7 @@ def is_sweep_running() -> bool:
 
 
 def _build_stats_response() -> str:
-    """Build the full stats JSON response."""
+    """Build the full stats JSON response with rich detail fields."""
     gpu = get_gpu_stats()
     results = get_completed_results()
     progress = compute_eta_and_progress(results, total_combos=720, window_size=50)
@@ -251,6 +271,7 @@ def _build_stats_response() -> str:
 
     serializable_results = [
         {
+            "id": idx,
             "track": r["track"],
             "module": r["module"],
             "model": r["model"],
@@ -259,9 +280,10 @@ def _build_stats_response() -> str:
             "fwd_ms": r["fwd_ms"],
             "bwd_ms": r["bwd_ms"],
             "mem_mb": r["mem_mb"],
+            "error_detail": r.get("error_detail", "None / Success"),
             "time": r["timestamp"].strftime("%H:%M:%S") if isinstance(r["timestamp"], datetime) else str(r["timestamp"]),
         }
-        for r in results
+        for idx, r in enumerate(results, 1)
     ]
 
     response = {
@@ -269,6 +291,7 @@ def _build_stats_response() -> str:
         "progress": progress,
         "is_running": is_running,
         "recent_results": serializable_results[-15:][::-1],
+        "all_results_count": len(results),
         "counts": {
             "pass": sum(1 for r in results if r["status"] == "PASS"),
             "timeout": sum(1 for r in results if r["status"] == "TIMEOUT"),
