@@ -56,6 +56,18 @@ class _LinearizedAttentionWrapper(nn.Module):
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             output = self.original_attn.out_lin(context)
             return (output, None)
+        elif hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "o_proj"):
+            # LLaMA / Mistral / Gemma style
+            v = self.original_attn.v_proj(hidden_states)
+            context = v.mean(dim=1, keepdim=True).expand_as(v)
+            output = self.original_attn.o_proj(context)
+            return (output, None)
+        elif hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "out_proj"):
+            # OPT / Falcon style
+            v = self.original_attn.v_proj(hidden_states)
+            context = v.mean(dim=1, keepdim=True).expand_as(v)
+            output = self.original_attn.out_proj(context)
+            return (output, None)
         elif hasattr(self.original_attn, "query") and hasattr(self.original_attn, "value"):
             # BERT BertSelfAttention
             v = self.original_attn.value(hidden_states)

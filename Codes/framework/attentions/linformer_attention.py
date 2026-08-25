@@ -99,6 +99,9 @@ class LinformerAttention(nn.Module):
             E_act = F.pad(self.E, (0, N - self.max_seq_len))
             F_act = F.pad(self.F, (0, N - self.max_seq_len))
 
+        E_act = E_act.to(dtype=dtype, device=device)
+        F_act = F_act.to(dtype=dtype, device=device)
+
         # Project sequence dimension: (k, N) @ (B,H,N,d) -> (B,H,k,d)
         K_proj = torch.matmul(E_act, K)  # E_act: [k,N], K: [B,H,N,d]
         V_proj = torch.matmul(F_act, V)

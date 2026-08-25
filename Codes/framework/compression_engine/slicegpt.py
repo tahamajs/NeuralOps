@@ -173,7 +173,7 @@ class SliceGPTCompressor(BaseCompressor):
                 W_tilde = torch.matmul(W, Q)
 
                 # Determine slicing dimension r
-                if self.non_uniform and "query" in name or "key" in name or "q_lin" in name or "k_lin" in name:
+                if self.non_uniform and ("query" in name or "key" in name or "q_lin" in name or "k_lin" in name):
                     # Non-uniform attention projection head preservation: lighter slicing
                     head_sparsity = max(0.0, self.sparsity * 0.75)
                     r = max(1, int(d_in * (1.0 - head_sparsity)))

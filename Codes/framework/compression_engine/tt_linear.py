@@ -213,7 +213,8 @@ class TTLinearLayer(nn.Module):
             Vt_trunc = Vt[:r_right, :]
 
             core_data = U_trunc.view(r_left, p_i, q_i, r_right)
-            layer.cores[i].data.copy_(core_data.to(dtype=W.dtype))
+            layer.cores[i].data.zero_()
+            layer.cores[i].data[:r_left, :p_i, :q_i, :r_right].copy_(core_data.to(dtype=W.dtype))
 
             curr_matrix = torch.matmul(torch.diag(S_trunc), Vt_trunc)
             r_left = r_right
@@ -221,8 +222,9 @@ class TTLinearLayer(nn.Module):
         # Final core
         p_last = p_dims[-1]
         q_last = q_dims[-1]
+        layer.cores[-1].data.zero_()
         final_core = curr_matrix.view(r_left, p_last, q_last, 1)
-        layer.cores[-1].data.copy_(final_core.to(dtype=W.dtype))
+        layer.cores[-1].data[:r_left, :p_last, :q_last, :].copy_(final_core.to(dtype=W.dtype))
 
         if bias is not None and layer.bias is not None:
             layer.bias.data.copy_(bias)

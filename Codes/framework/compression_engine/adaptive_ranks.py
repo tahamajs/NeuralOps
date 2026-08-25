@@ -202,9 +202,14 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
 
                 # Symmetric singular value distribution: U_r = U * sqrt(S), V_r = (sqrt(S) * V^T) * Cov(X)^{-1/2}
-                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                U_r = U[:, :r] * sqrt_S.unsqueeze(0)
                 V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
-                V_r = V_r.to(dtype=dtype, device=device)
+                # Symmetrically normalize factor magnitudes to prevent scale disparity
+                norm_u = torch.norm(U_r, p="fro").clamp_min(1e-8)
+                norm_v = torch.norm(V_r, p="fro").clamp_min(1e-8)
+                scale = torch.sqrt(norm_u / norm_v)
+                U_r = (U_r / scale).to(dtype=dtype, device=device)
+                V_r = (V_r * scale).to(dtype=dtype, device=device)
 
                 svd_layer = SVDLinear(
                     in_features=in_f,

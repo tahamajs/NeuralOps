@@ -154,7 +154,8 @@ class SparseGPTCompressor(BaseCompressor):
             i2 = min(i1 + block_cols, d_in)
             count = i2 - i1
 
-            W_block = W_pruned[:, i1:i2].clone()
+            W_block_init = W_pruned[:, i1:i2].clone()
+            W_block = W_block_init.clone()
             H_inv_block = H_inv[i1:i2, i1:i2].clone()
 
             for j in range(count):
@@ -179,7 +180,6 @@ class SparseGPTCompressor(BaseCompressor):
                     start_c = max(0, j - 3)
                     sub_w = W_block[:, start_c : j + 1]
                     sub_pruned, _ = apply_24_structured_mask(sub_w, saliency=torch.abs(sub_w), dim=1)
-                    err_block = sub_w - sub_pruned
                     W_block[:, start_c : j + 1] = sub_pruned
                 elif not self.structured_24:
                     k_prune = int(d_out * self.sparsity)
@@ -200,7 +200,7 @@ class SparseGPTCompressor(BaseCompressor):
 
             # Update remaining columns outside the current block
             if i2 < d_in:
-                err_block = W[:, i1:i2] - W_block
+                err_block = W_block_init - W_block
                 h_cross = H_inv[i1:i2, i2:]  # [count, d_in - i2]
                 inv_diag_block = torch.linalg.pinv(H_inv_block)
                 update = torch.matmul(err_block, torch.matmul(inv_diag_block, h_cross))
