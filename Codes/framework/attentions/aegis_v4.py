@@ -263,14 +263,14 @@ class AegisAttention(nn.Module):
             torch.randn(self.num_global_heads, self.head_dim, self.cfg.rff_features) * 0.02
         )
 
-        if aegis_cfg.use_adaptive_gate:
+        if self.cfg.use_adaptive_gate:
             self.blend_logits: Optional[nn.Parameter] = nn.Parameter(torch.zeros(self.num_heads))
-            self.gate_bias: float = aegis_cfg.gate_init_bias
+            self.gate_bias: float = self.cfg.gate_init_bias
         else:
             self.blend_logits = None
             self.gate_bias = 0.0
 
-        self.dropout: nn.Dropout = nn.Dropout(aegis_cfg.dropout)
+        self.dropout: nn.Dropout = nn.Dropout(self.cfg.dropout)
 
     def forward(
         self,
@@ -345,7 +345,7 @@ class AegisAttention(nn.Module):
         if self.blend_logits is not None:
             global_signal = ctx_global.mean(dim=1, keepdim=True).expand(-1, H, -1, -1)
             local_full = torch.cat(
-                [ctx_local, torch.zeros(B, Hg, N, D, device=ctx_local.device, dtype=ctx_local.dtype)], dim=1
+                [ctx_local, ctx_global], dim=1
             )
             gate = torch.sigmoid(self.blend_logits.unsqueeze(-1).unsqueeze(-1) + self.gate_bias)
             context = gate * local_full + (1.0 - gate) * global_signal

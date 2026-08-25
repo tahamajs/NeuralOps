@@ -200,7 +200,10 @@ class ADMMPruner(BaseCompressor):
                 # Final assignment to projection Z and STE Module conversion
                 if self.use_ste:
                     admm_layer = ADMMMaskedLinear.from_linear(module, mask=mask)
-                    replace_module(self.model, name, admm_layer)
+                    if name == "":
+                        self.model = admm_layer
+                    else:
+                        replace_module(self.model, name, admm_layer)
                 else:
                     module.weight.data = Z.to(dtype=dtype, device=device)
 

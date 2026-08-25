@@ -143,11 +143,14 @@ class MambaSVDFlash(BaseAttention):
         h = torch.zeros(b, d, device=hidden_states.device, dtype=hidden_states.dtype)
         outputs = []
 
+        U_norm = F.normalize(U, p=2, dim=2)  # [B, L, D, r]
+        V_norm = F.normalize(V, p=2, dim=3)  # [B, L, r, D]
+
         step_range = range(l - 1, -1, -1) if reverse else range(l)
         for t in step_range:
-            U_t = F.normalize(U[:, t], p=2, dim=1)           # [B, D, r]
+            U_t = U_norm[:, t]                                # [B, D, r]
             Sigma_t = Sigma[:, t]                             # [B, r]
-            V_t = F.normalize(V[:, t], p=2, dim=2)           # [B, r, D]
+            V_t = V_norm[:, t]                                # [B, r, D]
             b_t = B_seq[:, t]                                 # [B, D]
             x_t = hidden_states[:, t]                         # [B, D]
             c_t = C_seq[:, t]                                 # [B, D]

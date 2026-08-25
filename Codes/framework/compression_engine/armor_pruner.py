@@ -266,7 +266,10 @@ class ARMORPruner(BaseCompressor):
                 # 4. Module Replacement: Decoupled Dual-Branch or Fused
                 if self.decouple:
                     armor_layer = ARMORLinear.from_linear(module, mask=mask, lora_A=lora_A, lora_B=lora_B)
-                    replace_module(self.model, name, armor_layer)
+                    if name == "":
+                        self.model = armor_layer
+                    else:
+                        replace_module(self.model, name, armor_layer)
                 else:
                     W_armor = W_sparse + torch.matmul(lora_B, lora_A)
                     module.weight.data = W_armor.to(dtype=dtype, device=device)
