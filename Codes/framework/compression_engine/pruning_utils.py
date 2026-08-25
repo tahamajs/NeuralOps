@@ -75,8 +75,11 @@ def get_calibration_tensors(
             hidden_dim = 64
 
     # Try input_ids (for language models) or continuous hidden states (for sequential/vision)
+    v_size = getattr(getattr(model, "config", None), "vocab_size", 1000)
+    low_idx = min(10, max(1, v_size // 4))
+    high_idx = max(low_idx + 1, v_size - 10)
     return {
-        "input_ids": torch.randint(100, 2000, (sample_size, seq_len), device=device, dtype=torch.long),
+        "input_ids": torch.randint(low_idx, high_idx, (sample_size, seq_len), device=device, dtype=torch.long),
         "attention_mask": torch.ones((sample_size, seq_len), device=device, dtype=torch.long),
     }
 

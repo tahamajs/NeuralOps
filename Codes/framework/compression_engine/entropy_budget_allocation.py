@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @COMPRESSOR_REGISTRY.register("entropy_budget")
+@COMPRESSOR_REGISTRY.register("entropy_budget_allocation")
 class EntropyBudgetCompressor(BaseCompressor):
     """
     Entropy Budget Low-Rank SVD Compressor.
