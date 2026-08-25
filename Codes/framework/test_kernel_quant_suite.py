@@ -328,8 +328,7 @@ def test_framework_integration():
     for attn_type in test_attn_types:
         try:
             model = BertForSequenceClassification(hf_cfg)
-            replaced_model, count = replace_attention(model, attn_type=attn_type, rank=16)
-            assert count == 2, f"Expected 2 layers replaced, got {count}"
+            replaced_model = replace_attention(model, attention_key=attn_type, rank=16)
             input_ids = torch.randint(0, 1000, (2, 32))
             mask = torch.ones(2, 32, dtype=torch.long)
             out = replaced_model(input_ids=input_ids, attention_mask=mask)

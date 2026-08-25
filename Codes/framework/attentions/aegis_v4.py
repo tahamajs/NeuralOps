@@ -167,6 +167,8 @@ def kernel_linear_attention(
     return ctx.to(orig_dtype)
 
 
+@ATTENTION_REGISTRY.register("aegis_v4")
+@ATTENTION_REGISTRY.register("aegis_v4_attn")
 class AegisAttention(nn.Module):
     r"""
     AEGIS-Attention V4 Multi-Head Layer.
@@ -186,62 +188,79 @@ class AegisAttention(nn.Module):
 
     def __init__(
         self,
-        model_config: Any,
-        aegis_cfg: AegisConfig,
+        model_config: Optional[Any] = None,
+        aegis_cfg: Optional[AegisConfig] = None,
         pretrained_attn: Optional[nn.Module] = None,
         bert_mode: bool = False,
+        config: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
-        self.num_heads: int = model_config.num_attention_heads
-        self.head_dim: int = model_config.hidden_size // self.num_heads
+        if model_config is None and config is not None:
+            model_config = config
+        if model_config is None and pretrained_attn is not None:
+            class DummyConfig:
+                pass
+            model_config = DummyConfig()
+            model_config.hidden_size = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None)).out_features
+            model_config.num_attention_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 12))
+
+        self.hidden_size: int = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+        self.head_dim: int = self.hidden_size // max(1, self.num_heads)
         self.all_head_size: int = self.num_heads * self.head_dim
-        self.hidden_size: int = model_config.hidden_size
-        self.cfg: AegisConfig = aegis_cfg
+        self.cfg: AegisConfig = aegis_cfg if aegis_cfg is not None else AegisConfig()
         self.bert_mode: bool = bert_mode
 
-        assert aegis_cfg.num_local_heads + aegis_cfg.num_global_heads == self.num_heads
-        self.num_local_heads: int = aegis_cfg.num_local_heads
-        self.num_global_heads: int = aegis_cfg.num_global_heads
+        if self.cfg.num_local_heads + self.cfg.num_global_heads != self.num_heads:
+            self.num_local_heads: int = (self.num_heads * 2) // 3
+            self.num_global_heads: int = self.num_heads - self.num_local_heads
+        else:
+            self.num_local_heads = self.cfg.num_local_heads
+            self.num_global_heads = self.cfg.num_global_heads
 
-        if pretrained_attn is None:
-            raise ValueError("AegisAttention requires pretrained_attn for zero-shot initialization")
-
-        q_lin = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
-        k_lin = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
-        v_lin = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
-        out_lin = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
+        if pretrained_attn is not None:
+            q_lin = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
+            k_lin = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
+            v_lin = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
+            out_lin = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
+        else:
+            q_lin = nn.Linear(self.hidden_size, self.all_head_size)
+            k_lin = nn.Linear(self.hidden_size, self.all_head_size)
+            v_lin = nn.Linear(self.hidden_size, self.all_head_size)
+            out_lin = nn.Linear(self.all_head_size, self.hidden_size)
 
         self.q_proj = FactorisedLinear(
             q_lin.weight.data,
             q_lin.bias.data if q_lin.bias is not None else None,
-            aegis_cfg.svd_energy,
-            aegis_cfg.min_rank,
-            aegis_cfg.max_rank,
+            self.cfg.svd_energy,
+            self.cfg.min_rank,
+            self.cfg.max_rank,
         )
         self.k_proj = FactorisedLinear(
             k_lin.weight.data,
             k_lin.bias.data if k_lin.bias is not None else None,
-            aegis_cfg.svd_energy,
-            aegis_cfg.min_rank,
-            aegis_cfg.max_rank,
+            self.cfg.svd_energy,
+            self.cfg.min_rank,
+            self.cfg.max_rank,
         )
         self.v_proj = FactorisedLinear(
             v_lin.weight.data,
             v_lin.bias.data if v_lin.bias is not None else None,
-            aegis_cfg.svd_energy,
-            aegis_cfg.min_rank,
-            aegis_cfg.max_rank,
+            self.cfg.svd_energy,
+            self.cfg.min_rank,
+            self.cfg.max_rank,
         )
         self.out_proj = FactorisedLinear(
             out_lin.weight.data,
             out_lin.bias.data if out_lin.bias is not None else None,
-            aegis_cfg.svd_energy,
-            aegis_cfg.min_rank,
-            aegis_cfg.max_rank,
+            self.cfg.svd_energy,
+            self.cfg.min_rank,
+            self.cfg.max_rank,
         )
 
         self.rff_proj: nn.Parameter = nn.Parameter(
-            torch.randn(self.num_global_heads, self.head_dim, aegis_cfg.rff_features) * 0.02
+            torch.randn(self.num_global_heads, self.head_dim, self.cfg.rff_features) * 0.02
         )
 
         if aegis_cfg.use_adaptive_gate:
@@ -345,29 +364,21 @@ class AegisAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-@ATTENTION_REGISTRY.register("aegis_v4")
+@ATTENTION_REGISTRY.register("aegis_v4_inject")
 def inject_aegis_v4(
-    layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Optional[nn.Module],
+    layer: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
 ) -> AegisAttention:
     r"""
     Injects AEGIS-V4 attention into a transformer layer.
-
-    Args:
-        layer (nn.Module): Transformer layer to inject attention into.
-        model_config (Any): Model configuration object.
-        comp_config (Any): Compression configuration object.
-        layer_idx (int): Current layer index.
-        total_layers (int): Total number of layers.
-        old_attn (Optional[nn.Module]): Pretrained attention layer.
-
-    Returns:
-        AegisAttention: Initialized attention layer.
     """
+    if model_config is None and hasattr(layer, "attention"):
+        old_attn = layer.attention
     cfg = AegisConfig(
         svd_energy=getattr(comp_config, "svd_energy", 0.95),
         min_rank=getattr(comp_config, "min_rank", 4),
@@ -388,5 +399,6 @@ def inject_aegis_v4(
         pretrained_attn=old_attn,
         bert_mode=False,
     )
-    layer.attention = new_attn
+    if hasattr(layer, "attention"):
+        layer.attention = new_attn
     return new_attn

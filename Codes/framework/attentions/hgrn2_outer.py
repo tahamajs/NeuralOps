@@ -73,7 +73,7 @@ class HGRN2OuterBlock(BaseAttention):
         self.out_proj = nn.Linear(self.dim, self.dim, bias=True)
 
         # Initialize forget gate bias to -3.0 (~0.95 retention factor)
-        nn.init.constant_(self.W_f.bias, 1.5)
+        nn.init.constant_(self.W_f.bias, -3.0)
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained Multi-Head Attention weights."""

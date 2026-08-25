@@ -102,6 +102,10 @@ _MODULE_MAP: Dict[str, str] = {
     "liftr_factory": "liftr",
     "OATSCompressor": "oats_compressor",
     "oats_compressor_factory": "oats_compressor",
+    "CoMeCompressor": "come",
+    "CoMeBridge": "come",
+    "CoMeBridgedLayer": "come",
+    "come_factory": "come",
     # Quantization
     "AstroQuantizer": "astro_quantizer",
     "AstroLinear": "astro_quantizer",

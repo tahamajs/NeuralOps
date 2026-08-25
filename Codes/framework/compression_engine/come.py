@@ -126,10 +126,15 @@ class CoMeCompressor(BaseCompressor):
         candidates = [
             ("transformer.layer", lambda m: getattr(getattr(m, "transformer", None), "layer", None)),
             ("transformer.h", lambda m: getattr(getattr(m, "transformer", None), "h", None)),
+            ("transformer.blocks", lambda m: getattr(getattr(m, "transformer", None), "blocks", None)),
             ("model.layers", lambda m: getattr(getattr(m, "model", None), "layers", None)),
+            ("model.decoder.layers", lambda m: getattr(getattr(getattr(m, "model", None), "decoder", None), "layers", None)),
+            ("model.encoder.layers", lambda m: getattr(getattr(getattr(m, "model", None), "encoder", None), "layers", None)),
             ("encoder.layer", lambda m: getattr(getattr(m, "encoder", None), "layer", None)),
+            ("decoder.layer", lambda m: getattr(getattr(m, "decoder", None), "layer", None)),
             ("layers", lambda m: getattr(m, "layers", None)),
             ("h", lambda m: getattr(m, "h", None)),
+            ("blocks", lambda m: getattr(m, "blocks", None)),
         ]
 
         for name, getter in candidates:
@@ -140,6 +145,15 @@ class CoMeCompressor(BaseCompressor):
                 for p in parts[:-1]:
                     parent = getattr(parent, p)
                 return parent, parts[-1], res
+
+        # Generic search for any child ModuleList of repeated blocks
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.ModuleList) and len(module) >= 2:
+                parts = name.split(".")
+                parent = self.model
+                for p in parts[:-1]:
+                    parent = getattr(parent, p)
+                return parent, parts[-1], module
 
         return None, None, None
 
@@ -168,7 +182,10 @@ class CoMeCompressor(BaseCompressor):
                     is_gap = (i < len(kept_indices) - 1 and kept_indices[i + 1] > layer_idx + 1)
                     if is_gap:
                         hidden_size = self._get_hidden_size(layer)
+                        p = next(layer.parameters(), None)
                         bridge = CoMeBridge(hidden_size=hidden_size, alpha_init=self.alpha_init)
+                        if p is not None:
+                            bridge = bridge.to(device=p.device, dtype=p.dtype)
                         bridged_module_list.append(CoMeBridgedLayer(layer, bridge=bridge))
                         bridges_inserted += 1
                     else:

@@ -44,14 +44,13 @@ class PHANTOMConfig:
     """
     cur_rank: int = 16
     lsh_rounds: int = 4
-    lsh_bucket_size: int = 32
+    lsh_bucket_size: int = 4
     softpick_enabled: bool = True
     softpick_temperature: float = 1.0
     dropout: float = 0.1
 
 
 def softpick(x, dim: int = -1, temperature: float = 1.0):
-    import torch.nn.functional as F
     orig_dtype = x.dtype
     x = x.float()
     m = x.max(dim=dim, keepdim=True).values
@@ -59,7 +58,10 @@ def softpick(x, dim: int = -1, temperature: float = 1.0):
     m_scaled = torch.clamp(-m / temperature, max=80.0)
     denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
+    p_sum = p.sum(dim=dim, keepdim=True)
+    fallback = F.softmax(x / temperature, dim=dim)
+    res = torch.where(p_sum > 1e-5, p / torch.clamp(p_sum, min=1e-5), fallback)
+    return res.to(orig_dtype)
 
 
 class FactorisedLinear_CUR(nn.Module):
@@ -165,78 +167,41 @@ def lsh_attention(
     """
     B, H, N, D = Q.shape
     scale = D**-0.5
+    n_bits = max(1, min(bucket_size, 8))
 
-    Q_norm = F.normalize(Q, p=2, dim=-1, eps= 1e-5)
-    K_norm = F.normalize(K, p=2, dim=-1, eps= 1e-5)
+    Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
+    K_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
 
-    out = torch.zeros_like(V)
     bit_shifts = torch.tensor(
-        [2**i for i in range(bucket_size)], device=Q.device, dtype=torch.int64
-    ).view(1, 1, 1, -1)
+        [2**i for i in range(n_bits)], device=Q.device, dtype=torch.float32
+    )
+
+    scores_base = torch.matmul(Q, K.transpose(-2, -1)) * scale
+    if token_valid is not None:
+        val_mask = token_valid.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
+        scores_base = scores_base.masked_fill(~val_mask, -10000.0)
+
+    accum_out = torch.zeros_like(V)
 
     for _ in range(rounds):
-        hash_proj = torch.randn(D, bucket_size, device=Q.device, dtype=Q.dtype)
-        hash_proj = F.normalize(hash_proj, p=2, dim=0, eps= 1e-5)
+        hash_proj = torch.randn(D, n_bits, device=Q.device, dtype=Q.dtype)
+        hash_proj = F.normalize(hash_proj, p=2, dim=0, eps=1e-5)
 
-        hash_code_q = (
-            (torch.matmul(Q_norm, hash_proj) > 0).to(torch.int64).mul(bit_shifts).sum(dim=-1)
-        )
-        hash_code_k = (
-            (torch.matmul(K_norm, hash_proj) > 0).to(torch.int64).mul(bit_shifts).sum(dim=-1)
-        )
+        hq = (torch.matmul(Q_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N]
+        hk = (torch.matmul(K_norm, hash_proj) > 0).float() @ bit_shifts  # [B, H, N]
 
-        for b in range(B):
-            for h in range(H):
-                q_h = Q[b, h]
-                k_h = K[b, h]
-                v_h = V[b, h]
-                if token_valid is not None:
-                    valid = token_valid[b]
-                    q_h = q_h[valid]
-                    k_h = k_h[valid]
-                    v_h = v_h[valid]
-                    hq = hash_code_q[b, h][valid]
-                    hk = hash_code_k[b, h][valid]
-                    if q_h.size(0) == 0:
-                        continue
-                else:
-                    valid = None
-                    hq = hash_code_q[b, h]
-                    hk = hash_code_k[b, h]
+        match = (hq.unsqueeze(-1) == hk.unsqueeze(-2))  # [B, H, N, N]
+        eye = torch.eye(N, device=Q.device, dtype=torch.bool).unsqueeze(0).unsqueeze(0)
+        match = match | eye
 
-                sorted_q_idx = torch.argsort(hq)
-                q_sorted = q_h[sorted_q_idx]
+        scores_round = scores_base.masked_fill(~match, -10000.0)
+        attn_w = softpick(scores_round, dim=-1, temperature=softpick_temp)
+        if dropout is not None:
+            attn_w = dropout(attn_w)
 
-                buckets: Dict[int, List[int]] = {}
-                for i, code in enumerate(hk):
-                    buckets.setdefault(int(code.item()), []).append(i)
+        accum_out = accum_out + torch.matmul(attn_w, V)
 
-                attn_ctx = torch.zeros_like(q_sorted)
-                for i, q_i in enumerate(q_sorted):
-                    code_val = int(hq[sorted_q_idx[i]].item())
-                    key_indices = buckets.get(code_val, [])
-                    if not key_indices:
-                        continue
-                    k_bucket = k_h[key_indices]
-                    v_bucket = v_h[key_indices]
-
-                    scores = (q_i * scale) @ k_bucket.T
-                    attn_w = softpick(
-                        scores.unsqueeze(0), dim=-1, temperature=softpick_temp
-                    ).squeeze(0)
-                    if dropout is not None:
-                        attn_w = dropout(attn_w)
-                    attn_ctx[i] = attn_w @ v_bucket
-
-                unsorted_idx = torch.argsort(sorted_q_idx)
-                attn_unsorted = attn_ctx[unsorted_idx]
-                
-                if valid is not None:
-                    out[b, h][valid] += attn_unsorted
-                else:
-                    out[b, h] += attn_unsorted
-
-    return out / float(max(1, rounds))
+    return accum_out / float(max(1, rounds))
 
 
 @ATTENTION_REGISTRY.register("phantom_module")
