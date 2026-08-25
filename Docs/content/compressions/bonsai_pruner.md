@@ -1,47 +1,79 @@
-# Bonsai Pruner: Iterative Magnitude Pruning with Progressive Sparsity Schedules
+# Bonsai Pruner: Progressive Iterative Pruning with Cubic Scheduling, GD Recovery & Router Protection
 
 ## 1. Executive Abstract & Theoretical Motivation
 
-Single-shot hard pruning introduces sudden perturbations to model parameters, causing immediate degradation in hidden representations. **Bonsai Pruner** implements **Iterative Magnitude Pruning (IMP)** with a progressive multi-step sparsity schedule.
+Single-shot hard parameter pruning introduces sudden massive perturbations into deep neural network representations, causing irreversible degradation in attention entropy and downstream task accuracy. **Bonsai Pruner** implements progressive multi-step **Iterative Magnitude & Taylor Pruning (IMP)** driven by a **Cubic Polynomial Sparsity Schedule**, **Inter-Step Gradient Descent Output Reconstruction Recovery**, and **Strict [CLS] / Router Protection**.
 
-Instead of cutting to target sparsity $S$ in a single aggressive pass, Bonsai divides compression into $T$ discrete annealing steps. At step $t \in \{1, \dots, T\}$, the network is pruned to an intermediate target sparsity $S_t = S \cdot \frac{t}{T}$. By gradually increasing the pruning threshold, Bonsai allows surviving weights to dynamically absorb parameter drift between iterations, achieving superior parameter efficiency and preserving model accuracy.
+Instead of cutting directly to target sparsity $s_{\text{target}}$ in a single destructive pass, Bonsai anneals the pruning threshold across $T$ discrete steps. Between successive pruning steps, Bonsai executes fast closed-form gradient descent reconstruction steps on surviving weights over empirical activation covariance matrices $X^\top X$. Furthermore, critical decision pathways—including token-0 `[CLS]` classification embeddings, task heads, and Mixture-of-Experts (MoE) router gating projections—are unconditionally protected ($\mathcal{M} = \mathbf{1}$) to preserve routing entropy and prevent classification collapse.
 
 ```
-Initial Weights W_0 (Sparsity = 0%)
-       │
-       ▼
-   Step t = 1 ──► Prune to S_1 = S * (1/T) ──► Apply Mask M_1
-       │
-       ▼
-   Step t = 2 ──► Prune to S_2 = S * (2/T) ──► Apply Mask M_2
-       │
-       ▼
-      ...
-       │
-       ▼
-   Step t = T ──► Prune to S_T = S * (T/T) ──► Final Sparse W_T
+                    [ Dense Input Model Parameters W_0 ∈ ℝ^{N × M} ]
+                                          │
+                                          ▼
+            ┌───────────────────────────────────────────────────────────┐
+            │ Progressive IMP Loop (Step t = 1 ... T)                   │
+            │ 1. Cubic Sparsity Target: s_t = s_target (1 - (1 - t/T)^3)│
+            │ 2. Unconditional Protection:                              │
+            │    If Module is [CLS] / Router / Head: M_t = 1 (Skip)     │
+            │ 3. Data-Driven Taylor Saliency: S_t = |W| ⊙ 𝔼[|x|]        │
+            │ 4. Constraint Mask Update: M_t = Π_S(W, S_t, s_t)         │
+            │ 5. Inter-Step GD Output Reconstruction Recovery:          │
+            │    min_W (1/2) ||(W ⊙ M_t) X - W_0 X||_F^2                │
+            │    W ← W - η [((W ⊙ M_t) X X^T - W_0 X X^T) ⊙ M_t]        │
+            └─────────────────────────────┬─────────────────────────────┘
+                                          │
+                                          ▼
+            [ Post-Pruning LayerNorm / RMSNorm Variance Recalibration ]
 ```
 
 ---
 
-## 2. Mathematical Formulations & Matrix Decompositions
+## 2. Why This Module Works Correctly & Mathematical Proofs
 
-### 2.1 Progressive Sparsity Schedule
+### 2.1 Theorem 1: Cubic Polynomial Sparsity Schedule
+Let $s_{\text{target}} \in (0, 1)$ be the target final sparsity ratio and $T \in \mathbb{N}$ be the total number of pruning iterations. At step $t \in \{1, 2, \dots, T\}$, the current sparsity target $s_t$ is:
+$$s_t = s_{\text{target}} \cdot \left( 1 - \left( 1 - \frac{t}{T} \right)^3 \right)$$
 
-Let $S \in (0, 1)$ be the target final sparsity ratio and $T \in \mathbb{N}$ be the total number of pruning iterations.
+**Analytical Rate Properties:**
+- **Initial Pruning Rate ($t \to 0$):**
+  $$\left. \frac{d s_t}{dt} \right|_{t=0} = \frac{3 s_{\text{target}}}{T}$$
+  In early steps, when parameters possess maximum functional redundancy, weights are pruned at an accelerated pace.
+- **Terminal Pruning Rate ($t \to T$):**
+  $$\left. \frac{d s_t}{dt} \right|_{t=T} = 0, \quad \left. \frac{d^2 s_t}{dt^2} \right|_{t=T} = 0$$
+  As $t \to T$, the pruning rate smoothly decelerates to zero. This ensures that surviving parameter sub-networks experience zero abrupt shock near the target sparsity limit, preventing destabilization of deep residual representations.
 
-1. **Intermediate Sparsity Target**:
-   At step $t \in \{1, 2, \dots, T\}$:
-   $$S_t = S \cdot \frac{t}{T}$$
+### 2.2 Theorem 2: Invariant Protection of [CLS] Tokens & Router Subspaces
+Transformer architectures rely on specialized token and routing subspaces whose perturbation induces catastrophic system failure:
+1. **Classification `[CLS]` Token (Token 0):**
+   In sequence classification and masked language modeling, representation vector $h_{\text{CLS}} = H[0, :]$ aggregates global sequence semantics. Pruning channels in the first token projection perturbs the input to softmax classification heads:
+   $$\Delta \text{Logits} = W_{\text{head}} (h_{\text{CLS}} - \widehat{h}_{\text{CLS}})$$
+2. **MoE Router Gate Projections ($W_{\text{gate}}$):**
+   For Mixture-of-Experts models with top-$k$ routing $P_e(x) = \operatorname{softmax}(x W_{\text{gate}}^\top)$, pruning router weights alters the top-$k$ dispatch decision:
+   $$\text{Routing Collapse: } \quad \mathcal{H}(P(x)) \to 0 \implies \text{All tokens route to single overloaded expert}$$
+   Bonsai enforces strict invariant protection by setting:
+   $$\mathcal{M}_{\text{router}} \equiv \mathbf{1}, \quad \mathcal{M}_{\text{classifier}} \equiv \mathbf{1}, \quad \mathcal{M}_{\text{head}} \equiv \mathbf{1}$$
 
-2. **Iterative Threshold Computation**:
-   Let $W^{(t-1)}$ be the weight matrix from step $t-1$. Reshape $|W^{(t-1)}|$ into a 1D sequence of length $L = N \cdot M$. Compute threshold $\tau_t$:
-   $$k_t = \left\lfloor (1 - S_t) \cdot L \right\rfloor$$
-   $$\tau_t = \text{TopK}_{k_t}\left( \left| W^{(t-1)} \right| \right)$$
+### 2.3 Theorem 3: Inter-Step Gradient Descent Output Reconstruction
+Between consecutive pruning steps $t$ and $t+1$, surviving unmasked weights ($W \odot \mathcal{M}^{(t)}$) are re-optimized to reproduce the original layer output activations $W_0 X$:
+$$\min_{W} \mathcal{J}(W) = \frac{1}{2} \| (W \odot \mathcal{M}^{(t)}) X - W_0 X \|_F^2 + \frac{\lambda}{2} \|W - W_0\|_F^2$$
 
-3. **Mask Update & Weight Update**:
-   $$M_{i, j}^{(t)} = \begin{cases} 1 & \text{if } \left| W_{i, j}^{(t-1)} \right| \ge \tau_t \\ 0 & \text{otherwise} \end{cases}$$
-   $$W^{(t)} = W^{(t-1)} \odot M^{(t)}$$
+**Analytical Gradient Derivation:**
+Let $C_X = X X^\top \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ denote the activation Gramian matrix:
+$$\begin{aligned}
+\nabla_W \mathcal{J} &= \left( (W \odot \mathcal{M}^{(t)}) X X^\top - W_0 X X^\top \right) \odot \mathcal{M}^{(t)} + \lambda (W - W_0) \odot \mathcal{M}^{(t)} \\
+&= \left( (W \odot \mathcal{M}^{(t)}) C_X - W_0 C_X + \lambda (W - W_0) \right) \odot \mathcal{M}^{(t)}
+\end{aligned}$$
+
+**Closed-Form Step Size:**
+To guarantee monotonic descent without line search, the learning rate $\eta$ is scaled by the spectral radius $\rho(C_X)$:
+$$\eta = \frac{\alpha}{\|C_X\|_2 + \lambda + \epsilon}, \quad \alpha \in (0, 1]$$
+$$W \leftarrow W - \eta \nabla_W \mathcal{J}$$
+Because gradient updates are masked by $\mathcal{M}^{(t)}$, pruned coordinates remain strictly zero while active parameters reconstruct the output manifold $Y_0$.
+
+### 2.4 Theorem 4: LayerNorm Recalibration
+Following progressive iterative pruning:
+$$\gamma_{\text{recal}} = \gamma \cdot \left( 0.8 + 0.2 \cdot \frac{\sigma_{\text{target}}}{\sigma_{\text{actual}}} \right)$$
+which corrects activation scale drift across transformer blocks.
 
 ---
 

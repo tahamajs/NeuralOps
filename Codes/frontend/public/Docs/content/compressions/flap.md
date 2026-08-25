@@ -2,49 +2,67 @@
 
 ## 1. Executive Abstract & Theoretical Motivation
 
-Weight magnitude is a poor proxy for feature importance in Transformer architectures because parameters with small norm often act on high-variance activation channels to convey critical structural information. **FLAP** (Fluctuation-Based Adaptive Structured Pruning) replaces naive weight metrics with an **activation fluctuation metric**.
+Weight magnitude is an unreliable proxy for feature importance in Transformer architectures because parameters with small norm often act on high-variance activation channels to convey critical semantic information. Conversely, large-magnitude weights acting on constant or low-variance features contribute virtually zero dynamic information to subsequent attention or MLP layers. **FLAP** (Fluctuation-Based Adaptive Structured Pruning) replaces naive static weight metrics with **Activation Fluctuation Saliency**.
 
-FLAP measures the variance of input activations across calibration sequences and computes a combined weight-activation fluctuation score (WIFV / WIFN). Channels exhibiting minimal activation variance contribute least to downstream representation shift and are safely zeroed out, enabling structured column pruning across linear layers without catastrophic accuracy loss.
+FLAP measures the empirical variance of input activation channels across calibration tokens and computes joint weight-activation fluctuation scores (IFV, WIFV, WIFN). By pruning columns that contribute minimally to downstream activation variance, FLAP achieves structured channel pruning and hardware-compliant 2:4 semi-structured compression with minimal representation distortion.
 
 ```
- Calibration Activation X [N, D_in]
-                 │
-                 ▼
-    Compute Activation Variance
-      Var(X) = Var_i(X_{i, j})
-                 │
-                 ▼
- ┌───────────────────────────────┐
- │ Fluctuation Score Metric      │
- │ WIFV = Var(X) * sum(W^2, col) │
- └───────────────┬───────────────┘
-                 │
-                 ▼
-    Top-K Column Keep Selection
-  Zero Out Unimportant Columns
+                    [ Calibration Activations X ∈ ℝ^{N × d_in} ]
+                                         │
+                                         ▼
+             [ Empirical Column Variance: Var(X_j) = (1/N) Σ (X_{n,j} - X̄_j)^2 ]
+                                         │
+                                         ▼
+            ┌───────────────────────────────────────────────────────────┐
+            │ Fluctuation Saliency Metric Computation                   │
+            │ - IFV:  S_j = Var(X_j)                                    │
+            │ - WIFV: S_j = Var(X_j) · ||W_{:, j}||_2^2                 │
+            │ - WIFN: S_j = √(Var(X_j)) · ||W_{:, j}||_1                │
+            └─────────────────────────────┬─────────────────────────────┘
+                                         │
+                                         ▼
+            [ Structured Masking: Column Top-K or 2:4 Block Selection ]
+            [ W_FLAP = W ⊙ M^T (or Physical Column Dimension Deletion) ]
 ```
 
 ---
 
-## 2. Mathematical Formulations & Matrix Decompositions
+## 2. Why This Module Works Correctly & Mathematical Proofs
 
-### 2.1 Fluctuation Importance Metrics
+### 2.1 Theorem 1: Expected Output Variance Perturbation
+Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ denote the layer weight matrix, and let $X \in \mathbb{R}^{N \times d_{\text{in}}}$ denote calibration input activations. Let $x \in \mathbb{R}^{d_{\text{in}}}$ be an input activation vector with mean $\mu_X \in \mathbb{R}^{d_{\text{in}}}$ and diagonal variance $\sigma_j^2 = \operatorname{Var}(x_j) = \mathbb{E}[(x_j - \mu_j)^2]$.
 
-Let $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ be the weight matrix of a linear layer and $X \in \mathbb{R}^{N \times D_{\text{in}}}$ be the flattened calibration input activations.
+Let $\mathcal{M} = \operatorname{diag}(m_1, \dots, m_{d_{\text{in}}})$ be a binary diagonal column selection matrix where $m_j \in \{0, 1\}$. The pruned linear output is $\widehat{y} = (W \mathcal{M}) x$.
 
-1. **Input Feature Variance**:
-   $$\sigma_j^2 = \text{Var}_i(X_{i, j}) = \frac{1}{N} \sum_{i=1}^N \left( X_{i, j} - \mu_j \right)^2 \quad \text{for } j \in \{1, \dots, D_{\text{in}}\}$$
+**Expected Mean Squared Output Error:**
+$$\begin{aligned}
+\mathbb{E}\left[ \|y - \widehat{y}\|_2^2 \right] &= \mathbb{E}\left[ \|W (I - \mathcal{M}) x\|_2^2 \right] \\
+&= \mathbb{E}\left[ \operatorname{Tr}\left( (x - \mu_X)^\top (I - \mathcal{M}) W^\top W (I - \mathcal{M}) (x - \mu_X) \right) \right] + \|W (I - \mathcal{M}) \mu_X\|_2^2 \\
+&= \sum_{j=1}^{d_{\text{in}}} (1 - m_j) \sigma_j^2 \|W_{:, j}\|_2^2 + \left\| \sum_{j=1}^{d_{\text{in}}} (1 - m_j) \mu_j W_{:, j} \right\|_2^2
+\end{aligned}$$
+When activations are centered or bias is adjusted for mean drift ($\Delta b = \sum_{j=1}^{d_{\text{in}}} (1 - m_j) \mu_j W_{:, j}$), the output variance error simplifies exactly to:
+$$\mathbb{E}\left[ \|y - \widehat{y}\|_2^2 \right] = \sum_{j \notin \mathcal{K}} \sigma_j^2 \|W_{:, j}\|_2^2 = \sum_{j \notin \mathcal{K}} S_j^{\text{WIFV}}$$
+where $\mathcal{K} = \{j \mid m_j = 1\}$ is the set of retained channels.
 
-2. **Metric Variants**:
-Specifically, regarding \textbf{Input Feature Variance (IFV)}, $$S_j^{\text{IFV}} = \sigma_j^2$$ Furthermore, regarding \textbf{Weighted Input Feature Variance (WIFV)}, $$S_j^{\text{WIFV}} = \sigma_j^2 \cdot \sum_{i=1}^{D_{\text{out}}} W_{i, j}^2$$ Concurrently, regarding \textbf{Weighted Input Feature Norm (WIFN)}, $$S_j^{\text{WIFN}} = \frac{1}{D_{\text{out}}} \sum_{i=1}^{D_{\text{out}}} \left( |W_{i, j}| \cdot \sigma_j \right)$$
+**Optimality of WIFV Sorting:**
+To minimize total expected output error $\mathbb{E}[\|y - \widehat{y}\|_2^2]$ subject to retaining $k = \lfloor d_{\text{in}} \cdot (1 - \text{sparsity}) \rfloor$ columns, the globally optimal index set $\mathcal{K}^*$ must select the $k$ columns with largest $S_j^{\text{WIFV}} = \sigma_j^2 \sum_{i=1}^{d_{\text{out}}} W_{ij}^2$.
 
+### 2.2 Theorem 2: Metric Comparison & Theoretical Bounds
+FLAP supports three distinct fluctuation metrics:
+1. **Input Feature Variance (IFV):**
+   $$S_j^{\text{IFV}} = \sigma_j^2 = \frac{1}{N} \sum_{n=1}^N (X_{n, j} - \bar{X}_j)^2$$
+   Measures input signal dynamic range independently of weights. Suitable when weight matrices are near-orthogonal or have uniform column norms.
+2. **Weighted Input Feature Variance (WIFV):**
+   $$S_j^{\text{WIFV}} = \sigma_j^2 \cdot \sum_{i=1}^{d_{\text{out}}} W_{i, j}^2 = \sigma_j^2 \|W_{:, j}\|_2^2$$
+   Provides exact minimization of output Frobenius norm error under diagonal activation independence.
+3. **Weighted Input Feature Norm (WIFN):**
+   $$S_j^{\text{WIFN}} = \sigma_j \cdot \sum_{i=1}^{d_{\text{out}}} |W_{i, j}| = \sqrt{\sigma_j^2} \|W_{:, j}\|_1$$
+   Robust L1-norm variation that dampens the influence of isolated outlier weights.
 
-3. **Structured Column Pruning**:
-   Let $k = \lfloor (1 - S) \cdot D_{\text{in}} \rfloor$ be the number of channels to retain. Select index set $\mathcal{K} \subset \{1, \dots, D_{\text{in}}\}$ containing indices of the top $k$ scores in $S^{\text{WIFV}}$. Construct column mask vector $\mathbf{m} \in \{0, 1\}^{D_{\text{in}}}$:
-
-   $$m_j = \begin{cases} 1.0 & \text{if } j \in \mathcal{K} \\ 0.0 & \text{otherwise} \end{cases}$$
-
-   $$W_{\text{FLAP}} = W \odot \mathbf{m}^T$$
+### 2.3 Theorem 3: 2:4 Semi-Structured Fluctuation Constraint
+For hardware acceleration on NVIDIA Sparse Tensor Cores, FLAP expands the 1D fluctuation metric into a 2D saliency matrix $S \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ ($S_{ij} = S_j^{\text{WIFV}}$). In every contiguous block of 4 columns:
+$$m_{i, 4k:4k+4} = \Pi_{2:4}\left( S_{i, 4k:4k+4} \right)$$
+ensuring exact $50\%$ structured sparsity per quad while keeping the 2 columns with maximum fluctuation variance.
 
 ---
 
