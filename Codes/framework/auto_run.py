@@ -124,58 +124,55 @@ def run_track(
     return results
 
 
-def generate_markdown_report(results_dir: str = DEFAULT_RESULTS_DIR) -> str:
-    """
-    Gathers all individual JSON results and compiles a publication-ready Markdown report.
-    """
-    json_files = glob.glob(os.path.join(results_dir, "json", "**", "*.json"), recursive=True)
-    if not json_files:
-        logger.warning("No JSON result files found in %s", results_dir)
+def generate_report(results_dir: str = DEFAULT_RESULTS_DIR) -> str:
+    """Reads all JSON result files and generates a Markdown summary report."""
+    import glob, json
+    json_dir = os.path.join(results_dir, "json")
+    files = sorted(glob.glob(os.path.join(json_dir, "*.json")))
+    if not files:
+        files = sorted(glob.glob(os.path.join(json_dir, "**", "*.json"), recursive=True))
+
+    if not files:
+        print("No result files found in", json_dir)
         return ""
 
-    results: List[Dict[str, Any]] = []
-    for jf in json_files:
+    rows = []
+    for fp in files:
         try:
-            with open(jf, "r", encoding="utf-8") as f:
-                results.append(json.load(f))
-        except Exception:
-            continue
+            with open(fp) as f:
+                rows.append(json.load(f))
+        except Exception as e:
+            logger.warning("Could not read %s: %s", fp, e)
 
-    total_runs = len(results)
-    passed_runs = sum(1 for r in results if r.get("status") == "PASS")
-    pass_rate = (passed_runs / max(1, total_runs)) * 100.0
+    # Group by track
+    from collections import defaultdict
+    by_track = defaultdict(list)
+    for r in rows:
+        by_track[r.get("track", "unknown")].append(r)
 
-    lines: List[str] = [
-        "# Comprehensive Benchmark & Empirical Evaluation Report",
-        "",
-        f"**Total Model-Dataset Evaluations:** {total_runs}  ",
-        f"**Successful Passes:** {passed_runs} / {total_runs} ({pass_rate:.1f}%)  ",
-        f"**Generated:** {time.strftime('%Y-%m-%d %H:%M:%S')}  ",
-        "",
-        "---",
-        "",
-        "## Summary by Track & Module",
-        "",
-        "| Track | Module | Type | Model | Dataset | Status | Fwd (ms) | Bwd (ms) | Speedup | Compression | Grad Norm |",
-        "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
-    ]
+    lines = ["# NeuralOps Benchmark Summary Report\n",
+             f"**Total results**: {len(rows)} | **Generated**: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"]
 
-    for r in sorted(results, key=lambda x: (x.get("track", ""), x.get("module_name", ""), x.get("model_family", ""))):
-        lines.append(
-            f"| `{r.get('track')}` | `{r.get('module_name')}` | {r.get('module_type')} | "
-            f"**{r.get('model_family', '').upper()}** | `{r.get('dataset')}` | "
-            f"**{r.get('status')}** | {r.get('forward_latency_ms', 0.0):.1f} | "
-            f"{r.get('backward_latency_ms', 0.0):.1f} | {r.get('speedup_vs_baseline', 1.0):.2f}x | "
-            f"{r.get('compression_ratio', 1.0):.2f}x | {r.get('grad_norm', 0.0):.3f} |"
-        )
+    for track, track_rows in sorted(by_track.items()):
+        lines.append(f"\n## {track}\n")
+        lines.append("| Module | Model | Dataset | Status | Accuracy | Latency (ms) | Compression |\n")
+        lines.append("|--------|-------|---------|--------|----------|-------------|-------------|\n")
+        for r in sorted(track_rows, key=lambda x: (x.get("module_name",""), x.get("model_family",""))):
+            acc = f"{r.get('accuracy_pct', 0):.2f}%"
+            lat = f"{r.get('forward_latency_ms', 0):.1f}"
+            comp = f"{r.get('compression_ratio', 1.0):.2f}x"
+            status = "✅" if r.get("status") == "PASS" else "❌"
+            lines.append(f"| {r.get('module_name','')} | {r.get('model_family','')} | {r.get('dataset','')} | {status} | {acc} | {lat} | {comp} |\n")
 
-    report_content = "\n".join(lines)
-    report_path = os.path.join(results_dir, "BENCHMARK_REPORT.md")
-    with open(report_path, "w", encoding="utf-8") as f:
-        f.write(report_content)
+    report = "".join(lines)
+    out_path = os.path.join(results_dir, "SUMMARY_REPORT.md")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(report)
+    print(f"\n✅ Report saved to: {out_path}")
+    return out_path
 
-    logger.info("Saved consolidated markdown report to %s", report_path)
-    return report_path
+
+generate_markdown_report = generate_report
 
 
 def main() -> None:
@@ -189,13 +186,14 @@ def main() -> None:
     parser.add_argument("--rank", type=int, default=16, help="Target rank for low-rank / SVD modules")
     parser.add_argument("--results_dir", type=str, default=DEFAULT_RESULTS_DIR, help="Directory to save JSON/CSV results")
     parser.add_argument("--report", action="store_true", help="Generate consolidated markdown report from saved JSONs")
+    parser.add_argument("--synthetic", action="store_true", help="Allow synthetic data batches (no real datasets needed)")
     args = parser.parse_args()
 
     models = [m.strip().lower() for m in args.models.split(",") if m.strip()]
     datasets = [d.strip().lower() for d in args.datasets.split(",") if d.strip()]
 
     if args.report:
-        generate_markdown_report(args.results_dir)
+        generate_report(args.results_dir)
         return
 
     if args.module:
@@ -210,9 +208,10 @@ def main() -> None:
                     dataset=d,
                     rank=args.rank,
                     results_dir=args.results_dir,
+                    allow_synthetic=args.synthetic,
                 )
                 print(f"Result: {res.module_name} on {res.model_family} ({res.dataset}): {res.status}")
-        generate_markdown_report(args.results_dir)
+        generate_report(args.results_dir)
         return
 
     track_map = {
@@ -250,9 +249,10 @@ def main() -> None:
             datasets=datasets,
             rank=args.rank,
             results_dir=args.results_dir,
+            allow_synthetic=args.synthetic,
         )
 
-    generate_markdown_report(args.results_dir)
+    generate_report(args.results_dir)
 
 
 if __name__ == "__main__":

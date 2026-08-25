@@ -30,6 +30,7 @@ from typing import Any, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -59,7 +60,6 @@ class ORIONConfig:
 
 
 def softpick(x, dim: int = -1, temperature: float = 1.0):
-    import torch.nn.functional as F
     orig_dtype = x.dtype
     x = x.float()
     m = x.max(dim=dim, keepdim=True).values
@@ -82,34 +82,47 @@ class FactorisedLinear(nn.Module):
         energy: Cumulative singular value energy fraction to retain.
         min_rank: Lower bound on factorization rank.
         max_rank: Upper bound on factorization rank.
+        in_features: Input dimension fallback.
+        out_features: Output dimension fallback.
     """
 
     def __init__(
         self,
-        pretrained_weight: torch.Tensor,
-        pretrained_bias: Optional[torch.Tensor],
-        energy: float,
+        pretrained_weight: Optional[torch.Tensor] = None,
+        pretrained_bias: Optional[torch.Tensor] = None,
+        energy: float = 0.95,
         min_rank: int = 4,
         max_rank: int = 64,
+        in_features: Optional[int] = None,
+        out_features: Optional[int] = None,
     ) -> None:
         super().__init__()
-        out_dim, in_dim = pretrained_weight.shape
-        with torch.no_grad():
-            U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
-            total = (S**2).sum()
-            cum = torch.cumsum(S**2, dim=0) / total
-            rank = int(torch.searchsorted(cum, energy).item()) + 1
-            rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
-            self.rank: int = rank
-            A = U[:, :rank] * S[:rank].unsqueeze(0)
-            B = Vt[:rank, :]
-        self.down = nn.Linear(in_dim, rank, bias=False)
-        self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
+        if pretrained_weight is not None:
+            out_dim, in_dim = pretrained_weight.shape
+            with torch.no_grad():
+                U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
+                total = (S**2).sum()
+                cum = torch.cumsum(S**2, dim=0) / torch.clamp(total, min=1e-8)
+                rank = int(torch.searchsorted(cum, energy).item()) + 1
+                rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
+                self.rank: int = rank
+                A = U[:, :rank] * S[:rank].unsqueeze(0)
+                B = Vt[:rank, :]
+        else:
+            in_dim = in_features or 768
+            out_dim = out_features or 768
+            rank = max(min_rank, min(max_rank, min(in_dim, out_dim) // 4, 16))
+            self.rank = rank
+            A = torch.randn(out_dim, rank) * 0.02
+            B = torch.randn(rank, in_dim) * 0.02
+
+        self.down = nn.Linear(in_dim, self.rank, bias=False)
+        self.up = nn.Linear(self.rank, out_dim, bias=(pretrained_bias is not None))
         self.down.weight.data = B.float()
         self.up.weight.data = A.float()
         if pretrained_bias is not None:
             self.up.bias.data = pretrained_bias.float()
-        else:
+        elif self.up.bias is not None:
             self.up.bias.data.zero_()
 
     @property
@@ -125,12 +138,13 @@ class FactorisedLinear(nn.Module):
 @ATTENTION_REGISTRY.register("orion_module")
 @ATTENTION_REGISTRY.register("orion")
 @ATTENTION_REGISTRY.register("orion_attention")
-@ATTENTION_REGISTRY.register("orion_module")
-class ORIONAttention(nn.Module):
+class ORIONAttention(BaseAttention):
     r"""ORION hybrid multi-head attention module.
 
     Args:
-        model_config: Model configuration containing `hidden_size` and `num_attention_heads`.
+        config: Model configuration containing `hidden_size` and `num_attention_heads`.
+        rank: Rank constraint hint.
+        model_config: Backwards-compatible alias for config.
         orion_cfg: ORIONConfig hyperparameters.
         pretrained_attn: Pretrained attention module used for SVD weight initialization.
         bert_mode: Boolean indicating bidirectional context handling.
@@ -138,87 +152,93 @@ class ORIONAttention(nn.Module):
 
     def __init__(
         self,
+        config: Optional[Any] = None,
+        rank: Optional[int] = None,
         model_config: Optional[Any] = None,
         orion_cfg: Optional[ORIONConfig] = None,
         pretrained_attn: Optional[Any] = None,
         bert_mode: bool = False,
-        config: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
+        cfg = config or model_config
+        super().__init__(cfg, rank)
         if orion_cfg is None:
             orion_cfg = ORIONConfig()
-        hidden_size = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
-        num_heads = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
-        self.num_heads: int = num_heads
-        self.head_dim: int = hidden_size // num_heads
+            if rank is not None:
+                orion_cfg.svd_max_rank = max(rank, orion_cfg.svd_min_rank)
+
+        hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768))) if cfg is not None else kwargs.get("hidden_size", 768)
+        num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 12)) if cfg is not None else kwargs.get("num_attention_heads", 12)
+
+        self.num_heads: int = max(1, num_heads)
+        self.head_dim: int = hidden_size // self.num_heads
         self.all_head_size: int = hidden_size
         self.hidden_size: int = hidden_size
         self.cfg: ORIONConfig = orion_cfg
         self.bert_mode: bool = bert_mode
 
-        if pretrained_attn is None:
-            dummy_lin = nn.Linear(hidden_size, hidden_size)
-            pretrained_attn = type("DummyAttn", (), {
-                "q_lin": dummy_lin,
-                "k_lin": dummy_lin,
-                "v_lin": dummy_lin,
-                "out_lin": dummy_lin,
-            })()
+        # Allocate kernel vs full heads dynamically based on self.num_heads
+        if orion_cfg.num_kernel_heads + orion_cfg.num_full_heads == self.num_heads:
+            self.num_kernel_heads: int = orion_cfg.num_kernel_heads
+            self.num_full_heads: int = orion_cfg.num_full_heads
+        else:
+            if self.num_heads <= 1:
+                self.num_kernel_heads = 1
+                self.num_full_heads = 0
+            else:
+                self.num_full_heads = max(1, self.num_heads // 3)
+                self.num_kernel_heads = self.num_heads - self.num_full_heads
 
-        if orion_cfg.num_kernel_heads + orion_cfg.num_full_heads != self.num_heads:
-            raise ValueError(
-                f"num_kernel_heads ({orion_cfg.num_kernel_heads}) + "
-                f"num_full_heads ({orion_cfg.num_full_heads}) must equal "
-                f"total heads ({self.num_heads})"
-            )
-        self.num_kernel_heads: int = orion_cfg.num_kernel_heads
-        self.num_full_heads: int = orion_cfg.num_full_heads
+        self.q_proj = FactorisedLinear(None, None, orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank, in_features=hidden_size, out_features=hidden_size)
+        self.k_proj = FactorisedLinear(None, None, orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank, in_features=hidden_size, out_features=hidden_size)
+        self.v_proj = FactorisedLinear(None, None, orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank, in_features=hidden_size, out_features=hidden_size)
+        self.out_proj = FactorisedLinear(None, None, orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank, in_features=hidden_size, out_features=hidden_size)
 
-        self.q_proj = FactorisedLinear(
-            pretrained_attn.q_lin.weight.data,
-            pretrained_attn.q_lin.bias.data,
-            orion_cfg.svd_energy,
-            orion_cfg.svd_min_rank,
-            orion_cfg.svd_max_rank,
-        )
-        self.k_proj = FactorisedLinear(
-            pretrained_attn.k_lin.weight.data,
-            pretrained_attn.k_lin.bias.data,
-            orion_cfg.svd_energy,
-            orion_cfg.svd_min_rank,
-            orion_cfg.svd_max_rank,
-        )
-        self.v_proj = FactorisedLinear(
-            pretrained_attn.v_lin.weight.data,
-            pretrained_attn.v_lin.bias.data,
-            orion_cfg.svd_energy,
-            orion_cfg.svd_min_rank,
-            orion_cfg.svd_max_rank,
-        )
-        self.out_proj = FactorisedLinear(
-            pretrained_attn.out_lin.weight.data,
-            pretrained_attn.out_lin.bias.data,
-            orion_cfg.svd_energy,
-            orion_cfg.svd_min_rank,
-            orion_cfg.svd_max_rank,
-        )
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
         self.rff_proj = nn.Parameter(
-            torch.randn(self.num_kernel_heads, self.head_dim, orion_cfg.rff_features)
+            torch.randn(max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features)
             * 0.02
         )
         self.dropout = nn.Dropout(orion_cfg.dropout)
+
+    def copy_weights(self, old_attn: Any) -> None:
+        """Transfer weights from pretrained attention layer using SVD factorization."""
+        if old_attn is None:
+            return
+        from framework.core.adapters import UniversalAdapter
+        adapter = UniversalAdapter()
+        for proj_name, attr in [("q", "q_proj"), ("k", "k_proj"), ("v", "v_proj"), ("o", "out_proj")]:
+            try:
+                w, b = adapter.get_weight_bias(old_attn, proj_name)
+                if w is not None:
+                    setattr(
+                        self,
+                        attr,
+                        FactorisedLinear(
+                            w,
+                            b,
+                            self.cfg.svd_energy,
+                            self.cfg.svd_min_rank,
+                            self.cfg.svd_max_rank,
+                        ).to(device=w.device, dtype=w.dtype)
+                    )
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+                pass
 
     def _kernel_linear_attention(
         self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor
     ) -> torch.Tensor:
         r"""Compute kernel linear attention via RFF projections in $\mathcal{O}(N \cdot F \cdot d)$."""
         B, Hk, N, D = Q.shape
+        if Hk == 0:
+            return torch.zeros(B, 0, N, D, device=Q.device, dtype=Q.dtype)
         F_dim = self.cfg.rff_features
         orig_dtype = Q.dtype
         Q, K, V = Q.float(), K.float(), V.float()
-        proj = self.rff_proj.to(Q.device).float()
-        
+        proj = self.rff_proj[:Hk].to(Q.device).float()
+
         Q_norm = F.normalize(Q, p=2, dim=-1)
         K_norm = F.normalize(K, p=2, dim=-1)
         Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, proj).clamp(max=11.0)
@@ -239,6 +259,9 @@ class ORIONAttention(nn.Module):
         token_valid: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         r"""Compute full Softpick rectified attention in $\mathcal{O}(N^2 \cdot d)$."""
+        B, Hf, N, D = Q.shape
+        if Hf == 0:
+            return torch.zeros(B, 0, N, D, device=Q.device, dtype=Q.dtype)
         scale = self.head_dim**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
         if token_valid is not None:
@@ -269,8 +292,15 @@ class ORIONAttention(nn.Module):
                 - output: Layer projection output of shape `[Batch, SeqLen, HiddenDim]`.
                 - attention_weights: Attention matrix or None.
         """
+        if hidden_states.dim() == 4:
+            B, H, L, Dh = hidden_states.shape
+            hidden_states = hidden_states.view(B, L, H * Dh)
+        elif not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
+
         B, N, _ = hidden_states.shape
         Hk = self.num_kernel_heads
+        Hf = self.num_full_heads
 
         Q_all = self.q_proj(hidden_states)
         K_all = self.k_proj(hidden_states)
@@ -278,10 +308,6 @@ class ORIONAttention(nn.Module):
         Q_all = Q_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         K_all = K_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         V_all = V_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-
-        Q_kernel, Q_full = Q_all[:, :Hk], Q_all[:, Hk:]
-        K_kernel, K_full = K_all[:, :Hk], K_all[:, Hk:]
-        V_kernel, V_full = V_all[:, :Hk], V_all[:, Hk:]
 
         mask = (
             attention_mask
@@ -299,10 +325,26 @@ class ORIONAttention(nn.Module):
             elif mask.dim() == 2:
                 token_valid = mask.bool()
 
-        ctx_kernel = self._kernel_linear_attention(Q_kernel, K_kernel, V_kernel)
-        ctx_full = self._full_softpick_attention(Q_full, K_full, V_full, token_valid)
+        ctx_list = []
+        if Hk > 0:
+            Q_kernel = Q_all[:, :Hk]
+            K_kernel = K_all[:, :Hk]
+            V_kernel = V_all[:, :Hk]
+            ctx_kernel = self._kernel_linear_attention(Q_kernel, K_kernel, V_kernel)
+            ctx_list.append(ctx_kernel)
 
-        context = torch.cat([ctx_kernel, ctx_full], dim=1)
+        if Hf > 0:
+            Q_full = Q_all[:, Hk:]
+            K_full = K_all[:, Hk:]
+            V_full = V_all[:, Hk:]
+            ctx_full = self._full_softpick_attention(Q_full, K_full, V_full, token_valid)
+            ctx_list.append(ctx_full)
+
+        if len(ctx_list) == 1:
+            context = ctx_list[0]
+        else:
+            context = torch.cat(ctx_list, dim=1)
+
         if token_valid is not None:
             context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
 
@@ -335,6 +377,6 @@ def inject_orion(
         softpick_temperature=getattr(comp_config, "softpick_temperature", 1.0),
         dropout=getattr(comp_config, "dropout", 0.1),
     )
-    new_attn = ORIONAttention(model_config, cfg, pretrained_attn=old_attn)
+    new_attn = ORIONAttention(model_config, orion_cfg=cfg, pretrained_attn=old_attn)
     layer.attention = new_attn
     return new_attn

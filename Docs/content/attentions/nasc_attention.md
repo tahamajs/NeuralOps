@@ -359,14 +359,13 @@ def inject_nasc(
 
 ---
 
-## Theoretical Invariants & Numerical Stability Proofs
+## 4. Known Limitations & Future Work
+- **Static Block Size Partitioning**: The inter-block routing uses fixed block size $B_{\text{sz}}=32$; dynamic block sizing based on sequence length could further reduce FLOPs.
+- **Kernel Approximation Variance**: Extreme sequence lengths ($L > 8192$) require larger $F_{\text{dim}}$ to maintain accurate global kernel approximations.
 
-> [!NOTE]
-> **Mathematical Invariants for `nasc_attention`**:
-> 1. **Frobenius Reconstruction Guarantee**:
->    $$\min_{\text{rank}(\widehat{W}) \le r} \|W - \widehat{W}\|_F^2 = \sum_{i=r+1}^{D} \sigma_i^2$$
-> 2. **Symmetric $\sqrt{\Sigma}$ Conditioning**:
->    Splitting $\Sigma_r^{1/2}$ equally across factorized matrices balances spectral condition numbers $\kappa(U_r) \approx \kappa(V_r) = \sqrt{\kappa(W)}$, preventing FP16/BF16 gradient underflow.
-> 3. **Lyapunov Stability**:
->    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
+---
+
+## 5. Empirical Benchmarks
+> Benchmarks Pending — run `bash run_on_gpu_server.sh suite` to populate results.
+> See [Empirical Validation Protocol](../empirical_validation_protocol.md).
 

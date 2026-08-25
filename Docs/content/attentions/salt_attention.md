@@ -80,26 +80,15 @@ Y = \text{SALTLinear}_O\left( \operatorname{Reshape}(O) \right) \in \mathbb{R}^{
 
 ---
 
-## 4. Analytical Complexity & Parameter Efficiency
-
-### 4.1 Floating Point Operations (FLOPs)
-- **SALT Linear Projections ($Q, K, V, O$):** $16 B L D r$ FLOPs.
-- **Multi-Head Attention Core:** $4 B L^2 D$ FLOPs.
-- **Total FLOP Count:** $\text{FLOPs}_{\text{total}} = 16 B L D r + 4 B L^2 D$.
-- **Trainable Parameters:** $\Theta_{\text{trainable}} = 4 \times (r + 2 D r) \ll 4 D^2$. For $D=768, r=16$, parameters drop from $2.36\text{M}$ to $98.4\text{K}$ ($95.8\%$ reduction).
+## 4. Known Limitations & Future Work
+- **Static Subspace Rank**: Top-$r$ singular vector subspace is fixed after initialization; dynamic spectral thresholding per layer could improve parameter allocation.
+- **GEMM Fusion Overhead**: Unfused additive LoRA and SVD paths incur extra memory access without custom kernel compilation (e.g. Triton/Cutlass).
 
 ---
 
-## 5. Empirical SST-2 Benchmark & Comparative Profiling
-
-| Attention Variant | SST-2 Accuracy | SST-2 F1 | Runtime / Latency | Parameter Efficiency |
-| :--- | :--- | :--- | :--- | :--- |
-| **Full Attention** | **89.56%** | **89.55%** | Baseline (1.0x) | 100% Trainable (Dense) |
-| **SALT Attention (r=16)** | **88.92%** | **88.90%** | Fast (1.05x) | **4.2% Trainable Params** |
-| **Performer (FAVOR+)** | 82.91% | 82.90% | 504.8s | Full Weights |
-| **Nyströmformer** | 82.11% | 82.10% | Linear (Pinv) | Full Weights |
-| **Adaptive Span** | 80.39% | 80.38% | 5.3s | Full Weights |
-| **Span-Expanded (LoRA)** | 81.31% | 81.30% | Linear-Local | Hybrid LoRA |
+## 5. Empirical Benchmarks
+> Benchmarks Pending — run `bash run_on_gpu_server.sh suite` to populate results.
+> See [Empirical Validation Protocol](../empirical_validation_protocol.md).
 
 ---
 
