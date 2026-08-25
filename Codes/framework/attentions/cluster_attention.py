@@ -19,6 +19,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("cluster")
+@ATTENTION_REGISTRY.register("cluster_attention")
 class ClusterAttention(BaseAttention):
     r"""
     ClusterFormer Attention Layer (Fast Transformers with Clustered Attention).

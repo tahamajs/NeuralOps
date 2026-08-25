@@ -39,18 +39,22 @@ class HGRN2Layer(BaseAttention):
 
     def __init__(
         self,
-        d_model: Optional[Union[int, Any]] = None,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
+        d_model: Optional[Union[int, Any]] = None,
         res_clip: float = 5.0,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        
+        # Resolve d_model
         if d_model is None:
-            if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            else:
-                d_model = kwargs.get("hidden_size", 768)
+            if isinstance(config, int):
+                d_model = config
+            elif config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
+        if d_model is None:
+            d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size

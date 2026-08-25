@@ -243,35 +243,42 @@ class PHANTOMAttention(BaseAttention):
         self.hidden_size: int = hidden_size
         self.cfg: PHANTOMConfig = phantom_cfg
 
-        if pretrained_attn is None:
-            dummy_lin = nn.Linear(hidden_size, hidden_size)
-            pretrained_attn = type("DummyAttn", (), {
-                "q_lin": dummy_lin,
-                "k_lin": dummy_lin,
-                "v_lin": dummy_lin,
-                "out_lin": dummy_lin,
-            })()
+        q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", getattr(pretrained_attn, "q", None)))) if pretrained_attn is not None else None
+        k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", getattr(pretrained_attn, "k", None)))) if pretrained_attn is not None else None
+        v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", getattr(pretrained_attn, "v", None)))) if pretrained_attn is not None else None
+        out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", getattr(pretrained_attn, "o", None))))) if pretrained_attn is not None else None
 
-        self.q_proj = FactorisedLinear_CUR(
-            pretrained_attn.q_lin.weight.data,
-            pretrained_attn.q_lin.bias.data if hasattr(pretrained_attn.q_lin, 'bias') else None,
-            phantom_cfg.cur_rank,
-        )
-        self.k_proj = FactorisedLinear_CUR(
-            pretrained_attn.k_lin.weight.data,
-            pretrained_attn.k_lin.bias.data if hasattr(pretrained_attn.k_lin, 'bias') else None,
-            phantom_cfg.cur_rank,
-        )
-        self.v_proj = FactorisedLinear_CUR(
-            pretrained_attn.v_lin.weight.data,
-            pretrained_attn.v_lin.bias.data if hasattr(pretrained_attn.v_lin, 'bias') else None,
-            phantom_cfg.cur_rank,
-        )
-        self.out_proj = FactorisedLinear_CUR(
-            pretrained_attn.out_lin.weight.data,
-            pretrained_attn.out_lin.bias.data if hasattr(pretrained_attn.out_lin, 'bias') else None,
-            phantom_cfg.cur_rank,
-        )
+        if q_src is not None and hasattr(q_src, "weight"):
+            q_w = q_src.weight.data
+            q_b = q_src.bias.data if getattr(q_src, "bias", None) is not None else None
+        else:
+            q_w = torch.randn(self.all_head_size, hidden_size) * 0.02
+            q_b = None
+        self.q_proj = FactorisedLinear_CUR(q_w, q_b, phantom_cfg.cur_rank)
+
+        if k_src is not None and hasattr(k_src, "weight"):
+            k_w = k_src.weight.data
+            k_b = k_src.bias.data if getattr(k_src, "bias", None) is not None else None
+        else:
+            k_w = torch.randn(self.all_head_size, hidden_size) * 0.02
+            k_b = None
+        self.k_proj = FactorisedLinear_CUR(k_w, k_b, phantom_cfg.cur_rank)
+
+        if v_src is not None and hasattr(v_src, "weight"):
+            v_w = v_src.weight.data
+            v_b = v_src.bias.data if getattr(v_src, "bias", None) is not None else None
+        else:
+            v_w = torch.randn(self.all_head_size, hidden_size) * 0.02
+            v_b = None
+        self.v_proj = FactorisedLinear_CUR(v_w, v_b, phantom_cfg.cur_rank)
+
+        if out_src is not None and hasattr(out_src, "weight"):
+            out_w = out_src.weight.data
+            out_b = out_src.bias.data if getattr(out_src, "bias", None) is not None else None
+        else:
+            out_w = torch.randn(hidden_size, self.all_head_size) * 0.02
+            out_b = None
+        self.out_proj = FactorisedLinear_CUR(out_w, out_b, phantom_cfg.cur_rank)
 
         self.dropout = nn.Dropout(phantom_cfg.dropout)
 

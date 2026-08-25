@@ -224,6 +224,7 @@ class SVDLinear(nn.Module):
 @ATTENTION_REGISTRY.register("svd_linear_attn")
 @ATTENTION_REGISTRY.register("svd_linear")
 @ATTENTION_REGISTRY.register("svd_linear_attention")
+@ATTENTION_REGISTRY.register("svd_attention")
 @ATTENTION_REGISTRY.register("projection_factorized_attn")
 @ATTENTION_REGISTRY.register("svd_linear_decay")
 @ATTENTION_REGISTRY.register("decay_linear_attn")
