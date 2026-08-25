@@ -10,3 +10,23 @@
 - **Pretrained Transfer:** Symmetrically initialized zero-shot from pre-trained multi-head attention weights.
 
 See [`svd_linear_attention.md`](svd_linear_attention.md) for full mathematical derivations, tensor trace, and benchmark analyses.
+
+---
+
+## Complete Source Code Implementation (`svd_linear_decay.py`)
+
+```python
+r"""
+SVD Linear Decay Gated Attention Alias.
+Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.
+"""
+
+from framework.attentions.svd_linear_attention import (
+    SVDLinear,
+    SVDLinearAttention,
+)
+
+DecayGatedLinearAttention = SVDLinearAttention
+
+__all__ = ["DecayGatedLinearAttention", "SVDLinearAttention", "SVDLinear"]
+```

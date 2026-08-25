@@ -172,3 +172,23 @@ The empirical evaluation of `saes_svd` across standard sequence lengths and lang
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
 
+---
+
+## Complete Source Code Implementation (`saes_svd.py`)
+
+```python
+"""
+SAES-SVD v2: error suppression with fixed rank ratio. Registered as 'saes_svd_v2'.
+Alias/re-export module for saes_svd_v2.
+"""
+
+from framework.compression_engine.saes_svd_v2 import (
+    SAESSVDCompressorV2,
+    saes_svd_v2_factory,
+)
+
+# Alias for backward compatibility
+SAESCompressor = SAESSVDCompressorV2
+
+__all__ = ["SAESSVDCompressorV2", "SAESCompressor", "saes_svd_v2_factory"]
+```

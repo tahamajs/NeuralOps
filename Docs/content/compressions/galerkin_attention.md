@@ -94,3 +94,17 @@ The empirical evaluation of `galerkin_attention` across standard sequence length
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`galerkin_attention.py`)
+
+```python
+r"""
+Galerkin Transformer: Petrov-Galerkin projection attention.
+Re-exports repaired GalerkinAttention from framework.attentions.galerkin_attention.
+"""
+
+from framework.attentions.galerkin_attention import GalerkinAttention, inject_galerkin
+
+__all__ = ["GalerkinAttention", "inject_galerkin"]
+```

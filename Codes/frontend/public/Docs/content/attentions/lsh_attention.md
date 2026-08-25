@@ -136,16 +136,15 @@ Let $B$ be batch size, $N$ sequence length, $D$ hidden dimension, $H$ heads, $d_
 $$\text{Total FLOPs} = 8 B N D^2 + 2 n_r B N D b + \frac{4 n_r B N^2 D}{b}$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 4 B N D^2 + n_r B N D b + \frac{2 n_r B N^2 D}{b}$$
-- **Peak Activation Memory**:
-  - Random Projection Matrix: $d_k \times (b/2) \times 4 \text{ bytes}$
-  - Hash Codes: $2 \times B \cdot H \cdot N \times 8 \text{ bytes}$
-  - Dynamic Bucket Slice Activations: $\mathcal{O}(n_q d_k + n_k d_k)$. Memory scales linearly as $\mathcal{O}(n_r B H N)$.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Random Projection Matrix: $d_k \times (b/2) \times 4 \text{ bytes}$ Concurrently, Hash Codes: $2 \times B \cdot H \cdot N \times 8 \text{ bytes}$ In this setting, Dynamic Bucket Slice Activations: $\mathcal{O}(n_q d_k + n_k d_k)$. Memory scales linearly as $\mathcal{O}(n_r B H N)$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **LSH Reformer Attention**: Setting $b \approx \sqrt{N}$ yields $\mathcal{O}(n_r N^{1.5} D)$ compute and $\mathcal{O}(n_r N H)$ memory footprint.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory. Furthermore, regarding \textbf{LSH Reformer Attention}, setting $b \approx \sqrt{N}$ yields $\mathcal{O}(n_r N^{1.5} D)$ compute and $\mathcal{O}(n_r N H)$ memory footprint.
+
 
 ---
 
@@ -163,18 +162,18 @@ for r in range(self.rounds):
                 ...
                 out[b, h, q_idx] += ctx
 ```
-- **Host-Device Launch Bottleneck**: Executing 4 nested Python loops over `rounds`, `batch`, `heads`, and `buckets` launches thousands of tiny PyTorch CUDA kernels sequentially.
-- **GPU Under-Utilization**: GPU Tensor Cores sit idle while CPU host threads execute loop conditionals, causing $100\times$ slower runtime execution than standard dense attention for short/medium sequence lengths.
+Specifically, regarding \textbf{Host-Device Launch Bottleneck}, executing 4 nested Python loops over `rounds`, `batch`, `heads`, and `buckets` launches thousands of tiny PyTorch CUDA kernels sequentially. Furthermore, regarding \textbf{GPU Under-Utilization}, gPU Tensor Cores sit idle while CPU host threads execute loop conditionals, causing $100\times$ slower runtime execution than standard dense attention for short/medium sequence lengths.
+
 
 ### 5.2 Hash Collision Failure & False-Negative Erasure
 LSH is probabilistic: two semantically related tokens $i$ and $j$ with high dot product $\mathbf{q}_i \mathbf{k}_j^\top$ may fall into different buckets if their hyperplanes happen to split them.
-- **Recall Degradation**: If $n_r$ is too small (e.g., $n_r=1$), critical key tokens are dropped completely ($\mathbf{A}_{i, j} = 0$), causing false-negative memory erasure.
-- **Variance Instability**: Because projection matrix $R^{(r)} \sim \mathcal{N}(0, 1)$ is sampled stochastically on every forward pass (`torch.randn`), model outputs for identical input sequences exhibit high Monte Carlo variance.
+Specifically, regarding \textbf{Recall Degradation}, if $n_r$ is too small (e.g., $n_r=1$), critical key tokens are dropped completely ($\mathbf{A}_{i, j} = 0$), causing false-negative memory erasure. Furthermore, regarding \textbf{Variance Instability}, because projection matrix $R^{(r)} \sim \mathcal{N}(0, 1)$ is sampled stochastically on every forward pass (`torch.randn`), model outputs for identical input sequences exhibit high Monte Carlo variance.
+
 
 ### 5.3 Angular Hyperplane Bucket Imbalance
 If query embeddings inhabit a narrow directional cone in feature space (anisotropy / rank collapse), random hyperplanes fail to bisect the distribution evenly.
-- **Bucket Overcrowding**: A single bucket receives $\approx 90\%$ of tokens ($n_q \approx N$), while remaining buckets remain empty.
-- Complexity degrades back to $\mathcal{O}(N^2 D)$ while incurring additional hashing FLOPs overhead.
+Specifically, regarding \textbf{Bucket Overcrowding}, a single bucket receives $\approx 90\%$ of tokens ($n_q \approx N$), while remaining buckets remain empty. Furthermore, Complexity degrades back to $\mathcal{O}(N^2 D)$ while incurring additional hashing FLOPs overhead.
+
 
 ---
 
@@ -308,3 +307,192 @@ The empirical evaluation of `lsh_attention` across standard sequence lengths and
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
 
+---
+
+## Complete Source Code Implementation (`lsh_attention.py`)
+
+```python
+r"""
+Locality-Sensitive Hashing (LSH) Attention – Reformer style.
+Paper: https://arxiv.org/abs/2001.04451
+
+Approximates dense attention by clustering keys and queries into discrete hash buckets
+via angular random hyperplane projections with fallback context and exact pretrained weight transfer.
+"""
+
+from typing import Any, Optional, Tuple
+import math
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.attention_mask import get_token_valid_mask
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("lsh")
+class LSHAttention(BaseAttention):
+    r"""
+    Locality-Sensitive Hashing (LSH) Attention (Reformer, Kitaev et al., 2020).
+
+    Mathematical Formulation:
+        1. Angular LSH Hashing:
+           $$h(x) = \arg\max \left( [x R; -x R] \right) \in \{0, \dots, 2b - 1\}$$
+           where $R \in \mathbb{R}^{d_k \times b}$ is a normalized Gaussian random rotation matrix.
+        
+        2. Multi-Round Hashing & Bucket Attention:
+           $$\text{Attention}_{\text{LSH}}(Q, K, V) = \frac{1}{n_r} \sum_{r=1}^{n_r} \operatorname{Softmax}\left(\frac{Q_{\mathcal{B}_k}^{(r)} (K_{\mathcal{B}_k}^{(r)})^\top}{\sqrt{d_k}} + M\right) V_{\mathcal{B}_k}^{(r)}$$
+
+    Complexity:
+        - Time: $\mathcal{O}(n_r \cdot B \cdot H \cdot N \log N \cdot d_k)$
+        - Memory: $\mathcal{O}(n_r \cdot B \cdot H \cdot N)$ vs $\mathcal{O}(B \cdot H \cdot N^2)$
+    """
+
+    def __init__(
+        self,
+        config: Any,
+        rank: Optional[int] = None,
+        rounds: int = 4,
+        num_buckets: int = 16,
+        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config, rank)
+        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.rounds: int = getattr(config, "lsh_rounds", rounds)
+        self.num_buckets: int = getattr(config, "lsh_buckets", num_buckets)
+
+        self.query = nn.Linear(hidden_size, self.all_head_size)
+        self.key = nn.Linear(hidden_size, self.all_head_size)
+        self.value = nn.Linear(hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, hidden_size)
+
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        r"""Copy weights and biases from pretrained multi-head attention module."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.weight.data.copy_(w)
+                if b is not None and target.bias is not None:
+                    target.bias.data.copy_(b)
+            except Exception:
+                pass
+
+    def _hash(self, vectors: torch.Tensor, proj: torch.Tensor) -> torch.Tensor:
+        r"""Angular LSH: argmax of [x R; -x R]. vectors: (B, H, N, d), proj: (d, b/2)"""
+        norm = F.normalize(vectors, p=2, dim=-1)
+        dots = torch.matmul(norm, proj)  # (B, H, N, b/2)
+        rotations = torch.cat([dots, -dots], dim=-1)  # (B, H, N, b)
+        return torch.argmax(rotations, dim=-1)  # (B, H, N) in {0, ..., b-1}
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        B, N, D = hidden_states.shape
+        H, d = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
+        Q = self.query(hidden_states).view(B, N, H, d).permute(0, 2, 1, 3)
+        K = self.key(hidden_states).view(B, N, H, d).permute(0, 2, 1, 3)
+        V = self.value(hidden_states).view(B, N, H, d).permute(0, 2, 1, 3)
+
+        valid_mask = get_token_valid_mask(attention_mask, B, N, device)  # (B, N)
+        scale = d ** -0.5
+
+        out = torch.zeros_like(V)
+        half_buckets = max(1, self.num_buckets // 2)
+
+        for r in range(self.rounds):
+            # Seeded deterministic random projection per round
+            generator = torch.Generator(device=device)
+            generator.manual_seed(r * 1000 + N)
+            proj = torch.randn(d, half_buckets, device=device, dtype=dtype, generator=generator)
+            proj = F.normalize(proj, p=2, dim=0)
+
+            q_hash = self._hash(Q, proj)  # (B, H, N)
+            k_hash = self._hash(K, proj)  # (B, H, N)
+
+            # Bucket-wise attention computation
+            for b in range(B):
+                v_m = valid_mask[b]
+                for h in range(H):
+                    qh = q_hash[b, h]
+                    kh = k_hash[b, h]
+                    for bucket_id in torch.unique(qh):
+                        q_idx = (qh == bucket_id) & v_m
+                        k_idx = (kh == bucket_id) & v_m
+
+                        if not q_idx.any():
+                            continue
+
+                        # If no key in bucket, fallback to query's own tokens
+                        if not k_idx.any():
+                            k_idx = q_idx
+
+                        q_b = Q[b, h, q_idx]  # (n_q, d)
+                        k_b = K[b, h, k_idx]  # (n_k, d)
+                        v_b = V[b, h, k_idx]  # (n_k, d)
+
+                        scores = torch.matmul(q_b, k_b.transpose(-2, -1)) * scale
+                        attn = F.softmax(scores, dim=-1)
+                        attn = self.dropout(attn)
+                        ctx = torch.matmul(attn, v_b)
+                        out[b, h, q_idx] += ctx
+
+        out = out / max(1, self.rounds)
+        if head_mask is not None:
+            out = out * head_mask
+
+        out = out.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        out = self.out_proj(out)
+        out = out * valid_mask.unsqueeze(-1).to(dtype)
+        return out, None
+
+
+@ATTENTION_REGISTRY.register("lsh_inject")
+def inject_lsh(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module],
+) -> LSHAttention:
+    rounds = getattr(comp_config, "lsh_rounds", 4)
+    buckets = getattr(comp_config, "lsh_buckets", 16)
+    new_attn = LSHAttention(
+        config=model_config,
+        rounds=rounds,
+        num_buckets=buckets,
+        pretrained_attn=old_attn,
+    )
+    layer.attention = new_attn
+    return new_attn
+```

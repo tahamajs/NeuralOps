@@ -131,33 +131,27 @@ Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_
 1. **Linear Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$)**:
    $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
 2. **Centroid Reduction & Inter-Block Scoring**:
-   - Masked key centroid reduction: $2 B L D$ FLOPs.
-   - Inter-block affinity matmul ($\bar{\mathbf{Q}} \bar{\mathbf{K}}^\top$): $2 B H M^2 d_h = \frac{2 B D L^2}{B_s^2}$ FLOPs.
-   $$\operatorname{FLOPs}_{\text{coarse}} = \frac{2 B D L^2}{B_s^2} + 2 B L D$$
+Masked key centroid reduction: $2 B L D$ FLOPs. Furthermore, Inter-block affinity matmul ($\bar{\mathbf{Q}} \bar{\mathbf{K}}^\top$): $2 B H M^2 d_h = \frac{2 B D L^2}{B_s^2}$ FLOPs. $$\operatorname{FLOPs}_{\text{coarse}} = \frac{2 B D L^2}{B_s^2} + 2 B L D$$
+
 3. **Unified Candidate Block Attention**:
    Across all $M$ query blocks, fine-grained attention maps $B_s$ query tokens to $k \cdot B_s$ candidate key tokens:
-   - Attention score matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B H L (k B_s) d_h = 2 B D L (k B_s)$
-   - Context output matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B D L (k B_s)$
-   Since $k B_s = L(1-s)$:
-   $$\operatorname{FLOPs}_{\text{fine}} = 4 B D L^2 (1-s)$$
+Attention score matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B H L (k B_s) d_h = 2 B D L (k B_s)$ Furthermore, Context output matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B D L (k B_s)$ Since $k B_s = L(1-s)$: $$\operatorname{FLOPs}_{\text{fine}} = 4 B D L^2 (1-s)$$
+
 4. **Output Projection ($\mathbf{W}_O$)**:
    $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
 
 $$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_s^2} + 4 B D L^2 (1-s) + 2 B L D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 4 B L D^2 + \frac{B D L^2}{B_s^2} + 2 B D L^2 (1-s)$$
-- **Peak Activation Memory**:
-  - Block Centroid Matrices: $2 \times B \cdot H \cdot M \cdot d_k \times 2 \text{ bytes}$
-  - Coarse Block Affinity Matrix: $B \cdot H \cdot M \cdot M \times 2 \text{ bytes}$
-  - Candidate Keys/Values Buffer per query block: $2 \times B \cdot H \cdot (k B_s) \cdot d_k \times 2 \text{ bytes}$
-  - Per-Block Attention Matrix: $B \cdot H \cdot B_s \cdot (k B_s) \times 2 \text{ bytes}$.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Block Centroid Matrices: $2 \times B \cdot H \cdot M \cdot d_k \times 2 \text{ bytes}$ Concurrently, Coarse Block Affinity Matrix: $B \cdot H \cdot M \cdot M \times 2 \text{ bytes}$ In this setting, Candidate Keys/Values Buffer per query block: $2 \times B \cdot H \cdot (k B_s) \cdot d_k \times 2 \text{ bytes}$ Additionally, Per-Block Attention Matrix: $B \cdot H \cdot B_s \cdot (k B_s) \times 2 \text{ bytes}$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **XAttention Block-Sparse**: $\mathcal{O}\left(L D^2 + \frac{L^2 D}{B_s^2} + L^2 D (1-s)\right)$ compute.
-- When $s = 0.75$, XAttention reduces fine-grained token-level matrix operations by $75\%$, providing substantial compute reduction.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory. Furthermore, regarding \textbf{XAttention Block-Sparse}, $\mathcal{O}\left(L D^2 + \frac{L^2 D}{B_s^2} + L^2 D (1-s)\right)$ compute. Concurrently, When $s = 0.75$, XAttention reduces fine-grained token-level matrix operations by $75\%$, providing substantial compute reduction.
+
 
 ---
 
@@ -174,16 +168,18 @@ for i in range(n_blocks):
     ...
 ```
 Executing an explicit Python `for i in range(n_blocks):` loop introduces severe host-to-device kernel invocation overhead:
-- **GPU Under-Utilization**: Launching $M$ separate `gather`, `matmul`, and `softmax` ops sequentially stalls GPU SM hardware pipelines when $M \ge 64$.
+Specifically, regarding \textbf{GPU Under-Utilization}, launching $M$ separate `gather`, `matmul`, and `softmax` ops sequentially stalls GPU SM hardware pipelines when $M \ge 64$.
+
 
 ### 5.2 Outlier Token Masking & Centroid Distortion
 Coarse block routing computes block similarity using arithmetic key averages $\bar{\mathbf{K}}_j = \frac{1}{B_s} \sum \mathbf{K}_{j, t}$.
-- **Centroid Dilution**: Salient outlier tokens with high feature norm (such as delimiter tokens or task-critical keywords) become diluted when averaged with $B_s - 1$ background tokens.
-- **False Pruning**: If a key block contains a critical token but its average norm is low, coarse scoring drops the block ($\mathcal{I}_i \notin \text{TopK}$), causing irreversible attention information loss.
+Specifically, regarding \textbf{Centroid Dilution}, salient outlier tokens with high feature norm (such as delimiter tokens or task-critical keywords) become diluted when averaged with $B_s - 1$ background tokens. Furthermore, regarding \textbf{False Pruning}, if a key block contains a critical token but its average norm is low, coarse scoring drops the block ($\mathcal{I}_i \notin \text{TopK}$), causing irreversible attention information loss.
+
 
 ### 5.3 Non-Differentiable Block Routing & Hard Boundary Thresholds
 The selection $\operatorname{TopK}(\mathbf{S}^{\text{block}}, k)$ uses hard discrete indexing.
-- **Zero Gradient Flow**: Gradients $\frac{\partial \mathcal{L}}{\partial \mathbf{S}^{\text{block}}} = 0$ everywhere, preventing backpropagation from training the projection weights $\mathbf{W}_Q, \mathbf{W}_K$ to optimize block routing geometry.
+Specifically, regarding \textbf{Zero Gradient Flow}, gradients $\frac{\partial \mathcal{L}}{\partial \mathbf{S}^{\text{block}}} = 0$ everywhere, preventing backpropagation from training the projection weights $\mathbf{W}_Q, \mathbf{W}_K$ to optimize block routing geometry.
+
 
 ---
 
@@ -327,3 +323,199 @@ The empirical evaluation of `xattention` across standard sequence lengths and la
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`xattention.py`)
+
+```python
+r"""
+XAttention: Block Sparse Attention with Coarse-to-Fine Routing.
+Paper: https://arxiv.org/abs/2305.02102
+
+Partitions sequence tokens into non-overlapping blocks, evaluates coarse block-level routing,
+and computes unified normalized fine-grained attention across top-k candidate blocks.
+"""
+
+from typing import Any, Optional, Tuple
+import math
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.attention_mask import get_token_valid_mask
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("xattention")
+class XAttention(BaseAttention):
+    r"""
+    XAttention: Block-Sparse Attention Mechanism with Unified Probability Normalization.
+
+    Mathematical Formulation:
+        1. Block Partitioning:
+           Sequence $N$ is divided into $M = \lceil N / B_s \rceil$ blocks of size $B_s$.
+        
+        2. Coarse Block Summaries & Routing:
+           $\bar{Q}_i = \frac{1}{B_s} \sum_{t \in \text{Blk}_i} Q_t, \quad \bar{K}_j = \frac{1}{B_s} \sum_{t \in \text{Blk}_j} K_t$
+           $S_{ij}^{\text{block}} = \frac{\bar{Q}_i \bar{K}_j^\top}{\sqrt{d_k}}$
+           $\text{TopK Blocks} = \operatorname{TopK}(S_{i, :}^{\text{block}}, k)$
+        
+        3. Fine Attention Evaluation:
+           $$A = \operatorname{Softmax}\left(\frac{Q_i K_{\text{cand}}^\top}{\sqrt{d_k}} + M\right)$$
+           $$O_i = A V_{\text{cand}}$$
+
+    Complexity:
+        - Coarse Routing: $\mathcal{O}(B \cdot H \cdot M^2 \cdot d_k)$ where $M = N / B_s \ll N$.
+        - Fine Attention: $\mathcal{O}(B \cdot H \cdot N \cdot (k \cdot B_s) \cdot d_k)$.
+    """
+
+    def __init__(
+        self,
+        config: Any,
+        rank: Optional[int] = None,
+        block_size: int = 32,
+        sparsity: float = 0.5,
+        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config, rank)
+        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.block_size: int = getattr(config, "xattn_block_size", block_size)
+        self.sparsity: float = getattr(config, "xattn_sparsity", sparsity)
+
+        self.query = nn.Linear(hidden_size, self.all_head_size)
+        self.key = nn.Linear(hidden_size, self.all_head_size)
+        self.value = nn.Linear(hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, hidden_size)
+
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        r"""Universal adapter weight copying."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.weight.data.copy_(w)
+                if b is not None and target.bias is not None:
+                    target.bias.data.copy_(b)
+            except Exception:
+                pass
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        B, L, D = hidden_states.shape
+        H, d = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
+        Q = self.query(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
+        K = self.key(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
+        V = self.value(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
+
+        valid_mask = get_token_valid_mask(attention_mask, B, L, device)  # (B, L)
+
+        pad_len: int = (self.block_size - (L % self.block_size)) % self.block_size
+        if pad_len > 0:
+            Q = F.pad(Q, (0, 0, 0, pad_len))
+            K = F.pad(K, (0, 0, 0, pad_len))
+            V = F.pad(V, (0, 0, 0, pad_len))
+            valid_mask_pad = F.pad(valid_mask, (0, pad_len), value=False)
+        else:
+            valid_mask_pad = valid_mask
+
+        padded_len: int = L + pad_len
+        n_blocks: int = padded_len // self.block_size
+
+        Q_blk = Q.view(B, H, n_blocks, self.block_size, d)
+        K_blk = K.view(B, H, n_blocks, self.block_size, d)
+        V_blk = V.view(B, H, n_blocks, self.block_size, d)
+        mask_blk = valid_mask_pad.view(B, 1, n_blocks, self.block_size)
+
+        scale = d ** -0.5
+
+        # Coarse block-level summaries
+        mask_blk_float = mask_blk.unsqueeze(-1).to(dtype)
+        K_blk_masked = K_blk * mask_blk_float
+        Q_mean = Q_blk.mean(dim=3)
+        K_mean = K_blk_masked.sum(dim=3) / (mask_blk_float.sum(dim=3) + 1e-5)
+
+        block_scores = torch.matmul(Q_mean, K_mean.transpose(-2, -1)) * scale  # (B, H, n_blocks, n_blocks)
+        num_keep = max(1, min(n_blocks, int(n_blocks * (1.0 - self.sparsity))))
+        _, topk_idx = torch.topk(block_scores, num_keep, dim=-1)  # (B, H, n_blocks, num_keep)
+
+        out_blocks = []
+        for i in range(n_blocks):
+            qi = Q_blk[:, :, i]  # (B, H, block_size, d)
+            idx_i = topk_idx[:, :, i]  # (B, H, num_keep)
+
+            idx_expanded = idx_i.unsqueeze(-1).unsqueeze(-1).expand(B, H, num_keep, self.block_size, d)
+            k_cand = torch.gather(K_blk, 2, idx_expanded).view(B, H, num_keep * self.block_size, d)
+            v_cand = torch.gather(V_blk, 2, idx_expanded).view(B, H, num_keep * self.block_size, d)
+
+            mask_expanded = idx_i.unsqueeze(-1).expand(B, H, num_keep, self.block_size)
+            cand_mask = torch.gather(mask_blk.expand(B, H, n_blocks, self.block_size), 2, mask_expanded).view(B, H, 1, num_keep * self.block_size)
+
+            scores_i = torch.matmul(qi, k_cand.transpose(-2, -1)) * scale
+            scores_i = scores_i.masked_fill(~cand_mask, -10000.0)
+
+            attn_i = F.softmax(scores_i, dim=-1)
+            attn_i = self.dropout(attn_i)
+            ctx_i = torch.matmul(attn_i, v_cand)
+            out_blocks.append(ctx_i)
+
+        out_stacked = torch.stack(out_blocks, dim=2)  # (B, H, n_blocks, block_size, d)
+        out = out_stacked.view(B, H, padded_len, d)[:, :, :L, :]
+        if head_mask is not None:
+            out = out * head_mask
+
+        out = out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+        out = self.out_proj(out)
+        out = out * valid_mask.unsqueeze(-1).to(dtype)
+        return out, None
+
+
+@ATTENTION_REGISTRY.register("xattention_inject")
+def inject_xattention(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module],
+) -> XAttention:
+    block_size = getattr(comp_config, "xattn_block_size", 32)
+    sparsity = getattr(comp_config, "xattn_sparsity", 0.5)
+    new_attn = XAttention(
+        config=model_config,
+        block_size=block_size,
+        sparsity=sparsity,
+        pretrained_attn=old_attn,
+    )
+    layer.attention = new_attn
+    return new_attn
+```

@@ -11,3 +11,23 @@
 - **Empirical SST-2 Accuracy:** 89.22% (Top Performer).
 
 See [`svd_linear_attention.md`](svd_linear_attention.md) for full mathematical derivations, tensor trace, and benchmark analyses.
+
+---
+
+## Complete Source Code Implementation (`projection_factorized_attn.py`)
+
+```python
+r"""
+Projection Factorized Attention Alias.
+Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.
+"""
+
+from framework.attentions.svd_linear_attention import (
+    SVDLinear,
+    SVDLinearAttention,
+)
+
+ProjectionFactorizedAttention = SVDLinearAttention
+
+__all__ = ["ProjectionFactorizedAttention", "SVDLinearAttention", "SVDLinear"]
+```

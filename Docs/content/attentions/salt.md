@@ -153,3 +153,17 @@ The empirical evaluation of `salt` across standard sequence lengths and language
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`salt.py`)
+
+```python
+r"""
+SALT Attention: Singular Value Adaptation with Low-Rank Tuning.
+Re-exports from framework.attentions.salt_attention.
+"""
+
+from framework.attentions.salt_attention import SALTAttention, SALTLinear, inject_salt_attention
+
+__all__ = ["SALTAttention", "SALTLinear", "inject_salt_attention"]
+```
