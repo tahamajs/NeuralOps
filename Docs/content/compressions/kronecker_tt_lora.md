@@ -559,3 +559,27 @@ def kronecker_tt_lora_factory(
     compressed_model, _ = compressor.compress()
     return compressed_model
 ```
+
+
+
+## GPU Server Execution & Compression Workflow
+
+### Compression Pipeline Execution
+```bash
+python3 -m framework.main \
+    --model_name "bert-base-uncased" \
+    --compressor_type "kronecker_tt_lora" \
+    --dataset "glue/sst2" \
+    --rank 32 \
+    --device "cuda:0"
+```
+
+### Distributed Multi-GPU Evaluation
+```bash
+torchrun --nproc_per_node=4 -m framework.main \
+    --model_name "meta-llama/Llama-2-7b-hf" \
+    --compressor_type "kronecker_tt_lora" \
+    --rank 64 \
+    --batch_size 8 \
+    --distributed
+```

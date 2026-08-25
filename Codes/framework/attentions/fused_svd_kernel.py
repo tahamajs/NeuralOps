@@ -345,6 +345,11 @@ class FusedSVDLinear(nn.Module):
         if self.norm_weight is not None:
             nn.init.ones_(self.norm_weight)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.U, self.V)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # RESEARCH FIX: Dispatches fused kernel executing down-projection, RMSNorm, and up-projection
         return fused_svd_linear(

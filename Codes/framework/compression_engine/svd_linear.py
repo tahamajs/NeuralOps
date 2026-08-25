@@ -33,6 +33,7 @@ class SVDLinearLayer(nn.Module):
         self.rank: int = min(rank, self.in_features, self.out_features)
         self.use_fused_kernel: bool = use_fused_kernel
         self.use_rms_norm: bool = use_rms_norm
+        self.eps: float = eps
         device = linear_layer.weight.device
         dtype = linear_layer.weight.dtype
         with torch.no_grad():

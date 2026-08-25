@@ -66,8 +66,8 @@ graph TB
     end
 
     subgraph FrameworkCore ["NeuralOps Framework Core (Codes/framework/)"]
-        AttnReg["123 Attention Architectures"]
-        CompReg["86 Compression Engines"]
+        AttnReg["236 Attention Architectures"]
+        CompReg["107 Compression Engines"]
         Trainer["FSDP / DDP Distributed Trainer"]
         DataPipe["22 Benchmark Datasets Pipeline"]
         AnalysisEng["Hessian & Spectral Outlier Analyzer"]
