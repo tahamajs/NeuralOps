@@ -1,11 +1,11 @@
 # GPU Server Benchmark: Partial Sweep Snapshot Summary
 
-**Snapshot Date:** 2026-08-26 03:11:49  
-**Total Completed Combinations:** 301 / 720  
+**Snapshot Date:** 2026-08-26 03:26:54  
+**Total Completed Combinations:** 382 / 720  
 **Status Breakdown:**
-- **PASS:** 285
+- **PASS:** 354
 - **TIMEOUT:** 12
-- **FAIL:** 4
+- **FAIL:** 16
 
 ---
 
@@ -314,3 +314,84 @@
 | `track2_ssm` | `hgrn2_outer` | T5 | SST2 | **PASS** | 2431.60 ms | 6359.55 ms |
 | `track2_ssm` | `hgrn2_outer` | T5 | MRPC | **PASS** | 2452.63 ms | 6320.98 ms |
 | `track2_ssm` | `griffin_ssd` | BERT | SST2 | **PASS** | 1046.69 ms | 3158.25 ms |
+| `track2_ssm` | `griffin_ssd` | BERT | MRPC | **PASS** | 1045.30 ms | 3185.85 ms |
+| `track2_ssm` | `griffin_ssd` | ROBERTA | SST2 | **PASS** | 1047.63 ms | 3164.36 ms |
+| `track2_ssm` | `griffin_ssd` | ROBERTA | MRPC | **PASS** | 1032.61 ms | 3166.25 ms |
+| `track2_ssm` | `griffin_ssd` | T5 | SST2 | **PASS** | 1042.36 ms | 3163.19 ms |
+| `track2_ssm` | `griffin_ssd` | T5 | MRPC | **PASS** | 1037.36 ms | 3169.65 ms |
+| `track2_ssm` | `regla_attention` | BERT | SST2 | **PASS** | 15.68 ms | 23.74 ms |
+| `track2_ssm` | `regla_attention` | BERT | MRPC | **PASS** | 15.86 ms | 20.42 ms |
+| `track2_ssm` | `regla_attention` | ROBERTA | SST2 | **PASS** | 15.00 ms | 21.53 ms |
+| `track2_ssm` | `regla_attention` | ROBERTA | MRPC | **PASS** | 14.95 ms | 22.47 ms |
+| `track2_ssm` | `regla_attention` | T5 | SST2 | **PASS** | 13.62 ms | 18.59 ms |
+| `track2_ssm` | `regla_attention` | T5 | MRPC | **PASS** | 14.91 ms | 20.51 ms |
+| `track2_ssm` | `halo_regla` | BERT | SST2 | **PASS** | 20.90 ms | 40.15 ms |
+| `track2_ssm` | `halo_regla` | BERT | MRPC | **PASS** | 20.94 ms | 40.80 ms |
+| `track2_ssm` | `halo_regla` | ROBERTA | SST2 | **PASS** | 22.39 ms | 42.21 ms |
+| `track2_ssm` | `halo_regla` | ROBERTA | MRPC | **PASS** | 22.12 ms | 42.16 ms |
+| `track2_ssm` | `halo_regla` | T5 | SST2 | **PASS** | 22.23 ms | 43.01 ms |
+| `track2_ssm` | `halo_regla` | T5 | MRPC | **PASS** | 22.04 ms | 43.00 ms |
+| `track2_ssm` | `kda_attention` | BERT | SST2 | **PASS** | 2045.04 ms | 5114.73 ms |
+| `track2_ssm` | `kda_attention` | BERT | MRPC | **PASS** | 2071.40 ms | 5068.06 ms |
+| `track2_ssm` | `kda_attention` | ROBERTA | SST2 | **PASS** | 2012.85 ms | 5073.09 ms |
+| `track2_ssm` | `kda_attention` | ROBERTA | MRPC | **PASS** | 2090.30 ms | 5129.34 ms |
+| `track2_ssm` | `kda_attention` | T5 | SST2 | **PASS** | 2039.23 ms | 5010.24 ms |
+| `track2_ssm` | `kda_attention` | T5 | MRPC | **PASS** | 2042.76 ms | 5130.87 ms |
+| `track2_ssm` | `decay_linear_attention` | BERT | SST2 | **PASS** | 1965.44 ms | 5288.18 ms |
+| `track2_ssm` | `decay_linear_attention` | BERT | MRPC | **PASS** | 1967.26 ms | 5230.27 ms |
+| `track2_ssm` | `decay_linear_attention` | ROBERTA | SST2 | **PASS** | 1966.69 ms | 5244.22 ms |
+| `track2_ssm` | `decay_linear_attention` | ROBERTA | MRPC | **PASS** | 2003.67 ms | 5328.12 ms |
+| `track2_ssm` | `decay_linear_attention` | T5 | SST2 | **PASS** | 1980.57 ms | 5189.29 ms |
+| `track2_ssm` | `decay_linear_attention` | T5 | MRPC | **PASS** | 2025.85 ms | 5211.92 ms |
+| `track2_ssm` | `spectron` | BERT | SST2 | **PASS** | 18.05 ms | 27.61 ms |
+| `track2_ssm` | `spectron` | BERT | MRPC | **PASS** | 18.30 ms | 28.28 ms |
+| `track2_ssm` | `spectron` | ROBERTA | SST2 | **PASS** | 19.56 ms | 28.83 ms |
+| `track2_ssm` | `spectron` | ROBERTA | MRPC | **PASS** | 18.96 ms | 28.47 ms |
+| `track2_ssm` | `spectron` | T5 | SST2 | **PASS** | 19.37 ms | 30.05 ms |
+| `track2_ssm` | `spectron` | T5 | MRPC | **PASS** | 19.34 ms | 29.92 ms |
+| `track2_ssm` | `galerkin_attention` | BERT | SST2 | **PASS** | 17.48 ms | 19.11 ms |
+| `track2_ssm` | `galerkin_attention` | BERT | MRPC | **PASS** | 17.54 ms | 19.40 ms |
+| `track2_ssm` | `galerkin_attention` | ROBERTA | SST2 | **PASS** | 18.23 ms | 20.06 ms |
+| `track2_ssm` | `galerkin_attention` | ROBERTA | MRPC | **PASS** | 18.55 ms | 19.51 ms |
+| `track2_ssm` | `galerkin_attention` | T5 | SST2 | **PASS** | 18.35 ms | 19.27 ms |
+| `track2_ssm` | `galerkin_attention` | T5 | MRPC | **PASS** | 18.22 ms | 18.72 ms |
+| `track2_ssm` | `vspec` | BERT | SST2 | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec` | BERT | MRPC | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec` | ROBERTA | SST2 | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec` | ROBERTA | MRPC | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec` | T5 | SST2 | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec` | T5 | MRPC | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec_attention` | BERT | SST2 | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec_attention` | BERT | MRPC | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec_attention` | ROBERTA | SST2 | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec_attention` | ROBERTA | MRPC | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec_attention` | T5 | SST2 | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `vspec_attention` | T5 | MRPC | **FAIL** | 0.00 ms | 0.00 ms |
+| `track2_ssm` | `mamba_shedder` | BERT | SST2 | **PASS** | 15.80 ms | 22.70 ms |
+| `track2_ssm` | `mamba_shedder` | BERT | MRPC | **PASS** | 10.09 ms | 14.45 ms |
+| `track2_ssm` | `mamba_shedder` | ROBERTA | SST2 | **PASS** | 10.95 ms | 15.49 ms |
+| `track2_ssm` | `mamba_shedder` | ROBERTA | MRPC | **PASS** | 12.23 ms | 15.92 ms |
+| `track2_ssm` | `mamba_shedder` | T5 | SST2 | **PASS** | 19.03 ms | 33.50 ms |
+| `track2_ssm` | `mamba_shedder` | T5 | MRPC | **PASS** | 19.01 ms | 32.98 ms |
+| `track3_moe` | `bam_umoe` | BERT | SST2 | **PASS** | 47.64 ms | 71.89 ms |
+| `track3_moe` | `bam_umoe` | BERT | MRPC | **PASS** | 45.54 ms | 69.04 ms |
+| `track3_moe` | `bam_umoe` | ROBERTA | SST2 | **PASS** | 47.68 ms | 70.81 ms |
+| `track3_moe` | `bam_umoe` | ROBERTA | MRPC | **PASS** | 49.08 ms | 70.45 ms |
+| `track3_moe` | `bam_umoe` | T5 | SST2 | **PASS** | 45.15 ms | 69.95 ms |
+| `track3_moe` | `bam_umoe` | T5 | MRPC | **PASS** | 44.99 ms | 70.75 ms |
+| `track3_moe` | `expert_choice_moe` | BERT | SST2 | **PASS** | 43.21 ms | 69.62 ms |
+| `track3_moe` | `expert_choice_moe` | BERT | MRPC | **PASS** | 42.70 ms | 68.13 ms |
+| `track3_moe` | `expert_choice_moe` | ROBERTA | SST2 | **PASS** | 43.32 ms | 70.39 ms |
+| `track3_moe` | `expert_choice_moe` | ROBERTA | MRPC | **PASS** | 42.24 ms | 68.90 ms |
+| `track3_moe` | `expert_choice_moe` | T5 | SST2 | **PASS** | 40.16 ms | 67.84 ms |
+| `track3_moe` | `expert_choice_moe` | T5 | MRPC | **PASS** | 39.97 ms | 67.03 ms |
+| `track3_moe` | `reap_moe` | BERT | SST2 | **PASS** | 46.06 ms | 75.33 ms |
+| `track3_moe` | `reap_moe` | BERT | MRPC | **PASS** | 46.93 ms | 73.95 ms |
+| `track3_moe` | `reap_moe` | ROBERTA | SST2 | **PASS** | 47.20 ms | 75.87 ms |
+| `track3_moe` | `reap_moe` | ROBERTA | MRPC | **PASS** | 46.50 ms | 75.50 ms |
+| `track3_moe` | `reap_moe` | T5 | SST2 | **PASS** | 47.74 ms | 76.19 ms |
+| `track3_moe` | `reap_moe` | T5 | MRPC | **PASS** | 46.29 ms | 74.43 ms |
+| `track3_moe` | `samba_moe` | BERT | SST2 | **PASS** | 899.04 ms | 2227.83 ms |
+| `track3_moe` | `samba_moe` | BERT | MRPC | **PASS** | 878.57 ms | 2229.99 ms |
+| `track3_moe` | `samba_moe` | ROBERTA | SST2 | **PASS** | 875.84 ms | 2258.18 ms |
+| `track3_moe` | `samba_moe` | ROBERTA | MRPC | **PASS** | 888.87 ms | 2255.14 ms |
