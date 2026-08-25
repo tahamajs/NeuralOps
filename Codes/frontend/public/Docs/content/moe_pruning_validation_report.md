@@ -31,38 +31,38 @@ This report delivers a rigorous mathematical inspection, architectural validatio
 
 ## 1. Module Validation: MoE, Token Compression & Hybrid Attentions
 
-The 20 examined attention modules in [`Codes/framework/attentions/`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/) are cataloged below with their mathematical formulations, routing mechanisms, complexity profiles, and validation status:
+The 20 examined attention modules in [`Codes/framework/attentions/`](../../Codes/framework/attentions/) are cataloged below with their mathematical formulations, routing mechanisms, complexity profiles, and validation status:
 
 | Module File | Registered Keys | Core Mechanism | Time Complexity | Validation Status |
 |---|---|---|---|---|
-| [`bam_umoe.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/bam_umoe.py) | `bam_umoe` | Unified MoE with Top-$k$ gating on QKV & FFN, Switch Transformer load-balancing loss | $\mathcal{O}(N^2 d + N \cdot k \cdot d)$ | Verified & Validated |
-| [`expert_choice_moe.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/expert_choice_moe.py) | `expert_choice_moe` | Expert Choice routing where experts select top-$k$ tokens; perfect load balance by construction | $\mathcal{O}(N^2 d + E \cdot k \cdot d)$ | Verified & Validated |
-| [`moe_deltakv_paged.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/moe_deltakv_paged.py) | `moe_deltakv_paged` | Mixture-of-Block-Attention (MoBA) + Paged Delta-KV cache compression with STE 4-bit SVD | $\mathcal{O}(N \cdot B_s \cdot d)$ | Verified & Validated |
-| [`reap_moe.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/reap_moe.py) | `reap_moe` | Robust Expert Allocation & Pruning with SVD low-rank factorized expert layers | $\mathcal{O}(N^2 d + N \cdot k \cdot r)$ | Verified & Validated |
-| [`samba_moe.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/samba_moe.py) | `samba_moe` | Triple Hybrid: Local Sliding-Window Attention + Spectral Mamba SSM + REAP-MoE FFN | $\mathcal{O}(N \cdot W \cdot d + N \cdot d)$ | Verified & Validated |
-| [`token_compressed_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/token_compressed_attention.py) | `token_compressed`, `token_compressed_attention`, `token_compressed_module` | $L_2$ norm energy + MLP saliency scoring with guaranteed [CLS] token retention | $\mathcal{O}(N \cdot k_{keep} \cdot d)$ | Verified & Validated |
-| [`compressed_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/compressed_attention.py) | `compressed_attention`, `compressed_attention_layer` | Truncated SVD on stacked $W_{QKV}$ and $W_{out}$ with symmetric $\sqrt{S}$ scaling | $\mathcal{O}(N \cdot r + N^2 d)$ | Verified & Validated |
-| [`compressed_mha_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/compressed_mha_attention.py) | `compressed_mha`, `compressed_mha_attention` | DistilBERT joint SVD projection decomposition with trainable low-rank factors | $\mathcal{O}(N \cdot r + N^2 d)$ | Verified & Validated |
-| [`nha_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/nha_attention.py) | `nha`, `nha_attention`, `nha_compressor` | Native Hybrid Attention: Local Sliding-Window ($W=64$) + Global Random Fourier Features ($F=128$) | $\mathcal{O}(N \cdot W \cdot d + N \cdot F \cdot d)$ | Verified & Validated |
-| [`block_transformer_hiba.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/block_transformer_hiba.py) | `block_transformer_hiba` | Hierarchical Intra-Block and Inter-Block sparse attention with periodic global rectification | $\mathcal{O}(N \cdot B_s \cdot d + N \cdot k \cdot d)$ | Verified & Validated |
-| [`jamba.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/jamba.py) | `jamba`, `jamba2` | Tri-branch Hybrid: SVD-Mamba SSM + Multi-Head Attention + Expert Choice MoE | $\mathcal{O}(N \cdot d + N^2 d + E \cdot k \cdot d)$ | Verified & Validated |
-| [`hymba_transx.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hymba_transx.py) | `hymba_transx` | Differential Attention with Head-wise RoPE + SimpleSSM Mamba branch with learned fusion | $\mathcal{O}(N^2 d + N \cdot d)$ | Verified & Validated |
-| [`infini_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/infini_attention.py) | `infini`, `infini_attention` | Compressive associative memory bank ($D_{comp}=128$) + Sliding-Window Attention | $\mathcal{O}(N \cdot W \cdot d + N \cdot D_{comp} \cdot d)$ | Verified & Validated |
-| [`nexus.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/nexus.py) | `nexus` | Multi-scale sparse attention: XAttention scoring, Seer gating, Anchor stripe bands, Softpick, RFF | $\mathcal{O}(N \cdot B_s + N \cdot k \cdot B_s)$ | Verified & Validated |
-| [`leka_v1.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/leka_v1.py) | `leka_v1`, `leka_v1_inject` | Basic Random Fourier Feature kernel approximation $\phi(x) = \frac{1}{\sqrt{F}}[\cos(xW), \sin(xW)]$ | $\mathcal{O}(N \cdot F \cdot d)$ | Verified & Validated |
-| [`leka_v2.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/leka_v2.py) | `leka_v2`, `leka_v2_inject` | Multi-scale RFF + Learned Landmark Distillation + Softpick + Gated Local Window | $\mathcal{O}(N \cdot (L_{max} F + W_{local} d))$ | Verified & Validated |
-| [`leka_v3.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/leka_v3.py) | `leka_v3`, `leka_v3_inject` | Value-scored Landmark selection with strict padding masking and [CLS] prioritization | $\mathcal{O}(N \cdot (L_{max} F + W_{local} d))$ | Verified & Validated |
-| [`mixattention_moska.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/mixattention_moska.py) | `mixattention_moska` | Frequency/Variance-Aware Sparse Attention (FASA) with variance pruning and [CLS] lock | $\mathcal{O}(N \cdot k_{fasa} \cdot d)$ | Verified & Validated |
-| [`vspec_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/vspec_attention.py) | `vspec`, `vspec_attention` | Variational Spectral Gating over SVD projectors + per-head gating + token routing | $\mathcal{O}(N \cdot k \cdot d + k^2 d)$ | Verified & Validated |
-| [`wgqa_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/wgqa_attention.py) | `wgqa`, `wgqa_attention` | Weighted Grouped-Query Attention with learnable KV channel importance and head pooling | $\mathcal{O}(N^2 \cdot (H_q / H_{kv}) \cdot d)$ | Verified & Validated |
-| [`progressive_token_pruning.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/progressive_token_pruning.py) | `progressive_token_pruning` | Learnable MLP score network with progressive top-$k$ KV pruning and [CLS] protection | $\mathcal{O}(N \cdot k \cdot d)$ | Verified & Validated |
-| [`optimized_hybrid_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/optimized_hybrid_attention.py) | `oha`, `optimized_hybrid_attention`, `oha_inject` | Sliding-Window Local Attention ($W=64$) + Sequence-Compressed Low-Rank Global ($R=32$) | $\mathcal{O}(N \cdot (W + R) \cdot d)$ | Verified & Validated |
+| [`bam_umoe.py`](../../Codes/framework/attentions/bam_umoe.py) | `bam_umoe` | Unified MoE with Top-$k$ gating on QKV & FFN, Switch Transformer load-balancing loss | $\mathcal{O}(N^2 d + N \cdot k \cdot d)$ | Verified & Validated |
+| [`expert_choice_moe.py`](../../Codes/framework/attentions/expert_choice_moe.py) | `expert_choice_moe` | Expert Choice routing where experts select top-$k$ tokens; perfect load balance by construction | $\mathcal{O}(N^2 d + E \cdot k \cdot d)$ | Verified & Validated |
+| [`moe_deltakv_paged.py`](../../Codes/framework/attentions/moe_deltakv_paged.py) | `moe_deltakv_paged` | Mixture-of-Block-Attention (MoBA) + Paged Delta-KV cache compression with STE 4-bit SVD | $\mathcal{O}(N \cdot B_s \cdot d)$ | Verified & Validated |
+| [`reap_moe.py`](../../Codes/framework/attentions/reap_moe.py) | `reap_moe` | Robust Expert Allocation & Pruning with SVD low-rank factorized expert layers | $\mathcal{O}(N^2 d + N \cdot k \cdot r)$ | Verified & Validated |
+| [`samba_moe.py`](../../Codes/framework/attentions/samba_moe.py) | `samba_moe` | Triple Hybrid: Local Sliding-Window Attention + Spectral Mamba SSM + REAP-MoE FFN | $\mathcal{O}(N \cdot W \cdot d + N \cdot d)$ | Verified & Validated |
+| [`token_compressed_attention.py`](../../Codes/framework/attentions/token_compressed_attention.py) | `token_compressed`, `token_compressed_attention`, `token_compressed_module` | $L_2$ norm energy + MLP saliency scoring with guaranteed [CLS] token retention | $\mathcal{O}(N \cdot k_{keep} \cdot d)$ | Verified & Validated |
+| [`compressed_attention.py`](../../Codes/framework/attentions/compressed_attention.py) | `compressed_attention`, `compressed_attention_layer` | Truncated SVD on stacked $W_{QKV}$ and $W_{out}$ with symmetric $\sqrt{S}$ scaling | $\mathcal{O}(N \cdot r + N^2 d)$ | Verified & Validated |
+| [`compressed_mha_attention.py`](../../Codes/framework/attentions/compressed_mha_attention.py) | `compressed_mha`, `compressed_mha_attention` | DistilBERT joint SVD projection decomposition with trainable low-rank factors | $\mathcal{O}(N \cdot r + N^2 d)$ | Verified & Validated |
+| [`nha_attention.py`](../../Codes/framework/attentions/nha_attention.py) | `nha`, `nha_attention`, `nha_compressor` | Native Hybrid Attention: Local Sliding-Window ($W=64$) + Global Random Fourier Features ($F=128$) | $\mathcal{O}(N \cdot W \cdot d + N \cdot F \cdot d)$ | Verified & Validated |
+| [`block_transformer_hiba.py`](../../Codes/framework/attentions/block_transformer_hiba.py) | `block_transformer_hiba` | Hierarchical Intra-Block and Inter-Block sparse attention with periodic global rectification | $\mathcal{O}(N \cdot B_s \cdot d + N \cdot k \cdot d)$ | Verified & Validated |
+| [`jamba.py`](../../Codes/framework/attentions/jamba.py) | `jamba`, `jamba2` | Tri-branch Hybrid: SVD-Mamba SSM + Multi-Head Attention + Expert Choice MoE | $\mathcal{O}(N \cdot d + N^2 d + E \cdot k \cdot d)$ | Verified & Validated |
+| [`hymba_transx.py`](../../Codes/framework/attentions/hymba_transx.py) | `hymba_transx` | Differential Attention with Head-wise RoPE + SimpleSSM Mamba branch with learned fusion | $\mathcal{O}(N^2 d + N \cdot d)$ | Verified & Validated |
+| [`infini_attention.py`](../../Codes/framework/attentions/infini_attention.py) | `infini`, `infini_attention` | Compressive associative memory bank ($D_{comp}=128$) + Sliding-Window Attention | $\mathcal{O}(N \cdot W \cdot d + N \cdot D_{comp} \cdot d)$ | Verified & Validated |
+| [`nexus.py`](../../Codes/framework/attentions/nexus.py) | `nexus` | Multi-scale sparse attention: XAttention scoring, Seer gating, Anchor stripe bands, Softpick, RFF | $\mathcal{O}(N \cdot B_s + N \cdot k \cdot B_s)$ | Verified & Validated |
+| [`leka_v1.py`](../../Codes/framework/attentions/leka_v1.py) | `leka_v1`, `leka_v1_inject` | Basic Random Fourier Feature kernel approximation $\phi(x) = \frac{1}{\sqrt{F}}[\cos(xW), \sin(xW)]$ | $\mathcal{O}(N \cdot F \cdot d)$ | Verified & Validated |
+| [`leka_v2.py`](../../Codes/framework/attentions/leka_v2.py) | `leka_v2`, `leka_v2_inject` | Multi-scale RFF + Learned Landmark Distillation + Softpick + Gated Local Window | $\mathcal{O}(N \cdot (L_{max} F + W_{local} d))$ | Verified & Validated |
+| [`leka_v3.py`](../../Codes/framework/attentions/leka_v3.py) | `leka_v3`, `leka_v3_inject` | Value-scored Landmark selection with strict padding masking and [CLS] prioritization | $\mathcal{O}(N \cdot (L_{max} F + W_{local} d))$ | Verified & Validated |
+| [`mixattention_moska.py`](../../Codes/framework/attentions/mixattention_moska.py) | `mixattention_moska` | Frequency/Variance-Aware Sparse Attention (FASA) with variance pruning and [CLS] lock | $\mathcal{O}(N \cdot k_{fasa} \cdot d)$ | Verified & Validated |
+| [`vspec_attention.py`](../../Codes/framework/attentions/vspec_attention.py) | `vspec`, `vspec_attention` | Variational Spectral Gating over SVD projectors + per-head gating + token routing | $\mathcal{O}(N \cdot k \cdot d + k^2 d)$ | Verified & Validated |
+| [`wgqa_attention.py`](../../Codes/framework/attentions/wgqa_attention.py) | `wgqa`, `wgqa_attention` | Weighted Grouped-Query Attention with learnable KV channel importance and head pooling | $\mathcal{O}(N^2 \cdot (H_q / H_{kv}) \cdot d)$ | Verified & Validated |
+| [`progressive_token_pruning.py`](../../Codes/framework/attentions/progressive_token_pruning.py) | `progressive_token_pruning` | Learnable MLP score network with progressive top-$k$ KV pruning and [CLS] protection | $\mathcal{O}(N \cdot k \cdot d)$ | Verified & Validated |
+| [`optimized_hybrid_attention.py`](../../Codes/framework/attentions/optimized_hybrid_attention.py) | `oha`, `optimized_hybrid_attention`, `oha_inject` | Sliding-Window Local Attention ($W=64$) + Sequence-Compressed Low-Rank Global ($R=32$) | $\mathcal{O}(N \cdot (W + R) \cdot d)$ | Verified & Validated |
 
 ---
 
 ## 2. Module Validation: Structural Pruning & Shedding Compressors
 
-The 18 structural pruning, shedding, and matrix factorization compressors in [`Codes/framework/compression_engine/`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/) were verified against their mathematical specifications and registry factories:
+The 18 structural pruning, shedding, and matrix factorization compressors in [`Codes/framework/compression_engine/`](../../Codes/framework/compression_engine/) were verified against their mathematical specifications and registry factories:
 
 ```
                                   COMPRESSION ENGINE TAXONOMY
@@ -163,7 +163,7 @@ In sequence classification benchmarks (e.g. SST-2, QNLI, MRPC), the model's clas
 - `leka_v2.py` & `leka_v3.py`: `scores[:, :, 0] = 1e6` in landmark selection.
 
 ### 3.3 Universal Forward Adapter & Weight Transfer
-The `UniversalAttentionWrapper` in [`utils/replace_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/utils/replace_attention.py) dynamically adapts argument signatures across HuggingFace architectures:
+The `UniversalAttentionWrapper` in [`utils/replace_attention.py`](../../Codes/framework/utils/replace_attention.py) dynamically adapts argument signatures across HuggingFace architectures:
 - Multi-signature dispatch resolves `(hidden_states, attention_mask)`, `(query, key, value, mask)`, and `(x)`.
 - `_try_instantiate()` dynamically evaluates positional, keyword, and config-injected signatures across all 126 registered modules.
 - Pretrained weights for Q, K, V, and Output projections are transferred via `copy_weights()`, avoiding cold-start random initialization degradation.
@@ -172,7 +172,7 @@ The `UniversalAttentionWrapper` in [`utils/replace_attention.py`](file:///Users/
 
 ## 4. Empirical Results Audit & Benchmark Analysis
 
-The empirical results from [`Codes/framework/experiments/`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/experiments/) on the SST-2 GLUE benchmark are summarized below:
+The empirical results from [`Codes/framework/experiments/`](../../Codes/framework/experiments/) on the SST-2 GLUE benchmark are summarized below:
 
 ```mermaid
 gantt

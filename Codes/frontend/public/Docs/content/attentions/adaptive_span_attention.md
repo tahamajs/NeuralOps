@@ -134,38 +134,26 @@ Y = \text{Concat}(O_1, \dots, O_H) W_O + b_O \in \mathbb{R}^{B \times N \times D
 ### Computational Workload (FLOPs & MACs)
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_h = D/H$, $S_{\max}$ max span, and $\bar{S} = \frac{1}{H} \sum_{h=1}^H S_h$ average learned head span.
 
-1. **Linear Projections**:
-   - $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+The computational throughput of Adaptive Span Attention exhibits a bifurcated scaling profile governed by the hardware execution paradigm. In the input projection stage, linear transformations across projection matrices $W_Q, W_K, W_V,$ and $W_O$ require $8 B N D^2$ floating-point operations ($4 B N D^2$ multiply-accumulate operations), scaling quadratically with the hidden dimension but strictly linearly with sequence length. 
 
-2. **Core Adaptive Span Attention**:
-   - Raw score matrix calculation $Q K^\top$: $2 B N^2 D$ FLOPs.
-   - Distance matrix calculation & mask evaluation: $H N^2 + B H N^2$ FLOPs.
-   - Softmax & Value Aggregation (with active span $\bar{S}$):
-     - Un-optimized dense implementation: $2 B N^2 D + 7 B H N^2$ FLOPs.
-     - Block-sparse optimized implementation: $4 B H N \bar{S} d_h = 4 B N \bar{S} D$ FLOPs.
-
-3. **Total Workload Summary**:
-   - **Dense PyTorch FLOPs**: $8 B N D^2 + 4 B N^2 D + 8 B H N^2$
-   - **Sparse-Optimized FLOPs**: $8 B N D^2 + 4 B N \bar{S} D + 7 B H N \bar{S}$ (linear scaling in sequence length when $\bar{S} \ll N$).
+Within the core attention mechanism, the theoretical complexity diverges substantially between naive dense evaluation and specialized sparse execution. An un-optimized dense materialization incurs $2 B N^2 D$ FLOPs for raw affinity score computation $Q K^\top$, alongside $H N^2 + B H N^2$ FLOPs dedicated to relative distance construction and mask evaluation. In contrast, under a block-sparse or custom kernel execution where computation is strictly localized to active head windows $\bar{S}$, the softmax aggregation and value multiplication require only $4 B H N \bar{S} d_h = 4 B N \bar{S} D$ FLOPs. Consequently, while standard dense framework implementations yield an asymptotic burden of $8 B N D^2 + 4 B N^2 D + 8 B H N^2$ FLOPs, a hardware-aligned sparse execution achieves $8 B N D^2 + 4 B N \bar{S} D + 7 B H N \bar{S}$ FLOPs, transitioning to near-linear complexity when the mean receptive field satisfies $\bar{S} \ll N$.
 
 ### Memory Footprint & Parameter Overhead
-- **Parameter Count**: $4 D^2 + 4 D + H$ (only $H$ extra scalar logit parameters).
-- **KV Cache MemoryFootprint during Inference**:
-  Instead of caching $N$ tokens for all heads, head $h$ caches only its active span $S_h$:
-  \[
-  \text{KV Cache Size}_{\text{AdaptiveSpan}} = 2 \cdot B \cdot d_h \cdot \sum_{h=1}^H \min(N, S_h) \cdot b = 2 B \bar{S} D \cdot b \text{ bytes}
-  \]
-  If $\bar{S} = 64$ while $N = 4096$, KV cache memory is reduced by **98.4%**.
+From a parametric perspective, the architecture introduces negligible capacity overhead, requiring only $4 D^2 + 4 D + H$ parameters where the additional $H$ scalar logit weights parameterize the head-specific receptive fields. The primary operational advantage manifests during autoregressive generation within the key-value (KV) cache allocation. Rather than buffering the full context history of length $N$ uniformly across all heads, each head $h$ dynamically constrains its KV cache storage to its effective span $S_h$:
+\[
+\text{KV Cache Size}_{\text{AdaptiveSpan}} = 2 \cdot B \cdot d_h \cdot \sum_{h=1}^H \min(N, S_h) \cdot b = 2 B \bar{S} D \cdot b \text{ bytes}
+\]
+Under representative operational regimes where $\bar{S} = 64$ against an extended context of $N = 4096$, this selective retention mechanism contracts the inference memory footprint by approximately $98.4\%$, thereby mitigating bandwidth saturation at the memory bus.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Span Collapse ($S_h \to 0$)
-If gradient flow causes span logit $\theta_h \to -\infty$, effective span collapses to $S_h = 0$. Head $h$ can attend only to self-tokens ($i = j$), disabling cross-token context gathering. Adding span length L1 regularization ($\lambda \sum S_h$) requires balancing to avoid premature span collapse.
+### Optimization Stability and Span Collapse ($S_h \to 0$)
+A principal vulnerability within differentiable span gating concerns the risk of span collapse during gradient descent. When negative gradient trajectories push the unconstrained logit parameter $\theta_h \to -\infty$, the resulting Sigmoid activation saturates, contracting the effective receptive field to $S_h = 0$. Under this degenerate regime, the corresponding attention head collapses into an isolated self-attention mechanism restricted strictly to diagonal elements ($i = j$), entirely precluding the assimilation of cross-token semantic context. This structural failure mode is particularly acute when incorporating auxiliary $\ell_1$ regularization penalties ($\lambda \sum S_h$) intended to encourage global sparsity; an improperly calibrated regularization schedule induces steep gradients on the loss landscape, prematurely pruning heads before multi-scale syntactic features can stabilize. Mitigating this degradation requires careful warmup schedules for $\lambda$, gradient clipping on the span parameter manifold, and setting lower bounds on the differentiable soft-ramp activation.
 
-### Dense Score Materialization Bottleneck in PyTorch
-In naive PyTorch code, score matrices $[B, H, N, N]$ are computed fully before applying `masked_fill`. As a result, memory consumption remains quadratic $\mathcal{O}(N^2)$ during forward propagation unless custom block-sparse GPU kernels are used.
+### Materialization Constraints and Memory Landscape in Standard Frameworks
+A persistent architectural bottleneck in high-level tensor frameworks arises from the eager materialization of full intermediate affinity structures. In un-fused PyTorch execution pipelines, the dense pairwise score tensor $\mathbb{R}^{B \times H \times N \times N}$ is completely computed in global high-bandwidth memory (HBM) prior to the application of the boolean span mask via `masked_fill`. Consequently, the intermediate spatial allocation remains bound to quadratic complexity $\mathcal{O}(N^2)$ during forward and backward passes, negating theoretical memory savings unless custom hardware-aligned block-sparse kernels (e.g., custom Triton or CUDA primitives) are explicitly deployed to restrict DRAM transactions to active span windows.
 
 ---
 
@@ -201,9 +189,7 @@ A Triton kernel for Adaptive Span Attention executes variable block-sparse tilin
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Asymmetric Causal-Bidirectional Spans**: Parameterize independent backward span $S_h^{\text{back}}$ and forward span $S_h^{\text{fwd}}$ for encoder-decoder models.
-2. **Span-Aware Quantization**: Apply aggressive 2-bit quantization to long-span heads while maintaining 8-bit precision on short-span local heads.
-3. **Adaptive Span + Mamba SSM Hybrids**: Interleave short-span local attention layers with linear state-space model (SSM) blocks to handle infinite context with bounded memory.
+Emerging frontiers in dynamic receptive field gating explore multi-scale architectural hybridizations and hardware-aware precision adaptations to extend sequence modeling capabilities. One compelling direction involves the parameterization of asymmetric causal-bidirectional spans, wherein independent backward receptive fields $S_h^{\text{back}}$ and forward receptive fields $S_h^{\text{fwd}}$ are assigned across sequence dimensions, enabling encoder-decoder and non-causal architectures to decouple left-to-right syntactic gathering from right-to-left semantic lookahead. Concurrently, span-aware mixed-precision quantization offers substantial throughput improvements; by allocating aggressive low-bit representations (such as 2-bit integer formats) to long-span heads while reserving high-precision 8-bit representations for localized short-span heads, the architecture minimizes off-chip memory bandwidth consumption without compromising critical local syntactic resolution. Furthermore, hybridizing adaptive span attention with selective state-space models (SSMs), such as Mamba architectures, yields a hierarchical context engine: continuous state recurrences efficiently capture unbounded global background representations, while dynamically gated attention heads resolve sharp, token-level associative queries under strictly bounded memory overhead.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
@@ -226,3 +212,160 @@ The empirical evaluation of `adaptive_span_attention` across standard sequence l
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`adaptive_span_attention.py`)
+
+```python
+r"""
+Adaptive Span Attention Module.
+Paper: https://arxiv.org/abs/1905.07799
+"""
+
+from typing import Any, Optional, Tuple
+import math
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.attention_mask import get_token_valid_mask
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("adaptive_span")
+class AdaptiveSpanAttention(BaseAttention):
+    r"""
+    Adaptive Span Attention (Sukhbaatar et al., 2019).
+
+    Mathematical Formulation:
+        1. Query-Key Attention Scores:
+           $$S_{ij} = \frac{Q_i K_j^\top}{\sqrt{d}}$$
+        
+        2. Dynamic Per-Head Span Masking:
+           Let $z_h = \sigma(\text{logit}_h) \cdot S_{\max}$.
+           $$M_{ij}^{(h)} = \begin{cases} 0 & \text{if } |i - j| \le z_h \\ -10000 & \text{otherwise} \end{cases}$$
+        
+        3. Context:
+           $$A = \operatorname{Softmax}(S + M + M_{\text{pad}})$$
+           $$O = A V W_O$$
+    """
+
+    def __init__(
+        self,
+        config: Any,
+        rank: Optional[int] = None,
+        dropout: float = 0.1,
+        max_span: int = 128,
+        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config, rank)
+        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.max_span: int = getattr(config, "max_span", max_span)
+
+        self.q_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, hidden_size)
+
+        # Avoid saturation: initialize to 0 -> span ~ max_span / 2
+        self.span_logits = nn.Parameter(torch.zeros(self.num_heads))
+
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", dropout),
+            ),
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        r"""Universal adapter weight copying."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.weight.data.copy_(w)
+                if b is not None and target.bias is not None:
+                    target.bias.data.copy_(b)
+            except Exception:
+                pass
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        B, N, D = hidden_states.shape
+        H, d = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
+        Q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
+        K = self.k_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
+        V = self.v_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
+
+        scale = d ** -0.5
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N, N]
+
+        # Adaptive span mask
+        span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
+        pos = torch.arange(N, device=device, dtype=torch.float32)
+        dist = (pos.unsqueeze(0) - pos.unsqueeze(1)).abs()       # [N, N]
+        span_bool = dist.unsqueeze(0) <= span.unsqueeze(1).unsqueeze(2)  # [H, N, N]
+
+        valid_mask = get_token_valid_mask(attention_mask, B, N, device)  # [B, N]
+        key_valid_4d = valid_mask.unsqueeze(1).unsqueeze(2)             # [B, 1, 1, N]
+        total_mask = span_bool.unsqueeze(0) & key_valid_4d              # [B, H, N, N]
+
+        scores = scores.masked_fill(~total_mask, -10000.0)
+        attn = F.softmax(scores, dim=-1)
+        attn = self.dropout(attn)
+
+        if head_mask is not None:
+            attn = attn * head_mask
+
+        context = torch.matmul(attn, V)
+        context = context * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        output = self.out_proj(context)
+        return output, (attn if output_attentions else None)
+
+
+@ATTENTION_REGISTRY.register("adaptive_span_inject")
+def inject_adaptive_span(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module],
+) -> AdaptiveSpanAttention:
+    rank = getattr(comp_config, "adaptive_span_rank", 32)
+    dropout = getattr(comp_config, "dropout", 0.1)
+    max_span = getattr(comp_config, "max_span", 128)
+    new_attn = AdaptiveSpanAttention(
+        config=model_config,
+        rank=rank,
+        dropout=dropout,
+        max_span=max_span,
+        pretrained_attn=old_attn,
+    )
+    layer.attention = new_attn
+    return new_attn
+```

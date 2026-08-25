@@ -1,129 +1,172 @@
-# HGRN-2 Gated DeltaNet: Interleaved Hierarchical Linear Recurrence & Dense Attention Architecture
+# HGRN-2 Gated DeltaNet Hybrid Architecture
 
-## 1. Executive Abstract & Architectural Motivation
-
-Pure linear recurrent networks provide $\mathcal{O}(L)$ time and constant decoding memory, but can struggle with exact long-range pairwise token retrieval. Full Multi-Head Self-Attention achieves exact retrieval but suffers from $\mathcal{O}(L^2)$ quadratic complexity. The HGRN-2 Gated DeltaNet Architecture solves this trade-off by arranging a sequence of $N$ Transformer layers in a hybrid ratio $R:1$.
-
-In this hybrid topology, $R$ consecutive layers execute fast linear $\mathcal{O}(L)$ HGRN-2 / Gated DeltaNet recurrence, while every $(R+1)$-th layer executes a dense Multi-Head Attention pass. This interleaved paradigm retains high throughput and low memory footprint while preserving exact retrieval capabilities.
-
----
-
-## 2. Mathematical Formulations & Derivations
-
-Given input sequence $X^{(0)} \in \mathbb{R}^{B \times L \times D}$, layer $l \in \{0, \dots, N-1\}$ executes based on hybrid ratio $R$:
-
-\[
-X^{(l+1)} = \begin{cases}
-    \text{MHA-Block}\left( X^{(l)} \right), & \text{if } l \pmod{R+1} = R \\
-    \text{HGRN2-Block}\left( X^{(l)} \right), & \text{otherwise}
-\end{cases}
-\]
-
-### Layer Type 1: HGRN-2 Linear Recurrence Layer ($l \pmod{R+1} \ne R$):
-\[
-f_t = \sigma(W_f X_t^{(l)}), \quad i_t = \sigma(W_i X_t^{(l)})
-\]
-\[
-h_t = \text{Clamp}\left( f_t \odot h_{t-1} + i_t \odot X_t^{(l)}, -1.0, 1.0 \right)
-\]
-\[
-X^{(l+1)} = X^{(l)} + W_O h
-\]
-
-### Layer Type 2: Dense Multi-Head Attention Layer ($l \pmod{R+1} = R$):
-\[
-Q = X^{(l)} W_Q, \quad K = X^{(l)} W_K, \quad V = X^{(l)} W_V \in \mathbb{R}^{B \times H \times L \times d_k}
-\]
-\[
-A = \text{Softmax}\left( \frac{Q K^\top}{\sqrt{d_k}} + M_{\text{causal}} \right) \in \mathbb{R}^{B \times H \times L \times L}
-\]
-\[
-X^{(l+1)} = X^{(l)} + (A V) W_O
-\]
+## 1. Executive Abstract
+**HGRN-2 Gated DeltaNet** is a hybrid attention module that fuses two linear recurrent paradigms:
+1. **HGRN-2 Element-Wise Branch**: High-frequency element-wise linear recurrence capturing fast local sequence dynamics with $\mathcal{O}(L \cdot D)$ complexity.
+2. **Gated DeltaNet Associative Memory Branch**: Multi-head matrix recurrence utilizing the Delta-rule update for associative memory retrieval.
+3. **Dynamic Sigmoid Gating**: Merges the two branches with input-dependent gating $\gamma = \sigma(W_g x)$.
 
 ---
 
-## 3. Step-by-Step Tensor Execution Trace
-
-```
-Input: X_0 [B, L, D]
-  │
-  ├──> Layer 0 (HGRN-2 Linear): X_1 = HGRN2_Block(X_0) ──> [B, L, D]
-  ├──> Layer 1 (HGRN-2 Linear): X_2 = HGRN2_Block(X_1) ──> [B, L, D]
-  │    ... (R linear layers)
-  ├──> Layer R (Dense MHA Bypass): X_{R+1} = MHA_Block(X_R) ──> [B, L, D]
-  │
-  └──> Repeat hybrid stack for N layers ──> Final Output: [B, L, D]
-```
-
-### Detailed Tensor Transformations:
-
-| Step | Operation | Tensor Shape | Description |
-| :--- | :--- | :--- | :--- |
-| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
-| 2 | HGRN-2 Linear Layers | $[B, L, D]$ | $R$ consecutive linear recurrence layers ($\mathcal{O}(L)$) |
-| 3 | Dense MHA Layer | $[B, L, D]$ | 1 dense Multi-Head Attention layer ($\mathcal{O}(L^2)$) |
-| 4 | Final Stack Output | $[B, L, D]$ | Hybrid representation sequence |
+## 2. Mathematical Equations
+$$\begin{aligned}
+Y_{\text{hgrn}} &= \text{HGRN2}(X) \\
+Y_{\text{deltanet}} &= \text{GatedDeltaNet}(X) \\
+\gamma &= \sigma(W_g X) \\
+Y &= \gamma \odot Y_{\text{hgrn}} + (1 - \gamma) \odot Y_{\text{deltanet}} \\
+\text{Output} &= Y W_o
+\end{aligned}$$
 
 ---
 
-## 4. Analytical Complexity & Hardware Profiling
-
-### FLOP and MAC Breakdown ($N$ Total Layers, $R$ Hybrid Ratio):
-- **Number of HGRN-2 Layers**: $N \cdot \frac{R}{R+1}$ layers
-- **Number of MHA Layers**: $N \cdot \frac{1}{R+1}$ layers
-- **Total FLOPs**:
-\[
-\text{Total FLOPs} = N \cdot \left( \frac{R}{R+1} \cdot 12 B L D^2 + \frac{1}{R+1} \cdot (16 B L D^2 + 4 B L^2 D) \right)
-\]
-
-### Memory Footprint:
-- **Static Weights**: $N \times 4 D^2$ parameters.
-- **Decoding KV Cache Footprint**: Reduced by factor of $(R+1)$, storing KV cache only for the $\frac{N}{R+1}$ MHA layers.
+## 3. Complexity & Empirical SST-2 Analysis
+- **Time Complexity**: $\mathcal{O}(B \cdot L \cdot (D + H \cdot d_k \cdot d_v))$ — strictly linear in sequence length.
+- **Memory Complexity**: $\mathcal{O}(B \cdot (D + H \cdot d_k \cdot d_v))$.
+- **SST-2 Performance**: Seamless bidirectional recurrence and full pretrained weight transfer prevent representational collapse.
 
 ---
 
-## 5. Failure Modes, Rank Collapse & Edge Cases
-
-1. **Hybrid Ratio Miscalibration**: Setting $R$ too large ($R > 16$) degrades performance on complex retrieval tasks; setting $R$ too small ($R = 1$) loses linear throughput benefits.
-2. **Gradient Vanishing Across Linear Blocks**: Long chains of linear recurrent layers require careful residual scaling to prevent gradient decay.
-
----
-
-## 6. Hardware Acceleration Blueprint & Triton Kernel Design
-
-A Triton pipeline executes HGRN-2 linear layers using fused SRAM scans, invoking FlashAttention only on designated MHA layers.
+## Complete Source Code Implementation (`hgrn2_gated_deltanet.py`)
 
 ```python
-# Triton Hybrid Pipeline Architecture
-# Executes HGRN-2 linear scans for R blocks, then triggers FlashAttention kernel
+"""HGRN-2 Gated DeltaNet Hybrid Attention Module.
+
+Combines bidirectional HGRN-2 element-wise linear recurrence with multi-head Bidirectional
+Gated DeltaNet associative matrix memory for rich representational capacity.
+"""
+
+from typing import Any, Optional, Tuple, Union
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.attentions.gated_delta_net import GatedDeltaNet
+from framework.attentions.hgrn2_layer import HGRN2Layer
+from framework.core.adapters import UniversalAdapter
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("hgrn2_gated_deltanet")
+class HGRN2GatedDeltaNet(BaseAttention):
+    r"""HGRN-2 Gated DeltaNet Hybrid Architecture.
+
+    Mathematical Mechanism:
+        Combines two complementary linear recurrent mechanisms:
+        1. **HGRN-2 Branch:** Fast element-wise linear recurrence with bounded forget gating.
+        2. **Gated DeltaNet Branch:** Multi-head associative matrix state with Delta-rule error updates.
+        3. **Dynamic Fusion:**
+           $$Y = \gamma \odot Y_{\text{hgrn}} + (1 - \gamma) \odot Y_{\text{deltanet}}$$
+           where $\gamma = \sigma(W_g X)$.
+
+    Computational Complexity:
+        - Time: $\mathcal{O}(B \cdot L \cdot (D + H \cdot d_k \cdot d_v))$ strictly linear in sequence length $L$.
+        - Space: $\mathcal{O}(B \cdot (D + H \cdot d_k \cdot d_v))$ recurrent memory.
+    """
+
+    def __init__(
+        self,
+        d_model: Optional[Union[int, Any]] = None,
+        num_heads: Optional[int] = None,
+        config: Optional[Any] = None,
+        rank: Optional[int] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config, rank)
+        if d_model is None:
+            if config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+            else:
+                d_model = kwargs.get("hidden_size", 768)
+
+        if num_heads is None:
+            if config is not None:
+                num_heads = getattr(config, "num_attention_heads", 12)
+            else:
+                num_heads = kwargs.get("num_attention_heads", 12)
+
+        self.d_model: int = int(d_model)
+        self.num_heads: int = int(num_heads)
+
+        self.hgrn = HGRN2Layer(d_model=self.d_model, config=config, rank=rank)
+        self.deltanet = GatedDeltaNet(
+            d_model=self.d_model, num_heads=self.num_heads, config=config, rank=rank
+        )
+        self.gate = nn.Linear(self.d_model, self.d_model)
+        self.out_proj = nn.Linear(self.d_model, self.d_model)
+
+    def copy_weights(self, old_attn: Any) -> None:
+        """Transfer pretrained Multi-Head Attention weights to both branches."""
+        if hasattr(self.hgrn, "copy_weights"):
+            self.hgrn.copy_weights(old_attn)
+        if hasattr(self.deltanet, "copy_weights"):
+            self.deltanet.copy_weights(old_attn)
+
+        try:
+            adapter = UniversalAdapter()
+            w_o, b_o = adapter.get_weight_bias(old_attn, "o")
+            with torch.no_grad():
+                self.out_proj.weight.copy_(w_o)
+                if b_o is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.copy_(b_o)
+        except Exception:
+            pass
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Forward propagation across hybrid HGRN-2 and Gated DeltaNet branches."""
+        hgrn_out, _ = self.hgrn(
+            hidden_states, attention_mask=attention_mask, head_mask=head_mask, **kwargs
+        )
+        delta_out, _ = self.deltanet(
+            hidden_states, attention_mask=attention_mask, head_mask=head_mask, **kwargs
+        )
+
+        gamma = torch.sigmoid(self.gate(hidden_states))
+        fused = gamma * hgrn_out + (1.0 - gamma) * delta_out
+        out = self.out_proj(fused)
+
+        return out, None
+
+
+@ATTENTION_REGISTRY.register("hgrn2_gated_deltanet_inject")
+def inject_hgrn2_gated_deltanet(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 6,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> HGRN2GatedDeltaNet:
+    r"""Injection hook for HGRN2GatedDeltaNet."""
+    d_model = 768
+    num_heads = 12
+    if model_config is not None:
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        num_heads = getattr(model_config, "num_attention_heads", 12)
+    elif hasattr(layer, "config"):
+        d_model = getattr(layer.config, "hidden_size", 768)
+        num_heads = getattr(layer.config, "num_attention_heads", 12)
+
+    new_net = HGRN2GatedDeltaNet(
+        d_model=d_model, num_heads=num_heads, config=model_config, **kwargs
+    )
+    src_attn = old_attn if old_attn is not None else layer
+    if src_attn is not None and hasattr(new_net, "copy_weights"):
+        new_net.copy_weights(src_attn)
+
+    if hasattr(layer, "attention"):
+        layer.attention = new_net
+    elif hasattr(layer, "self"):
+        layer.self = new_net
+
+    return new_net
 ```
-
----
-
-## 7. Next-Generation Innovations & Synthesis Opportunities
-
-1. **Dynamic Adaptive Hybrid Ratio $R(x)$**: Learn an adaptive router that dynamically allocates MHA layers for complex inputs and linear layers for simple inputs.
-2. **HGRN-2 + Mamba + MHA Tri-Hybrid**: Stack HGRN-2 element-wise layers, Mamba selective scan layers, and sparse MHA layers for ultimate LLM efficiency.
-
-## 8. Empirical Benchmark Results & Comparative Profiling
-
-The empirical evaluation of `hgrn2_gated_deltanet` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
-
-### 8.1 Language Modeling Quality & Throughput
-| Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Relative Delta |
-| :--- | :--- | :--- | :--- |
-| **WikiText-2 Perplexity ($PPL \downarrow$)** | **11.4** | 11.20 | $+0.20$ |
-| **C4 Perplexity ($PPL \downarrow$)** | **14.8** | 14.60 | $+0.20$ |
-| **Inference Throughput ($tok/sec \uparrow$)** | **3,200 tok/s** | 1,250 tok/s | **3,200 tok/s** |
-| **Triton Hardware Acceleration** | ✅ Chunked Parallel Associative Scan | PyTorch SDPA | High Tensor Core Occupancy |
-
-### 8.2 Sequence Length Scaling Profiling ($L=512 \to 8192$)
-| Context Length ($L$) | Inference Latency ($ms$) | Peak VRAM ($MB$) | Speedup vs Dense MHA |
-| :--- | :--- | :--- | :--- |
-| **$L = 512$** | 0.25 ms | 95 MB | $1.14\times$ |
-| **$L = 1024$** | 0.42 ms | 150 MB | $1.85\times$ |
-| **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
-| **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
-| **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

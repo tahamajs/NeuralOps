@@ -12,9 +12,8 @@ The compression framework offers a variety of efficient attention modules that c
 
 This module can serve multiple purposes:
 
-- As a **sanity check** for the injection mechanism: if replacing the attention layer with this wrapper yields identical outputs, the replacement pipeline is verified.
-- As a **baseline** for evaluating other compression methods: any performance degradation of a true compression module can be compared against this uncompressed reference.
-- As a **placeholder** for future development: the name “token_compressed” may be intended for a future implementation that actually compresses tokens; currently it is a stub that passes through to the original attention.
+As a **sanity check** for the injection mechanism: if replacing the attention layer with this wrapper yields identical outputs, the replacement pipeline is verified. Furthermore, As a **baseline** for evaluating other compression methods: any performance degradation of a true compression module can be compared against this uncompressed reference. Concurrently, As a **placeholder** for future development: the name “token_compressed” may be intended for a future implementation that actually compresses tokens; currently it is a stub that passes through to the original attention.
+
 
 In this paper, we detail the architecture and the forward pass of `TokenCompressedAttention`, and discuss its role in the framework.
 
@@ -52,9 +51,8 @@ The injection function `inject_token_compressed` is registered under the key `"t
 
 ## 3. Implementation Details
 
-- The class `TokenCompressedAttention` is minimal; it only holds a reference to the original attention module.
-- The forward method simply returns the result of calling the original attention module.
-- The injection function is registered under `"token_compressed"`, making this module selectable via the compression configuration (e.g., `comp_config.attention_type = "token_compressed"`).
+The class `TokenCompressedAttention` is minimal; it only holds a reference to the original attention module. Furthermore, The forward method simply returns the result of calling the original attention module. Concurrently, The injection function is registered under `"token_compressed"`, making this module selectable via the compression configuration (e.g., `comp_config.attention_type = "token_compressed"`).
+
 
 ---
 
@@ -68,9 +66,8 @@ comp_config.attention_type = "token_compressed"
 
 The injection function will replace each layer’s attention with a `TokenCompressedAttention` wrapper, which does not alter the model’s behavior. This is useful for:
 
-- Testing the injection pipeline.
-- Establishing a baseline for performance metrics (e.g., accuracy, latency) without any actual compression.
-- Providing a placeholder that can later be swapped for a real token compression method.
+Testing the injection pipeline. Furthermore, Establishing a baseline for performance metrics (e.g., accuracy, latency) without any actual compression. Concurrently, Providing a placeholder that can later be swapped for a real token compression method.
+
 
 ---
 
@@ -105,3 +102,94 @@ The empirical evaluation of `tt` across standard sequence lengths and language m
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`tt.py`)
+
+```python
+r"""
+Token-Compressed Attention Wrapper (tt.py).
+
+A minimal delegate wrapper around an existing attention sub-module to
+enable transparent injection into transformer layer slots.
+
+Mathematical Mechanism:
+    Delegates to the wrapped sub-module:
+    $$\text{Output} = \text{BaseAttn}(X, M)$$
+
+Computational Complexity:
+    Inherits the complexity of the wrapped attention module.
+"""
+
+from typing import Any, Optional, Tuple
+
+import torch
+import torch.nn as nn
+
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+class TokenCompressedAttention(nn.Module):
+    r"""Minimal wrapper delegating to an existing attention sub-module.
+
+    Args:
+        config: Model configuration.
+        comp_config: Compression configuration.
+        layer_idx: Index of current transformer layer.
+        num_layers: Total number of transformer layers.
+        old_attn: Pre-existing attention module to wrap.
+    """
+
+    def __init__(
+        self,
+        config: Any,
+        comp_config: Any,
+        layer_idx: int,
+        num_layers: int,
+        old_attn: Any,
+    ) -> None:
+        super().__init__()
+        self.attn: nn.Module = old_attn
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""Delegate forward pass to wrapped attention module.
+
+        Args:
+            hidden_states: Input tensor `[Batch, SeqLen, HiddenDim]`.
+            attention_mask: Optional attention mask.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Tuple of (output tensor, None or attention weights).
+        """
+        res = self.attn(hidden_states, attention_mask=attention_mask, **kwargs)
+        if isinstance(res, tuple):
+            return res
+        return res, None
+
+
+@ATTENTION_REGISTRY.register("token_compressed")
+def inject_token_compressed(
+    layer: Any,
+    config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    num_layers: int,
+    old_attn: Any,
+) -> "TokenCompressedAttention":
+    r"""Inject TokenCompressedAttention into a transformer layer.
+
+    Returns:
+        The newly instantiated :class:`TokenCompressedAttention`.
+    """
+    new_attn = TokenCompressedAttention(
+        config, comp_config, layer_idx, num_layers, old_attn
+    )
+    layer.attention = new_attn
+    return new_attn
+```

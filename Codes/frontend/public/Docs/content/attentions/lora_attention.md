@@ -88,44 +88,39 @@ Input Hidden States X [B, N, D]
 ## 4. Analytical Complexity Profiling
 
 ### FLOP & MAC Counting
-1. **Frozen Base Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
-2. **LoRA Adapter Path (for 4 projections)**:
-   - Down-projection ($\mathbf{X} \mathbf{A}^\top$): $4 \times (2 B N D r) = 8 B N D r$ FLOPs.
-   - Up-projection ($\text{Down} \cdot \mathbf{B}^\top$): $4 \times (2 B N r D) = 8 B N D r$ FLOPs.
-3. **Score Matrix Product ($\mathbf{Q} \mathbf{K}^\top$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
-4. **Context Matrix Product ($\mathbf{A} \mathbf{V}$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
+The computational efficiency of Low-Rank Adaptation stems from isolating parameter updates to a low-dimensional manifold while freezing primary backbone projections. For an input sequence of length $N$, batch size $B$, model dimension $D$, attention head count $H$, head dimension $d = D/H$, and intrinsic adaptation rank $r$, the arithmetic and memory requirements decompose into distinct computational layers.
 
-**Total Computational Cost**:
+Evaluating the frozen base linear projections across query, key, value, and output operators accounts for $8 B N D^2$ floating-point operations ($4 B N D^2$ MACs). Concurrently, the four parallel low-rank adapter paths execute two-stage factorizations: the down-projection stage ($\mathbf{X} \mathbf{A}^\top$) requires $4 \times (2 B N D r) = 8 B N D r$ FLOPs, while the subsequent up-projection stage ($\operatorname{Down} \cdot \mathbf{B}^\top$) consumes an identical $8 B N D r$ FLOPs. Within the multi-head attention core, the pairwise query-key score product ($\mathbf{Q} \mathbf{K}^\top$) and value-context accumulation ($\mathbf{A} \mathbf{V}$) each incur $2 B H N^2 d = 2 B N^2 D$ FLOPs, yielding an aggregate attention core complexity of $4 B N^2 D$ FLOPs.
+
+Consequently, the total forward pass computational workload during training is formulated as:
 \[
 \text{Total FLOPs} = 8 B N D^2 + 16 B N D r + 4 B N^2 D
 \]
 
-During inference, weights can be merged off-line $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$, eliminating adapter FLOP overhead entirely.
+Crucially, during inference deployment, the adapter parameters can be folded directly into the base projections via static weight re-parameterization $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$, completely eliminating the $16 B N D r$ adapter FLOP overhead and restoring baseline inference throughput.
 
 ### Memory Footprint & Tensor Store
-- **Trainable Parameters**: $4 \times (r D + D r) = 8 D r$ parameters (vs $4 D^2$ frozen base parameters).
-- **Activation Memory**:
-  - Adapter Intermediate Tensors ($\operatorname{Down}$): $4 B N r$ floats.
-  - Score & Softmax Matrices ($\mathbf{S}, \mathbf{A}$): $B H N^2$ floats.
-  - Peak Activation Memory: $\mathcal{O}(B N D + B H N^2 + B N r)$.
+Regarding the parameter footprint and memory storage dynamics, LoRA restricts the volume of trainable parameters to $4 \times (r D + D r) = 8 D r$, contrasting sharply with the $4 D^2$ frozen base parameters. In high-dimensional regimes ($r \ll D$), this reduction exceeds $99\%$, dramatically shrinking optimizer gradient states in VRAM. The activation memory footprint requires storing intermediate rank-$r$ bottleneck tensors ($4 B N r$ floats) alongside the quadratic score and Softmax probability matrices ($B H N^2$ floats), establishing an overall peak activation complexity of $\mathcal{O}(B N D + B H N^2 + B N r)$.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Architectural Bottlenecks, Rank Collapse & Optimization Dynamics
 
-1. **Un-Merged Dual-Stream Inference Latency**: Evaluating separate frozen base linear layers and low-rank adapter paths during inference introduces extra kernel launch overhead. Weights must be merged into $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$ prior to deployment.
-2. **Subspace Rank Saturation**: If rank $r$ is selected too small ($r < 4$), adapter expressivity collapses, restricting capacity to learn complex downstream task distributions.
-3. **Persistent Quadratic Attention Scaling**: LoRA optimizes parameter efficiency during fine-tuning but retains standard $N \times N$ attention matrices, scaling quadratically $\mathcal{O}(N^2)$ in sequence length.
+Despite its profound parameter efficiency, LoRA exhibits subtle structural tradeoffs, optimization constraints, and spectrum saturation phenomena across fine-tuning regimes. A primary latency bottleneck emerges when executing un-merged dual-stream forward passes in production. Evaluating independent GPU GEMM kernels for the frozen base weights and the low-rank branch incurs substantial kernel launch overhead and redundant memory-bus transfers of the input tensor $\mathbf{X}$. To eliminate this runtime penalty, offline weight fusion into a single unified tensor $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$ is indispensable prior to deployment.
+
+From a representation learning perspective, subspace rank saturation poses a significant failure mode. If the adaptation rank $r$ is constrained excessively ($r < 4$), the bottleneck restricts the dimensionality of the update manifold, precipitating rank collapse where the gradient updates fail to span the intrinsic task subspace. This leads to underfitting and severe optimization stagnation on complex downstream tasks. Conversely, scaling $r$ arbitrarily high yields diminishing returns and increases susceptibility to catastrophic forgetting of pre-trained priors.
+
+Furthermore, LoRA inherently preserves the standard scaled dot-product attention core, meaning that while parameter updates are compressed to $\mathcal{O}(D r)$, the context scaling persists as quadratic $\mathcal{O}(N^2)$ in sequence length. Consequently, LoRA does not alleviate long-context memory bottlenecks during decoding or training on extended context windows, necessitating complementary linear attention or FlashAttention integration to overcome asymptotic sequence scaling limits.
 
 ---
 
 ## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
 ### Memory Access & Vectorization Barriers
-Naive PyTorch executes `self.original_layer(x) + F.linear(F.linear(x, A), B)` via separate GPU GEMM calls, reading and writing activation tensor $X$ multiple times.
+Under standard execution frameworks, evaluating the composite operator $\mathbf{X} \mathbf{W}_0^\top + \frac{\alpha}{r} (\mathbf{X} \mathbf{A}^\top) \mathbf{B}^\top$ via naive PyTorch triggers multiple disjoint GEMM kernel invocations. This non-fused access pattern repeatedly loads and writes activation tensor $\mathbf{X}$ across the global GPU memory bus, creating high memory bandwidth contention.
 
 ### High-Performance Triton Kernel Fusion Strategy
-1. **Fused Weight-Merged Matrix-Vector Kernel**: Implement a Triton kernel that performs fused linear projection using pre-computed combined weights in SRAM registers without allocating separate adapter output memory.
+To maximize hardware throughput and register reuse, a dedicated Triton fused linear projection kernel streams input activation tiles directly into fast on-chip SRAM registers. Within a single thread block, the kernel performs the base GEMM projection alongside the sequential low-rank down-projection ($\mathbf{X} \mathbf{A}^\top$) and scaled up-projection ($\operatorname{Down} \cdot \mathbf{B}^\top$), accumulating both contributions directly into SRAM accumulators before writing the finalized output tensor back to global DRAM.
 
 ```python
 # Triton Pseudocode for Fused LoRA Linear Projection Kernel
@@ -153,7 +148,7 @@ def _lora_fused_linear_kernel(
     tl.store(Out_ptr + offsets_out, out_base + out_adapter)
 ```
 
-2. **Offline Weight Fusion for Zero-Overhead Inference**: Merge weights $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$ prior to deployment to achieve zero latency overhead during production inference.
+Furthermore, prior to production deployment, complete offline weight fusion should be applied to fold adapter matrices into base parameters ($\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$), thereby attaining zero latency overhead and optimal Tensor Core occupancy during inference.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
@@ -176,3 +171,207 @@ The empirical evaluation of `lora_attention` across standard sequence lengths an
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`lora_attention.py`)
+
+```python
+import math
+from typing import Any, Dict, Optional, Tuple
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+class LoRALinear(nn.Module):
+    r"""
+    Low-Rank Adaptation (LoRA) Linear Layer Wrapper.
+
+    Mathematical Mechanism:
+        Freezes the pretrained weight matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$
+        and introduces trainable rank-$r$ residual factor matrices $A$ and $B$:
+        $$y = W_0 x + \frac{\alpha}{r} B A x$$
+        where $A \sim \mathcal{U}\left(-\frac{1}{\sqrt{d_{\text{in}}}}, \frac{1}{\sqrt{d_{\text{in}}}}\right)$ and $B = 0$.
+
+    Computational Complexity:
+        - Time: $\mathcal{O}(B \cdot N \cdot (d_{\text{in}} \cdot d_{\text{out}} + r \cdot (d_{\text{in}} + d_{\text{out}})))$
+        - Space: $\mathcal{O}(r \cdot (d_{\text{in}} + d_{\text{out}}))$ trainable parameters.
+    """
+
+    def __init__(
+        self,
+        original_layer: nn.Linear,
+        rank: int,
+        alpha: float = 1.0,
+        dropout: float = 0.0,
+    ) -> None:
+        super().__init__()
+        self.original_layer: nn.Linear = original_layer
+        for param in self.original_layer.parameters():
+            param.requires_grad = False
+        self.rank: int = rank
+        self.alpha: float = alpha
+        self.dropout: nn.Module = nn.Dropout(dropout) if dropout > 0.0 else nn.Identity()
+        in_features = original_layer.in_features
+        out_features = original_layer.out_features
+        self.lora_A: nn.Parameter = nn.Parameter(torch.empty(rank, in_features))
+        self.lora_B: nn.Parameter = nn.Parameter(torch.zeros(out_features, rank))
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        """Reset parameters."""
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        nn.init.zeros_(self.lora_B)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward."""
+        orig_out = self.original_layer(x)
+        lora_out = F.linear(self.dropout(x), self.lora_A)  # (..., rank)
+        lora_out = F.linear(lora_out, self.lora_B)  # (..., out_features)
+        lora_out = lora_out * (self.alpha / self.rank)
+        return orig_out + lora_out
+
+
+@ATTENTION_REGISTRY.register("lora_attn")
+class LoRAAttention(BaseAttention):
+    r"""
+    LoRA Parameter-Efficient Fine-Tuning Attention Module.
+
+    Mathematical Mechanism:
+        Replaces standard query, key, value, and output linear projections with LoRA adapters:
+        $$\begin{aligned}
+        Q &= \text{LoRA}_Q(X), \quad K = \text{LoRA}_K(X), \quad V = \text{LoRA}_V(X) \\
+        S &= \frac{Q K^\top}{\sqrt{d_k}} + M_{\text{mask}} \\
+        P &= \text{softmax}(S, \text{dim}=-1) \\
+        O &= \text{LoRA}_O(P V)
+        \end{aligned}$$
+
+    Computational Complexity:
+        - Attention Map: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k)$ time, $\mathcal{O}(B \cdot H \cdot N^2)$ space.
+        - LoRA Projections: $\mathcal{O}(B \cdot N \cdot (D^2 + 2 D r))$ time.
+
+    Tensor Dimensions:
+        - Input `hidden_states`: `[B, N, D]`
+        - Output: Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.
+    """
+
+    def __init__(
+        self,
+        model_config: Any,
+        rank: int = 8,
+        alpha: float = 16.0,
+        dropout: float = 0.1,
+        pretrained_attn: Optional[nn.Module] = None,
+    ) -> None:
+        super().__init__(model_config, rank)
+        if pretrained_attn is None:
+            class MockAttn:
+                def __init__(self, d):
+                    self.q_lin = torch.nn.Linear(d, d)
+                    self.k_lin = torch.nn.Linear(d, d)
+                    self.v_lin = torch.nn.Linear(d, d)
+                    self.out_lin = torch.nn.Linear(d, d)
+            hidden_size = getattr(model_config, "hidden_size", 768)
+            pretrained_attn = MockAttn(hidden_size)
+
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        hidden_size: int = getattr(model_config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.hidden_size: int = hidden_size
+        self.alpha: float = alpha
+
+        # Keep original layers frozen, wrapped in LoRALinear
+        self.q_proj: LoRALinear = LoRALinear(pretrained_attn.q_lin, rank, alpha, dropout)
+        self.k_proj: LoRALinear = LoRALinear(pretrained_attn.k_lin, rank, alpha, dropout)
+        self.v_proj: LoRALinear = LoRALinear(pretrained_attn.v_lin, rank, alpha, dropout)
+        self.out_proj: LoRALinear = LoRALinear(pretrained_attn.out_lin, rank, alpha, dropout)
+
+        self.dropout: nn.Dropout = nn.Dropout(dropout)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""
+        Forward execution of LoRAAttention.
+
+        Args:
+            hidden_states: Input tensor of shape `[B, N, D]`.
+            attention_mask: Optional mask tensor of shape `[B, N]` or `[B, 1, N, N]`.
+            head_mask: Optional head masking tensor.
+            output_attentions: Boolean flag to return attention map.
+            **kwargs: Extra keyword arguments.
+
+        Returns:
+            Tuple `(output, attn_weights)` with output of shape `[B, N, D]`.
+        """
+        B, N, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+
+        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+        K = self.k_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+        V = self.v_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+
+        scale = 1.0 / math.sqrt(D)
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask = attention_mask[:, None, None, :]
+            else:
+                mask = attention_mask
+            scores = scores + (1.0 - mask.to(scores.dtype)) * -10000.0
+
+        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = self.dropout(attn_weights)
+        context = torch.matmul(attn_weights, V)
+        context = context.transpose(1, 2).contiguous().view(B, N, -1)
+        output = self.out_proj(context)
+
+        return output, (attn_weights if output_attentions else None)
+
+
+def inject_lora_attn(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module] = None,
+) -> LoRAAttention:
+    r"""
+    Injection hook for LoRAAttention into transformer layer.
+
+    Args:
+        layer: Target transformer layer module.
+        model_config: Model configuration.
+        comp_config: Compression configuration.
+        layer_idx: Layer index.
+        total_layers: Total number of transformer layers.
+        old_attn: Previous attention module to wrap with LoRA adapters.
+
+    Returns:
+        Instantiated `LoRAAttention` assigned to `layer.attention`.
+    """
+    rank: int = getattr(comp_config, "lora_rank", 8)
+    alpha: float = getattr(comp_config, "lora_alpha", 16.0)
+    dropout: float = getattr(comp_config, "dropout", 0.1)
+    new_attn = LoRAAttention(
+        model_config=model_config,
+        rank=rank,
+        alpha=alpha,
+        dropout=dropout,
+        pretrained_attn=old_attn,
+    )
+    layer.attention = new_attn
+    return new_attn
+```
