@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
 Real-Time Live Dashboard & Monitoring Server for GPU Benchmark Sweep.
-Supports interactive error inspection, detail inspection modal, and real-time telemetry.
+Includes:
+- Real-time Hardware Telemetry (GPU, VRAM, Power, Temp)
+- Moving Average ETA & Progress Calculation
+- Interactive Diagnostics & Error Stack Inspection Modal
+- Comparative Analytics Engine (Leaderboards, Model Breakdown, Module Comparison Data)
 """
 
 from __future__ import annotations
@@ -81,11 +85,14 @@ def get_gpu_stats() -> Dict[str, Any]:
         except Exception:
             continue
 
-    ram_used, ram_total = 0.0, 0.0
+    mem_pct = round((mem_used / max(1.0, mem_total)) * 100.0, 1)
+
+    ram_used, ram_total = 0.0, 16.0
     if psutil:
         try:
-            ram_used = round(psutil.virtual_memory().used / (1024**3), 1)
-            ram_total = round(psutil.virtual_memory().total / (1024**3), 1)
+            vm = psutil.virtual_memory()
+            ram_used = round(vm.used / (1024 ** 3), 1)
+            ram_total = round(vm.total / (1024 ** 3), 1)
         except Exception:
             pass
 
@@ -93,7 +100,7 @@ def get_gpu_stats() -> Dict[str, Any]:
         "gpu_util": gpu_util,
         "mem_used_mb": mem_used,
         "mem_total_mb": mem_total,
-        "mem_pct": round((mem_used / max(1.0, mem_total)) * 100, 1),
+        "mem_pct": mem_pct,
         "temp_c": temp,
         "power_w": power,
         "sys_ram_used_gb": ram_used,
@@ -112,83 +119,90 @@ def get_completed_results() -> List[Dict[str, Any]]:
         if p.exists():
             target_log = p
             break
-
+            
     if not target_log:
         return results
 
     try:
-        lines = target_log.read_text(encoding="utf-8", errors="ignore").splitlines()
+        with open(target_log, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+
+        # First pass: collect error stack traces
         for line in lines:
             line_str = line.strip()
+            fail_match = FAIL_ERROR_REGEX.search(line_str)
+            if fail_match:
+                ts, mod, model, ds, err_msg = fail_match.groups()
+                error_map[(mod.lower(), model.lower(), ds.lower())] = err_msg.strip()
 
-            # Catch explicit failure error messages
-            fe_match = FAIL_ERROR_REGEX.match(line_str)
-            if fe_match:
-                _, mod, model, dataset, err_msg = fe_match.groups()
-                error_map[(mod.lower(), model.lower(), dataset.lower())] = err_msg
-                continue
+        # Second pass: collect evaluation results
+        for line in lines:
+            line_str = line.strip()
             
-            # Standard result match
-            m = RESULT_REGEX.match(line_str)
-            if m:
-                ts_str, track, module, model, dataset, status, details = m.groups()
-                try:
-                    dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S,%f")
-                except Exception:
-                    dt = datetime.now()
+            # Normal result match
+            match = RESULT_REGEX.search(line_str)
+            if match:
+                ts_str, track, mod, model, ds, status, details = match.groups()
+                fwd_ms, bwd_ms, mem_mb = None, None, None
                 
-                fwd, bwd, mem = "-", "-", "-"
-                fwd_m = re.search(r'fwd:\s*([\d\.]+)ms', details)
-                bwd_m = re.search(r'bwd:\s*([\d\.]+)ms', details)
-                mem_m = re.search(r'mem:\s*([\d\.]+)MB', details)
-                
-                if fwd_m: fwd = fwd_m.group(1)
-                if bwd_m: bwd = bwd_m.group(1)
-                if mem_m: mem = mem_m.group(1)
+                fwd_m = re.search(r'fwd:\s*([0-9.]+)ms', details)
+                if fwd_m:
+                    fwd_ms = fwd_m.group(1)
+                    
+                bwd_m = re.search(r'bwd:\s*([0-9.]+)ms', details)
+                if bwd_m:
+                    bwd_ms = bwd_m.group(1)
+                    
+                mem_m = re.search(r'mem:\s*([0-9.]+)MB', details)
+                if mem_m:
+                    mem_mb = mem_m.group(1)
 
-                key = (module.lower(), model.lower(), dataset.lower())
-                err_detail = "None / Success"
-                if status == "FAIL":
-                    err_detail = error_map.get(key, "Evaluation failed during forward/backward pass (Check log).")
-                elif status == "TIMEOUT":
-                    err_detail = "Execution exceeded hard time limit (>120s)."
+                try:
+                    ts = datetime.strptime(ts_str.split(",")[0], "%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    ts = datetime.now()
+
+                err_detail = error_map.get((mod.lower(), model.lower(), ds.lower()), "None / Success")
+                if status.upper() == "FAIL" and err_detail == "None / Success":
+                    err_detail = f"Failed during execution: {details}"
 
                 results.append({
-                    "timestamp": dt,
+                    "timestamp": ts,
                     "track": track,
-                    "module": module,
+                    "module": mod,
                     "model": model.upper(),
-                    "dataset": dataset.upper(),
-                    "status": status,
-                    "fwd_ms": fwd,
-                    "bwd_ms": bwd,
-                    "mem_mb": mem,
+                    "dataset": ds.upper(),
+                    "status": status.upper(),
+                    "fwd_ms": fwd_ms,
+                    "bwd_ms": bwd_ms,
+                    "mem_mb": mem_mb,
                     "error_detail": err_detail,
                 })
                 continue
 
             # Timeout match
-            tm = TIMEOUT_REGEX.match(line_str)
-            if tm:
-                ts_str, module, model, dataset, timeout_len = tm.groups()
+            timeout_match = TIMEOUT_REGEX.search(line_str)
+            if timeout_match:
+                ts_str, mod, model, ds, dur = timeout_match.groups()
                 try:
-                    dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S,%f")
+                    ts = datetime.strptime(ts_str.split(",")[0], "%Y-%m-%d %H:%M:%S")
                 except Exception:
-                    dt = datetime.now()
+                    ts = datetime.now()
 
-                to_str = timeout_len or "120s"
+                dur_str = dur if dur else "60s"
                 results.append({
-                    "timestamp": dt,
-                    "track": "track1_svd",
-                    "module": module,
+                    "timestamp": ts,
+                    "track": "unknown",
+                    "module": mod,
                     "model": model.upper(),
-                    "dataset": dataset.upper(),
+                    "dataset": ds.upper(),
                     "status": "TIMEOUT",
-                    "fwd_ms": f">{to_str}",
-                    "bwd_ms": "-",
-                    "mem_mb": "-",
-                    "error_detail": f"Execution exceeded hard timeout ({to_str}). Task was killed safely to prevent sweep stall.",
+                    "fwd_ms": None,
+                    "bwd_ms": None,
+                    "mem_mb": None,
+                    "error_detail": f"Execution exceeded hard timeout threshold ({dur_str}). Process killed to prevent GPU deadlocks.",
                 })
+
     except Exception:
         pass
 
@@ -207,48 +221,211 @@ def compute_eta_and_progress(results: List[Dict[str, Any]], total_combos: int = 
             "total": total_combos,
             "percent": pct,
             "avg_sec": 0.0,
+            "eta_seconds": 0,
             "eta_formatted": "Calculating...",
-            "eta_seconds": 0
         }
 
-    window = min(window_size, completed - 1)
-    recent = results[-(window + 1):]
-    
-    t_start = recent[0]["timestamp"]
-    t_end = recent[-1]["timestamp"]
-    elapsed_sec = (t_end - t_start).total_seconds()
+    # Moving window calculation based on timestamps
+    window = results[-window_size:] if len(results) >= window_size else results
+    t_start = window[0]["timestamp"]
+    t_end = window[-1]["timestamp"]
 
-    if elapsed_sec <= 0 or window == 0:
-        return {
-            "completed": completed,
-            "total": total_combos,
-            "percent": pct,
-            "avg_sec": 0.0,
-            "eta_formatted": "Calculating...",
-            "eta_seconds": 0
-        }
-
-    avg_sec = elapsed_sec / window
-    eta_sec = remaining * avg_sec
-
-    hrs = int(eta_sec // 3600)
-    mins = int((eta_sec % 3600) // 60)
-    secs = int(eta_sec % 60)
-
-    if hrs > 0:
-        eta_str = f"{hrs}h {mins}m"
-    elif mins > 0:
-        eta_str = f"{mins}m {secs}s"
+    if isinstance(t_start, datetime) and isinstance(t_end, datetime):
+        delta = (t_end - t_start).total_seconds()
+        n_window = len(window) - 1
+        avg_sec = (delta / max(1, n_window)) if n_window > 0 else 5.0
     else:
-        eta_str = f"{secs}s"
+        avg_sec = 5.0
+
+    if avg_sec <= 0.05:
+        avg_sec = 1.0
+
+    eta_seconds = round(remaining * avg_sec, 1)
+
+    # Human readable formatting
+    hours = int(eta_seconds // 3600)
+    minutes = int((eta_seconds % 3600) // 60)
+    seconds = int(eta_seconds % 60)
+
+    if hours > 0:
+        eta_formatted = f"{hours}h {minutes}m"
+    elif minutes > 0:
+        eta_formatted = f"{minutes}m {seconds}s"
+    else:
+        eta_formatted = f"{seconds}s"
 
     return {
         "completed": completed,
         "total": total_combos,
         "percent": pct,
         "avg_sec": round(avg_sec, 2),
-        "eta_formatted": eta_str,
-        "eta_seconds": round(eta_sec, 1)
+        "eta_seconds": eta_seconds,
+        "eta_formatted": eta_formatted,
+    }
+
+
+def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Aggregates full evaluation metrics across modules, tracks, and model families.
+    Generates leaderboard rankings, head-to-head comparisons, and track latency distributions.
+    """
+    module_stats: Dict[str, Dict[str, Any]] = {}
+    model_stats: Dict[str, Dict[str, Any]] = {}
+    track_stats: Dict[str, Dict[str, Any]] = {}
+
+    for r in results:
+        mod = r["module"]
+        model = r["model"]
+        track = r.get("track", "other")
+        status = r["status"]
+
+        fwd = float(r["fwd_ms"]) if r.get("fwd_ms") is not None else None
+        bwd = float(r["bwd_ms"]) if r.get("bwd_ms") is not None else None
+        mem = float(r["mem_mb"]) if r.get("mem_mb") is not None else None
+
+        # 1. Module Aggregation
+        if mod not in module_stats:
+            module_stats[mod] = {
+                "module": mod,
+                "track": track,
+                "fwd_list": [],
+                "bwd_list": [],
+                "mem_list": [],
+                "success_count": 0,
+                "timeout_count": 0,
+                "fail_count": 0,
+                "total_runs": 0,
+                "by_model": {},
+            }
+        m_entry = module_stats[mod]
+        m_entry["total_runs"] += 1
+        if status == "PASS":
+            m_entry["success_count"] += 1
+            if fwd is not None:
+                m_entry["fwd_list"].append(fwd)
+            if bwd is not None:
+                m_entry["bwd_list"].append(bwd)
+            if mem is not None:
+                m_entry["mem_list"].append(mem)
+        elif status == "TIMEOUT":
+            m_entry["timeout_count"] += 1
+        else:
+            m_entry["fail_count"] += 1
+
+        if model not in m_entry["by_model"]:
+            m_entry["by_model"][model] = {"fwd": [], "bwd": [], "mem": []}
+        if fwd is not None:
+            m_entry["by_model"][model]["fwd"].append(fwd)
+        if bwd is not None:
+            m_entry["by_model"][model]["bwd"].append(bwd)
+        if mem is not None:
+            m_entry["by_model"][model]["mem"].append(mem)
+
+        # 2. Model Family Aggregation
+        if model not in model_stats:
+            model_stats[model] = {
+                "model": model,
+                "fwd_list": [],
+                "bwd_list": [],
+                "mem_list": [],
+                "pass_count": 0,
+                "total_runs": 0,
+            }
+        mod_entry = model_stats[model]
+        mod_entry["total_runs"] += 1
+        if status == "PASS":
+            mod_entry["pass_count"] += 1
+            if fwd is not None:
+                mod_entry["fwd_list"].append(fwd)
+            if bwd is not None:
+                mod_entry["bwd_list"].append(bwd)
+            if mem is not None:
+                mod_entry["mem_list"].append(mem)
+
+        # 3. Track Aggregation
+        if track != "unknown":
+            if track not in track_stats:
+                track_stats[track] = {
+                    "track": track,
+                    "fwd_list": [],
+                    "bwd_list": [],
+                    "mem_list": [],
+                    "pass_count": 0,
+                    "total_runs": 0,
+                }
+            tr_entry = track_stats[track]
+            tr_entry["total_runs"] += 1
+            if status == "PASS":
+                tr_entry["pass_count"] += 1
+                if fwd is not None:
+                    tr_entry["fwd_list"].append(fwd)
+                if bwd is not None:
+                    tr_entry["bwd_list"].append(bwd)
+                if mem is not None:
+                    tr_entry["mem_list"].append(mem)
+
+    # Format module leaderboard list
+    leaderboard = []
+    for mod, data in module_stats.items():
+        avg_fwd = round(sum(data["fwd_list"]) / len(data["fwd_list"]), 2) if data["fwd_list"] else 0.0
+        avg_bwd = round(sum(data["bwd_list"]) / len(data["bwd_list"]), 2) if data["bwd_list"] else 0.0
+        avg_mem = round(sum(data["mem_list"]) / len(data["mem_list"]), 1) if data["mem_list"] else 0.0
+        total_lat = round(avg_fwd + avg_bwd, 2)
+        succ_rate = round((data["success_count"] / max(1, data["total_runs"])) * 100.0, 1)
+
+        leaderboard.append({
+            "module": mod,
+            "track": data["track"],
+            "avg_fwd_ms": avg_fwd,
+            "avg_bwd_ms": avg_bwd,
+            "avg_total_ms": total_lat,
+            "avg_mem_mb": avg_mem,
+            "success_count": data["success_count"],
+            "timeout_count": data["timeout_count"],
+            "fail_count": data["fail_count"],
+            "total_runs": data["total_runs"],
+            "success_rate_pct": succ_rate,
+        })
+
+    # Sort leaderboard: primary = avg_fwd_ms ascending (put 0/incomplete at end)
+    leaderboard.sort(key=lambda x: (x["avg_fwd_ms"] == 0, x["avg_fwd_ms"]))
+
+    # Format Model Breakdown
+    model_breakdown = {}
+    for model, data in model_stats.items():
+        avg_fwd = round(sum(data["fwd_list"]) / len(data["fwd_list"]), 2) if data["fwd_list"] else 0.0
+        avg_bwd = round(sum(data["bwd_list"]) / len(data["bwd_list"]), 2) if data["bwd_list"] else 0.0
+        avg_mem = round(sum(data["mem_list"]) / len(data["mem_list"]), 1) if data["mem_list"] else 0.0
+        pass_rate = round((data["pass_count"] / max(1, data["total_runs"])) * 100.0, 1)
+
+        model_breakdown[model] = {
+            "avg_fwd_ms": avg_fwd,
+            "avg_bwd_ms": avg_bwd,
+            "avg_mem_mb": avg_mem,
+            "total_runs": data["total_runs"],
+            "pass_rate_pct": pass_rate,
+        }
+
+    # Format Track Breakdown
+    track_breakdown = {}
+    for track, data in track_stats.items():
+        avg_fwd = round(sum(data["fwd_list"]) / len(data["fwd_list"]), 2) if data["fwd_list"] else 0.0
+        avg_bwd = round(sum(data["bwd_list"]) / len(data["bwd_list"]), 2) if data["bwd_list"] else 0.0
+        avg_mem = round(sum(data["mem_list"]) / len(data["mem_list"]), 1) if data["mem_list"] else 0.0
+        track_breakdown[track] = {
+            "avg_fwd_ms": avg_fwd,
+            "avg_bwd_ms": avg_bwd,
+            "avg_mem_mb": avg_mem,
+            "total_runs": data["total_runs"],
+        }
+
+    all_modules = sorted(list(module_stats.keys()))
+
+    return {
+        "module_leaderboard": leaderboard,
+        "model_breakdown": model_breakdown,
+        "track_breakdown": track_breakdown,
+        "available_modules": all_modules,
     }
 
 
@@ -263,11 +440,12 @@ def is_sweep_running() -> bool:
 
 
 def _build_stats_response() -> str:
-    """Build the full stats JSON response with rich detail fields."""
+    """Build the full stats JSON response with rich detail fields and comparative analytics."""
     gpu = get_gpu_stats()
     results = get_completed_results()
     progress = compute_eta_and_progress(results, total_combos=720, window_size=50)
     is_running = is_sweep_running()
+    comparative = compute_comparative_analytics(results)
 
     serializable_results = [
         {
@@ -290,14 +468,15 @@ def _build_stats_response() -> str:
         "gpu": gpu,
         "progress": progress,
         "is_running": is_running,
-        "recent_results": serializable_results[-15:][::-1],
+        "recent_results": serializable_results[-20:][::-1],
         "all_results_count": len(results),
         "counts": {
             "pass": sum(1 for r in results if r["status"] == "PASS"),
             "timeout": sum(1 for r in results if r["status"] == "TIMEOUT"),
             "fail": sum(1 for r in results if r["status"] == "FAIL"),
             "total": len(results),
-        }
+        },
+        "comparative_analytics": comparative,
     }
     return json.dumps(response)
 
@@ -317,6 +496,8 @@ def _cache_refresh_loop() -> None:
 
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
+    """Custom HTTP handler serving the live web UI and JSON telemetry endpoints."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB_DIR), **kwargs)
 
@@ -341,16 +522,12 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
             self.end_headers()
             self.wfile.write(payload)
             return
 
-        if req_path == "/favicon.ico":
-            self.send_response(204)
-            self.end_headers()
-            return
-
-        return super().do_GET()
+        super().do_GET()
 
     def do_POST(self):
         req_path = self.path.split('?')[0]
@@ -364,38 +541,45 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
             action = data.get("action", "")
             success = False
-            msg = ""
+            msg = "Unknown action"
 
             if action == "stop":
                 try:
-                    cmd = 'powershell -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match \\"run_comprehensive\\" -or $_.CommandLine -match \\"launch_gpu_server\\" } | Invoke-CimMethod -MethodName Terminate; Stop-Process -Name python -Force -ErrorAction SilentlyContinue"'
-                    subprocess.run(cmd, shell=True, capture_output=True, timeout=5)
+                    subprocess.run(
+                        ["powershell", "-Command", "Get-Process python | Where-Object { $_.CommandLine -match 'launch_gpu_server' } | Stop-Process -Force"],
+                        timeout=5
+                    )
                     success = True
-                    msg = "Sweep terminated."
+                    msg = "Sweep process terminated"
                 except Exception as e:
-                    msg = f"Failed to stop: {e}"
+                    msg = str(e)
 
             elif action == "start":
                 try:
                     bat_path = PROJECT_DIR / "run_comprehensive.bat"
-                    cmd = f'wmic process call create "cmd.exe /c \\"{bat_path}\\""'
-                    subprocess.run(cmd, shell=True, capture_output=True, timeout=5)
-                    success = True
-                    msg = "Sweep started in detached mode."
+                    if bat_path.exists():
+                        subprocess.Popen(
+                            ["cmd.exe", "/c", str(bat_path)],
+                            cwd=str(PROJECT_DIR),
+                            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0
+                        )
+                        success = True
+                        msg = "Sweep launched in background"
+                    else:
+                        msg = "run_comprehensive.bat not found"
                 except Exception as e:
-                    msg = f"Failed to start: {e}"
+                    msg = str(e)
 
-            resp = json.dumps({"success": success, "message": msg}).encode("utf-8")
+            resp_data = json.dumps({"success": success, "message": msg}).encode("utf-8")
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
+            self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Content-Length", str(len(resp)))
+            self.send_header("Content-Length", str(len(resp_data)))
             self.end_headers()
-            self.wfile.write(resp)
+            self.wfile.write(resp_data)
             return
 
-        self.send_response(404)
-        self.end_headers()
+        self.send_error(404, "Endpoint not found")
 
 
 def main():
