@@ -23,48 +23,47 @@ class MockConfig:
         self.dropout = 0.0
         self.layer_norm_eps = 1e-12
 
-def test_attention(module, name):
+import pytest
+
+def _run_attention_test(module, name):
     print(f"Testing {name}...")
-    try:
-        x = torch.randn(2, 128, 768, requires_grad=True)
-        out = module(x)
-        if isinstance(out, tuple):
-            out = out[0]
-        loss = out.sum()
-        loss.backward()
-        assert x.grad is not None and not torch.isnan(x.grad).any(), "Gradient is NaN or None"
-        print(f"{name} passed.")
-    except Exception as e:
-        print(f"{name} failed: {e}")
-        traceback.print_exc()
+    x = torch.randn(2, 128, 768, requires_grad=True)
+    out = module(x)
+    if isinstance(out, tuple):
+        out = out[0]
+    loss = out.sum()
+    loss.backward()
+    assert x.grad is not None and not torch.isnan(x.grad).any(), "Gradient is NaN or None"
+    print(f"{name} passed.")
+
+@pytest.mark.parametrize("attn_cls,name", [
+    (ClusterAttention, "ClusterAttention"),
+    (AdaSplashAttention, "AdaSplashAttention"),
+    (HammingAttention, "HammingAttention"),
+    (GalerkinAttention, "GalerkinAttention"),
+    (PerformerAttention, "PerformerAttention"),
+])
+def test_all_attentions(attn_cls, name):
+    config = MockConfig()
+    module = attn_cls(config)
+    _run_attention_test(module, name)
 
 def main():
     print("Testing Attentions...")
     config = MockConfig()
-    try:
-        test_attention(ClusterAttention(config), "ClusterAttention")
-    except Exception as e:
-        print("ClusterAttention failed to initialize", e)
-
-    try:
-        test_attention(AdaSplashAttention(config), "AdaSplashAttention")
-    except Exception as e:
-        print("AdaSplashAttention failed to initialize", e)
-        
-    try:
-        test_attention(HammingAttention(config), "HammingAttention")
-    except Exception as e:
-        print("HammingAttention failed to initialize", e)
-
-    try:
-        test_attention(GalerkinAttention(config), "GalerkinAttention")
-    except Exception as e:
-        print("GalerkinAttention failed to initialize", e)
-
-    try:
-        test_attention(PerformerAttention(config), "PerformerAttention")
-    except Exception as e:
-        print("PerformerAttention failed to initialize", e)
+    for attn_cls, name in [
+        (ClusterAttention, "ClusterAttention"),
+        (AdaSplashAttention, "AdaSplashAttention"),
+        (HammingAttention, "HammingAttention"),
+        (GalerkinAttention, "GalerkinAttention"),
+        (PerformerAttention, "PerformerAttention"),
+    ]:
+        try:
+            _run_attention_test(attn_cls(config), name)
+        except Exception as e:
+            print(f"{name} failed: {e}")
+            traceback.print_exc()
 
 if __name__ == '__main__':
     main()
+
