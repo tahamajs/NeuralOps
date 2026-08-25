@@ -276,7 +276,7 @@ def apply_module_to_model(
                 target_cls = None
                 for attr in dir(mod):
                     obj = getattr(mod, attr)
-                    if isinstance(obj, type) and issubclass(obj, nn.Module) and "Attention" in attr:
+                    if isinstance(obj, type) and issubclass(obj, nn.Module) and "Attention" in attr and attr != "BaseAttention":
                         target_cls = obj
                         break
                 if target_cls is not None:
@@ -645,10 +645,10 @@ TRACK_MODULES: Dict[str, Dict[str, List[str]]] = {
             "adasplash_attention",
             "hamming_attention",
             "cosformer",
-            "linear_attention",
-            "exact_linear_attention",
-            "fourier_attention",
-            "multiscale_attention",
+            "decay_linear_attention",
+            "gated_linear_attention",
+            "SOAFusedAttention",
+            "fused_svd_kernel",
         ],
         "compressors": [
             "astro_quantizer",
@@ -684,6 +684,7 @@ TRACK_MODULES: Dict[str, Dict[str, List[str]]] = {
             "proxsparse",
             "soka",
             "liftr",
+            "mamba_shedder",
             "sdrm",
         ],
     },
