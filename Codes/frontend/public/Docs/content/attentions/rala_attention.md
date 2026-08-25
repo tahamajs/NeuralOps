@@ -120,43 +120,29 @@ Y = \text{Concat}(O_{\text{fused}, 1}, \dots, O_{\text{fused}, H}) W_O + b_O \in
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### Computational Workload (FLOPs & MACs)
-Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ augmentation rank.
+### Computational Workload & Scaling Dynamics
+Let $B$ represent the batch size, $N$ sequence length, $D$ model dimension, $H$ the number of attention heads, $d_k = D/H$ the head dimension, and $r$ the rank of the parametric augmentation subspace where $r \ll d_k$. 
 
-1. **Linear Projections**:
-   - $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
-2. **Associative Memory Construction**:
-   - $KV$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
-   - Denominator calculation: $2 B N D$ FLOPs.
-3. **Linear Path Projection**:
-   - $O_{\text{lin}}$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
-4. **Rank-Augmented Path Projection**:
-   - $M_{\text{rank}} = U V^\top$: $2 H d_k^2 r$ FLOPs (evaluated once).
-   - $O_{\text{aug}}$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
+The arithmetic operational profile of Rank-Augmented Linear Attention demonstrates strict $\mathcal{O}(N)$ computational scalability across all sequence lengths. The initial input projection stage spanning transformations $W_Q, W_K, W_V,$ and $W_O$ requires $8 B N D^2$ floating-point operations ($4 B N D^2$ multiply-accumulate operations). Subsequently, associative state construction proceeds by contracting positive feature mappings into the Key-Value memory tensor $S_{\text{KV}}$, which consumes $2 B H N d_k^2 = 2 B N D d_k$ FLOPs alongside $2 B N D$ FLOPs dedicated to computing the normalization denominator sum. 
 
-5. **Total Workload Summary**:
-   - **Total MACs**: $4 B N D^2 + 3 B N D d_k + H d_k^2 r$
-   - **Total FLOPs**: $8 B N D^2 + 6 B N D d_k + 2 H d_k^2 r + 2 B N D$
-   - **Strict Linear Scaling**: Scalability in sequence length $N$ is strictly $\mathcal{O}(N)$ without intermediate $N \times N$ score matrices.
+Evaluation of the dual-path context representation executes with minimal asymptotic overhead. The primary kernel linear attention path $O_{\text{lin}}$ requires $2 B H N d_k^2 = 2 B N D d_k$ FLOPs to query the aggregated associative memory. In parallel, the parametric low-rank interaction matrix $M_{\text{rank}} = U V^\top$ is pre-computed once per head requiring $2 H d_k^2 r$ FLOPs, after which the query projections compute $O_{\text{aug}}$ in $2 B H N d_k^2 = 2 B N D d_k$ FLOPs. Aggregating these operations yields a cumulative workload of $4 B N D^2 + 3 B N D d_k + H d_k^2 r$ MACs (or $8 B N D^2 + 6 B N D d_k + 2 H d_k^2 r + 2 B N D$ FLOPs). Crucially, because no intermediate $N \times N$ token affinity matrices are materialized in memory, memory consumption and arithmetic complexity remain strictly linear with respect to sequence length.
 
-### Parameter Overhead Analysis
-- **Standard Linear Attention Parameters**: $4 D^2 + 4 D$ floats.
-- **RALA Parameter Count**:
-  \[
-  \text{Params}_{\text{RALA}} = 4 D^2 + 4 D + 2 \cdot H \cdot d_k \cdot r + 1 = 4 D^2 + 4 D + 2 D r + 1 \text{ floats}
-  \]
-  For $D = 4096, H = 32, d_k = 128, r = 8$:
-  - Extra parameters: $2 \times 4096 \times 8 + 1 = 65,537$ parameters (**$< 0.1\%$ parameter overhead** over standard linear attention).
+### Parameter Footprint and Subspace Capacity
+Compared to standard linear attention frameworks that parameterize $4 D^2 + 4 D$ weights for basic input-output projections, RALA incorporates low-rank factorization matrices $U, V \in \mathbb{R}^{H \times d_k \times r}$ and the learnable blending scalar $\alpha$:
+\[
+\text{Params}_{\text{RALA}} = 4 D^2 + 4 D + 2 \cdot H \cdot d_k \cdot r + 1 = 4 D^2 + 4 D + 2 D r + 1 \text{ parameters}
+\]
+Under representative large-scale model dimensions ($D = 4096, H = 32, d_k = 128, r = 8$), the additional parametric allocation amounts to $2 \times 4096 \times 8 + 1 = 65,537$ parameters. This represents an overhead of less than $0.1\%$ relative to the baseline architecture, achieving significant expressivity enhancements across complex associative retrieval tasks without measurable parametric expansion.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Zero Denominator Divide-by-Zero
-If all key activations undergo extreme negative masking, denominator vector $\text{Denom} = \Phi_Q \cdot z^\top$ can collapse to 0. Adding offset $\epsilon = 1e-8$ prevents divide-by-zero NaN outputs.
+### Normalization Stability and Denominator Vanishing
+A central stability consideration in kernelized linear attention mechanisms is the vulnerability to denominator collapse. In scenarios where extensive causal or sequence padding masks suppress large contiguous blocks of key tokens, the accumulated normalizer $\text{Denom}_{b, h, i} = \sum_{m=1}^{d_k} (\Phi_Q)_{b, h, i, m} \cdot z_{b, h, m}$ can vanish towards zero. This denominator degeneracy induces numerical singularity, generating exploding gradients and NaN activations in backpropagation. To guarantee gradient stability across degenerate sequence distributions, an additive damping constant $\epsilon = 10^{-8}$ is enforced within the normalization denominator, establishing a strictly positive lower bound on the loss landscape denominator manifold.
 
-### Rank Matrix Ill-Conditioning
-If parameter matrices $U, V$ are initialized with large variance, the augmented output magnitude $O_{\text{aug}}$ can overwhelm the kernel linear output $O_{\text{lin}}$. Initializing $U, V$ with small std ($0.02$) and setting $\alpha = 0.1$ preserves stable gradient dynamics.
+### Ill-Conditioning and Optimization Dynamics of Low-Rank Memory
+A potential optimization impediment arises from the unconstrained magnitude scaling of the parametric low-rank matrices $U$ and $V$. If $U$ and $V$ are initialized with large variance, the resulting parametric output $O_{\text{aug}}$ can drastically overpower the associative kernel output $O_{\text{lin}}$, effectively uncoupling the attention block from the dynamic input sequence context and collapsing it into an invariant static transformation. To preserve well-conditioned gradient flow across both paths, factor matrices $U$ and $V$ are initialized with Gaussian perturbations scaled to small standard deviations ($\sigma = 0.02$), while the scalar mixing coefficient is initialized conservatively to $\alpha = 0.1$. This ensures that initial training dynamics remain anchored to the associative memory path while the low-rank subspace progressively learns complementary high-order feature correlations.
 
 ---
 
@@ -192,9 +178,7 @@ A Triton kernel for RALA fuses the associative memory reduction $S_{\text{KV}}$,
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **State-Space RALA (Mamba-RALA)**: Interleave RALA rank-augmented linear layers with selective State-Space Models (SSM) for unified linear-time sequence modeling.
-2. **Quantized Low-Rank Parametric Memory**: Quantize rank memory matrices $U, V$ to INT4 format to minimize SRAM register overhead during long-context decoding.
-3. **Adaptive Mixing Scaling ($\alpha_h$)**: Parameterize independent mixing coefficients $\alpha_h$ per head to allow specialized channels to rely more heavily on parametric rank memory.
+The integration of parametric rank augmentation into linear attention architectures unlocks multiple avenues for structural innovation and hardware efficiency. One compelling direction involves unifying RALA with continuous-time State-Space Models (SSMs), establishing Mamba-RALA hybrid layers wherein selective recurrent state transitions track non-stationary temporal dynamics while low-rank parametric matrices maintain cross-channel associative capacity under strict linear-time complexity. Furthermore, memory footprint during high-throughput autoregressive decoding can be minimized by quantizing the static parametric memory tensors $U$ and $V$ into low-bit representations (such as INT4 or FP4 formats), thereby mitigating SRAM register pressure during fused kernel execution. Concurrently, parameterizing head-specific adaptive mixing coefficients $\alpha_h$ enables individual attention heads to autonomously determine their optimal reliance on static parametric rank memory versus dynamic associative state aggregation.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
@@ -217,3 +201,159 @@ The empirical evaluation of `rala_attention` across standard sequence lengths an
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
 
+---
+
+## Complete Source Code Implementation (`rala_attention.py`)
+
+```python
+"""
+Rank‑Augmented Linear Attention (RALA) – ICLR 2024.
+Augments linear attention kernel maps with low-rank static head interaction matrices.
+"""
+
+from typing import Any, Optional, Tuple, Union
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("rala")
+class RALALinearAttention(nn.Module):
+    r"""Rank-Augmented Linear Attention (RALA) Mechanism.
+
+    Augments standard kernel-based linear attention ($\mathcal{O}(N)$) with a low-rank parametric
+    correction matrix $U_h V_h^\top \in \mathbb{R}^{d_k \times d_k}$ (rank $r \ll d_k$) to mitigate
+    the capacity bottlenecks of standard low-rank kernel approximations:
+    $$\text{Attention}_{\text{RALA}}(Q, K, V) = \frac{\phi(Q) (\phi(K)^\top V)}{\phi(Q) (\phi(K)^\top \mathbf{1})} + \alpha \frac{\phi(Q) (U V^\top)}{\phi(Q) (\phi(K)^\top \mathbf{1})}$$
+
+    Computational Complexity:
+        - Time: $\mathcal{O}(B \cdot H \cdot N \cdot d_k^2 + B \cdot H \cdot N \cdot d_k \cdot r)$
+        - Memory: $\mathcal{O}(B \cdot H \cdot (d_k^2 + N \cdot d_k))$
+        - Strictly linear in sequence length $N$.
+
+    Tensor Dimensions:
+        - hidden_states: $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
+        - attention_mask: Optional $[B, N]$ or $[B, 1, 1, N]$.
+        - Output: Tuple of $([B, N, D], \text{None})$.
+    """
+
+    def __init__(self, config: Any) -> None:
+        super().__init__()
+        if config.hidden_size % config.num_attention_heads != 0:
+            raise ValueError("hidden_size must be divisible by num_attention_heads")
+        self.hidden_size: int = config.hidden_size
+        self.num_heads: int = config.num_attention_heads
+        self.head_dim: int = self.hidden_size // self.num_heads
+        self.scaling: float = self.head_dim**-0.5
+
+        self.q_proj: nn.Linear = nn.Linear(self.hidden_size, self.hidden_size)
+        self.k_proj: nn.Linear = nn.Linear(self.hidden_size, self.hidden_size)
+        self.v_proj: nn.Linear = nn.Linear(self.hidden_size, self.hidden_size)
+        self.out_proj: nn.Linear = nn.Linear(self.hidden_size, self.hidden_size)
+
+        self.rank_r: int = getattr(config, "rala_rank", 8)
+        self.U: nn.Parameter = nn.Parameter(
+            torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.02
+        )
+        self.V: nn.Parameter = nn.Parameter(
+            torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.02
+        )
+
+        self.alpha: nn.Parameter = nn.Parameter(torch.tensor(0.1))
+        self.activation: nn.GELU = nn.GELU()
+
+    @staticmethod
+    def _apply_linear_mask(
+        k: torch.Tensor, attention_mask: Optional[torch.Tensor]
+    ) -> torch.Tensor:
+        """ apply linear mask."""
+        if attention_mask is None:
+            return k
+        
+        # Ensure mask is [B, L]
+        if attention_mask.dim() == 4:
+            mask = attention_mask[:, 0, 0, :]
+        elif attention_mask.dim() == 3:
+            mask = attention_mask[:, 0, :]
+        else:
+            mask = attention_mask
+            
+        # Reshape to [B, 1, L, 1] so it can broadcast against k [B, H, L, d_k]
+        mask = mask.unsqueeze(1).unsqueeze(-1)
+        
+        mask_val: torch.Tensor = (
+            (mask > -10000.0).to(torch.float32)
+        )
+        return k * mask_val.to(k.dtype)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Forward pass for rank-augmented linear attention.
+
+        Args:
+            hidden_states (torch.Tensor): Input activations of shape `[Batch, SeqLen, HiddenDim]`.
+            attention_mask (Optional[torch.Tensor]): Mask tensor `[Batch, SeqLen]`.
+            output_attentions (bool): Whether to return attention weights.
+            **kwargs (Any): Additional parameters.
+
+        Returns:
+            Tuple[torch.Tensor, Optional[torch.Tensor]]: Contextualized representation `[Batch, SeqLen, HiddenDim]` and `None`.
+        """
+        batch_size, seq_len, _ = hidden_states.shape
+        q: torch.Tensor = (
+            self.q_proj(hidden_states)
+            .view(batch_size, seq_len, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+        )
+        k: torch.Tensor = (
+            self.k_proj(hidden_states)
+            .view(batch_size, seq_len, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+        )
+        v: torch.Tensor = (
+            self.v_proj(hidden_states)
+            .view(batch_size, seq_len, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+        )
+
+        q_prime: torch.Tensor = F.elu(q) + 1.0
+        k_prime: torch.Tensor = self._apply_linear_mask(
+            F.elu(k) + 1.0, attention_mask
+        )
+
+        kv: torch.Tensor = torch.einsum("b h n d, b h n e -> b h d e", k_prime, v)
+        z: torch.Tensor = k_prime.sum(dim=2)  # (B, H, D)
+
+        denom: torch.Tensor = (
+            torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1)
+            + 1e-5
+        )
+        lin_out: torch.Tensor = (
+            torch.einsum("b h n d, b h d e -> b h n e", q_prime, kv) / denom
+        )
+
+        rank_mat: torch.Tensor = torch.einsum(
+            "h d r, h e r -> h d e", self.U, self.V
+        )  # (H, D, E)
+        aug_out: torch.Tensor = (
+            torch.einsum("b h n d, h d e -> b h n e", q_prime, rank_mat) / denom
+        )
+
+        output: torch.Tensor = lin_out + self.alpha * aug_out
+        output = (
+            output.transpose(1, 2)
+            .contiguous()
+            .view(batch_size, seq_len, self.hidden_size)
+        )
+        output = self.out_proj(output)
+
+        return (output, None)
+```

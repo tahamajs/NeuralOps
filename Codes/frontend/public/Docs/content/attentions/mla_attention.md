@@ -132,45 +132,34 @@ Thus, computing affinity scores reduces to an inner product between transformed 
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### Computational Workload (FLOPs & MACs)
-Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $d_c$ latent compression rank.
+The computational workload decomposes into distinct projection and pairwise routing phases governed by batch size $B$, sequence length $N$, hidden dimension $D$, head count $H$, head dimension $d_k = D/H$, and compression rank $d_c$. The primary linear projections encompass the un-biased query transformation $W_Q$ consuming $2 B N D^2$ FLOPs, the down-projection operator $W_{DKV}$ requiring $2 B N D d_c$ FLOPs, the dual multi-head up-projections $W_{UK}$ and $W_{UV}$ jointly contributing $4 B N d_c D$ FLOPs, and the final linear projection $W_O$ incurring $2 B N D^2$ FLOPs. Consequently, the cumulative projection workload evaluates to $4 B N D^2 + 6 B N d_c D$ FLOPs.
 
-1. **Linear Projections**:
-   - $W_Q$: $2 B N D^2$ FLOPs.
-   - $W_{DKV}$ (down-projection): $2 B N D d_c$ FLOPs.
-   - $W_{UK}, W_{UV}$ (up-projections): $2 \times (2 B N d_c D) = 4 B N d_c D$ FLOPs.
-   - $W_O$ (output projection): $2 B N D^2$ FLOPs.
-   - *Total Projection Workload*: $4 B N D^2 + 6 B N d_c D$ FLOPs.
-
-2. **Core Attention Computation**:
-   - $Q K^\top$ MatMul: $2 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
-   - $A V$ MatMul: $2 B N^2 D$ FLOPs.
-
-3. **Total Workload Summary**:
-   - **Total MACs**: $2 B N D^2 + 3 B N d_c D + 2 B N^2 D$
-   - **Total FLOPs**: $4 B N D^2 + 6 B N d_c D + 4 B N^2 D + 7 B H N^2$
+Within the core attention mechanism, computing the pairwise similarity tensor via the $Q K^\top$ matrix multiplication requires $2 B N^2 D$ FLOPs, while row-wise normalization and causal masking consume approximately $7 B H N^2$ FLOPs. Context aggregation via the attention-value contraction $A V$ demands an additional $2 B N^2 D$ FLOPs. In aggregate, the computational complexity yields a total multiply-accumulate count of $2 B N D^2 + 3 B N d_c D + 2 B N^2 D$ MACs, translating to an arithmetic density of $4 B N D^2 + 6 B N d_c D + 4 B N^2 D + 7 B H N^2$ FLOPs.
 
 ### Memory Footprint & KV Cache Analysis
-- **Parameter Count**: $2 D^2 + 3 D d_c + D$ floats.
-- **Autoregressive Decoding KV Cache Footprint**:
-  In MLA, only the latent vector $\mathbf{c}_{KV}$ is cached per token step (instead of caching full key and value heads):
-  \[
-  \text{KV Cache Size}_{\text{MLA}} = B \cdot N \cdot d_c \cdot b \text{ bytes}
-  \]
-  Comparing to standard MHA ($2 B N D \cdot b$ bytes) with $d_c = 128$ and $D = 4096$:
-  \[
-  \text{Compression Ratio} = \frac{2 \cdot 4096}{128} = \mathbf{64\times \text{ Reduction in KV Cache Memory}}
-  \]
+From a parameterization perspective, the static weight footprint comprises $2 D^2 + 3 D d_c + D$ floating-point scalars. Crucially, during autoregressive decoding, the memory bandwidth bottleneck is substantially mitigated because the Key-Value cache stores solely the low-rank latent representation $\mathbf{c}_{KV} \in \mathbb{R}^{B \times N \times d_c}$ rather than full multi-head key and value activations across all heads. The decoding cache allocation is formally defined by:
+
+\[
+\text{KV Cache Size}_{\text{MLA}} = B \cdot N \cdot d_c \cdot b \text{ bytes}
+\]
+
+where $b$ denotes the precision byte width. In contrast to standard Multi-Head Attention requiring $2 B N D \cdot b$ bytes, setting $d_c = 128$ for a representative model dimension of $D = 4096$ yields:
+
+\[
+\text{Compression Ratio} = \frac{2 \cdot 4096}{128} = \mathbf{64\times \text{ Reduction in KV Cache Memory}}
+\]
+
+This structural reduction alleviates High Bandwidth Memory (HBM) bandwidth saturation during long-sequence autoregressive generation, shifting execution characteristics from memory-bound memory-stall regimes toward compute-bound Tensor Core saturation.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### Rank Collapse in Latent Bottleneck
-If latent compression dimension $d_c$ is chosen too small ($d_c < 64$), the matrix rank of $\mathbf{c}_{KV}$ becomes insufficient to capture multi-topic context across heads, leading to rank deficiency and degradation of long-range dependencies.
+The low-rank compression architecture introduces intricate optimization trade-offs and structural failure modes that warrant rigorous analysis. A primary failure mode manifests as rank collapse within the latent bottleneck when the compression dimension $d_c$ is aggressively constrained (e.g., $d_c < 64$). In this regime, the intermediate latent subspace $\mathbf{c}_{KV}$ lacks sufficient representational capacity to span the diverse subspace trajectories required by disparate query heads. This induced rank deficiency restricts the effective rank of the reconstructed Key and Value matrices, thereby flattening the singular value spectrum and degrading the model's capacity to resolve multi-topic associations across extended sequence horizons.
 
-### Up-Projection Compute Overhead during Training
-During backward pass training, propagating gradients through `k_up` and `v_up` requires computing matrix products with shape $[B, N, d_c] \times [d_c, D]$, increasing training FLOPs compared to standard MHA despite providing massive decoding speedups.
+### Up-Projection Compute Overhead and Gradient Dynamics
+Furthermore, propagating gradient signals through the consecutive down- and up-projection matrices ($W_{DKV}$, $W_{UK}$, and $W_{UV}$) alters the conditioning of the optimization loss landscape. During backward propagation, backpropagating through the latent bottleneck requires computing matrix products with shape $[B, N, d_c] \times [d_c, D]$, creating non-negligible training-time arithmetic overhead compared to standard dense attention. Concurrently, the composition of low-rank linear maps can amplify spectral radius discrepancies during early training phases, rendering parameter updates sensitive to learning rate scheduling and requiring precise weight initialization to prevent vanishing or exploding gradient norms across deep transformer layers.
 
 ---
 
@@ -205,9 +194,9 @@ For inference, a fused Triton MLA decoding kernel absorbs up-projection weights 
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Decoupled RoPE Latent MLA**: Combine MLA latent KV compression with decoupled Rotary Position Embedding (RoPE) keys, maintaining positional awareness while preserving $64\times$ cache compression (DeepSeek-V2 style).
-2. **Dynamic Rank Adapters (AdaMLA)**: Dynamically scale latent dimension $d_c$ using low-rank rank-gating adapters according to sequence length or context complexity.
-3. **Quantized Latent State Caching**: Quantize $\mathbf{c}_{KV}$ to FP8 / INT4 format, driving total KV cache footprint down to under 1% of standard MHA.
+Future architectural trajectories for low-rank attention compression span several promising research directions. A prominent synthesis opportunity lies in Decoupled Rotary Position Embedding (RoPE) Latent MLA, which augments compressed latent states with an uncompressed, decoupled positional query-key subspace. This structural formulation preserves exact relative geometric encoding while maintaining the full $64\times$ KV cache reduction ratio during generation.
+
+Concurrently, dynamic rank adapters (AdaMLA) offer a mechanism to dynamically modulate the compression rank $d_c$ on a per-layer or per-token basis via input-dependent gating networks. By allocating higher rank capacity to semantically dense layers and lower capacity to diffuse routing layers, the architecture achieves optimal Pareto efficiency across heterogeneous sequence lengths. Furthermore, combining low-rank latent caching with low-bit post-training quantization or quantization-aware training (such as FP8 or INT4 latent representations) enables an order-of-magnitude reduction in state memory, compressing the effective cache footprint to less than 1% of dense Multi-Head Attention and unlocking extreme-scale context windows on memory-constrained accelerator clusters.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
@@ -230,3 +219,175 @@ The empirical evaluation of `mla_attention` across standard sequence lengths and
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`mla_attention.py`)
+
+```python
+"""Multi-Head Latent Attention (MLA) – DeepSeek‑V2.
+
+Paper: https://arxiv.org/abs/2405.04434
+"""
+
+import math
+from typing import Any, Optional, Tuple, Union
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("mla")
+class MLAAttention(nn.Module):
+    r"""Multi-Head Latent Attention (MLA) Mechanism.
+
+    Compresses the Key and Value representations into a low-rank latent vector $\mathbf{c}_{KV} \in \mathbb{R}^{d_c}$
+    prior to head projection, drastically reducing Key-Value activation caching requirements:
+    $$\mathbf{c}_{KV} = W_{DKV} X \in \mathbb{R}^{B \times N \times d_c}$$
+    $$K = W_{UK} \mathbf{c}_{KV} \in \mathbb{R}^{B \times N \times (H \cdot d_k)}, \quad V = W_{UV} \mathbf{c}_{KV} \in \mathbb{R}^{B \times N \times (H \cdot d_v)}$$
+    $$\text{Attention}_{\text{MLA}}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} + M\right) V$$
+
+    Computational Complexity:
+        - Time: $\mathcal{O}(B \cdot N \cdot d \cdot d_c + B \cdot H \cdot N^2 \cdot d_k)$
+        - Cache Storage: $\mathcal{O}(B \cdot N \cdot d_c)$ vs $\mathcal{O}(2 \cdot B \cdot N \cdot H \cdot d_k)$ where $d_c \ll 2 H d_k$.
+
+    Tensor Dimensions:
+        - hidden_states: $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
+        - Output: Tuple of $([B, N, D], \text{Optional}[B, H, N, N])$.
+    """
+
+    def __init__(self, config: Any, rank: int = 128) -> None:
+        super().__init__()
+        self.num_heads: int = config.num_attention_heads
+        self.head_dim: int = config.hidden_size // self.num_heads
+        self.rank: int = getattr(config, "mla_rank", rank)
+
+        self.q_proj: nn.Linear = nn.Linear(
+            config.hidden_size, config.hidden_size, bias=False
+        )
+        self.kv_down: nn.Linear = nn.Linear(
+            config.hidden_size, self.rank, bias=False
+        )
+        self.k_up: nn.Linear = nn.Linear(
+            self.rank, config.hidden_size, bias=False
+        )
+        self.v_up: nn.Linear = nn.Linear(
+            self.rank, config.hidden_size, bias=False
+        )
+
+        self.out_proj: nn.Linear = nn.Linear(
+            config.hidden_size, config.hidden_size
+        )
+        self.dropout: nn.Dropout = nn.Dropout(config.dropout)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Forward pass for Multi-Head Latent Attention.
+
+        Args:
+            hidden_states (torch.Tensor): Input hidden activations `[Batch, SeqLen, HiddenDim]`.
+            attention_mask (Optional[torch.Tensor]): Mask tensor `[Batch, SeqLen]` or additive mask.
+            output_attentions (bool): Whether to return attention weights.
+            **kwargs (Any): Additional parameters.
+
+        Returns:
+            Tuple[torch.Tensor, Optional[torch.Tensor]]: Contextualized representation `[Batch, SeqLen, HiddenDim]` and attention probabilities.
+        """
+        batch_size, seq_len, _ = hidden_states.shape
+
+        q: torch.Tensor = self.q_proj(hidden_states).view(
+            batch_size, seq_len, self.num_heads, self.head_dim
+        )
+
+        latent: torch.Tensor = self.kv_down(hidden_states)
+        k: torch.Tensor = self.k_up(latent).view(
+            batch_size, seq_len, self.num_heads, self.head_dim
+        )
+        v: torch.Tensor = self.v_up(latent).view(
+            batch_size, seq_len, self.num_heads, self.head_dim
+        )
+
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
+
+        scores: torch.Tensor = torch.matmul(
+            q, k.transpose(-2, -1)
+        ) / math.sqrt(self.head_dim)
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                scores = scores + (1.0 - attention_mask[:, None, None, :]) * -10000.0
+            else:
+                scores = scores + attention_mask.unsqueeze(1)
+
+        attn_probs: torch.Tensor = torch.softmax(scores, dim=-1)
+        attn_probs = self.dropout(attn_probs)
+
+        context: torch.Tensor = torch.matmul(attn_probs, v)
+        context = (
+            context.transpose(1, 2)
+            .contiguous()
+            .view(batch_size, seq_len, -1)
+        )
+        out: torch.Tensor = self.out_proj(context)
+
+        if output_attentions:
+            return out, attn_probs
+        return out, None
+
+
+def inject_mla(
+    layer: Any,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Any,
+) -> MLAAttention:
+    r"""Dynamic bridge injecting MLAAttention into a transformer layer."""
+    rank = getattr(comp_config, "mla_rank", 128) if comp_config is not None else 128
+    
+    class ConfigWrapper:
+        def __init__(self, cfg):
+            self.hidden_size = getattr(cfg, "hidden_size", 768)
+            self.num_attention_heads = getattr(cfg, "num_attention_heads", 12)
+            self.dropout = getattr(cfg, "attention_probs_dropout_prob", getattr(cfg, "dropout", 0.1))
+            self.mla_rank = rank
+
+    wrapper = ConfigWrapper(model_config)
+    new_attn = MLAAttention(wrapper, rank=rank)
+
+    # Pretrained weight transfer
+    if old_attn is not None:
+        if hasattr(old_attn, "q_lin") and hasattr(new_attn, "q_proj"):
+            new_attn.q_proj.weight.data.copy_(old_attn.q_lin.weight.data)
+        if hasattr(old_attn, "out_lin") and hasattr(new_attn, "out_proj"):
+            new_attn.out_proj.weight.data.copy_(old_attn.out_lin.weight.data)
+            if old_attn.out_lin.bias is not None and new_attn.out_proj.bias is not None:
+                new_attn.out_proj.bias.data.copy_(old_attn.out_lin.bias.data)
+        if hasattr(old_attn, "k_lin") and hasattr(old_attn, "v_lin"):
+            # SVD decomposition of K and V to initialize low-rank latent projections
+            try:
+                k_w = old_attn.k_lin.weight.data
+                u_k, s_k, vh_k = torch.linalg.svd(k_w, full_matrices=False)
+                # Down projection: V^T, Up projection: U * S
+                r = min(rank, s_k.shape[0])
+                new_attn.kv_down.weight.data[:r, :] = vh_k[:r, :]
+                new_attn.k_up.weight.data[:, :r] = u_k[:, :r] @ torch.diag(s_k[:r])
+                
+                v_w = old_attn.v_lin.weight.data
+                u_v, s_v, vh_v = torch.linalg.svd(v_w, full_matrices=False)
+                new_attn.v_up.weight.data[:, :r] = u_v[:, :r] @ torch.diag(s_v[:r])
+            except Exception:
+                pass
+
+    layer.attention = new_attn
+    return new_attn
+```

@@ -205,3 +205,20 @@ The empirical evaluation of `swift_svd_compressor` across standard sequence leng
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
 
+---
+
+## Complete Source Code Implementation (`swift_svd_compressor.py`)
+
+```python
+"""
+Swift-SVD Activation-aware via cross-covariance. Registered as 'swift_svd_act'.
+Alias/re-export module for swift_svd_act.
+"""
+
+from framework.compression_engine.swift_svd_act import (
+    SwiftSVDActivationCompressor,
+    swift_svd_act_factory,
+)
+
+__all__ = ["SwiftSVDActivationCompressor", "swift_svd_act_factory"]
+```
