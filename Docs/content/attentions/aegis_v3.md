@@ -85,8 +85,7 @@ $$O = g \odot [O^{\text{local}}, O^{\text{global}}] + (1 - g) \odot \bar{O}^{\te
 | :--- | :--- | :--- |
 | **FLOP Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D \cdot r + B \cdot H_l \cdot L \cdot W \cdot d_h + B \cdot H_g \cdot L \cdot F \cdot d_h)$ |
 | **Memory Complexity** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot H_l \cdot L \cdot W + B \cdot H_g \cdot F \cdot d_h)$ |
-| **SST-2 Classification Accuracy** | 50.92% (uninitialized) | **84.02%** |
-| **SST-2 F1 Score** | 50.90% | **84.00%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

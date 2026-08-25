@@ -78,7 +78,7 @@ $$O^{\text{global}} = \frac{Q_{\text{feat}} KV}{\text{Den}} \in \mathbb{R}^{B \t
 | Metric | Full Softmax Attention | AEGIS-V5 Layer |
 | :--- | :--- | :--- |
 | **Time Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D \cdot r + B \cdot H_l \cdot L \cdot W \cdot d_h + B \cdot H_g \cdot L \cdot F \cdot d_h)$ |
-| **SST-2 Classification Accuracy** | 84.06% | **83.83%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

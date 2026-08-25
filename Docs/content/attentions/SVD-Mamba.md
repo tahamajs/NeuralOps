@@ -83,7 +83,7 @@ $$\bar{A}_t^\top P \bar{A}_t - P = -Q_t < 0 \quad (\text{for } P = I, \; Q_t = 1
 | :--- | :--- | :--- |
 | **Time Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot (D \cdot r_{\text{proj}} + D_{\text{inner}} \cdot d_{\text{state}}))$ |
 | **Parameter Footprint** | $100\%$ Baseline | **$62.5\%$** (Low-Rank SVD) |
-| **SST-2 Classification Accuracy** | 90.12% | **85.34%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 | **Inference Latency Speedup** | $1.00\times$ | **$1.72\times$ (0.58x latency)** |
 
 ---

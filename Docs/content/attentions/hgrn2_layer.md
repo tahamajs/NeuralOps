@@ -87,7 +87,7 @@ Under causal recurrence, $h_0 = i_0 \odot v_0$ is completely decoupled from futu
 | :--- | :--- | :--- |
 | **Time Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D)$ |
 | **Memory Footprint** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot D)$ |
-| **SST-2 Classification Accuracy** | 84.06% | **83.94%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

@@ -110,7 +110,7 @@ $$\text{Output} = (Y \odot \operatorname{SiLU}(Z)) W_{\text{out}} + b_{\text{out
 | :--- | :--- | :--- | :--- |
 | **Time Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D \cdot d_{\text{state}})$ | $\mathcal{O}(B \cdot L \cdot D \cdot d_{\text{state}})$ |
 | **Memory Footprint** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot D \cdot d_{\text{state}})$ | $\mathcal{O}(B \cdot D \cdot d_{\text{state}})$ |
-| **SST-2 Classification Accuracy** | 84.06% | 50.92% (stalled) | **83.94%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 | **Inference Scaling** | Quadratic $\mathcal{O}(L^2)$ | Linear $\mathcal{O}(L)$ | Linear $\mathcal{O}(L)$ |
 
 ---
