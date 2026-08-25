@@ -160,19 +160,62 @@ The `framework.visualization` package provides publication-ready Matplotlib/Seab
 
 ---
 
+---
+
+## 🚀 GPU Server Execution & Benchmark Runner
+
+The framework includes a fully automated runner suite specifically optimized for CUDA GPU servers, HPC clusters, AWS EC2, and RunPod environments:
+
+### 1. Hardware Diagnostics & Precision Verification
+```bash
+# Probes CUDA devices, Tensor Cores, compute capability, VRAM, and mixed-precision support
+bash Codes/framework/run_on_gpu_server.sh --mode diagnostics
+```
+
+### 2. Dataset Preparation & Preprocessing Pipeline
+```bash
+# Prepares, tokenizes, and caches all GLUE and Language Modeling benchmarks
+python Codes/framework/data/prepare_datasets.py --all --save_dir ./prepared_benchmark_data
+
+# Prepare specific tasks for fast local or offline execution
+python Codes/framework/data/prepare_datasets.py --tasks sst2,mrpc,qnli,wikitext2 --tokenizer bert-base-uncased
+```
+
+### 3. Fast Multi-Architecture Benchmark Sweep (GPU / BF16 / FP16)
+```bash
+# Execute fast benchmark sweep across all 5 tracks on GPU
+bash Codes/framework/run_on_gpu_server.sh --mode fast
+
+# Execute comprehensive multi-model evaluation matrix (BERT, RoBERTa, T5 on SST-2 & MRPC)
+bash Codes/framework/run_on_gpu_server.sh --mode comprehensive
+```
+
+### 4. Auto-Runner CLI (`auto_run.py`)
+```bash
+# Benchmark specific tracks or modules across model families:
+python Codes/framework/auto_run.py --track 1 --models bert,roberta,t5 --datasets sst2,mrpc
+python Codes/framework/auto_run.py --module aegis_v1 --models bert,roberta,t5 --datasets sst2
+python Codes/framework/auto_run.py --all --workers 4
+
+# Compile consolidated Markdown benchmark summary from saved JSON records:
+python Codes/framework/auto_run.py --report
+```
+
+---
+
 ## 🧪 Testing & Validation Suites
 
-Run the exhaustive test suites to verify all 106 attention mechanisms and 84 compressors:
+Run the exhaustive test suites to verify all 123 attention mechanisms and 86 compressors:
 
 ```bash
 # 1. Run unit tests
 pytest Codes/framework/tests/
 
-# 2. Run deep integration validation suite
-python Codes/framework/deep_validation_suite.py
+# 2. Run multi-model integration validation across all 5 tracks
+python Codes/framework/auto_run.py --all
 
-# 3. Audit all attention and compression modules
-python Codes/framework/verify_all_framework_modules.py
+# 3. View saved individual JSON results
+ls Codes/framework/benchmark_results/json/
 ```
 
 ---
