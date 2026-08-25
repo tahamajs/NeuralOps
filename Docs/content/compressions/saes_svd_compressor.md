@@ -222,3 +222,22 @@ The empirical evaluation of `saes_svd_compressor` across standard sequence lengt
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
 
+---
+
+## Complete Source Code Implementation (`saes_svd_compressor.py`)
+
+```python
+"""
+SAES-SVD Compressor: Joint intra- and inter-layer error compensation. Registered as 'saes'.
+Alias/re-export module for saes_svd_v2.
+"""
+
+from framework.compression_engine.saes_svd_v2 import (
+    SAESSVDCompressorV2,
+    saes_svd_v2_factory,
+)
+
+SAESCompressor = SAESSVDCompressorV2
+
+__all__ = ["SAESCompressor", "SAESSVDCompressorV2", "saes_svd_v2_factory"]
+```

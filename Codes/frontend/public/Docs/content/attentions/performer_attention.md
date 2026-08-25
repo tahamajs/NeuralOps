@@ -97,30 +97,19 @@ Input: hidden_states [B, L, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $m$: Random Features):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Random Feature Projections ($Q W^\top, K W^\top$)**: $2 \times (2 B H L \cdot d_k \cdot m) = 4 B L m D$ FLOPs
-- **Associative Matrix State ($KV = \phi(K)^\top V$)**: $2 B H \cdot m \cdot L \cdot d_k = 2 B L m D$ FLOPs
-- **Context Numerator Matrix Product ($\phi(Q) KV$)**: $2 B H \cdot L \cdot m \cdot d_k = 2 B L m D$ FLOPs
-- **Denominator Product ($\phi(Q) K_{\text{sum}}^\top$)**: $2 B H L m$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+### Computational and Analytical Complexity Breakdown
+The computational workload of the FAVOR+ mechanism is governed by the projection dimensionality, head allocation, and the chosen random feature budget $m$. Initial linear projections for queries, keys, and values ($W_Q, W_K, W_V$) demand $6 B L D^2$ floating-point operations (FLOPs). Subsequently, projecting query and key matrices into the randomized feature space via $Q W^\top$ and $K W^\top$ incurs $2 \times (2 B H L \cdot d_k \cdot m) = 4 B L m D$ FLOPs. Exploiting matrix multiplication associativity, the unmasked associative key-value state $KV = \phi(K)^\top V$ aggregates contextual information across the sequence with a computational budget of $2 B H \cdot m \cdot L \cdot d_k = 2 B L m D$ FLOPs. The context numerator product $\phi(Q) KV$ similarly accounts for $2 B H \cdot L \cdot m \cdot d_k = 2 B L m D$ FLOPs, while the scalar denominator normalizer $\phi(Q) K_{\text{sum}}^\top$ introduces an auxiliary overhead of $2 B H L m$ FLOPs. Concluding the forward pass, the linear output projection $W_O$ requires $2 B L D^2$ FLOPs. Consequently, the cumulative computational load reaches $4 B L D^2 + 4 B L m D$ multiply-accumulate operations (MACs), corresponding to $8 B L D^2 + 8 B L m D$ total FLOPs and establishing strict $\mathcal{O}(L)$ asymptotic complexity with respect to sequence length.
 
-**Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 4 B L m D$
-- **Total FLOPs**: $8 B L D^2 + 8 B L m D$ ($\mathcal{O}(L)$ linear complexity)
-
-### Memory Footprint:
-- **Static Weights**: $4 D^2$ model weights $+ m \cdot d_k$ orthogonal random projection matrix buffer.
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot m \cdot d_k + B \cdot H \cdot L \cdot m)$, completely bypassing $L \times L$ storage.
+### Memory Footprint and Activation Allocation
+In terms of memory residency, the model maintains a compact footprint composed of static parameter tensors and dynamic activation caches. Static allocations are restricted to $4 D^2$ projection weights complemented by an $m \cdot d_k$ orthogonal projection buffer. Concurrently, transient activation memory during training and autoregressive decoding remains strictly bounded by $\mathcal{O}(B \cdot H \cdot m \cdot d_k + B \cdot H \cdot L \cdot m)$, entirely circumventing the prohibitive quadratic $\mathcal{O}(L^2)$ matrix storage required by conventional multi-head attention.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Variance of Random Feature Estimator**: At small feature counts ($m \ll d_k$), the variance of $\phi(x)$ leads to noisy attention weight estimations, impairing fine-grained token retrieval.
-2. **Exponential Feature Overflow in FP16**: Computing $\exp(W x)$ can cause numerical overflow in standard IEEE half-precision (FP16). Subtraction of maximum logits $\max(W x)$ and execution in FP32 / BF16 is mandatory.
-3. **Causal Scan Memory Accumulation**: In causal autoregressive decoding, maintaining the associative matrix $KV_t = KV_{t-1} + \phi(K_t)^\top V_t$ requires numerical stabilization to prevent monotonic sum drift.
-4. **Rank Bottleneck**: The maximum rank of the attention map is strictly bounded by $\min(L, m)$.
+The theoretical convergence and practical stability of the FAVOR+ estimator are intimately linked to the number of random feature projections $m$ and the underlying precision regime. When the random feature dimension is constrained such that $m \ll d_k$, the Monte Carlo variance of the positive feature mapping $\phi(x)$ increases substantially. This stochastic variance distorts the implicit attention weight distribution, introducing non-negligible gradient noise that roughens the optimization landscape and degrades retrieval precision on associative recall tasks. 
+
+Furthermore, evaluating the exponential non-linearity $\exp(W x)$ introduces acute vulnerability to numerical overflow under standard IEEE half-precision (FP16) arithmetic. Subtracting maximum logit projections prior to exponentiation and executing feature mappings in high-precision formats (FP32 or BF16) is indispensable for preserving numerical conditioning. During causal autoregressive processing, continuous prefix accumulation in the recurrent state $KV_t = KV_{t-1} + \phi(K_t)^\top V_t$ can induce monotonic magnitude drift and eigenvalue explosion over extended context windows, necessitating periodic renormalization or decay factors. Finally, the effective expressivity of the linearized kernel operator is fundamentally constrained by an intrinsic rank bottleneck, wherein the rank of the implicit attention matrix cannot exceed $\min(L, m)$, thereby enforcing a structural upper bound on contextual capacity relative to dense full-rank attention.
 
 ---
 
@@ -172,9 +161,7 @@ def _performer_causal_scan_kernel(
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Structured Orthogonal Ensemble (ORF+)**: Replace i.i.d. Gaussian random projection matrices $W$ with Gram-Schmidt orthogonalized block Hadamard matrices to minimize feature estimator variance.
-2. **Hybrid Performer-Mamba Paradigm**: Combine FAVOR+ kernel feature maps with selective state-space discretization parameters to create continuous-time recurrent transformers.
-3. **Quantized FP8 Random Features**: Quantize feature maps $\phi(x)$ to FP8 (E4M3 format) for 2x memory throughput on modern Hopper/Blackwell GPU architectures.
+To advance the efficiency and representational fidelity of linearized kernel attention, several promising architectural directions emerge. First, replacing standard independently and identically distributed Gaussian projection matrices with Structured Orthogonal Ensembles (ORF+)—such as Gram-Schmidt orthogonalized block Hadamard matrices—substantially suppresses kernel approximation variance without incurring additional computational overhead. Furthermore, establishing a hybrid Performer-State Space Model (SSM) architecture by synthesizing FAVOR+ positive feature maps with selective discretization dynamics enables continuous-time recurrent memory updates while strictly maintaining linear algorithmic complexity. Concurrently, quantizing intermediate positive feature activations $\phi(x)$ into microscopic 8-bit floating-point formats (e.g., FP8 E4M3) offers the potential to double memory bus throughput and enhance arithmetic intensity across contemporary GPU architectures like NVIDIA Hopper and Blackwell, facilitating ultra-long sequence processing at minimal energetic cost.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
@@ -197,3 +184,181 @@ The empirical evaluation of `performer_attention` across standard sequence lengt
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`performer_attention.py`)
+
+```python
+r"""
+Performer Attention – Fast Attention via Positive Orthogonal Random Features (FAVOR+).
+Paper: https://arxiv.org/abs/2009.14794
+"""
+
+from typing import Any, Optional, Tuple
+import math
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.attention_mask import get_token_valid_mask
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("performer")
+class PerformerAttention(BaseAttention):
+    r"""
+    Performer Attention (FAVOR+).
+
+    Mathematical Formulation:
+        1. Positive Orthogonal Random Features:
+           $$\phi(x) = \frac{\exp\left(x W^\top - \frac{\|x\|^2}{2}\right)}{\sqrt{m}}$$
+           where $W \in \mathbb{R}^{m \times d}$ is an orthogonal random projection matrix ($W W^\top \approx I$).
+        
+        2. Linear Attention Kernel Formulation:
+           $$\operatorname{Attn}(Q, K, V) = \frac{\phi(Q) (\phi(K)^\top V)}{\phi(Q) (\phi(K)^\top \mathbf{1}_N) + \epsilon}$$
+
+    Complexity:
+        - Time: $\mathcal{O}(B \cdot H \cdot N \cdot m \cdot d)$ linear.
+        - Memory: $\mathcal{O}(B \cdot H \cdot (N \cdot m + m \cdot d))$.
+    """
+
+    def __init__(
+        self,
+        config: Any,
+        rank: Optional[int] = None,
+        eps: float = 1e-6,
+        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config, rank)
+        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.num_features: int = getattr(
+            config,
+            "performer_rank",
+            rank if rank is not None else getattr(config, "rank", 64),
+        )
+        self.eps: float = eps
+
+        self.query = nn.Linear(hidden_size, self.all_head_size)
+        self.key = nn.Linear(hidden_size, self.all_head_size)
+        self.value = nn.Linear(hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, hidden_size)
+
+        omega = self._build_orthogonal_matrix(self.head_dim, self.num_features)
+        self.register_buffer("omega", omega)
+
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        r"""Universal adapter weight copying."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.weight.data.copy_(w)
+                if b is not None and target.bias is not None:
+                    target.bias.data.copy_(b)
+            except Exception:
+                pass
+
+    def _build_orthogonal_matrix(self, d: int, m: int) -> torch.Tensor:
+        r"""Constructs (m, d) matrix with orthogonal rows scaled by sqrt(d)."""
+        blocks = []
+        remaining = m
+        while remaining > 0:
+            block_size = min(d, remaining)
+            g = torch.randn(d, block_size)
+            q, _ = torch.linalg.qr(g)
+            blocks.append(q)
+            remaining -= block_size
+        W = torch.cat(blocks, dim=1)
+        W = W * math.sqrt(d)
+        return W.t().contiguous()
+
+    def _feature_map(self, x: torch.Tensor) -> torch.Tensor:
+        r"""x: (B, H, N, d) -> phi: (B, H, N, m)"""
+        proj = torch.matmul(x, self.omega.to(dtype=x.dtype, device=x.device).t())
+        # Positive kernel projection: using ReLU to ensure strict non-negativity
+        # and prevent variance issues from exponential growth.
+        phi = F.relu(proj) + self.eps
+        # Normalize sum of features
+        phi = phi / (math.sqrt(self.num_features) + self.eps)
+        return phi
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        B, N, D = hidden_states.shape
+        H, d = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
+        scale = d ** -0.25
+        Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2) * scale
+        K = self.key(hidden_states).view(B, N, H, d).transpose(1, 2) * scale
+        V = self.value(hidden_states).view(B, N, H, d).transpose(1, 2)
+
+        valid_mask = get_token_valid_mask(attention_mask, B, N, device)  # (B, N)
+        mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)   # (B, 1, N, 1)
+
+        Q_feat = self._feature_map(Q)
+        K_feat = self._feature_map(K) * mask_expanded
+
+        # Associative linear attention reduction
+        KV = torch.matmul(K_feat.transpose(-2, -1), V)   # (B, H, m, d)
+        K_sum = K_feat.sum(dim=-2, keepdim=True)         # (B, H, 1, m)
+        num = torch.matmul(Q_feat, KV)                   # (B, H, N, d)
+        den = torch.matmul(Q_feat, K_sum.transpose(-2, -1)) + self.eps
+        context = num / den
+
+        context = self.dropout(context)
+        if head_mask is not None:
+            context = context * head_mask
+
+        context = context * mask_expanded
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        out = self.out_proj(context)
+        return out, None
+
+
+@ATTENTION_REGISTRY.register("performer_inject")
+def inject_performer(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module],
+) -> PerformerAttention:
+    rank = getattr(comp_config, "performer_rank", 64)
+    new_attn = PerformerAttention(
+        config=model_config,
+        rank=rank,
+        pretrained_attn=old_attn,
+    )
+    layer.attention = new_attn
+    return new_attn
+```

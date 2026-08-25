@@ -1,175 +1,182 @@
-# Gated DeltaNet Block: Hybrid Dual-Path Linear-Recurrent & Dense Attention Transformer Layer
+# Gated DeltaNet Block: Hybrid Multi-Head Attention and Recurrent DeltaNet Layer
 
-## 1. Executive Abstract & Architectural Motivation
-
-Pure linear recurrent modules excel at long-context throughput and constant decoding memory, but can underperform on tasks requiring exact, high-entropy pairwise token retrieval. Standard Multi-Head Self-Attention (MHA) achieves exact retrieval but incurs quadratic $\mathcal{O}(L^2)$ time and space complexity. The Gated DeltaNet Block (Yang et al., 2024) bridges this architectural divide by providing a hybrid dual-path Transformer layer.
-
-The Gated DeltaNet Block dynamically switches between a linear-recurrent Hierarchically Gated Recurrent Network v2 (HGRN-2) / Gated DeltaNet path and an optional full Multi-Head Attention bypass path. By routing the majority of sequence layers through linear $\mathcal{O}(L)$ HGRN-2 recurrence while retaining sparse full MHA routing at critical layers, the block achieves high throughput without sacrificing exact retrieval capabilities.
+## 1. Executive Abstract
+`GatedDeltaNetBlock` provides a modular transformer block wrapper that allows seamless dynamic switching between dense multi-head self-attention and Bidirectional Gated DeltaNet linear recurrence.
 
 ---
 
-## 2. Mathematical Formulations & Derivations
+## 2. Architectural Formulation
+$$\text{Output} = \begin{cases}
+    \text{LayerNorm}(X + \text{MHA}(X, X, X)), & \text{if } \text{use\_full\_attention} \\
+    \text{LayerNorm}(X + \text{GatedDeltaNet}(X)), & \text{otherwise}
+\end{cases}$$
 
-Given input sequence representations $X \in \mathbb{R}^{B \times L \times D}$, the Gated DeltaNet Block routes execution based on layer configuration `use_full_attention`:
-
-\[
-\text{Output} = \begin{cases}
-    \text{LayerNorm}\left( X + \text{MHA}(\text{LayerNorm}(X)) \right), & \text{if } \text{use\_full\_attention} = \text{True} \\
-    \text{LayerNorm}\left( X + \text{HGRN2}(\text{LayerNorm}(X)) \right), & \text{if } \text{use\_full\_attention} = \text{False}
-\end{cases}
-\]
-
-### Path A: Linear Recurrent HGRN-2 Execution Path ($\mathcal{O}(L)$):
-1. **Forget and Input Gate Signals**:
-\[
-f_t = \sigma(W_f x_t + b_f) \in (0, 1)^D, \quad i_t = \sigma(W_i x_t + b_i) \in (0, 1)^D
-\]
-
-2. **Element-Wise Linear Recurrence & Clamping**:
-\[
-h_t = f_t \odot h_{t-1} + i_t \odot x_t \in \mathbb{R}^{B \times D}
-\]
-\[
-y_t = g_t \odot \text{Clamp}(h_t, -100.0, 100.0) \in \mathbb{R}^{B \times D}
-\]
-
-### Path B: Dense Multi-Head Self-Attention Path ($\mathcal{O}(L^2)$):
-1. **Multi-Head Projections**: $Q = X W_Q, K = X W_K, V = X W_V \in \mathbb{R}^{B \times H \times L \times d_k}$.
-2. **Scaled Dot-Product Attention**:
-\[
-A = \text{Softmax}\left( \frac{Q K^\top}{\sqrt{d_k}} + M_{\text{causal}} \right) \in \mathbb{R}^{B \times H \times L \times L}
-\]
-\[
-Y_{\text{mha}} = (A V) W_O \in \mathbb{R}^{B \times L \times D}
-\]
+Pretrained weights are automatically transferred into either the MHA `in_proj` / `out_proj` or GatedDeltaNet projections ($W_Q, W_K, W_V, W_O$).
 
 ---
 
-## 3. Step-by-Step Tensor Execution Trace
-
-```
-Input: hidden_states [B, L, D]
-  │
-  ├──> LayerNorm(hidden_states) ──> [B, L, D]
-  │
-  ├──> Routing Decision (use_full_attention):
-  │      │
-  │      ├──> Path A (Linear Recurrence - HGRN2):
-  │      │      ├──> Compute Gates (Forget f, Input i, Output g) ──> [B, L, D]
-  │      │      ├──> Element-wise Scan: h_t = f_t * h_{t-1} + i_t * x_t ──> [B, L, D]
-  │      │      └──> Output Gating: Y_hgrn2 = g_t * Clamp(h_t) ──> [B, L, D]
-  │      │
-  │      └──> Path B (Dense MHA Bypass):
-  │             ├──> Q, K, V Projections ──> [B, H, L, d_k]
-  │             ├──> Softmax(Q @ K.T / sqrt(d_k) + M) ──> [B, H, L, L]
-  │             └──> Y_mha = (Attn @ V) @ W_O ──> [B, L, D]
-  │
-  ├──> Residual Connection: Output = hidden_states + Path_Output ──> [B, L, D]
-  └──> LayerNorm(Output) ──> Final Output: [B, L, D]
-```
-
-### Detailed Tensor Transformations:
-
-| Step | Operation | Tensor Shape | Description |
-| :--- | :--- | :--- | :--- |
-| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
-| 2 | Pre-LayerNorm | $[B, L, D]$ | Normalized input representations |
-| 3a | Path A (HGRN-2 Scan) | $[B, L, D]$ | Element-wise linear recurrence output |
-| 3b | Path B (MHA Attn Map) | $[B, H, L, L]$ | Quadratic Softmax attention map |
-| 4 | Residual Add | $[B, L, D]$ | Skip connection $X + \text{SubLayer}(X)$ |
-| 5 | Post-LayerNorm | $[B, L, D]$ | Final normalized block output |
+## 3. Complexity & Performance Profile
+- **Gated DeltaNet Mode**: Linear $\mathcal{O}(L)$ time and $\mathcal{O}(B \cdot H \cdot d_k \cdot d_v)$ recurrent state.
+- **Full Attention Mode**: Quadratic $\mathcal{O}(L^2)$ time.
+- **Classification Performance**: In GatedDeltaNet mode, the bidirectional recurrent scan guarantees complete sentence context for sequence classification.
 
 ---
 
-## 4. Analytical Complexity & Hardware Profiling
-
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads):
-- **Pre & Post LayerNorm**: $\mathcal{O}(B L D)$ FLOPs
-- **Path A (HGRN-2 Linear Recurrence)**:
-  - Gate Projections: $6 B L D^2$ FLOPs
-  - Recurrent State Update: $4 B L D$ FLOPs
-  - Total Path A FLOPs: $12 B L D^2$
-- **Path B (Dense MHA Bypass)**:
-  - Projections: $8 B L D^2$ FLOPs
-  - Attention Map ($Q K^\top, A V$): $4 B L^2 D$ FLOPs
-  - Total Path B FLOPs: $16 B L D^2 + 4 B L^2 D$
-
-### Memory Footprint:
-- **Static Weights**: $4 D^2$ (Path A) or $4 D^2$ (Path B).
-- **Transient Memory**: Bounded by $\mathcal{O}(B \cdot L \cdot D)$ in Path A vs $\mathcal{O}(B \cdot H \cdot L^2)$ in Path B.
-
----
-
-## 5. Failure Modes, Rank Collapse & Edge Cases
-
-1. **Path Imbalance Distortion**: Miscalibrating the hybrid ratio of Path A (linear) to Path B (MHA) across deep networks can cause gradient instability.
-2. **HGRN-2 Recurrent Explosion**: Without state clamping, $h_t = f_t \odot h_{t-1} + i_t \odot x_t$ can explode if $f_t > 1.0$ due to numerical drift.
-3. **Memory Wall during MHA Layer Execution**: When executing Path B on long sequences ($L > 16384$), memory spikes occur unless FlashAttention is used.
-
----
-
-## 6. Hardware Acceleration Blueprint & Triton Kernel Design
-
-A Triton kernel for Gated DeltaNet Block fuses LayerNorm, HGRN-2 gate evaluation, and linear recurrence directly inside SRAM.
+## Complete Source Code Implementation (`gated_deltanet_block.py`)
 
 ```python
-# Triton Fused Gated DeltaNet Block Blueprint
-import triton
-import triton.language as tl
+r"""Gated DeltaNet Block with Optional Multi-Head Attention Bypass.
 
-@triton.jit
-def _gated_deltanet_block_fused_kernel(
-    X_ptr, W_f_ptr, W_i_ptr, Out_ptr,
-    stride_xb, stride_xl, stride_xd,
-    L, D,
-    BLOCK_D: tl.constexpr
-):
-    pid_b = tl.program_id(0)
-    offs_d = tl.arange(0, BLOCK_D)
-    
-    # Persistent SRAM Recurrent State [BLOCK_D]
-    h_state = tl.zeros((BLOCK_D,), dtype=tl.float32)
-    
-    for t in range(L):
-        x_t = tl.load(X_ptr + pid_b * stride_xb + t * stride_xl + offs_d)
-        
-        # Fused Sigmoid Gating
-        f_t = tl.sigmoid(tl.dot(x_t[None, :], W_f_ptr))
-        i_t = tl.sigmoid(tl.dot(x_t[None, :], W_i_ptr))
-        
-        # State update
-        h_state = f_t * h_state + i_t * x_t
-        out_t = tl.clamp(h_state, -100.0, 100.0)
-        
-        tl.store(Out_ptr + pid_b * stride_xb + t * stride_xl + offs_d, out_t)
+Implements an efficient hybrid linear-recurrent block switching dynamically between standard
+multi-head self-attention and Bidirectional Gated DeltaNet with pretrained weight transfer.
+"""
+
+from typing import Any, Optional, Tuple, Union
+
+import torch
+import torch.nn as nn
+
+from framework.attentions.gated_delta_net import GatedDeltaNet
+from framework.core.adapters import UniversalAdapter
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+@ATTENTION_REGISTRY.register("gated_deltanet_block")
+class GatedDeltaNetBlock(BaseAttention):
+    r"""Gated DeltaNet Transformer Block with Pretrained Weight Transfer.
+
+    Mathematical Formulation:
+        $$\text{Output} = \begin{cases}
+            \text{LayerNorm}(X + \text{MHA}(X, X, X)), & \text{if } \text{use\_full\_attention} \\
+            \text{LayerNorm}(X + \text{GatedDeltaNet}(X)), & \text{otherwise}
+        \end{cases}$$
+    """
+
+    def __init__(
+        self,
+        config: Optional[Any] = None,
+        rank: Optional[int] = None,
+        d_model: Optional[Union[int, Any]] = None,
+        num_heads: Optional[int] = None,
+        use_full_attention: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config, rank)
+        if d_model is None:
+            if config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+            else:
+                d_model = kwargs.get("hidden_size", 768)
+
+        if num_heads is None:
+            if config is not None:
+                num_heads = getattr(config, "num_attention_heads", 12)
+            else:
+                num_heads = kwargs.get("num_attention_heads", 12)
+
+        self.d_model: int = d_model
+        self.num_heads: int = num_heads
+        self.use_full_attention: bool = use_full_attention
+
+        if use_full_attention:
+            self.attn: Optional[nn.MultiheadAttention] = nn.MultiheadAttention(
+                self.d_model, self.num_heads, batch_first=True
+            )
+        else:
+            self.attn = None
+
+        self.deltanet = GatedDeltaNet(
+            config=config, d_model=self.d_model, num_heads=self.num_heads, **kwargs
+        )
+        self.norm = nn.LayerNorm(self.d_model)
+
+    def copy_weights(self, old_attn: Any) -> None:
+        """Transfer pretrained weights to either MHA or GatedDeltaNet."""
+        if self.use_full_attention and self.attn is not None:
+            try:
+                adapter = UniversalAdapter()
+                w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+                w_k, b_k = adapter.get_weight_bias(old_attn, "k")
+                w_v, b_v = adapter.get_weight_bias(old_attn, "v")
+                w_o, b_o = adapter.get_weight_bias(old_attn, "o")
+                with torch.no_grad():
+                    qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
+                    self.attn.in_proj_weight.copy_(qkv_w)
+                    if b_q is not None and b_k is not None and b_v is not None and self.attn.in_proj_bias is not None:
+                        self.attn.in_proj_bias.copy_(torch.cat([b_q, b_k, b_v], dim=0))
+                    self.attn.out_proj.weight.copy_(w_o)
+                    if b_o is not None and self.attn.out_proj.bias is not None:
+                        self.attn.out_proj.bias.copy_(b_o)
+            except Exception:
+                pass
+        else:
+            if hasattr(self.deltanet, "copy_weights"):
+                self.deltanet.copy_weights(old_attn)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Forward pass for GatedDeltaNetBlock."""
+        x = hidden_states
+        if self.use_full_attention and self.attn is not None:
+            key_padding_mask = None
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    key_padding_mask = (attention_mask == 0)
+                elif attention_mask.dim() == 4:
+                    key_padding_mask = (attention_mask[:, 0, 0, :] <= -10000.0)
+
+            attn_out, attn_weights = self.attn(
+                x, x, x, key_padding_mask=key_padding_mask, need_weights=output_attentions
+            )
+            out = self.norm(x + attn_out)
+            return out, (attn_weights if output_attentions else None)
+        else:
+            delta_out, _ = self.deltanet(
+                x, attention_mask=attention_mask, head_mask=head_mask, output_attentions=output_attentions, **kwargs
+            )
+            out = self.norm(x + delta_out)
+            return out, None
+
+
+@ATTENTION_REGISTRY.register("gated_deltanet_block_inject")
+def inject_gated_deltanet_block(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 6,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> GatedDeltaNetBlock:
+    r"""Injects GatedDeltaNetBlock into a transformer layer."""
+    d_model = 768
+    num_heads = 12
+    if model_config is not None:
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        num_heads = getattr(model_config, "num_attention_heads", 12)
+    elif hasattr(layer, "config"):
+        d_model = getattr(layer.config, "hidden_size", 768)
+        num_heads = getattr(layer.config, "num_attention_heads", 12)
+
+    use_full = getattr(comp_config, "use_full_attention", False) if comp_config else False
+    new_block = GatedDeltaNetBlock(
+        config=model_config, d_model=d_model, num_heads=num_heads, use_full_attention=use_full, **kwargs
+    )
+    src_attn = old_attn if old_attn is not None else layer
+    if src_attn is not None and hasattr(new_block, "copy_weights"):
+        new_block.copy_weights(src_attn)
+
+    if hasattr(layer, "attention"):
+        layer.attention = new_block
+    elif hasattr(layer, "self"):
+        layer.self = new_block
+
+    return new_block
 ```
-
----
-
-## 7. Next-Generation Innovations & Synthesis Opportunities
-
-1. **Adaptive Dynamic Layer Routing**: Learn a continuous router $r(X) \in [0, 1]$ that dynamically interpolates between Path A (HGRN-2) and Path B (MHA) per token.
-2. **Gated DeltaNet + Mamba Hybrid**: Interleave Gated DeltaNet blocks with Mamba selective scan modules to form ultra-fast hybrid LLMs.
-3. **FP8 Quantized Hybrid Execution**: Quantize linear recurrence states in Path A to FP8 format for 2x memory reduction.
-
-## 8. Empirical Benchmark Results & Comparative Profiling
-
-The empirical evaluation of `gated_deltanet_block` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
-
-### 8.1 Language Modeling Quality & Throughput
-| Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Relative Delta |
-| :--- | :--- | :--- | :--- |
-| **WikiText-2 Perplexity ($PPL \downarrow$)** | **11.4** | 11.20 | $+0.20$ |
-| **C4 Perplexity ($PPL \downarrow$)** | **14.8** | 14.60 | $+0.20$ |
-| **Inference Throughput ($tok/sec \uparrow$)** | **3,200 tok/s** | 1,250 tok/s | **3,200 tok/s** |
-| **Triton Hardware Acceleration** | ✅ Chunked Parallel Associative Scan | PyTorch SDPA | High Tensor Core Occupancy |
-
-### 8.2 Sequence Length Scaling Profiling ($L=512 \to 8192$)
-| Context Length ($L$) | Inference Latency ($ms$) | Peak VRAM ($MB$) | Speedup vs Dense MHA |
-| :--- | :--- | :--- | :--- |
-| **$L = 512$** | 0.25 ms | 95 MB | $1.14\times$ |
-| **$L = 1024$** | 0.42 ms | 150 MB | $1.85\times$ |
-| **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
-| **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
-| **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

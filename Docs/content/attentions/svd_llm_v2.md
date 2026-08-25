@@ -10,3 +10,21 @@
 - **Pretrained Transfer:** Truncated SVD initialized via `UniversalAdapter` preserving singular spectrum energy.
 
 See [`svd_llm_v2_attention.md`](svd_llm_v2_attention.md) for full mathematical derivations, tensor trace, and benchmark analyses.
+
+---
+
+## Complete Source Code Implementation (`svd_llm_v2.py`)
+
+```python
+r"""
+SVD-LLM V2 Attention Alias.
+Maps to `framework.attentions.svd_llm_v2_attention.SVDLLMV2Attention`.
+"""
+
+from framework.attentions.svd_llm_v2_attention import (
+    SVDLLMV2Attention,
+    inject_svd_llm_v2,
+)
+
+__all__ = ["SVDLLMV2Attention", "inject_svd_llm_v2"]
+```

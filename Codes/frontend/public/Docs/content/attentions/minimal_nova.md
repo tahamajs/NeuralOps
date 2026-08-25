@@ -4,10 +4,7 @@
 
 Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires dense projection matrices ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) that introduce heavy parameter memory footprints and high matrix multiplication FLOP counts. Standard low-rank compression methods apply static projection ranks across all network layers, ignoring the empirical singular value distribution of pre-trained parameters.
 
-**MinimalNOVA Attention** implements an energy-preserving drop-in attention module based on Singular Value Decomposition (SVD):
-1. **Spectral Energy Ratio Truncation**: For each projection matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, full SVD is evaluated. The bottleneck rank $r$ is dynamically determined per layer to retain a target cumulative Frobenius energy ratio $\eta_{\text{energy}} = 0.95$.
-2. **Dual-Linear Factorization**: Projection layers are factorized into down-projection matrix $B = V_{:, :r}^T \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection matrix $A = U_{:, :r} \operatorname{diag}(\Sigma_{:r}) \in \mathbb{R}^{d_{\text{out}} \times r}$, executing linear projections in $\mathcal{O}(B \cdot N \cdot r \cdot (d_{\text{in}} + d_{\text{out}}))$ time.
-3. **Zero-Shot Drop-In Compatibility**: Preserves standard scaled dot-product attention logits, enabling immediate injection into pre-trained Transformer layers without zero-shot performance collapse.
+To circumvent the parameter redundancy and quadratic operational scaling of uncompressed projections, **MinimalNOVA Attention** establishes an energy-preserving drop-in attention module anchored in Singular Value Decomposition (SVD). The architecture operates via dynamic spectral energy ratio truncation, wherein the full singular value decomposition is evaluated for each projection matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ to dynamically calibrate the bottleneck rank $r$ on a per-layer basis, rigorously preserving a target cumulative Frobenius energy ratio of $\eta_{\text{energy}} = 0.95$. Building upon this spectral selection, the projection layers are cast into a dual-linear factorization comprising a down-projection operator $B = V_{:, :r}^T \in \mathbb{R}^{r \times d_{\text{in}}}$ and an up-projection operator $A = U_{:, :r} \operatorname{diag}(\Sigma_{:r}) \in \mathbb{R}^{d_{\text{out}} \times r}$, which restricts intermediate linear transformations to an asymptotic complexity of $\mathcal{O}(B \cdot N \cdot r \cdot (d_{\text{in}} + d_{\text{out}}))$. Furthermore, the module enforces strict zero-shot drop-in compatibility by retaining the canonical scaled dot-product attention logit formulation, thereby permitting seamless post-hoc integration into pre-trained Transformer architectures without inducing catastrophic zero-shot representation collapse.
 
 ---
 
@@ -72,38 +69,34 @@ $$Y = \text{FactorisedLinear}_O\left( \text{Reshape}(O) \right) \in \mathbb{R}^{
 ### 4.1 Floating Point Operations (FLOPs)
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, and $r$ average SVD rank.
 
-1. **Factorized Projections ($Q, K, V, O$)**:
-   - Down-projection ($X B^T$): $2 B N D r$
-   - Up-projection ($Z A^T$): $2 B N r D$
-   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
-2. **Attention Core**:
-   - Query-Key score product ($Q K^T$): $2 B H N^2 d_h = 2 B N^2 D$
-   - Softmax & Value contraction ($A V$): $2 B H N^2 d_h = 2 B N^2 D$
-   $$\text{FLOPs}_{\text{attn}} = 4 B N^2 D$$
+The theoretical computational workload is governed by the factorized tensor projections and the core scaled dot-product attention mechanism. For the factorized projections encompassing Query, Key, Value, and Output transformations, the execution decomposes into a down-projection step ($X B^T$) contributing $2 B N D r$ FLOPs and an up-projection step ($Z A^T$) contributing $2 B N r D$ FLOPs. Aggregating across all four projection operators yields:
 
-**Total FLOP Count**:
+$$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+
+Concurrently, the canonical multi-head attention core evaluates the query-key score matrix product ($Q K^T$) and the subsequent softmax-weighted value contraction ($A V$), each requiring $2 B H N^2 d_h = 2 B N^2 D$ floating-point operations:
+
+$$\text{FLOPs}_{\text{attn}} = 4 B N^2 D$$
+
+Synthesizing these dual computational phases produces the cumulative operational complexity:
 
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B N^2 D$$
 
 ### 4.2 Memory Footprint & Bandwidth
-- **Parameter Footprint**:
-  $$\Theta = 4 \times (D \cdot r + r \cdot D) = 8 D r \ll 4 D^2$$
-- **Activation Footprint**:
-  - Intermediate rank-$r$ bottleneck activations: $\mathcal{O}(B N r)$
-  - Full attention score tensor: $\mathcal{O}(B H N^2)$
-  - Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
+Evaluating the memory profile reveals substantial efficiency gains in static parameter storage alongside distinct dynamic memory regimes. The total static parameter footprint scales as:
+
+$$\Theta = 4 \times (D \cdot r + r \cdot D) = 8 D r \ll 4 D^2$$
+
+which introduces massive parameter compression whenever the selected rank satisfies $r \ll D$. Concurrently, the runtime activation footprint is characterized by intermediate rank-$r$ bottleneck activations scaling as $\mathcal{O}(B N r)$ and the full attention score tensor demanding $\mathcal{O}(B H N^2)$ storage, culminating in an aggregate peak activation memory overhead of $\mathcal{O}(B N D + B N r + B H N^2)$.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
 ### 5.1 Energy Truncation Loss in Deep Layers
-- **Mechanism**: Preserving $\eta_{\text{energy}} = 0.95$ energy caps maximum rank to $r_{\max} = 64$. For deep Transformer layers where singular values decay slowly (high spectral entropy), truncating at $r = 64$ discards more than $5\%$ of total Frobenius norm.
-- **Consequence**: Loss of fine-grained representation capacity, causing perplexity degradation on long-context benchmarks.
+The spectral energy truncation threshold $\eta_{\text{energy}} = 0.95$ operates under an upper-bound rank constraint of $r_{\max} = 64$. In deep Transformer representations, layer representations tend toward isotropic dispersion characterized by high spectral entropy and slowly decaying singular value tails. Consequently, enforcing a hard truncation cap at $r = 64$ discards a non-negligible portion (exceeding 5%) of the total Frobenius norm. This structural truncation induces an unrecoverable projection loss in high-order subspace interactions, which manifests empirically as degraded representation capacity and elevated perplexity on long-context benchmarks. From an optimization perspective, this spectral attenuation alters the gradient conditioning across residual streams, flattening sensitive directions in the local loss landscape and impeding fine-grained convergence during post-decomposition adaptation.
 
 ### 5.2 Zero-Bias Instability in Pre-Trained Transfer
-- **Mechanism**: If source linear layers contain biases ($b \neq 0$), omitting biases in low-rank factorized projections introduces systematically shifted activation distributions.
-- **Mitigation**: Ensure `pretrained_bias` is passed and copied directly to the `up` linear layer.
+A subtle yet critical instability arises during pre-trained weight transfer when source linear projection layers possess non-zero bias vectors ($b \neq 0$). Omitting affine bias parameters during low-rank factorization introduces systematic distributional shifts in the forward activation space. This discrepancy disrupts the delicate layer normalization statistics calibrated throughout pre-training, causing early-step gradient shocks and potential divergence in fine-tuning trajectories. To preserve numerical fidelity and stabilize the underlying loss landscape, the pre-trained bias vector must be explicitly retained and assigned to the up-projection operator ($W_{\text{up}}$), thereby ensuring exact preservation of the affine manifold geometry.
 
 ---
 
@@ -128,16 +121,10 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B N^2 D$$
 ```
 
 ### 6.1 Triton Strategy 1: Fused Dual-GEMM Factorized Projection Operator
-Standard PyTorch executes two sequential matrix multiplications (`x @ down.weight.T` followed by `@ up.weight.T`), allocating an intermediate tensor $[B, N, r]$ in global DRAM.
-
-**Triton Optimization**:
-- Implement a custom Triton GEMM kernel that loads input tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Compute down-projection with $V_{:, :r}^T$ in register files and immediately evaluate up-projection with $(U_{:, :r} \Sigma_{:r})^T$.
-- **Speedup**: Reduces DRAM memory bandwidth consumption by $2\times$, achieving up to $1.8\times$ kernel latency reduction.
+In standard execution pipelines, naive frameworks execute two sequential matrix multiplications—specifically evaluating $X W_{\text{down}}^T$ followed by the subsequent up-projection across $W_{\text{up}}^T$—which necessitates the materialization and round-trip memory allocation of an intermediate tensor of shape $[B, N, r]$ within global high-bandwidth memory (DRAM). To eliminate this memory bandwidth bottleneck, a custom Triton GEMM kernel stages input tiles $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ directly into on-chip static RAM (SRAM). The down-projection against $V_{:, :r}^T$ is computed entirely within local register files, immediately chaining into the up-projection matrix product against $(U_{:, :r} \Sigma_{:r})^T$ without intermediary DRAM writes. This register-level fusion reduces off-chip memory traffic by approximately $2\times$, realizing up to a $1.8\times$ reduction in overall kernel execution latency.
 
 ### 6.2 Triton Strategy 2: FlashAttention-2 Core Integration
-- Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
-- Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, N, N]$ attention matrices.
+To mitigate the quadratic memory overhead associated with attention logit materialization, Query, Key, and Value tensors are streamed through a specialized Triton FlashAttention-2 kernel configured with tiling parameters `BLOCK_M = 128` and `BLOCK_N = 128`. By maintaining running row-wise maximum tracking $m_i$ and partition function normalizers $l_i$ within SRAM registers via online softmax rescaling, the implementation completely eliminates global HBM allocations for the $[B, H, N, N]$ attention score matrix, maintaining optimal Tensor Core arithmetic intensity.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
@@ -160,3 +147,269 @@ The empirical evaluation of `minimal_nova` across standard sequence lengths and 
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
 
+---
+
+## Complete Source Code Implementation (`minimal_nova.py`)
+
+```python
+import math
+from typing import Any, Dict, Optional, Tuple
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+
+class FactorisedLinear(nn.Module):
+    r"""
+    SVD-Factorized Linear Transformation for NOVA Architecture.
+
+    Mathematical Mechanism:
+        Preserves $\eta \in (0, 1]$ fraction of the singular energy spectrum:
+        $$W \approx U_{:, :r} \Sigma_{:r} V_{:, :r}^\top = A B$$
+        $$A = U_{:, :r} \text{diag}(\sqrt{\Sigma_{:r}}) \in \mathbb{R}^{d_{\text{out}} \times r}, \quad B = \text{diag}(\sqrt{\Sigma_{:r}}) V_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}$$
+        $$y = (x B^\top) A^\top + b$$
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        bias: bool = True,
+        energy: float = 0.95,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = min(rank, in_features, out_features)
+        self.energy = energy
+
+        self.down: nn.Linear = nn.Linear(in_features, self.rank, bias=False)
+        self.up: nn.Linear = nn.Linear(self.rank, out_features, bias=bias)
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        """Initialize with orthogonal factors."""
+        nn.init.orthogonal_(self.down.weight)
+        nn.init.orthogonal_(self.up.weight)
+        if self.up.bias is not None:
+            nn.init.zeros_(self.up.bias)
+
+    def decompose_from_weight(
+        self,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+        energy: Optional[float] = None,
+    ) -> None:
+        """Decompose pretrained dense weight matrix via SVD and set factor parameters."""
+        with torch.no_grad():
+            W = weight.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            target_energy = energy if energy is not None else self.energy
+            total_energy = (S**2).sum()
+            cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
+            calc_rank = int(torch.searchsorted(cum_energy, target_energy).item()) + 1
+            r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+            r = max(1, r)
+
+            sqrt_s = torch.sqrt(S[:r])
+            A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
+            B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
+
+            if r != self.rank:
+                self.up.weight.data.zero_()
+                self.down.weight.data.zero_()
+                self.up.weight.data[:, :r] = A
+                self.down.weight.data[:r, :] = B
+            else:
+                self.up.weight.data.copy_(A)
+                self.down.weight.data.copy_(B)
+
+            if bias is not None and self.up.bias is not None:
+                self.up.bias.data.copy_(bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        r"""Evaluates factorized linear transformation."""
+        return self.up(self.down(x))
+
+
+@ATTENTION_REGISTRY.register("minimal_nova")
+class MinimalNOVAAttention(BaseAttention):
+    r"""
+    MinimalNOVA: SVD-Factorized Low-Rank Projection Attention.
+
+    Mathematical Mechanism:
+        Zero-shot drop-in replacement with SVD-compressed projection layers:
+        $$\begin{aligned}
+        Q &= \text{FactorisedLinear}_Q(X), \quad K = \text{FactorisedLinear}_K(X), \quad V = \text{FactorisedLinear}_V(X) \\
+        A &= \text{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} + M_{\text{mask}}\right) \\
+        O &= \text{FactorisedLinear}_O(A V)
+        \end{aligned}$$
+
+    Computational Complexity:
+        - Projections: $\mathcal{O}(B \cdot N \cdot r \cdot D)$
+        - Attention: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k)$ time, $\mathcal{O}(B \cdot H \cdot N^2)$ space.
+
+    Tensor Dimensions:
+        - Input `hidden_states`: `[B, N, D]`
+        - Output: Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.
+    """
+
+    def __init__(
+        self,
+        model_config: Any,
+        energy: float = 0.95,
+        dropout: float = 0.1,
+        pretrained_attn: Optional[nn.Module] = None,
+        rank: Optional[int] = None,
+        **kwargs: Any,
+    ) -> None:
+        actual_rank = getattr(
+            model_config,
+            "svd_rank",
+            rank if rank is not None else getattr(model_config, "rank", 64),
+        )
+        super().__init__(model_config, actual_rank)
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        hidden_size: int = getattr(model_config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.hidden_size: int = hidden_size
+        self.rank: int = actual_rank
+        self.energy: float = energy
+
+        self.q_proj: FactorisedLinear = FactorisedLinear(
+            self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy
+        )
+        self.k_proj: FactorisedLinear = FactorisedLinear(
+            self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy
+        )
+        self.v_proj: FactorisedLinear = FactorisedLinear(
+            self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy
+        )
+        self.out_proj: FactorisedLinear = FactorisedLinear(
+            self.all_head_size, self.hidden_size, rank=self.rank, bias=True, energy=energy
+        )
+        dropout_p = getattr(
+            model_config,
+            "dropout",
+            getattr(
+                model_config,
+                "hidden_dropout_prob",
+                getattr(model_config, "attention_probs_dropout_prob", dropout),
+            ),
+        )
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+            ("o", self.out_proj),
+        ]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                target.decompose_from_weight(w, b, self.energy)
+            except Exception:
+                pass
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""
+        Forward computation of MinimalNOVAAttention.
+
+        Args:
+            hidden_states: Input tensor of shape `[B, N, D]`.
+            attention_mask: Optional attention mask tensor.
+            head_mask: Optional head masking tensor.
+            output_attentions: Boolean flag to return attention matrix.
+            **kwargs: Extra keyword arguments.
+
+        Returns:
+            Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.
+        """
+        B, N, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+        Q = self.q_proj(hidden_states)
+        K = self.k_proj(hidden_states)
+        V = self.v_proj(hidden_states)
+        Q = Q.view(B, N, H, D).transpose(1, 2)
+        K = K.view(B, N, H, D).transpose(1, 2)
+        V = V.view(B, N, H, D).transpose(1, 2)
+
+        scale = 1.0 / math.sqrt(D)
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+
+        mask = (
+            attention_mask
+            if attention_mask is not None
+            else kwargs.get("attn_mask", None)
+        )
+        if mask is not None:
+            if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
+                token_valid = mask[:, 0, 0, :] > -10000.0
+            elif mask.dim() == 4:
+                token_valid = mask.squeeze(1).squeeze(1) > -10000.0
+            elif mask.dim() == 3:
+                token_valid = mask.squeeze(1).bool()
+            elif mask.dim() == 2:
+                token_valid = mask.bool()
+            else:
+                token_valid = None
+            if token_valid is not None:
+                scores = scores.masked_fill(
+                    ~token_valid.unsqueeze(1).unsqueeze(2), -10000.0
+                )
+
+        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = self.dropout(attn_weights)
+
+        if head_mask is not None:
+            attn_weights = attn_weights * head_mask
+
+        context = torch.matmul(attn_weights, V)
+        context = context.transpose(1, 2).contiguous().view(B, N, H * D)
+        output = self.out_proj(context)
+        return output, (attn_weights if output_attentions else None)
+
+    def get_ortho_loss(self) -> torch.Tensor:
+        r"""Returns orthogonality regularization loss (0.0)."""
+        return torch.tensor(0.0, device=self.out_proj.up.weight.device)
+
+
+@ATTENTION_REGISTRY.register("minimal_nova_inject")
+def inject_minimal_nova(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module] = None,
+) -> MinimalNOVAAttention:
+    r"""Injection hook for MinimalNOVAAttention into transformer layer."""
+    new_attn = MinimalNOVAAttention(
+        model_config=model_config,
+        energy=getattr(comp_config, "svd_energy", 0.95),
+        dropout=getattr(comp_config, "dropout", 0.1),
+        pretrained_attn=old_attn,
+    )
+    layer.attention = new_attn
+    return new_attn
+```
