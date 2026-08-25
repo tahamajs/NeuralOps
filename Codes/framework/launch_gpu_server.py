@@ -42,19 +42,45 @@ logging.basicConfig(
 )
 logger = logging.getLogger("GPUServerLauncher")
 
+# Intelligent Fast-Fail Module Blacklist
+FAILED_MODULE_BLACKLIST: set = set()
+_BLACKLIST_LOCK = threading.Lock()
+
 
 def _eval_worker_task(task_args: Dict[str, Any]) -> BenchmarkResult:
-    """Executes a single combination with a hard timeout wrapper."""
+    """Executes a single combination with hard timeout and fast-fail blacklisting."""
+    mod_name = task_args["module_name"]
+    track = task_args["track"]
+    model_family = task_args["model_family"]
+    dataset = task_args["dataset"]
     timeout = task_args.get("timeout", 120)
-    
+
+    # 1. Fast-Fail Blacklist Check
+    with _BLACKLIST_LOCK:
+        if mod_name in FAILED_MODULE_BLACKLIST:
+            logger.warning(
+                "FAST-FAIL: Skipping blacklisted module '%s' on %s/%s (previously timed out or unrecoverable)",
+                mod_name, model_family, dataset
+            )
+            return BenchmarkResult(
+                track=track,
+                module_name=mod_name,
+                module_type=task_args["module_type"],
+                model_family=model_family,
+                dataset=dataset,
+                status="TIMEOUT_SKIPPED",
+                error_message="Fast-Fail Blacklist: Module previously timed out or crashed in earlier run.",
+            )
+
+    # 2. Execute with ThreadPoolExecutor Timeout
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(
             evaluate_single_combination_opt,
-            track=task_args["track"],
-            module_name=task_args["module_name"],
+            track=track,
+            module_name=mod_name,
             module_type=task_args["module_type"],
-            model_family=task_args["model_family"],
-            dataset=task_args["dataset"],
+            model_family=model_family,
+            dataset=dataset,
             rank=task_args.get("rank", 16),
             num_steps=task_args.get("max_steps", 5),
             batch_size=task_args.get("batch_size", 64),
@@ -64,16 +90,25 @@ def _eval_worker_task(task_args: Dict[str, Any]) -> BenchmarkResult:
             allow_synthetic=task_args.get("allow_synthetic", False),
         )
         try:
-            return future.result(timeout=timeout)
+            res = future.result(timeout=timeout)
+            if res.status == "TIMEOUT" or (res.status == "FAIL" and res.error_message and ("out of memory" in res.error_message.lower() or "deadlock" in res.error_message.lower())):
+                with _BLACKLIST_LOCK:
+                    if mod_name not in FAILED_MODULE_BLACKLIST:
+                        FAILED_MODULE_BLACKLIST.add(mod_name)
+                        logger.warning("BLACKLIST ADDED: Module '%s' marked as unstable/failing -> fast-failing future runs.", mod_name)
+            return res
         except concurrent.futures.TimeoutError:
-            logger.error("TIMEOUT: %s on %s/%s exceeded %ds.", task_args["module_name"], task_args["model_family"], task_args["dataset"], timeout)
+            logger.error("TIMEOUT: %s on %s/%s exceeded %ds. Adding '%s' to FAILED_MODULE_BLACKLIST.", mod_name, model_family, dataset, timeout, mod_name)
+            with _BLACKLIST_LOCK:
+                FAILED_MODULE_BLACKLIST.add(mod_name)
             return BenchmarkResult(
-                track=task_args["track"],
-                module_name=task_args["module_name"],
+                track=track,
+                module_name=mod_name,
                 module_type=task_args["module_type"],
-                model_family=task_args["model_family"],
-                dataset=task_args["dataset"],
+                model_family=model_family,
+                dataset=dataset,
                 status="TIMEOUT",
+                error_message=f"Execution exceeded hard timeout threshold ({timeout}s). Added to Fast-Fail Blacklist.",
             )
 
 
