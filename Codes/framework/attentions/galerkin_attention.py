@@ -19,6 +19,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("galerkin")
+@ATTENTION_REGISTRY.register("galerkin_attention")
 class GalerkinAttention(BaseAttention):
     r"""
     Petrov-Galerkin Projection Attention.

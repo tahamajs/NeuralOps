@@ -33,27 +33,30 @@ class SVDLinearLayer(nn.Module):
         self.rank: int = min(rank, self.in_features, self.out_features)
         self.use_fused_kernel: bool = use_fused_kernel
         self.use_rms_norm: bool = use_rms_norm
-        self.eps: float = eps
+        device = linear_layer.weight.device
+        dtype = linear_layer.weight.dtype
+        with torch.no_grad():
+            W = linear_layer.weight.data.float()
+            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            # Symmetrical square-root singular energy distribution
+            sqrt_s = torch.sqrt(torch.clamp(S[: self.rank], min=1e-12))
+            U_weighted = (U[:, : self.rank] * sqrt_s.unsqueeze(0)).to(device=device, dtype=dtype)
+            V_weighted = (sqrt_s.unsqueeze(1) * Vh[: self.rank, :]).to(device=device, dtype=dtype)
+            S_param = S[: self.rank].to(device=device, dtype=dtype)
+            Vh_param = Vh[: self.rank, :].to(device=device, dtype=dtype)
 
-        W = linear_layer.weight.data.float().cpu().numpy()
-        U, S, Vh = np.linalg.svd(W, full_matrices=False)
-        # Symmetrical square-root singular energy distribution
-        sqrt_s = np.sqrt(np.maximum(S[: self.rank], 1e-12))
-        U_weighted = U[:, : self.rank] * sqrt_s[np.newaxis, :]
-        V_weighted = sqrt_s[:, np.newaxis] * Vh[: self.rank, :]
-
-        self.U = nn.Parameter(torch.from_numpy(U_weighted).float())
-        self.V = nn.Parameter(torch.from_numpy(V_weighted).float())
-        self.S = nn.Parameter(torch.from_numpy(S[: self.rank]).float())
-        self.Vh = nn.Parameter(torch.from_numpy(Vh[: self.rank, :]).float())
+        self.U = nn.Parameter(U_weighted)
+        self.V = nn.Parameter(V_weighted)
+        self.S = nn.Parameter(S_param)
+        self.Vh = nn.Parameter(Vh_param)
 
         if use_rms_norm:
-            self.norm_weight = nn.Parameter(torch.ones(self.rank, dtype=torch.float32))
+            self.norm_weight = nn.Parameter(torch.ones(self.rank, dtype=dtype, device=device))
         else:
             self.register_parameter("norm_weight", None)
 
         if linear_layer.bias is not None:
-            self.bias = nn.Parameter(linear_layer.bias.data.clone())
+            self.bias = nn.Parameter(linear_layer.bias.data.clone().to(device=device, dtype=dtype))
         else:
             self.register_parameter("bias", None)
 

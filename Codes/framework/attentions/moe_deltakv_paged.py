@@ -181,22 +181,34 @@ class MoEDeltaKVPagedAttention(nn.Module):
             q_padded, k_padded, v_padded = q, k_hat, v_hat
             padded_N = N
 
+        # Convert attention_mask to valid boolean mask [B, padded_N]
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                valid_mask = attention_mask.bool() if attention_mask.dtype == torch.bool else attention_mask > 0
+            elif attention_mask.dim() == 4:
+                valid_mask = attention_mask[:, 0, 0, :] > -10000.0 if attention_mask.min() < -1000 else attention_mask[:, 0, 0, :] > 0
+            else:
+                valid_mask = torch.ones(B, N, device=q.device, dtype=torch.bool)
+        else:
+            valid_mask = torch.ones(B, N, device=q.device, dtype=torch.bool)
+
+        if padded_N > N:
+            valid_mask = F.pad(valid_mask, (0, padded_N - N), value=False)
+
         if num_pages <= 2:
             # Full attention path when sequence length fits in 1-2 pages
             scale = 1.0 / math.sqrt(d)
             scores = torch.matmul(q, k_hat.transpose(-2, -1)) * scale
             if attention_mask is not None:
-                if attention_mask.dim() == 2:
-                    pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)
-                    scores = scores.masked_fill(pad_mask, -10000.0)
-                elif attention_mask.dim() == 4:
-                    scores = scores + attention_mask
+                pad_mask = (~valid_mask[:, :N]).unsqueeze(1).unsqueeze(2)
+                scores = scores.masked_fill(pad_mask, -10000.0)
 
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
             if head_mask is not None:
                 attn = attn * head_mask
             out = torch.matmul(attn, v_hat).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+            self.aux_loss = torch.tensor(0.0, device=q.device)
             return self.out_proj(out), (attn if output_attentions else None)
 
         # Block Paging
@@ -213,13 +225,22 @@ class MoEDeltaKVPagedAttention(nn.Module):
             causal_mask = torch.tril(torch.ones((num_pages, num_pages), device=q.device, dtype=torch.bool))
             router_logits = router_logits.masked_fill(~causal_mask, float("-inf"))
 
-        # Always include page 0 (which contains CLS token at index 0)
+        # Boost page 0 logit to ensure it is always selected by top-k (CLS preservation)
+        router_logits_biased = router_logits.clone()
+        router_logits_biased[:, :, :, 0] = router_logits_biased[:, :, :, 0] + 1e4
+
         k_experts = min(self.k_experts, num_pages)
-        topk_logits, topk_indices = torch.topk(router_logits, k_experts, dim=-1)
-        # Ensure page 0 is included
-        topk_indices[:, :, :, 0] = 0
+        _, topk_indices = torch.topk(router_logits_biased, k_experts, dim=-1)
+        topk_logits = torch.gather(router_logits, -1, topk_indices)
 
         g_j = F.softmax(topk_logits, dim=-1)
+
+        # Auxiliary load balancing loss across pages
+        router_probs = F.softmax(router_logits, dim=-1)
+        expert_mask = F.one_hot(topk_indices, num_classes=num_pages).float()
+        density = expert_mask.sum(dim=-2).mean(dim=(0, 1, 2))
+        prob_mean = router_probs.mean(dim=(0, 1, 2))
+        self.aux_loss = float(num_pages) * torch.sum(density * prob_mean)
 
         expanded_indices = topk_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, self.page_size, d)
         k_blocks_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
@@ -228,8 +249,15 @@ class MoEDeltaKVPagedAttention(nn.Module):
         k_gathered = torch.gather(k_blocks_exp, dim=3, index=expanded_indices)
         v_gathered = torch.gather(v_blocks_exp, dim=3, index=expanded_indices)
 
+        # Mask padding keys across selected pages
+        valid_blocks = valid_mask.view(B, 1, num_pages, self.page_size)
+        valid_blocks_exp = valid_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1)
+        expanded_idx_mask = topk_indices.unsqueeze(-1).expand(-1, -1, -1, -1, self.page_size)
+        k_valid = torch.gather(valid_blocks_exp.expand(-1, H, -1, -1, -1), dim=3, index=expanded_idx_mask)
+
         q_expanded = q_blocks.unsqueeze(3)
         attn_scores = torch.matmul(q_expanded, k_gathered.transpose(-1, -2)) / math.sqrt(d)
+        attn_scores = attn_scores.masked_fill(~k_valid.unsqueeze(-2), -10000.0)
 
         attn_probs = F.softmax(attn_scores, dim=-1)
         attn_probs = self.dropout(attn_probs)

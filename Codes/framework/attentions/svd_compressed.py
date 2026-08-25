@@ -209,10 +209,10 @@ class SVDCompressedAttention(BaseAttention):
                     nn.init.zeros_(mod.bias)
 
         if add_sparse:
-            self.q_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.all_head_size))
-            self.k_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.all_head_size))
-            self.v_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.all_head_size))
-            self.o_sparse_weight = nn.Parameter(torch.zeros(self.all_head_size, self.hidden_size))
+            self.q_sparse_weight = nn.Parameter(torch.zeros(self.all_head_size, self.hidden_size))
+            self.k_sparse_weight = nn.Parameter(torch.zeros(self.all_head_size, self.hidden_size))
+            self.v_sparse_weight = nn.Parameter(torch.zeros(self.all_head_size, self.hidden_size))
+            self.o_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.all_head_size))
         else:
             self.register_parameter("q_sparse_weight", None)
             self.register_parameter("k_sparse_weight", None)
@@ -239,18 +239,20 @@ class SVDCompressedAttention(BaseAttention):
         with torch.no_grad():
             W = W_tensor.float()
             d_out, d_in = W.shape
-            r = min(rank, min(d_out, d_in))
+            r = min(rank, min(d_out, d_in), down.out_features, up.in_features)
             r = max(r, 1)
 
             U, s, VT = torch.linalg.svd(W, full_matrices=False)
-            sqrt_s = torch.sqrt(s[:r])
-            down_weight = (sqrt_s.unsqueeze(1) * VT[:r, :]).to(down.weight.dtype)
-            up_weight = (U[:, :r] * sqrt_s).to(up.weight.dtype)
+            sqrt_s = torch.sqrt(torch.clamp(s[:r], min=1e-12))
+            down_weight = (sqrt_s.unsqueeze(1) * VT[:r, :]).to(device=down.weight.device, dtype=down.weight.dtype)
+            up_weight = (U[:, :r] * sqrt_s.unsqueeze(0)).to(device=up.weight.device, dtype=up.weight.dtype)
 
-            down.weight.data.copy_(down_weight)
-            up.weight.data.copy_(up_weight)
+            down.weight.data.zero_()
+            up.weight.data.zero_()
+            down.weight.data[:r, :].copy_(down_weight)
+            up.weight.data[:, :r].copy_(up_weight)
             if bias_tensor is not None and up.bias is not None:
-                up.bias.data.copy_(bias_tensor)
+                up.bias.data.copy_(bias_tensor.to(device=up.bias.device, dtype=up.bias.dtype))
 
     def copy_weights(self, src: Any) -> None:
         """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
@@ -277,7 +279,7 @@ class SVDCompressedAttention(BaseAttention):
         residual = W - low_rank
         threshold = np.percentile(np.abs(residual), sparsity * 100)
         sparse_res = np.where(np.abs(residual) >= threshold, residual, 0.0)
-        return nn.Parameter(torch.from_numpy(sparse_res.T).float())
+        return nn.Parameter(torch.from_numpy(sparse_res).float())
 
     def forward(
         self,

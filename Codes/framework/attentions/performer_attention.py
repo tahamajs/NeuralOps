@@ -51,6 +51,7 @@ class PerformerAttention(BaseAttention):
             "performer_rank",
             rank if rank is not None else getattr(config, "rank", 64),
         )
+        self.kernel_type: str = getattr(config, "performer_kernel_type", kwargs.get("kernel_type", "favor_plus"))
         self.eps: float = eps
 
         self.query = nn.Linear(hidden_size, self.all_head_size)
@@ -103,13 +104,22 @@ class PerformerAttention(BaseAttention):
         return W.t().contiguous()
 
     def _feature_map(self, x: torch.Tensor) -> torch.Tensor:
-        r"""x: (B, H, N, d) -> phi: (B, H, N, m)"""
+        r"""x: (B, H, N, d) -> phi: (B, H, N, m)
+        FAVOR+ Positive Orthogonal Random Feature Map.
+        Approximates the softmax Gaussian kernel via:
+        phi(x) = exp(x W^T - ||x||^2 / 2) / sqrt(m)
+        with log-sum-exp shift for numerical stability.
+        """
         proj = torch.matmul(x, self.omega.to(dtype=x.dtype, device=x.device).t())
-        # Positive kernel projection: using ReLU to ensure strict non-negativity
-        # and prevent variance issues from exponential growth.
-        phi = F.relu(proj) + self.eps
-        # Normalize sum of features
-        phi = phi / (math.sqrt(self.num_features) + self.eps)
+        if self.kernel_type in ["favor_plus", "exp", "favor"]:
+            diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5  # (B, H, N, 1)
+            max_proj = proj.amax(dim=-1, keepdim=True).detach()
+            phi = torch.exp(proj - max_proj - diag_sq) + self.eps
+            phi = phi / (math.sqrt(self.num_features) + self.eps)
+        elif self.kernel_type == "elu":
+            phi = (F.elu(proj) + 1.0) / (math.sqrt(self.num_features) + self.eps)
+        else:
+            phi = (F.relu(proj) + self.eps) / (math.sqrt(self.num_features) + self.eps)
         return phi
 
     def forward(

@@ -154,8 +154,10 @@ class FactorisedMatrixState(BaseAttention):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        q = F.normalize(self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2), dim=-1)
-        k = F.normalize(self.k_proj(hidden_states).view(B, L, H, d).transpose(1, 2), dim=-1) / (d ** 0.5)
+        q_raw = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
+        k_raw = self.k_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
+        q = F.elu(q_raw) + 1.0
+        k = (F.elu(k_raw) + 1.0) / (d ** 0.5)
         v = self.v_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
 
         decay = torch.sigmoid(self.beta).unsqueeze(0)  # [1, H, 1, 1]

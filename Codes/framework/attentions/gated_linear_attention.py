@@ -120,7 +120,7 @@ class GatedLinearAttention(BaseAttention):
             v_t = v[:, :, t, :]  # [B, H, d]
             lam_t = lambdas[:, :, t].unsqueeze(-1).unsqueeze(-1)  # [B, H, 1, 1]
 
-            S_next = lam_t * S + (k_t.unsqueeze(-1) @ v_t.unsqueeze(-2))
+            S_next = lam_t * S + (v_t.unsqueeze(-1) @ k_t.unsqueeze(-2))
             z_next = lam_t * z + k_t.unsqueeze(-1)
 
             if mask is not None:

@@ -65,10 +65,15 @@ class ASVDLinear(nn.Module):
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor, S: Optional[torch.Tensor] = None) -> None:
         with torch.no_grad():
             r = min(self.rank, U.size(1), V.size(0))
-            self.U.data[:, :r].copy_(U[:, :r])
-            self.V.data[:r, :].copy_(V[:r, :])
+            self.U.data.zero_()
+            self.V.data.zero_()
+            self.S.data.zero_()
+            self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.V.data[:r, :].copy_(V[:r, :].to(device=self.V.device, dtype=self.V.dtype))
             if S is not None:
-                self.S.data[:r].copy_(S[:r])
+                self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
+            else:
+                self.S.data[:r].fill_(1.0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (*, in_features)
@@ -137,11 +142,14 @@ class ASVDAttention(nn.Module):
             W = src_weight.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(self.rank, U.size(1), Vt.size(0))
-            target_linear.U.data[:, :r] = U[:, :r].to(target_linear.U.dtype)
-            target_linear.S.data[:r] = S[:r].to(target_linear.S.dtype)
-            target_linear.V.data[:r, :] = Vt[:r, :].to(target_linear.V.dtype)
+            target_linear.U.data.zero_()
+            target_linear.V.data.zero_()
+            target_linear.S.data.zero_()
+            target_linear.U.data[:, :r] = U[:, :r].to(device=target_linear.U.device, dtype=target_linear.U.dtype)
+            target_linear.S.data[:r] = S[:r].to(device=target_linear.S.device, dtype=target_linear.S.dtype)
+            target_linear.V.data[:r, :] = Vt[:r, :].to(device=target_linear.V.device, dtype=target_linear.V.dtype)
             if src_bias is not None and target_linear.bias is not None:
-                target_linear.bias.data.copy_(src_bias)
+                target_linear.bias.data.copy_(src_bias.to(device=target_linear.bias.device, dtype=target_linear.bias.dtype))
 
     def copy_weights(self, src: Any) -> None:
         """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""

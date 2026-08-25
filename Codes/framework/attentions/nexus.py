@@ -264,6 +264,7 @@ class DualStageStripeAttention(nn.Module):
         K: torch.Tensor,
         V: torch.Tensor,
         token_valid: Optional[torch.Tensor] = None,
+        seer_mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         r"""Forward pass for dual-stage stripe attention.
 
@@ -272,6 +273,7 @@ class DualStageStripeAttention(nn.Module):
             K: Key tensor `[Batch, Heads, SeqLen, HeadDim]`.
             V: Value tensor `[Batch, Heads, SeqLen, HeadDim]`.
             token_valid: Optional boolean mask `[Batch, SeqLen]` indicating non-padded tokens.
+            seer_mask: Optional boolean block mask from Seer gating network.
 
         Returns:
             Attended context tensor of shape `[Batch, Heads, SeqLen, HeadDim]`.
@@ -289,6 +291,12 @@ class DualStageStripeAttention(nn.Module):
             inter_mask = self._inter_block_topk(block_scores, top_k)
         else:
             inter_mask = torch.ones(B, H, nb, nb, device=Q.device, dtype=torch.bool)
+
+        if seer_mask is not None:
+            inter_mask = inter_mask | seer_mask
+
+        # Always guarantee block 0 (containing CLS at index 0) is retained
+        inter_mask[:, :, :, 0] = True
 
         outputs: List[torch.Tensor] = []
         for bi in range(nb):
@@ -554,12 +562,13 @@ class NEXUSAttention(BaseAttention):
         if self.is_rectify and self.spec_rectify is not None:
             context = self.spec_rectify(Q, K, V)
         else:
+            seer_mask = None
             if self.seer_gate is not None:
                 bs = self.cfg.block_size
                 nb = (N + bs - 1) // bs
-                _ = self.seer_gate(Q, K, nb, training=self.training)
+                seer_mask = self.seer_gate(Q, K, nb, training=self.training)
 
-            context = self.dss_attn(Q, K, V, token_valid)
+            context = self.dss_attn(Q, K, V, token_valid, seer_mask=seer_mask)
 
         if token_valid is not None:
             context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)

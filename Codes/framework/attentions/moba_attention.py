@@ -109,11 +109,25 @@ class MoBAAttention(BaseAttention):
         K = self.k_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
         V = self.v_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
 
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                valid_mask = attention_mask.bool() if attention_mask.dtype == torch.bool else attention_mask > 0
+            elif attention_mask.dim() == 4:
+                valid_mask = attention_mask[:, 0, 0, :] > -10000.0 if attention_mask.min() < -1000 else attention_mask[:, 0, 0, :] > 0
+            else:
+                valid_mask = torch.ones(B, L, device=hidden_states.device, dtype=torch.bool)
+        else:
+            valid_mask = torch.ones(B, L, device=hidden_states.device, dtype=torch.bool)
+
         pad = (self.block_size - L % self.block_size) % self.block_size
         if pad > 0:
             Q = F.pad(Q, (0, 0, 0, pad))
             K = F.pad(K, (0, 0, 0, pad))
             V = F.pad(V, (0, 0, 0, pad))
+            valid_mask_padded = F.pad(valid_mask, (0, pad), value=False)
+        else:
+            valid_mask_padded = valid_mask
+
         Lp = L + pad
         nb = Lp // self.block_size
 
@@ -135,17 +149,28 @@ class MoBAAttention(BaseAttention):
             )
             block_scores = block_scores + causal_block_mask.unsqueeze(0).unsqueeze(0)
 
-        top_k = min(self.top_k, nb)
-        _, top_idx = block_scores.topk(top_k, dim=-1)  # (B, H, nb, top_k)
+        # Guarantee preservation of block 0 (CLS)
+        block_scores_for_topk = block_scores.clone()
+        block_scores_for_topk[:, :, :, 0] = block_scores_for_topk[:, :, :, 0] + 1e4
 
+        top_k = min(self.top_k, nb)
+        _, top_idx = block_scores_for_topk.topk(top_k, dim=-1)  # (B, H, nb, top_k)
+
+        valid_b_exp = valid_mask_padded.view(B, 1, nb, self.block_size).expand(-1, H, -1, -1)
         out_blocks = torch.zeros_like(Qb)
         for i in range(nb):
             idx = top_idx[:, :, i, :]  # (B, H, top_k)
             idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, self.block_size, d)
             K_sel = torch.gather(Kb, 2, idx_exp).view(B, H, top_k * self.block_size, d)
             V_sel = torch.gather(Vb, 2, idx_exp).view(B, H, top_k * self.block_size, d)
+
+            idx_mask_exp = idx.unsqueeze(-1).expand(-1, -1, -1, self.block_size)
+            k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).view(B, H, 1, top_k * self.block_size)
+
             Q_i = Qb[:, :, i]  # (B, H, block_size, d)
             scores = torch.matmul(Q_i, K_sel.transpose(-2, -1)) * scale  # (B, H, block_size, top_k * block_size)
+            scores = scores.masked_fill(~k_valid, -10000.0)
+
             if is_causal:
                 # Key global token offsets: idx has shape (B, H, top_k)
                 # Query global token offsets for block i: [i * block_size, ..., (i+1) * block_size - 1]
@@ -155,6 +180,7 @@ class MoBAAttention(BaseAttention):
                 k_pos = k_block_offsets.view(B, H, 1, top_k * self.block_size)
                 invalid = k_pos > q_pos
                 scores = scores.masked_fill(invalid, float("-inf"))
+
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
             ctx = torch.matmul(attn, V_sel)
