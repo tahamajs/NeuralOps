@@ -62,6 +62,7 @@ def run_track(
     datasets: List[str],
     rank: int = 16,
     results_dir: str = DEFAULT_RESULTS_DIR,
+    allow_synthetic: bool = False,
 ) -> List[BenchmarkResult]:
     """
     Sequentially runs all modules for a given track across specified models and datasets.
@@ -88,6 +89,7 @@ def run_track(
                     dataset=dataset,
                     rank=rank,
                     results_dir=results_dir,
+                    allow_synthetic=allow_synthetic,
                 )
                 results.append(res)
                 done += 1
@@ -109,6 +111,7 @@ def run_track(
                     dataset=dataset,
                     rank=rank,
                     results_dir=results_dir,
+                    allow_synthetic=allow_synthetic,
                 )
                 results.append(res)
                 done += 1
