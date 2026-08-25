@@ -1,9 +1,9 @@
 # GPU Server Benchmark: Partial Sweep Snapshot Summary
 
-**Snapshot Date:** 2026-08-26 02:56:43  
-**Total Completed Combinations:** 281 / 720  
+**Snapshot Date:** 2026-08-26 03:11:49  
+**Total Completed Combinations:** 301 / 720  
 **Status Breakdown:**
-- **PASS:** 265
+- **PASS:** 285
 - **TIMEOUT:** 12
 - **FAIL:** 4
 
@@ -294,3 +294,23 @@
 | `track2_ssm` | `gated_linear_attention` | ROBERTA | SST2 | **PASS** | 1883.62 ms | 5098.99 ms |
 | `track2_ssm` | `gated_linear_attention` | ROBERTA | MRPC | **PASS** | 1980.41 ms | 5195.78 ms |
 | `track2_ssm` | `gated_linear_attention` | T5 | SST2 | **PASS** | 1905.92 ms | 5083.81 ms |
+| `track2_ssm` | `gated_linear_attention` | T5 | MRPC | **PASS** | 1961.95 ms | 5302.40 ms |
+| `track2_ssm` | `hgrn2_layer` | BERT | SST2 | **PASS** | 440.14 ms | 1435.33 ms |
+| `track2_ssm` | `hgrn2_layer` | BERT | MRPC | **PASS** | 427.22 ms | 1355.21 ms |
+| `track2_ssm` | `hgrn2_layer` | ROBERTA | SST2 | **PASS** | 454.60 ms | 1482.55 ms |
+| `track2_ssm` | `hgrn2_layer` | ROBERTA | MRPC | **PASS** | 429.82 ms | 1378.53 ms |
+| `track2_ssm` | `hgrn2_layer` | T5 | SST2 | **PASS** | 444.27 ms | 1410.48 ms |
+| `track2_ssm` | `hgrn2_layer` | T5 | MRPC | **PASS** | 454.23 ms | 1471.81 ms |
+| `track2_ssm` | `hgrn2_gated_deltanet` | BERT | SST2 | **PASS** | 2221.27 ms | 6800.71 ms |
+| `track2_ssm` | `hgrn2_gated_deltanet` | BERT | MRPC | **PASS** | 2228.60 ms | 6805.38 ms |
+| `track2_ssm` | `hgrn2_gated_deltanet` | ROBERTA | SST2 | **PASS** | 2200.07 ms | 6830.29 ms |
+| `track2_ssm` | `hgrn2_gated_deltanet` | ROBERTA | MRPC | **PASS** | 2202.51 ms | 6829.12 ms |
+| `track2_ssm` | `hgrn2_gated_deltanet` | T5 | SST2 | **PASS** | 2202.02 ms | 6752.19 ms |
+| `track2_ssm` | `hgrn2_gated_deltanet` | T5 | MRPC | **PASS** | 2205.34 ms | 6753.19 ms |
+| `track2_ssm` | `hgrn2_outer` | BERT | SST2 | **PASS** | 2409.08 ms | 6274.19 ms |
+| `track2_ssm` | `hgrn2_outer` | BERT | MRPC | **PASS** | 2424.12 ms | 6324.12 ms |
+| `track2_ssm` | `hgrn2_outer` | ROBERTA | SST2 | **PASS** | 2468.00 ms | 6365.76 ms |
+| `track2_ssm` | `hgrn2_outer` | ROBERTA | MRPC | **PASS** | 2436.27 ms | 6325.45 ms |
+| `track2_ssm` | `hgrn2_outer` | T5 | SST2 | **PASS** | 2431.60 ms | 6359.55 ms |
+| `track2_ssm` | `hgrn2_outer` | T5 | MRPC | **PASS** | 2452.63 ms | 6320.98 ms |
+| `track2_ssm` | `griffin_ssd` | BERT | SST2 | **PASS** | 1046.69 ms | 3158.25 ms |
