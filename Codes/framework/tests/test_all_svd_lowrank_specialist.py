@@ -298,7 +298,7 @@ with torch.no_grad():
     step_outputs = []
     for t in range(N):
         x_t = seq_inputs[:, t : t + 1, :]
-        y_t, state = svd_lin_attn.step_recurrent(x_t, prev_state=state)
+        y_t, state = svd_lin_attn.step_recurrent(x_t, past_state=state)
         step_outputs.append(y_t)
     step_seq_out = torch.cat(step_outputs, dim=1)
 
