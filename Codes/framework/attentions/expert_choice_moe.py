@@ -36,7 +36,7 @@ class ExpertChoiceMoE(nn.Module):
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
         # Router matrix [d_model, n_experts] initialized uniformly for balanced initial gating
-        self.router_ln = nn.LayerNorm(dim if "dim" in locals() else (d_model if "d_model" in locals() else self.hidden_size))
+        self.router_ln = nn.LayerNorm(self.d_model)
         self.router = nn.Linear(d_model, n_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
