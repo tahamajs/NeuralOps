@@ -495,6 +495,70 @@ def _cache_refresh_loop() -> None:
         time.sleep(2)
 
 
+
+def generate_latex_table(results: List[Dict[str, Any]]) -> str:
+    """Generates a publication-grade booktabs LaTeX table for NeurIPS/ICLR."""
+    comparative = compute_comparative_analytics(results)
+    leaderboard = comparative.get("module_leaderboard", [])
+    top_modules = leaderboard[:15] if len(leaderboard) >= 15 else leaderboard
+    
+    lines = [
+        r"\begin{table*}[t]",
+        r"\centering",
+        r"\small",
+        r"\caption{\textbf{Empirical Efficiency and Memory Footprint Across Attention and SVD Modules.} Evaluated on NVIDIA RTX 4070 (Ada Lovelace, 8GB VRAM) with PyTorch 2.6.0+cu124 and TF32 acceleration across GLUE benchmark splits.}",
+        r"\label{tab:main_benchmark_results}",
+        r"\begin{tabular}{l l r r r r c}",
+        r"\toprule",
+        r"\textbf{Module Architecture} & \textbf{Track} & \textbf{Fwd Latency (ms)} & \textbf{Bwd Latency (ms)} & \textbf{Total Step (ms)} & \textbf{Peak VRAM (MB)} & \textbf{Pass Rate} \\",
+        r"\midrule",
+    ]
+    
+    for m in top_modules:
+        mod_name = m["module"].replace("_", r"\_")
+        trk_name = m["track"].replace("_", r"\_")
+        fwd_str = f"{m['avg_fwd_ms']:.2f}" if m['avg_fwd_ms'] > 0 else "--"
+        bwd_str = f"{m['avg_bwd_ms']:.2f}" if m['avg_bwd_ms'] > 0 else "--"
+        tot_str = f"{m['avg_total_ms']:.2f}" if m['avg_total_ms'] > 0 else "--"
+        mem_str = f"{m['avg_mem_mb']:.1f}" if m['avg_mem_mb'] > 0 else "--"
+        rate_str = f"{m['success_rate_pct']:.1f}" + r"\%"
+        
+        lines.append(f"\texttt{{{mod_name}}} & \textsc{{{trk_name}}} & {fwd_str} & {bwd_str} & \textbf{{{tot_str}}} & {mem_str} & {rate_str} \\")
+        
+    lines.extend([
+        r"\bottomrule",
+        r"\end{tabular}",
+        r"\end{table*}",
+    ])
+    
+    return "\n".join(lines)
+
+
+def generate_plot_data(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Formats benchmark results for instant ingestion by Matplotlib and Seaborn scripts."""
+    comparative = compute_comparative_analytics(results)
+    return {
+        "generated_at": datetime.now().isoformat(),
+        "total_evaluated": len(results),
+        "leaderboard": comparative.get("module_leaderboard", []),
+        "model_breakdown": comparative.get("model_breakdown", {}),
+        "track_breakdown": comparative.get("track_breakdown", {}),
+        "raw_series": [
+            {
+                "module": r["module"],
+                "model": r["model"],
+                "dataset": r["dataset"],
+                "track": r["track"],
+                "fwd_ms": float(r["fwd_ms"]) if r.get("fwd_ms") is not None else None,
+                "bwd_ms": float(r["bwd_ms"]) if r.get("bwd_ms") is not None else None,
+                "mem_mb": float(r["mem_mb"]) if r.get("mem_mb") is not None else None,
+                "status": r["status"],
+            }
+            for r in results if r["status"] == "PASS"
+        ]
+    }
+
+
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     """Custom HTTP handler serving the live web UI and JSON telemetry endpoints."""
 
@@ -513,6 +577,30 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         req_path = self.path.split('?')[0]
+
+        if req_path == "/api/export/latex-table":
+            results = get_completed_results()
+            latex_code = generate_latex_table(results)
+            payload = json.dumps({"latex": latex_code}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
+        if req_path == "/api/export/plot-data":
+            results = get_completed_results()
+            plot_payload = json.dumps(generate_plot_data(results), indent=2).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Disposition", 'attachment; filename="benchmark_plot_data.json"')
+            self.send_header("Content-Length", str(len(plot_payload)))
+            self.end_headers()
+            self.wfile.write(plot_payload)
+            return
 
         if req_path == "/api/stats":
             _cache_ready.wait(timeout=5)
