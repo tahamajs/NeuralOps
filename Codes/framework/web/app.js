@@ -615,3 +615,118 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchStats();
   setInterval(fetchStats, POLL_INTERVAL_MS);
 });
+
+// -----------------------------------------------------------------------------
+// Paper Publication Studio Controller
+// -----------------------------------------------------------------------------
+async function fetchLatexTable() {
+  const box = document.getElementById("latex-code-box");
+  if (!box) return;
+
+  try {
+    const res = await fetch("/api/export/latex-table");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.latex) {
+      box.value = data.latex;
+      
+      // Update download link
+      const btnDownload = document.getElementById("btn-download-tex");
+      if (btnDownload) {
+        btnDownload.href = "data:text/plain;charset=utf-8," + encodeURIComponent(data.latex);
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to fetch LaTeX table:", err);
+  }
+}
+
+function copyLatexCode() {
+  const box = document.getElementById("latex-code-box");
+  if (!box) return;
+
+  box.select();
+  box.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(box.value).then(() => {
+    alert("LaTeX table code copied to clipboard!");
+  }).catch(() => {
+    document.execCommand("copy");
+    alert("LaTeX table code copied to clipboard!");
+  });
+}
+
+function exportChartImage(chartType, filename) {
+  let targetChart = null;
+  if (chartType === "comparison") targetChart = comparisonChart;
+  else if (chartType === "tracks") targetChart = tracksChart;
+  else if (chartType === "models") targetChart = modelsChart;
+
+  if (!targetChart) {
+    alert("Chart is not ready or has no data yet.");
+    return;
+  }
+
+  const imageUri = targetChart.toBase64Image("image/png", 1.0);
+  const link = document.createElement("a");
+  link.download = filename || "figure.png";
+  link.href = imageUri;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function updatePublicationSummary(analytics) {
+  if (!analytics) return;
+
+  const totalMods = analytics.available_modules ? analytics.available_modules.length : 0;
+  const leaderboard = analytics.module_leaderboard || [];
+
+  document.getElementById("pub-total-mods").textContent = `${totalMods} Modules`;
+
+  if (leaderboard.length >= 2) {
+    const fastest = leaderboard[0].avg_total_ms;
+    const slowest = leaderboard[leaderboard.length - 1].avg_total_ms;
+    if (fastest > 0 && slowest > 0) {
+      const speedup = (slowest / fastest).toFixed(1);
+      document.getElementById("pub-peak-speedup").textContent = `${speedup}x`;
+      document.getElementById("pub-speedup-sub").textContent = `${leaderboard[0].module} vs ${leaderboard[leaderboard.length - 1].module}`;
+    }
+
+    // Memory savings
+    const maxMem = Math.max(...leaderboard.map((m) => m.avg_mem_mb).filter((m) => m > 0));
+    const minMem = Math.min(...leaderboard.map((m) => m.avg_mem_mb).filter((m) => m > 0));
+    if (maxMem > 0 && minMem > 0) {
+      const savings = (((maxMem - minMem) / maxMem) * 100).toFixed(1);
+      document.getElementById("pub-peak-savings").textContent = `${savings}%`;
+    }
+  }
+}
+
+// Extend switchTab to handle publication studio
+const origSwitchTab = switchTab;
+switchTab = function(tabId) {
+  document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach((view) => view.classList.remove("active"));
+
+  if (tabId === "telemetry") {
+    document.getElementById("tab-telemetry-btn").classList.add("active");
+    document.getElementById("view-telemetry").classList.add("active");
+  } else if (tabId === "analytics") {
+    document.getElementById("tab-analytics-btn").classList.add("active");
+    document.getElementById("view-analytics").classList.add("active");
+    if (comparisonChart) comparisonChart.resize();
+    if (tracksChart) tracksChart.resize();
+    if (modelsChart) modelsChart.resize();
+  } else if (tabId === "publication") {
+    document.getElementById("tab-publication-btn").classList.add("active");
+    document.getElementById("view-publication").classList.add("active");
+    fetchLatexTable();
+  }
+};
+
+// Hook updatePublicationSummary into renderComparativeAnalytics
+const origRenderComp = renderComparativeAnalytics;
+renderComparativeAnalytics = function(analytics) {
+  origRenderComp(analytics);
+  updatePublicationSummary(analytics);
+};

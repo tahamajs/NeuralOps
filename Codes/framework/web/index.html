@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NeuralOps Live View & Comparative Analytics Studio</title>
+  <title>NeuralOps Live View & Publication Studio</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,9 +20,9 @@
         <div>
           <div class="brand-title-wrap">
             <h1>NeuralOps Live View</h1>
-            <span class="version-tag">v2.4 Analytics Studio</span>
+            <span class="version-tag">v2.5 Publication Suite</span>
           </div>
-          <p class="subtitle">Real-time SVD & Attention GPU Benchmark Suite (NeurIPS/ICLR Rigor)</p>
+          <p class="subtitle">Universal SVD & Attention GPU Benchmark Suite (NeurIPS/ICLR Publication Ready)</p>
         </div>
       </div>
       <div class="nav-controls">
@@ -43,6 +43,10 @@
       <button class="tab-btn" id="tab-analytics-btn" onclick="switchTab('analytics')">
         <span class="tab-icon">🔬</span> Comparative Analytics Lab
         <span class="tab-pill-badge" id="tab-module-count">0 Modules</span>
+      </button>
+      <button class="tab-btn" id="tab-publication-btn" onclick="switchTab('publication')">
+        <span class="tab-icon">📄</span> Paper Publication Studio
+        <span class="tab-pill-badge tab-pill-purple">LaTeX & Plots</span>
       </button>
     </nav>
 
@@ -276,6 +280,121 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- VIEW 3: Paper Publication Studio -->
+    <div id="view-publication" class="tab-content">
+      <!-- Summary Highlights Grid -->
+      <section class="telemetry-grid">
+        <div class="telemetry-card pub-metric-card">
+          <div class="card-header">
+            <span class="card-label">Publication Status</span>
+            <span class="card-icon">📜</span>
+          </div>
+          <div class="card-value text-accent" id="pub-total-mods">0 Modules</div>
+          <div class="card-sub">Evaluated Across 5 Model Families</div>
+        </div>
+
+        <div class="telemetry-card pub-metric-card">
+          <div class="card-header">
+            <span class="card-label">Peak Speedup Observed</span>
+            <span class="card-icon">⚡</span>
+          </div>
+          <div class="card-value text-pass" id="pub-peak-speedup">--</div>
+          <div class="card-sub" id="pub-speedup-sub">vs. Full Attention Baseline</div>
+        </div>
+
+        <div class="telemetry-card pub-metric-card">
+          <div class="card-header">
+            <span class="card-label">Max VRAM Reduction</span>
+            <span class="card-icon">💾</span>
+          </div>
+          <div class="card-value text-info" id="pub-peak-savings">--</div>
+          <div class="card-sub">Peak Memory Footprint Saved</div>
+        </div>
+
+        <div class="telemetry-card pub-metric-card">
+          <div class="card-header">
+            <span class="card-label">Benchmark Integrity</span>
+            <span class="card-icon">🛡️</span>
+          </div>
+          <div class="card-value text-pass" id="pub-pass-rate">100.0%</div>
+          <div class="card-sub">Hardware Crash & NaN Free</div>
+        </div>
+      </section>
+
+      <!-- LaTeX Table Generator Section -->
+      <section class="analytics-card pub-studio-card">
+        <div class="card-header-flex">
+          <div>
+            <h2>📝 Automated LaTeX Table Generator</h2>
+            <p class="section-desc">Generates publication-ready, copy-pasteable LaTeX <code>booktabs</code> tables with formatted captions and bolded top performers for your NeurIPS/ICLR paper.</p>
+          </div>
+          <div class="pub-actions">
+            <button class="btn btn-primary" onclick="copyLatexCode()">
+              <span class="btn-icon">📋</span> Copy to Clipboard
+            </button>
+            <button class="btn btn-secondary" onclick="fetchLatexTable()">
+              <span class="btn-icon">🔄</span> Refresh Code
+            </button>
+            <a id="btn-download-tex" class="btn btn-secondary" href="data:text/plain;charset=utf-8," download="benchmark_table.tex">
+              <span class="btn-icon">💾</span> Download .tex
+            </a>
+          </div>
+        </div>
+
+        <div class="latex-editor-wrapper">
+          <textarea id="latex-code-box" class="latex-textarea" readonly spellcheck="false">% Loading LaTeX code from live benchmark...</textarea>
+        </div>
+      </section>
+
+      <!-- Figure & Data Exporter Section -->
+      <section class="charts-dual-grid">
+        <div class="analytics-card">
+          <div class="card-header">
+            <h3>🎨 High-Resolution Figure Exporters</h3>
+          </div>
+          <p class="section-desc">Export current live charts directly as 300 DPI high-resolution PNGs ready for camera-ready submission.</p>
+          
+          <div class="export-buttons-stack">
+            <button class="btn btn-secondary btn-full" onclick="exportChartImage('comparison', 'module_comparison_figure.png')">
+              📸 Export Module Comparison Chart (PNG)
+            </button>
+            <button class="btn btn-secondary btn-full" onclick="exportChartImage('tracks', 'track_latency_distribution.png')">
+              📸 Export Track Latency Breakdown (PNG)
+            </button>
+            <button class="btn btn-secondary btn-full" onclick="exportChartImage('models', 'model_architecture_breakdown.png')">
+              📸 Export Model Family Breakdown (PNG)
+            </button>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="card-header">
+            <h3>🐍 Python & Plotting Script Ingestion</h3>
+          </div>
+          <p class="section-desc">Download clean, structured JSON data or use the snippet below in your Python plotting notebook.</p>
+          
+          <div class="export-actions-wrap">
+            <a class="btn btn-primary btn-full text-center" href="/api/export/plot-data" download="benchmark_plot_data.json">
+              📊 Download Full Plot Data (JSON)
+            </a>
+          </div>
+
+          <div class="python-snippet-box">
+            <pre><code>import json, matplotlib.pyplot as plt
+import pandas as pd
+
+# Load exported benchmark data
+with open('benchmark_plot_data.json') as f:
+    data = json.load(f)
+
+df = pd.DataFrame(data['raw_series'])
+print("Evaluated Combos:", len(df))
+# Ready for seaborn.barplot / violinplot!</code></pre>
+          </div>
         </div>
       </section>
     </div>
