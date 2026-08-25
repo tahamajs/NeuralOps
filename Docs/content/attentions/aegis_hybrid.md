@@ -67,7 +67,7 @@ $$\text{Output} = O W_{O1} W_{O2} + b_O$$
 | Metric | Dense Baseline Attention | AEGIS-Hybrid Layer |
 | :--- | :--- | :--- |
 | **FLOP Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D \cdot r + B \cdot H \cdot L \cdot W \cdot d_h + B \cdot H \cdot L \cdot d_h^2)$ |
-| **SST-2 Classification Accuracy** | 50.92% (stalled) | **83.94%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

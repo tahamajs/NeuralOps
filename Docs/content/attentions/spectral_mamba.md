@@ -84,7 +84,7 @@ At initialization, $g = \sigma(1.8) \approx 0.858$, routing $86\%$ of the repres
 
 | Metric | Pure SSM (From Scratch) | Standard MHA | Spectral-Mamba (Fixed) |
 | :--- | :--- | :--- | :--- |
-| **SST-2 Classification Accuracy** | 50.92% (collapse) | 84.06% | **83.83%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 | **Time Complexity** | $\mathcal{O}(B \cdot L \cdot D \cdot d_{\text{state}})$ | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L^2 \cdot D + B \cdot L \cdot D \cdot d_{\text{state}})$ |
 | **Gradient Stability** | Prone to drift | Stable | **Strictly Lyapunov Stable** |
 

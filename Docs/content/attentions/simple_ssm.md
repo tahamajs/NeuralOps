@@ -88,7 +88,7 @@ $$\text{Output} = (y \odot \operatorname{SiLU}(Z)) W_{\text{out}} + b_{\text{out
 | :--- | :--- | :--- |
 | **Computational Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D \cdot d_{\text{state}})$ |
 | **Recurrent Footprint** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot D \cdot d_{\text{state}})$ |
-| **SST-2 Classification Accuracy** | 84.06% | **83.83%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

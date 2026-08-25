@@ -77,7 +77,7 @@ where $c_{\min} = -20.0, c_{\max} = 20.0$.
 | Metric | Baseline Transformer | AEGIS-V6 (SVD + LoRA) |
 | :--- | :--- | :--- |
 | **Parameters** | 100% | **68.4%** |
-| **SST-2 Classification Accuracy** | 50.92% (stalled) | **83.94%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

@@ -83,7 +83,7 @@ $$\text{Output} = \operatorname{reshape}(Y_{\text{local}} + Y_{\text{global}}, [
 | :--- | :--- | :--- |
 | **Computational Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot H \cdot L \cdot (W \cdot d + d^2))$ |
 | **Memory Footprint** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot H \cdot (L \cdot W + d^2))$ |
-| **SST-2 Classification Accuracy** | 84.06% | **83.94%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

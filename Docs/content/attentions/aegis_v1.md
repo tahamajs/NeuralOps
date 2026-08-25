@@ -141,8 +141,7 @@ $$\text{Output} = \text{FactorisedLinear}_{\text{out}}(\operatorname{reshape}(O,
 | **FLOP Complexity** | $\mathcal{O}(B \cdot H \cdot L^2 \cdot d_h)$ | $\mathcal{O}(B \cdot L \cdot D \cdot r + B \cdot H_l \cdot L \cdot W \cdot d_h + B \cdot H_g \cdot L \cdot F \cdot d_h)$ |
 | **Activation Memory** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot H_l \cdot L \cdot W + B \cdot H_g \cdot F \cdot d_h)$ |
 | **Inference Step Memory** | $\mathcal{O}(L \cdot D)$ (Full KV-Cache) | $\mathcal{O}(W \cdot D + H_g \cdot F \cdot d_h)$ (Fixed Band + State) |
-| **SST-2 Classification Accuracy** | 84.06% | **84.18%** |
-| **SST-2 F1 Score** | 84.05% | **84.16%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 
