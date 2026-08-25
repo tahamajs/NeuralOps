@@ -2,59 +2,89 @@
 
 ## 1. Executive Abstract & Theoretical Motivation
 
-Pruning large language models (LLMs) with over 100 billion parameters poses unique computational challenges. Traditional iterative retraining algorithms are prohibitively expensive, while simple magnitude pruning causes severe accuracy degradation at high sparsities. **SparseGPT** overcomes these limitations by performing post-training one-shot pruning using second-order Hessian information.
+Pruning large language models (LLMs) with tens or hundreds of billions of parameters poses severe computational and optimization challenges. Traditional iterative retraining algorithms (such as iterative magnitude pruning with fine-tuning) require prohibitive GPU hours, while zero-shot magnitude pruning induces severe catastrophic collapse beyond $20\%\text{--}30\%$ sparsity. **SparseGPT** resolves this challenge by executing post-training, one-shot layer-wise pruning using second-order empirical Hessian approximations with continuous Optimal Brain Surgeon (OBS) weight compensation.
 
-SparseGPT formulates weight pruning as a localized layer-wise error minimization problem solved via Inverse Hessian updates. By maintaining an accurate approximation of the inverse activation covariance matrix $H^{-1} = (X X^T + \lambda I)^{-1}$, SparseGPT prunes weights column-by-column or block-by-block while continuously updating the remaining unpruned weights to compensate for the error introduced by eliminated parameters.
+SparseGPT models layer-wise weight compression as a localized quadratic error minimization problem. By maintaining an accurate, numerically stabilized inverse empirical Hessian matrix $H^{-1} = (2 X X^\top + \lambda I)^{-1}$ derived from calibration activations, SparseGPT iteratively determines optimal pruning masks (unstructured, block, or strict 2:4 semi-structured) column-by-column, while simultaneously updating unpruned parameters to dynamically cancel out the reconstruction error.
 
 ```
- Calibration Activation X [D, B*S]
-             │
-             ▼
- Inverse Hessian H^(-1) = (X X^T + λI)^(-1)
-             │
-             ▼
-┌─────────────────────────────────────────┐
-│ Column-by-Column Cholesky Update        │
-│ 1. Select Pruning Mask M_j              │
-│ 2. Compute Pruning Error E_j            │
-│ 3. Adjust Unpruned Weights W_{:, >j}    │
-└────────────────────┬────────────────────┘
-                     │
-                     ▼
-       Pruned Weight Matrix W_pruned
+                    [ Calibration Activations X ∈ ℝ^{d_in × N} ]
+                                         │
+                                         ▼
+             [ Empirical Hessian H = (2/N) X X^T + λ I, λ = α diag(H) ]
+                                         │
+                                         ▼
+             [ Multi-Tier Stabilized Inversion: H^(-1) via Cholesky / LU ]
+                                         │
+                                         ▼
+            ┌───────────────────────────────────────────────────────────┐
+            │ Block-Wise Cholesky & OBS Elimination Loop (Block Size B) │
+            │ 1. Evaluate OBS Column Saliency: S_j = w_j^2 / (2 [H^-1]_jj)│
+            │ 2. Apply 2:4 or Unstructured Mask: w_pruned = w ⊙ M_j     │
+            │ 3. Compute Column Error Residual: e_j = w_j - w_pruned    │
+            │ 4. Broadcast OBS Intra-Block Update:                      │
+            │    W_{:, j+1:B} -= e_j ⊗ ([H^-1]_{j, j+1:B} / [H^-1]_jj)  │
+            │ 5. Lazy Inter-Block Cross Update:                         │
+            │    W_{:, >B} -= E_B ([H^-1]_{B,B})^(-1) [H^-1]_{B, >B}    │
+            └─────────────────────────────┬─────────────────────────────┘
+                                         │
+                                         ▼
+                     [ Compressed Model Weight Matrix W_pruned ]
 ```
-
-SparseGPT achieves up to 50% unstructured or 2:4 semi-structured sparsity on models like LLaMA-65B and OPT-175B in a single forward pass without any fine-tuning.
 
 ---
 
-## 2. Mathematical Formulations & Matrix Decompositions
+## 2. Why This Module Works Correctly & Mathematical Proofs
 
-### 2.1 Layer-Wise Compression Objective
+### 2.1 Theorem 1: Second-Order Taylor Expansion of Pruning Perturbation
+Let $\mathcal{L}(W)$ denote the task loss for a given layer. When a parameter perturbation $\Delta W = \widehat{W} - W$ is introduced by pruning, the Taylor series expansion around converged weights $W^*$ is:
+$$\Delta \mathcal{L} = \mathcal{L}(W^* + \Delta W) - \mathcal{L}(W^*) = \nabla_W \mathcal{L}^\top \Delta W + \frac{1}{2} \Delta W^\top H \Delta W + \mathcal{O}(\|\Delta W\|_3)$$
+At convergence, the first-order gradient satisfies $\nabla_W \mathcal{L} \approx 0$. Thus, layer-wise output error minimization:
+$$\min_{\widehat{W}} \frac{1}{2 N} \| W X - \widehat{W} X \|_F^2$$
+is mathematically equivalent to minimizing the second-order perturbation $\frac{1}{2} \operatorname{vec}(\Delta W)^\top H \operatorname{vec}(\Delta W)$, where the layer Hessian is given by the uncentered input activation correlation:
+$$H = \nabla_W^2 \left( \frac{1}{2 N} \| W X - \widehat{W} X \|_F^2 \right) = \frac{2}{N} X X^\top \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$$
 
-For a linear layer with weights $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ and calibration input activations $X \in \mathbb{R}^{d_{\text{in}} \times N}$ (where $N = B \times S$ total tokens), SparseGPT minimizes the output activation error:
+### 2.2 Theorem 2: Optimal Brain Surgeon (OBS) Closed-Form Error Compensation
+Consider eliminating parameter coordinate $q$ (forcing $\widehat{w}_q = 0 \iff e_q^\top \Delta w + w_q = 0$, where $e_q$ is the $q$-th standard basis vector). The constrained quadratic optimization problem is:
+$$\min_{\Delta w} \frac{1}{2} \Delta w^\top H \Delta w \quad \text{subject to} \quad e_q^\top \Delta w + w_q = 0$$
 
-$$\min_{\widehat{W}} \| W X - \widehat{W} X \|_F^2 \quad \text{subject to } \widehat{W} \in \mathcal{C}_{\text{sparsity}}$$
+**Lagrangian Derivation:**
+Define the Lagrangian with Lagrange multiplier $\mu \in \mathbb{R}$:
+$$\mathcal{L}(\Delta w, \mu) = \frac{1}{2} \Delta w^\top H \Delta w + \mu \left( e_q^\top \Delta w + w_q \right)$$
+Setting the gradient with respect to $\Delta w$ to zero:
+$$\nabla_{\Delta w} \mathcal{L} = H \Delta w + \mu e_q = 0 \implies \Delta w = - \mu H^{-1} e_q$$
+Substituting $\Delta w$ back into the linear constraint:
+$$e_q^\top \left( - \mu H^{-1} e_q \right) + w_q = 0 \implies - \mu [H^{-1}]_{qq} + w_q = 0 \implies \mu = \frac{w_q}{[H^{-1}]_{qq}}$$
 
-### 2.2 Hessian Matrix & Cholesky Decomposition
+**Optimal Weight Compensation Vector:**
+$$\Delta w = - \frac{w_q}{[H^{-1}]_{qq}} H^{-1} e_q$$
+For all remaining unpruned parameters $j \neq q$:
+$$w_j \leftarrow w_j - \frac{w_q}{[H^{-1}]_{qq}} [H^{-1}]_{j, q}$$
 
-Let $H = 2 X X^T \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ be the Hessian matrix of the quadratic error objective. The inverse Hessian $H^{-1}$ is computed with a diagonal damping factor $\lambda = \epsilon \cdot \text{diag}(H)$:
+**Optimal Saliency Metric (Loss Increase $\Delta E_q$):**
+$$\Delta E_q = \frac{1}{2} \Delta w^\top H \Delta w = \frac{1}{2} \left( - \frac{w_q}{[H^{-1}]_{qq}} H^{-1} e_q \right)^\top H \left( - \frac{w_q}{[H^{-1}]_{qq}} H^{-1} e_q \right) = \frac{w_q^2}{2 [H^{-1}]_{qq}}$$
+This proves that the parameter inflicting the minimum loss increase is precisely the one that minimizes the saliency score $S_q = \frac{w_q^2}{2 [H^{-1}]_{qq}}$.
 
-$$H^{-1} = \left( 2 X X^T + \lambda I \right)^{-1}$$
+### 2.3 Theorem 3: Multi-Tier Damped Empirical Hessian Inversion
+In deep neural networks, activation covariance matrices $X X^\top$ are frequently ill-conditioned or rank-deficient when $N < d_{\text{in}}$ or when collinear activation features exist. To ensure numerical stability and bound the condition number:
+$$H_{\text{damped}} = \frac{2}{N} X X^\top + \lambda I_{d_{\text{in}}}$$
+where the adaptive damping factor is chosen proportionally to the mean diagonal magnitude:
+$$\lambda = \alpha \cdot \operatorname{mean}(\operatorname{diag}(H)) + \epsilon_{\text{floor}}, \quad \alpha \in [0.01, 0.1]$$
 
-To perform stable column-by-column elimination, SparseGPT uses the Cholesky decomposition of $H^{-1}$:
+**Condition Number Bound:**
+Let $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_{d_{\text{in}}} \ge 0$ denote the singular values of $\frac{2}{N} X X^\top$. The condition number of $H_{\text{damped}}$ is strictly bounded:
+$$\kappa(H_{\text{damped}}) = \frac{\sigma_1 + \lambda}{\sigma_{d_{\text{in}}} + \lambda} \le \frac{\sigma_1}{\lambda} + 1 < \infty$$
+SparseGPT evaluates $H^{-1}$ using a multi-tier numerical pipeline:
+1. **Cholesky Decomposition**: Compute lower triangular factor $L$ such that $H_{\text{damped}} = L L^\top$, then $H^{-1} = (L^{-1})^\top L^{-1}$.
+2. **LU / Standard Inversion Fallback**: If Cholesky fails due to non-positive definite sub-blocks, compute $LU$ decomposition with adaptive damping escalation ($\lambda \leftarrow 5\lambda, 25\lambda$).
+3. **Moore-Penrose Pseudo-Inverse Fallback**: $H^{-1} = V \operatorname{diag}\left(\frac{1}{\sigma_i + \lambda}\right) V^\top$.
 
-$$H^{-1} = L \cdot L^T$$
-
-where $L \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}$ is a lower triangular matrix.
-
-### 2.3 Optimal Error Compensation Formula
-
-When column $j$ of weight matrix $W$ is pruned according to mask $M_j$, the optimal update for the remaining unpruned columns $W_{:, >j}$ is given by:
-
-$$W_{:, >j} \leftarrow W_{:, >j} - \frac{W_{:, j} - \text{Prune}(W_{:, j})}{[H^{-1}]_{j, j}} \cdot \left[ H^{-1} \right]_{j, >j}$$
-
-where $[H^{-1}]_{j, j}$ represents the diagonal entry of the inverse Hessian for column $j$, and $[H^{-1}]_{j, >j}$ is the row slice corresponding to remaining columns.
+### 2.4 Theorem 4: Block-Wise Lazy Updates & 2:4 Semi-Structured Pruning
+To scale OBS to matrices of size $4096 \times 4096$ in $\mathcal{O}(d_{\text{in}}^3)$ time with high GPU memory bandwidth utilization, SparseGPT partitions columns into blocks of size $B_{\text{block}} = 128$:
+- **Intra-Block Updates:** For column $j \in \{0, \dots, B-1\}$ within the block, the immediate row updates are applied to $W_{:, j+1:B}$ using $[H^{-1}]_{j, j+1:B} / [H^{-1}]_{jj}$.
+- **Lazy Inter-Block Update:** Once the entire block $B$ is pruned, all remaining columns outside the block ($W_{:, B:}$) are updated simultaneously via matrix multiplication:
+  $$W_{:, B:} \leftarrow W_{:, B:} - (W_{:, :B} - \widehat{W}_{:, :B}) \cdot \left( [H^{-1}]_{:B, :B} \right)^{-1} [H^{-1}]_{:B, B:}$$
+- **2:4 Semi-Structured Enforcement:** For every consecutive 4-column group, the two columns with lowest OBS saliency are eliminated:
+  $$\Pi_{2:4}(W_{:, 4k:4k+4}) = \operatorname{arg}\min_{\mathcal{M} \in \mathcal{C}_{2:4}} \sum_{j=1}^4 (1 - m_j) \cdot \frac{w_j^2}{2 [H^{-1}]_{jj}}$$
 
 ---
 

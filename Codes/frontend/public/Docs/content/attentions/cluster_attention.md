@@ -2,94 +2,119 @@
 
 ## 1. Executive Abstract & Architectural Motivation
 
-Dense Multi-Head Self-Attention (MHSA) computes $L \times L$ pairwise interaction matrices across all tokens in a sequence, leading to quadratic time complexity $\mathcal{O}(L^2 d)$ and severe memory constraints for long context models. Standard sparse attention paradigms rely either on fixed positional windows or static random graphs, which fail to adapt to content-dependent semantic clustering in hidden representations.
+Dense Multi-Head Self-Attention computes all $L \times L$ pairwise interactions, leading to quadratic time complexity $\mathcal{O}(L^2 d)$. Standard sparse attention methods use fixed positional windows or static random graphs that cannot adapt to the semantic content of input sequences.
 
-**ClusterFormer (`ClusterAttention`)** reformulates sequence-wide self-attention as a dynamic, content-driven semantic partitioning problem. Token representations are dynamically grouped into $K$ spatial clusters using a batch-wise iterative $K$-means clustering algorithm (Lloyd's algorithm) operating in feature space. In our optimized formulation (Fast Transformers with Clustered Attention), cluster centroids $\bar{Q} \in \mathbb{R}^{B \times H \times K \times d}$ compute global cross-attention over all sequence keys, which is then broadcast back to tokens and fused with local sliding-window attention.
-
-This eliminates the token-isolation failure mode of naive intra-cluster attention while preserving $\mathcal{O}(K \cdot L \cdot d + W \cdot L \cdot d)$ linear complexity with respect to sequence length.
+**ClusterFormer (`ClusterAttention`)** addresses this challenge by grouping queries into $K \ll L$ semantic cluster centroids via batch-wise iterative $K$-means clustering (Lloyd's algorithm) in feature space. In our optimized architecture:
+1. **Centroid Global Cross-Attention**: Cluster centroids $\bar{Q} \in \mathbb{R}^{B \times H \times K \times d}$ evaluate global cross-attention against all sequence keys $K \in \mathbb{R}^{B \times H \times L \times d}$, yielding centroid context states $V^{\text{cent}} \in \mathbb{R}^{B \times H \times K \times d}$.
+2. **Context Gathering & Local Sliding-Window Fusion**: Tokens gather global context from their assigned cluster centroid and fuse it with local sliding-window attention:
+\[
+O_i = (1 - \alpha) V^{\text{cent}}_{c_i} + \alpha O^{\text{local}}_i
+\]
+This formulation achieves $\mathcal{O}(B H L K d + B H L W d)$ linear complexity while completely eliminating the singleton token-isolation failure mode of naive intra-cluster attention.
 
 ---
 
-## 2. Mathematical Formulations & Derivations
+## 2. Rigorous Mathematical Foundations & Derivations
 
-### 2.1 Batch-Wise Iterative $K$-Means Clustering
-Given input hidden states $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, $K = \min(\text{num\_clusters}, L)$ initial centroids $\boldsymbol{\mu}^{(0)} \in \mathbb{R}^{B \times K \times D}$ are initialized via deterministic uniform striding across the sequence.
+### 2.1 Batch-Wise Lloyd's $K$-Means Clustering
+
+Given Query vectors $Q \in \mathbb{R}^{B \times H \times L \times d}$, $K = \min(\text{num\_clusters}, L)$ initial centroids $\mu^{(0)} \in \mathbb{R}^{B \times H \times K \times d}$ are initialized via deterministic uniform striding:
+\[
+\mu_k^{(0)} = Q_{:, :, \lfloor k \cdot L / K \rfloor, :}, \quad k \in \{0, \dots, K-1\}
+\]
 
 For $t = 1, \dots, I$ iterations (where $I = \text{n\_iters}$):
-
-1. **Euclidean Distance Computation**:
-   $$\mathbf{D}_{b, i, k}^{(t)} = \|\mathbf{X}_{b, i, :} - \boldsymbol{\mu}_{b, k, :}^{(t-1)}\|_2$$
-
-2. **Nearest Centroid Assignment**:
-   $$c_{b, i}^{(t)} = \operatorname{arg\,min}_{k \in \{1, \dots, K\}} \mathbf{D}_{b, i, k}^{(t)} \quad \in \{0, \dots, K-1\}^{B \times L}$$
-
+1. **Distance Metric Evaluation**:
+\[
+D_{i, k}^{(t)} = \|Q_i - \mu_k^{(t-1)}\|_2^2 = \|Q_i\|^2 + \|\mu_k^{(t-1)}\|^2 - 2 Q_i \mu_k^{(t-1)\top}
+\]
+2. **Cluster Assignment**:
+\[
+c_i^{(t)} = \arg\min_{k \in \{0, \dots, K-1\}} D_{i, k}^{(t)} \in \{0, \dots, K-1\}
+\]
 3. **Centroid Coordinate Recalculation**:
-   $$\boldsymbol{\mu}_{b, k, :}^{(t)} = \frac{\sum_{i=1}^L \mathbb{I}\left( c_{b, i}^{(t)} = k \right) \mathbf{X}_{b, i, :}}{\max\left(1, \sum_{i=1}^L \mathbb{I}\left( c_{b, i}^{(t)} = k \right)\right)}$$
+\[
+\mu_k^{(t)} = \frac{\sum_{i=1}^L \mathbb{I}(c_i^{(t)} = k) Q_i}{\max\left(1, \sum_{i=1}^L \mathbb{I}(c_i^{(t)} = k)\right)}
+\]
 
-### 2.2 Centroid Global Cross-Attention & Local Refinement
-Input activations are mapped to Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) spaces via linear projections $\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times D}$:
-$$\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times L \times d_h}$$
+---
 
-1. **Centroid-Key Cross Attention**:
-   $$S^{\text{cent}}_{b, h, k, j} = \frac{\boldsymbol{\mu}_{b, h, k, :} \mathbf{K}_{b, h, j, :}^\top}{\sqrt{d_h}} + M^{\text{pad}}_{b, j}$$
-   $$A^{\text{cent}} = \operatorname{Softmax}(S^{\text{cent}}, \text{dim}=-1) \in \mathbb{R}^{B \times H \times K \times L}$$
-   $$V^{\text{cent}} = A^{\text{cent}} \mathbf{V} \in \mathbb{R}^{B \times H \times K \times d_h}$$
+### 2.2 Mathematical Proof: Bounded Approximation Error via Within-Cluster Variance
 
-2. **Global Context Gathering & Local Fusion**:
-   $$O^{\text{global}}_{b, h, i, :} = V^{\text{cent}}_{b, h, c_{b, i}, :}$$
-   $$O^{\text{local}}_{b, h, i, :} = \sum_{j : |i - j| \le W} \operatorname{Softmax}\left(\frac{\mathbf{Q}_i \mathbf{K}_j^\top}{\sqrt{d_h}}\right) \mathbf{V}_j$$
-   $$O = \frac{1}{2} O^{\text{global}} + \frac{1}{2} O^{\text{local}}$$
+**Theorem 1 (Cluster Attention Approximation Bound).**
+*Let $A_{\text{dense}}(Q_i) = \sum_{j=1}^L \operatorname{Softmax}(Q_i K^\top / \sqrt{d})_j V_j$ be dense attention, and let $\widehat{A}(Q_i) = V^{\text{cent}}_{c_i} = \sum_{j=1}^L \operatorname{Softmax}(\mu_{c_i} K^\top / \sqrt{d})_j V_j$ be centroid attention. Then for bounded keys $\|K_j\|_2 \le \kappa$ and values $\|V_j\|_2 \le \nu$:*
+\[
+\|A_{\text{dense}}(Q_i) - \widehat{A}(Q_i)\|_2 \le \frac{2 \kappa \nu}{\sqrt{d}} \|Q_i - \mu_{c_i}\|_2
+\]
+*and the mean sequence approximation error is bounded by the within-cluster standard deviation:*
+\[
+\frac{1}{L} \sum_{i=1}^L \|A_{\text{dense}}(Q_i) - \widehat{A}(Q_i)\|_2 \le \frac{2 \kappa \nu}{\sqrt{d}} \sqrt{\frac{1}{L} \sum_{i=1}^L \|Q_i - \mu_{c_i}\|_2^2} = \mathcal{O}\left( \frac{\sigma_{\text{within}}}{\sqrt{d}} \right)
+\]
+
+**Proof:**
+Let $f(q) = \operatorname{Softmax}(q K^\top / \sqrt{d}) V$. By the Mean Value Theorem for vector-valued functions on $\mathbb{R}^d$:
+\[
+\|f(Q_i) - f(\mu_{c_i})\|_2 \le \sup_{q \in [Q_i, \mu_{c_i}]} \|J_f(q)\|_2 \cdot \|Q_i - \mu_{c_i}\|_2
+\]
+where $J_f(q) = \frac{\partial f}{\partial q}$ is the Jacobian matrix:
+\[
+J_f(q) = \frac{1}{\sqrt{d}} \left[ \operatorname{diag}(p) - p p^\top \right] K V^\top
+\]
+with $p = \operatorname{Softmax}(q K^\top / \sqrt{d})$.
+Since $\|\operatorname{diag}(p) - p p^\top\|_2 \le 2$ on the probability simplex $\Delta^{L-1}$, $\|K\|_{2, \infty} \le \kappa$, and $\|V\|_{2, \infty} \le \nu$:
+\[
+\|J_f(q)\|_2 \le \frac{2 \kappa \nu}{\sqrt{d}}
+\]
+Applying this bound to all sequence tokens $i \in \{1, \dots, L\}$ and using the Cauchy-Schwarz inequality over the sequence average yields the stated result. $\blacksquare$
+
+---
+
+### 2.3 Elimination of Token Isolation in Short Sentences
+
+In naive intra-cluster attention (where tokens only attend within their cluster), if $K \ge L$, every token forms a singleton cluster ($C_k = \{k\}$). This causes the attention matrix to degenerate into the identity matrix $A = I_L$, eliminating inter-token communication.
+
+In **ClusterFormer**, centroids attend **globally** over all keys $K_1, \dots, K_L$, and tokens gather this global context via $V^{\text{cent}}_{c_i}$. Even when $K = L$, $\mu_k = Q_k$, and centroid attention evaluates full dense attention $V^{\text{cent}}_k = \sum_j \operatorname{Softmax}(Q_k K_j^\top / \sqrt{d}) V_j$, guaranteeing continuous interpolation and complete elimination of token isolation.
 
 ---
 
 ## 3. Step-by-Step Tensor Execution Trace
 
-| Step | Operation | Input Shape | Output Shape | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| 1 | Projections | `[B, L, D]` | `[B, H, L, d_h]` | Linear map via $W_Q, W_K, W_V$ & split heads |
-| 2 | Initial Centroids | `[B, H, L, d_h]` | `[B, H, K, d_h]` | Deterministic strided centroid selection |
-| 3 | Distance Matrix | `[B, H, L, d_h]` | `[B, H, L, K]` | Batch Pairwise Euclidean Distance `cdist(Q, centroids)` |
-| 4 | Nearest Assignment | `[B, H, L, K]` | `[B, H, L]` | `argmin(dist, dim=-1)` cluster IDs |
-| 5 | Centroid Recalculation| `[B, H, L, d_h]` | `[B, H, K, d_h]` | Masked mean sum over assigned queries ($I$ iterations) |
-| 6 | Centroid Cross-Attn | `centroids`, `K` | `[B, H, K, L]` | Scaled dot-product + pad mask + Softmax |
-| 7 | Centroid Values | `A_cent`, `V` | `[B, H, K, d_h]` | Gather value representations for centroids |
-| 8 | Broadcast & Local Fusion| `V_cent`, `cluster_ids` | `[B, H, L, d_h]` | Index gather by cluster ID + local window context |
-| 9 | Output Projection | `[B, L, D]` | `[B, L, D]` | Reshape multi-head context & linear project $W_O$ |
+```
+Input: hidden_states [B, L, D]
+  │
+  ├──> Q, K, V Projections ──> [B, H, L, d_h]
+  │
+  ├──> Lloyd's K-Means (Q, K_num, iters=3):
+  │      ├──> Initial Centroids: Uniform Striding ──> [B, H, K, d_h]
+  │      ├──> cdist(Q, Centroids) ───────────────────> [B, H, L, K]
+  │      ├──> Cluster IDs: argmin(dist) ─────────────> [B, H, L]
+  │      └──> Update Centroids via Einsum Mask ──────> [B, H, K, d_h]
+  │
+  ├──> Centroid Cross-Attention:
+  │      ├──> Scores: Centroids @ K.T / sqrt(d) ─────> [B, H, K, L]
+  │      ├──> Softmax & Dropout ─────────────────────> [B, H, K, L]
+  │      └──> V_cent = Attn @ V ─────────────────────> [B, H, K, d_h]
+  │
+  ├──> Gather Global Context: gather(V_cent, cluster_ids) ──> [B, H, L, d_h]
+  ├──> Local Window Attention: Band-Masked SDPA ────────────> [B, H, L, d_h]
+  ├──> Fused Context: (1 - alpha) * Global + alpha * Local ──> [B, H, L, d_h]
+  │
+  └──> Out Projection: Linear(D, D)(Context) ──> Output: [B, L, D]
+```
 
 ---
 
-## 4. Analytical Complexity & FLOP Counts
+## 4. Analytical Complexity & Hardware Profiling
 
-- **K-Means Iterations ($I$ iters):** $2 I \cdot B \cdot H \cdot L \cdot K \cdot d_h$ FLOPs.
-- **Centroid-Key Attention:** $2 B \cdot H \cdot K \cdot L \cdot d_h$ FLOPs.
-- **Centroid Value Contraction:** $2 B \cdot H \cdot K \cdot L \cdot d_h$ FLOPs.
-- **Local Window Attention:** $2 B \cdot H \cdot L \cdot (2W+1) \cdot d_h$ FLOPs.
-- **Total Complexity:** $\mathcal{O}(B \cdot H \cdot L \cdot (K + W) \cdot d_h) \ll \mathcal{O}(B \cdot H \cdot L^2 \cdot d_h)$.
-
----
-
-## 5. Empirical SST-2 Benchmark & Failure Mode Analysis
-
-### 5.1 Why the Unrepaired Baseline Underperformed (61.01% Acc)
-1. **Cluster Count Oversizing ($K=64 \ge L$):** On short classification sentences ($L \le 64$), $K = \min(64, L) = L$. Every token became its own singleton cluster ($C_k = \{k\}$).
-2. **Token Isolation / Identity Attention ($A = I$):** Intra-cluster attention restricted attention strictly to the same cluster. With singleton clusters, tokens attended *only to themselves*, converting multi-head attention into a disconnected MLP with no inter-token interaction.
-3. **Random Non-Deterministic Centroid Permutation:** Random initial centroids caused high variance across epochs.
-
-### 5.2 SST-2 Empirical Comparison Table
-| Attention Variant | SST-2 Accuracy | SST-2 F1 | Runtime / Latency | Mechanism |
-| :--- | :--- | :--- | :--- | :--- |
-| **Full Attention** | **89.56%** | **89.55%** | Baseline (1.0x) | Full Dense $\mathcal{O}(N^2)$ |
-| **Performer (FAVOR+)** | 82.91% | 82.90% | 504.8s | Random Features |
-| **FlashAttention-3** | 82.91% | 82.90% | Fast (IO-optimal) | Exact Tiled |
-| **Nyströmformer** | 82.11% | 82.10% | Linear (Pinv) | Landmark Pinv |
-| **Span-Expanded** | 81.31% | 81.30% | Linear-Local | Receptive Field Expansion |
-| **Adaptive Span** | 80.39% | 80.38% | **5.3s (Superfast)** | Per-Head Learned Span |
-| **Repaired ClusterAttention** | **82.60% (Repaired)** | **82.58%** | Fast Linear | Centroid Global + Local |
-| *Unrepaired Cluster* | *61.01% (Broken)* | *60.85%* | — | Singleton Token Isolation ($A=I$) |
+- **K-Means Clustering**: $2 I \cdot B H L K d_h$ FLOPs.
+- **Centroid-Key Attention**: $2 B H K L d_h$ FLOPs.
+- **Centroid-Value MatMul**: $2 B H K L d_h$ FLOPs.
+- **Local Sliding Window**: $2 B H L (2W+1) d_h$ FLOPs.
+- **Total Complexity**: $\mathcal{O}(B H L (K + W) d_h)$ linear in $L$.
 
 ---
 
-## Complete Source Code Implementation (`cluster_attention.py`)
+## 5. Complete Source Code Implementation (`cluster_attention.py`)
 
 ```python
 r"""
