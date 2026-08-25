@@ -1,5 +1,6 @@
 /**
  * Real-Time Dashboard Controller for NeuralOps GPU Sweep
+ * Supports interactive modal detail & error inspection.
  */
 
 const API_STATS = "/api/stats";
@@ -7,6 +8,7 @@ const API_ACTION = "/api/action";
 const POLL_INTERVAL_MS = 3000;
 
 let isFetching = false;
+let currentResultsCache = [];
 
 async function fetchStats() {
   if (isFetching) return;
@@ -104,8 +106,10 @@ function renderDashboard(data) {
   // 5. Recent Results Table
   const tbody = document.getElementById("results-tbody");
   if (tbody && data.recent_results && data.recent_results.length > 0) {
+    currentResultsCache = data.recent_results;
+
     tbody.innerHTML = data.recent_results
-      .map((r) => {
+      .map((r, idx) => {
         const statusClass =
           r.status === "PASS"
             ? "tag-pass"
@@ -114,7 +118,7 @@ function renderDashboard(data) {
             : "tag-fail";
 
         return `
-        <tr>
+        <tr class="clickable-row" onclick="openDetailModal(${idx})" title="Click to inspect full diagnostics">
           <td>${r.time || "-"}</td>
           <td><code>${r.track}</code></td>
           <td><strong>${r.module}</strong></td>
@@ -130,6 +134,63 @@ function renderDashboard(data) {
       .join("");
   }
 }
+
+/* Modal Functions */
+function openDetailModal(index) {
+  const item = currentResultsCache[index];
+  if (!item) return;
+
+  document.getElementById("modal-module-title").textContent = item.module;
+  document.getElementById("modal-track").textContent = item.track;
+  document.getElementById("modal-model").textContent = item.model;
+  document.getElementById("modal-dataset").textContent = item.dataset;
+  document.getElementById("modal-time").textContent = item.time || "-";
+  document.getElementById("modal-fwd").textContent = item.fwd_ms ? `${item.fwd_ms} ms` : "-";
+  document.getElementById("modal-bwd").textContent = item.bwd_ms ? `${item.bwd_ms} ms` : "-";
+  document.getElementById("modal-mem").textContent = item.mem_mb ? `${item.mem_mb} MB` : "-";
+
+  // Status badge
+  const badge = document.getElementById("modal-status-badge");
+  badge.textContent = item.status;
+  badge.className = `tag-status ${
+    item.status === "PASS"
+      ? "tag-pass"
+      : item.status === "TIMEOUT"
+      ? "tag-timeout"
+      : "tag-fail"
+  }`;
+
+  // Error Details Box
+  const errorBox = document.getElementById("modal-error-box");
+  const detailText = item.error_detail || "None / Success";
+  errorBox.textContent = detailText;
+
+  if (item.status === "FAIL") {
+    errorBox.className = "error-detail-box error-box-fail";
+  } else if (item.status === "TIMEOUT") {
+    errorBox.className = "error-detail-box error-box-timeout";
+  } else {
+    errorBox.className = "error-detail-box success-box";
+  }
+
+  const modal = document.getElementById("detail-modal");
+  modal.style.display = "flex";
+}
+
+function hideModal() {
+  const modal = document.getElementById("detail-modal");
+  if (modal) modal.style.display = "none";
+}
+
+function closeModal(e) {
+  if (e.target.id === "detail-modal") {
+    hideModal();
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") hideModal();
+});
 
 async function triggerAction(action) {
   const btn = action === "stop" ? document.getElementById("btn-stop") : document.getElementById("btn-start");
