@@ -158,7 +158,7 @@ class SVDMamba(BaseAttention):
             # Out proj
             out_w = torch.cat([ow, ow], dim=1)[:, : self.inner_dim]
             self.out_proj.decompose_from_weight(out_w, ob)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
     def forward(

@@ -16,7 +16,7 @@ from pathlib import Path
 try:
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-except Exception:
+except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
     pass
 
 # Force 100% Offline Mode (use cached HuggingFace models & on-disk Arrow datasets)
@@ -52,7 +52,7 @@ def log_master(msg: str):
     try:
         with open(MASTER_LOG, "a", encoding="utf-8", errors="ignore") as f:
             f.write(line)
-    except Exception:
+    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
         pass
 
 

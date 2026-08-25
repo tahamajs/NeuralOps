@@ -134,7 +134,7 @@ class SVDAwareTrainer(Trainer):
         if hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
             try:
                 torch.mps.empty_cache()
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
 

@@ -55,6 +55,11 @@ class NMFLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.H, self.V) + self.shift
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Sub-quadratic forward pass using factorized matrix multiplications.

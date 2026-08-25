@@ -117,7 +117,7 @@ def plot_attention_heatmap(
             try:
                 fig.clf()
                 plt.close(fig)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         gc.collect()
 
@@ -203,7 +203,7 @@ def plot_singular_value_decay(
             try:
                 fig.clf()
                 plt.close(fig)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         gc.collect()
 
@@ -268,7 +268,7 @@ def plot_kv_cache_scaling(
             try:
                 fig.clf()
                 plt.close(fig)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         gc.collect()
 
@@ -376,7 +376,7 @@ def plot_pareto_frontier(
             try:
                 fig.clf()
                 plt.close(fig)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         gc.collect()
 
@@ -446,7 +446,7 @@ def plot_dataset_radar_chart(
             try:
                 fig.clf()
                 plt.close(fig)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         gc.collect()
 
@@ -535,6 +535,6 @@ def plot_layerwise_sparsity_rank(
             try:
                 fig.clf()
                 plt.close(fig)
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         gc.collect()

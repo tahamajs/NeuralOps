@@ -242,7 +242,7 @@ class ModeTransformEngine:
                         inject_attention(model, key)
                         injected = True
                         break
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         if not injected:
             # Emulate FP8 scale quantization on linear layers
@@ -262,7 +262,7 @@ class ModeTransformEngine:
                         inject_attention(model, key, rank=rank)
                         injected = True
                         break
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         if not injected:
             # Apply low-rank factorization to Linear layers
@@ -293,7 +293,7 @@ class ModeTransformEngine:
             try:
                 inject_attention(model, "slicegpt")
                 return model
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         # Prune / slice 1 - slice_ratio channels
         with torch.no_grad():
@@ -332,7 +332,7 @@ class ModeTransformEngine:
                     try:
                         inject_attention(model, key)
                         return model
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         for module in model.modules():
             setattr(module, "_mode_tag", "paged_deltakv_cache")
@@ -347,7 +347,7 @@ class ModeTransformEngine:
                     try:
                         inject_attention(model, key)
                         return model
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         for module in model.modules():
             setattr(module, "_mode_tag", "mamba_ssm_scan")
@@ -362,7 +362,7 @@ class ModeTransformEngine:
                     try:
                         inject_attention(model, key)
                         return model
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         for module in model.modules():
             setattr(module, "_mode_tag", "moe_block_routing")
@@ -377,7 +377,7 @@ class ModeTransformEngine:
                     try:
                         inject_attention(model, key)
                         return model
-                    except Exception:
+                    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         for module in model.modules():
             setattr(module, "_mode_tag", "aegis_spectron_hybrid")
@@ -390,7 +390,7 @@ class ModeTransformEngine:
             try:
                 inject_attention(model, "kronecker_tt_lora", rank=rank)
                 return model
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         for module in model.modules():
             setattr(module, "_mode_tag", "kronecker_tt_adapter")
@@ -403,7 +403,7 @@ class ModeTransformEngine:
             try:
                 inject_attention(model, "cluster_attention")
                 return model
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         with torch.no_grad():
             for module in model.modules():
@@ -425,7 +425,7 @@ class ModeTransformEngine:
             try:
                 inject_attention(model, "nystrom_attention")
                 return model
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         for module in model.modules():
             setattr(module, "_mode_tag", "nystrom_landmark_kernel")
@@ -515,7 +515,7 @@ class MultiModeBenchmarkRunner:
                     local_files_only=True,
                 )
                 return model, tokenizer
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
             try:
@@ -523,7 +523,7 @@ class MultiModeBenchmarkRunner:
                     self.model_name_or_path,
                 )
                 return model, tokenizer
-            except Exception:
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
         # Lightweight fallback model for testing / CI

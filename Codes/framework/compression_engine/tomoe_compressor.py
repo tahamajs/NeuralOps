@@ -43,6 +43,17 @@ class ToMoELinear(nn.Module):
         # Router (learned)
         self.router = nn.Linear(self.in_features, num_experts)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        device = self.experts[0].weight.device
+        dtype = self.experts[0].weight.dtype
+        W = torch.zeros(self.out_features, self.in_features, device=device, dtype=dtype)
+        for e, expert in enumerate(self.experts):
+            mask = self.masks[e].to(device)
+            W[mask] = expert.weight
+        return W
+
     def forward(self, x):
         # x: (..., in_features)
         """Forward pass."""

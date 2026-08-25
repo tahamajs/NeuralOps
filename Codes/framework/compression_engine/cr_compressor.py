@@ -53,6 +53,11 @@ class CRLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.C, self.P)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Sub-quadratic forward execution:
@@ -98,7 +103,7 @@ class CRLinear(nn.Module):
             W_np = W_float.cpu().numpy()
             _, _, piv = scipy.linalg.qr(W_np, mode="economic", pivoting=True)
             col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device)
-        except Exception:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
             pass
 
         if col_idx is None:

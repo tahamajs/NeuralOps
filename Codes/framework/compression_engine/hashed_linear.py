@@ -102,6 +102,11 @@ class HashedLinear(nn.Module):
         out = F.linear(x_flat, W, self.bias)
         return out.view(*orig_shape[:-1], self.out_features)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return self.get_weight()
+
     def get_weight(self) -> torch.Tensor:
         """Materialize full reconstructed weight matrix."""
         W = self.weight_table[self.hash_idx.long()]

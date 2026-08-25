@@ -112,6 +112,11 @@ class FactorisedLinear(nn.Module):
         else:
             self.up.bias.data.zero_()
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.up.weight, self.down.weight)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Compute low-rank linear projection: $y = (x B^T) A^T + b$."""
         return self.up(self.down(x))

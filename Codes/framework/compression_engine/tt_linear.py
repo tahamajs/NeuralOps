@@ -117,6 +117,11 @@ class TTLinearLayer(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return self.materialize_weight()
+
     def materialize_weight(self) -> torch.Tensor:
         """
         Reconstruct the full dense weight matrix W in R^{out_features x in_features}.
