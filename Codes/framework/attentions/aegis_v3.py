@@ -176,16 +176,21 @@ class AegisAttention(nn.Module):
             self.num_local_heads = self.cfg.num_local_heads
             self.num_global_heads = self.cfg.num_global_heads
 
-        if pretrained_attn is not None:
-            q_lin = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
-            k_lin = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
-            v_lin = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
-            out_lin = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
-        else:
-            q_lin = nn.Linear(self.hidden_size, self.all_head_size)
-            k_lin = nn.Linear(self.hidden_size, self.all_head_size)
-            v_lin = nn.Linear(self.hidden_size, self.all_head_size)
-            out_lin = nn.Linear(self.all_head_size, self.hidden_size)
+        def _extract_lin(p_name: str, in_f: int, out_f: int) -> nn.Linear:
+            if pretrained_attn is not None:
+                for obj in [pretrained_attn, getattr(pretrained_attn, "self", None), getattr(pretrained_attn, "output", None)]:
+                    if obj is not None:
+                        for attr in [p_name, f"{p_name}_proj", f"{p_name}_lin", "query" if p_name == "q" else ("key" if p_name == "k" else ("value" if p_name == "v" else "dense")), "out_proj" if p_name == "o" else None]:
+                            if attr and hasattr(obj, attr):
+                                mod = getattr(obj, attr)
+                                if hasattr(mod, "weight") and isinstance(mod.weight, torch.Tensor) and mod.weight.shape[1] == in_f:
+                                    return mod
+            return nn.Linear(in_f, out_f)
+
+        q_lin = _extract_lin("q", self.hidden_size, self.all_head_size)
+        k_lin = _extract_lin("k", self.hidden_size, self.all_head_size)
+        v_lin = _extract_lin("v", self.hidden_size, self.all_head_size)
+        out_lin = _extract_lin("o", self.all_head_size, self.hidden_size)
 
         self.q_proj = FactorisedLinear(
             q_lin.weight.data,
@@ -327,9 +332,13 @@ def inject_aegis_v3(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> AegisAttention:
-    r"""Injects AegisAttention V3 into a transformer layer."""
-    if model_config is None and hasattr(layer, "attention"):
-        old_attn = layer.attention
+    if model_config is None:
+        if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
+            model_config = layer
+        elif hasattr(layer, "attention"):
+            old_attn = layer.attention
+    h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768)))) if model_config is not None else 768
+    n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)))) if model_config is not None else 12
     cfg = AegisConfig(
         svd_energy=getattr(comp_config, "svd_energy", 0.95),
         min_rank=getattr(comp_config, "min_rank", 4),

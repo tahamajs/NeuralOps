@@ -240,6 +240,7 @@ class AstroQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("astro")
+@COMPRESSOR_REGISTRY.register("astro_quantizer")
 def astro_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Astro compressor factory function."""
     bits = kwargs.pop("bits", getattr(comp_config, "astro_bits", 8) if comp_config is not None else 8)

@@ -56,9 +56,14 @@ class SVDLinearLayer(nn.Module):
             self.register_parameter("norm_weight", None)
 
         if linear_layer.bias is not None:
-            self.bias = nn.Parameter(linear_layer.bias.data.clone().to(device=device, dtype=dtype))
+            self.bias = nn.Parameter(linear_layer.bias.data.clone())
         else:
             self.register_parameter("bias", None)
+
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.U, self.V)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass with optional fused kernel acceleration."""

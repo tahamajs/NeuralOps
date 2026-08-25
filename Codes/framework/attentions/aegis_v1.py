@@ -308,8 +308,11 @@ def inject_aegis_v1(
     **kwargs: Any,
 ) -> AegisAttentionV1:
     r"""Injects AEGIS-V1 attention into a transformer layer."""
-    if model_config is None and hasattr(layer, "attention"):
-        old_attn = layer.attention
+    if model_config is None:
+        if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
+            model_config = layer
+        elif hasattr(layer, "attention"):
+            old_attn = layer.attention
     cfg = AegisConfigV1(
         svd_energy=getattr(comp_config, "svd_energy", 0.95),
         min_rank=getattr(comp_config, "min_rank", 4),

@@ -255,6 +255,7 @@ class CacheNotesCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cachenotes")
+@COMPRESSOR_REGISTRY.register("cachenotes_compressor")
 def cachenotes_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """CacheNotes compressor factory function."""
     task_type = kwargs.pop("task_type", getattr(comp_config, "cachenotes_task", "qa") if comp_config else "qa")

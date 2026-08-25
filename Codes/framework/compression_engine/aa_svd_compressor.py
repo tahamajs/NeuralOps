@@ -89,6 +89,11 @@ class SVDLinear(nn.Module):
 
         self.reset_parameters()
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.U, self.V)
+
     def reset_parameters(self) -> None:
         with torch.no_grad():
             if self.U.dtype in (torch.float16, torch.bfloat16):

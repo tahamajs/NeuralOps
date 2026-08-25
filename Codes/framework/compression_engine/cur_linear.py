@@ -102,6 +102,11 @@ class CURLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(torch.matmul(self.C, self.U), self.R)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Sub-quadratic forward execution:

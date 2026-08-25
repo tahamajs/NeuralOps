@@ -60,6 +60,11 @@ class LowRankLinear(nn.Module):
         nn.init.normal_(self.V, std=0.02)
         nn.init.normal_(self.U, std=0.02)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.U, self.V.t())
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [..., in_features]
         bottleneck = torch.matmul(x, self.V)  # [..., rank]

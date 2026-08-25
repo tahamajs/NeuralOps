@@ -228,16 +228,26 @@ class SpectronAttention(nn.Module):
             ranks = {"q": 64, "k": 64, "v": 64, "o": 64}
 
         if pretrained_attn is not None:
-            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
-            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
-            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
-            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
-            proj_weights = {
-                "q": (q_src.weight.data, q_src.bias.data if q_src.bias is not None else None),
-                "k": (k_src.weight.data, k_src.bias.data if k_src.bias is not None else None),
-                "v": (v_src.weight.data, v_src.bias.data if v_src.bias is not None else None),
-                "o": (out_src.weight.data, out_src.bias.data if out_src.bias is not None else None),
-            }
+            def _get_proj(p_name):
+                # Search direct, self, or output
+                for obj in [pretrained_attn, getattr(pretrained_attn, "self", None), getattr(pretrained_attn, "output", None)]:
+                    if obj is not None:
+                        for attr in [p_name, f"{p_name}_proj", f"{p_name}_lin", "query" if p_name == "q" else ("key" if p_name == "k" else ("value" if p_name == "v" else "dense")), "out_proj" if p_name == "o" else None]:
+                            if attr and hasattr(obj, attr):
+                                mod = getattr(obj, attr)
+                                if hasattr(mod, "weight"):
+                                    return mod.weight.data, getattr(mod, "bias", None)
+                return None, None
+
+            proj_weights = {}
+            for p in ["q", "k", "v", "o"]:
+                w, b = _get_proj(p)
+                if w is None:
+                    out_d = self.hidden_size if p == "o" else self.all_head_size
+                    in_d = self.all_head_size if p == "o" else self.hidden_size
+                    w = torch.randn(out_d, in_d) * 0.02
+                    b = None
+                proj_weights[p] = (w, b)
         else:
             proj_weights = {
                 "q": (torch.randn(self.all_head_size, self.hidden_size) * 0.02, None),
