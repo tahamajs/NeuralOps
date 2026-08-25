@@ -7,6 +7,11 @@ are stored in registries, enabling dynamic discovery and plug‑and‑play integ
 from typing import Callable, Dict, List, Optional
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 class Registry:
     """A named dictionary that maps string keys to classes or factory functions."""
 
@@ -47,8 +52,10 @@ class Registry:
                     # Try importing module by key directly
                     import importlib
                     importlib.import_module(f"framework.compression_engine.{k}")
-            except Exception:
+            except ImportError:
                 pass
+            except Exception as e:
+                logger.warning("Error during lazy loading of compressor '%s': %s", key, e)
         elif self.name == "attentions":
             try:
                 import framework.attentions as _att
@@ -56,8 +63,10 @@ class Registry:
                 if k not in self._dict:
                     import importlib
                     importlib.import_module(f"framework.attentions.{k}")
-            except Exception:
+            except ImportError:
                 pass
+            except Exception as e:
+                logger.warning("Error during lazy loading of attention '%s': %s", key, e)
 
     def get(self, key: str) -> Optional[Callable]:
         """Safely retrieve a registered component, or None if not found."""
