@@ -75,8 +75,11 @@ class SVDProjectionLinear(nn.Module):
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor) -> None:
         """Set precomputed U and V factors."""
         with torch.no_grad():
-            self.U.copy_(U)
-            self.V.copy_(V)
+            r = min(self.rank, U.size(1), V.size(0))
+            self.U.data.zero_()
+            self.V.data.zero_()
+            self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.V.data[:r, :].copy_(V[:r, :].to(device=self.V.device, dtype=self.V.dtype))
 
 
 @ATTENTION_REGISTRY.register("svd_proj_attn")
@@ -165,11 +168,13 @@ class SVDProjectionAttention(nn.Module):
             W = weight.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(self.rank, U.size(1), Vt.size(0))
-            sqrt_s = torch.sqrt(S[:r])
-            target.U.data[:, :r] = (U[:, :r] * sqrt_s).to(target.U.dtype)
-            target.V.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(target.V.dtype)
+            sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            target.U.data.zero_()
+            target.V.data.zero_()
+            target.U.data[:, :r] = (U[:, :r] * sqrt_s.unsqueeze(0)).to(device=target.U.device, dtype=target.U.dtype)
+            target.V.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(device=target.V.device, dtype=target.V.dtype)
             if target.bias is not None and bias is not None:
-                target.bias.data.copy_(bias)
+                target.bias.data.copy_(bias.to(device=target.bias.device, dtype=target.bias.dtype))
 
     def copy_weights(self, src: Any) -> None:
         """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""

@@ -195,8 +195,11 @@ class SVDLinear(nn.Module):
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():
-            self.U.copy_(U_factor)
-            self.V.copy_(V_factor)
+            r = min(self.rank, U_factor.size(1), V_factor.size(0))
+            self.U.data.zero_()
+            self.V.data.zero_()
+            self.U.data[:, :r].copy_(U_factor[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.V.data[:r, :].copy_(V_factor[:r, :].to(device=self.V.device, dtype=self.V.dtype))
 
     def get_orthogonality_loss(self) -> torch.Tensor:
         """
@@ -215,6 +218,7 @@ class SVDLinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("svd_linear_attn")
 @ATTENTION_REGISTRY.register("svd_linear")
+@ATTENTION_REGISTRY.register("svd_linear_attention")
 @ATTENTION_REGISTRY.register("projection_factorized_attn")
 @ATTENTION_REGISTRY.register("svd_linear_decay")
 @ATTENTION_REGISTRY.register("decay_linear_attn")

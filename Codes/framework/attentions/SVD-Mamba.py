@@ -223,7 +223,7 @@ class SVDMamba(BaseAttention):
                 out = out * mask
             elif attention_mask.dim() == 4:
                 mask = attention_mask[:, 0, 0, :].unsqueeze(-1)
-                out = out * (mask > 0).to(out.dtype)
+                out = out * (mask > -10000.0).to(out.dtype)
 
         return out, None
 
