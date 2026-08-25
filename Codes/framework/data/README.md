@@ -1,52 +1,74 @@
-# Data Subsystem (`Codes/framework/data`)
+# Data Pipeline Subsystem (`Codes/framework/data`)
 
-The `data` subsystem provides a unified dataset ingestion, tokenization, preprocessing, multi-task discovery, and synthetic generation pipeline.
-
----
-
-## 🏗 Architecture Overview
-
-- **GLUE Benchmark Loader (`glue_loader.py`, `glue.py`)**: Native support for standard GLUE tasks (MRPC, SST-2, QNLI, RTE, MNLI, QQP, STS-B, CoLA) with automatic caching and label normalization.
-- **Dataset Preprocessing & Validation (`prepare_datasets.py`, `validation.py`)**: Token length filtering, dynamic padding, truncation, sequence packing, and schema integrity validation.
-- **Multi-Choice Classification (`multi_choice.py`)**: Flattening and batch collation for multiple-choice reasoning datasets (e.g. SWAG, ARC, HellaSwag).
-- **Synthetic Data Generator (`synthetic_generator.py`)**: Deterministic synthetic token and sequence generator for offline CI/CD pipelines, quick smoke tests, and kernel profiling.
-- **Augmentation & Task Mapping (`augmentation.py`, `task_mapper.py`)**: Text perturbation, back-translation hooks, and task metadata mapping.
+The `data` subsystem provides an end-to-end dataset preparation, caching, and loading pipeline for benchmark evaluation and training on CPU and GPU environments.
 
 ---
 
-## 📦 Key Files & Modules
+## 🏗 Architecture & Local Cache Structure
 
-| Module | Description |
-|:---|:---|
-| `glue_loader.py` | High-level loader for GLUE benchmark datasets with offline caching. |
-| `prepare_datasets.py` | Tokenization pipeline converting raw HuggingFace datasets to model inputs. |
-| `dataset_loader.py` | Base dataset loading utilities and DataLoader factory helpers. |
-| `multi_choice.py` | Specialized preprocessor and collator for multiple-choice QA tasks. |
-| `synthetic_generator.py` | Offline synthetic dataset generator for zero-network testing. |
-| `validation.py` | Pre-flight dataset verification and schema validator. |
+```
+Codes/framework/data/
+├── glue_data/              # Pre-cached GLUE dataset splits on local disk
+│   ├── sst2/               # SST-2 (Stanford Sentiment Treebank)
+│   ├── mrpc/               # MRPC (Microsoft Research Paraphrase Corpus)
+│   ├── qnli/               # QNLI (Question Natural Language Inference)
+│   ├── cola/               # CoLA (Corpus of Linguistic Acceptability)
+│   ├── rte/                # RTE (Recognizing Textual Entailment)
+│   ├── qqp/                # QQP (Quora Question Pairs)
+│   ├── mnli/               # MNLI (Multi-Genre Natural Language Inference)
+│   ├── stsb/               # STS-B (Semantic Textual Similarity Benchmark)
+│   └── wnli/               # WNLI (Winograd NLI)
+├── prepare_datasets.py     # Master dataset preparation script (HF Hub -> disk)
+├── glue_loader.py          # Unified GLUE loader (local disk cache first, then HF Hub)
+├── benchmark_datasets.py   # Benchmark batch collators and schema formatters
+└── synthetic_generator.py  # Deterministic synthetic data generator for offline testing
+```
 
 ---
 
-## 🚀 Quick Start & Usage
+## 🚀 Usage Guide
 
-### 1. Loading GLUE Benchmark Datasets
+### 1. Preparing Benchmark Datasets
+Download and tokenize datasets for multiple target model architectures:
+
+```bash
+# Prepare specific tasks with custom tokenizers
+python prepare_datasets.py --tasks sst2,mrpc --models bert,roberta,t5 --save_dir ./prepared_data
+
+# Prepare all GLUE and LM benchmarks in batch
+python prepare_datasets.py --all --models bert,roberta,t5,distilbert --save_dir /mnt/data
+```
+
+### 2. Loading Datasets in Python
+Use `glue_loader.py` to seamlessly load pre-cached or online datasets with tokenizer-specific formatting:
+
 ```python
-from framework.data.glue_loader import load_glue_dataset
-from transformers import AutoTokenizer
+from framework.data.glue_loader import load_glue_split
 
-tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
-train_ds, eval_ds = load_glue_dataset(
-    task_name="mrpc",
-    tokenizer=tokenizer,
-    max_length=128,
-    batch_size=32,
+# Automatically strips token_type_ids for T5 and handles padding for GPT-2
+val_dataset = load_glue_split(
+    task="sst2",
+    split="validation",
+    tokenizer_name="bert-base-uncased",
+    max_seq_len=128,
 )
 ```
 
-### 2. Generating Synthetic Dataset for Offline Tests
-```python
-from framework.data.synthetic_generator import SyntheticDataGenerator
+---
 
-generator = SyntheticDataGenerator(vocab_size=1000, seq_len=64)
-dataset = generator.generate_classification_dataset(num_samples=100, num_classes=2)
+## ⚙️ Tokenizer Compatibility Guarantees
+
+| Architecture | Tokenizer | Special Handling |
+|:---|:---|:---|
+| **BERT / DistilBERT** | `bert-base-uncased` | Standard `input_ids`, `attention_mask`, `token_type_ids` |
+| **RoBERTa** | `roberta-base` | BPE tokenization, byte-level vocabulary (50,265 tokens) |
+| **T5** | `t5-small` | `token_type_ids` strictly stripped from tensors |
+| **GPT-2** | `gpt2` | Missing `pad_token` set to `eos_token` automatically |
+
+---
+
+## 🖥️ GPU Server Bootstrap One-Liner
+
+```bash
+python3 Codes/framework/data/prepare_datasets.py --all --models bert,roberta,t5,distilbert --save_dir ./prepared_benchmark_data
 ```
