@@ -771,24 +771,20 @@ def evaluate_single_combination_opt(
             p.requires_grad = True
 
         is_cuda = (device.type == "cuda")
-        scaler = torch.amp.GradScaler('cuda') if is_cuda else None
 
-        # Warmup passes with AMP
+        # Warmup passes with AMP autocast
         for _ in range(num_warmup):
             if is_cuda:
                 with torch.amp.autocast('cuda'):
                     out = model(**filtered_batch)
                     _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
-                if loss is None:
-                    loss = torch.tensor(0.0, requires_grad=True, device=device)
-                scaler.scale(loss).backward()
-                scaler.update()
             else:
                 out = model(**filtered_batch)
                 _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
-                if loss is None:
-                    loss = torch.tensor(0.0, requires_grad=True, device=device)
-                loss.backward()
+
+            if loss is None:
+                loss = torch.tensor(0.0, requires_grad=True, device=device)
+            loss.backward()
             model.zero_grad()
 
         fwd_times: List[float] = []
@@ -813,8 +809,7 @@ def evaluate_single_combination_opt(
                     loss = torch.tensor(0.0, requires_grad=True, device=device)
 
                 bwd_start_events[i].record()
-                scaler.scale(loss).backward()
-                scaler.update()
+                loss.backward()
                 bwd_end_events[i].record()
                 model.zero_grad()
 
