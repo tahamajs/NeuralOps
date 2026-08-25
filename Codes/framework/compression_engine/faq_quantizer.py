@@ -270,6 +270,7 @@ class FAQQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("faq")
+@COMPRESSOR_REGISTRY.register("faq_quantizer")
 def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """FAQ compressor factory function."""
     bits = kwargs.pop("bits", getattr(comp_config, "faq_bits", 8) if comp_config is not None else 8)
