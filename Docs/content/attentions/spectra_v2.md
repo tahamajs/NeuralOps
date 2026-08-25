@@ -85,7 +85,7 @@ $$\langle \phi(x), \phi(y) \rangle = \frac{1}{\sqrt{d_r}} \sum_{m=1}^{d_r} \left
 | :--- | :--- | :--- |
 | **FLOP Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot B_{\text{size}} \cdot D + B \cdot L \cdot k \cdot B_{\text{size}} \cdot d_h)$ |
 | **Memory Footprint** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot H \cdot L \cdot B_{\text{size}})$ |
-| **SST-2 Classification Accuracy** | 84.06% | **84.02%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

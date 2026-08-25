@@ -122,7 +122,7 @@ $$\text{Output} = \operatorname{reshape}(O, [B, L, D]) W_{O1} W_{O2} + b_O$$
 | **Computational Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D \cdot r + B \cdot H \cdot L \cdot W \cdot d_h + B \cdot H \cdot L \cdot d_h^2)$ |
 | **Memory Footprint** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot H \cdot L \cdot W + B \cdot H \cdot d_h^2)$ |
 | **Parameter Reduction** | $100\%$ Baseline | **$68.2\%$** (Rank-64 Projections) |
-| **SST-2 Classification Accuracy** | 50.92% (stalled baseline) | **83.94%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 

@@ -129,7 +129,7 @@ $$\text{Output} = (Y \odot \operatorname{SiLU}(Z)) W_{\text{out}} + b_{\text{out
 | :--- | :--- | :--- | :--- |
 | **Time Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot H \cdot L \cdot d^2)$ | $\mathcal{O}(B \cdot H \cdot L \cdot d^2)$ |
 | **Recurrent Memory State** | $\mathcal{O}(B \cdot H \cdot L^2)$ | $\mathcal{O}(B \cdot H \cdot d^2)$ | $\mathcal{O}(B \cdot H \cdot d^2)$ |
-| **SST-2 Accuracy** | 84.06% | 50.92% (collapse) | **83.94%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 | **Long Context Scaling** | Quadratic $\mathcal{O}(L^2)$ | Linear $\mathcal{O}(L)$ | Linear $\mathcal{O}(L)$ |
 
 ---
