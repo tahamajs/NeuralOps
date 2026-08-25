@@ -37,8 +37,8 @@ class UnifiedMoE(nn.Module):
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
         # Router initialized with small uniform weights for balanced expert participation
-        self.router_ln = nn.LayerNorm(dim if "dim" in locals() else (d_model if "d_model" in locals() else self.hidden_size))
-        self.router = nn.Linear(dim, num_experts, bias=False)
+        self.router_ln = nn.LayerNorm(self.dim)
+        self.router = nn.Linear(self.dim, num_experts, bias=False)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
         # Experts
