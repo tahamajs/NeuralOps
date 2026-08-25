@@ -220,6 +220,14 @@ class KroneckerTTLoRALayer(nn.Module):
         # Slicing shape padding to (out_features, in_features)
         return delta_w_padded[: self.out_features, : self.in_features]
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        W = self.base_layer.weight + self.get_delta_w()
+        if self.lora_A is not None and self.lora_B is not None:
+            W = W + self.lora_scaling * torch.matmul(self.lora_B, self.lora_A)
+        return W
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass with base weight + Kronecker-TT delta + symmetric LoRA residual bypass."""
         base_out = self.base_layer(x)

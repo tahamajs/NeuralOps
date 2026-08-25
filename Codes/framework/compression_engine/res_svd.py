@@ -116,6 +116,18 @@ class ResSVDLinear(nn.Module):
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        if self.factorize_base:
+            base = torch.matmul(self.base_U, self.base_V)
+        else:
+            base = self.base_weight
+        if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            res = self.scaling * torch.matmul(self.lora_B, self.lora_A)
+            return base + res
+        return base
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward execution:

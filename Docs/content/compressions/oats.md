@@ -74,7 +74,7 @@ This alternating process refines both components, converging to a decomposition 
 After the final L and S are obtained, we map the result back to the original parameter space:
 
 ```
-W_compressed = (L + S) · L_chol^T
+W_compressed = (L + S) · L_chol^{-1}
 ```
 
 This yields a dense weight matrix of the same shape as the original **W**, but its effective degrees of freedom are the sum of the rank of L and the number of non‑zeros in S.

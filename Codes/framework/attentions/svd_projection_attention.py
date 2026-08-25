@@ -60,6 +60,11 @@ class SVDProjectionLinear(nn.Module):
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             nn.init.uniform_(self.bias, -bound, bound)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.U, self.V)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Project input using sequentially factorized low-rank projections.
 
