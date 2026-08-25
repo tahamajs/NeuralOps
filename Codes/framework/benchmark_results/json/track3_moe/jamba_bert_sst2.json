@@ -6,10 +6,10 @@
   "dataset": "sst2",
   "status": "PASS",
   "error_message": null,
-  "forward_latency_ms": 50.75,
-  "backward_latency_ms": 57.86,
-  "total_step_latency_ms": 108.61,
-  "throughput_samples_per_sec": 78.8,
+  "forward_latency_ms": 531.85,
+  "backward_latency_ms": 359.91,
+  "total_step_latency_ms": 891.77,
+  "throughput_samples_per_sec": 7.5,
   "speedup_vs_baseline": 1.0,
   "param_count": 3263106,
   "trainable_param_count": 3263106,
@@ -21,5 +21,5 @@
   "f1_score": 0.0,
   "perplexity": 0.0,
   "grad_norm": 1.625,
-  "timestamp": "2026-08-25 17:46:44"
+  "timestamp": "2026-08-25 19:14:04"
 }
