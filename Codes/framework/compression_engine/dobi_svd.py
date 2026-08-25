@@ -82,6 +82,12 @@ class DobiSVDLinearLayer(nn.Module):
             self.U.copy_(U_factor)
             self.V.copy_(V_factor)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        g = torch.sigmoid(self.gate).unsqueeze(1)
+        return torch.matmul(self.U, self.V * g)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Differentiable forward pass with spectral gating."""
         g = torch.sigmoid(self.gate).unsqueeze(1)  # [rank, 1]
@@ -95,6 +101,7 @@ class DobiSVDLinearLayer(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("dobi")
+@COMPRESSOR_REGISTRY.register("dobi_svd")
 class DobiSVDCompressor(BaseCompressor):
     """
     Dobi-SVD Compressor: Differentiable SVD with learnable spectral gating.

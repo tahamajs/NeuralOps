@@ -265,8 +265,10 @@ class AegisSpectronFP8Attention(BaseAttention):
         return final_out, None
 
 
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8")
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8_inject")
 def inject_aegis_spectron_fp8(
-    layer: Any,
+    layer: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -275,10 +277,13 @@ def inject_aegis_spectron_fp8(
     **kwargs: Any,
 ) -> AegisSpectronFP8Attention:
     r"""Injects Aegis-Spectron-FP8 attention into a transformer layer."""
-    if model_config is None and hasattr(layer, "attention"):
-        old_attn = layer.attention
-    h_size = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
-    n_heads = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+    if model_config is None:
+        if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
+            model_config = layer
+        elif hasattr(layer, "attention"):
+            old_attn = layer.attention
+    h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768)))) if model_config is not None else 768
+    n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)))) if model_config is not None else 12
 
     cfg = AegisSpectronFP8Config(
         hidden_size=h_size,

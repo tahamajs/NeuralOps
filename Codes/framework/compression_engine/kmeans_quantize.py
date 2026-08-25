@@ -136,6 +136,11 @@ class KMeansLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return self.centroids[self.indices]
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.training:
             return KMeansSTEFunction.apply(
@@ -201,6 +206,7 @@ class KMeansCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kmeans")
+@COMPRESSOR_REGISTRY.register("kmeans_quantize")
 def kmeans_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """KMeans compressor factory function."""
     n_clusters = kwargs.pop("n_clusters", getattr(comp_config, "kmeans_clusters", 256) if comp_config is not None else 256)

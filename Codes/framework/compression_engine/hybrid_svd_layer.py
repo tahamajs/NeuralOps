@@ -118,6 +118,8 @@ class DirectSVDEncoderLayer(nn.Module):
         return_dict: bool = True,
         **kwargs: Any,
     ) -> Any:
+        if isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
         residual = hidden_states
         normed = self.input_layernorm(hidden_states)
         svd_out = self.svd_layer(normed)
@@ -131,8 +133,6 @@ class DirectSVDEncoderLayer(nn.Module):
         ff_out = self.dropout(ff_out)
         hidden_states = residual + ff_out
 
-        if return_dict:
-            return (hidden_states,)
         return hidden_states
 
 
@@ -199,8 +199,11 @@ class HybridSVDCompressor(BaseCompressor):
             if module.__class__.__name__ in target_class_names or (
                 hasattr(module, "attention") and hasattr(module, "intermediate")
             ):
-                cfg = getattr(module, "config", None)
-                new_layer = DirectSVDEncoderLayer(config=cfg, svd_rank=self.svd_rank)
+                cfg = getattr(module, "config", None) or getattr(self.model, "config", None)
+                h_size = getattr(cfg, "hidden_size", None)
+                if h_size is None and hasattr(module, "intermediate") and hasattr(module.intermediate, "dense"):
+                    h_size = module.intermediate.dense.in_features
+                new_layer = DirectSVDEncoderLayer(config=cfg, hidden_size=h_size, svd_rank=self.svd_rank)
                 setattr(parent, child_name, new_layer)
                 replaced_count += 1
 
