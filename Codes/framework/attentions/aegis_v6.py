@@ -364,26 +364,30 @@ class AegisAttentionV3(BaseAttention):
 
     @staticmethod
     def init_from_pretrained(layer: nn.Module) -> Dict[str, torch.Tensor]:
-        q_src = getattr(layer, "q_lin", getattr(layer, "query", None))
-        k_src = getattr(layer, "k_lin", getattr(layer, "key", None))
-        v_src = getattr(layer, "v_lin", getattr(layer, "value", None))
-        out_src = getattr(layer, "out_lin", getattr(layer, "dense", None))
+        def _get_proj(p_name: str):
+            for obj in [layer, getattr(layer, "self", None), getattr(layer, "output", None)]:
+                if obj is not None:
+                    for attr in [p_name, f"{p_name}_proj", f"{p_name}_lin", "query" if p_name == "q" else ("key" if p_name == "k" else ("value" if p_name == "v" else "dense")), "out_proj" if p_name == "o" else None]:
+                        if attr and hasattr(obj, attr):
+                            mod = getattr(obj, attr)
+                            if hasattr(mod, "weight") and isinstance(mod.weight, torch.Tensor):
+                                return mod.weight.data.clone().detach(), (mod.bias.data.clone().detach() if mod.bias is not None else None)
+            return None, None
+
+        qw, qb = _get_proj("q")
+        kw, kb = _get_proj("k")
+        vw, vb = _get_proj("v")
+        ow, ob = _get_proj("o")
         return {
-            "q": q_src.weight.data.clone().detach() if q_src is not None else None,
-            "k": k_src.weight.data.clone().detach() if k_src is not None else None,
-            "v": v_src.weight.data.clone().detach() if v_src is not None else None,
-            "o": out_src.weight.data.clone().detach() if out_src is not None else None,
-            "q_b": q_src.bias.data.clone().detach() if q_src is not None and q_src.bias is not None else None,
-            "k_b": k_src.bias.data.clone().detach() if k_src is not None and k_src.bias is not None else None,
-            "v_b": v_src.bias.data.clone().detach() if v_src is not None and v_src.bias is not None else None,
-            "o_b": out_src.bias.data.clone().detach() if out_src is not None and out_src.bias is not None else None,
+            "q": qw, "k": kw, "v": vw, "o": ow,
+            "q_b": qb, "k_b": kb, "v_b": vb, "o_b": ob,
         }
 
 
 @ATTENTION_REGISTRY.register("aegis_v6")
 @ATTENTION_REGISTRY.register("aegis_v6_inject")
 def inject_aegis_v6(
-    layer: Any,
+    layer: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -392,10 +396,13 @@ def inject_aegis_v6(
     **kwargs: Any,
 ) -> AegisAttentionV3:
     r"""Injects AEGIS-V6 attention into a transformer layer."""
-    if model_config is None and hasattr(layer, "attention"):
-        old_attn = layer.attention
-    h_size = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
-    n_heads = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+    if model_config is None:
+        if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
+            model_config = layer
+        elif hasattr(layer, "attention"):
+            old_attn = layer.attention
+    h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768)))) if model_config is not None else 768
+    n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)))) if model_config is not None else 12
 
     cfg = AegisConfigV3(
         hidden_size=h_size,

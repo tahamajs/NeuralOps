@@ -287,6 +287,11 @@ class DynamicSVDLinear(nn.Module):
 
         self.reset_parameters()
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.U, self.V)
+
     def reset_parameters(self) -> None:
         """Kaiming uniform parameter initialization."""
         nn.init.kaiming_uniform_(self.V, a=math.sqrt(5))

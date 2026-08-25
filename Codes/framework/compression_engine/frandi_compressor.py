@@ -51,6 +51,11 @@ class FRanDILinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.B, self.A)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass."""
         orig_shape = x.shape

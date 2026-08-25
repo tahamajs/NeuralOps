@@ -262,21 +262,30 @@ def inject_attention(
     """
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     config = getattr(model, "config", None)
-
-    if config is not None and not hasattr(config, "dropout"):
-        dropout_val = getattr(
-            config,
-            "hidden_dropout_prob",
-            getattr(config, "attention_probs_dropout_prob", 0.1),
-        )
-        setattr(config, "dropout", dropout_val)
+    if config is not None:
+        hidden_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", 768))))
+        num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", 12))))
+        head_dim = getattr(config, "head_dim", getattr(config, "d_kv", hidden_size // max(1, num_heads)))
+        num_kv_heads = getattr(config, "num_key_value_heads", num_heads)
+        setattr(config, "hidden_size", hidden_size)
+        setattr(config, "num_attention_heads", num_heads)
+        setattr(config, "head_dim", head_dim)
+        setattr(config, "num_key_value_heads", num_kv_heads)
+        if not hasattr(config, "dropout"):
+            dropout_val = getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            )
+            setattr(config, "dropout", dropout_val)
+    else:
+        hidden_size = 768
+        num_heads = 12
+        head_dim = 64
+        num_kv_heads = 12
 
     arch = detect_architecture(model)
     adapter = get_adapter(arch)
-
-    num_heads = getattr(config, "num_attention_heads", 12) if config else 12
-    num_kv_heads = getattr(config, "num_key_value_heads", num_heads) if config else num_heads
-    head_dim = getattr(config, "head_dim", getattr(config, "hidden_size", 768) // num_heads) if config else 64
 
     replaced = 0
     for name, old_attn in get_attention_modules(model):
