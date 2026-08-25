@@ -40,7 +40,9 @@ def make_gpu_batch(family: str, batch_size: int = 4, seq_len: int = 32, device: 
     }
     if family not in {"t5", "gpt2"}:
         b["token_type_ids"] = torch.zeros(batch_size, seq_len, dtype=torch.long, device=dev)
-    if family != "t5":
+    if family == "gpt2":
+        b["labels"] = torch.randint(100, vocab_size - 100, (batch_size, seq_len), device=dev)
+    elif family != "t5":
         b["labels"] = torch.zeros(batch_size, dtype=torch.long, device=dev)
     return b
 
