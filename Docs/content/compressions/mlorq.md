@@ -77,30 +77,38 @@ compressed_model = compress_model(
 
 ---
 
-## 6. Empirical Benchmark Results
+## 6. Empirical Benchmark Results & Verification
 
-| Model Architecture | Task | Baseline Score | `mlorq` Score | Parameter Compression | Speedup | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **BERT-Base** | SST-2 | 84.10% | **83.70%** | **3.18x** | **2.05x** | ✅ PASS |
-| **BERT-Base** | MRPC | 88.20% | **87.95%** | **3.18x** | **2.02x** | ✅ PASS |
-| **RoBERTa-Base** | SST-2 | 94.80% | **94.35%** | **3.22x** | **2.12x** | ✅ PASS |
-| **RoBERTa-Base** | MRPC | 90.10% | **89.80%** | **3.22x** | **2.09x** | ✅ PASS |
-| **T5-Base** | SST-2 | 85.50% | **85.15%** | **2.95x** | **1.88x** | ✅ PASS |
-| **T5-Base** | MRPC | 89.40% | **89.10%** | **2.95x** | **1.85x** | ✅ PASS |
+> [!NOTE]
+> **GPU Benchmark Evaluation Protocol**: Standardized evaluation on GLUE benchmarks (SST-2, MRPC, QNLI, MNLI) and language modeling perplexity (WikiText-2, C4) is executed via distributed GPU cluster runs. Benchmark execution scripts and diagnostic verification harnesses are provided below.
+
+To execute reproducible benchmark evaluations:
+
+```bash
+# Run single-module compression evaluation on GPU
+python Codes/framework/eval_all_models_datasets.py \
+    --model bert-base-uncased \
+    --dataset sst2 \
+    --compressor mlorq \
+    --rank 32 \
+    --device cuda
+```
 
 ---
 
-## 7. GPU Server Verification Commands
+## 7. Verification & Diagnostic Commands
 
 ```bash
-# Verify mlorq compression engine
-PYTHONPATH=Codes python3 -c "
+# Verify compression engine and shape invariants
+python -c "
 import torch
 from transformers import AutoModelForSequenceClassification
 from framework.core.compression_engine import compress_model
 model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
 compressed = compress_model(model, config={'compressors': [{'method': 'mlorq', 'rank': 32}]})
-out = compressed(torch.randint(0, 1000, (2, 128)))
-print('Compression verified:', out.logits.shape)
+sample_input = torch.randint(0, 1000, (2, 128))
+out = compressed(sample_input)
+assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
+print('Verification successful: logits shape', out.logits.shape)
 "
 ```

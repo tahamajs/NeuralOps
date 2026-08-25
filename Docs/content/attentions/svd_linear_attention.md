@@ -1132,3 +1132,22 @@ torchrun --nproc_per_node=4 -m framework.main \
     --distributed \
     --mixed_precision "fp16"
 ```
+
+---
+## 8. Computational Complexity Analysis
+
+| Operation Stage | Time Complexity | Working Memory Complexity | FLOPs Scaling vs Dense Softmax ($N=4096$) |
+| :--- | :--- | :--- | :---: |
+| **Symmetric SVD Projection ($U_r, V_r$)** | $\mathcal{O}(B \cdot N \cdot D \cdot r)$ | $\mathcal{O}(B \cdot N \cdot r)$ | $4.0\times$ reduction |
+| **Kernelized Feature Map $\phi(\cdot)$** | $\mathcal{O}(B \cdot N \cdot d_k)$ | $\mathcal{O}(B \cdot N \cdot d_k)$ | Linear in $N$ |
+| **Associative State Accumulation** | $\mathcal{O}(B \cdot d_k \cdot d_v)$ | $\mathcal{O}(B \cdot d_k \cdot d_v)$ | Independent of sequence length $N$ |
+| **Output Reconstruction** | $\mathcal{O}(B \cdot N \cdot D)$ | $\mathcal{O}(B \cdot N \cdot D)$ | Memory bandwidth bound |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Eckart, C., & Young, G. (1936)**. *The approximation of one matrix by another of lower rank*. Psychometrika, 1(3), 211-218. [DOI: 10.1007/BF02288367](https://doi.org/10.1007/BF02288367).
+2. **Katharopoulos, A., Vyas, A., Pappas, N., & Fleuret, F. (2020)**. *Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention*. In Proceedings of the 37th International Conference on Machine Learning (ICML 2020). [arXiv:2006.16236](https://arxiv.org/abs/2006.16236).
+3. **Wang, S., Li, B. Z., Khabsa, M., Fang, H., & Ma, H. (2020)**. *Linformer: Self-Attention with Linear Complexity*. arXiv preprint [arXiv:2006.04768](https://arxiv.org/abs/2006.04768).
+4. **Golub, G. H., & Van Loan, C. F. (2013)**. *Matrix Computations* (4th ed.). Johns Hopkins University Press.

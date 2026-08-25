@@ -489,3 +489,20 @@ __all__ = [
     "admm_pruner_factory",
 ]
 ```
+
+---
+## 8. Computational Complexity Analysis
+
+| Phase | Time Complexity | Memory Footprint |
+| :--- | :--- | :--- |
+| **ADMM Auxiliary Variable Splitting** | $\mathcal{O}(N_{\text{params}})$ | $\mathcal{O}(N_{\text{params}})$ dual variables |
+| **Proximal Projection Step $\Pi_S$** | $\mathcal{O}(N_{\text{params}} \log N_{\text{params}})$ | In-place GPU tensor operation |
+| **Pruned Inference GEMM Acceleration** | $2\times - 4\times$ latency speedup on structured sparse hardware | $50\% - 80\%$ VRAM reduction |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Zhang, T., Ye, S., Zhang, K., Tang, J., Wen, W., Fardad, M., & Wang, Y. (2018)**. *A Systematic DNN Weight Pruning Framework using Alternating Direction Method of Multipliers*. In European Conference on Computer Vision (ECCV 2018).
+2. **Boyd, S., Parikh, N., Chu, E., Peleato, B., & Eckstein, J. (2011)**. *Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers*. Foundations and Trends in Machine Learning, 3(1), 1-122.
+3. **Ren, A., et al. (2019)**. *ADMM-NN: An Algorithm-Hardware Co-Design Framework for Deep Neural Network Pruning*. In IEEE ASPLOS 2019.

@@ -3670,3 +3670,7 @@ track2_ssm,vspec_attention,attention,t5,sst2,PASS,,31.88,22.11,54.0,125.5,1.0,61
 track2_ssm,mamba_shedder,compressor,bert,sst2,PASS,,16.43,25.38,41.8,243.5,1.0,607362,607362,1.0,0.0,0.0,0.6921,50.0,0.0,0.0,1.4121,2026-08-25 19:16:21
 track2_ssm,mamba_shedder,compressor,roberta,sst2,PASS,,22.02,26.75,48.76,181.7,1.0,607362,607362,1.0,0.0,0.0,0.6687,75.0,0.0,0.0,1.3756,2026-08-25 19:16:21
 track2_ssm,mamba_shedder,compressor,t5,sst2,PASS,,10.25,11.49,21.74,390.3,1.0,521984,521984,1.0,0.0,0.0,0.0183,0.0,0.0,0.0,0.9869,2026-08-25 19:16:22
+custom,svd_linear_attention,attention,bert,sst2,FAIL,Tensor for argument weight is on cpu but expected on mps,0.0,0.0,0.0,0.0,1.0,4323218,4323218,1.015,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2026-08-25 21:23:07
+custom,svd_linear_attention,attention,bert,sst2,PASS,,3.42,3.12,6.55,1168.6,1.0,4323218,4323218,1.015,0.0,0.0,0.6988,25.0,0.0,0.0,1.724,2026-08-25 21:26:47
+custom,svd_linear_attention,attention,bert,sst2,PASS,,47.73,11.42,59.15,83.8,1.0,4323218,4323218,1.015,0.0,0.0,0.6998,25.0,0.0,0.0,1.4452,2026-08-25 21:27:40
+custom,direct_svd,compressor,bert,synthetic,PASS,,1.33,1.55,2.88,3006.1,1.0,4054402,4054402,1.082,0.0,0.0,0.6761,50.0,0.0,0.0,0.9862,2026-08-25 21:28:28

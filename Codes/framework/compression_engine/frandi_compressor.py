@@ -157,6 +157,8 @@ class FRanDILinear(nn.Module):
         return len(S)
 
 
+@COMPRESSOR_REGISTRY.register("frandi")
+@COMPRESSOR_REGISTRY.register("frandi_compressor")
 class FRanDICompressor(BaseCompressor):
     """
     FRanDI (Feature-Regression aligned SVD) Compressor.

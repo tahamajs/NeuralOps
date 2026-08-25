@@ -358,3 +358,22 @@ def inject_nystrom(
     layer.attention = new_attn
     return new_attn
 ```
+
+---
+
+## 8. Computational Complexity Analysis
+
+| Stage | Operation | Time Complexity | Memory Complexity |
+| :--- | :--- | :--- | :--- |
+| **1. Landmark Selection** | Segment-mean pooling over $N$ tokens | $\mathcal{O}(B \cdot H \cdot N \cdot d)$ | $\mathcal{O}(B \cdot H \cdot m \cdot d)$ |
+| **2. Kernel Evaluations** | $\widetilde{Q} \widetilde{K}^\top, Q \widetilde{K}^\top, \widetilde{Q} K^\top$ | $\mathcal{O}(B \cdot H \cdot (m^2 + 2 N m) d)$ | $\mathcal{O}(B \cdot H \cdot N m)$ |
+| **3. Iterative Schulz Inversion** | 6 Schulz matrix multiplications | $\mathcal{O}(6 \cdot B \cdot H \cdot m^3)$ | $\mathcal{O}(B \cdot H \cdot m^2)$ |
+| **4. Associative Output Scan** | $F = S_{:, \mathcal{M}} \cdot (S_{\mathcal{M}, \mathcal{M}}^+ (S_{\mathcal{M}, :} V))$ | $\mathcal{O}(B \cdot H \cdot N \cdot m \cdot d)$ | $\mathcal{O}(B \cdot H \cdot N \cdot d)$ |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Xiong, Y., Zeng, Z., Chakraborty, R., Tan, M., Fung, G., Li, C., & Singh, V. (2021)**. *Nyströmformer: A Nyström-Based Algorithm for Approximating Self-Attention*. In Proceedings of the AAAI Conference on Artificial Intelligence (AAAI 2021). [arXiv:2102.03902](https://arxiv.org/abs/2102.03902).
+2. **Williams, C., & Seeger, M. (2001)**. *Using the Nyström Method to Speed Up Kernel Machines*. In Advances in Neural Information Processing Systems (NeurIPS 2001).
+3. **Schulz, G. (1933)**. *Iterative Berechnung der reziproken Matrix*. ZAMM - Journal of Applied Mathematics and Mechanics, 13(1), 57-59.

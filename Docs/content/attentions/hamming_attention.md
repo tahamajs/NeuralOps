@@ -282,14 +282,38 @@ def inject_hamming(
 
 ---
 
-## Empirical Benchmark Results
+## 6. Empirical Benchmark Results & Verification
 
-| Model Architecture | Benchmark Dataset | Baseline Score | `hamming_attention` Score | Speedup | Memory Reduction | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **BERT-Base** | SST-2 (Acc) | 84.10% | **83.65%** | **2.14x** | **44.2%** | ✅ PASS |
-| **BERT-Base** | MRPC (F1) | 88.20% | **87.90%** | **2.08x** | **43.8%** | ✅ PASS |
-| **RoBERTa-Base** | SST-2 (Acc) | 94.80% | **94.20%** | **2.21x** | **45.6%** | ✅ PASS |
-| **RoBERTa-Base** | MRPC (F1) | 90.10% | **89.70%** | **2.15x** | **45.1%** | ✅ PASS |
-| **T5-Base** | SST-2 (Acc) | 85.50% | **85.10%** | **1.95x** | **38.4%** | ✅ PASS |
-| **T5-Base** | MRPC (F1) | 89.40% | **89.05%** | **1.91x** | **37.9%** | ✅ PASS |
+> [!NOTE]
+> **GPU Benchmark Evaluation Protocol**: Standardized evaluation on GLUE benchmarks (SST-2, MRPC, QNLI, MNLI) and LongBench is executed via distributed GPU cluster runs. Benchmark execution scripts and diagnostic verification harnesses are provided below.
 
+To execute reproducible benchmark evaluations:
+
+```bash
+# Run single-module GLUE evaluation on GPU
+python Codes/framework/eval_all_models_datasets.py \
+    --model bert-base-uncased \
+    --dataset sst2 \
+    --attn_type hamming_attention \
+    --rank 32 \
+    --device cuda
+```
+
+---
+
+## 7. Verification & Diagnostic Commands
+
+```bash
+# Verify attention replacement and shape invariants
+python -c "
+import torch
+from framework.core.attention_utils import inject_attention
+from transformers import AutoModelForSequenceClassification
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+model = inject_attention(model, attn_type='hamming_attention', rank=32)
+sample_input = torch.randint(0, 1000, (2, 128))
+out = model(sample_input)
+assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
+print('Verification successful: logits shape', out.logits.shape)
+"
+```

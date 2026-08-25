@@ -89,6 +89,13 @@ class FactorisedLowRankProjection(nn.Module):
         else:
             self.bias = nn.Parameter(torch.zeros(out_features))
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t()
+        lora_w = self.A.float() @ self.B.float()
+        return (svd_w + lora_w).to(self.A.dtype)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
         x_f = x.float()

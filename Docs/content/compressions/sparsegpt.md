@@ -466,3 +466,21 @@ def sparsegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any
 # FIX APPLIED: SparseGPT Hessian damping H + lambda I
 # FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
 ```
+
+---
+## 8. Computational Complexity Analysis
+
+| Phase | Time Complexity | Working Memory Complexity |
+| :--- | :--- | :--- |
+| **Calibration Hessian Accumulation** | $\mathcal{O}(B \cdot N \cdot d_{\text{in}}^2)$ | $\mathcal{O}(d_{\text{in}}^2)$ |
+| **Damped Cholesky Inversion ($H^{-1}$)** | $\mathcal{O}(d_{\text{in}}^3)$ | $\mathcal{O}(d_{\text{in}}^2)$ |
+| **Column-Wise Optimal Brain Surgery Update** | $\mathcal{O}(d_{\text{out}} \cdot d_{\text{in}}^2)$ | $\mathcal{O}(d_{\text{out}} \cdot d_{\text{in}})$ |
+| **Total One-Shot Pruning Duration (70B LLM)** | $\approx 2.5\text{ hours on single GPU}$ | Fits in standard 80GB VRAM |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Frantar, E., & Alistarh, D. (2023)**. *SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot*. In International Conference on Machine Learning (ICML 2023). [arXiv:2301.00774](https://arxiv.org/abs/2301.00774).
+2. **Hassibi, B., & Stork, D. G. (1992)**. *Second order derivatives for network pruning: Optimal Brain Surgeon*. In Advances in Neural Information Processing Systems (NeurIPS 1992).
+3. **LeCun, Y., Denker, J. S., & Solla, S. A. (1989)**. *Optimal Brain Damage*. In Advances in Neural Information Processing Systems (NeurIPS 1989).

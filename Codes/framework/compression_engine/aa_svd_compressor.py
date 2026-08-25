@@ -10,6 +10,7 @@ real physical parameter reduction and FLOP savings.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -136,6 +137,8 @@ class SVDLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("aasvd")
+@COMPRESSOR_REGISTRY.register("aa_svd")
+@COMPRESSOR_REGISTRY.register("aa_svd_compressor")
 class AASVDCompressor(BaseCompressor):
     """
     Activation-Aware SVD Compressor with streaming EMA covariance accumulation
@@ -192,20 +195,21 @@ class AASVDCompressor(BaseCompressor):
         r = min(rank or self.rank, in_feat, out_feat)
 
         if cov is not None:
-            # Principal activation directions via SVD of covariance
+            # Principal activation directions via SVD of covariance in FP32
             try:
-                _, _, Vh_act = torch.linalg.svd(cov.cpu().float(), full_matrices=False)
-                anchor = Vh_act[:r, :].to(layer.weight.device)  # [r, in_feat]
+                cov_fp32 = cov.cpu().float()
+                _, _, Vh_act = torch.linalg.svd(cov_fp32, full_matrices=False)
+                anchor = Vh_act[:r, :].to(device=layer.weight.device, dtype=torch.float32)  # [r, in_feat]
             except Exception:
-                anchor = torch.eye(in_feat, device=layer.weight.device)[:r, :]
+                anchor = torch.eye(in_feat, device=layer.weight.device, dtype=torch.float32)[:r, :]
 
-            # Project weight W onto principal activation subspace
+            # Project weight W onto principal activation subspace in FP32
             W = layer.weight.data.float()  # [out_feat, in_feat]
             W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))  # [out_feat, in_feat]
         else:
-            W_proj = layer.weight.data.float().cpu()
+            W_proj = layer.weight.data.float()
 
-        # Truncated SVD on projected weight
+        # Truncated SVD on projected weight in FP32
         U, S, Vt = torch.linalg.svd(W_proj.cpu().float(), full_matrices=False)
 
         # FIX: Symmetrical Square-Root Singular Value Allocation U_r = U @ sqrt(S), V_r = sqrt(S) @ V^T
@@ -251,11 +255,26 @@ class AASVDCompressor(BaseCompressor):
 
         def make_hook(name: str):
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+                if not inp or inp[0] is None:
+                    return
                 # Input shape: [batch_size, seq_len, in_features]
-                x = inp[0].detach().float()
-                x_flat = x.view(-1, x.size(-1))  # [total_tokens, in_features]
-                # FIX: Streaming Exponential Moving Average (EMA) Covariance Accumulation: (X^T @ X) / B
-                batch_cov = torch.matmul(x_flat.T, x_flat) / max(1, x_flat.size(0))
+                x = inp[0].detach()
+                # Compute empirical covariance strictly in FP32 with autocast disabled to prevent FP16 overflow / NaN
+                dev_type = x.device.type
+                autocast_ctx = (
+                    torch.autocast(device_type=dev_type, enabled=False)
+                    if hasattr(torch, "autocast") and dev_type in ("cuda", "cpu")
+                    else (
+                        torch.cuda.amp.autocast(enabled=False)
+                        if hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "autocast") and dev_type == "cuda"
+                        else contextlib.nullcontext()
+                    )
+                )
+                with autocast_ctx:
+                    x_fp32 = x.float()
+                    x_flat = x_fp32.reshape(-1, x_fp32.size(-1))  # [total_tokens, in_features]
+                    # FIX: Streaming Exponential Moving Average (EMA) Covariance Accumulation in FP32: (X^T @ X) / B
+                    batch_cov = torch.matmul(x_flat.T, x_flat) / max(1, x_flat.size(0))
 
                 if name not in covariances:
                     covariances[name] = batch_cov
@@ -318,6 +337,9 @@ class AASVDCompressor(BaseCompressor):
         return self.model, self.get_compression_stats()
 
 
+@COMPRESSOR_REGISTRY.register("aasvd")
+@COMPRESSOR_REGISTRY.register("aa_svd")
+@COMPRESSOR_REGISTRY.register("aa_svd_compressor")
 def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """AASVD factory function."""
     compressor = AASVDCompressor(model, comp_config=comp_config, **kwargs)
@@ -327,6 +349,7 @@ def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Modu
 
 aa_svd_compressor_factory = aasvd_factory
 aa_svd_factory = aasvd_factory
+aasvd_compressor_factory = aasvd_factory
 
 __all__ = [
     "AASVDCompressor",
@@ -334,5 +357,6 @@ __all__ = [
     "aasvd_factory",
     "aa_svd_factory",
     "aa_svd_compressor_factory",
+    "aasvd_compressor_factory",
     "DEFAULT_CALIBRATION_CORPUS",
 ]
