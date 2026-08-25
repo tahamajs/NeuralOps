@@ -91,6 +91,7 @@ def entmax15_bisect(
 
 
 @ATTENTION_REGISTRY.register("adasplash")
+@ATTENTION_REGISTRY.register("adasplash_attention")
 class AdaSplashAttention(BaseAttention):
     r"""
     AdaSplash Attention Layer with α-Entmax and Local Splash Radius.

@@ -16,6 +16,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("performer")
+@ATTENTION_REGISTRY.register("performer_attention")
 class PerformerAttention(BaseAttention):
     r"""
     Performer Attention (FAVOR+).

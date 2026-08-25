@@ -129,6 +129,7 @@ class AdaptiveSVDLinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("adaptive_svd_attn")
 @ATTENTION_REGISTRY.register("adaptive_svd")
+@ATTENTION_REGISTRY.register("adaptive_svd_attention")
 class AdaptiveSVDAttention(nn.Module):
     r"""Multi-Head Attention with Adaptive SVD + Residual factorized projections."""
 

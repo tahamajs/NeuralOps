@@ -15,6 +15,8 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("soa_fused_module")
 @ATTENTION_REGISTRY.register("soa_fused_attn")
+@ATTENTION_REGISTRY.register("SOAFusedAttention")
+@ATTENTION_REGISTRY.register("soa_fused_attention")
 class SOAFusedAttention(nn.Module):
     r"""Fused SOA Attention module factorizing Q/K/V projections with low-rank bottlenecks."""
 

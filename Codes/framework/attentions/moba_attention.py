@@ -57,29 +57,32 @@ class MoBAAttention(BaseAttention):
         self.v_proj: nn.Linear = nn.Linear(hidden_size, hidden_size)
         self.out_proj: nn.Linear = nn.Linear(hidden_size, hidden_size)
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+        pretrained_attn = kwargs.get("pretrained_attn", None)
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         with torch.no_grad():
-            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
-            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
-            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
-            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", getattr(pretrained_attn, "q", None))))
+            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", getattr(pretrained_attn, "k", None))))
+            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", getattr(pretrained_attn, "v", None))))
+            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", getattr(pretrained_attn, "o", None)))))
 
             if q_src is not None and hasattr(q_src, "weight"):
                 self.q_proj.weight.copy_(q_src.weight)
-                if q_src.bias is not None:
+                if q_src.bias is not None and self.q_proj.bias is not None:
                     self.q_proj.bias.copy_(q_src.bias)
             if k_src is not None and hasattr(k_src, "weight"):
                 self.k_proj.weight.copy_(k_src.weight)
-                if k_src.bias is not None:
+                if k_src.bias is not None and self.k_proj.bias is not None:
                     self.k_proj.bias.copy_(k_src.bias)
             if v_src is not None and hasattr(v_src, "weight"):
                 self.v_proj.weight.copy_(v_src.weight)
-                if v_src.bias is not None:
+                if v_src.bias is not None and self.v_proj.bias is not None:
                     self.v_proj.bias.copy_(v_src.bias)
             if out_src is not None and hasattr(out_src, "weight"):
                 self.out_proj.weight.copy_(out_src.weight)
-                if out_src.bias is not None:
+                if out_src.bias is not None and self.out_proj.bias is not None:
                     self.out_proj.bias.copy_(out_src.bias)
 
     def forward(
@@ -191,7 +194,6 @@ class MoBAAttention(BaseAttention):
         return self.out_proj(out), None
 
 
-@ATTENTION_REGISTRY.register("moba")
 @ATTENTION_REGISTRY.register("moba_inject")
 def inject_moba(
     layer: nn.Module,

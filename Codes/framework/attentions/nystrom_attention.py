@@ -16,6 +16,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("nystrom")
+@ATTENTION_REGISTRY.register("nystrom_attention")
 class NystromAttention(BaseAttention):
     r"""
     Nyströmformer: Linear Complexity Self-Attention via Nyström Landmark Approximation (Xiong et al., 2021).
