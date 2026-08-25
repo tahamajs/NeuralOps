@@ -6,10 +6,10 @@
   "dataset": "mrpc",
   "status": "PASS",
   "error_message": null,
-  "forward_latency_ms": 2.88,
-  "backward_latency_ms": 3.14,
-  "total_step_latency_ms": 6.02,
-  "throughput_samples_per_sec": 1387.3,
+  "forward_latency_ms": 3.79,
+  "backward_latency_ms": 4.52,
+  "total_step_latency_ms": 8.31,
+  "throughput_samples_per_sec": 1055.6,
   "speedup_vs_baseline": 1.0,
   "param_count": 521984,
   "trainable_param_count": 521984,
@@ -21,5 +21,5 @@
   "f1_score": 0.0,
   "perplexity": 0.0,
   "grad_norm": 1.0594,
-  "timestamp": "2026-08-25 17:45:26"
+  "timestamp": "2026-08-25 18:37:49"
 }
