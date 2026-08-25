@@ -334,6 +334,11 @@ def inject_attention(
                 except TypeError:
                     new_attn = attn_class(**kwargs)
 
+        # Match device and dtype of old attention layer
+        old_param = next(old_attn.parameters(), None)
+        if old_param is not None:
+            new_attn.to(device=old_param.device, dtype=old_param.dtype)
+
         if copy_weights:
             if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
                 try:

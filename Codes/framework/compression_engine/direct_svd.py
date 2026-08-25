@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @COMPRESSOR_REGISTRY.register("direct_svd")
+@COMPRESSOR_REGISTRY.register("direct_svd_compressor")
 class DirectSVDCompressor(BaseCompressor):
     """
     Direct SVD Compressor.
@@ -88,14 +89,22 @@ class DirectSVDCompressor(BaseCompressor):
         max_r = min(out_f, in_f)
         r_floor = max(1, min(self.min_rank, max_r))
 
+        ref_dim = 768.0
+        if hasattr(self, "model") and hasattr(self.model, "config") and self.model.config is not None:
+            cfg_obj = self.model.config
+            ref_dim = float(getattr(cfg_obj, "hidden_size", getattr(cfg_obj, "d_model", getattr(cfg_obj, "n_embd", 768.0))))
+        elif hasattr(self, "cfg") and self.cfg is not None:
+            ref_dim = float(getattr(self.cfg, "hidden_size", getattr(self.cfg, "d_model", 768.0)))
+        ref_dim = max(1.0, ref_dim)
+
         target_r = rank if rank is not None else self.rank
         if self.rank_ratio is not None:
             r = int(round(max_r * self.rank_ratio))
         elif target_r is not None:
-            # Proportional rank scaling relative to reference hidden dimension 768
-            r = int(round(target_r * (max_r / 768.0)))
+            # Proportional rank scaling relative to model hidden dimension
+            r = int(round(target_r * (max_r / ref_dim)))
         else:
-            r = int(round(32 * (max_r / 768.0)))
+            r = int(round(32 * (max_r / ref_dim)))
 
         # Enforce minimum rank floor r_min >= 16 and physical bounds
         r = max(r_floor, min(r, max_r))

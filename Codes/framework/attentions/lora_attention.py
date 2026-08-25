@@ -49,6 +49,23 @@ class LoRALinear(nn.Module):
         nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         nn.init.zeros_(self.lora_B)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Effective weight matrix including LoRA residual adapter."""
+        return self.original_layer.weight + (self.lora_B @ self.lora_A) * (self.alpha / self.rank)
+
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return self.original_layer.bias
+
+    @property
+    def in_features(self) -> int:
+        return self.original_layer.in_features
+
+    @property
+    def out_features(self) -> int:
+        return self.original_layer.out_features
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward."""
         orig_out = self.original_layer(x)

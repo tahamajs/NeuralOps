@@ -284,3 +284,22 @@ class CosformerAttention(BaseAttention):
         out = self.out_proj(context)
         return out, None
 ```
+
+---
+
+## 8. Computational Complexity Analysis
+
+| Metric | Softmax Attention (Standard MHA) | Cosformer Linear Attention |
+| :--- | :--- | :--- |
+| **Time Complexity** | $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$ | $\mathcal{O}(B \cdot H \cdot N \cdot d^2)$ |
+| **Space Complexity (Attention Map)** | $\mathcal{O}(B \cdot H \cdot N^2)$ | $\mathcal{O}(B \cdot H \cdot (N d + d^2))$ |
+| **Locality Mechanism** | Absolute/Relative Positional Embeddings | Continuous Cosine Distance Re-weighting |
+| **Kernel Non-negativity** | Softmax normalization | $\text{ReLU}(x) \ge 0$ feature map |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Qin, Z., Sun, W., Deng, H., Li, D., Wei, Y., Lv, B., Yan, J., Kong, L., & Zhong, Y. (2022)**. *cosFormer: Rethinking Softmax In Attention to Achieve Linear Time and Space Complexity*. In International Conference on Learning Representations (ICLR 2022). [arXiv:2202.08791](https://arxiv.org/abs/2202.08791).
+2. **Katharopoulos, A., Vyas, A., Pappas, N., & Fleuret, F. (2020)**. *Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention*. In ICML 2020.
+3. **Choromanski, K., et al. (2021)**. *Rethinking Attention with Performers*. In ICLR 2021.

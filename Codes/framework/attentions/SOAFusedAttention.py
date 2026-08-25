@@ -13,6 +13,35 @@ import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 
 
+class FactorizedLinear(nn.Module):
+    r"""Factorized linear projection with reconstructed weight property for compatibility."""
+
+    def __init__(self, down: nn.Linear, up: nn.Linear) -> None:
+        super().__init__()
+        self.down = down
+        self.up = up
+
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.up.weight, self.down.weight)
+
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return getattr(self.up, "bias", None)
+
+    @property
+    def in_features(self) -> int:
+        return self.down.in_features
+
+    @property
+    def out_features(self) -> int:
+        return self.up.out_features
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.up(self.down(x))
+
+
 @ATTENTION_REGISTRY.register("soa_fused_module")
 @ATTENTION_REGISTRY.register("soa_fused_attn")
 @ATTENTION_REGISTRY.register("SOAFusedAttention")
@@ -55,12 +84,73 @@ class SOAFusedAttention(nn.Module):
         if pretrained_attn is not None:
             self._init_from_pretrained(pretrained_attn)
 
+    @property
+    def q_proj(self) -> FactorizedLinear:
+        return FactorizedLinear(self.q_down, self.q_up)
+
+    @property
+    def k_proj(self) -> FactorizedLinear:
+        return FactorizedLinear(self.k_down, self.k_up)
+
+    @property
+    def v_proj(self) -> FactorizedLinear:
+        return FactorizedLinear(self.v_down, self.v_up)
+
+    # T5, BERT, DistilBERT, RoBERTa compatibility aliases
+    @property
+    def q(self) -> FactorizedLinear:
+        return self.q_proj
+
+    @property
+    def k(self) -> FactorizedLinear:
+        return self.k_proj
+
+    @property
+    def v(self) -> FactorizedLinear:
+        return self.v_proj
+
+    @property
+    def o(self) -> nn.Linear:
+        return self.out_proj
+
+    @property
+    def query(self) -> FactorizedLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> FactorizedLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> FactorizedLinear:
+        return self.v_proj
+
+    @property
+    def dense(self) -> nn.Linear:
+        return self.out_proj
+
+    @property
+    def q_lin(self) -> FactorizedLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> FactorizedLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> FactorizedLinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> nn.Linear:
+        return self.out_proj
+
     def _init_from_pretrained(self, pretrained_attn: Any) -> None:
         r"""Initialize down- and up-projections via truncated SVD decomposition."""
-        q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
-        k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
-        v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
-        out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
+        q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", getattr(pretrained_attn, "q", None))))
+        k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", getattr(pretrained_attn, "k", None))))
+        v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", getattr(pretrained_attn, "v", None))))
+        out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o", None))))
 
         with torch.no_grad():
             for orig, down, up in [
@@ -68,11 +158,10 @@ class SOAFusedAttention(nn.Module):
                 (k_src, self.k_down, self.k_up),
                 (v_src, self.v_down, self.v_up),
             ]:
-                if orig is None:
+                if orig is None or not hasattr(orig, "weight"):
                     continue
                 W = orig.weight.data.float()
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                S = S.clamp(min=1e-6)
                 S = S.clamp(min=1e-6)
                 r = min(self.k_rank, U.size(1), Vt.size(0))
                 down.weight.data.zero_()
@@ -80,9 +169,9 @@ class SOAFusedAttention(nn.Module):
                 down.weight.data[:r, :] = Vt[:r, :].to(down.weight.dtype)
                 up.weight.data[:, :r] = (U[:, :r] * S[:r]).to(up.weight.dtype)
 
-            if out_src is not None:
+            if out_src is not None and hasattr(out_src, "weight"):
                 self.out_proj.weight.data.copy_(out_src.weight.data)
-                if out_src.bias is not None:
+                if getattr(out_src, "bias", None) is not None:
                     self.out_proj.bias.data.copy_(out_src.bias.data)
 
     @classmethod

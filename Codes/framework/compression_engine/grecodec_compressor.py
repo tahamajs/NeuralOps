@@ -167,6 +167,8 @@ class GreCoDeCLinear(nn.Module):
         return grecodec_layer
 
 
+@COMPRESSOR_REGISTRY.register("grecodec")
+@COMPRESSOR_REGISTRY.register("grecodec_compressor")
 class GreCoDeCCompressor(BaseCompressor):
     """
     GreCoDeC (Greedy Coordinate Descent) Compressor.

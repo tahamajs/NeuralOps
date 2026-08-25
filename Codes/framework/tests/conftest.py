@@ -99,19 +99,22 @@ def registered_attention_keys() -> List[str]:
 # Fixture: original DistilBERT attention module (for zero‑shot tests)
 # ----------------------------------------------------------------------
 @pytest.fixture(scope="session")
-def distilbert_attention():
+def distilbert_attention(model_config):
     """
-    Load a real DistilBERT model and return its first layer's attention module.
-    This gives us the pretrained q_lin, k_lin, v_lin, out_lin weights.
+    Load a real DistilBERT model or initialized DistilBertModel and return its first layer's attention module.
+    This gives us the q_lin, k_lin, v_lin, out_lin weights for zero-shot testing.
     """
     try:
         model = AutoModel.from_pretrained(
             "distilbert-base-uncased", local_files_only=True
         )
-        attn = model.distilbert.transformer.layer[0].attention
-        return attn
+        if hasattr(model, "distilbert"):
+            return model.distilbert.transformer.layer[0].attention
+        return model.transformer.layer[0].attention
     except Exception:
-        return None
+        from transformers import DistilBertModel
+        model = DistilBertModel(model_config)
+        return model.transformer.layer[0].attention
 
 
 # ----------------------------------------------------------------------
