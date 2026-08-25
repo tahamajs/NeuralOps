@@ -36,6 +36,8 @@ import os
 import platform
 import sys
 import time
+import concurrent.futures
+from framework.eval_all_models_datasets import BenchmarkResult
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -148,12 +150,37 @@ def print_diagnostics_report(profile: GPUHardwareProfile) -> None:
     print("=" * 80)
 
 
+
+def run_with_timeout(func, *args, timeout=120, **kwargs):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(func, *args, **kwargs)
+        try:
+            return future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            track = kwargs.get('track', 'unknown')
+            module_name = kwargs.get('module_name', 'unknown')
+            model_family = kwargs.get('model_family', 'unknown')
+            dataset = kwargs.get('dataset', 'unknown')
+            logger.error(f"TIMEOUT: {module_name} on {model_family}/{dataset} exceeded {timeout}s.")
+            res = BenchmarkResult(
+                track=track,
+                module_name=module_name,
+                module_type=kwargs.get('module_type', 'unknown'),
+                model_family=model_family,
+                dataset=dataset,
+                status="TIMEOUT",
+            )
+            return res
+
+
 def run_gpu_benchmark_sweep(
     models: List[str],
     datasets: List[str],
     precision: str = "bf16",
     batch_size: int = 32,
     seq_len: int = 128,
+    max_steps: int = 5,
+    timeout: int = 120,
     tracks: Optional[List[str]] = None,
     output_dir: str = "./results/gpu_server",
     distributed: bool = False,
@@ -200,7 +227,8 @@ def run_gpu_benchmark_sweep(
         for attn in attns:
             for m in models:
                 for d in datasets:
-                    res = evaluate_single_combination(
+                    res = run_with_timeout(evaluate_single_combination,
+timeout=timeout,
                         track=t_key,
                         module_name=attn,
                         module_type="attention",
@@ -211,6 +239,7 @@ def run_gpu_benchmark_sweep(
                         device=device,
                         seq_len=seq_len,
                         batch_size=batch_size,
+                        num_steps=max_steps,
                     )
                     results.append(res)
                     logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB)",
@@ -220,7 +249,8 @@ def run_gpu_benchmark_sweep(
         for comp in comps:
             for m in models:
                 for d in datasets:
-                    res = evaluate_single_combination(
+                    res = run_with_timeout(evaluate_single_combination,
+timeout=timeout,
                         track=t_key,
                         module_name=comp,
                         module_type="compressor",
@@ -231,6 +261,7 @@ def run_gpu_benchmark_sweep(
                         device=device,
                         seq_len=seq_len,
                         batch_size=batch_size,
+                        num_steps=max_steps,
                     )
                     results.append(res)
                     logger.info("[%s] %s | %s | %s -> %s (ratio: %.2fx, fwd: %.2fms, mem: %.1fMB)",
@@ -282,6 +313,8 @@ def main() -> None:
     parser.add_argument("--datasets", type=str, default="sst2,mrpc", help="Comma-separated evaluation datasets")
     parser.add_argument("--precision", type=str, default="bf16", choices=["bf16", "fp16", "fp32"], help="Execution precision")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for benchmark steps")
+    parser.add_argument("--max_steps", type=int, default=5, help="Max steps for evaluation")
+    parser.add_argument("--timeout", type=int, default=120, help="Hard timeout per module in seconds")
     parser.add_argument("--seq_len", type=int, default=128, help="Sequence length")
     parser.add_argument("--tracks", type=str, default=None, help="Comma-separated track names (track1_svd,track2_ssm,...)")
     parser.add_argument("--output_dir", type=str, default="./results/gpu_server", help="Directory for logs and reports")
@@ -307,6 +340,8 @@ def main() -> None:
             precision=args.precision,
             batch_size=args.batch_size,
             seq_len=args.seq_len,
+            max_steps=args.max_steps,
+            timeout=args.timeout,
             tracks=track_list,
             output_dir=args.output_dir,
             distributed=args.distributed,
