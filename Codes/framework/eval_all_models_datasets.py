@@ -22,6 +22,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
+# ==== ADVANCED HARDWARE OPTIMIZATIONS (Ada Lovelace / RTX 4070) ====
+torch.backends.cudnn.benchmark = True
+if hasattr(torch, "set_float32_matmul_precision"):
+    torch.set_float32_matmul_precision('high')
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -90,6 +94,15 @@ class BenchmarkResult:
     f1_score: float = 0.0
     perplexity: float = 0.0
     grad_norm: float = 0.0
+    
+    # Advanced Publication Metrics
+    mcc: float = 0.0
+    pearson: float = 0.0
+    spearman: float = 0.0
+    fidelity_score: float = 0.0
+    flops_macs: float = 0.0
+    throughput_tokens_sec: float = 0.0
+    latency_variance_ms: float = 0.0
     
     trajectories: Dict[str, List[float]] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -709,232 +722,244 @@ def get_base_model_cached(
 # -----------------------------------------------------------------------------
 
 def evaluate_single_combination_opt(
-    track: str,
-    module_name: str,
-    module_type: str,
-    model_family: str,
-    dataset: str,
-    rank: int = 16,
-    num_warmup: int = 2,
-    num_steps: int = 5,
-    batch_size: int = 128,
-    seq_len: int = 256,
-    device: torch.device = torch.device("cpu"),
-    results_dir: str = "./results/gpu_server",
-    allow_synthetic: bool = False,
+    track: str, module_name: str, module_type: str, model_family: str, dataset: str,
+    rank: int = 16, num_warmup: int = 2, num_steps: int = 5, batch_size: int = 128, seq_len: int = 256,
+    device: torch.device = torch.device("cpu"), results_dir: str = "./results/gpu_server", allow_synthetic: bool = False,
 ) -> BenchmarkResult:
+    import numpy as np
+    from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+    from scipy.stats import pearsonr, spearmanr
+    from torch.profiler import profile, record_function, ProfilerActivity
+    import math
+
     result = BenchmarkResult(
-        track=track,
-        module_name=module_name,
-        module_type=module_type,
-        model_family=model_family,
-        dataset=dataset,
-        status="PASS",
+        track=track, module_name=module_name, module_type=module_type,
+        model_family=model_family, dataset=dataset
     )
+    
+    current_batch_size = batch_size
+    max_retries = 5
+    retry_count = 0
+    success = False
 
-    model = None
-    try:
-        model, cfg = get_base_model_cached(
-            model_family=model_family,
-            num_labels=2,
-            hidden_size=128,
-            num_heads=4,
-            num_layers=2,
-            device=device,
-        )
-
-        model, comp_ratio = apply_module_to_model(
-            model=model,
-            module_name=module_name,
-            module_type=module_type,
-            rank=rank,
-            device=device,
-        )
-        result.compression_ratio = round(comp_ratio, 3)
-        result.param_count = sum(p.numel() for p in model.parameters())
-        result.trainable_param_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-        num_labels = getattr(cfg, "num_labels", 2)
-        batch = get_dataset_batch(
-            dataset_name=dataset,
-            model_family=model_family,
-            batch_size=batch_size,
-            seq_len=seq_len,
-            vocab_size=getattr(cfg, "vocab_size", 30522),
-            num_labels=num_labels,
-            device=device,
-            allow_synthetic=allow_synthetic,
-        )
-
-        filtered_batch = _filter_batch(batch, model_family, model)
-
-        for p in model.parameters():
-            p.requires_grad = True
-
-        is_cuda = (device.type == "cuda")
-
-        # Warmup passes with AMP autocast
-        for _ in range(num_warmup):
-            if is_cuda:
-                with torch.amp.autocast('cuda'):
-                    out = model(**filtered_batch)
-                    _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
-            else:
-                out = model(**filtered_batch)
-                _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
-
-            if loss is None:
-                loss = torch.tensor(0.0, requires_grad=True, device=device)
-            loss.backward()
-            model.zero_grad()
-
-        # Initialize Trajectory Tracking
-        traj_loss: List[float] = []
-        traj_grad_norm: List[float] = []
-        traj_fwd_ms: List[float] = []
-        traj_bwd_ms: List[float] = []
-
-        if is_cuda:
-            torch.cuda.reset_peak_memory_stats(device)
-            fwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
-            fwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
-            bwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
-            bwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
-
-            for i in range(num_steps):
-                fwd_start_events[i].record()
-                with torch.amp.autocast('cuda'):
-                    out = model(**filtered_batch)
-                fwd_end_events[i].record()
-
-                with torch.amp.autocast('cuda'):
-                    _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
-                if loss is None:
-                    loss = torch.tensor(0.0, requires_grad=True, device=device)
-
-                loss_val = float(loss.detach().item())
-                traj_loss.append(round(loss_val, 4))
-
-                bwd_start_events[i].record()
-                loss.backward()
-                bwd_end_events[i].record()
-
-                # Calculate L2 gradient norm
-                total_norm_sq = 0.0
-                for p in model.parameters():
-                    if p.grad is not None:
-                        param_norm = p.grad.detach().data.norm(2)
-                        total_norm_sq += float(param_norm.item() ** 2)
-                grad_norm = float(total_norm_sq ** 0.5)
-                traj_grad_norm.append(round(grad_norm, 4))
-
-                model.zero_grad()
-
-            bwd_end_events[-1].synchronize()
-
-            for i in range(num_steps):
-                fwd_ms = fwd_start_events[i].elapsed_time(fwd_end_events[i])
-                bwd_ms = bwd_start_events[i].elapsed_time(bwd_end_events[i])
-                traj_fwd_ms.append(round(float(fwd_ms), 4))
-                traj_bwd_ms.append(round(float(bwd_ms), 4))
-
-            result.peak_memory_mb = round(torch.cuda.max_memory_allocated(device) / (1024 ** 2), 1)
-        else:
-            for _ in range(num_steps):
-                t0 = time.perf_counter()
-                out = model(**filtered_batch)
-                t1 = time.perf_counter()
-                fwd_ms = (t1 - t0) * 1000.0
-                traj_fwd_ms.append(round(float(fwd_ms), 4))
-
-                _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
-                if loss is None:
-                    loss = torch.tensor(0.0, requires_grad=True, device=device)
-
-                loss_val = float(loss.detach().item())
-                traj_loss.append(round(loss_val, 4))
-
-                t2 = time.perf_counter()
-                loss.backward()
-                t3 = time.perf_counter()
-                bwd_ms = (t3 - t2) * 1000.0
-                traj_bwd_ms.append(round(float(bwd_ms), 4))
-
-                # Calculate L2 gradient norm
-                total_norm_sq = 0.0
-                for p in model.parameters():
-                    if p.grad is not None:
-                        param_norm = p.grad.detach().data.norm(2)
-                        total_norm_sq += float(param_norm.item() ** 2)
-                grad_norm = float(total_norm_sq ** 0.5)
-                traj_grad_norm.append(round(grad_norm, 4))
-
-                model.zero_grad()
-
-        result.forward_latency_ms = round(float(torch.tensor(traj_fwd_ms).mean().item()), 2) if traj_fwd_ms else 0.0
-        result.backward_latency_ms = round(float(torch.tensor(traj_bwd_ms).mean().item()), 2) if traj_bwd_ms else 0.0
-        result.total_step_latency_ms = round(result.forward_latency_ms + result.backward_latency_ms, 2)
-        result.loss = round(float(torch.tensor(traj_loss).mean().item()), 4) if traj_loss else 0.0
-        result.grad_norm = round(float(torch.tensor(traj_grad_norm).mean().item()), 4) if traj_grad_norm else 0.0
-        result.trajectories = {
-            "loss": traj_loss,
-            "grad_norm": traj_grad_norm,
-            "fwd_latency_ms": traj_fwd_ms,
-            "bwd_latency_ms": traj_bwd_ms,
-        }
-
-        # ==== STRICT EVALUATION PHASE ====
-        model.eval()
-        all_preds = []
-        all_labels = []
+    while retry_count < max_retries and not success:
+        model = None
+        baseline_model = None
         try:
-            tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
-            dataset_cache_key = (dataset.lower(), tok_name, seq_len)
-            if dataset_cache_key in _PREPARED_DATASET_CACHE:
-                val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
-                loader = torch.utils.data.DataLoader(
-                    val_tokenized, batch_size=batch_size, shuffle=False, pin_memory=(device.type == "cuda")
-                )
-                with torch.no_grad():
-                    for val_batch in loader:
-                        inputs = {
-                            ("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v)
-                            for k, v in val_batch.items()
-                        }
-                        filtered_inputs = {k: v for k, v in inputs.items() if k in ["input_ids", "attention_mask", "labels", "decoder_input_ids"]}
-                        
-                        # Use AMP if on CUDA
-                        if device.type == "cuda":
-                            with torch.amp.autocast('cuda'):
+            is_cuda = (device.type == "cuda")
+            if is_cuda:
+                torch.cuda.empty_cache()
+            
+            # --- Load Models ---
+            num_labels = 1 if dataset.lower() == "stsb" else 2
+            model, cfg = get_base_model_cached(model_family, num_labels, seq_len, device, dataset)
+            model.train()
+            
+            # --- Inject Module ---
+            if module_type == "attention":
+                from framework.core.attention_utils import inject_custom_attention
+                inject_custom_attention(model, module_name, rank=rank)
+            elif module_type == "compressor":
+                from framework.core.compression_utils import apply_compression
+                apply_compression(model, module_name, rank=rank)
+            
+            model = model.to(device)
+            if hasattr(model, "train"):
+                model.train()
+            
+            batch = get_dataset_batch(dataset, model_family, current_batch_size, seq_len, num_labels=num_labels, device=device, allow_synthetic=allow_synthetic)
+            filtered_batch = {k: v for k, v in batch.items() if k in ["input_ids", "attention_mask", "labels", "decoder_input_ids"]}
+
+            # --- FLOPs Profiling (Warmup) ---
+            flops_macs = 0.0
+            with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, with_flops=True) as prof:
+                with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
+                    out = model(**filtered_batch)
+            
+            # Extract FLOPs from profiler
+            evt_list = prof.key_averages()
+            total_flops = sum([e.flops for e in evt_list if e.flops is not None])
+            result.flops_macs = total_flops
+            
+            # Additional warmups
+            for _ in range(num_warmup):
+                with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
+                    model(**filtered_batch)
+
+            traj_loss, traj_grad_norm, traj_fwd_ms, traj_bwd_ms = [], [], [], []
+            
+            if is_cuda:
+                torch.cuda.reset_peak_memory_stats(device)
+                fwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
+                fwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
+                bwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
+                bwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
+
+                for i in range(num_steps):
+                    fwd_start_events[i].record()
+                    with torch.amp.autocast('cuda'):
+                        out = model(**filtered_batch)
+                    fwd_end_events[i].record()
+
+                    with torch.amp.autocast('cuda'):
+                        _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
+                    if loss is None:
+                        loss = torch.tensor(0.0, requires_grad=True, device=device)
+                    
+                    traj_loss.append(round(float(loss.detach().item()), 4))
+
+                    bwd_start_events[i].record()
+                    loss.backward()
+                    bwd_end_events[i].record()
+
+                    total_norm_sq = 0.0
+                    for p in model.parameters():
+                        if p.grad is not None:
+                            total_norm_sq += float(p.grad.detach().data.norm(2).item() ** 2)
+                    traj_grad_norm.append(round(float(total_norm_sq ** 0.5), 4))
+                    model.zero_grad()
+
+                bwd_end_events[-1].synchronize()
+                for i in range(num_steps):
+                    traj_fwd_ms.append(round(float(fwd_start_events[i].elapsed_time(fwd_end_events[i])), 4))
+                    traj_bwd_ms.append(round(float(bwd_start_events[i].elapsed_time(bwd_end_events[i])), 4))
+                
+                result.peak_memory_mb = round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 2)
+            else:
+                for _ in range(num_steps):
+                    t0 = time.perf_counter()
+                    out = model(**filtered_batch)
+                    traj_fwd_ms.append(round((time.perf_counter() - t0) * 1000.0, 4))
+                    _, loss = _extract_logits_and_loss(out, num_labels=num_labels, labels=batch.get("labels"))
+                    if loss is None: loss = torch.tensor(0.0, requires_grad=True, device=device)
+                    traj_loss.append(round(float(loss.detach().item()), 4))
+                    
+                    t2 = time.perf_counter()
+                    loss.backward()
+                    traj_bwd_ms.append(round((time.perf_counter() - t2) * 1000.0, 4))
+                    
+                    total_norm_sq = 0.0
+                    for p in model.parameters():
+                        if p.grad is not None:
+                            total_norm_sq += float(p.grad.detach().data.norm(2).item() ** 2)
+                    traj_grad_norm.append(round(float(total_norm_sq ** 0.5), 4))
+                    model.zero_grad()
+            
+            result.forward_latency_ms = round(float(np.mean(traj_fwd_ms)), 2) if traj_fwd_ms else 0.0
+            result.backward_latency_ms = round(float(np.mean(traj_bwd_ms)), 2) if traj_bwd_ms else 0.0
+            result.total_step_latency_ms = round(result.forward_latency_ms + result.backward_latency_ms, 2)
+            result.latency_variance_ms = round(float(np.var(traj_fwd_ms) + np.var(traj_bwd_ms)), 4) if traj_fwd_ms else 0.0
+            
+            # Throughput
+            total_time_s = sum(traj_fwd_ms + traj_bwd_ms) / 1000.0
+            if total_time_s > 0:
+                result.throughput_samples_per_sec = round((num_steps * current_batch_size) / total_time_s, 2)
+                result.throughput_tokens_sec = round((num_steps * current_batch_size * seq_len) / total_time_s, 2)
+                
+            result.loss = round(float(np.mean(traj_loss)), 4) if traj_loss else 0.0
+            result.grad_norm = round(float(np.mean(traj_grad_norm)), 4) if traj_grad_norm else 0.0
+            result.trajectories = {"loss": traj_loss, "grad_norm": traj_grad_norm, "fwd_latency_ms": traj_fwd_ms, "bwd_latency_ms": traj_bwd_ms}
+
+            # ==== STRICT EVALUATION PHASE (Full Dataset & Fidelity) ====
+            model.eval()
+            all_preds, all_labels = [], []
+            sum_cosine_sim = 0.0
+            batches_for_fidelity = 0
+            
+            # Get baseline model for Fidelity (Zero-Shot Drift)
+            baseline_model, _ = get_base_model_cached(model_family, num_labels, seq_len, device, dataset)
+            baseline_model.eval()
+            baseline_model = baseline_model.to(device)
+            
+            try:
+                tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
+                dataset_cache_key = (dataset.lower(), tok_name, seq_len)
+                if dataset_cache_key in _PREPARED_DATASET_CACHE:
+                    val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
+                    loader = torch.utils.data.DataLoader(val_tokenized, batch_size=current_batch_size, shuffle=False, pin_memory=is_cuda)
+                    
+                    with torch.no_grad():
+                        for val_batch in loader:
+                            inputs = {("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v) for k, v in val_batch.items()}
+                            filtered_inputs = {k: v for k, v in inputs.items() if k in ["input_ids", "attention_mask", "labels", "decoder_input_ids"]}
+                            
+                            with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
                                 out = model(**filtered_inputs)
+                                base_out = baseline_model(**filtered_inputs)
+                            
+                            logits, _ = _extract_logits_and_loss(out, num_labels=num_labels, labels=inputs.get("labels"))
+                            base_logits, _ = _extract_logits_and_loss(base_out, num_labels=num_labels, labels=inputs.get("labels"))
+                            
+                            if logits is not None and base_logits is not None:
+                                # Fidelity Score (Cosine Similarity)
+                                sim = torch.nn.functional.cosine_similarity(base_logits.view(-1), logits.view(-1), dim=0)
+                                sum_cosine_sim += float(sim.item())
+                                batches_for_fidelity += 1
+
+                            if logits is not None and inputs.get("labels") is not None:
+                                if dataset.lower() == "stsb":
+                                    preds = logits.squeeze()
+                                else:
+                                    preds = torch.argmax(logits, dim=-1)
+                                all_preds.extend(preds.cpu().numpy())
+                                all_labels.extend(inputs["labels"].cpu().numpy())
+                                
+                    if all_labels:
+                        if dataset.lower() == "stsb":
+                            # STS-B specific metrics
+                            p_val, _ = pearsonr(all_labels, all_preds)
+                            s_val, _ = spearmanr(all_labels, all_preds)
+                            result.pearson = round(float(p_val), 4)
+                            result.spearman = round(float(s_val), 4)
+                        elif dataset.lower() == "cola":
+                            # CoLA specific metric
+                            result.mcc = round(float(matthews_corrcoef(all_labels, all_preds)), 4)
+                            result.accuracy_pct = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
+                        elif dataset.lower() == "wikitext2":
+                            # LM metric
+                            if result.loss > 0:
+                                result.perplexity = round(float(math.exp(min(result.loss, 100))), 4)
                         else:
-                            out = model(**filtered_inputs)
-                            
-                        logits, _ = _extract_logits_and_loss(out, num_labels=num_labels, labels=inputs.get("labels"))
-                        if logits is not None and inputs.get("labels") is not None:
-                            preds = torch.argmax(logits, dim=-1)
-                            all_preds.extend(preds.cpu().numpy())
-                            all_labels.extend(inputs["labels"].cpu().numpy())
-                            
-                if all_labels:
-                    from sklearn.metrics import accuracy_score, f1_score
-                    result.accuracy_pct = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
-                    result.f1_score = round(float(f1_score(all_labels, all_preds, average='macro' if num_labels > 2 else 'binary')), 4)
-        except Exception as eval_e:
-            logger.warning("Validation phase failed: %s", eval_e)
+                            result.accuracy_pct = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
+                            result.f1_score = round(float(f1_score(all_labels, all_preds, average='macro' if num_labels > 2 else 'binary')), 4)
+                    
+                    if batches_for_fidelity > 0:
+                        result.fidelity_score = round(sum_cosine_sim / batches_for_fidelity, 4)
 
+            except Exception as eval_e:
+                logger.warning("Validation phase failed: %s", eval_e)
+            
+            result.status = "PASS"
+            success = True
 
-    except Exception as e:
-        logger.error("Evaluation FAILED for %s on %s/%s: %s", module_name, model_family, dataset, e)
+        except RuntimeError as e:
+            if "out of memory" in str(e).lower():
+                logger.warning(f"OOM caught at batch_size {current_batch_size}. Halving and retrying...")
+                current_batch_size = max(1, current_batch_size // 2)
+                retry_count += 1
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+            else:
+                logger.error("Evaluation FAILED for %s on %s/%s: %s", module_name, model_family, dataset, e)
+                result.status = "FAIL"
+                result.error_message = str(e)
+                break
+        except Exception as e:
+            logger.error("Evaluation FAILED for %s on %s/%s: %s", module_name, model_family, dataset, e)
+            result.status = "FAIL"
+            result.error_message = str(e)
+            break
+        finally:
+            if model is not None: del model
+            if baseline_model is not None: del baseline_model
+            gc.collect()
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+
+    if not success and result.status != "FAIL":
         result.status = "FAIL"
-        result.error_message = str(e)
-    finally:
-        if model is not None:
-            del model
-        gc.collect()
-        if device.type == "cuda":
-            torch.cuda.empty_cache()
-
+        result.error_message = "OOM limits exceeded after max retries."
+        
     return result
 
 evaluate_single_combination = evaluate_single_combination_opt
