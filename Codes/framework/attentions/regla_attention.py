@@ -91,16 +91,19 @@ class ReGLAAttention(BaseAttention):
         q = F.elu(q) + 1.0
         k_gated = F.elu(k * torch.sigmoid(g)) + 1.0
 
+        pad_2d = None
         if attention_mask is not None:
             if attention_mask.dim() == 4:
-                mask = (attention_mask[:, 0, 0, :] > -10000.0).float()
+                mask_2d = (attention_mask[:, 0, 0, :] > -10000.0).float()
             elif attention_mask.dim() == 3:
-                mask = attention_mask[:, 0, :]
+                mask_2d = attention_mask[:, 0, :].float()
             else:
-                mask = attention_mask
+                mask_2d = attention_mask.float()
             
-            mask = mask.unsqueeze(1).unsqueeze(-1).to(k_gated.dtype)
-            k_gated = k_gated * mask
+            pad_2d = mask_2d.unsqueeze(-1).to(x.dtype)  # (B, L, 1)
+            mask_4d = mask_2d.unsqueeze(1).unsqueeze(-1).to(k_gated.dtype)  # (B, 1, L, 1)
+            k_gated = k_gated * mask_4d
+            v = v * mask_4d
 
         kv = torch.matmul(k_gated.transpose(-2, -1), v)
         z = k_gated.sum(dim=2, keepdim=True)
@@ -111,12 +114,12 @@ class ReGLAAttention(BaseAttention):
 
         out = out.transpose(1, 2).contiguous().view(B, L, D)
 
-        loc = self.conv(x.permute(0, 2, 1)).permute(0, 2, 1)
+        # Apply boundary padding isolation to prevent padded tokens from leaking via convolution
+        x_in = x * pad_2d if pad_2d is not None else x
+        loc = self.conv(x_in.permute(0, 2, 1)).permute(0, 2, 1)
         output = self.out_proj(out + loc)
 
-        # Zero out padding positions so test assertions hold
-        if attention_mask is not None and attention_mask.dim() == 2:
-            pad_mask = attention_mask.bool().unsqueeze(-1).to(output.dtype)  # (B, L, 1)
-            output = output * pad_mask
+        if pad_2d is not None:
+            output = output * pad_2d
 
         return output, None

@@ -74,8 +74,8 @@ class DecayLinearAttention(BaseAttention):
         self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
         self.out_proj = nn.Linear(self.dim, self.dim, bias=True)
 
-        # Initialize decay gate bias to -3.0 (~0.95 retention)
-        nn.init.constant_(self.decay_gate.bias, 1.5)  # safe log-decay initialization
+        # Initialize decay gate bias to 3.0 (~0.95 retention via sigmoid)
+        nn.init.constant_(self.decay_gate.bias, 3.0)  # safe sigmoid decay initialization
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained Multi-Head Attention weights."""

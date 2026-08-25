@@ -108,9 +108,38 @@ class MambaShedderCompressor(BaseCompressor):
         return aggregated
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes Mamba-Shedder sensitivity pruning across all Linear modules."""
+        """Executes Mamba-Shedder sensitivity pruning across all Linear modules and layer shedding."""
         activations_map = self._collect_activations()
         pruned_layers_count = 0
+        shed_done = 0
+
+        # Optional layer shedding across transformer / SSM blocks
+        if self.shed_layers > 0:
+            candidates = [
+                ("backbone.layers", lambda m: getattr(getattr(m, "backbone", None), "layers", None)),
+                ("transformer.layer", lambda m: getattr(getattr(m, "transformer", None), "layer", None)),
+                ("transformer.h", lambda m: getattr(getattr(m, "transformer", None), "h", None)),
+                ("model.layers", lambda m: getattr(getattr(m, "model", None), "layers", None)),
+                ("encoder.layer", lambda m: getattr(getattr(m, "encoder", None), "layer", None)),
+                ("layers", lambda m: getattr(m, "layers", None)),
+                ("h", lambda m: getattr(m, "h", None)),
+            ]
+            for name, getter in candidates:
+                res = getter(self.model)
+                if isinstance(res, (nn.ModuleList, list)) and len(res) > self.shed_layers:
+                    parts = name.split(".")
+                    parent = self.model
+                    for p in parts[:-1]:
+                        parent = getattr(parent, p)
+                    orig_len = len(res)
+                    keep_len = orig_len - self.shed_layers
+                    kept_indices = torch.linspace(0, orig_len - 1, keep_len).round().long().tolist()
+                    seen = set()
+                    kept_indices = [x for x in kept_indices if not (x in seen or seen.add(x))]
+                    new_layers = nn.ModuleList([res[i] for i in kept_indices])
+                    setattr(parent, parts[-1], new_layers)
+                    shed_done = orig_len - len(new_layers)
+                    break
 
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
@@ -149,7 +178,7 @@ class MambaShedderCompressor(BaseCompressor):
             "pruned_layers": pruned_layers_count,
             "sparsity_target": self.sparsity,
             "structured_24": self.structured_24,
-            "shed_layers": self.shed_layers,
+            "shed_layers": shed_done,
             "method": "mamba_shedder_sensitivity",
         })
         self.stats = stats

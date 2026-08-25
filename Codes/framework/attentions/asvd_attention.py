@@ -23,27 +23,44 @@ class ASVDLinear(nn.Module):
         out_features: int,
         rank: int,
         bias: bool = True,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
 
-        self.U = nn.Parameter(torch.empty(out_features, rank))
-        self.S = nn.Parameter(torch.empty(rank))
-        self.V = nn.Parameter(torch.empty(rank, in_features))
+        factory_kwargs = {"dtype": dtype, "device": device}
+        self.U = nn.Parameter(torch.empty(out_features, rank, **factory_kwargs))
+        self.S = nn.Parameter(torch.empty(rank, **factory_kwargs))
+        self.V = nn.Parameter(torch.empty(rank, in_features, **factory_kwargs))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        nn.init.orthogonal_(self.U)
-        nn.init.ones_(self.S)
-        nn.init.orthogonal_(self.V)
-        if self.bias is not None:
-            nn.init.zeros_(self.bias)
+        with torch.no_grad():
+            if self.U.dtype in (torch.float16, torch.bfloat16):
+                u_fp32 = torch.empty_like(self.U, dtype=torch.float32, device="cpu")
+                nn.init.orthogonal_(u_fp32)
+                self.U.copy_(u_fp32.to(dtype=self.U.dtype, device=self.U.device))
+            else:
+                nn.init.orthogonal_(self.U)
+
+            nn.init.ones_(self.S)
+
+            if self.V.dtype in (torch.float16, torch.bfloat16):
+                v_fp32 = torch.empty_like(self.V, dtype=torch.float32, device="cpu")
+                nn.init.orthogonal_(v_fp32)
+                self.V.copy_(v_fp32.to(dtype=self.V.dtype, device=self.V.device))
+            else:
+                nn.init.orthogonal_(self.V)
+
+            if self.bias is not None:
+                nn.init.zeros_(self.bias)
 
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor, S: Optional[torch.Tensor] = None) -> None:
         with torch.no_grad():

@@ -621,6 +621,8 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
 # Register under both canonical and alias names
 @COMPRESSOR_REGISTRY.register("dynamic_entropy_svd")
+@COMPRESSOR_REGISTRY.register("dynamic_rank")
+@COMPRESSOR_REGISTRY.register("dynamic_entropy")
 class DynamicEntropySVDCompressorRegistered(DynamicEntropySVDCompressor):
     pass
 
