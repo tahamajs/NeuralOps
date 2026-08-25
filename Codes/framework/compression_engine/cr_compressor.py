@@ -90,31 +90,43 @@ class CRLinear(nn.Module):
         )
 
         W_float = W.float()
-        decomposed = False
 
-        # Attempt scipy interpolative decomposition if available
+        # Step 1: Select skeleton columns via QRCP (QR with Column Pivoting) or SVD/energy fallback
+        col_idx = None
         try:
-            from scipy.linalg import interpolative
+            import scipy.linalg
             W_np = W_float.cpu().numpy()
-            idx, proj = interpolative.interp_decomp(W_np, r)
-            # Reconstruct full P from interpolative format
-            P_full_np = interpolative.reconstruct_interp_matrix(idx, proj)  # (r, in_f)
-            C_np = W_np[:, idx[:r]]  # (out_f, r)
-
-            C_data = torch.tensor(C_np, dtype=torch.float32, device=W.device)
-            P_data = torch.tensor(P_full_np, dtype=torch.float32, device=W.device)
-            decomposed = True
+            _, _, piv = scipy.linalg.qr(W_np, mode="economic", pivoting=True)
+            col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device)
         except Exception:
-            decomposed = False
+            pass
 
-        if not decomposed:
-            # PyTorch Column-Pivoted / SVD Fallback for ID
-            # Select top-r energy columns as C, then P = C^+ @ W
+        if col_idx is None:
+            # Fallback: select top-r energy columns
             col_norms = (W_float ** 2).sum(dim=0)
-            _, top_cols = torch.topk(col_norms, k=r, largest=True, sorted=True)
-            C_data = W_float[:, top_cols]  # (out_f, r)
-            C_pinv = torch.linalg.pinv(C_data)  # (r, out_f)
-            P_data = torch.matmul(C_pinv, W_float)  # (r, in_f)
+            _, col_idx = torch.topk(col_norms, k=r, largest=True, sorted=True)
+
+        C_data = W_float[:, col_idx]  # (out_f, r)
+
+        # Step 2: Tikhonov regularized pseudo-inverse: (C^T C + eps * I)^{-1} C^T with rcond=1e-4
+        # Prevents ill-conditioning and FP16 overflow
+        CtC = torch.matmul(C_data.T, C_data)  # (r, r)
+        diag_mean = torch.trace(CtC) / max(1, r)
+        eps = max(1e-4 * diag_mean.item(), 1e-4)
+        reg_eye = eps * torch.eye(r, device=C_data.device, dtype=C_data.dtype)
+        try:
+            C_pinv = torch.linalg.solve(CtC + reg_eye, C_data.T)  # (r, out_f)
+        except Exception:
+            C_pinv = torch.linalg.pinv(C_data, rcond=1e-4)
+
+        P_data = torch.matmul(C_pinv, W_float)  # (r, in_f)
+
+        # Step 3: Symmetrically normalize factor magnitudes to ensure FP16 stability
+        norm_C = torch.norm(C_data, p="fro").clamp_min(1e-8)
+        norm_P = torch.norm(P_data, p="fro").clamp_min(1e-8)
+        scale = torch.sqrt(norm_C / norm_P)
+        C_data = C_data / scale
+        P_data = P_data * scale
 
         cr_layer.C.data.copy_(C_data.to(dtype=W.dtype))
         cr_layer.P.data.copy_(P_data.to(dtype=W.dtype))
@@ -160,10 +172,15 @@ class CRCompressor(BaseCompressor):
         self.compressed_layers = []
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and not isinstance(module, CRLinear):
+                name_lower = name.lower()
+                if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+                    continue
                 if self.target_layers and not any(t in name for t in self.target_layers):
                     continue
 
                 max_rank = min(module.in_features, module.out_features)
+                if max_rank < 16:
+                    continue
                 r = min(self.rank, max_rank)
                 if r >= max_rank and max_rank > 4:
                     continue

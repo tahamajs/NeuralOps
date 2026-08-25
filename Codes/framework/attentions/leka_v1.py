@@ -57,6 +57,7 @@ class LEKAV1Attention(BaseAttention):
         self.key: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
         self.value: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, hidden_size)
+        self.norm: nn.LayerNorm = nn.LayerNorm(self.head_dim)
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         # Random projection matrix (one per head, shared)
@@ -73,18 +74,18 @@ class LEKAV1Attention(BaseAttention):
 
     def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
         r"""
-        Computes random Fourier feature embedding $\phi(x)$.
+        Computes positive kernel feature embedding $\phi(x)$ with pre-projection LayerNorm.
 
         Args:
             x: Tensor of shape `[B, H, N, d_k]`.
 
         Returns:
-            Feature map tensor `[B, H, N, 2F]`.
+            Feature map tensor `[B, H, N, F]`.
         """
-        proj = self.proj.to(x.device)  # (H, D, F)
-        x_proj = torch.einsum("bhnd,hdf->bhnf", x, proj)  # (B, H, N, F)
-        phi = torch.cat([torch.cos(x_proj), torch.sin(x_proj)], dim=-1)  # (B, H, N, 2F)
-        phi = phi / math.sqrt(self.feature_dim)
+        x_norm = self.norm(x)
+        proj = self.proj.to(dtype=x.dtype, device=x.device)  # (H, D, F)
+        x_proj = torch.einsum("bhnd,hdf->bhnf", x_norm, proj)  # (B, H, N, F)
+        phi = (F.elu(x_proj) + 1.0) / math.sqrt(self.feature_dim)
         return phi
 
     @staticmethod
@@ -149,27 +150,32 @@ class LEKAV1Attention(BaseAttention):
         K = self.transpose_for_scores(self.key(hidden_states))
         V = self.transpose_for_scores(self.value(hidden_states))
 
-        Q_features = self.kernel_feature_map(Q)  # (B, H, N, 2F)
+        Q_features = self.kernel_feature_map(Q)  # (B, H, N, F)
         K_features = self.kernel_feature_map(K)
 
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask = attention_mask[:, None, :, None].to(hidden_states.dtype)
+            elif attention_mask.dim() == 4:
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(1).unsqueeze(-1).to(hidden_states.dtype)
+            else:
+                mask = attention_mask.to(hidden_states.dtype)
+            K_features = K_features * mask
+            V = V * mask
+        else:
+            mask = None
+
         # Linear attention
-        KV = torch.einsum("bhnf,bhnd->bhfd", K_features, V)  # (B, H, 2F, D)
-        K_sum = K_features.sum(dim=2, keepdim=True)  # (B, H, 1, 2F)
+        KV = torch.einsum("bhnf,bhnd->bhfd", K_features, V)  # (B, H, F, D)
+        K_sum = K_features.sum(dim=2, keepdim=True)  # (B, H, 1, F)
 
         num = torch.einsum("bhnf,bhfd->bhnd", Q_features, KV)
         denom = (
             torch.einsum("bhnf,bhf->bhn", Q_features, K_sum.squeeze(2)).unsqueeze(-1)
-            + 1e-5
-        )
+        ).clamp(min=1e-5)
         context = num / denom
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask[:, None, :, None].to(context.dtype)
-            elif attention_mask.dim() == 4:
-                mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(1).unsqueeze(-1).to(context.dtype)
-            else:
-                mask = attention_mask
+        if mask is not None:
             context = context * mask
 
         context = (

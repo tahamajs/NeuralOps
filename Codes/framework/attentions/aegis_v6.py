@@ -30,7 +30,7 @@ class AegisConfigV3:
     dropout: float = 0.1
     use_query_gate: bool = True
     use_input_gate: bool = True
-    use_pre_norm: bool = True
+    use_pre_norm: bool = False
     long_context_threshold: int = 2048
     max_global_tokens: int = 1024
     kernel_method: str = "orthogonal"
@@ -326,7 +326,7 @@ class AegisAttentionV3(BaseAttention):
         KV = torch.matmul(K_feat.transpose(-2, -1), V)
         Z = K_feat.sum(dim=-2, keepdim=True)
         num = torch.matmul(Q_feat, KV)
-        den = torch.matmul(Q_feat, Z.transpose(-2, -1)) + 1e-5
+        den = torch.matmul(Q_feat, Z.transpose(-2, -1)).clamp(min=1e-5)
         out = num / den
         out = out * pad.transpose(-2, -1)
         return out
@@ -354,7 +354,7 @@ class AegisAttentionV3(BaseAttention):
         global_out = self._global_linear_attention(Q, K, V, pad_mask_binary, q_gate, in_gate)
 
         fuse_gate = self.fusion(hidden_states, local_out, global_out)
-        fused = (1.0 - fuse_gate) * local_out + fuse_gate * global_out
+        fused = fuse_gate * local_out + (1.0 - fuse_gate) * global_out
         fused = fused.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         out = self.out_proj(fused)
         return out, None

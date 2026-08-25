@@ -80,7 +80,9 @@ Kronecker-TT-LoRA Hybrid Compression Engine Adapter.
 
 Implements a hybrid parameter-efficient fine-tuning (PEFT) and compression mechanism
 by decomposing weight updates into a Kronecker product multiplied element-wise by a
-Tensor-Train (TT) core tensor with dynamic singular value entropy adaptation.
+Tensor-Train (TT) core tensor with dynamic singular value entropy adaptation,
+orthogonal initialization with spectral normalization, symmetric LoRA residual bypass,
+and shape padding.
 """
 
 from __future__ import annotations
@@ -96,11 +98,28 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 
+def _init_orthogonal_spectral(shape: Tuple[int, ...], shape_2d: Tuple[int, int], device: torch.device, dtype: torch.dtype) -> torch.Tensor:
+    """Initialize tensor with orthogonal matrix and spectral normalization."""
+    flat = torch.empty(shape_2d, dtype=torch.float32, device="cpu")
+    if shape_2d[0] >= shape_2d[1]:
+        nn.init.orthogonal_(flat)
+    else:
+        nn.init.orthogonal_(flat.T)
+        flat = flat.T.contiguous()
+    # Spectral normalization: divide by maximum singular value
+    s_vals = torch.linalg.svdvals(flat)
+    sigma_max = s_vals[0].item() if len(s_vals) > 0 else 1.0
+    if sigma_max > 1e-8:
+        flat = flat / sigma_max
+    return flat.view(shape).to(device=device, dtype=dtype)
+
+
 class KroneckerTTLoRALayer(nn.Module):
     """
-    Kronecker-TT-LoRA Hybrid Compression Layer.
-    Combines Kronecker product structure (A1 ⊗ A2) with a 3-core Tensor-Train tensor T(G1, G2, G3):
-    ΔW = γ * ((A1 ⊗ A2) ⊙ T)
+    Kronecker-TT-LoRA Hybrid Compression Layer with Symmetric LoRA Bypass and Shape Padding.
+    Combines Kronecker product structure (A1 ⊗ A2) with a 3-core Tensor-Train tensor T(G1, G2, G3)
+    plus a direct symmetric LoRA residual bypass:
+    ΔW = γ * ((A1 ⊗ A2) ⊙ T)[:out_features, :in_features] + (alpha / r) * (B_lora @ A_lora)
     """
 
     def __init__(
@@ -113,6 +132,8 @@ class KroneckerTTLoRALayer(nn.Module):
         tt_shapes: Tuple[int, int, int],
         tt_ranks: Tuple[int, int, int, int] = (1, 4, 4, 1),
         gamma: float = 1.0,
+        lora_r: int = 4,
+        lora_alpha: float = 8.0,
         r_min: int = 2,
         r_max: int = 32,
         entropy_threshold: float = 0.75,
@@ -124,14 +145,18 @@ class KroneckerTTLoRALayer(nn.Module):
         self.in_features = base_layer.in_features
         self.out_features = base_layer.out_features
 
-        if m1 * m2 != self.out_features:
-            raise ValueError(f"m1 * m2 ({m1 * m2}) must equal out_features ({self.out_features})")
-        if n1 * n2 != self.in_features:
-            raise ValueError(f"n1 * n2 ({n1 * n2}) must equal in_features ({self.in_features})")
-        if tt_shapes[0] * tt_shapes[1] * tt_shapes[2] != self.out_features * self.in_features:
+        self.padded_out_features = m1 * m2
+        self.padded_in_features = n1 * n2
+        if self.padded_out_features < self.out_features:
+            raise ValueError(f"m1 * m2 ({self.padded_out_features}) must be >= out_features ({self.out_features})")
+        if self.padded_in_features < self.in_features:
+            raise ValueError(f"n1 * n2 ({self.padded_in_features}) must be >= in_features ({self.in_features})")
+
+        tt_prod = tt_shapes[0] * tt_shapes[1] * tt_shapes[2]
+        if tt_prod != self.padded_out_features * self.padded_in_features:
             raise ValueError(
-                f"Product of tt_shapes ({tt_shapes[0]*tt_shapes[1]*tt_shapes[2]}) must equal "
-                f"out_features * in_features ({self.out_features * self.in_features})"
+                f"Product of tt_shapes ({tt_prod}) must equal "
+                f"padded_out_features * padded_in_features ({self.padded_out_features * self.padded_in_features})"
             )
         if tt_ranks[0] != 1 or tt_ranks[3] != 1:
             raise ValueError("Boundary TT ranks (r0 and r3) must be 1")
@@ -141,6 +166,9 @@ class KroneckerTTLoRALayer(nn.Module):
         self.tt_shapes = tt_shapes
         self.tt_ranks = list(tt_ranks)
         self.gamma = gamma
+        self.lora_r = max(1, int(lora_r))
+        self.lora_alpha = float(lora_alpha)
+        self.lora_scaling = self.lora_alpha / float(self.lora_r)
         self.r_min = r_min
         self.r_max = r_max
         self.entropy_threshold = entropy_threshold
@@ -148,44 +176,71 @@ class KroneckerTTLoRALayer(nn.Module):
         device = base_layer.weight.device
         dtype = base_layer.weight.dtype
 
-        # Kronecker factor matrices
-        self.A1 = nn.Parameter(
-            torch.randn(m1, n1, device=device, dtype=dtype) * math.sqrt(1.0 / max(1, n1))
-        )
+        # Kronecker factor matrices with orthogonal init & spectral normalization
+        a1_tensor = _init_orthogonal_spectral((m1, n1), (m1, n1), device, dtype)
+        self.A1 = nn.Parameter(a1_tensor)
         self.A2 = nn.Parameter(torch.zeros(m2, n2, device=device, dtype=dtype))
 
-        # Tensor-Train cores
-        self.G1 = nn.Parameter(
-            torch.randn(self.tt_ranks[0], tt_shapes[0], self.tt_ranks[1], device=device, dtype=dtype)
-            * math.sqrt(1.0 / max(1, tt_shapes[0]))
+        # Tensor-Train cores with orthogonal init & spectral normalization
+        # G1: (1, tt_shapes[0], r1)
+        g1_tensor = _init_orthogonal_spectral(
+            (self.tt_ranks[0], tt_shapes[0], self.tt_ranks[1]),
+            (tt_shapes[0], self.tt_ranks[1]),
+            device,
+            dtype,
         )
-        self.G2 = nn.Parameter(
-            torch.randn(self.tt_ranks[1], tt_shapes[1], self.tt_ranks[2], device=device, dtype=dtype)
-            * math.sqrt(1.0 / max(1, tt_shapes[1]))
+        self.G1 = nn.Parameter(g1_tensor)
+
+        # G2: (r1, tt_shapes[1], r2)
+        g2_tensor = _init_orthogonal_spectral(
+            (self.tt_ranks[1], tt_shapes[1], self.tt_ranks[2]),
+            (self.tt_ranks[1] * tt_shapes[1], self.tt_ranks[2]),
+            device,
+            dtype,
         )
-        self.G3 = nn.Parameter(
-            torch.randn(self.tt_ranks[2], tt_shapes[2], self.tt_ranks[3], device=device, dtype=dtype)
-            * math.sqrt(1.0 / max(1, tt_shapes[2]))
+        self.G2 = nn.Parameter(g2_tensor)
+
+        # G3: (r2, tt_shapes[2], 1)
+        g3_tensor = _init_orthogonal_spectral(
+            (self.tt_ranks[2], tt_shapes[2], self.tt_ranks[3]),
+            (self.tt_ranks[2], tt_shapes[2]),
+            device,
+            dtype,
         )
+        self.G3 = nn.Parameter(g3_tensor)
+
+        # Symmetric LoRA residual bypass
+        self.lora_A = nn.Parameter(
+            _init_orthogonal_spectral(
+                (self.lora_r, self.in_features),
+                (self.lora_r, self.in_features),
+                device,
+                dtype,
+            )
+        )
+        self.lora_B = nn.Parameter(torch.zeros(self.out_features, self.lora_r, device=device, dtype=dtype))
 
     @staticmethod
     def factorize_dimensions(in_features: int, out_features: int) -> Dict[str, Any]:
-        """Find balanced factors for Kronecker and TT dimensions."""
-        def factor_pair(n: int) -> Tuple[int, int]:
-            for i in range(int(math.isqrt(n)), 0, -1):
-                if n % i == 0:
-                    return i, n // i
-            return 1, n
+        """Find balanced factors with shape padding for Kronecker and TT dimensions."""
+        def find_factor_pair(n: int) -> Tuple[int, int, int]:
+            curr = n
+            while True:
+                for i in range(int(math.isqrt(curr)), 0, -1):
+                    if curr % i == 0:
+                        return i, curr // i, curr
+                curr += 1
 
-        m1, m2 = factor_pair(out_features)
-        n1, n2 = factor_pair(in_features)
-        # Fix inner dimension factoring (d_in = d1 x d2)
-        tt_shapes = (out_features, n1, n2)
+        m1, m2, padded_out = find_factor_pair(out_features)
+        n1, n2, padded_in = find_factor_pair(in_features)
+        tt_shapes = (padded_out, n1, n2)
         return {
             "m1": m1,
             "n1": n1,
             "m2": m2,
             "n2": n2,
+            "padded_out_features": padded_out,
+            "padded_in_features": padded_in,
             "tt_shapes": tt_shapes,
         }
 
@@ -200,9 +255,11 @@ class KroneckerTTLoRALayer(nn.Module):
         tt_shapes: Optional[Tuple[int, int, int]] = None,
         tt_ranks: Tuple[int, int, int, int] = (1, 4, 4, 1),
         gamma: float = 1.0,
+        lora_r: int = 4,
+        lora_alpha: float = 8.0,
         **kwargs: Any,
     ) -> "KroneckerTTLoRALayer":
-        """Create KroneckerTTLoRALayer directly from linear layer with auto-factorization."""
+        """Create KroneckerTTLoRALayer directly from linear layer with auto-factorization and shape padding."""
         dims = cls.factorize_dimensions(base_layer.in_features, base_layer.out_features)
         return cls(
             base_layer=base_layer,
@@ -213,6 +270,8 @@ class KroneckerTTLoRALayer(nn.Module):
             tt_shapes=tt_shapes or dims["tt_shapes"],
             tt_ranks=tt_ranks,
             gamma=gamma,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
             **kwargs,
         )
 
@@ -228,21 +287,24 @@ class KroneckerTTLoRALayer(nn.Module):
         g3 = self.G3.view(self.tt_ranks[2], self.tt_shapes[2])
         # core12 @ G3 -> (d1 * d2, d3) -> (d1 * d2 * d3,)
         tt_tensor = torch.matmul(core12, g3)
-        return tt_tensor.view(self.out_features, self.in_features)
+        return tt_tensor.view(self.padded_out_features, self.padded_in_features)
 
     def get_delta_w(self) -> torch.Tensor:
-        """Compute the final adapter weight delta W = gamma * ((A1 ⊗ A2) ⊙ TT_tensor)."""
+        """Compute final adapter weight delta W = gamma * ((A1 ⊗ A2) ⊙ TT_tensor) sliced to original shape."""
         kron = torch.kron(self.A1, self.A2)
         tt_tensor = self.get_tt_tensor()
-        delta_w = self.gamma * (kron * tt_tensor)
-        return delta_w
+        delta_w_padded = self.gamma * (kron * tt_tensor)
+        # Slicing shape padding to (out_features, in_features)
+        return delta_w_padded[: self.out_features, : self.in_features]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass with base weight + delta W."""
+        """Forward pass with base weight + Kronecker-TT delta + symmetric LoRA residual bypass."""
         base_out = self.base_layer(x)
         delta_w = self.get_delta_w()
-        delta_out = F.linear(x, delta_w)
-        return base_out + delta_out
+        kron_tt_out = F.linear(x, delta_w)
+        # Symmetric LoRA residual bypass: (x @ lora_A^T) @ lora_B^T * scaling
+        lora_bypass = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return base_out + kron_tt_out + lora_bypass
 
     def adapt_tt_ranks(self, delta_r: int = 1) -> None:
         """
@@ -273,16 +335,27 @@ class KroneckerTTLoRALayer(nn.Module):
                     self._resize_cores(new_r1, new_r2)
 
     def _resize_cores(self, new_r1: int, new_r2: int) -> None:
-        """Resize TT cores while preserving existing parameter values."""
+        """Resize TT cores while preserving existing parameter values and orthogonal normalization."""
         old_r1, old_r2 = self.tt_ranks[1], self.tt_ranks[2]
 
-        new_G1 = torch.zeros(1, self.tt_shapes[0], new_r1, device=self.G1.device, dtype=self.G1.dtype)
-        new_G2 = torch.zeros(new_r1, self.tt_shapes[1], new_r2, device=self.G2.device, dtype=self.G2.dtype)
-        new_G3 = torch.zeros(new_r2, self.tt_shapes[2], 1, device=self.G3.device, dtype=self.G3.dtype)
-
-        new_G1.normal_(0, math.sqrt(1.0 / max(1, self.tt_shapes[0])))
-        new_G2.normal_(0, math.sqrt(1.0 / max(1, self.tt_shapes[1])))
-        new_G3.normal_(0, math.sqrt(1.0 / max(1, self.tt_shapes[2])))
+        new_G1 = _init_orthogonal_spectral(
+            (1, self.tt_shapes[0], new_r1),
+            (self.tt_shapes[0], new_r1),
+            self.G1.device,
+            self.G1.dtype,
+        )
+        new_G2 = _init_orthogonal_spectral(
+            (new_r1, self.tt_shapes[1], new_r2),
+            (new_r1 * self.tt_shapes[1], new_r2),
+            self.G2.device,
+            self.G2.dtype,
+        )
+        new_G3 = _init_orthogonal_spectral(
+            (new_r2, self.tt_shapes[2], 1),
+            (new_r2, self.tt_shapes[2]),
+            self.G3.device,
+            self.G3.dtype,
+        )
 
         min_r1 = min(old_r1, new_r1)
         min_r2 = min(old_r2, new_r2)
@@ -309,6 +382,8 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         model: Optional[nn.Module] = None,
         rank: int = 8,
         gamma: float = 1.0,
+        lora_r: int = 4,
+        lora_alpha: float = 8.0,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
@@ -317,6 +392,8 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         )
         self.rank = rank or getattr(cfg, "tt_rank", 8) or getattr(cfg, "rank", 8)
         self.gamma = gamma or getattr(cfg, "gamma", 1.0)
+        self.lora_r = lora_r or getattr(cfg, "lora_r", 4)
+        self.lora_alpha = lora_alpha or getattr(cfg, "lora_alpha", 8.0)
         self.cfg = cfg
         self.compressed_layers: List[str] = []
 
@@ -339,6 +416,8 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats["compressed_layer_count"] = len(self.compressed_layers)
+        stats["lora_r"] = self.lora_r
+        stats["lora_alpha"] = self.lora_alpha
         return self.model, stats
 
     def compress_linear(self, linear_layer: nn.Linear) -> KroneckerTTLoRALayer:
@@ -349,6 +428,8 @@ class KroneckerTTLoRACompressor(BaseCompressor):
             base_layer=linear_layer,
             tt_ranks=(1, r_inner, r_inner, 1),
             gamma=self.gamma,
+            lora_r=self.lora_r,
+            lora_alpha=self.lora_alpha,
         )
 
     def _get_parent(self, full_name: str) -> Optional[nn.Module]:
@@ -371,7 +452,11 @@ def kronecker_tt_lora_factory(
     """Factory function for Kronecker-TT-LoRA compressor."""
     rank = rank or getattr(comp_config, "tt_rank", 8) or getattr(comp_config, "rank", 8)
     gamma = getattr(comp_config, "gamma", 1.0)
-    compressor = KroneckerTTLoRACompressor(model, rank=rank, gamma=gamma, cfg=comp_config, **kwargs)
+    lora_r = getattr(comp_config, "lora_r", kwargs.pop("lora_r", 4))
+    lora_alpha = getattr(comp_config, "lora_alpha", kwargs.pop("lora_alpha", 8.0))
+    compressor = KroneckerTTLoRACompressor(
+        model, rank=rank, gamma=gamma, lora_r=lora_r, lora_alpha=lora_alpha, cfg=comp_config, **kwargs
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
 ```
@@ -397,21 +482,27 @@ Adaptive Ranks SVD Compressor: dynamic rank selection per layer based on singula
 
 Dynamic cumulative singular value energy thresholding:
     $$\\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)$$
-with symmetrical $\\sqrt{\\Sigma}$ singular value distribution:
-    $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = \\sqrt{\\Sigma_r} V^\\top_{:r, :}$$
+with minimum rank floor:
+    $$r_{\\min} = \\max(16, \\lfloor 0.15 \\cdot \\min(d_{in}, d_{out}) \\rfloor)$$
+activation covariance whitening:
+    $$M = W \\cdot \\operatorname{Cov}(X)^{1/2}$$
+and symmetrical $\\sqrt{\\Sigma}$ singular value distribution:
+    $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = (\\sqrt{\\Sigma_r} V^\\top_{:r, :}) \\cdot \\operatorname{Cov}(X)^{-1/2}$$
 Registered as 'adaptive_ranks' and 'adaptive_svd'.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+import math
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 
 from framework.attentions.compressed_attention import CompressedAttentionLayer
 from framework.compression_engine.aa_svd_compressor import SVDLinear
+from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -420,14 +511,16 @@ logger = logging.getLogger(__name__)
 
 
 @COMPRESSOR_REGISTRY.register("adaptive_ranks")
+@COMPRESSOR_REGISTRY.register("adaptive_svd")
 class AdaptiveRanksCompressor(BaseCompressor):
     r"""
     Adaptive Ranks SVD Compressor.
 
     Dynamically determines ranks per layer according to cumulative singular value energy threshold:
         $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)$$
-    and symmetrically distributes singular values:
-        $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = \sqrt{\Sigma_r} V^\top_{:r, :}$$
+    with minimum rank floor $r_{\min} = \max(16, \lfloor 0.15 \cdot \min(d_{in}, d_{out}) \rfloor)$,
+    activation covariance whitening, and symmetrically distributed singular values:
+        $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = (\sqrt{\Sigma_r} V^\top_{:r, :}) \cdot \operatorname{Cov}(X)^{-1/2}$$
     """
 
     def __init__(
@@ -435,7 +528,11 @@ class AdaptiveRanksCompressor(BaseCompressor):
         model: nn.Module,
         energy_threshold: float = 0.92,
         min_rank: int = 16,
-        target_modules: Optional[list[str]] = None,
+        target_modules: Optional[List[str]] = None,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="adaptive_ranks", **kwargs)
@@ -450,6 +547,14 @@ class AdaptiveRanksCompressor(BaseCompressor):
         self.energy_threshold = float(energy_threshold)
         self.min_rank = int(min_rank)
         self.target_modules = target_modules
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else next(model.parameters(), torch.tensor(0.0)).device
+        )
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, (SVDLinear, CompressedAttentionLayer)):
@@ -460,36 +565,145 @@ class AdaptiveRanksCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    def _compute_energy_rank(self, S: torch.Tensor, max_rank: int) -> int:
+    def _compute_energy_rank(self, S: torch.Tensor, max_rank: int, min_rank_floor: Optional[int] = None) -> int:
         r"""
         Find smallest rank $r$ satisfying cumulative singular energy ratio $\ge$ threshold:
         $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)$$
+        constrained by minimum rank floor.
         """
+        r_floor = min_rank_floor if min_rank_floor is not None else self.min_rank
+        r_floor = max(1, min(r_floor, max_rank))
         s_squared = S ** 2
         total_energy = s_squared.sum()
         if total_energy <= 1e-12:
-            return max(1, min(self.min_rank, max_rank))
+            return r_floor
 
         cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
         idx = torch.where(cum_energy >= self.energy_threshold)[0]
         r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
-        return max(1, min(max(r, self.min_rank), max_rank))
+        return max(1, min(max(r, r_floor), max_rank))
 
-    def compress_linear(self, layer: nn.Linear) -> SVDLinear:
-        """Decompose a single linear layer via energy-thresholded SVD."""
+    def _collect_activation_covariances(self) -> Dict[str, torch.Tensor]:
+        """Collect empirical input activation covariances across target nn.Linear modules."""
+        self.model.eval()
+        running_cov: Dict[str, torch.Tensor] = {}
+        sample_counts: Dict[str, int] = {}
+        hooks = []
+
+        def make_hook(layer_name: str) -> Any:
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
+                if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
+                    x = inp[0].detach().float()
+                    if x.ndim >= 2:
+                        flat_x = x.reshape(-1, x.shape[-1])
+                    else:
+                        flat_x = x.unsqueeze(0)
+                    n_samples = flat_x.shape[0]
+                    if n_samples > 0:
+                        batch_cov = torch.matmul(flat_x.T, flat_x).cpu()
+                        if layer_name not in running_cov:
+                            running_cov[layer_name] = batch_cov
+                            sample_counts[layer_name] = n_samples
+                        else:
+                            running_cov[layer_name] += batch_cov
+                            sample_counts[layer_name] += n_samples
+
+            return hook
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear) and self._is_target_module(name, module):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=self.target_device,
+        )
+
+        with torch.no_grad():
+            try:
+                if isinstance(calib_inputs, dict):
+                    self.model(**calib_inputs)
+                elif isinstance(calib_inputs, torch.Tensor):
+                    self.model(calib_inputs)
+                elif isinstance(calib_inputs, (list, tuple)):
+                    self.model(*calib_inputs)
+            except Exception as e:
+                logger.debug("AdaptiveRanks covariance collection forward pass exception: %s", e)
+
+        for h in hooks:
+            h.remove()
+
+        covariances: Dict[str, torch.Tensor] = {}
+        for name, cov_sum in running_cov.items():
+            n = float(max(sample_counts.get(name, 1), 1))
+            covariances[name] = cov_sum / n
+
+        return covariances
+
+    def compress_linear(self, layer: nn.Linear, cov: Optional[torch.Tensor] = None) -> SVDLinear:
+        """Decompose a single linear layer via energy-thresholded SVD with covariance whitening."""
         out_f = layer.out_features
         in_f = layer.in_features
-        max_r = min(out_f, in_f)
+        min_dim = min(out_f, in_f)
         device = layer.weight.device
         dtype = layer.weight.dtype
 
+        # Enforce minimum rank floor: r_min = max(16, floor(0.15 * min(d_in, d_out)))
+        r_floor = max(self.min_rank, 16, int(0.15 * min_dim))
+        r_floor = max(1, min(r_floor, min_dim))
+
         W = layer.weight.data.float()
+
+        if cov is not None and cov.shape == (in_f, in_f):
+            try:
+                cov_dev = cov.to(device=device, dtype=torch.float32)
+                diag_mean = torch.diagonal(cov_dev).mean().item()
+                if not math.isfinite(diag_mean) or diag_mean <= 0.0:
+                    diag_mean = 1.0
+                lambda_reg = max(1e-4 * diag_mean, 1e-6)
+                cov_reg = cov_dev + lambda_reg * torch.eye(in_f, device=device)
+
+                eigvals, eigvecs = torch.linalg.eigh(cov_reg)
+                eigvals_clamped = torch.clamp(eigvals, min=1e-6)
+
+                # Cov(X)^{1/2} and Cov(X)^{-1/2}
+                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+
+                # Whiten weights: M = W * Cov(X)^{1/2}
+                M = torch.matmul(W, cov_sqrt)
+                U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+
+                r = self._compute_energy_rank(S, min_dim, min_rank_floor=r_floor)
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+
+                # Symmetric singular value distribution: U_r = U * sqrt(S), V_r = (sqrt(S) * V^T) * Cov(X)^{-1/2}
+                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
+                V_r = V_r.to(dtype=dtype, device=device)
+
+                svd_layer = SVDLinear(
+                    in_features=in_f,
+                    out_features=out_f,
+                    rank=r,
+                    bias=layer.bias is not None,
+                    dtype=dtype,
+                    device=device,
+                )
+                svd_layer.set_low_rank_factors(U_r, V_r)
+                if layer.bias is not None:
+                    svd_layer.bias.data.copy_(layer.bias.data)
+
+                return svd_layer
+            except Exception as e:
+                logger.debug("Covariance whitening exception on linear layer: %s", e)
+
+        # Fallback to direct SVD with symmetric distribution and rank floor
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-
-        r = self._compute_energy_rank(S, max_r)
-
-        # Symmetrical square-root singular value distribution:
-        # U_r = U[:, :r] * sqrt(Sigma_r), V_r = sqrt(Sigma_r) * V_r^T
+        r = self._compute_energy_rank(S, min_dim, min_rank_floor=r_floor)
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
@@ -509,7 +723,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         return svd_layer
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress target layers."""
+        """Compress target layers with activation covariance whitening."""
         target_layers = [
             (name, mod)
             for name, mod in self.model.named_modules()
@@ -520,14 +734,17 @@ class AdaptiveRanksCompressor(BaseCompressor):
             logger.warning("AdaptiveRanksCompressor: No compressible layers found.")
             return self.model, self.get_compression_stats()
 
+        covariances = self._collect_activation_covariances()
+
         for name, module in target_layers:
             if isinstance(module, nn.MultiheadAttention):
                 try:
                     embed_dim = module.embed_dim
-                    r = max(1, min(self.min_rank, embed_dim))
+                    r_floor = max(self.min_rank, 16, int(0.15 * embed_dim))
+                    r = max(1, min(r_floor, embed_dim))
                     if hasattr(module, "in_proj_weight") and module.in_proj_weight is not None:
                         _, S, _ = torch.linalg.svd(module.in_proj_weight.data.float(), full_matrices=False)
-                        r = self._compute_energy_rank(S, min(embed_dim, 3 * embed_dim))
+                        r = self._compute_energy_rank(S, min(embed_dim, 3 * embed_dim), min_rank_floor=r_floor)
                     compressed = CompressedAttentionLayer(
                         original_layer=module,
                         rank_qkv=r,
@@ -537,7 +754,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 except Exception as e:
                     logger.warning("Failed to compress attention layer %s: %s", name, e)
             elif isinstance(module, nn.Linear):
-                svd_layer = self.compress_linear(module)
+                cov = covariances.get(name, None)
+                svd_layer = self.compress_linear(module, cov=cov)
                 replace_module(self.model, name, svd_layer)
 
         stats = self.get_compression_stats()
@@ -585,47 +803,319 @@ Replaced in-place weight mutation with factorized `A3Linear` module containing t
 
 #### Complete Verbatim Source Code (`a3_compressor.py`)
 ```python
-"""A3: grouped QK/OV/MLP compression. Registered as 'a3'."""
+"""
+A3 Compressor: Activation-Aware Factorized SVD Compression with Fisher Weighting and LayerNorm Recalibration.
+Registered in COMPRESSOR_REGISTRY as 'a3' and 'a3_compressor'.
 
-from typing import Any, Dict, Tuple
+Mathematical Formulation:
+1. Activation Covariance & Empirical Fisher Information:
+   $$C_X = \\frac{1}{N} X^\\top X, \\quad F = \\mathbb{E}_{x \\sim \\mathcal{D}}[g \\odot g]$$
+2. Subspace Projection & Fisher-Weighted SVD:
+   $$W_{\\text{proj}} = W V_{\\text{act}} V_{\\text{act}}^\\top \\quad \\text{or} \\quad W_{\\text{weighted}} = W \\operatorname{diag}(\\sqrt{F + \\epsilon})$$
+   $$W = U \\Sigma V^\\top \\approx U_r \\Sigma_r V_r^\\top$$
+3. Symmetric Singular Value Allocation:
+   $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = \\sqrt{\\Sigma_r} V_{:r, :}^\\top$$
+4. Structural Module Replacement:
+   $$y = (x V_r^\\top) U_r^\\top + b$$
+5. LayerNorm Recalibration:
+   $$\\gamma \\leftarrow \\gamma \\cdot \\frac{\\sigma_{\\text{target}}}{\\sigma_{\\text{current}}}$$
+"""
 
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional, Tuple, Union
+import logging
+import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.compression_engine.pruning_utils import (
+    get_calibration_tensors,
+    recalibrate_layernorms,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class A3FactorizedLinear(nn.Module):
+    """
+    True Low-Rank Factorized Linear Layer:
+    y = (x @ V.T) @ U.T + b
+    Achieves physical parameter reduction from d_in * d_out to r * (d_in + d_out).
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+
+        # Factorized parameters: V (rank, in_features) and U (out_features, rank)
+        self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter("bias", None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        with torch.no_grad():
+            nn.init.orthogonal_(self.V)
+            nn.init.orthogonal_(self.U)
+            if self.bias is not None:
+                nn.init.zeros_(self.bias)
+
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
+        """Sets precomputed low-rank factors."""
+        with torch.no_grad():
+            self.U.copy_(U_factor)
+            self.V.copy_(V_factor)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Two-stage linear transformation: (..., in_features) -> (..., rank) -> (..., out_features)
+        latent = F.linear(x, self.V)
+        out = F.linear(latent, self.U)
+        if self.bias is not None:
+            out = out + self.bias
+        return out
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear,
+        rank: int,
+        U_factor: Optional[torch.Tensor] = None,
+        V_factor: Optional[torch.Tensor] = None,
+    ) -> A3FactorizedLinear:
+        layer = cls(
+            in_features=linear.in_features,
+            out_features=linear.out_features,
+            rank=rank,
+            bias=linear.bias is not None,
+            dtype=linear.weight.dtype,
+            device=linear.weight.device,
+        )
+        if U_factor is not None and V_factor is not None:
+            layer.set_low_rank_factors(U_factor, V_factor)
+        if linear.bias is not None:
+            layer.bias.data.copy_(linear.bias.data)
+        return layer
 
 
 class A3Compressor(BaseCompressor):
-    """A3 compression logic (not directly registered)."""
+    """
+    A3 Compressor: Activation-Aware SVD with Fisher weighting and LayerNorm recalibration.
+    """
 
-    def __init__(self, model: nn.Module, rank: int = 64, **kwargs):
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 64,
+        use_fisher: bool = True,
+        recalibrate_ln: bool = True,
+        target_attention_only: bool = False,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="a3", **kwargs)
-        self.rank = rank
+        self.rank = max(1, int(rank))
+        self.use_fisher = use_fisher
+        self.recalibrate_ln = recalibrate_ln
+        self.target_attention_only = target_attention_only
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
+        self.stats: Dict[str, Any] = {}
+
+    def _collect_activations_and_fisher(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        """Collects activation covariance and empirical Fisher information via calibration forward pass."""
+        self.model.eval()
+        activations: Dict[str, List[torch.Tensor]] = {}
+        fisher_info: Dict[str, torch.Tensor] = {}
+        hooks = []
+
+        def make_hook(name: str):
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+                if inp and isinstance(inp[0], torch.Tensor):
+                    x = inp[0].detach()
+                    if name not in activations:
+                        activations[name] = []
+                    activations[name].append(x.cpu())
+            return hook
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=self.target_device,
+        )
+
+        with torch.no_grad():
+            try:
+                if isinstance(calib_inputs, dict):
+                    self.model(**calib_inputs)
+                elif isinstance(calib_inputs, torch.Tensor):
+                    self.model(calib_inputs)
+                elif isinstance(calib_inputs, (list, tuple)):
+                    self.model(*calib_inputs)
+            except Exception as e:
+                logger.debug("A3 calibration forward pass exception: %s", e)
+
+        for h in hooks:
+            h.remove()
+
+        cov_map: Dict[str, torch.Tensor] = {}
+        for name, act_list in activations.items():
+            if act_list:
+                act_concat = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0).float()
+                N, D = act_concat.shape
+                cov = torch.matmul(act_concat.T, act_concat) / max(N, 1)
+                cov_map[name] = cov
+                # Fisher information proxy from activation variance / second moment
+                fisher_info[name] = torch.mean(act_concat.pow(2), dim=0)
+
+        return cov_map, fisher_info
+
+    def compress_linear(
+        self,
+        module: nn.Linear,
+        cov: Optional[torch.Tensor] = None,
+        fisher: Optional[torch.Tensor] = None,
+    ) -> A3FactorizedLinear:
+        """Compresses a single nn.Linear into A3FactorizedLinear using activation/Fisher-weighted SVD."""
+        in_f = module.in_features
+        out_f = module.out_features
+        device = module.weight.device
+        dtype = module.weight.dtype
+        W = module.weight.data.float()
+
+        r = min(self.rank, in_f, out_f)
+
+        if cov is not None and cov.numel() > 0 and cov.shape[0] == in_f:
+            try:
+                # Activation-aware subspace projection
+                _, _, Vh_act = torch.linalg.svd(cov.to(device).float(), full_matrices=False)
+                anchor = Vh_act[:r, :]  # [r, in_f]
+                W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))
+            except Exception:
+                W_proj = W
+        elif self.use_fisher and fisher is not None and fisher.numel() == in_f:
+            f_scale = torch.sqrt(torch.clamp(fisher.to(device).float(), min=1e-8))
+            W_proj = W * f_scale.unsqueeze(0)
+        else:
+            W_proj = W
+
+        # Truncated SVD on projected weight
+        try:
+            U, S, Vt = torch.linalg.svd(W_proj, full_matrices=False)
+        except Exception:
+            U, S, Vt = torch.linalg.svd(W_proj.cpu(), full_matrices=False)
+            U, S, Vt = U.to(device), S.to(device), Vt.to(device)
+
+        # Symmetrical square-root singular value allocation
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+
+        factorized_layer = A3FactorizedLinear.from_linear(module, rank=r, U_factor=U_r, V_factor=V_r)
+        return factorized_layer
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress the target module using this strategy."""
-        for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and (
-                "attention" in name.lower() or "attn" in name.lower()
-            ):
-                W = module.weight.data.float()
-                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                r = min(self.rank, min(W.shape), len(S))
-                if r < len(S):
-                    W_approx = (U[:, :r] * S[:r]) @ Vt[:r, :]
-                    module.weight.data = W_approx.to(dtype=module.weight.dtype)
+        """Executes A3 factorized compression with activation-aware weighting and LayerNorm recalibration."""
+        cov_map, fisher_map = self._collect_activations_and_fisher()
+        factorized_count = 0
+
+        for name, module in list(self.model.named_modules()):
+            if isinstance(module, nn.Linear):
+                is_target = True
+                if self.target_attention_only:
+                    is_target = any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj"])
+                if is_target:
+                    cov = cov_map.get(name, None)
+                    fisher = fisher_map.get(name, None)
+                    factorized_layer = self.compress_linear(module, cov=cov, fisher=fisher)
+                    replace_module(self.model, name, factorized_layer)
+                    factorized_count += 1
+
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+
         self._compressed_params = self._count_params(self.model)
-        return self.model, self.get_compression_stats()
+        stats = self.get_compression_stats()
+        stats.update({
+            "factorized_layers": factorized_count,
+            "rank": self.rank,
+            "use_fisher": self.use_fisher,
+            "recalibrate_ln": self.recalibrate_ln,
+            "method": "a3_activation_aware_factorized_svd",
+        })
+        self.stats = stats
+        return self.model, stats
 
 
-# ✅ Register a factory function, not the class
 @COMPRESSOR_REGISTRY.register("a3")
-def a3_compressor_factory(model: nn.Module, comp_config: Any = None, rank: int = 64, **kwargs: Any) -> nn.Module:
-    """A3 compressor factory."""
-    r = getattr(comp_config, "a3_rank", rank) if comp_config is not None else kwargs.get("rank", rank)
-    compressor = A3Compressor(model, rank=r, **kwargs)
+@COMPRESSOR_REGISTRY.register("a3_compressor")
+def a3_compressor_factory(
+    model: nn.Module,
+    comp_config: Any = None,
+    rank: int = 64,
+    use_fisher: bool = True,
+    recalibrate_ln: bool = True,
+    **kwargs: Any,
+) -> nn.Module:
+    """A3 compressor factory function."""
+    r = getattr(comp_config, "a3_rank", getattr(comp_config, "rank", rank)) if comp_config is not None else kwargs.get("rank", rank)
+    u_fish = getattr(comp_config, "a3_use_fisher", use_fisher) if comp_config is not None else kwargs.get("use_fisher", use_fisher)
+    recal_ln = getattr(comp_config, "a3_recalibrate_ln", recalibrate_ln) if comp_config is not None else kwargs.get("recalibrate_ln", recalibrate_ln)
+    target_attn = getattr(comp_config, "a3_attention_only", kwargs.get("target_attention_only", False))
+
+    compressor = A3Compressor(
+        model,
+        rank=r,
+        use_fisher=u_fish,
+        recalibrate_ln=recal_ln,
+        target_attention_only=target_attn,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+__all__ = ["A3FactorizedLinear", "A3Compressor", "a3_compressor_factory"]
 ```
 
 ---
@@ -645,39 +1135,110 @@ Added Straight-Through Estimator (STE) gradient masks, dynamic $\rho$ penalty sc
 #### Complete Verbatim Source Code (`admm_pruner.py`)
 ```python
 """
-ADMM Pruner: Alternating Direction Method of Multipliers for Structured & Semi-Structured Pruning.
+ADMM Pruner: Alternating Direction Method of Multipliers for Structured & Semi-Structured Pruning with STE & Dynamic Rho.
 Registered in COMPRESSOR_REGISTRY as 'admm_pruner'.
 
 Mathematical Formulation:
 $$\\min_W \\frac{1}{2} \\|W - W_0\\|_F^2 + g(Z) \\quad \\text{s.t.} \\quad W = Z$$
 
-ADMM Updates:
+ADMM Updates with Dynamic Rho Scheduling:
 1. $Z^{(t+1)} = \\Pi_{\\mathcal{S}}(W^{(t)} + U^{(t)})$
-2. $W^{(t+1)} = \\frac{1}{1 + \\rho} \\left( W_0 + \\rho (Z^{(t+1)} - U^{(t)}) \\right)$
+2. $W^{(t+1)} = \\frac{1}{1 + \\rho^{(t)}} \\left( W_0 + \\rho^{(t)} (Z^{(t+1)} - U^{(t)}) \\right)$
 3. $U^{(t+1)} = U^{(t)} + W^{(t+1)} - Z^{(t+1)}$
+4. Primal residual $r^{(t+1)} = \\|W^{(t+1)} - Z^{(t+1)}\\|_F$, Dual residual $s^{(t+1)} = \\rho^{(t)} \\|Z^{(t+1)} - Z^{(t)}\\|_F$
+   $$\\rho^{(t+1)} = \\begin{cases} \\rho^{(t)} \\cdot \\tau_{\\text{incr}} & \\text{if } \\|r^{(t+1)}\\| > \\mu \\|s^{(t+1)}\\| \\\\ \\rho^{(t)} / \\tau_{\\text{decr}} & \\text{if } \\|s^{(t+1)}\\| > \\mu \\|r^{(t+1)}\\| \\\\ \\rho^{(t)} & \\text{otherwise} \\end{cases}$$
+5. Straight-Through Estimator (STE) gradient pass for continuous backpropagation through binary masks.
+6. Post-pruning LayerNorm recalibration to restore activation variance.
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
+import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.pruning_utils import (
     apply_24_structured_mask,
     apply_block_mask,
+    recalibrate_layernorms,
 )
 
 logger = logging.getLogger(__name__)
 
 
+class ADMMSTEPrune(torch.autograd.Function):
+    """
+    Straight-Through Estimator (STE) autograd function for ADMM sparse weights.
+    Forwards masked weights and passes gradients through uninhibited on backward pass.
+    """
+
+    @staticmethod
+    def forward(ctx: Any, weight: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        ctx.save_for_backward(mask)
+        return weight * mask
+
+    @staticmethod
+    def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[torch.Tensor, None]:
+        (mask,) = ctx.saved_tensors
+        # STE allows gradients to flow to all continuous weight coordinates
+        grad_weight = grad_output.clone()
+        return grad_weight, None
+
+
+class ADMMMaskedLinear(nn.Module):
+    """
+    Linear layer maintaining continuous weights and an ADMM-derived binary mask with STE gradient backprop.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight = nn.Parameter(torch.empty(out_features, in_features, dtype=dtype, device=device))
+        self.register_buffer("mask", torch.ones(out_features, in_features, dtype=dtype, device=device))
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter("bias", None)
+
+    @classmethod
+    def from_linear(cls, linear: nn.Linear, mask: torch.Tensor) -> ADMMMaskedLinear:
+        layer = cls(
+            in_features=linear.in_features,
+            out_features=linear.out_features,
+            bias=linear.bias is not None,
+            dtype=linear.weight.dtype,
+            device=linear.weight.device,
+        )
+        layer.weight.data.copy_(linear.weight.data)
+        layer.mask.copy_(mask.to(dtype=linear.weight.dtype, device=linear.weight.device))
+        if linear.bias is not None:
+            layer.bias.data.copy_(linear.bias.data)
+        return layer
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        w_masked = ADMMSTEPrune.apply(self.weight, self.mask)
+        return F.linear(x, w_masked, self.bias)
+
+
 class ADMMPruner(BaseCompressor):
     """
     ADMM Pruner supporting unstructured sparsity, block-wise structured sparsity,
-    and 2:4 semi-structured tensor core acceleration.
+    and 2:4 semi-structured tensor core acceleration with STE gradients and dynamic rho scheduling.
     """
 
     def __init__(
@@ -688,58 +1249,108 @@ class ADMMPruner(BaseCompressor):
         max_iter: int = 6,
         structured_24: bool = True,
         block_size: Tuple[int, int] = (4, 4),
+        dynamic_rho: bool = True,
+        use_ste: bool = True,
+        recalibrate_ln: bool = True,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="admm_pruner", **kwargs)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
-        self.rho = rho
-        self.max_iter = max_iter
+        self.initial_rho = float(rho)
+        self.max_iter = max(1, int(max_iter))
         self.structured_24 = structured_24
         self.block_size = block_size
+        self.dynamic_rho = dynamic_rho
+        self.use_ste = use_ste
+        self.recalibrate_ln = recalibrate_ln
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
         self.stats: Dict[str, Any] = {}
 
-    def _project_sparse(self, tensor: torch.Tensor) -> torch.Tensor:
-        """Projects continuous weights onto sparse constraint set."""
+    def _project_sparse(self, tensor: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Projects continuous weights onto sparse constraint set and returns (pruned_tensor, binary_mask)."""
         if self.structured_24:
-            pruned, _ = apply_24_structured_mask(tensor, saliency=torch.abs(tensor), dim=1)
-            return pruned
+            pruned, mask = apply_24_structured_mask(tensor, saliency=torch.abs(tensor), dim=1)
+            return pruned, mask
         elif self.block_size != (1, 1):
-            pruned, _ = apply_block_mask(tensor, block_size=self.block_size, sparsity=self.sparsity)
-            return pruned
+            pruned, mask = apply_block_mask(tensor, block_size=self.block_size, sparsity=self.sparsity)
+            return pruned, mask
         else:
             flat = tensor.abs().reshape(-1)
             k = max(1, int(flat.numel() * (1.0 - self.sparsity)))
             thr = torch.topk(flat, k, largest=True).values[-1]
             mask = (tensor.abs() >= thr).float()
-            return tensor * mask
+            return tensor * mask, mask
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes ADMM pruning across all Linear modules."""
+        """Executes ADMM pruning with dynamic rho scheduling, STE integration, and LayerNorm recalibration."""
         pruned_layers_count = 0
 
-        for name, module in self.model.named_modules():
+        for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear):
                 W0 = module.weight.data.clone().float()
                 device = W0.device
                 dtype = module.weight.dtype
 
                 W = W0.clone()
-                Z = self._project_sparse(W0)
+                Z, mask = self._project_sparse(W0)
                 U = torch.zeros_like(W0)
 
+                rho = self.initial_rho
+                mu = 10.0
+                tau_incr = 1.5
+                tau_decr = 1.5
+                rho_min, rho_max = 1e-4, 100.0
+
                 for it in range(self.max_iter):
+                    Z_prev = Z.clone()
+
                     # 1. Update Z (Sparse projection)
-                    Z = self._project_sparse(W + U)
+                    Z, mask = self._project_sparse(W + U)
 
                     # 2. Update W
-                    W = (W0 + self.rho * (Z - U)) / (1.0 + self.rho)
+                    W = (W0 + rho * (Z - U)) / (1.0 + rho)
 
                     # 3. Update Dual variable U
                     U = U + W - Z
 
-                # Final assignment to projection Z
-                module.weight.data = Z.to(dtype=dtype, device=device)
+                    # 4. Dynamic Rho Scheduling based on primal/dual residuals
+                    if self.dynamic_rho:
+                        primal_res = torch.norm(W - Z).item()
+                        dual_res = (rho * torch.norm(Z - Z_prev)).item()
+                        if primal_res > mu * (dual_res + 1e-8):
+                            rho = min(rho * tau_incr, rho_max)
+                        elif dual_res > mu * (primal_res + 1e-8):
+                            rho = max(rho / tau_decr, rho_min)
+
+                # Final assignment to projection Z and STE Module conversion
+                if self.use_ste:
+                    admm_layer = ADMMMaskedLinear.from_linear(module, mask=mask)
+                    replace_module(self.model, name, admm_layer)
+                else:
+                    module.weight.data = Z.to(dtype=dtype, device=device)
+
                 pruned_layers_count += 1
+
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -748,7 +1359,10 @@ class ADMMPruner(BaseCompressor):
             "sparsity_target": self.sparsity,
             "structured_24": self.structured_24,
             "admm_iterations": self.max_iter,
-            "method": "admm_pruner",
+            "dynamic_rho": self.dynamic_rho,
+            "use_ste": self.use_ste,
+            "recalibrate_ln": self.recalibrate_ln,
+            "method": "admm_pruner_ste_dynamic_rho",
         })
         self.stats = stats
         return self.model, stats
@@ -761,6 +1375,9 @@ def admm_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> A
     rho = getattr(comp_config, "admm_pruner_rho", getattr(comp_config, "rho", 0.1)) if comp_config else kwargs.get("rho", 0.1)
     max_iter = getattr(comp_config, "admm_pruner_max_iter", getattr(comp_config, "max_iter", 6)) if comp_config else kwargs.get("max_iter", 6)
     structured_24 = getattr(comp_config, "admm_pruner_structured_24", getattr(comp_config, "structured_24", True)) if comp_config else kwargs.get("structured_24", True)
+    dynamic_rho = getattr(comp_config, "admm_pruner_dynamic_rho", kwargs.get("dynamic_rho", True))
+    use_ste = getattr(comp_config, "admm_pruner_use_ste", kwargs.get("use_ste", True))
+    recalibrate_ln = getattr(comp_config, "admm_pruner_recalibrate_ln", kwargs.get("recalibrate_ln", True))
 
     compressor = ADMMPruner(
         model,
@@ -768,16 +1385,20 @@ def admm_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> A
         rho=rho,
         max_iter=max_iter,
         structured_24=structured_24,
+        dynamic_rho=dynamic_rho,
+        use_ste=use_ste,
+        recalibrate_ln=recalibrate_ln,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+__all__ = [
+    "ADMMSTEPrune",
+    "ADMMMaskedLinear",
+    "ADMMPruner",
+    "admm_pruner_factory",
+]
 ```
 
 ---
@@ -798,41 +1419,145 @@ Factorized ARMOR into a composite `ARMORLinear` module holding decoupled sparse 
 ```python
 """
 ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction).
-Registered in COMPRESSOR_REGISTRY as 'armor_pruner'.
+Registered in COMPRESSOR_REGISTRY as 'armor_pruner' and 'armor'.
 
 Mathematical Formulation:
-1. Saliency Metric (First-Order Taylor or Second-Order Hessian):
-   $$S_{ij} = |W_{ij} \\odot g_{ij}| \\quad \\text{or} \\quad S_{ij} = \\frac{|W_{ij}|^2}{2 [H^{-1}]_{jj}}$$
-2. 2:4 Semi-Structured Pruning:
-   $$W_{sparse} = \\Pi_{2:4}(W, S)$$
-3. Pruning Residual:
-   $$R = W - W_{sparse}$$
-4. Truncated Singular Value Decomposition of Residual:
-   $$R = U \\Sigma V^\\top \\approx U_r \\Sigma_r V_r^\\top = L_r$$
-5. Error-Compensated Weight Representation:
-   $$W_{armor} = W_{sparse} + L_r$$
+1. Resilient First-Order Taylor Saliency (handling zero-grad gracefully):
+   $$S_{ij} = \\begin{cases} |W_{ij} \\odot g_{ij}| & \\text{if } g \\text{ is valid and } \\|g\\| > 0 \\\\ |W_{ij}| \\cdot \\mathbb{E}[|x_j|] & \\text{if activations available} \\\\ |W_{ij}| \\cdot (\\sigma(W) + 1) & \\text{fallback} \\end{cases}$$
+2. 2:4 Semi-Structured Pruning Mask:
+   $$\\mathcal{M} = \\Pi_{2:4}(S), \\quad W_{\\text{sparse}} = W \\odot \\mathcal{M}$$
+3. Residual Low-Rank Decomposition:
+   $$R = W - W_{\\text{sparse}} \\approx B A, \\quad A \\in \\mathbb{R}^{r \\times d_{\\text{in}}}, \\; B \\in \\mathbb{R}^{d_{\\text{out}} \\times r}$$
+4. Decoupled Dual-Branch Forward with Independent Gradient Flow:
+   $$y = x (W_{\\text{sparse}} \\odot \\mathcal{M})^\\top + (x A^\\top) B^\\top + b$$
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
+import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.pruning_utils import (
     apply_24_structured_mask,
-    compute_taylor_first_order_saliency,
+    get_calibration_tensors,
+    recalibrate_layernorms,
 )
 
 logger = logging.getLogger(__name__)
 
 
+def compute_resilient_taylor_saliency(
+    weight: torch.Tensor,
+    grad: Optional[torch.Tensor] = None,
+    activations: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """
+    Computes Taylor parameter saliency handling zero-grad, NaN/Inf, and absent activations gracefully.
+    """
+    W = weight.float()
+
+    # 1. Check if gradient is provided and non-zero
+    if grad is not None and torch.is_tensor(grad):
+        g = grad.float()
+        if torch.isfinite(g).all() and torch.count_nonzero(g) > 0:
+            return torch.abs(W * g)
+
+    # 2. Check if activations are provided
+    if activations is not None and torch.is_tensor(activations) and activations.numel() > 0:
+        X = activations.reshape(-1, activations.shape[-1]).float()
+        if X.shape[-1] == W.shape[1]:
+            act_scale = torch.mean(torch.abs(X), dim=0, keepdim=True).to(W.device)
+            act_scale = torch.nan_to_num(act_scale, nan=1.0)
+            return torch.abs(W) * act_scale
+
+    # 3. Fallback: Magnitude weighted by standard deviation
+    w_std = torch.std(W).item() if W.numel() > 1 else 1.0
+    if not math.isfinite(w_std) or w_std <= 0.0:
+        w_std = 1.0
+    return torch.abs(W) * (1.0 + w_std)
+
+
+class ARMORLinear(nn.Module):
+    """
+    Decoupled Sparse + Low-Rank Residual Layer.
+    Maintains clean gradient flow to both the sparse weight core and low-rank adapter branches.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+
+        self.sparse_weight = nn.Parameter(torch.empty(out_features, in_features, dtype=dtype, device=device))
+        self.register_buffer("sparse_mask", torch.ones(out_features, in_features, dtype=dtype, device=device))
+
+        # Low-rank factorized parameters: lora_A (r, in_features) and lora_B (out_features, r)
+        self.lora_A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.lora_B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter("bias", None)
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear,
+        mask: torch.Tensor,
+        lora_A: torch.Tensor,
+        lora_B: torch.Tensor,
+    ) -> ARMORLinear:
+        layer = cls(
+            in_features=linear.in_features,
+            out_features=linear.out_features,
+            rank=lora_A.shape[0],
+            bias=linear.bias is not None,
+            dtype=linear.weight.dtype,
+            device=linear.weight.device,
+        )
+        layer.sparse_weight.data.copy_(linear.weight.data)
+        layer.sparse_mask.copy_(mask.to(dtype=linear.weight.dtype, device=linear.weight.device))
+        layer.lora_A.data.copy_(lora_A.to(dtype=linear.weight.dtype, device=linear.weight.device))
+        layer.lora_B.data.copy_(lora_B.to(dtype=linear.weight.dtype, device=linear.weight.device))
+        if linear.bias is not None:
+            layer.bias.data.copy_(linear.bias.data)
+        return layer
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # 1. Sparse Core Forward
+        w_eff = self.sparse_weight * self.sparse_mask
+        out_sparse = F.linear(x, w_eff)
+
+        # 2. Low-Rank Residual Correction Forward
+        out_lr = F.linear(F.linear(x, self.lora_A), self.lora_B)
+
+        out = out_sparse + out_lr
+        if self.bias is not None:
+            out = out + self.bias
+        return out
+
+
 class ARMORPruner(BaseCompressor):
     """
-    ARMOR Pruner: Combines 2:4 structured sparsity with low-rank error compensation.
+    ARMOR Pruner: Combines 2:4 structured sparsity with low-rank error compensation
+    and decoupled dual-branch gradient propagation.
     """
 
     def __init__(
@@ -842,6 +1567,12 @@ class ARMORPruner(BaseCompressor):
         rank: int = 8,
         sparsity: float = 0.5,
         structured_24: bool = True,
+        decouple: bool = True,
+        recalibrate_ln: bool = True,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="armor_pruner", **kwargs)
@@ -849,25 +1580,86 @@ class ARMORPruner(BaseCompressor):
         self.rank = max(1, int(rank))
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.structured_24 = structured_24
+        self.decouple = decouple
+        self.recalibrate_ln = recalibrate_ln
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
         self.stats: Dict[str, Any] = {}
 
+    def _collect_activations(self) -> Dict[str, torch.Tensor]:
+        """Capture activations across linear layers."""
+        self.model.eval()
+        activations: Dict[str, List[torch.Tensor]] = {}
+        hooks = []
+
+        def make_hook(name: str):
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+                if inp and isinstance(inp[0], torch.Tensor):
+                    x = inp[0].detach()
+                    if name not in activations:
+                        activations[name] = []
+                    activations[name].append(x.cpu())
+            return hook
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=self.target_device,
+        )
+
+        with torch.no_grad():
+            try:
+                if isinstance(calib_inputs, dict):
+                    self.model(**calib_inputs)
+                elif isinstance(calib_inputs, torch.Tensor):
+                    self.model(calib_inputs)
+                elif isinstance(calib_inputs, (list, tuple)):
+                    self.model(*calib_inputs)
+            except Exception as e:
+                logger.debug("ARMOR calibration pass exception: %s", e)
+
+        for h in hooks:
+            h.remove()
+
+        aggregated: Dict[str, torch.Tensor] = {}
+        for name, act_list in activations.items():
+            if act_list:
+                aggregated[name] = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0)
+
+        return aggregated
+
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes ARMOR pruning with low-rank error correction."""
+        """Executes ARMOR pruning with low-rank error correction and decoupled gradient modules."""
+        act_map = self._collect_activations()
         pruned_layers_count = 0
         total_correction_energy = 0.0
 
-        for name, module in self.model.named_modules():
+        for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear):
                 W = module.weight.data.clone().float()
                 device = W.device
                 dtype = module.weight.dtype
+                grad = getattr(module.weight, "grad", None)
+                act = act_map.get(name, None)
 
-                # 1. Compute saliency
-                saliency = compute_taylor_first_order_saliency(W)
+                # 1. Resilient Saliency Computation
+                saliency = compute_resilient_taylor_saliency(W, grad=grad, activations=act)
 
-                # 2. Compute structured 2:4 or magnitude sparse baseline
+                # 2. Structured 2:4 or magnitude sparse mask
                 if self.structured_24:
-                    W_sparse, _ = apply_24_structured_mask(W, saliency=saliency, dim=1)
+                    W_sparse, mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
                 else:
                     flat = saliency.reshape(-1)
                     k = max(1, int(flat.numel() * (1.0 - self.sparsity)))
@@ -875,23 +1667,40 @@ class ARMORPruner(BaseCompressor):
                     mask = (saliency >= thr).float()
                     W_sparse = W * mask
 
-                # 3. Residual Low-Rank Error Correction
+                # 3. Residual Low-Rank Error SVD Correction
                 residual = W - W_sparse
+                r = min(self.rank, residual.shape[0], residual.shape[1])
                 try:
                     U, S, Vh = torch.linalg.svd(residual, full_matrices=False)
-                    r = min(self.rank, len(S))
-                    if r > 0:
-                        correction = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
-                        total_correction_energy += torch.norm(correction).item()
-                        W_armor = W_sparse + correction
-                    else:
-                        W_armor = W_sparse
+                    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                    lora_B = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                    lora_A = (sqrt_S.unsqueeze(1) * Vh[:r, :]).to(dtype=dtype, device=device)
+                    correction = torch.matmul(lora_B, lora_A)
+                    total_correction_energy += torch.norm(correction).item()
                 except Exception as e:
                     logger.debug("SVD failed on residual in %s: %s", name, e)
-                    W_armor = W_sparse
+                    lora_A = torch.zeros(r, W.shape[1], dtype=dtype, device=device)
+                    lora_B = torch.zeros(W.shape[0], r, dtype=dtype, device=device)
 
-                module.weight.data = W_armor.to(dtype=dtype, device=device)
+                # 4. Module Replacement: Decoupled Dual-Branch or Fused
+                if self.decouple:
+                    armor_layer = ARMORLinear.from_linear(module, mask=mask, lora_A=lora_A, lora_B=lora_B)
+                    replace_module(self.model, name, armor_layer)
+                else:
+                    W_armor = W_sparse + torch.matmul(lora_B, lora_A)
+                    module.weight.data = W_armor.to(dtype=dtype, device=device)
+
                 pruned_layers_count += 1
+
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -899,8 +1708,9 @@ class ARMORPruner(BaseCompressor):
             "pruned_layers": pruned_layers_count,
             "rank": self.rank,
             "structured_24": self.structured_24,
+            "decouple": self.decouple,
             "total_correction_energy": total_correction_energy,
-            "method": "armor_sparse_plus_lowrank",
+            "method": "armor_sparse_plus_lowrank_decoupled",
         })
         self.stats = stats
         return self.model, stats
@@ -913,22 +1723,27 @@ def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> 
     block_size = getattr(comp_config, "armor_block_size", getattr(comp_config, "block_size", 4)) if comp_config else kwargs.get("block_size", 4)
     rank = getattr(comp_config, "armor_rank", getattr(comp_config, "rank", 8)) if comp_config else kwargs.get("rank", 8)
     structured_24 = getattr(comp_config, "armor_structured_24", getattr(comp_config, "structured_24", True)) if comp_config else kwargs.get("structured_24", True)
+    decouple = getattr(comp_config, "armor_decouple", kwargs.get("decouple", True))
+    recalibrate_ln = getattr(comp_config, "armor_recalibrate_ln", kwargs.get("recalibrate_ln", True))
 
     compressor = ARMORPruner(
         model,
         block_size=block_size,
         rank=rank,
         structured_24=structured_24,
+        decouple=decouple,
+        recalibrate_ln=recalibrate_ln,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+__all__ = [
+    "compute_resilient_taylor_saliency",
+    "ARMORLinear",
+    "ARMORPruner",
+    "armor_pruner_factory",
+]
 ```
 
 ---
@@ -948,22 +1763,28 @@ Integrated calibration DataLoader hook to accumulate empirical Fisher gradients 
 #### Complete Verbatim Source Code (`ast_pruner.py`)
 ```python
 """
-AST: Adaptive Semi-Structured 2:4 and N:M Pruning with First-Order Taylor Saliency.
-Registered in COMPRESSOR_REGISTRY as 'ast_pruner'.
+AST: Adaptive Semi-Structured 2:4 and N:M Pruning with Empirical Fisher Calibration and PCA Coordinate Rotation.
+Registered in COMPRESSOR_REGISTRY as 'ast_pruner' and 'ast'.
 
 Mathematical Formulation:
-1. First-Order Taylor Saliency:
-   $$I(W_{ij}) = |W_{ij} \\odot g_{ij}| \\quad \\text{or} \\quad I(W_{ij}) = |W_{ij}| \\cdot \\mathbb{E}[|x_j|]$$
-2. Vectorized 2:4 Pattern Projection:
-   $$\\forall k \\in \\{0, \\dots, \\lfloor d_{in}/4 \\rfloor - 1\\}: \\quad \\mathcal{M}_{i, 4k:4k+4} = \\operatorname{Top-2}(I(W_{i, 4k:4k+4}))$$
-3. Pruned Weights:
-   $$W_{ast} = W \\odot \\mathcal{M}$$
+1. Activation Covariance & PCA Coordinate Rotation:
+   $$\\Sigma_X = \\frac{1}{N - 1} (X - \\mu)^\\top (X - \\mu) = Q \\Lambda Q^\\top, \\quad Q^\\top Q = I$$
+   $$\\widetilde{W} = W Q, \\quad \\widetilde{X} = Q^\\top X$$
+2. Empirical Fisher Information Calibration:
+   $$\\mathcal{L}_{\\text{calib}} = \\frac{1}{2} \\sum_{i} \\|y_i\\|_2^2, \\quad g = \\frac{\\partial \\mathcal{L}}{\\partial W}$$
+   $$F = \\mathbb{E}[g \\odot g], \\quad \\widetilde{F} = F Q^2$$
+3. PCA-Rotated Fisher Saliency:
+   $$S_{ij} = |\\widetilde{W}_{ij}| \\cdot \\sqrt{\\widetilde{F}_{ij} + \\epsilon}$$
+4. 2:4 Structured Masking & Coordinate Back-Rotation:
+   $$\\widetilde{W}_{\\text{pruned}} = \\Pi_{2:4}(\\widetilde{W}, S)$$
+   $$W_{\\text{ast}} = \\widetilde{W}_{\\text{pruned}} Q^\\top$$
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
+import math
 import torch
 import torch.nn as nn
 
@@ -971,7 +1792,8 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.pruning_utils import (
     apply_24_structured_mask,
-    compute_taylor_first_order_saliency,
+    get_calibration_tensors,
+    recalibrate_layernorms,
 )
 
 logger = logging.getLogger(__name__)
@@ -979,7 +1801,8 @@ logger = logging.getLogger(__name__)
 
 class ASTPruner(BaseCompressor):
     """
-    AST Pruner: Vectorized semi-structured 2:4 and N:M pruning engine.
+    AST Pruner: Vectorized semi-structured 2:4 and N:M pruning engine with
+    empirical Fisher calibration and PCA coordinate rotation.
     """
 
     def __init__(
@@ -988,32 +1811,173 @@ class ASTPruner(BaseCompressor):
         block_size: int = 4,
         n_keep: int = 2,
         dim: int = 1,
+        use_pca: bool = True,
+        use_fisher: bool = True,
+        recalibrate_ln: bool = True,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="ast_pruner", **kwargs)
         self.block_size = block_size
         self.n_keep = n_keep
         self.dim = dim
+        self.use_pca = use_pca
+        self.use_fisher = use_fisher
+        self.recalibrate_ln = recalibrate_ln
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
         self.stats: Dict[str, Any] = {}
 
+    def _collect_fisher_and_activations(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+        """Collects empirical Fisher gradients and activation covariance via calibration pass."""
+        activations: Dict[str, List[torch.Tensor]] = {}
+        fisher_info: Dict[str, torch.Tensor] = {}
+        hooks = []
+
+        def make_hook(name: str):
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+                if inp and isinstance(inp[0], torch.Tensor):
+                    x = inp[0].detach()
+                    if name not in activations:
+                        activations[name] = []
+                    activations[name].append(x.cpu())
+            return hook
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=self.target_device,
+        )
+
+        # 1. Forward & Optional Backward pass to compute empirical Fisher gradients
+        try:
+            self.model.train()
+            out = None
+            if isinstance(calib_inputs, dict):
+                out = self.model(**calib_inputs)
+            elif isinstance(calib_inputs, torch.Tensor):
+                out = self.model(calib_inputs)
+            elif isinstance(calib_inputs, (list, tuple)):
+                out = self.model(*calib_inputs)
+
+            if self.use_fisher and out is not None:
+                # Construct calibration loss
+                if hasattr(out, "logits"):
+                    loss = 0.5 * torch.sum(out.logits.pow(2))
+                elif isinstance(out, torch.Tensor):
+                    loss = 0.5 * torch.sum(out.pow(2))
+                elif isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor):
+                    loss = 0.5 * torch.sum(out[0].pow(2))
+                else:
+                    loss = None
+
+                if loss is not None:
+                    self.model.zero_grad()
+                    loss.backward()
+                    for name, module in self.model.named_modules():
+                        if isinstance(module, nn.Linear) and module.weight.grad is not None:
+                            g = module.weight.grad.detach()
+                            fisher_info[name] = g.pow(2).cpu()
+                    self.model.zero_grad()
+        except Exception as e:
+            logger.debug("AST Fisher calibration exception: %s", e)
+        finally:
+            self.model.eval()
+            for h in hooks:
+                h.remove()
+
+        cov_map: Dict[str, torch.Tensor] = {}
+        for name, act_list in activations.items():
+            if act_list:
+                act_concat = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0).float()
+                N, D = act_concat.shape
+                mean = torch.mean(act_concat, dim=0, keepdim=True)
+                centered = act_concat - mean
+                cov = torch.matmul(centered.T, centered) / max(N - 1, 1)
+                cov_map[name] = cov
+                if name not in fisher_info:
+                    # Fallback Fisher proxy from activation variance
+                    fisher_info[name] = torch.var(act_concat, dim=0, keepdim=True).expand(1, D)
+
+        return cov_map, fisher_info
+
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes AST 2:4 structured pruning across all Linear modules."""
+        """Executes AST 2:4 structured pruning with PCA rotation and empirical Fisher calibration."""
+        cov_map, fisher_map = self._collect_fisher_and_activations()
         pruned_layers_count = 0
 
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.clone().float()
+                d_out, d_in = W.shape
                 device = W.device
                 dtype = module.weight.dtype
 
-                # Compute saliency
-                saliency = compute_taylor_first_order_saliency(W)
+                # 1. Derive PCA orthogonal coordinate rotation matrix Q
+                if self.use_pca and name in cov_map:
+                    cov = cov_map[name].to(device)
+                    cov = cov + 1e-6 * torch.eye(d_in, device=device)
+                    try:
+                        eigvals, Q = torch.linalg.eigh(cov)
+                        # Sort eigenvectors descending
+                        idx = torch.argsort(eigvals, descending=True)
+                        Q = Q[:, idx]
+                    except Exception:
+                        H = torch.randn(d_in, d_in, device=device)
+                        Q, _ = torch.linalg.qr(H)
+                else:
+                    Q = torch.eye(d_in, device=device)
 
-                # Apply vectorized 2:4 mask
-                W_ast, _ = apply_24_structured_mask(W, saliency=saliency, dim=self.dim)
+                # 2. Rotate weights into PCA coordinate space: \widetilde{W} = W Q
+                W_pca = torch.matmul(W, Q)
 
-                module.weight.data = W_ast.to(dtype=dtype, device=device)
+                # 3. Compute empirical Fisher saliency in rotated basis
+                fisher = fisher_map.get(name, None)
+                if fisher is not None:
+                    F_mat = fisher.to(device).float()
+                    if F_mat.dim() == 2 and F_mat.shape == W.shape:
+                        F_pca = torch.matmul(F_mat, Q.pow(2))
+                    elif F_mat.shape[-1] == d_in:
+                        F_pca = torch.matmul(F_mat.reshape(1, d_in), Q.pow(2)).expand(d_out, d_in)
+                    else:
+                        F_pca = torch.ones_like(W_pca)
+                    saliency = torch.abs(W_pca) * torch.sqrt(torch.clamp(F_pca, min=1e-8))
+                else:
+                    saliency = torch.abs(W_pca)
+
+                # 4. Apply semi-structured 2:4 mask in PCA space
+                W_pca_pruned, _ = apply_24_structured_mask(W_pca, saliency=saliency, dim=self.dim)
+
+                # 5. Rotate back to original coordinate basis: W = \widetilde{W}_pruned Q^T
+                W_final = torch.matmul(W_pca_pruned, Q.T)
+
+                module.weight.data = W_final.to(dtype=dtype, device=device)
                 pruned_layers_count += 1
+
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -1022,7 +1986,10 @@ class ASTPruner(BaseCompressor):
             "block_size": self.block_size,
             "n_keep": self.n_keep,
             "pattern": f"{self.n_keep}:{self.block_size}",
-            "method": "ast_2_4_pruning",
+            "use_pca": self.use_pca,
+            "use_fisher": self.use_fisher,
+            "recalibrate_ln": self.recalibrate_ln,
+            "method": "ast_fisher_pca_2_4_pruning",
         })
         self.stats = stats
         return self.model, stats
@@ -1035,16 +2002,27 @@ def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
     block_size = getattr(comp_config, "ast_block_size", getattr(comp_config, "block_size", 4)) if comp_config else kwargs.get("block_size", 4)
     n_keep = getattr(comp_config, "ast_n_keep", getattr(comp_config, "n_keep", 2)) if comp_config else kwargs.get("n_keep", 2)
     dim = getattr(comp_config, "ast_dim", getattr(comp_config, "dim", 1)) if comp_config else kwargs.get("dim", 1)
+    use_pca = getattr(comp_config, "ast_use_pca", kwargs.get("use_pca", True))
+    use_fisher = getattr(comp_config, "ast_use_fisher", kwargs.get("use_fisher", True))
+    recalibrate_ln = getattr(comp_config, "ast_recalibrate_ln", kwargs.get("recalibrate_ln", True))
 
-    compressor = ASTPruner(model, block_size=block_size, n_keep=n_keep, dim=dim, **kwargs)
+    compressor = ASTPruner(
+        model,
+        block_size=block_size,
+        n_keep=n_keep,
+        dim=dim,
+        use_pca=use_pca,
+        use_fisher=use_fisher,
+        recalibrate_ln=recalibrate_ln,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+__all__ = [
+    "ASTPruner",
+    "ast_pruner_factory",
+]
 ```
 
 ---
@@ -1064,22 +2042,26 @@ Added mini-batch gradient descent recovery between pruning steps and protected c
 #### Complete Verbatim Source Code (`bonsai_pruner.py`)
 ```python
 """
-Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Dynamic Saliency Schedule.
-Registered in COMPRESSOR_REGISTRY as 'bonsai'.
+Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recovery & [CLS] Routing Protection.
+Registered in COMPRESSOR_REGISTRY as 'bonsai' and 'bonsai_pruner'.
 
 Mathematical Formulation:
 1. Polynomial Sparsity Schedule:
    $$s_t = s_{\\text{target}} \\cdot \\left(1 - \\left(1 - \\frac{t}{T}\\right)^3\\right), \\quad t \\in \\{1, \\dots, T\\}$$
-2. Dynamic Taylor Saliency:
-   $$S_t(W_{ij}) = |W_{ij}^{(t)}| \\cdot \\mathbb{E}[|x_j|]$$
-3. Structured / Semi-Structured Mask Update:
-   $$\\mathcal{M}^{(t)} = \\Pi_{\\mathcal{S}}(W^{(t)}, S_t, s_t)$$
+2. Protected [CLS] / Router Modules:
+   $$\\mathcal{M}_{\\text{router}} = \\mathbf{1}, \\quad \\mathcal{M}_{\\text{classifier}} = \\mathbf{1}$$
+3. Dynamic Saliency & Mask Update:
+   $$S_t(W_{ij}) = |W_{ij}^{(t)}| \\cdot \\mathbb{E}[|x_j|], \\quad \\mathcal{M}^{(t)} = \\Pi_{\\mathcal{S}}(W^{(t)}, S_t, s_t)$$
+4. Inter-Step Gradient Descent Reconstruction Recovery:
+   $$\\min_W \\frac{1}{2} \\| (W \\odot \\mathcal{M}^{(t)}) X - W_0 X \\|_F^2 + \\frac{\\lambda}{2} \\|W - W_0\\|_F^2$$
+   $$W^{(t)} \\leftarrow W^{(t)} - \\eta \\left( ((W^{(t)} \\odot \\mathcal{M}^{(t)}) X - W_0 X) X^\\top \\odot \\mathcal{M}^{(t)} \\right)$$
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
+import math
 import torch
 import torch.nn as nn
 
@@ -1089,6 +2071,8 @@ from framework.compression_engine.pruning_utils import (
     apply_24_structured_mask,
     apply_block_mask,
     compute_taylor_first_order_saliency,
+    get_calibration_tensors,
+    recalibrate_layernorms,
 )
 
 logger = logging.getLogger(__name__)
@@ -1096,7 +2080,8 @@ logger = logging.getLogger(__name__)
 
 class BonsaiPruner(BaseCompressor):
     """
-    Bonsai Pruner: Progressive multi-step iterative pruning with cubic schedule.
+    Bonsai Pruner: Progressive multi-step iterative pruning with cubic schedule,
+    inter-step gradient descent recovery, and [CLS] routing protection.
     """
 
     def __init__(
@@ -1104,63 +2089,181 @@ class BonsaiPruner(BaseCompressor):
         model: nn.Module,
         sparsity: float = 0.5,
         steps: int = 8,
+        recovery_steps: int = 3,
+        recovery_lr: float = 1e-3,
         structured_24: bool = False,
         block_size: Tuple[int, int] = (4, 4),
+        protect_cls: bool = True,
+        recalibrate_ln: bool = True,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="bonsai", **kwargs)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.steps = max(1, int(steps))
+        self.recovery_steps = max(0, int(recovery_steps))
+        self.recovery_lr = float(recovery_lr)
         self.structured_24 = structured_24
         self.block_size = block_size
+        self.protect_cls = protect_cls
+        self.recalibrate_ln = recalibrate_ln
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
         self.stats: Dict[str, Any] = {}
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes progressive iterative pruning across all Linear layers."""
-        pruned_layers_count = 0
+    def _is_protected_layer(self, name: str) -> bool:
+        """Determines if a layer is a protected [CLS], router, or classification head module."""
+        if not self.protect_cls:
+            return False
+        name_lower = name.lower()
+        protected_keywords = ["router", "gate", "cls", "classifier", "head", "embed", "score", "lm_head"]
+        return any(kw in name_lower for kw in protected_keywords)
+
+    def _collect_activations(self) -> Dict[str, torch.Tensor]:
+        """Capture activations across linear layers."""
+        self.model.eval()
+        activations: Dict[str, List[torch.Tensor]] = {}
+        hooks = []
+
+        def make_hook(name: str):
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+                if inp and isinstance(inp[0], torch.Tensor):
+                    x = inp[0].detach()
+                    if name not in activations:
+                        activations[name] = []
+                    activations[name].append(x.cpu())
+            return hook
 
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                W = module.weight.data.clone().float()
-                device = W.device
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=self.target_device,
+        )
+
+        with torch.no_grad():
+            try:
+                if isinstance(calib_inputs, dict):
+                    self.model(**calib_inputs)
+                elif isinstance(calib_inputs, torch.Tensor):
+                    self.model(calib_inputs)
+                elif isinstance(calib_inputs, (list, tuple)):
+                    self.model(*calib_inputs)
+            except Exception as e:
+                logger.debug("Bonsai calibration exception: %s", e)
+
+        for h in hooks:
+            h.remove()
+
+        aggregated: Dict[str, torch.Tensor] = {}
+        for name, act_list in activations.items():
+            if act_list:
+                aggregated[name] = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0)
+
+        return aggregated
+
+    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Executes progressive iterative pruning with inter-step gradient descent recovery."""
+        activations_map = self._collect_activations()
+        pruned_layers_count = 0
+        protected_layers_count = 0
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear):
+                if self._is_protected_layer(name):
+                    protected_layers_count += 1
+                    continue
+
+                W0 = module.weight.data.clone().float()
+                device = W0.device
                 dtype = module.weight.dtype
+                W = W0.clone()
+
+                act = activations_map.get(name, None)
+                X = None
+                if act is not None and act.numel() > 0:
+                    X = act.to(device).float()
+                    if X.shape[-1] != W.shape[1]:
+                        X = None
 
                 final_mask = torch.ones_like(W)
 
-                if self.structured_24:
-                    # Multi-step 2:4 structured pruning convergence
-                    for s in range(self.steps):
-                        saliency = compute_taylor_first_order_saliency(W)
-                        W, final_mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
-                else:
-                    # Cubic schedule for unstructured or block sparsity
-                    for s in range(self.steps):
-                        t_ratio = (s + 1.0) / self.steps
-                        current_sp = self.sparsity * (1.0 - (1.0 - t_ratio) ** 3)
-                        saliency = compute_taylor_first_order_saliency(W)
+                # Iterative Pruning Loop
+                for s in range(self.steps):
+                    t_ratio = (s + 1.0) / self.steps
+                    current_sp = self.sparsity * (1.0 - (1.0 - t_ratio) ** 3)
+                    saliency = compute_taylor_first_order_saliency(W, activations=X)
 
-                        if self.block_size != (1, 1):
-                            W, final_mask = apply_block_mask(
-                                W, block_size=self.block_size, sparsity=current_sp, saliency=saliency
-                            )
-                        else:
-                            flat = saliency.reshape(-1)
-                            k = max(1, int(flat.numel() * (1.0 - current_sp)))
-                            thr = torch.topk(flat, k, largest=True).values[-1]
-                            final_mask = (saliency >= thr).float()
-                            W = W * final_mask
+                    # 1. Compute Mask for step s
+                    if self.structured_24:
+                        W_pruned, final_mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
+                    elif self.block_size != (1, 1):
+                        W_pruned, final_mask = apply_block_mask(
+                            W, block_size=self.block_size, sparsity=current_sp, saliency=saliency
+                        )
+                    else:
+                        flat = saliency.reshape(-1)
+                        k = max(1, int(flat.numel() * (1.0 - current_sp)))
+                        thr = torch.topk(flat, k, largest=True).values[-1]
+                        final_mask = (saliency >= thr).float()
+                        W_pruned = W * final_mask
 
-                module.weight.data = (module.weight.data.float() * final_mask).to(dtype=dtype, device=device)
+                    W = W_pruned
+
+                    # 2. Gradient Descent Recovery between pruning steps
+                    if self.recovery_steps > 0 and X is not None:
+                        # Normalize covariance X^T X
+                        cov_X = torch.matmul(X.T, X) / max(X.shape[0], 1)  # [d_in, d_in]
+                        # Target output: W0 @ cov_X
+                        W0_cov = torch.matmul(W0, cov_X)
+
+                        step_size = self.recovery_lr / (torch.norm(cov_X).item() + 1e-6)
+                        for _ in range(self.recovery_steps):
+                            # grad = ((W @ cov_X) - W0_cov) * mask
+                            curr_cov = torch.matmul(W, cov_X)
+                            grad = (curr_cov - W0_cov) * final_mask
+                            W = W - step_size * grad
+                            W = W * final_mask  # ensure pruned coordinates stay zero
+
+                module.weight.data = W.to(dtype=dtype, device=device)
                 pruned_layers_count += 1
+
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats.update({
             "pruned_layers": pruned_layers_count,
+            "protected_layers": protected_layers_count,
             "steps": self.steps,
+            "recovery_steps": self.recovery_steps,
             "sparsity_target": self.sparsity,
             "structured_24": self.structured_24,
-            "method": "bonsai_iterative_pruning",
+            "protect_cls": self.protect_cls,
+            "recalibrate_ln": self.recalibrate_ln,
+            "method": "bonsai_iterative_pruning_with_gd_recovery",
         })
         self.stats = stats
         return self.model, stats
@@ -1172,23 +2275,28 @@ def bonsai_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for Bonsai pruner."""
     sparsity = getattr(comp_config, "bonsai_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)
     steps = getattr(comp_config, "bonsai_steps", getattr(comp_config, "steps", 8)) if comp_config else kwargs.get("steps", 8)
+    recovery_steps = getattr(comp_config, "bonsai_recovery_steps", getattr(comp_config, "recovery_steps", 3)) if comp_config else kwargs.get("recovery_steps", 3)
     structured_24 = getattr(comp_config, "bonsai_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else kwargs.get("structured_24", False)
+    protect_cls = getattr(comp_config, "bonsai_protect_cls", kwargs.get("protect_cls", True))
+    recalibrate_ln = getattr(comp_config, "bonsai_recalibrate_ln", kwargs.get("recalibrate_ln", True))
 
     compressor = BonsaiPruner(
         model,
         sparsity=sparsity,
         steps=steps,
+        recovery_steps=recovery_steps,
         structured_24=structured_24,
+        protect_cls=protect_cls,
+        recalibrate_ln=recalibrate_ln,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+__all__ = [
+    "BonsaiPruner",
+    "bonsai_factory",
+]
 ```
 
 ---
@@ -1208,7 +2316,7 @@ Decoupled static weight compression from KV cache dynamic pruning, ensuring all 
 #### Complete Verbatim Source Code (`cachenotes_compressor.py`)
 ```python
 """
-CacheNotes: Task-Aware Key-Value Cache Compression.
+CacheNotes: Task-Aware Key-Value Cache Compression and Static Weight Compression.
 
 Given a task description or task type, CacheNotes generates Compression-Planning-Tokens (CPTs)
 that guide the compression of the corpus and KV cache into compact, reusable states.
@@ -1216,15 +2324,35 @@ that guide the compression of the corpus and KV cache into compact, reusable sta
 Paper: "CacheNotes: Task-aware key-value cache compression for reasoning-intensive
         knowledge tasks." Corallo et al., EACL 2026.
 Registered as 'cachenotes'.
+
+Mathematical Formulation:
+1. CPT Importance Vector:
+   $$I_{\\text{task}} = \\text{CPT}(T, d)$$
+2. Runtime Dynamic KV Cache Pruning:
+   $$\\mathcal{S}_{\\text{token}} = \\|K_{\\text{cache}} \\odot I_{\\text{task}}\\|_2, \\quad \\mathcal{S}_{:sinks} = +\\infty$$
+   $$K_{\\text{retained}} = \\operatorname{Top-}k(K_{\\text{cache}}, \\mathcal{S}_{\\text{token}})$$
+3. Decoupled Static Weight Compression (Low-Rank Task-Aware SVD without channel zeroing):
+   $$W_{\\text{cpt}} = \\operatorname{diag}(I_{\\text{task}}) W$$
+   $$W_{\\text{cpt}} = U \\Sigma V^\\top \\approx U_r \\Sigma_r V_r^\\top$$
+   $$W_{\\text{approx}} = \\operatorname{diag}(I_{\\text{task}}^{-1}) (U_r \\Sigma_r V_r^\\top)$$
 """
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any, Dict, List, Optional, Tuple, Union
+import logging
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.compression_engine.pruning_utils import (
+    get_calibration_tensors,
+    recalibrate_layernorms,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class CompressionPlanningTokens:
@@ -1242,7 +2370,9 @@ class CompressionPlanningTokens:
     }
 
     @classmethod
-    def generate_importance(cls, task_type: str, num_features: int, device: torch.device = torch.device("cpu")) -> torch.Tensor:
+    def generate_importance(
+        cls, task_type: str, num_features: int, device: torch.device = torch.device("cpu")
+    ) -> torch.Tensor:
         """Generate per-feature importance modulation vector based on task specification."""
         task_lower = str(task_type).lower()
         importance = torch.zeros(num_features, device=device)
@@ -1297,7 +2427,6 @@ class CacheNotesKVCache:
         Append new KV tokens and apply task-aware retention when exceeding capacity.
         Shapes: (B, H, N, D).
         """
-        orig_shape = new_k.shape
         k_4d = new_k
         v_4d = new_v
         if new_k.ndim == 2:
@@ -1348,56 +2477,97 @@ class CacheNotesKVCache:
 
 class CacheNotesCompressor(BaseCompressor):
     """
-    CacheNotes Compressor: Compresses model weights using task-aware importance scoring
-    inspired by CacheNotes CPT planning.
+    CacheNotes Compressor: Decouples static weight compression from KV cache dynamic pruning.
+    Compresses static model weights using CPT-guided low-rank SVD without zeroing out entire output channels.
 
     Args:
         model: PyTorch model.
         task_type: Target downstream task ('qa', 'summarize', 'code', 'reasoning', 'math').
-        keep_ratio: Fraction of parameters to retain (default 0.3).
+        keep_ratio: Fraction of rank / energy to retain (default 0.5).
+        recalibrate_ln: Whether to recalibrate LayerNorm statistics after compression.
     """
 
     def __init__(
         self,
         model: nn.Module,
         task_type: str = "qa",
-        keep_ratio: float = 0.3,
+        keep_ratio: float = 0.5,
+        recalibrate_ln: bool = True,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="cachenotes", **kwargs)
         self.task_type = task_type
-        self.keep_ratio = float(keep_ratio)
+        self.keep_ratio = max(0.05, min(float(keep_ratio), 1.0))
+        self.recalibrate_ln = recalibrate_ln
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
+        self.stats: Dict[str, Any] = {}
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress linear layers using task-guided CPT scoring."""
+        """Compress linear layers using task-guided CPT-weighted low-rank SVD without channel destruction."""
+        compressed_layers_count = 0
+
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                W = module.weight.data
+                W = module.weight.data.clone().float()
                 out_f, in_f = W.shape
+                device = W.device
+                dtype = module.weight.dtype
 
-                # Generate CPT importance modulation per neuron
+                # Generate CPT importance modulation per output feature
                 importance = CompressionPlanningTokens.generate_importance(
-                    self.task_type, out_f, device=W.device
-                )
+                    self.task_type, out_f, device=device
+                )  # [out_f]
 
-                # Combine row norm with task importance
-                row_norms = torch.norm(W.float(), dim=1)
-                combined_score = row_norms * (1.0 + importance)
+                # Weight rows by CPT importance
+                W_cpt = W * importance.unsqueeze(1)
 
-                keep_n = max(1, min(int(out_f * self.keep_ratio), out_f))
-                _, top_idx = torch.topk(combined_score, keep_n)
+                # Compute SVD in CPT-weighted space
+                r = max(1, min(int(min(out_f, in_f) * self.keep_ratio), min(out_f, in_f)))
+                try:
+                    U, S, Vt = torch.linalg.svd(W_cpt, full_matrices=False)
+                    # Low-rank approximation
+                    W_lowrank = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
+                    # Unweight back to physical space: all channels remain active and non-zero
+                    W_approx = W_lowrank / importance.unsqueeze(1)
+                except Exception as e:
+                    logger.debug("SVD failed in CacheNotes on %s: %s", name, e)
+                    W_approx = W
 
-                mask = torch.zeros(out_f, device=W.device)
-                mask[top_idx] = 1.0
+                module.weight.data = W_approx.to(dtype=dtype, device=device)
+                compressed_layers_count += 1
 
-                module.weight.data = (W * mask.unsqueeze(1)).to(dtype=module.weight.dtype)
-                if module.bias is not None:
-                    module.bias.data = module.bias.data * mask
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
 
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        stats["task_type"] = self.task_type
-        stats["keep_ratio"] = self.keep_ratio
-        stats["kv_cache_budget_saving"] = f"{(1.0 - self.keep_ratio) * 100:.1f}% Footprint Reduction"
+        stats.update({
+            "compressed_layers": compressed_layers_count,
+            "task_type": self.task_type,
+            "keep_ratio": self.keep_ratio,
+            "recalibrate_ln": self.recalibrate_ln,
+            "method": "cachenotes_decoupled_cpt_svd",
+            "kv_cache_budget_saving": f"{(1.0 - self.keep_ratio) * 100:.1f}% Footprint Reduction",
+        })
+        self.stats = stats
         return self.model, stats
 
 
@@ -1405,10 +2575,25 @@ class CacheNotesCompressor(BaseCompressor):
 def cachenotes_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """CacheNotes compressor factory function."""
     task_type = kwargs.pop("task_type", getattr(comp_config, "cachenotes_task", "qa") if comp_config else "qa")
-    keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "cachenotes_keep_ratio", 0.3) if comp_config else 0.3)
-    compressor = CacheNotesCompressor(model, task_type=task_type, keep_ratio=keep_ratio, **kwargs)
+    keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "cachenotes_keep_ratio", 0.5) if comp_config else 0.5)
+    recalibrate_ln = getattr(comp_config, "cachenotes_recalibrate_ln", kwargs.get("recalibrate_ln", True))
+
+    compressor = CacheNotesCompressor(
+        model,
+        task_type=task_type,
+        keep_ratio=keep_ratio,
+        recalibrate_ln=recalibrate_ln,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+__all__ = [
+    "CompressionPlanningTokens",
+    "CacheNotesKVCache",
+    "CacheNotesCompressor",
+    "cachenotes_factory",
+]
 ```
 
 ---
@@ -1427,92 +2612,240 @@ Introduced learnable linear interpolation adapters between non-consecutive layer
 
 #### Complete Verbatim Source Code (`come.py`)
 ```python
-"""CoMe: Compress LLMs through layer concatenation (external wrapper). Registered as 'come'."""
-from typing import Any
+"""
+CoMe: Compress LLMs through Layer Concatenation and Shedding with Learnable Inter-Layer Interpolation Adapters.
+Registered in COMPRESSOR_REGISTRY as 'come'.
 
-import shutil
-import subprocess
-from pathlib import Path
+Mathematical Formulation:
+1. Layer Shedding & Uniform Strided Selection:
+   $$\\mathcal{I}_{\\text{keep}} = \\{i_0, i_1, \\dots, i_{K-1}\\}, \\quad i_k = \\left\\lfloor k \\cdot \\frac{L-1}{K-1} \\right\\rceil$$
+2. Learnable Linear Interpolation Bridge between Non-Consecutive Layers:
+   $$\\forall k \\text{ s.t. } i_{k+1} > i_k + 1: \\quad h_{k}^{\\text{bridged}} = h_k + \\alpha_k \\left( W_{\\text{bridge}}^{(k)} h_k - h_k \\right)$$
+   $$W_{\\text{bridge}} \\approx I, \\quad \\alpha_k \\in \\mathbb{R} \\text{ (learnable mixing coefficient)}$$
+"""
+
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional, Tuple, Union
+import logging
+import math
+import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from framework.compression_engine.pruning_utils import (
+    get_calibration_tensors,
+    recalibrate_layernorms,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class CoMeBridge(nn.Module):
+    """
+    Learnable linear interpolation adapter bridging the representation gap between non-consecutive layers.
+    Computes: y = x + alpha * (W_bridge @ x - x) with W_bridge initialized to Identity.
+    """
+
+    def __init__(self, hidden_size: int, alpha_init: float = 0.1) -> None:
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.linear = nn.Linear(hidden_size, hidden_size, bias=False)
+        with torch.no_grad():
+            nn.init.eye_(self.linear.weight)
+        self.alpha = nn.Parameter(torch.tensor(float(alpha_init)))
+
+    def forward(self, hidden_states: Any, *args: Any, **kwargs: Any) -> Any:
+        if isinstance(hidden_states, (tuple, list)):
+            x = hidden_states[0]
+            if isinstance(x, torch.Tensor):
+                bridged = x + self.alpha * (self.linear(x) - x)
+                return (bridged, *hidden_states[1:])
+            return hidden_states
+
+        if isinstance(hidden_states, torch.Tensor):
+            return hidden_states + self.alpha * (self.linear(hidden_states) - hidden_states)
+
+        return hidden_states
+
+
+class CoMeBridgedLayer(nn.Module):
+    """
+    Wraps a retained transformer layer and appends a learnable CoMeBridge when skipping layers.
+    """
+
+    def __init__(self, layer: nn.Module, bridge: Optional[CoMeBridge] = None) -> None:
+        super().__init__()
+        self.layer = layer
+        self.bridge = bridge
+
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
+        out = self.layer(*args, **kwargs)
+        if self.bridge is not None:
+            out = self.bridge(out)
+        return out
 
 
 class CoMeCompressor(BaseCompressor):
     """
-    Applies CoMe layer concatenation to the model.
-    Requires the official CoMe repository to be installed and accessible
-    via `python -m main`.
+    CoMe Compressor: Layer shedding with learnable linear interpolation adapters/bridges.
 
-    Config parameters (in comp_config):
-        come_target_layers : int, optional – number of layers after merging
-        come_sparsity       : float, default 0.3 – fraction of layers to remove
-        come_calib_dataset : str, default 'wiki2'
-        come_nsamples      : int, default 256
+    Config parameters:
+        target_layers : int, optional – target number of layers after shedding
+        sparsity      : float, default 0.3 – fraction of layers to remove
+        alpha_init    : float, default 0.1 – initial bridge interpolation weight
     """
 
     def __init__(
         self,
-        model,
-        tokenizer=None,
-        target_layers=None,
-        sparsity=0.3,
-        device="cuda",
-        **kwargs,
-    ):
+        model: nn.Module,
+        tokenizer: Optional[Any] = None,
+        target_layers: Optional[int] = None,
+        sparsity: float = 0.3,
+        alpha_init: float = 0.1,
+        recalibrate_ln: bool = True,
+        device: Optional[Union[str, torch.device]] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="come", **kwargs)
-        self.tokenizer = tokenizer
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.target_layers = target_layers
-        self.sparsity = sparsity
-        self.device = device
+        self.sparsity = max(0.0, min(float(sparsity), 0.95))
+        self.alpha_init = alpha_init
+        self.recalibrate_ln = recalibrate_ln
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
+        self.stats: Dict[str, Any] = {}
 
-    def compress(
-        self, save_dir="come_pruned", calibration_dataset="wiki2", nsamples=256
-    ):
-        """Compress the target module using this strategy."""
-        # Native PyTorch fallback layer pruning if tokenizer or external tool unavailable
-        if hasattr(self.model, "transformer") and hasattr(self.model.transformer, "layer"):
-            layers = self.model.transformer.layer
+    def _get_hidden_size(self, layer: nn.Module) -> int:
+        """Infers the hidden feature dimension from a transformer layer."""
+        for attr in ["hidden_size", "d_model", "dim", "embed_dim"]:
+            if hasattr(layer, attr):
+                return getattr(layer, attr)
+        for m in layer.modules():
+            if isinstance(m, nn.Linear):
+                return m.in_features
+            elif isinstance(m, nn.LayerNorm):
+                return m.normalized_shape[0] if isinstance(m.normalized_shape, tuple) else m.normalized_shape
+        return 768
+
+    def _find_layer_container(self) -> Tuple[Optional[nn.Module], Optional[str], Optional[nn.ModuleList]]:
+        """Finds the ModuleList containing transformer layers."""
+        candidates = [
+            ("transformer.layer", lambda m: getattr(getattr(m, "transformer", None), "layer", None)),
+            ("transformer.h", lambda m: getattr(getattr(m, "transformer", None), "h", None)),
+            ("model.layers", lambda m: getattr(getattr(m, "model", None), "layers", None)),
+            ("encoder.layer", lambda m: getattr(getattr(m, "encoder", None), "layer", None)),
+            ("layers", lambda m: getattr(m, "layers", None)),
+            ("h", lambda m: getattr(m, "h", None)),
+        ]
+
+        for name, getter in candidates:
+            res = getter(self.model)
+            if isinstance(res, (nn.ModuleList, list)) and len(res) > 0:
+                parts = name.split(".")
+                parent = self.model
+                for p in parts[:-1]:
+                    parent = getattr(parent, p)
+                return parent, parts[-1], res
+
+        return None, None, None
+
+    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Applies layer shedding with learnable inter-layer interpolation adapters."""
+        parent, attr_name, layers = self._find_layer_container()
+        bridges_inserted = 0
+
+        if layers is not None and parent is not None and attr_name is not None:
             orig_len = len(layers)
-            keep_len = max(1, int(orig_len * (1 - self.sparsity)))
+            keep_len = max(1, int(orig_len * (1.0 - self.sparsity)))
             if self.target_layers is not None:
                 keep_len = min(orig_len, max(1, self.target_layers))
-            self.model.transformer.layer = nn.ModuleList([layers[i] for i in range(keep_len)])
-        elif hasattr(self.model, "layers") and isinstance(self.model.layers, nn.ModuleList):
-            layers = self.model.layers
-            orig_len = len(layers)
-            keep_len = max(1, int(orig_len * (1 - self.sparsity)))
-            if self.target_layers is not None:
-                keep_len = min(orig_len, max(1, self.target_layers))
-            self.model.layers = nn.ModuleList([layers[i] for i in range(keep_len)])
+
+            if keep_len < orig_len:
+                # Uniformly sampled layer indices
+                kept_indices = np.round(np.linspace(0, orig_len - 1, keep_len)).astype(int).tolist()
+                # Deduplicate while preserving order
+                seen = set()
+                kept_indices = [x for x in kept_indices if not (x in seen or seen.add(x))]
+
+                bridged_module_list = nn.ModuleList()
+                for i, layer_idx in enumerate(kept_indices):
+                    layer = layers[layer_idx]
+                    # Check if jumping across dropped layers
+                    is_gap = (i < len(kept_indices) - 1 and kept_indices[i + 1] > layer_idx + 1)
+                    if is_gap:
+                        hidden_size = self._get_hidden_size(layer)
+                        bridge = CoMeBridge(hidden_size=hidden_size, alpha_init=self.alpha_init)
+                        bridged_module_list.append(CoMeBridgedLayer(layer, bridge=bridge))
+                        bridges_inserted += 1
+                    else:
+                        bridged_module_list.append(layer)
+
+                setattr(parent, attr_name, bridged_module_list)
         else:
             # SVD prune linear layers if architecture lacks explicit layer list
             for name, module in self.model.named_modules():
                 if isinstance(module, nn.Linear):
                     W = module.weight.data.float()
                     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                    r = max(1, int(len(S) * (1 - self.sparsity)))
+                    r = max(1, int(len(S) * (1.0 - self.sparsity)))
                     module.weight.data = ((U[:, :r] * S[:r]) @ Vt[:r, :]).to(dtype=module.weight.dtype)
 
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                device=self.target_device,
+            )
+
         self._compressed_params = self._count_params(self.model)
-        return self.model, self.get_compression_stats()
+        stats = self.get_compression_stats()
+        stats.update({
+            "bridges_inserted": bridges_inserted,
+            "target_layers": self.target_layers,
+            "sparsity": self.sparsity,
+            "recalibrate_ln": self.recalibrate_ln,
+            "method": "come_layer_shedding_with_bridges",
+        })
+        self.stats = stats
+        return self.model, stats
 
 
 @COMPRESSOR_REGISTRY.register("come")
 def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
-    """Come factory."""
+    """Factory function for CoMe compressor."""
     target_layers = getattr(comp_config, "come_target_layers", kwargs.get("target_layers", None))
     sparsity = getattr(comp_config, "come_sparsity", kwargs.get("sparsity", 0.3))
+    alpha_init = getattr(comp_config, "come_alpha_init", kwargs.get("alpha_init", 0.1))
     tokenizer = getattr(model, "tokenizer", kwargs.get("tokenizer", None))
+    recalibrate_ln = getattr(comp_config, "come_recalibrate_ln", kwargs.get("recalibrate_ln", True))
 
     compressor = CoMeCompressor(
-        model, tokenizer, target_layers=target_layers, sparsity=sparsity, **kwargs
+        model,
+        tokenizer=tokenizer,
+        target_layers=target_layers,
+        sparsity=sparsity,
+        alpha_init=alpha_init,
+        recalibrate_ln=recalibrate_ln,
+        **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+__all__ = [
+    "CoMeBridge",
+    "CoMeBridgedLayer",
+    "CoMeCompressor",
+    "come_factory",
+]
 ```
 
 ---
@@ -1531,63 +2864,255 @@ Set minimum bit-width floor $b_{\min} = 4$, enabled `use_ste=True` with `AstroLi
 
 #### Complete Verbatim Source Code (`coopq_quantizer.py`)
 ```python
-"""CoopQ: Cooperative Game-Theoretic Bit Allocation Quantizer with STE. Registered as 'coopq'."""
+"""
+CoopQ: Cooperative Game-Theoretic Bit Allocation Quantizer with STE and Per-Channel Asymmetric Calibration.
+Registered in COMPRESSOR_REGISTRY as 'coopq'.
+
+Mathematical Formulation:
+1. Min Bit-Width Floor Enforcement:
+   $$b_l \\ge b_{\\min} = 4, \\quad \\forall l \\in \\{1, \\dots, L\\}$$
+2. Per-Channel Asymmetric Scale & Zero-Point Calibration:
+   $$\\text{scale}_i = \\max\\left( \\frac{\\max_j W_{ij} - \\min_j W_{ij}}{2^b - 1}, 10^{-8} \\right), \\quad z_i = \\operatorname{clamp}\\left( \\left\\lfloor -\\frac{\\min_j W_{ij}}{\\text{scale}_i} \\right\\rceil, 0, 2^b - 1 \\right)$$
+   $$\\widehat{W}_{ij} = \\left( \\operatorname{clamp}\\left( \\left\\lfloor \\frac{W_{ij}}{\\text{scale}_i} \\right\\rceil + z_i, 0, 2^b - 1 \\right) - z_i \\right) \\cdot \\text{scale}_i$$
+3. Straight-Through Estimator (STE) Gradient Backpropagation:
+   $$\\frac{\\partial \\mathcal{L}}{\\partial W} = \\frac{\\partial \\mathcal{L}}{\\partial \\widehat{W}}$$
+"""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any, Dict, List, Optional, Tuple, Union
+import logging
 import torch
 import torch.nn as nn
-from framework.compression_engine.astro_quantizer import (
-    AstroLinear,
-    quantize_dequantize_tensor,
-)
+import torch.nn.functional as F
+
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.compression_engine.astro_quantizer import AstroLinear
+from framework.compression_engine.pruning_utils import (
+    get_calibration_tensors,
+    recalibrate_layernorms,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class CoopQSTEFakeQuantize(torch.autograd.Function):
+    """
+    Straight-Through Estimator (STE) fake-quantization autograd function for CoopQ.
+    Forwards per-channel quantized-dequantized weights and passes gradients through on backward pass.
+    """
+
+    @staticmethod
+    def forward(
+        ctx: Any,
+        x: torch.Tensor,
+        scale: torch.Tensor,
+        zero_point: torch.Tensor,
+        qmin: float,
+        qmax: float,
+    ) -> torch.Tensor:
+        ctx.save_for_backward(scale, zero_point)
+        ctx.qmin = qmin
+        ctx.qmax = qmax
+
+        # Quantize and clamp
+        q = torch.clamp(torch.round(x / scale) + zero_point, qmin, qmax)
+        # De-quantize
+        dq = (q - zero_point) * scale
+        return dq
+
+    @staticmethod
+    def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[torch.Tensor, None, None, None, None]:
+        # STE passes gradient uninhibited to parameter tensor
+        grad_x = grad_output.clone()
+        return grad_x, None, None, None, None
+
+
+def quantize_dequantize_coopq(
+    tensor: torch.Tensor,
+    bits: int = 4,
+    symmetric: bool = False,
+    per_channel: bool = True,
+    use_ste: bool = False,
+) -> torch.Tensor:
+    """
+    Calibrates per-channel / tensor-wide scale and zero-point for INT(bits) and applies
+    symmetric or asymmetric uniform quantization with optional STE.
+    Enforces minimum bit-width floor b >= 4.
+    """
+    if tensor.numel() == 0:
+        return tensor
+
+    bits = max(4, int(bits))
+    orig_dtype = tensor.dtype
+    t = tensor.float()
+
+    if symmetric:
+        qmin = float(-(2 ** (bits - 1)))
+        qmax = float((2 ** (bits - 1)) - 1)
+        if per_channel and t.ndim >= 2:
+            dim_to_reduce = tuple(range(1, t.ndim))
+            max_abs = torch.amax(torch.abs(t), dim=dim_to_reduce, keepdim=True)
+            scale = torch.clamp(max_abs / max(float(qmax), 1.0), min=1e-8)
+            zero_point = torch.zeros_like(scale)
+        else:
+            max_abs = torch.max(torch.abs(t))
+            scale = torch.clamp(max_abs / max(float(qmax), 1.0), min=1e-8)
+            zero_point = torch.tensor(0.0, device=t.device, dtype=t.dtype)
+    else:
+        # Asymmetric quantization with explicit zero-point offset calibration
+        qmin = 0.0
+        qmax = float((2**bits) - 1)
+        if per_channel and t.ndim >= 2:
+            dim_to_reduce = tuple(range(1, t.ndim))
+            min_val = torch.amin(t, dim=dim_to_reduce, keepdim=True)
+            max_val = torch.amax(t, dim=dim_to_reduce, keepdim=True)
+            scale = torch.clamp((max_val - min_val) / max(float(qmax), 1.0), min=1e-8)
+            zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
+        else:
+            min_val = torch.min(t)
+            max_val = torch.max(t)
+            scale = torch.clamp((max_val - min_val) / max(float(qmax), 1.0), min=1e-8)
+            zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
+
+    if use_ste and t.requires_grad:
+        out = CoopQSTEFakeQuantize.apply(t, scale, zero_point, qmin, qmax)
+    else:
+        q = torch.clamp(torch.round(t / scale) + zero_point, qmin, qmax)
+        out = (q - zero_point) * scale
+
+    return out.to(dtype=orig_dtype)
+
+
+class CoopQLinear(nn.Module):
+    """
+    CoopQ Linear layer with per-channel asymmetric quantization and STE backpropagation.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        bits: int = 4,
+        symmetric: bool = False,
+        per_channel: bool = True,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.bits = max(4, int(bits))
+        self.symmetric = symmetric
+        self.per_channel = per_channel
+
+        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter("bias", None)
+
+        nn.init.kaiming_uniform_(self.weight, a=5**0.5)
+        if self.bias is not None:
+            nn.init.zeros_(self.bias)
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear,
+        bits: int = 4,
+        symmetric: bool = False,
+        per_channel: bool = True,
+    ) -> CoopQLinear:
+        layer = cls(
+            linear.in_features,
+            linear.out_features,
+            bias=linear.bias is not None,
+            bits=bits,
+            symmetric=symmetric,
+            per_channel=per_channel,
+        )
+        layer.weight.data.copy_(linear.weight.data)
+        if linear.bias is not None:
+            layer.bias.data.copy_(linear.bias.data)
+        return layer
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        w_q = quantize_dequantize_coopq(
+            self.weight,
+            bits=self.bits,
+            symmetric=self.symmetric,
+            per_channel=self.per_channel,
+            use_ste=self.training,
+        )
+        b_q = None
+        if self.bias is not None:
+            b_q = quantize_dequantize_coopq(
+                self.bias,
+                bits=self.bits,
+                symmetric=self.symmetric,
+                per_channel=False,
+                use_ste=self.training,
+            )
+        return F.linear(
+            x,
+            w_q.to(dtype=x.dtype, device=x.device),
+            b_q.to(dtype=x.dtype, device=x.device) if b_q is not None else None,
+        )
 
 
 class CoopQQuantizer(BaseCompressor):
     """
     CoopQ: Cooperative Game-Theoretic Bit Allocation Quantization.
-    Allocates discrete bit-widths (e.g. 2, 4, 6, 8 bits) across transformer layers
+    Allocates discrete bit-widths (>= 4 bits) across transformer layers
     proportional to layer sensitivity (Frobenius energy / variance), guaranteeing
     a target mean bit-budget under strict distortion minimization.
 
     Args:
         model: PyTorch model.
         bits: Target average bit-width (default 4).
-        min_bits: Minimum allowable bit-width per layer (default 2).
+        min_bits: Minimum allowable bit-width per layer (floor enforced at >= 4).
         max_bits: Maximum allowable bit-width per layer (default 8).
-        symmetric: Whether to use symmetric quantization (default True).
-        per_channel: Whether to use per-channel scale factors (default False).
-        use_ste: Whether to substitute nn.Linear with AstroLinear for QAT (default False).
+        symmetric: Whether to use symmetric quantization (default False for asymmetric calibration).
+        per_channel: Whether to use per-channel scale factors (default True).
+        use_ste: Whether to substitute nn.Linear with AstroLinear/CoopQLinear for QAT (default True).
     """
 
     def __init__(
         self,
         model: nn.Module,
         bits: int = 4,
-        min_bits: int = 2,
+        min_bits: int = 4,
         max_bits: int = 8,
-        symmetric: bool = True,
-        per_channel: bool = False,
-        use_ste: bool = False,
+        symmetric: bool = False,
+        per_channel: bool = True,
+        use_ste: bool = True,
+        recalibrate_ln: bool = True,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="coopq", **kwargs)
-        self.bits = int(bits)
-        self.min_bits = int(min_bits)
-        self.max_bits = int(max_bits)
+        # Strictly enforce minimum bit-width floor b_min = 4
+        self.min_bits = max(4, int(min_bits))
+        self.max_bits = max(self.min_bits, int(max_bits))
+        self.bits = max(self.min_bits, min(int(bits), self.max_bits))
         self.symmetric = bool(symmetric)
         self.per_channel = bool(per_channel)
         self.use_ste = bool(use_ste)
-
-    def _replace_module(self, full_name: str, new_module: nn.Module) -> None:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part)
-        setattr(parent, parts[-1], new_module)
+        self.recalibrate_ln = recalibrate_ln
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else (next(model.parameters(), torch.tensor(0.0)).device)
+        )
+        self.stats: Dict[str, Any] = {}
 
     def _calculate_layer_sensitivities(self) -> Dict[str, float]:
         """Compute sensitivity metric per Linear layer based on normalized Frobenius energy and variance."""
@@ -1595,14 +3120,13 @@ class CoopQQuantizer(BaseCompressor):
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float()
-                # Frobenius norm normalized by matrix dimensions + standard deviation
                 frob_norm = torch.norm(W, p="fro").item() / (W.numel() ** 0.5 + 1e-8)
                 std_val = torch.std(W).item() if W.numel() > 1 else 0.0
                 sensitivities[name] = float(frob_norm + std_val)
         return sensitivities
 
     def _allocate_bits(self, sensitivities: Dict[str, float]) -> Dict[str, int]:
-        """Allocate discrete integer bit-widths satisfying mean(bits) <= self.bits."""
+        """Allocate discrete integer bit-widths satisfying mean(bits) <= self.bits with floor >= min_bits (>= 4)."""
         if not sensitivities:
             return {}
 
@@ -1610,20 +3134,18 @@ class CoopQQuantizer(BaseCompressor):
         num_layers = len(sensitivities)
         target_total_bits = self.bits * num_layers
 
+        # Allowed bit-levels with floor >= self.min_bits (>= 4)
+        allowed_bits = [b for b in [4, 5, 6, 7, 8] if self.min_bits <= b <= self.max_bits]
+        if not allowed_bits:
+            allowed_bits = [self.min_bits]
+
         # Continuous allocation proportional to sensitivity
         raw_allocations: Dict[str, float] = {}
         mean_sens = total_sens / num_layers
         for name, sens in sensitivities.items():
-            # Sensitivity delta from mean
             sens_ratio = sens / mean_sens
             raw_bits = self.bits + (sens_ratio - 1.0) * (self.max_bits - self.min_bits) / 2.0
             raw_allocations[name] = max(float(self.min_bits), min(float(self.max_bits), raw_bits))
-
-        # Discrete rounding into allowed bit-levels [2, 3, 4, 6, 8]
-        allowed_bits = [2, 3, 4, 6, 8]
-        allowed_bits = [b for b in allowed_bits if self.min_bits <= b <= self.max_bits]
-        if not allowed_bits:
-            allowed_bits = [self.bits]
 
         discrete_allocations: Dict[str, int] = {}
         for name, raw_b in raw_allocations.items():
@@ -1635,7 +3157,6 @@ class CoopQQuantizer(BaseCompressor):
         sorted_names = sorted(sensitivities.keys(), key=lambda k: sensitivities[k], reverse=True)
 
         if current_sum > target_total_bits:
-            # Reduce bits starting from lowest sensitivity
             for name in reversed(sorted_names):
                 curr_b = discrete_allocations[name]
                 valid_lower = [b for b in allowed_bits if b < curr_b]
@@ -1645,7 +3166,6 @@ class CoopQQuantizer(BaseCompressor):
                     if current_sum <= target_total_bits:
                         break
         elif current_sum < target_total_bits:
-            # Increase bits starting from highest sensitivity
             for name in sorted_names:
                 curr_b = discrete_allocations[name]
                 valid_higher = [b for b in allowed_bits if b > curr_b]
@@ -1655,10 +3175,14 @@ class CoopQQuantizer(BaseCompressor):
                     if current_sum >= target_total_bits:
                         break
 
+        # Ensure strict min_bits floor on all layers
+        for k in discrete_allocations:
+            discrete_allocations[k] = max(self.min_bits, discrete_allocations[k])
+
         return discrete_allocations
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Quantize linear layers with layer-specific bit allocation."""
+        """Quantize linear layers with layer-specific bit allocation (>= 4 bits) and per-channel asymmetric calibration."""
         sensitivities = self._calculate_layer_sensitivities()
         bit_allocations = self._allocate_bits(sensitivities)
 
@@ -1672,15 +3196,15 @@ class CoopQQuantizer(BaseCompressor):
                 total_params_linear += module.weight.numel()
 
                 if self.use_ste:
-                    astro_layer = AstroLinear.from_linear(
+                    coopq_layer = CoopQLinear.from_linear(
                         module,
                         bits=layer_bits,
                         symmetric=self.symmetric,
                         per_channel=self.per_channel,
                     )
-                    self._replace_module(name, astro_layer)
+                    replace_module(self.model, name, coopq_layer)
                 else:
-                    module.weight.data = quantize_dequantize_tensor(
+                    module.weight.data = quantize_dequantize_coopq(
                         module.weight.data,
                         bits=layer_bits,
                         symmetric=self.symmetric,
@@ -1688,7 +3212,7 @@ class CoopQQuantizer(BaseCompressor):
                         use_ste=False,
                     )
                     if module.bias is not None:
-                        module.bias.data = quantize_dequantize_tensor(
+                        module.bias.data = quantize_dequantize_coopq(
                             module.bias.data,
                             bits=layer_bits,
                             symmetric=self.symmetric,
@@ -1696,15 +3220,33 @@ class CoopQQuantizer(BaseCompressor):
                             use_ste=False,
                         )
 
+        # LayerNorm Recalibration
+        if self.recalibrate_ln:
+            recalibrate_layernorms(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+
         avg_bits = (
             total_bits_weighted / total_params_linear if total_params_linear > 0 else self.bits
         )
         stats = self.get_compression_stats()
-        stats["target_bits"] = self.bits
-        stats["average_allocated_bits"] = round(avg_bits, 2)
-        stats["layer_bit_allocations"] = bit_allocations
-        stats["symmetric"] = self.symmetric
-        stats["theoretical_vram_saving"] = f"{(1.0 - avg_bits / 16.0) * 100:.1f}% vs FP16"
+        stats.update({
+            "target_bits": self.bits,
+            "min_bits_floor": self.min_bits,
+            "average_allocated_bits": round(avg_bits, 2),
+            "layer_bit_allocations": bit_allocations,
+            "symmetric": self.symmetric,
+            "per_channel": self.per_channel,
+            "use_ste": self.use_ste,
+            "recalibrate_ln": self.recalibrate_ln,
+            "method": "coopq_asymmetric_ste_bmin4",
+            "theoretical_vram_saving": f"{(1.0 - avg_bits / 16.0) * 100:.1f}% vs FP16",
+        })
+        self.stats = stats
         return self.model, stats
 
 
@@ -1712,11 +3254,13 @@ class CoopQQuantizer(BaseCompressor):
 def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """CoopQ compressor factory function."""
     bits = kwargs.pop("bits", getattr(comp_config, "coopq_bits", 4) if comp_config is not None else 4)
-    min_bits = kwargs.pop("min_bits", getattr(comp_config, "coopq_min_bits", 2) if comp_config is not None else 2)
+    min_bits = kwargs.pop("min_bits", getattr(comp_config, "coopq_min_bits", 4) if comp_config is not None else 4)
     max_bits = kwargs.pop("max_bits", getattr(comp_config, "coopq_max_bits", 8) if comp_config is not None else 8)
-    symmetric = kwargs.pop("symmetric", getattr(comp_config, "coopq_symmetric", True) if comp_config is not None else True)
-    per_channel = kwargs.pop("per_channel", getattr(comp_config, "coopq_per_channel", False) if comp_config is not None else False)
-    use_ste = kwargs.pop("use_ste", getattr(comp_config, "coopq_use_ste", False) if comp_config is not None else False)
+    symmetric = kwargs.pop("symmetric", getattr(comp_config, "coopq_symmetric", False) if comp_config is not None else False)
+    per_channel = kwargs.pop("per_channel", getattr(comp_config, "coopq_per_channel", True) if comp_config is not None else True)
+    use_ste = kwargs.pop("use_ste", getattr(comp_config, "coopq_use_ste", True) if comp_config is not None else True)
+    recalibrate_ln = getattr(comp_config, "coopq_recalibrate_ln", kwargs.get("recalibrate_ln", True))
+
     compressor = CoopQQuantizer(
         model,
         bits=bits,
@@ -1725,10 +3269,19 @@ def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         symmetric=symmetric,
         per_channel=per_channel,
         use_ste=use_ste,
+        recalibrate_ln=recalibrate_ln,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+__all__ = [
+    "CoopQSTEFakeQuantize",
+    "quantize_dequantize_coopq",
+    "CoopQLinear",
+    "CoopQQuantizer",
+    "coopq_factory",
+]
 ```
 
 ---
@@ -1773,6 +3326,7 @@ class ENLightenCompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float()
+                norm_w = torch.linalg.norm(W, ord="fro")
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                 r = max(1, min(self.rank, len(S), min(W.shape)))
                 U_r = U[:, :r]
@@ -1795,7 +3349,11 @@ class ENLightenCompressor(BaseCompressor):
                         mask.scatter_(1, top_idx, 1.0)
                         residual_sp[:, j:end_j] = sub * mask
 
-                W_new = L + residual_sp
+                W_recon = L + residual_sp
+                recon_norm = torch.linalg.norm(W_recon, ord="fro")
+                # Balanced scale factor (W_F / ||L + R||_F) to preserve global matrix Frobenius norm post-decomposition
+                scale = norm_w / (recon_norm + 1e-12) if recon_norm > 1e-12 else 1.0
+                W_new = W_recon * scale
                 module.weight.data = W_new.to(
                     dtype=module.weight.dtype, device=module.weight.device
                 )
@@ -1964,24 +3522,28 @@ class FAQQuantizer(BaseCompressor):
         self.use_ste = bool(use_ste)
 
     def _collect_activation_scales(self) -> Dict[str, torch.Tensor]:
-        """Collect channel-wise input activation scales per Linear layer via forward hooks."""
-        act_scales: Dict[str, torch.Tensor] = {}
+        """Collect channel-wise input activation scales via empirical calibration hooks with running covariance."""
+        running_cov: Dict[str, torch.Tensor] = {}
+        sample_counts: Dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str) -> Any:
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
-                    # Compute mean/max magnitude per input channel (last dimension)
                     if x.ndim >= 2:
                         flat_x = x.reshape(-1, x.shape[-1])
-                        channel_scale = torch.mean(torch.abs(flat_x), dim=0)
                     else:
-                        channel_scale = torch.abs(x)
-                    if layer_name in act_scales:
-                        act_scales[layer_name] = 0.5 * (act_scales[layer_name] + channel_scale.cpu())
-                    else:
-                        act_scales[layer_name] = channel_scale.cpu()
+                        flat_x = x.unsqueeze(0)
+                    n_samples = flat_x.shape[0]
+                    if n_samples > 0:
+                        batch_cov = torch.matmul(flat_x.T, flat_x).cpu()
+                        if layer_name not in running_cov:
+                            running_cov[layer_name] = batch_cov
+                            sample_counts[layer_name] = n_samples
+                        else:
+                            running_cov[layer_name] += batch_cov
+                            sample_counts[layer_name] += n_samples
 
             return hook
 
@@ -2005,12 +3567,15 @@ class FAQQuantizer(BaseCompressor):
                         dev = first_p.device if first_p is not None else torch.device("cpu")
                         self.model(self.calibration_data.to(dev))
                     elif hasattr(self.calibration_data, "__iter__"):
-                        for batch in self.calibration_data:
+                        for idx, batch in enumerate(self.calibration_data):
                             if isinstance(batch, torch.Tensor):
-                                self.model(batch)
+                                first_p = next(self.model.parameters(), None)
+                                dev = first_p.device if first_p is not None else torch.device("cpu")
+                                self.model(batch.to(dev))
                             elif isinstance(batch, dict):
                                 self.model(**batch)
-                            break
+                            if idx >= 32:
+                                break
                 else:
                     # Synthetic calibration forward pass
                     first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
@@ -2021,23 +3586,25 @@ class FAQQuantizer(BaseCompressor):
                         try:
                             self.model(dummy_x)
                         except Exception:
-                            # If model doesn't accept tensor directly, run per-layer synthetic
-                            for name, module in self.model.named_modules():
-                                if isinstance(module, nn.Linear):
-                                    act_scales[name] = torch.ones(module.in_features)
+                            pass
             except Exception:
-                # Fallback to uniform activation scales
-                for name, module in self.model.named_modules():
-                    if isinstance(module, nn.Linear):
-                        act_scales[name] = torch.ones(module.in_features)
+                pass
 
         for h in hooks:
             h.remove()
 
-        # Ensure all linear layers have an entry
+        act_scales: Dict[str, torch.Tensor] = {}
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and name not in act_scales:
-                act_scales[name] = torch.ones(module.in_features)
+            if isinstance(module, nn.Linear):
+                if name in running_cov and sample_counts.get(name, 0) > 0:
+                    cov = running_cov[name] / float(max(sample_counts[name], 1))
+                    # Diagonal of covariance is empirical channel variance / second moment
+                    var_diag = torch.diagonal(cov)
+                    # Clamping with eps=1e-6 to prevent zero-variance division by zero
+                    channel_scale = torch.sqrt(torch.clamp(var_diag, min=1e-6))
+                    act_scales[name] = channel_scale
+                else:
+                    act_scales[name] = torch.ones(module.in_features)
 
         return act_scales
 
@@ -2153,6 +3720,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
+import math
 import torch
 import torch.nn as nn
 
@@ -2176,6 +3744,7 @@ class FLATLLMCompressor(BaseCompressor):
         model: nn.Module,
         tokenizer: Optional[Any] = None,
         keep_ratio: float = 0.7,
+        damping: float = 1e-4,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
@@ -2183,8 +3752,14 @@ class FLATLLMCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="flat_llm", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            keep_ratio = getattr(cfg, "flat_llm_keep_ratio", getattr(cfg, "keep_ratio", keep_ratio))
+            damping = getattr(cfg, "flat_llm_damping", getattr(cfg, "damping", damping))
+            structured_24 = getattr(cfg, "flat_llm_structured_24", getattr(cfg, "structured_24", structured_24))
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.keep_ratio = max(0.05, min(float(keep_ratio), 1.0))
+        self.damping = float(damping)
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.structured_24 = structured_24
@@ -2244,7 +3819,7 @@ class FLATLLMCompressor(BaseCompressor):
         return aggregated
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes FLAT-LLM dimension pruning across all Linear modules."""
+        """Executes FLAT-LLM dimension pruning across all Linear modules with damped Hessian."""
         outputs_map = self._collect_layer_outputs()
         pruned_layers_count = 0
 
@@ -2259,9 +3834,14 @@ class FLATLLMCompressor(BaseCompressor):
                 if act is not None and act.numel() > 0:
                     act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
                     if act_flat.shape[-1] == d_out:
-                        cov = torch.matmul(act_flat.T, act_flat) / max(act_flat.shape[0], 1)
-                        cov = cov + 1e-6 * torch.eye(d_out, device=device)
-                        eigvals, _ = torch.linalg.eigh(cov)
+                        # Empirical Hessian H = (1/N) Y^T Y with diagonal damping H + lambda * I
+                        H = torch.matmul(act_flat.T, act_flat) / max(act_flat.shape[0], 1)
+                        diag_mean = torch.diagonal(H).mean().item()
+                        if not math.isfinite(diag_mean) or diag_mean <= 0.0:
+                            diag_mean = 1.0
+                        lambda_val = max(float(self.damping) * diag_mean, 1e-6)
+                        H_damped = H + lambda_val * torch.eye(d_out, device=device, dtype=H.dtype)
+                        eigvals, _ = torch.linalg.eigh(H_damped)
                     else:
                         eigvals = torch.sum(W.pow(2), dim=1)
                 else:
@@ -2289,6 +3869,7 @@ class FLATLLMCompressor(BaseCompressor):
         stats.update({
             "pruned_layers": pruned_layers_count,
             "keep_ratio": self.keep_ratio,
+            "damping": self.damping,
             "structured_24": self.structured_24,
             "method": "flat_llm_eigen_pruning",
         })
@@ -2301,6 +3882,7 @@ class FLATLLMCompressor(BaseCompressor):
 def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for FLAT-LLM compressor."""
     keep_ratio = getattr(comp_config, "flat_llm_keep_ratio", getattr(comp_config, "keep_ratio", 0.7)) if comp_config else kwargs.get("keep_ratio", 0.7)
+    damping = getattr(comp_config, "flat_llm_damping", getattr(comp_config, "damping", 1e-4)) if comp_config else kwargs.get("damping", 1e-4)
     structured_24 = getattr(comp_config, "flat_llm_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else kwargs.get("structured_24", False)
     tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
 
@@ -2308,6 +3890,7 @@ def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         model,
         tokenizer=tokenizer,
         keep_ratio=keep_ratio,
+        damping=damping,
         structured_24=structured_24,
         **kwargs,
     )
@@ -2337,57 +3920,184 @@ Replaced synthetic Fisher approximation with activation covariance singular deco
 
 #### Complete Verbatim Source Code (`gfws_d_compressor.py`)
 ```python
-"""GFWSVD: Fisher-weighted SVD. Registered as 'gfws'."""
-from typing import Any
+"""GFWSVD: Fisher-weighted SVD. Registered as 'gfws' and 'gfws_d'."""
+from __future__ import annotations
 
-import numpy as np
+import logging
+import math
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
+from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
+logger = logging.getLogger(__name__)
+
 
 class GFWSCompressor(BaseCompressor):
-    def __init__(self, model, rank=64, damping=0.01, **kwargs):
-        super().__init__(model, name="gfws", **kwargs)
-        self.rank = rank
-        self.damping = damping
+    """
+    Generalized Fisher / Covariance-Weighted SVD Compressor.
+    Whitens weights using empirical input activation covariance square-root Cov(X)^{1/2},
+    performs low-rank truncated SVD, and de-whitens to restore optimal compressed weights.
+    """
 
-    def compress(self) -> Any:
-        """Compress the target module using this strategy."""
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 64,
+        damping: float = 0.01,
+        tokenizer: Optional[Any] = None,
+        calibration_loader: Optional[Any] = None,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(model, name="gfws", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            rank = getattr(cfg, "gfws_rank", getattr(cfg, "rank", rank))
+            damping = getattr(cfg, "gfws_damping", getattr(cfg, "damping", damping))
+        self.rank = int(rank)
+        self.damping = float(damping)
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else next(model.parameters(), torch.tensor(0.0)).device
+        )
+
+    def _collect_activation_covariances(self) -> Dict[str, torch.Tensor]:
+        """Collect empirical input activation covariances across nn.Linear modules."""
+        self.model.eval()
+        running_cov: Dict[str, torch.Tensor] = {}
+        sample_counts: Dict[str, int] = {}
+        hooks = []
+
+        def make_hook(layer_name: str) -> Any:
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
+                if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
+                    x = inp[0].detach().float()
+                    if x.ndim >= 2:
+                        flat_x = x.reshape(-1, x.shape[-1])
+                    else:
+                        flat_x = x.unsqueeze(0)
+                    n_samples = flat_x.shape[0]
+                    if n_samples > 0:
+                        batch_cov = torch.matmul(flat_x.T, flat_x).cpu()
+                        if layer_name not in running_cov:
+                            running_cov[layer_name] = batch_cov
+                            sample_counts[layer_name] = n_samples
+                        else:
+                            running_cov[layer_name] += batch_cov
+                            sample_counts[layer_name] += n_samples
+
+            return hook
+
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                W = module.weight.data.float().cpu().numpy()
-                if module.weight.grad is not None:
-                    grad = module.weight.grad.data.float().cpu().numpy()
-                else:
-                    grad = np.eye(W.shape[0], W.shape[1]) if W.shape[0] == W.shape[1] else np.random.randn(*W.shape) * 0.01
-                F = grad @ grad.T + self.damping * np.eye(W.shape[0])
-                try:
-                    L = np.linalg.cholesky(F)
-                    W_white = L @ W
-                    U, S, Vh = np.linalg.svd(W_white, full_matrices=False)
-                    r = min(self.rank, min(W.shape))
-                    W_approx = np.linalg.solve(L, U[:, :r] @ np.diag(S[:r]) @ Vh[:r, :])
-                    module.weight.data = torch.tensor(
-                        W_approx, dtype=module.weight.dtype, device=module.weight.device
-                    )
-                except Exception:
-                    U, S, Vh = np.linalg.svd(W, full_matrices=False)
-                    r = min(self.rank, min(W.shape))
-                    W_approx = U[:, :r] @ np.diag(S[:r]) @ Vh[:r, :]
-                    module.weight.data = torch.tensor(
-                        W_approx, dtype=module.weight.dtype, device=module.weight.device
-                    )
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=self.target_device,
+        )
+
+        with torch.no_grad():
+            try:
+                if isinstance(calib_inputs, dict):
+                    self.model(**calib_inputs)
+                elif isinstance(calib_inputs, torch.Tensor):
+                    self.model(calib_inputs)
+                elif isinstance(calib_inputs, (list, tuple)):
+                    self.model(*calib_inputs)
+            except Exception as e:
+                logger.debug("GFWS covariance collection forward pass exception: %s", e)
+
+        for h in hooks:
+            h.remove()
+
+        covariances: Dict[str, torch.Tensor] = {}
+        for name, cov_sum in running_cov.items():
+            n = float(max(sample_counts.get(name, 1), 1))
+            covariances[name] = cov_sum / n
+
+        return covariances
+
+    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Compress linear layers via real activation covariance singular decomposition W * Cov(X)^{1/2}."""
+        covariances = self._collect_activation_covariances()
+        compressed_count = 0
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear):
+                W = module.weight.data.float()
+                d_out, d_in = W.shape
+                device = module.weight.device
+                dtype = module.weight.dtype
+                r = max(1, min(self.rank, d_out, d_in))
+
+                cov = covariances.get(name, None)
+                if cov is not None and cov.shape == (d_in, d_in):
+                    try:
+                        cov_dev = cov.to(device=device, dtype=torch.float32)
+                        diag_mean = torch.diagonal(cov_dev).mean().item()
+                        if not math.isfinite(diag_mean) or diag_mean <= 0.0:
+                            diag_mean = 1.0
+                        lambda_reg = max(float(self.damping) * diag_mean, 1e-6)
+                        cov_reg = cov_dev + lambda_reg * torch.eye(d_in, device=device)
+
+                        eigvals, eigvecs = torch.linalg.eigh(cov_reg)
+                        eigvals_clamped = torch.clamp(eigvals, min=1e-6)
+
+                        # Cov(X)^{1/2} and Cov(X)^{-1/2}
+                        cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                        cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+
+                        # Whiten weights: M = W * Cov(X)^{1/2}
+                        M = torch.matmul(W, cov_sqrt)
+                        U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+
+                        # Low-rank approximation of M: U_r * S_r * Vt_r
+                        M_r = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
+
+                        # De-whiten: W_approx = M_r * Cov(X)^{-1/2}
+                        W_approx = torch.matmul(M_r, cov_inv_sqrt)
+                        module.weight.data = W_approx.to(dtype=dtype, device=device)
+                        compressed_count += 1
+                        continue
+                    except Exception as e:
+                        logger.debug("GFWS covariance decomposition exception on layer %s: %s", name, e)
+
+                # Fallback to standard SVD
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                W_approx = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
+                module.weight.data = W_approx.to(dtype=dtype, device=device)
+                compressed_count += 1
+
         self._compressed_params = self._count_params(self.model)
-        return self.model, self.get_compression_stats()
+        stats = self.get_compression_stats()
+        stats.update({
+            "rank": self.rank,
+            "damping": self.damping,
+            "compressed_layers": compressed_count,
+            "method": "covariance_weighted_svd",
+        })
+        return self.model, stats
 
 
 @COMPRESSOR_REGISTRY.register("gfws")
+@COMPRESSOR_REGISTRY.register("gfws_d")
 def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
-    """Gfws factory."""
-    rank = getattr(comp_config, "gfws_rank", kwargs.get("rank", 64))
-    damping = getattr(comp_config, "gfws_damping", kwargs.get("damping", 0.01))
+    """GFWS factory."""
+    rank = getattr(comp_config, "gfws_rank", getattr(comp_config, "rank", kwargs.get("rank", 64)))
+    damping = getattr(comp_config, "gfws_damping", getattr(comp_config, "damping", kwargs.get("damping", 0.01)))
     compressor = GFWSCompressor(model, rank=rank, damping=damping, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
@@ -2412,7 +4122,7 @@ Restructured HybridKV to preserve all model weights, applying head budget compre
 """
 HybridKV: Hybrid KV Cache Compression for Multimodal & Long-Context LLMs.
 Classifies attention heads into static/dynamic types and applies distinct
-compression strategies per type under a hierarchical budget.
+compression strategies per type under a hierarchical budget strictly to dynamic KV caches.
 
 Paper: "HybridKV: Hybrid KV Cache Compression for Efficient MLLM Inference"
        Zeng et al., arXiv:2604.05887.
@@ -2420,7 +4130,7 @@ Registered as 'hybridkv'.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -2434,6 +4144,7 @@ class HybridKVCache:
     Maintains separate retention policies for static vs dynamic attention heads:
     - Static heads: pinned attention sinks (first S tokens) + global heavy hitters
     - Dynamic heads: recent local sliding window (last W tokens) + chunked key retention
+    Preserves all model stationary weights and strictly compresses dynamic KV cache tensors.
     Supports variable sequence lengths across prefill and token-by-token decoding.
     """
 
@@ -2442,11 +4153,15 @@ class HybridKVCache:
         max_cache_len: int = 128,
         num_sinks: int = 4,
         recent_window: int = 32,
+        budget: float = 0.3,
+        static_ratio: float = 0.7,
         static_heads_mask: Optional[torch.Tensor] = None,
     ) -> None:
         self.max_cache_len = int(max_cache_len)
         self.num_sinks = int(num_sinks)
         self.recent_window = int(recent_window)
+        self.budget = float(budget)
+        self.static_ratio = float(static_ratio)
         self.static_heads_mask = static_heads_mask
         self.k_cache: Optional[torch.Tensor] = None
         self.v_cache: Optional[torch.Tensor] = None
@@ -2464,16 +4179,16 @@ class HybridKVCache:
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Append new KV representations and apply hybrid eviction if cache exceeds capacity.
-        Shapes: (B, H, N, D).
+        Shapes: (B, H, N, D) or (B, N, D) or (N, D).
         """
-        # Ensure 4D tensors (B, H, N, D)
+        orig_ndim = new_k.ndim
         orig_shape = new_k.shape
         k_4d = new_k
         v_4d = new_v
-        if new_k.ndim == 2:
+        if orig_ndim == 2:
             k_4d = new_k.unsqueeze(0).unsqueeze(0)
             v_4d = new_v.unsqueeze(0).unsqueeze(0)
-        elif new_k.ndim == 3:
+        elif orig_ndim == 3:
             k_4d = new_k.unsqueeze(1)
             v_4d = new_v.unsqueeze(1)
 
@@ -2494,62 +4209,109 @@ class HybridKVCache:
 
         cur_len = self.k_cache.size(2)
         if cur_len <= self.max_cache_len:
-            return self.k_cache, self.v_cache
+            out_k, out_v = self.k_cache, self.v_cache
+            if orig_ndim == 2:
+                return out_k.squeeze(0).squeeze(0), out_v.squeeze(0).squeeze(0)
+            elif orig_ndim == 3:
+                return out_k.squeeze(1), out_v.squeeze(1)
+            return out_k, out_v
 
-        # Apply hybrid eviction per head
-        sinks = min(self.num_sinks, cur_len)
-        window = min(self.recent_window, cur_len - sinks)
-        middle_capacity = max(0, self.max_cache_len - sinks - window)
+        # Eviction per head according to static vs dynamic classification
+        target_len = self.max_cache_len
+        head_k_list: List[torch.Tensor] = []
+        head_v_list: List[torch.Tensor] = []
 
-        sink_k = self.k_cache[:, :, :sinks, :]
-        sink_v = self.v_cache[:, :, :sinks, :]
-        win_k = self.k_cache[:, :, -window:, :] if window > 0 else torch.empty(0, device=self.k_cache.device, dtype=self.k_cache.dtype)
-        win_v = self.v_cache[:, :, -window:, :] if window > 0 else torch.empty(0, device=self.v_cache.device, dtype=self.v_cache.dtype)
+        is_static_head = [True] * H
+        if self.static_heads_mask is not None:
+            mask_list = self.static_heads_mask.view(-1).tolist()
+            is_static_head = [bool(mask_list[h % len(mask_list)]) for h in range(H)]
+        else:
+            # Default first int(H * static_ratio) heads as static
+            num_static = max(1, int(H * self.static_ratio))
+            is_static_head = [h < num_static for h in range(H)]
 
-        if middle_capacity <= 0:
-            # Fallback to sinks + recent window
-            self.k_cache = torch.cat([sink_k, win_k], dim=2).contiguous() if window > 0 else sink_k.contiguous()
-            self.v_cache = torch.cat([sink_v, win_v], dim=2).contiguous() if window > 0 else sink_v.contiguous()
-            return self.k_cache, self.v_cache
+        for h in range(H):
+            cur_k_h = self.k_cache[:, h : h + 1, :, :]
+            cur_v_h = self.v_cache[:, h : h + 1, :, :]
 
-        # Intermediate token eviction using L2 norms
-        mid_k = self.k_cache[:, :, sinks : cur_len - window, :]
-        mid_v = self.v_cache[:, :, sinks : cur_len - window, :]
+            if is_static_head[h]:
+                # Static head policy: pinned sinks + heavy hitters across sequence
+                sinks = min(self.num_sinks, cur_len)
+                sink_k = cur_k_h[:, :, :sinks, :]
+                sink_v = cur_v_h[:, :, :sinks, :]
 
-        # Importance metric: mean norm across channels
-        mid_norms = torch.norm(mid_k.float(), dim=-1)  # (B, H, mid_len)
-        _, top_mid_idx = torch.topk(mid_norms, min(middle_capacity, mid_norms.size(-1)), dim=-1)
-        top_mid_idx, _ = torch.sort(top_mid_idx, dim=-1)
+                rem_capacity = max(0, target_len - sinks)
+                if rem_capacity > 0 and cur_len > sinks:
+                    rest_k = cur_k_h[:, :, sinks:, :]
+                    rest_v = cur_v_h[:, :, sinks:, :]
+                    rest_norms = torch.norm(rest_k.float(), dim=-1)  # (B, 1, rem_len)
+                    k_val = min(rem_capacity, rest_norms.size(-1))
+                    _, top_idx = torch.topk(rest_norms, k_val, dim=-1)
+                    top_idx, _ = torch.sort(top_idx, dim=-1)
+                    idx_exp = top_idx.unsqueeze(-1).expand(-1, -1, -1, D)
+                    sel_k = rest_k.gather(2, idx_exp)
+                    sel_v = rest_v.gather(2, idx_exp)
+                    head_k = torch.cat([sink_k, sel_k], dim=2)
+                    head_v = torch.cat([sink_v, sel_v], dim=2)
+                else:
+                    head_k = sink_k
+                    head_v = sink_v
+            else:
+                # Dynamic head policy: recent sliding window + chunked top keys
+                window = min(self.recent_window, cur_len)
+                win_k = cur_k_h[:, :, -window:, :]
+                win_v = cur_v_h[:, :, -window:, :]
 
-        # Gather top middle tokens
-        idx_exp = top_mid_idx.unsqueeze(-1).expand(-1, -1, -1, D)
-        sel_mid_k = mid_k.gather(2, idx_exp)
-        sel_mid_v = mid_v.gather(2, idx_exp)
+                rem_capacity = max(0, target_len - window)
+                if rem_capacity > 0 and cur_len > window:
+                    rest_k = cur_k_h[:, :, :-window, :]
+                    rest_v = cur_v_h[:, :, :-window, :]
+                    rest_norms = torch.norm(rest_k.float(), dim=-1)
+                    k_val = min(rem_capacity, rest_norms.size(-1))
+                    _, top_idx = torch.topk(rest_norms, k_val, dim=-1)
+                    top_idx, _ = torch.sort(top_idx, dim=-1)
+                    idx_exp = top_idx.unsqueeze(-1).expand(-1, -1, -1, D)
+                    sel_k = rest_k.gather(2, idx_exp)
+                    sel_v = rest_v.gather(2, idx_exp)
+                    head_k = torch.cat([sel_k, win_k], dim=2)
+                    head_v = torch.cat([sel_v, win_v], dim=2)
+                else:
+                    head_k = win_k
+                    head_v = win_v
 
-        parts_k = [sink_k]
-        parts_v = [sink_v]
-        if sel_mid_k.size(2) > 0:
-            parts_k.append(sel_mid_k)
-            parts_v.append(sel_mid_v)
-        if window > 0:
-            parts_k.append(win_k)
-            parts_v.append(win_v)
+            head_k_list.append(head_k)
+            head_v_list.append(head_v)
 
-        self.k_cache = torch.cat(parts_k, dim=2).contiguous()
-        self.v_cache = torch.cat(parts_v, dim=2).contiguous()
+        self.k_cache = torch.cat(head_k_list, dim=1).contiguous()
+        self.v_cache = torch.cat(head_v_list, dim=1).contiguous()
 
-        return self.k_cache, self.v_cache
+        out_k, out_v = self.k_cache, self.v_cache
+        if orig_ndim == 2:
+            return out_k.squeeze(0).squeeze(0), out_v.squeeze(0).squeeze(0)
+        elif orig_ndim == 3:
+            return out_k.squeeze(1), out_v.squeeze(1)
+        return out_k, out_v
+
+    @torch.no_grad()
+    def compress(
+        self, k: torch.Tensor, v: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compress dynamic KV cache tensors directly."""
+        return self.update_and_compress(k, v)
 
 
 class HybridKVCompressor(BaseCompressor):
     """
     HybridKV Compressor: Classifies attention projection heads into static/dynamic types
-    and applies hierarchical pruning budgets.
+    and configures hierarchical dynamic KV cache budgets without altering model stationary weights.
 
     Args:
         model: PyTorch model.
-        budget: Overall fraction of parameters to retain (default 0.3).
+        budget: Overall fraction of KV cache budget to retain (default 0.3).
         static_ratio: Fraction of budget allocated to static heads (default 0.7).
+        max_cache_len: Maximum KV cache capacity per head (default 128).
+        num_sinks: Number of sink tokens pinned for static heads (default 4).
+        recent_window: Number of recent tokens retained for dynamic heads (default 32).
     """
 
     def __init__(
@@ -2557,11 +4319,25 @@ class HybridKVCompressor(BaseCompressor):
         model: nn.Module,
         budget: float = 0.3,
         static_ratio: float = 0.7,
+        max_cache_len: int = 128,
+        num_sinks: int = 4,
+        recent_window: int = 32,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="hybridkv", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            budget = getattr(cfg, "hybridkv_budget", getattr(cfg, "budget", budget))
+            static_ratio = getattr(cfg, "hybridkv_static_ratio", getattr(cfg, "static_ratio", static_ratio))
+            max_cache_len = getattr(cfg, "max_cache_len", max_cache_len)
+            num_sinks = getattr(cfg, "num_sinks", num_sinks)
+            recent_window = getattr(cfg, "recent_window", recent_window)
+
         self.budget = float(budget)
         self.static_ratio = float(static_ratio)
+        self.max_cache_len = int(max_cache_len)
+        self.num_sinks = int(num_sinks)
+        self.recent_window = int(recent_window)
 
     @staticmethod
     def _classify_head(weight: torch.Tensor, threshold: float = 0.5) -> str:
@@ -2577,41 +4353,53 @@ class HybridKVCompressor(BaseCompressor):
         return "dynamic" if dynamic_ratio > 0.3 else "static"
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress attention projection weights using hierarchical head budgets."""
-        head_stats: Dict[str, str] = {}
+        """Configure dynamic KV cache compression per attention layer while preserving all model weights."""
+        head_stats: Dict[str, Any] = {}
+        total_heads = 0
+        static_heads_count = 0
+        dynamic_heads_count = 0
+
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear) and self._is_attention_proj(name):
                 W = module.weight.data
                 out_f = W.shape[0]
+                head_dim = 64 if out_f % 64 == 0 else (128 if out_f % 128 == 0 else 32)
+                num_heads = max(1, out_f // head_dim)
                 head_type = self._classify_head(W)
-                head_stats[name] = head_type
 
-                if head_type == "static":
-                    keep = max(1, min(int(out_f * self.budget * self.static_ratio), out_f))
-                    row_norms = torch.norm(W.float(), dim=1)
-                    _, idx = torch.topk(row_norms, keep)
-                    mask = torch.zeros(out_f, device=W.device)
-                    mask[idx] = 1.0
-                else:
-                    chunk_size = 8
-                    keep = max(1, min(int(out_f * self.budget * (1.0 - self.static_ratio)), out_f))
-                    mask = torch.zeros(out_f, device=W.device)
-                    for c in range(0, out_f, chunk_size):
-                        end = min(c + chunk_size, out_f)
-                        chunk = W[c:end].float()
-                        chunk_norms = torch.norm(chunk, dim=1)
-                        n_keep_chunk = max(1, int((end - c) * keep / max(out_f, 1)))
-                        _, local_idx = torch.topk(chunk_norms, min(n_keep_chunk, end - c))
-                        mask[c + local_idx] = 1.0
+                num_static = max(1, int(num_heads * self.static_ratio))
+                num_dynamic = max(0, num_heads - num_static)
+                static_mask = torch.zeros(num_heads, dtype=torch.bool, device=W.device)
+                static_mask[:num_static] = True
 
-                W_pruned = W * mask.unsqueeze(1)
-                module.weight.data = W_pruned.to(dtype=module.weight.dtype)
-                if module.bias is not None:
-                    module.bias.data = module.bias.data * mask
+                kv_cache = HybridKVCache(
+                    max_cache_len=self.max_cache_len,
+                    num_sinks=self.num_sinks,
+                    recent_window=self.recent_window,
+                    budget=self.budget,
+                    static_ratio=self.static_ratio,
+                    static_heads_mask=static_mask,
+                )
+                # Attach KV cache manager without mutating model weights
+                setattr(module, "hybrid_kv_cache", kv_cache)
 
+                head_stats[name] = {
+                    "head_type": head_type,
+                    "num_heads": num_heads,
+                    "static_heads": num_static,
+                    "dynamic_heads": num_dynamic,
+                }
+                total_heads += num_heads
+                static_heads_count += num_static
+                dynamic_heads_count += num_dynamic
+
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats["budget"] = self.budget
         stats["static_ratio"] = self.static_ratio
+        stats["total_attention_heads"] = total_heads
+        stats["static_heads_count"] = static_heads_count
+        stats["dynamic_heads_count"] = dynamic_heads_count
         stats["head_classifications"] = head_stats
         stats["kv_cache_budget_saving"] = f"{(1.0 - self.budget) * 100:.1f}% Footprint Reduction"
         return self.model, stats
@@ -2639,8 +4427,8 @@ class HybridKVCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("hybridkv")
 def hybridkv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """HybridKV compressor factory function."""
-    budget = kwargs.pop("budget", getattr(comp_config, "hybridkv_budget", 0.3) if comp_config is not None else 0.3)
-    static_ratio = kwargs.pop("static_ratio", getattr(comp_config, "hybridkv_static_ratio", 0.7) if comp_config is not None else 0.7)
+    budget = kwargs.pop("budget", getattr(comp_config, "hybridkv_budget", getattr(comp_config, "budget", 0.3)) if comp_config is not None else 0.3)
+    static_ratio = kwargs.pop("static_ratio", getattr(comp_config, "hybridkv_static_ratio", getattr(comp_config, "static_ratio", 0.7)) if comp_config is not None else 0.7)
     compressor = HybridKVCompressor(model, budget=budget, static_ratio=static_ratio, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
@@ -2782,10 +4570,11 @@ def allocate_entropy_ranks(
     if not entropies:
         return {}
 
+    min_rank = max(16, int(min_rank))
     layer_names = list(entropies.keys())
     num_layers = len(layer_names)
 
-    # Determine per-layer physical dimension bounds
+    # Determine per-layer physical dimension bounds with minimum rank floor
     per_layer_min = {}
     per_layer_max = {}
     for name in layer_names:
@@ -2795,7 +4584,7 @@ def allocate_entropy_ranks(
         else:
             phys_max = max_rank
 
-        l_min = max(1, min(min_rank, phys_max))
+        l_min = max(1, min(max(16, min_rank), phys_max))
         l_max = max(l_min, min(max_rank, phys_max))
         per_layer_min[name] = l_min
         per_layer_max[name] = l_max
@@ -3003,12 +4792,12 @@ class DynamicSVDLinear(nn.Module):
         W = linear.weight.data.float()  # (out_f, in_f)
 
         if covariance is not None and covariance.numel() > 0:
-            # RESEARCH FIX: Activation-aware whitening SVD: W_scaled = W @ C_X^{1/2}
+            # RESEARCH FIX: Activation-aware whitening SVD with eigenvalue clamping lambda_i >= 1e-4
             cov = covariance.to(device=W.device, dtype=torch.float32)
             try:
-                # Eigen-decomposition of positive semi-definite covariance
-                eigvals, eigvecs = torch.linalg.eigh(cov)
-                eigvals_clamped = torch.clamp(eigvals, min=1e-8)
+                # Eigen-decomposition with regularized eigenvalue clamping >= 1e-4
+                eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
+                eigvals_clamped = torch.clamp(eigvals, min=1e-4)
                 cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t()
                 cov_inv_sqrt = (
                     eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.t()
@@ -3018,23 +4807,32 @@ class DynamicSVDLinear(nn.Module):
                 U_svd, S_svd, Vh_svd = torch.linalg.svd(W_scaled, full_matrices=False)
 
                 # Truncate and un-whiten right singular factors
-                U_r = U_svd[:, :target_rank] * torch.sqrt(S_svd[:target_rank]).unsqueeze(0)
+                sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
+                U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
                 V_r = (
-                    torch.sqrt(S_svd[:target_rank]).unsqueeze(1)
+                    sqrt_S.unsqueeze(1)
                     * (Vh_svd[:target_rank, :] @ cov_inv_sqrt)
                 )
+                # Symmetrically normalize factor magnitudes
+                norm_u = torch.norm(U_r, p="fro").clamp_min(1e-8)
+                norm_v = torch.norm(V_r, p="fro").clamp_min(1e-8)
+                scale = torch.sqrt(norm_u / norm_v)
+                U_r = U_r / scale
+                V_r = V_r * scale
             except Exception as e:
                 logger.warning(
                     f"Activation-aware SVD failed ({e}), falling back to standard SVD."
                 )
                 U_svd, S_svd, Vh_svd = torch.linalg.svd(W, full_matrices=False)
-                U_r = U_svd[:, :target_rank] * torch.sqrt(S_svd[:target_rank]).unsqueeze(0)
-                V_r = torch.sqrt(S_svd[:target_rank]).unsqueeze(1) * Vh_svd[:target_rank, :]
+                sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
+                U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
+                V_r = sqrt_S.unsqueeze(1) * Vh_svd[:target_rank, :]
         else:
             # Standard weight SVD
             U_svd, S_svd, Vh_svd = torch.linalg.svd(W, full_matrices=False)
-            U_r = U_svd[:, :target_rank] * torch.sqrt(S_svd[:target_rank]).unsqueeze(0)
-            V_r = torch.sqrt(S_svd[:target_rank]).unsqueeze(1) * Vh_svd[:target_rank, :]
+            sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
+            U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
+            V_r = sqrt_S.unsqueeze(1) * Vh_svd[:target_rank, :]
 
         new_layer.U.data.copy_(U_r.to(dtype=linear.weight.dtype))
         new_layer.V.data.copy_(V_r.to(dtype=linear.weight.dtype))
@@ -3079,9 +4877,10 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             total_rank_budget = getattr(cfg, "total_rank_budget", total_rank_budget)
             target_param_ratio = getattr(cfg, "target_param_ratio", target_param_ratio)
 
+        min_rank = max(16, int(min_rank))
         if "rank" in kwargs and kwargs["rank"] is not None:
             target_rank = kwargs["rank"]
-            min_rank = min(min_rank, target_rank)
+            min_rank = max(16, min(min_rank, target_rank))
             max_rank = max(max_rank, target_rank)
 
         self.min_rank = min_rank
@@ -3100,6 +4899,11 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         if not isinstance(module, nn.Linear):
             return False
         if isinstance(module, DynamicSVDLinear):
+            return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if min(module.in_features, module.out_features) < 16:
             return False
         if self.target_modules is None:
             return True
@@ -3331,7 +5135,28 @@ import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
-from .cur_linear import CURLinear
+from .cur_linear import (
+    CURLinear,
+    compute_energy_scores,
+    compute_leverage_scores,
+    select_indices,
+)
+
+
+def tikhonov_pinv(U_mat: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+    """
+    Compute Tikhonov regularized pseudo-inverse: (U^T U + eps * I)^{-1} U^T.
+    Prevents numerical instability and FP16 overflow in CUR core reconstruction.
+    """
+    k = U_mat.shape[1]
+    UtU = torch.matmul(U_mat.T, U_mat)
+    diag_mean = torch.trace(UtU) / max(1, k)
+    effective_eps = max(eps * (diag_mean.item() if isinstance(diag_mean, torch.Tensor) else diag_mean), 1e-6)
+    reg_eye = effective_eps * torch.eye(k, device=U_mat.device, dtype=U_mat.dtype)
+    try:
+        return torch.linalg.solve(UtU + reg_eye, U_mat.T)
+    except Exception:
+        return torch.linalg.pinv(U_mat, rcond=eps)
 
 
 class CURMoECompressor(BaseCompressor):
@@ -3561,31 +5386,43 @@ class CRLinear(nn.Module):
         )
 
         W_float = W.float()
-        decomposed = False
 
-        # Attempt scipy interpolative decomposition if available
+        # Step 1: Select skeleton columns via QRCP (QR with Column Pivoting) or SVD/energy fallback
+        col_idx = None
         try:
-            from scipy.linalg import interpolative
+            import scipy.linalg
             W_np = W_float.cpu().numpy()
-            idx, proj = interpolative.interp_decomp(W_np, r)
-            # Reconstruct full P from interpolative format
-            P_full_np = interpolative.reconstruct_interp_matrix(idx, proj)  # (r, in_f)
-            C_np = W_np[:, idx[:r]]  # (out_f, r)
-
-            C_data = torch.tensor(C_np, dtype=torch.float32, device=W.device)
-            P_data = torch.tensor(P_full_np, dtype=torch.float32, device=W.device)
-            decomposed = True
+            _, _, piv = scipy.linalg.qr(W_np, mode="economic", pivoting=True)
+            col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device)
         except Exception:
-            decomposed = False
+            pass
 
-        if not decomposed:
-            # PyTorch Column-Pivoted / SVD Fallback for ID
-            # Select top-r energy columns as C, then P = C^+ @ W
+        if col_idx is None:
+            # Fallback: select top-r energy columns
             col_norms = (W_float ** 2).sum(dim=0)
-            _, top_cols = torch.topk(col_norms, k=r, largest=True, sorted=True)
-            C_data = W_float[:, top_cols]  # (out_f, r)
-            C_pinv = torch.linalg.pinv(C_data)  # (r, out_f)
-            P_data = torch.matmul(C_pinv, W_float)  # (r, in_f)
+            _, col_idx = torch.topk(col_norms, k=r, largest=True, sorted=True)
+
+        C_data = W_float[:, col_idx]  # (out_f, r)
+
+        # Step 2: Tikhonov regularized pseudo-inverse: (C^T C + eps * I)^{-1} C^T with rcond=1e-4
+        # Prevents ill-conditioning and FP16 overflow
+        CtC = torch.matmul(C_data.T, C_data)  # (r, r)
+        diag_mean = torch.trace(CtC) / max(1, r)
+        eps = max(1e-4 * diag_mean.item(), 1e-4)
+        reg_eye = eps * torch.eye(r, device=C_data.device, dtype=C_data.dtype)
+        try:
+            C_pinv = torch.linalg.solve(CtC + reg_eye, C_data.T)  # (r, out_f)
+        except Exception:
+            C_pinv = torch.linalg.pinv(C_data, rcond=1e-4)
+
+        P_data = torch.matmul(C_pinv, W_float)  # (r, in_f)
+
+        # Step 3: Symmetrically normalize factor magnitudes to ensure FP16 stability
+        norm_C = torch.norm(C_data, p="fro").clamp_min(1e-8)
+        norm_P = torch.norm(P_data, p="fro").clamp_min(1e-8)
+        scale = torch.sqrt(norm_C / norm_P)
+        C_data = C_data / scale
+        P_data = P_data * scale
 
         cr_layer.C.data.copy_(C_data.to(dtype=W.dtype))
         cr_layer.P.data.copy_(P_data.to(dtype=W.dtype))
@@ -3631,10 +5468,15 @@ class CRCompressor(BaseCompressor):
         self.compressed_layers = []
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and not isinstance(module, CRLinear):
+                name_lower = name.lower()
+                if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+                    continue
                 if self.target_layers and not any(t in name for t in self.target_layers):
                     continue
 
                 max_rank = min(module.in_features, module.out_features)
+                if max_rank < 16:
+                    continue
                 r = min(self.rank, max_rank)
                 if r >= max_rank and max_rank > 4:
                     continue
@@ -3745,6 +5587,7 @@ class DirectSVDCompressor(BaseCompressor):
         self,
         model: nn.Module,
         rank: Optional[int] = 32,
+        min_rank: int = 16,
         rank_ratio: Optional[float] = None,
         target_modules: Optional[list[str]] = None,
         **kwargs: Any,
@@ -3753,12 +5596,14 @@ class DirectSVDCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             rank = getattr(cfg, "direct_svd_rank", getattr(cfg, "svd_rank", getattr(cfg, "rank", rank)))
+            min_rank = getattr(cfg, "min_rank", min_rank)
             rank_ratio = getattr(cfg, "direct_svd_rank_ratio", getattr(cfg, "rank_ratio", rank_ratio))
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
 
         self.rank = rank
+        self.min_rank = max(16, int(min_rank))
         self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
         self.target_modules = target_modules
 
@@ -3766,6 +5611,11 @@ class DirectSVDCompressor(BaseCompressor):
         if not isinstance(module, nn.Linear):
             return False
         if isinstance(module, SVDLinear):
+            return False
+        # Exclude classifier and language model prediction heads
+        name_lower = name.lower()
+        skip_keywords = ["lm_head", "classifier", "head", "output_layer", "score", "embed_out", "logits_processor"]
+        if any(skip in name_lower for skip in skip_keywords):
             return False
         if self.target_modules is None:
             return True
@@ -3776,19 +5626,23 @@ class DirectSVDCompressor(BaseCompressor):
         layer: nn.Linear,
         rank: Optional[int] = None,
     ) -> SVDLinear:
-        """Decompose a single linear layer via direct SVD and return SVDLinear."""
+        """Decompose a single linear layer via direct SVD with proportional rank scaling and min rank floor."""
         out_f = layer.out_features
         in_f = layer.in_features
         max_r = min(out_f, in_f)
+        r_floor = max(1, min(self.min_rank, max_r))
 
-        if rank is not None:
-            r = max(1, min(rank, max_r))
-        elif self.rank_ratio is not None:
-            r = max(1, min(int(round(max_r * self.rank_ratio)), max_r))
-        elif self.rank is not None:
-            r = max(1, min(self.rank, max_r))
+        target_r = rank if rank is not None else self.rank
+        if self.rank_ratio is not None:
+            r = int(round(max_r * self.rank_ratio))
+        elif target_r is not None:
+            # Proportional rank scaling relative to reference hidden dimension 768
+            r = int(round(target_r * (max_r / 768.0)))
         else:
-            r = max(1, min(32, max_r))
+            r = int(round(32 * (max_r / 768.0)))
+
+        # Enforce minimum rank floor r_min >= 16 and physical bounds
+        r = max(r_floor, min(r, max_r))
 
         device = layer.weight.device
         dtype = layer.weight.dtype
@@ -3902,7 +5756,7 @@ class DobiSVDLinearLayer(nn.Module):
         out_features: int,
         rank: int,
         bias: bool = True,
-        init_gate_val: float = 2.0,
+        init_gate_val: float = 2.5,
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None,
     ) -> None:
@@ -3913,7 +5767,7 @@ class DobiSVDLinearLayer(nn.Module):
 
         self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-        # Learnable spectral gate parameter initialized to pass ~90% through sigmoid
+        # Learnable spectral gate parameter initialized to +2.5 so sigma(alpha) ~ 0.92 for near-identity pass-through at step 0
         self.gate = nn.Parameter(torch.full((self.rank,), fill_value=init_gate_val, dtype=dtype, device=device))
 
         if bias:
@@ -3968,6 +5822,7 @@ class DobiSVDCompressor(BaseCompressor):
         model: nn.Module,
         init_rank_ratio: float = 0.5,
         rank: Optional[int] = None,
+        init_gate_val: float = 2.5,
         target_modules: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -3978,18 +5833,25 @@ class DobiSVDCompressor(BaseCompressor):
                 cfg, "dobi_init_rank_ratio", getattr(cfg, "init_rank_ratio", init_rank_ratio)
             )
             rank = getattr(cfg, "dobi_rank", getattr(cfg, "rank", rank))
+            init_gate_val = getattr(cfg, "init_gate_val", init_gate_val)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
 
         self.init_rank_ratio = float(init_rank_ratio)
         self.rank = rank
+        self.init_gate_val = float(init_gate_val)
         self.target_modules = target_modules
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if not isinstance(module, nn.Linear):
             return False
         if isinstance(module, DobiSVDLinearLayer):
+            return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if min(module.in_features, module.out_features) < 16:
             return False
         if self.target_modules is None:
             return True
@@ -4027,6 +5889,7 @@ class DobiSVDCompressor(BaseCompressor):
             out_features=out_f,
             rank=r,
             bias=layer.bias is not None,
+            init_gate_val=self.init_gate_val,
             dtype=dtype,
             device=device,
         )
@@ -4163,6 +6026,11 @@ class EntropyBudgetCompressor(BaseCompressor):
             return False
         if isinstance(module, SVDLinear):
             return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if min(module.in_features, module.out_features) < 16:
+            return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
@@ -4243,7 +6111,7 @@ class EntropyBudgetCompressor(BaseCompressor):
         return normalized_covs
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress model using whitened entropy budget allocation."""
+        """Compress model using whitened entropy budget allocation and covariance-aligned singular vectors."""
         target_layers = [
             (name, mod)
             for name, mod in self.model.named_modules()
@@ -4255,52 +6123,67 @@ class EntropyBudgetCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         covs = self.collect_covariances()
-        components = []
+        residual_candidates = []
+        layer_decomp_info = {}
 
+        # Step 1: Compute covariance-whitened singular decomposition and singular entropy per layer
         for name, module in target_layers:
             W = module.weight.data.float()
             in_f = module.in_features
             out_f = module.out_features
+            max_r = min(out_f, in_f)
+            r_floor = max(1, min(16, max_r))  # Guaranteed minimum rank floor r_l >= 16
 
-            if name in covs:
-                # Robust symmetric covariance root
+            cov_inv_sqrt = None
+            if name in covs and covs[name].shape == (in_f, in_f):
                 cov = covs[name].to(device=W.device, dtype=torch.float32)
                 try:
-                    eigvals, eigvecs = torch.linalg.eigh(cov + self.eps * torch.eye(in_f, device=W.device))
-                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(torch.clamp(eigvals, min=self.eps))) @ eigvecs.T
+                    # Eigen-decomposition of activation covariance with clamping lambda_i >= 1e-4
+                    eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
+                    eigvals_clamped = torch.clamp(eigvals, min=1e-4)
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     M = W @ cov_sqrt
                 except Exception:
                     M = W
+                    cov_inv_sqrt = None
             else:
                 M = W
 
             U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+            layer_decomp_info[name] = (U, S, Vt, cov_inv_sqrt, max_r, r_floor)
+
             total_s = S.sum() + self.eps
             p = torch.clamp(S / total_s, min=self.eps, max=1.0)
             entropy = -torch.sum(p * torch.log(p)).item()
             entropy = max(entropy, 1e-4)
 
-            for i, s_val in enumerate(S):
-                # Score component by singular energy relative to entropy
-                score = (s_val.item() ** 2) / entropy
-                components.append((name, i, s_val.item(), score))
+            # Residual candidates beyond the guaranteed minimum rank floor
+            for i in range(r_floor, max_r):
+                s_val = S[i].item()
+                score = (s_val ** 2) / entropy
+                residual_candidates.append((name, i, s_val, score))
 
+        # Step 2: Allocate ranks with per-layer minimum rank guarantee r_l >= 16
         if self.rank is not None:
-            allocated_ranks = {name: min(self.rank, mod.in_features, mod.out_features) for name, mod in target_layers}
+            allocated_ranks = {
+                name: max(layer_decomp_info[name][5], min(self.rank, layer_decomp_info[name][4]))
+                for name, _ in target_layers
+            }
         else:
-            # Sort components globally by energy-entropy score
-            components.sort(key=lambda x: x[3], reverse=True)
-            total_components = len(components)
-            keep_count = max(len(target_layers), int(total_components * self.total_budget_ratio))
-            keep_set = set((c[0], c[1]) for c in components[:keep_count])
+            # Initialize each layer with its guaranteed minimum rank floor
+            allocated_ranks = {name: layer_decomp_info[name][5] for name, _ in target_layers}
+            base_allocated = sum(allocated_ranks.values())
+            total_possible = sum(layer_decomp_info[name][4] for name, _ in target_layers)
+            target_total = max(base_allocated, min(total_possible, int(total_possible * self.total_budget_ratio)))
+            residual_budget = target_total - base_allocated
 
-            allocated_ranks = {}
-            for name, module in target_layers:
-                layer_rank = len([i for (n, i) in keep_set if n == name])
-                max_r = min(module.in_features, module.out_features)
-                allocated_ranks[name] = max(1, min(layer_rank, max_r))
+            # Distribute residual budget to highest information-entropy components
+            residual_candidates.sort(key=lambda x: x[3], reverse=True)
+            for c in residual_candidates[:residual_budget]:
+                allocated_ranks[c[0]] += 1
 
-        # Perform factorized replacement with symmetric square root singular values
+        # Step 3: Perform factorized replacement with activation-covariance alignment
         for name, module in target_layers:
             r = allocated_ranks[name]
             in_f = module.in_features
@@ -4308,12 +6191,25 @@ class EntropyBudgetCompressor(BaseCompressor):
             device = module.weight.device
             dtype = module.weight.dtype
 
-            W = module.weight.data.float()
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            U, S, Vt, cov_inv_sqrt, max_r, _ = layer_decomp_info[name]
+            r = max(1, min(r, max_r))
 
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+            U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+            if cov_inv_sqrt is not None:
+                # Align singular vectors with empirical activation covariance
+                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
+                # Symmetrically normalize factor magnitudes
+                norm_u = torch.norm(U_r, p="fro").clamp_min(1e-8)
+                norm_v = torch.norm(V_r, p="fro").clamp_min(1e-8)
+                scale = torch.sqrt(norm_u / norm_v)
+                U_r = U_r / scale
+                V_r = V_r * scale
+            else:
+                V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+
+            U_r = U_r.to(dtype=dtype, device=device)
+            V_r = V_r.to(dtype=dtype, device=device)
 
             svd_layer = SVDLinear(
                 in_features=in_f,
@@ -4432,6 +6328,11 @@ class ERCCompressor(BaseCompressor):
             return False
         if isinstance(module, SVDLinear):
             return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if min(module.in_features, module.out_features) < 16:
+            return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
@@ -4462,8 +6363,8 @@ class ERCCompressor(BaseCompressor):
             idx = torch.where(cum_energy >= target_retention)[0]
             r = int(idx[0].item()) + 1 if len(idx) > 0 else max_r
 
-        if self.rank is not None:
-            r = min(r, self.rank)
+        # Dynamic rank expansion up to max_r = min(d_in, d_out) strictly satisfying Frobenius error bound
+        # (Artificial rank ceiling override removed)
         r = max(1, min(r, max_r))
 
         # Symmetrical square-root singular value distribution
@@ -4624,10 +6525,11 @@ class FRanDILinear(nn.Module):
 
         if cov_matrix is not None and cov_matrix.shape == (in_f, in_f):
             try:
-                # Sqrt of covariance
-                L, V = torch.linalg.eigh(cov_matrix.float() + 1e-5 * torch.eye(in_f, device=cov_matrix.device))
-                L_sqrt = torch.diag(torch.sqrt(L.clamp_min(1e-6)))
-                L_inv_sqrt = torch.diag(1.0 / torch.sqrt(L.clamp_min(1e-6)))
+                # Sqrt of covariance with eigenvalue clamping lambda_i >= 1e-4
+                L, V = torch.linalg.eigh(cov_matrix.float() + 1e-4 * torch.eye(in_f, device=cov_matrix.device))
+                L_clamped = torch.clamp(L, min=1e-4)
+                L_sqrt = torch.diag(torch.sqrt(L_clamped))
+                L_inv_sqrt = torch.diag(1.0 / torch.sqrt(L_clamped))
                 C_sqrt = torch.matmul(torch.matmul(V, L_sqrt), V.t())
                 C_inv_sqrt = torch.matmul(torch.matmul(V, L_inv_sqrt), V.t())
 
@@ -4635,21 +6537,32 @@ class FRanDILinear(nn.Module):
                 U, S, Vt = torch.linalg.svd(W_scaled, full_matrices=False)
 
                 r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
-                B_data = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-                A_scaled = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
+                r = max(1, min(r, out_f, in_f))
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+                A_scaled = sqrt_S.unsqueeze(1) * Vt[:r, :]
                 A_data = torch.matmul(A_scaled, C_inv_sqrt)
+
+                # Symmetrically normalize factor magnitudes between A and B
+                norm_B = torch.norm(B_data, p="fro").clamp_min(1e-8)
+                norm_A = torch.norm(A_data, p="fro").clamp_min(1e-8)
+                scale_factor = torch.sqrt(norm_B / norm_A)
+                B_data = B_data / scale_factor
+                A_data = A_data * scale_factor
             except Exception:
                 U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
                 r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
-                B_data = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-                A_data = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
+                r = max(1, min(r, out_f, in_f))
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+                A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
         else:
             U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
             r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
-            B_data = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-            A_data = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
-
-        r = max(1, min(r, out_f, in_f))
+            r = max(1, min(r, out_f, in_f))
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+            A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
         frandi_layer = cls(
             in_features=in_f,
             out_features=out_f,
@@ -4777,10 +6690,15 @@ class FRanDICompressor(BaseCompressor):
 
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and not isinstance(module, FRanDILinear):
+                name_lower = name.lower()
+                if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+                    continue
                 if self.target_layers and not any(t in name for t in self.target_layers):
                     continue
 
                 max_rank = min(module.in_features, module.out_features)
+                if max_rank < 16:
+                    continue
                 r = min(self.rank, max_rank)
                 if r >= max_rank and self.energy_threshold is None and max_rank > 4:
                     continue
@@ -4877,6 +6795,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 
@@ -4903,7 +6822,7 @@ class GreCoDeCLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.rank = min(rank, in_features, out_features)
+        self.rank = max(1, min(rank, in_features, out_features))
 
         self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
         self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
@@ -4939,10 +6858,11 @@ class GreCoDeCLinear(nn.Module):
         cls,
         linear: nn.Linear,
         rank: int = 16,
-        max_iter: int = 5,
+        max_iter: int = 15,
     ) -> "GreCoDeCLinear":
         """
-        Decompose linear layer weight matrix via Greedy Coordinate Descent (GreCoDeC).
+        Decompose linear layer weight matrix via Greedy Coordinate Descent (GreCoDeC)
+        with 15 ALS iterations and Gram-Schmidt re-orthogonalization, with SVD fallback.
         """
         W = linear.weight.data
         bias = linear.bias.data if linear.bias is not None else None
@@ -4962,34 +6882,59 @@ class GreCoDeCLinear(nn.Module):
         U_factors = torch.zeros(out_f, r, dtype=torch.float32, device=W.device)
         V_factors = torch.zeros(r, in_f, dtype=torch.float32, device=W.device)
 
-        for k in range(r):
-            # 1. Initialize v from column with highest residual norm
-            col_norms = (R ** 2).sum(dim=0)
-            best_col = torch.argmax(col_norms).item()
-            v = R[:, best_col].clone()
-            v_norm = v.norm().clamp_min(1e-8)
-            v = v / v_norm  # (out_f,) -> actually we initialize v as (in_f,)
+        success = True
+        try:
+            for k in range(r):
+                # 1. Initialize v_k from row of R with highest residual norm
+                row_norms = (R ** 2).sum(dim=1)
+                best_row = torch.argmax(row_norms).item()
+                v_k = R[best_row, :].clone()
+                v_norm = v_k.norm().clamp_min(1e-8)
+                v_k = (v_k / v_norm).unsqueeze(1)  # (in_f, 1)
 
-            # Better: initialize v_k in R^{in_f} as row with highest norm or projection
-            row_norms = (R ** 2).sum(dim=1)
-            best_row = torch.argmax(row_norms).item()
-            v_k = R[best_row, :].clone()
-            v_norm = v_k.norm().clamp_min(1e-8)
-            v_k = (v_k / v_norm).unsqueeze(1)  # (in_f, 1)
+                # 2. ALS coordinate descent with Gram-Schmidt re-orthogonalization
+                u_k = torch.zeros(out_f, 1, dtype=torch.float32, device=W.device)
+                for _ in range(max(1, max_iter)):
+                    # u = R @ v / ||v||^2
+                    v_sq = (v_k ** 2).sum().clamp_min(1e-10)
+                    u_k = torch.matmul(R, v_k) / v_sq
 
-            # 2. Greedy coordinate descent updates
-            u_k = torch.zeros(out_f, 1, dtype=torch.float32, device=W.device)
-            for _ in range(max_iter):
-                # u = R @ v / ||v||^2
-                u_k = torch.matmul(R, v_k) / ((v_k ** 2).sum().clamp_min(1e-10))
-                # v = R^T @ u / ||u||^2
-                v_k = torch.matmul(R.t(), u_k) / ((u_k ** 2).sum().clamp_min(1e-10))
+                    # Gram-Schmidt re-orthogonalization on u_k against prior columns U_factors[:, :k]
+                    if k > 0:
+                        prior_U = U_factors[:, :k]  # (out_f, k)
+                        u_proj = torch.matmul(prior_U, torch.matmul(prior_U.t(), u_k) / (prior_U.norm(dim=0, keepdim=True) ** 2).clamp_min(1e-10).t())
+                        u_k = u_k - u_proj
 
-            # 3. Deflate residual: R = R - u @ v^T
-            R = R - torch.matmul(u_k, v_k.t())
+                    u_sq = (u_k ** 2).sum().clamp_min(1e-10)
+                    # v = R^T @ u / ||u||^2
+                    v_k = torch.matmul(R.t(), u_k) / u_sq
 
-            U_factors[:, k] = u_k.squeeze(1)
-            V_factors[k, :] = v_k.squeeze(1)
+                    # Gram-Schmidt re-orthogonalization on v_k against prior rows V_factors[:k, :]
+                    if k > 0:
+                        prior_V = V_factors[:k, :].t()  # (in_f, k)
+                        v_proj = torch.matmul(prior_V, torch.matmul(prior_V.t(), v_k) / (prior_V.norm(dim=0, keepdim=True) ** 2).clamp_min(1e-10).t())
+                        v_k = v_k - v_proj
+
+                # Check for degenerate vector
+                if u_k.norm() < 1e-8 or v_k.norm() < 1e-8 or torch.isnan(u_k).any() or torch.isnan(v_k).any():
+                    success = False
+                    break
+
+                # 3. Deflate residual: R = R - u @ v^T
+                R = R - torch.matmul(u_k, v_k.t())
+
+                U_factors[:, k] = u_k.squeeze(1)
+                V_factors[k, :] = v_k.squeeze(1)
+
+        except Exception:
+            success = False
+
+        if not success or torch.isnan(U_factors).any() or torch.isnan(V_factors).any():
+            # Robust SVD fallback to guarantee orthogonal singular components
+            U_svd, S_svd, Vh_svd = torch.linalg.svd(W.float(), full_matrices=False)
+            sqrt_S = torch.sqrt(torch.clamp(S_svd[:r], min=1e-12))
+            U_factors = U_svd[:, :r] * sqrt_S.unsqueeze(0)
+            V_factors = sqrt_S.unsqueeze(1) * Vh_svd[:r, :]
 
         grecodec_layer.U.data.copy_(U_factors.to(dtype=W.dtype))
         grecodec_layer.V.data.copy_(V_factors.to(dtype=W.dtype))
@@ -5008,7 +6953,7 @@ class GreCoDeCCompressor(BaseCompressor):
     Args:
         model: PyTorch model.
         rank: Target rank for decomposition.
-        max_iter: Coordinate descent iterations per rank component (default 5).
+        max_iter: Coordinate descent iterations per rank component (default 15).
         cfg: Optional configuration object.
         target_layers: Optional target layer filter.
     """
@@ -5017,14 +6962,14 @@ class GreCoDeCCompressor(BaseCompressor):
         self,
         model: Optional[nn.Module] = None,
         rank: int = 16,
-        max_iter: int = 5,
+        max_iter: int = 15,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="grecodec", **kwargs)
         self.rank = rank or getattr(cfg, "grecodec_rank", None) or getattr(cfg, "rank", 16)
-        self.max_iter = max_iter or getattr(cfg, "grecodec_max_iter", 5)
+        self.max_iter = max_iter or getattr(cfg, "grecodec_max_iter", 15)
         self.cfg = cfg
         self.target_layers = target_layers or getattr(cfg, "target_layers", None)
         self.compressed_layers: List[str] = []
@@ -5049,11 +6994,8 @@ class GreCoDeCCompressor(BaseCompressor):
                 grecodec_layer = GreCoDeCLinear.from_linear(
                     module, rank=r, max_iter=self.max_iter
                 )
-                parent = self._get_parent_module(name)
-                if parent is not None:
-                    child_name = name.split(".")[-1]
-                    setattr(parent, child_name, grecodec_layer)
-                    self.compressed_layers.append(name)
+                replace_module(self.model, name, grecodec_layer)
+                self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -5070,15 +7012,6 @@ class GreCoDeCCompressor(BaseCompressor):
         """Compress a single linear layer into GreCoDeCLinear."""
         return GreCoDeCLinear.from_linear(linear, rank=self.rank, max_iter=self.max_iter)
 
-    def _get_parent_module(self, full_name: str) -> Optional[nn.Module]:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part, None)
-            if parent is None:
-                return None
-        return parent
-
 
 @COMPRESSOR_REGISTRY.register("grecodec")
 def grecodec_compressor_factory(
@@ -5089,7 +7022,7 @@ def grecodec_compressor_factory(
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for GreCoDeC compressor."""
     effective_rank = rank or getattr(comp_config, "grecodec_rank", None) or getattr(comp_config, "rank", 16)
-    max_iter = getattr(comp_config, "grecodec_max_iter", 5)
+    max_iter = getattr(comp_config, "grecodec_max_iter", 15)
     compressor = GreCoDeCCompressor(model, rank=effective_rank, max_iter=max_iter, cfg=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
@@ -5167,14 +7100,8 @@ class SVDSingleHead(nn.Module):
         try:
             U, S, Vh = torch.linalg.svd(x_flat, full_matrices=False)
             k = min(self.svd_rank, len(S))
-            top_s = S[:k]
-            top_Vh = Vh[:k, :]
-            # Softmax-weighted singular energy distribution
-            s_max = top_s.max()
-            exp_s = torch.exp(top_s - s_max)
-            softmax_s = exp_s / (exp_s.sum() + 1e-12)
-            weighted_U = U[:, :k] * softmax_s.view(1, -1)
-            output_flat = torch.matmul(weighted_U, top_Vh)
+            weighted_U = U[:, :k] * S[:k].view(1, -1)
+            output_flat = torch.matmul(weighted_U, Vh[:k, :])
             output = output_flat.reshape(batch_size, seq_len, self.hidden_size).to(dtype=hidden_states.dtype)
             return output
         except Exception:
@@ -5390,6 +7317,7 @@ Registered as 'mgie_budget'.
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
@@ -5454,14 +7382,19 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
     @staticmethod
     def _compute_entropy(W: torch.Tensor) -> Tuple[float, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Compute singular entropy and return SVD components in FP32."""
+        """Compute singular entropy on squared singular values (energy distribution),
+        normalized by layer parameter count sqrt(d_in * d_out), returning SVD components in FP32."""
+        d_out, d_in = W.shape
         U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
-        total_s = S.sum()
-        if total_s <= 1e-12:
+        energy = S ** 2
+        total_energy = energy.sum()
+        if total_energy <= 1e-12:
             return 0.0, U, S, Vt
-        p = torch.clamp(S / total_s, min=1e-12, max=1.0)
+        p = torch.clamp(energy / total_energy, min=1e-12, max=1.0)
         entropy = -torch.sum(p * torch.log(p)).item()
-        return max(0.0, float(entropy)), U, S, Vt
+        norm_factor = math.sqrt(float(d_in * d_out))
+        normalized_entropy = entropy / max(1e-6, norm_factor)
+        return max(0.0, float(normalized_entropy)), U, S, Vt
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all linear layers according to global entropy budget."""
@@ -5517,6 +7450,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
             replace_module(self.model, name, svd_layer)
 
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats["allocated_ranks"] = allocated_ranks
         return self.model, stats
@@ -5584,7 +7518,7 @@ class MGIECompressor(BaseCompressor):
     MGIE-SVD Compressor (Maximum Information Entropy SVD).
 
     Analyzes each weight matrix's singular spectrum, computes normalized Shannon singular entropy:
-        p_i = sigma_i / sum_j(sigma_j)
+        p_i = sigma_i**2 / sum_j(sigma_j**2)
         H = -sum_i(p_i * ln(p_i))
     dynamically determines optimal truncation rank r_l proportional to H, factorizes into
     symmetric square-root matrices (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T), and replaces
@@ -5624,12 +7558,13 @@ class MGIECompressor(BaseCompressor):
         return any(t in name for t in self.target_modules)
 
     def _compute_entropy_rank(self, S: torch.Tensor, max_rank: int) -> int:
-        """Compute rank from singular entropy."""
-        total_s = S.sum()
-        if total_s <= 1e-12:
+        """Compute rank from singular entropy based on squared singular values (energy distribution)."""
+        energy = S ** 2
+        total_energy = energy.sum()
+        if total_energy <= 1e-12:
             return 1
 
-        p = torch.clamp(S / total_s, min=1e-12, max=1.0)
+        p = torch.clamp(energy / total_energy, min=1e-12, max=1.0)
         entropy = -torch.sum(p * torch.log(p)).item()
         max_entropy = math.log(float(max_rank)) if max_rank > 1 else 1.0
 
@@ -5693,6 +7628,7 @@ class MGIECompressor(BaseCompressor):
             svd_layer = self.compress_linear(module)
             replace_module(self.model, name, svd_layer)
 
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         return self.model, stats
 
@@ -5743,6 +7679,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 from .hashed_linear import HashedLinear
@@ -5803,11 +7740,8 @@ class HashedNetCompressor(BaseCompressor):
                 new_layer = HashedLinear.from_linear(
                     module, n_buckets=self.n_buckets, use_sign=self.use_sign
                 )
-                parent = self._get_parent(name)
-                if parent is not None:
-                    child_name = name.split(".")[-1]
-                    setattr(parent, child_name, new_layer)
-                    self.compressed_layers.append(name)
+                replace_module(self.model, name, new_layer)
+                self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -5825,15 +7759,6 @@ class HashedNetCompressor(BaseCompressor):
         return HashedLinear.from_linear(
             linear, n_buckets=self.n_buckets, use_sign=self.use_sign
         )
-
-    def _get_parent(self, full_name: str) -> Optional[nn.Module]:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part, None)
-            if parent is None:
-                return None
-        return parent
 
 
 @COMPRESSOR_REGISTRY.register("hashed_net")
@@ -5897,6 +7822,7 @@ from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -5957,7 +7883,9 @@ class ReGLAAttention(BaseAttention):
         v = self.v_proj(x).view(B, L, self.heads, self.head_dim).transpose(1, 2)
         g = self.gate_proj(x).view(B, L, self.heads, self.head_dim).transpose(1, 2)
 
-        k_gated = k * torch.sigmoid(g)
+        # Strictly non-negative activation to prevent division by zero / negative denominators
+        q = F.elu(q) + 1.0
+        k_gated = F.elu(k * torch.sigmoid(g)) + 1.0
 
         if attention_mask is not None:
             if attention_mask.dim() == 4:
@@ -5974,7 +7902,7 @@ class ReGLAAttention(BaseAttention):
         z = k_gated.sum(dim=2, keepdim=True)
 
         num = torch.matmul(q, kv)
-        den = torch.matmul(q, z.transpose(-2, -1)) + 1e-5
+        den = torch.matmul(q, z.transpose(-2, -1)).clamp(min=1e-5)
         out = num / den
 
         out = out.transpose(1, 2).contiguous().view(B, L, D)
@@ -6298,8 +8226,8 @@ class AegisAttention(nn.Module):
             token_valid=token_valid,
         )
 
-        Q_feat = torch.einsum("bhnd,hdf->bhnf", Q_global, self.rff_proj)
-        K_feat = torch.einsum("bhnd,hdf->bhnf", K_global, self.rff_proj)
+        Q_feat = F.elu(torch.einsum("bhnd,hdf->bhnf", Q_global, self.rff_proj)) + 1.0
+        K_feat = F.elu(torch.einsum("bhnd,hdf->bhnf", K_global, self.rff_proj)) + 1.0
 
         if token_valid is not None:
             mask_g = token_valid.unsqueeze(1).unsqueeze(-1)
@@ -6308,7 +8236,7 @@ class AegisAttention(nn.Module):
 
         KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_global)
         K_sum = K_feat.sum(dim=2, keepdim=True)
-        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-5
+        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)).clamp(min=1e-5)
         ctx_global = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
 
         if self.blend_logits is not None:
@@ -6458,6 +8386,7 @@ class LEKAV1Attention(BaseAttention):
         self.key: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
         self.value: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, hidden_size)
+        self.norm: nn.LayerNorm = nn.LayerNorm(self.head_dim)
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         # Random projection matrix (one per head, shared)
@@ -6474,18 +8403,18 @@ class LEKAV1Attention(BaseAttention):
 
     def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
         r"""
-        Computes random Fourier feature embedding $\phi(x)$.
+        Computes positive kernel feature embedding $\phi(x)$ with pre-projection LayerNorm.
 
         Args:
             x: Tensor of shape `[B, H, N, d_k]`.
 
         Returns:
-            Feature map tensor `[B, H, N, 2F]`.
+            Feature map tensor `[B, H, N, F]`.
         """
-        proj = self.proj.to(x.device)  # (H, D, F)
-        x_proj = torch.einsum("bhnd,hdf->bhnf", x, proj)  # (B, H, N, F)
-        phi = torch.cat([torch.cos(x_proj), torch.sin(x_proj)], dim=-1)  # (B, H, N, 2F)
-        phi = phi / math.sqrt(self.feature_dim)
+        x_norm = self.norm(x)
+        proj = self.proj.to(dtype=x.dtype, device=x.device)  # (H, D, F)
+        x_proj = torch.einsum("bhnd,hdf->bhnf", x_norm, proj)  # (B, H, N, F)
+        phi = (F.elu(x_proj) + 1.0) / math.sqrt(self.feature_dim)
         return phi
 
     @staticmethod
@@ -6550,27 +8479,32 @@ class LEKAV1Attention(BaseAttention):
         K = self.transpose_for_scores(self.key(hidden_states))
         V = self.transpose_for_scores(self.value(hidden_states))
 
-        Q_features = self.kernel_feature_map(Q)  # (B, H, N, 2F)
+        Q_features = self.kernel_feature_map(Q)  # (B, H, N, F)
         K_features = self.kernel_feature_map(K)
 
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask = attention_mask[:, None, :, None].to(hidden_states.dtype)
+            elif attention_mask.dim() == 4:
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(1).unsqueeze(-1).to(hidden_states.dtype)
+            else:
+                mask = attention_mask.to(hidden_states.dtype)
+            K_features = K_features * mask
+            V = V * mask
+        else:
+            mask = None
+
         # Linear attention
-        KV = torch.einsum("bhnf,bhnd->bhfd", K_features, V)  # (B, H, 2F, D)
-        K_sum = K_features.sum(dim=2, keepdim=True)  # (B, H, 1, 2F)
+        KV = torch.einsum("bhnf,bhnd->bhfd", K_features, V)  # (B, H, F, D)
+        K_sum = K_features.sum(dim=2, keepdim=True)  # (B, H, 1, F)
 
         num = torch.einsum("bhnf,bhfd->bhnd", Q_features, KV)
         denom = (
             torch.einsum("bhnf,bhf->bhn", Q_features, K_sum.squeeze(2)).unsqueeze(-1)
-            + 1e-5
-        )
+        ).clamp(min=1e-5)
         context = num / denom
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask[:, None, :, None].to(context.dtype)
-            elif attention_mask.dim() == 4:
-                mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(1).unsqueeze(-1).to(context.dtype)
-            else:
-                mask = attention_mask
+        if mask is not None:
             context = context * mask
 
         context = (
@@ -6677,6 +8611,7 @@ def entmax15_bisect(
     r"""
     Compute 1.5-entmax via stabilized bisection strictly over valid tokens.
     Solves $\sum_j \max(0, \alpha' s_j - \tau)^{1/(\alpha-1)} = 1$ for $\alpha = 1.5$.
+    Includes softmax fallback when support is empty, preserving gradient flow.
     """
     alpha = 1.5
     alpha_minus_1 = alpha - 1.0  # 0.5
@@ -6723,9 +8658,20 @@ def entmax15_bisect(
     if valid_mask is not None:
         p = p.masked_fill(~valid_mask, 0.0)
     
-    # Safe normalization to guard against any residual tolerance error
-    denom = p.sum(dim=dim, keepdim=True).clamp(min=1e-9)
-    p = p / denom
+    denom = p.sum(dim=dim, keepdim=True)
+
+    # Softmax fallback for numerical stabilization when support is empty or ill-conditioned
+    if valid_mask is not None:
+        scores_for_sm = scores.masked_fill(~valid_mask, -10000.0)
+        sf = F.softmax(scores_for_sm, dim=dim).masked_fill(~valid_mask, 0.0)
+        sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
+        sf = sf / sf_denom
+    else:
+        sf = F.softmax(scores, dim=dim)
+
+    is_empty = (denom < 1e-7) | torch.isnan(denom)
+    p_normalized = p / denom.clamp(min=1e-9)
+    p = torch.where(is_empty, sf, p_normalized)
     return p
 
 
@@ -7110,13 +9056,15 @@ class AegisAttentionV2(nn.Module):
         else:
             Kg, Vg = K, V
 
-        if mask_2d is not None:
-            m4 = mask_2d.unsqueeze(-1).unsqueeze(-1)
-            Kg = Kg * m4
-            Vg = Vg * m4
-
         phi_K = phi(Kg)
         phi_Q = phi(Q)
+
+        # Mask phi_K and Vg after applying ELU+1 non-linearity so padding tokens don't accumulate 1s in denominator
+        if mask_2d is not None:
+            m4 = mask_2d.unsqueeze(-1).unsqueeze(-1).to(phi_K.dtype)
+            phi_K = phi_K * m4
+            Vg = Vg * m4
+
         phi_K_t = phi_K.permute(0, 2, 3, 1)
         Vg_t = Vg.permute(0, 2, 1, 3)
 
@@ -7128,7 +9076,7 @@ class AegisAttentionV2(nn.Module):
         norm_eps = 1e-4 if Kg.dtype in (torch.float16, torch.bfloat16) else 1e-5
         global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2)
         norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)
-        global_out = global_out / (norm + norm_eps)
+        global_out = global_out / (norm.clamp(min=norm_eps))
         global_out = global_out.permute(0, 2, 1, 3)
 
         if mask_2d is not None:
@@ -7236,7 +9184,7 @@ class AegisConfigV3:
     dropout: float = 0.1
     use_query_gate: bool = True
     use_input_gate: bool = True
-    use_pre_norm: bool = True
+    use_pre_norm: bool = False
     long_context_threshold: int = 2048
     max_global_tokens: int = 1024
     kernel_method: str = "orthogonal"
@@ -7532,7 +9480,7 @@ class AegisAttentionV3(BaseAttention):
         KV = torch.matmul(K_feat.transpose(-2, -1), V)
         Z = K_feat.sum(dim=-2, keepdim=True)
         num = torch.matmul(Q_feat, KV)
-        den = torch.matmul(Q_feat, Z.transpose(-2, -1)) + 1e-5
+        den = torch.matmul(Q_feat, Z.transpose(-2, -1)).clamp(min=1e-5)
         out = num / den
         out = out * pad.transpose(-2, -1)
         return out
@@ -7560,7 +9508,7 @@ class AegisAttentionV3(BaseAttention):
         global_out = self._global_linear_attention(Q, K, V, pad_mask_binary, q_gate, in_gate)
 
         fuse_gate = self.fusion(hidden_states, local_out, global_out)
-        fused = (1.0 - fuse_gate) * local_out + fuse_gate * global_out
+        fused = fuse_gate * local_out + (1.0 - fuse_gate) * global_out
         fused = fused.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         out = self.out_proj(fused)
         return out, None
@@ -7679,6 +9627,14 @@ class CompressedAttentionLayer(nn.Module):
         self.num_heads: int = getattr(layer_cfg, 'num_heads', getattr(layer_cfg, 'num_attention_heads', 12))
         self.head_dim: int = self.original_dim // self.num_heads
         self.method: str = method
+
+        rank_val = kwargs.get("rank", getattr(layer_cfg, "rank", getattr(layer_cfg, "lora_r", getattr(layer_cfg, "svd_rank", None))))
+        if rank_val is not None:
+            rank_qkv = rank_val
+            rank_out = rank_val
+        rank_qkv = kwargs.get("rank_qkv", getattr(layer_cfg, "rank_qkv", rank_qkv))
+        rank_out = kwargs.get("rank_out", getattr(layer_cfg, "rank_out", rank_out))
+
         self.rank_qkv = rank_qkv
         self.rank_out = rank_out
 
@@ -7751,10 +9707,9 @@ class CompressedAttentionLayer(nn.Module):
             hidden_states = hidden_states.unsqueeze(0)
         B, N, D = hidden_states.shape
 
-        # SVD QKV forward: (X @ Vh.T) * S_sqrt @ U.T + bias
-        # Using symmetric sqrt(S) scaling
-        v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt.unsqueeze(0).unsqueeze(0)
-        qkv = torch.matmul(v_proj * self.S_qkv_sqrt.unsqueeze(0).unsqueeze(0), self.U_qkv.t()) + self.bias_qkv
+        # SVD QKV forward with single symmetric sqrt(S) distribution
+        v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt.view(1, 1, -1)
+        qkv = torch.matmul(v_proj, (self.U_qkv * self.S_qkv_sqrt.view(1, -1)).t()) + self.bias_qkv
 
         q, k, v = qkv.chunk(3, dim=-1)
 
@@ -7779,9 +9734,9 @@ class CompressedAttentionLayer(nn.Module):
 
         attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.original_dim)
 
-        # SVD Out forward
-        out_v = torch.matmul(attn_out, self.Vh_out.t()) * self.S_out_sqrt.unsqueeze(0).unsqueeze(0)
-        out = torch.matmul(out_v * self.S_out_sqrt.unsqueeze(0).unsqueeze(0), self.U_out.t()) + self.bias_out
+        # SVD Out forward with single symmetric sqrt(S) distribution
+        out_v = torch.matmul(attn_out, self.Vh_out.t()) * self.S_out_sqrt.view(1, 1, -1)
+        out = torch.matmul(out_v, (self.U_out * self.S_out_sqrt.view(1, -1)).t()) + self.bias_out
 
         return out, (probs if output_attentions else None)
 
@@ -7846,6 +9801,14 @@ class CompressedAttentionLayer(nn.Module):
         self.num_heads: int = getattr(layer_cfg, 'num_heads', getattr(layer_cfg, 'num_attention_heads', 12))
         self.head_dim: int = self.original_dim // self.num_heads
         self.method: str = method
+
+        rank_val = kwargs.get("rank", getattr(layer_cfg, "rank", getattr(layer_cfg, "lora_r", getattr(layer_cfg, "svd_rank", None))))
+        if rank_val is not None:
+            rank_qkv = rank_val
+            rank_out = rank_val
+        rank_qkv = kwargs.get("rank_qkv", getattr(layer_cfg, "rank_qkv", rank_qkv))
+        rank_out = kwargs.get("rank_out", getattr(layer_cfg, "rank_out", rank_out))
+
         self.rank_qkv = rank_qkv
         self.rank_out = rank_out
 
@@ -7918,10 +9881,9 @@ class CompressedAttentionLayer(nn.Module):
             hidden_states = hidden_states.unsqueeze(0)
         B, N, D = hidden_states.shape
 
-        # SVD QKV forward: (X @ Vh.T) * S_sqrt @ U.T + bias
-        # Using symmetric sqrt(S) scaling
-        v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt.unsqueeze(0).unsqueeze(0)
-        qkv = torch.matmul(v_proj * self.S_qkv_sqrt.unsqueeze(0).unsqueeze(0), self.U_qkv.t()) + self.bias_qkv
+        # SVD QKV forward with single symmetric sqrt(S) distribution
+        v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt.view(1, 1, -1)
+        qkv = torch.matmul(v_proj, (self.U_qkv * self.S_qkv_sqrt.view(1, -1)).t()) + self.bias_qkv
 
         q, k, v = qkv.chunk(3, dim=-1)
 
@@ -7946,9 +9908,9 @@ class CompressedAttentionLayer(nn.Module):
 
         attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.original_dim)
 
-        # SVD Out forward
-        out_v = torch.matmul(attn_out, self.Vh_out.t()) * self.S_out_sqrt.unsqueeze(0).unsqueeze(0)
-        out = torch.matmul(out_v * self.S_out_sqrt.unsqueeze(0).unsqueeze(0), self.U_out.t()) + self.bias_out
+        # SVD Out forward with single symmetric sqrt(S) distribution
+        out_v = torch.matmul(attn_out, self.Vh_out.t()) * self.S_out_sqrt.view(1, 1, -1)
+        out = torch.matmul(out_v, (self.U_out * self.S_out_sqrt.view(1, -1)).t()) + self.bias_out
 
         return out, (probs if output_attentions else None)
 
@@ -8099,9 +10061,9 @@ class HammingAttention(BaseAttention):
         k_b = self._binarize(k, self.k_scale)
 
         dot = torch.matmul(q_b, k_b.transpose(-2, -1))  # [B, H, L, L]
-        # Calibrated pseudo-Hamming logit formulation
-        scale = (math.sqrt(Dh))
-        scores = (dot * self.temp) / scale
+        scale = 1.0 / math.sqrt(Dh)
+        beta = torch.clamp(self.temp, min=0.1, max=1.0)
+        scores = dot * scale * beta
 
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
@@ -8113,7 +10075,15 @@ class HammingAttention(BaseAttention):
             thresh = top_vals[..., -1:]
             scores = scores.masked_fill(scores < thresh, -10000.0)
 
-        probs = F.softmax(scores, dim=-1)
+        # Log-sum-exp stabilization
+        max_scores = scores.amax(dim=-1, keepdim=True)
+        max_scores = torch.where(max_scores < -1e8, torch.zeros_like(max_scores), max_scores)
+        scores_stab = scores - max_scores
+        probs = F.softmax(scores_stab, dim=-1)
+        probs = torch.nan_to_num(probs, nan=0.0)
+        probs = probs.masked_fill(~key_valid_4d, 0.0)
+        denom = probs.sum(dim=-1, keepdim=True).clamp(min=1e-9)
+        probs = probs / denom
         probs = self.dropout(probs)
 
         if head_mask is not None:
@@ -8195,10 +10165,10 @@ class MixAttentionMoSKA(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.fasa_keep_ratio: float = fasa_keep_ratio
 
-        self.W_q = nn.Linear(self.dim, self.all_head_size, bias=False)
-        self.W_k = nn.Linear(self.dim, self.all_head_size, bias=False)
-        self.W_v = nn.Linear(self.dim, self.all_head_size, bias=False)
-        self.out_proj = nn.Linear(self.all_head_size, self.dim)
+        self.W_q = nn.Linear(self.dim, self.all_head_size, bias=True)
+        self.W_k = nn.Linear(self.dim, self.all_head_size, bias=True)
+        self.W_v = nn.Linear(self.dim, self.all_head_size, bias=True)
+        self.out_proj = nn.Linear(self.all_head_size, self.dim, bias=True)
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
@@ -8214,13 +10184,19 @@ class MixAttentionMoSKA(BaseAttention):
 
             if q_src is not None and hasattr(q_src, "weight"):
                 self.W_q.weight.copy_(q_src.weight)
+                if q_src.bias is not None and self.W_q.bias is not None:
+                    self.W_q.bias.copy_(q_src.bias)
             if k_src is not None and hasattr(k_src, "weight"):
                 self.W_k.weight.copy_(k_src.weight)
+                if k_src.bias is not None and self.W_k.bias is not None:
+                    self.W_k.bias.copy_(k_src.bias)
             if v_src is not None and hasattr(v_src, "weight"):
                 self.W_v.weight.copy_(v_src.weight)
+                if v_src.bias is not None and self.W_v.bias is not None:
+                    self.W_v.bias.copy_(v_src.bias)
             if out_src is not None and hasattr(out_src, "weight"):
                 self.out_proj.weight.copy_(out_src.weight)
-                if out_src.bias is not None:
+                if out_src.bias is not None and self.out_proj.bias is not None:
                     self.out_proj.bias.copy_(out_src.bias)
 
     def _fasa_prune(
@@ -8231,13 +10207,16 @@ class MixAttentionMoSKA(BaseAttention):
             return k, v, mask
 
         importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
-        # Always protect [CLS] token at index 0
-        importance[:, 0] = 1e6
-
         if mask is not None:
             if mask.dim() == 2:
-                importance = importance.masked_fill(mask == 0, -1e6)
-                importance[:, 0] = 1e6
+                mask_2d = mask.bool() if mask.dtype == torch.bool else mask > 0
+                importance = importance.masked_fill(~mask_2d, -1e6)
+            elif mask.dim() == 4:
+                mask_2d = mask[:, 0, 0, :] > -10000.0 if mask.min() < -1000 else mask[:, 0, 0, :] > 0
+                importance = importance.masked_fill(~mask_2d, -1e6)
+
+        # Always protect [CLS] token at index 0 unconditionally
+        importance[:, 0] = 1e9
 
         keep = max(2, min(L, int(L * self.fasa_keep_ratio)))
         _, idx = torch.topk(importance, keep, dim=-1)
@@ -8352,12 +10331,25 @@ class NativeHybridAttention(BaseAttention):
         self.v_proj = nn.Linear(self.dim, self.all_head_size)
         self.out_proj = nn.Linear(self.all_head_size, self.dim)
 
-        self.register_buffer("rff_proj", torch.randn(self.head_dim, rff_features) * 0.02)
+        omega = self._build_orthogonal_matrix(self.head_dim, self.rff_features)
+        self.register_buffer("rff_proj", omega)
         self.dropout = nn.Dropout(dropout)
         self.gate = nn.Linear(self.dim, 1)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+    def _build_orthogonal_matrix(self, d: int, m: int) -> torch.Tensor:
+        blocks = []
+        remaining = m
+        while remaining > 0:
+            block_size = min(d, remaining)
+            g = torch.randn(d, block_size)
+            q, _ = torch.linalg.qr(g)
+            blocks.append(q)
+            remaining -= block_size
+        W = torch.cat(blocks, dim=1) * math.sqrt(d)
+        return W
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         with torch.no_grad():
@@ -8406,22 +10398,28 @@ class NativeHybridAttention(BaseAttention):
 
     def _global_rff_attention(self, Q, K, V, valid_mask):
         B, H, N, d = Q.shape
-        Qf = torch.matmul(Q, self.rff_proj)
-        Kf = torch.matmul(K, self.rff_proj)
+        scale = d ** -0.25
+        Q_scaled = Q * scale
+        K_scaled = K * scale
+
+        proj = self.rff_proj.to(dtype=Q.dtype, device=Q.device)
+        Qf = torch.matmul(Q_scaled, proj)
+        Kf = torch.matmul(K_scaled, proj)
 
         norm = 1.0 / math.sqrt(self.rff_features)
-        phi_Q = torch.cat([torch.cos(Qf), torch.sin(Qf)], dim=-1) * norm
-        phi_K = torch.cat([torch.cos(Kf), torch.sin(Kf)], dim=-1) * norm
+        phi_Q = (F.elu(Qf) + 1.0) * norm
+        phi_K = (F.elu(Kf) + 1.0) * norm
 
-        pad = (~valid_mask).unsqueeze(1).unsqueeze(-1).to(Q.dtype)
-        phi_K = phi_K.masked_fill(pad.bool(), 0.0)
-        V_masked = V.masked_fill(pad.bool(), 0.0)
+        pad = valid_mask.unsqueeze(1).unsqueeze(-1).to(Q.dtype)
+        phi_K = phi_K * pad
+        V_masked = V * pad
 
         KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
         Z = phi_K.sum(dim=-2, keepdim=True)
         num = torch.matmul(phi_Q, KV)
-        den = torch.matmul(phi_Q, Z.transpose(-2, -1)) + 1e-5
-        return num / den
+        den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=1e-5)
+        out = (num / den) * pad
+        return out
 
     def forward(
         self,
@@ -8452,7 +10450,8 @@ class NativeHybridAttention(BaseAttention):
         seq_summary = hidden_states.mean(dim=1)
         gate = torch.sigmoid(self.gate(seq_summary)).view(B, 1, 1, 1)
 
-        out = gate * local_out + (1 - gate) * global_out
+        out = gate * local_out + (1.0 - gate) * global_out
+        out = out * valid_mask.unsqueeze(1).unsqueeze(-1).to(out.dtype)
         out = out.permute(0, 2, 1, 3).contiguous().view(B, N, D)
         return self.out_proj(out), None
 ```
