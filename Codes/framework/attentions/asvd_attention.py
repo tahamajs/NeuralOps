@@ -75,6 +75,11 @@ class ASVDLinear(nn.Module):
             else:
                 self.S.data[:r].fill_(1.0)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        return torch.matmul(self.U * self.S.unsqueeze(0), self.V)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (*, in_features)
         # 1. x @ V.T -> (*, rank)

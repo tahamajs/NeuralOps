@@ -115,6 +115,14 @@ class AdaptiveSVDLinear(nn.Module):
             if self.B is not None:
                 nn.init.zeros_(self.B)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        W = torch.matmul(self.U, self.V)
+        if self.A is not None and self.B is not None:
+            W = W + torch.matmul(self.A, self.B)
+        return W
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Forward computation for low-rank SVD + residual linear layer."""
         Vx = F.linear(x, self.V)

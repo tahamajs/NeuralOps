@@ -1,34 +1,64 @@
-# 📊 Consolidated Datasets Folder
+# 📊 Consolidated Datasets & Automated Preprocessing Hub
 
-All project datasets have been consolidated into the central `/datasets` folder at the project root for consistency across the framework and external tools.
+All project datasets are consolidated into the central `/datasets` directory, supported by the automated tokenization and streaming pipeline in `Codes/framework/data/prepare_datasets.py`.
+
+---
 
 ## 📁 Folder Structure
 
-- `/datasets/glue/`: Standard GLUE benchmark tasks (CoLA, SST-2, MRPC, etc.).
-- `/datasets/coco/`: COCO dataset files and scripts.
-- `/datasets/udt-coco/`: Unified Data Tool annotations for COCO.
-- `/datasets/vlm-selection/`: Experimental datasets for Vision-Language Models.
-- `/datasets/bigbench/`:
-  - `data/`: Prompting and ground truth data.
-  - `tasks/`: BIG-bench task definitions.
-- `/datasets/vgnlp_data/`: Evaluation data for Visual Grounding NLP tasks.
-- `/datasets/truthful_qa/`: Multiple choice and generation splits for TruthfulQA.
-
-## 🛠️ Usage in Framework
-
-The `Codes` framework uses `framework.utils.paths` to resolve these directories dynamically:
-
-```python
-from framework.utils.paths import get_datasets_dir, get_glue_dir
-
-# Get absolute path to /datasets
-ds_path = get_datasets_dir()
-
-# Get absolute path to /datasets/glue
-glue_path = get_glue_dir()
+```
+datasets/
+├── cache/                  # Serialized .pt tokenized batches for zero-latency DataLoader streaming
+│   ├── glue_sst2_bert-base-uncased.pt
+│   ├── glue_mrpc_roberta-base.pt
+│   └── lm_wikitext2_t5-base.pt
+├── glue/                   # Standard GLUE benchmark parquet/arrow splits (SST-2, MRPC, QNLI, MNLI, etc.)
+├── coco/                   # COCO dataset files and visual grounding annotations
+├── udt-coco/               # Unified Data Tool annotations
+├── bigbench/               # BIG-bench multi-task prompting & evaluation suites
+├── truthful_qa/            # TruthfulQA multiple choice and generation splits
+└── synthetic/              # High-fidelity deterministic synthetic evaluation benchmarks
 ```
 
-## 📝 Configuration
+---
 
-- **Django**: The `GLUE_DATA_PATH` in `settings.py` is automatically updated to use the consolidated path.
-- **Data Loaders**: All `load_glue_local` calls and `ExperimentConfig` defaults now point to this centralized location.
+## ⚡ Automated Dataset Preparation CLI
+
+Pre-download, tokenize, dynamically pad, and cache all datasets for air-gapped GPU servers:
+
+```bash
+# Tokenize and cache GLUE + LM benchmarks for BERT, RoBERTa, and T5
+PYTHONPATH=Codes python3 Codes/framework/data/prepare_datasets.py \
+  --benchmarks glue,lm \
+  --models bert-base-uncased,roberta-base,t5-base \
+  --output_dir datasets/cache/ \
+  --max_seq_len 128 \
+  --num_workers 4
+```
+
+### Preprocessing Features:
+1. **Zero-Latency Streaming**: Pre-tokenized PyTorch tensors (`input_ids`, `attention_mask`, `labels`) loaded directly to GPU memory with pinned memory support.
+2. **Deterministic Offline Synthetic Fallback**: If network is unavailable or HuggingFace is air-gapped, `SyntheticDataset` automatically generates reproducible synthetic batches matching exact vocabularies and sequence distributions.
+3. **Multi-Model Tokenizer Mapping**: Correctly maps tokenizers for encoder-only (`bert`, `roberta`), sequence-to-sequence (`t5`), and causal LM (`gpt2`, `llama`).
+
+---
+
+## 🛠️ Usage in Python
+
+```python
+from framework.data.prepare_datasets import get_dataset, create_benchmark_dataloader
+
+# Load cached or dynamically preprocessed dataloader
+dataloader = get_dataset(
+    dataset_name="sst2",
+    tokenizer_name="bert-base-uncased",
+    split="validation",
+    batch_size=32,
+    max_seq_len=128
+)
+
+for batch in dataloader:
+    input_ids = batch["input_ids"]
+    labels = batch["labels"]
+    break
+```

@@ -141,7 +141,10 @@ class SVDLinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix for compatibility."""
-        return torch.matmul(self.U, self.V)
+        W = torch.matmul(self.U, self.V)
+        if self.lora_A is not None and self.lora_B is not None:
+            W = W + torch.matmul(self.lora_A, self.lora_B) * self.lora_scaling
+        return W
 
     def reset_parameters(self) -> None:
         nn.init.orthogonal_(self.U)
