@@ -71,8 +71,7 @@ $$O^{\text{global}}_i = \frac{\phi(Q_{g, i}) KV}{\phi(Q_{g, i}) Z + 10^{-5}}$$
 | Metric | Full Softmax Attention | AEGIS-V4 Attention |
 | :--- | :--- | :--- |
 | **Computation Complexity** | $\mathcal{O}(B \cdot L^2 \cdot D)$ | $\mathcal{O}(B \cdot L \cdot D \cdot r + B \cdot H_l \cdot L \cdot W \cdot d_h + B \cdot H_g \cdot L \cdot F \cdot d_h)$ |
-| **SST-2 Classification Accuracy** | 84.06% | **84.06%** |
-| **SST-2 F1 Score** | 84.05% | **84.05%** |
+| **Empirical Benchmarks** | *Benchmarks Pending (Execute run_on_gpu_server.sh)* | *See [Empirical Validation Protocol](../empirical_validation_protocol.md)* |
 
 ---
 
