@@ -147,8 +147,16 @@ class SVDLinear(nn.Module):
         return W
 
     def reset_parameters(self) -> None:
-        nn.init.orthogonal_(self.U)
-        nn.init.orthogonal_(self.V)
+        # orthogonal_ uses QR decomposition which is not supported for FP16/BF16
+        # on CPU. Upcast to float32 for init, then cast back.
+        for param in (self.U, self.V):
+            orig_dtype = param.data.dtype
+            if orig_dtype in (torch.float16, torch.bfloat16):
+                param.data = param.data.float()
+                nn.init.orthogonal_(param)
+                param.data = param.data.to(orig_dtype)
+            else:
+                nn.init.orthogonal_(param)
         if self.norm_weight is not None:
             nn.init.ones_(self.norm_weight)
         if self.lora_A is not None and self.lora_B is not None:
