@@ -26,7 +26,7 @@ class MGIECompressor(BaseCompressor):
     MGIE-SVD Compressor (Maximum Information Entropy SVD).
 
     Analyzes each weight matrix's singular spectrum, computes normalized Shannon singular entropy:
-        p_i = sigma_i / sum_j(sigma_j)
+        p_i = sigma_i**2 / sum_j(sigma_j**2)
         H = -sum_i(p_i * ln(p_i))
     dynamically determines optimal truncation rank r_l proportional to H, factorizes into
     symmetric square-root matrices (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T), and replaces
@@ -66,12 +66,13 @@ class MGIECompressor(BaseCompressor):
         return any(t in name for t in self.target_modules)
 
     def _compute_entropy_rank(self, S: torch.Tensor, max_rank: int) -> int:
-        """Compute rank from singular entropy."""
-        total_s = S.sum()
-        if total_s <= 1e-12:
+        """Compute rank from singular entropy based on squared singular values (energy distribution)."""
+        energy = S ** 2
+        total_energy = energy.sum()
+        if total_energy <= 1e-12:
             return 1
 
-        p = torch.clamp(S / total_s, min=1e-12, max=1.0)
+        p = torch.clamp(energy / total_energy, min=1e-12, max=1.0)
         entropy = -torch.sum(p * torch.log(p)).item()
         max_entropy = math.log(float(max_rank)) if max_rank > 1 else 1.0
 
@@ -135,6 +136,7 @@ class MGIECompressor(BaseCompressor):
             svd_layer = self.compress_linear(module)
             replace_module(self.model, name, svd_layer)
 
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         return self.model, stats
 

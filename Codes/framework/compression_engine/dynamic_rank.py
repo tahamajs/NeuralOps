@@ -118,10 +118,11 @@ def allocate_entropy_ranks(
     if not entropies:
         return {}
 
+    min_rank = max(16, int(min_rank))
     layer_names = list(entropies.keys())
     num_layers = len(layer_names)
 
-    # Determine per-layer physical dimension bounds
+    # Determine per-layer physical dimension bounds with minimum rank floor
     per_layer_min = {}
     per_layer_max = {}
     for name in layer_names:
@@ -131,7 +132,7 @@ def allocate_entropy_ranks(
         else:
             phys_max = max_rank
 
-        l_min = max(1, min(min_rank, phys_max))
+        l_min = max(1, min(max(16, min_rank), phys_max))
         l_max = max(l_min, min(max_rank, phys_max))
         per_layer_min[name] = l_min
         per_layer_max[name] = l_max
@@ -339,12 +340,12 @@ class DynamicSVDLinear(nn.Module):
         W = linear.weight.data.float()  # (out_f, in_f)
 
         if covariance is not None and covariance.numel() > 0:
-            # RESEARCH FIX: Activation-aware whitening SVD: W_scaled = W @ C_X^{1/2}
+            # RESEARCH FIX: Activation-aware whitening SVD with eigenvalue clamping lambda_i >= 1e-4
             cov = covariance.to(device=W.device, dtype=torch.float32)
             try:
-                # Eigen-decomposition of positive semi-definite covariance
-                eigvals, eigvecs = torch.linalg.eigh(cov)
-                eigvals_clamped = torch.clamp(eigvals, min=1e-8)
+                # Eigen-decomposition with regularized eigenvalue clamping >= 1e-4
+                eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
+                eigvals_clamped = torch.clamp(eigvals, min=1e-4)
                 cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t()
                 cov_inv_sqrt = (
                     eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.t()
@@ -354,23 +355,32 @@ class DynamicSVDLinear(nn.Module):
                 U_svd, S_svd, Vh_svd = torch.linalg.svd(W_scaled, full_matrices=False)
 
                 # Truncate and un-whiten right singular factors
-                U_r = U_svd[:, :target_rank] * torch.sqrt(S_svd[:target_rank]).unsqueeze(0)
+                sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
+                U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
                 V_r = (
-                    torch.sqrt(S_svd[:target_rank]).unsqueeze(1)
+                    sqrt_S.unsqueeze(1)
                     * (Vh_svd[:target_rank, :] @ cov_inv_sqrt)
                 )
+                # Symmetrically normalize factor magnitudes
+                norm_u = torch.norm(U_r, p="fro").clamp_min(1e-8)
+                norm_v = torch.norm(V_r, p="fro").clamp_min(1e-8)
+                scale = torch.sqrt(norm_u / norm_v)
+                U_r = U_r / scale
+                V_r = V_r * scale
             except Exception as e:
                 logger.warning(
                     f"Activation-aware SVD failed ({e}), falling back to standard SVD."
                 )
                 U_svd, S_svd, Vh_svd = torch.linalg.svd(W, full_matrices=False)
-                U_r = U_svd[:, :target_rank] * torch.sqrt(S_svd[:target_rank]).unsqueeze(0)
-                V_r = torch.sqrt(S_svd[:target_rank]).unsqueeze(1) * Vh_svd[:target_rank, :]
+                sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
+                U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
+                V_r = sqrt_S.unsqueeze(1) * Vh_svd[:target_rank, :]
         else:
             # Standard weight SVD
             U_svd, S_svd, Vh_svd = torch.linalg.svd(W, full_matrices=False)
-            U_r = U_svd[:, :target_rank] * torch.sqrt(S_svd[:target_rank]).unsqueeze(0)
-            V_r = torch.sqrt(S_svd[:target_rank]).unsqueeze(1) * Vh_svd[:target_rank, :]
+            sqrt_S = torch.sqrt(torch.clamp(S_svd[:target_rank], min=1e-12))
+            U_r = U_svd[:, :target_rank] * sqrt_S.unsqueeze(0)
+            V_r = sqrt_S.unsqueeze(1) * Vh_svd[:target_rank, :]
 
         new_layer.U.data.copy_(U_r.to(dtype=linear.weight.dtype))
         new_layer.V.data.copy_(V_r.to(dtype=linear.weight.dtype))
@@ -415,9 +425,10 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             total_rank_budget = getattr(cfg, "total_rank_budget", total_rank_budget)
             target_param_ratio = getattr(cfg, "target_param_ratio", target_param_ratio)
 
+        min_rank = max(16, int(min_rank))
         if "rank" in kwargs and kwargs["rank"] is not None:
             target_rank = kwargs["rank"]
-            min_rank = min(min_rank, target_rank)
+            min_rank = max(16, min(min_rank, target_rank))
             max_rank = max(max_rank, target_rank)
 
         self.min_rank = min_rank
@@ -436,6 +447,11 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         if not isinstance(module, nn.Linear):
             return False
         if isinstance(module, DynamicSVDLinear):
+            return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if min(module.in_features, module.out_features) < 16:
             return False
         if self.target_modules is None:
             return True

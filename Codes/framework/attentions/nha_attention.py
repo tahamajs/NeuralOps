@@ -40,12 +40,25 @@ class NativeHybridAttention(BaseAttention):
         self.v_proj = nn.Linear(self.dim, self.all_head_size)
         self.out_proj = nn.Linear(self.all_head_size, self.dim)
 
-        self.register_buffer("rff_proj", torch.randn(self.head_dim, rff_features) * 0.02)
+        omega = self._build_orthogonal_matrix(self.head_dim, self.rff_features)
+        self.register_buffer("rff_proj", omega)
         self.dropout = nn.Dropout(dropout)
         self.gate = nn.Linear(self.dim, 1)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+    def _build_orthogonal_matrix(self, d: int, m: int) -> torch.Tensor:
+        blocks = []
+        remaining = m
+        while remaining > 0:
+            block_size = min(d, remaining)
+            g = torch.randn(d, block_size)
+            q, _ = torch.linalg.qr(g)
+            blocks.append(q)
+            remaining -= block_size
+        W = torch.cat(blocks, dim=1) * math.sqrt(d)
+        return W
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         with torch.no_grad():
@@ -94,22 +107,28 @@ class NativeHybridAttention(BaseAttention):
 
     def _global_rff_attention(self, Q, K, V, valid_mask):
         B, H, N, d = Q.shape
-        Qf = torch.matmul(Q, self.rff_proj)
-        Kf = torch.matmul(K, self.rff_proj)
+        scale = d ** -0.25
+        Q_scaled = Q * scale
+        K_scaled = K * scale
+
+        proj = self.rff_proj.to(dtype=Q.dtype, device=Q.device)
+        Qf = torch.matmul(Q_scaled, proj)
+        Kf = torch.matmul(K_scaled, proj)
 
         norm = 1.0 / math.sqrt(self.rff_features)
-        phi_Q = torch.cat([torch.cos(Qf), torch.sin(Qf)], dim=-1) * norm
-        phi_K = torch.cat([torch.cos(Kf), torch.sin(Kf)], dim=-1) * norm
+        phi_Q = (F.elu(Qf) + 1.0) * norm
+        phi_K = (F.elu(Kf) + 1.0) * norm
 
-        pad = (~valid_mask).unsqueeze(1).unsqueeze(-1).to(Q.dtype)
-        phi_K = phi_K.masked_fill(pad.bool(), 0.0)
-        V_masked = V.masked_fill(pad.bool(), 0.0)
+        pad = valid_mask.unsqueeze(1).unsqueeze(-1).to(Q.dtype)
+        phi_K = phi_K * pad
+        V_masked = V * pad
 
         KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
         Z = phi_K.sum(dim=-2, keepdim=True)
         num = torch.matmul(phi_Q, KV)
-        den = torch.matmul(phi_Q, Z.transpose(-2, -1)) + 1e-5
-        return num / den
+        den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=1e-5)
+        out = (num / den) * pad
+        return out
 
     def forward(
         self,
@@ -140,6 +159,7 @@ class NativeHybridAttention(BaseAttention):
         seq_summary = hidden_states.mean(dim=1)
         gate = torch.sigmoid(self.gate(seq_summary)).view(B, 1, 1, 1)
 
-        out = gate * local_out + (1 - gate) * global_out
+        out = gate * local_out + (1.0 - gate) * global_out
+        out = out * valid_mask.unsqueeze(1).unsqueeze(-1).to(out.dtype)
         out = out.permute(0, 2, 1, 3).contiguous().view(B, N, D)
         return self.out_proj(out), None

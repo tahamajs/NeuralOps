@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
+import math
 import torch
 import torch.nn as nn
 
@@ -42,6 +43,7 @@ class FLATLLMCompressor(BaseCompressor):
         model: nn.Module,
         tokenizer: Optional[Any] = None,
         keep_ratio: float = 0.7,
+        damping: float = 1e-4,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
@@ -49,8 +51,14 @@ class FLATLLMCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="flat_llm", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            keep_ratio = getattr(cfg, "flat_llm_keep_ratio", getattr(cfg, "keep_ratio", keep_ratio))
+            damping = getattr(cfg, "flat_llm_damping", getattr(cfg, "damping", damping))
+            structured_24 = getattr(cfg, "flat_llm_structured_24", getattr(cfg, "structured_24", structured_24))
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.keep_ratio = max(0.05, min(float(keep_ratio), 1.0))
+        self.damping = float(damping)
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.structured_24 = structured_24
@@ -110,7 +118,7 @@ class FLATLLMCompressor(BaseCompressor):
         return aggregated
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes FLAT-LLM dimension pruning across all Linear modules."""
+        """Executes FLAT-LLM dimension pruning across all Linear modules with damped Hessian."""
         outputs_map = self._collect_layer_outputs()
         pruned_layers_count = 0
 
@@ -125,9 +133,14 @@ class FLATLLMCompressor(BaseCompressor):
                 if act is not None and act.numel() > 0:
                     act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
                     if act_flat.shape[-1] == d_out:
-                        cov = torch.matmul(act_flat.T, act_flat) / max(act_flat.shape[0], 1)
-                        cov = cov + 1e-6 * torch.eye(d_out, device=device)
-                        eigvals, _ = torch.linalg.eigh(cov)
+                        # Empirical Hessian H = (1/N) Y^T Y with diagonal damping H + lambda * I
+                        H = torch.matmul(act_flat.T, act_flat) / max(act_flat.shape[0], 1)
+                        diag_mean = torch.diagonal(H).mean().item()
+                        if not math.isfinite(diag_mean) or diag_mean <= 0.0:
+                            diag_mean = 1.0
+                        lambda_val = max(float(self.damping) * diag_mean, 1e-6)
+                        H_damped = H + lambda_val * torch.eye(d_out, device=device, dtype=H.dtype)
+                        eigvals, _ = torch.linalg.eigh(H_damped)
                     else:
                         eigvals = torch.sum(W.pow(2), dim=1)
                 else:
@@ -155,6 +168,7 @@ class FLATLLMCompressor(BaseCompressor):
         stats.update({
             "pruned_layers": pruned_layers_count,
             "keep_ratio": self.keep_ratio,
+            "damping": self.damping,
             "structured_24": self.structured_24,
             "method": "flat_llm_eigen_pruning",
         })
@@ -167,6 +181,7 @@ class FLATLLMCompressor(BaseCompressor):
 def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for FLAT-LLM compressor."""
     keep_ratio = getattr(comp_config, "flat_llm_keep_ratio", getattr(comp_config, "keep_ratio", 0.7)) if comp_config else kwargs.get("keep_ratio", 0.7)
+    damping = getattr(comp_config, "flat_llm_damping", getattr(comp_config, "damping", 1e-4)) if comp_config else kwargs.get("damping", 1e-4)
     structured_24 = getattr(comp_config, "flat_llm_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else kwargs.get("structured_24", False)
     tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
 
@@ -174,6 +189,7 @@ def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         model,
         tokenizer=tokenizer,
         keep_ratio=keep_ratio,
+        damping=damping,
         structured_24=structured_24,
         **kwargs,
     )

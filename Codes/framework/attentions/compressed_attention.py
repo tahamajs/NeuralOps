@@ -37,6 +37,14 @@ class CompressedAttentionLayer(nn.Module):
         self.num_heads: int = getattr(layer_cfg, 'num_heads', getattr(layer_cfg, 'num_attention_heads', 12))
         self.head_dim: int = self.original_dim // self.num_heads
         self.method: str = method
+
+        rank_val = kwargs.get("rank", getattr(layer_cfg, "rank", getattr(layer_cfg, "lora_r", getattr(layer_cfg, "svd_rank", None))))
+        if rank_val is not None:
+            rank_qkv = rank_val
+            rank_out = rank_val
+        rank_qkv = kwargs.get("rank_qkv", getattr(layer_cfg, "rank_qkv", rank_qkv))
+        rank_out = kwargs.get("rank_out", getattr(layer_cfg, "rank_out", rank_out))
+
         self.rank_qkv = rank_qkv
         self.rank_out = rank_out
 
@@ -109,10 +117,9 @@ class CompressedAttentionLayer(nn.Module):
             hidden_states = hidden_states.unsqueeze(0)
         B, N, D = hidden_states.shape
 
-        # SVD QKV forward: (X @ Vh.T) * S_sqrt @ U.T + bias
-        # Using symmetric sqrt(S) scaling
-        v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt.unsqueeze(0).unsqueeze(0)
-        qkv = torch.matmul(v_proj * self.S_qkv_sqrt.unsqueeze(0).unsqueeze(0), self.U_qkv.t()) + self.bias_qkv
+        # SVD QKV forward with single symmetric sqrt(S) distribution
+        v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt.view(1, 1, -1)
+        qkv = torch.matmul(v_proj, (self.U_qkv * self.S_qkv_sqrt.view(1, -1)).t()) + self.bias_qkv
 
         q, k, v = qkv.chunk(3, dim=-1)
 
@@ -137,9 +144,9 @@ class CompressedAttentionLayer(nn.Module):
 
         attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.original_dim)
 
-        # SVD Out forward
-        out_v = torch.matmul(attn_out, self.Vh_out.t()) * self.S_out_sqrt.unsqueeze(0).unsqueeze(0)
-        out = torch.matmul(out_v * self.S_out_sqrt.unsqueeze(0).unsqueeze(0), self.U_out.t()) + self.bias_out
+        # SVD Out forward with single symmetric sqrt(S) distribution
+        out_v = torch.matmul(attn_out, self.Vh_out.t()) * self.S_out_sqrt.view(1, 1, -1)
+        out = torch.matmul(out_v, (self.U_out * self.S_out_sqrt.view(1, -1)).t()) + self.bias_out
 
         return out, (probs if output_attentions else None)
 
