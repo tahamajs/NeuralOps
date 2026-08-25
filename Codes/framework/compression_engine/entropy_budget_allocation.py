@@ -70,6 +70,11 @@ class EntropyBudgetCompressor(BaseCompressor):
             return False
         if isinstance(module, SVDLinear):
             return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if min(module.in_features, module.out_features) < 16:
+            return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
@@ -150,7 +155,7 @@ class EntropyBudgetCompressor(BaseCompressor):
         return normalized_covs
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress model using whitened entropy budget allocation."""
+        """Compress model using whitened entropy budget allocation and covariance-aligned singular vectors."""
         target_layers = [
             (name, mod)
             for name, mod in self.model.named_modules()
@@ -162,52 +167,67 @@ class EntropyBudgetCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         covs = self.collect_covariances()
-        components = []
+        residual_candidates = []
+        layer_decomp_info = {}
 
+        # Step 1: Compute covariance-whitened singular decomposition and singular entropy per layer
         for name, module in target_layers:
             W = module.weight.data.float()
             in_f = module.in_features
             out_f = module.out_features
+            max_r = min(out_f, in_f)
+            r_floor = max(1, min(16, max_r))  # Guaranteed minimum rank floor r_l >= 16
 
-            if name in covs:
-                # Robust symmetric covariance root
+            cov_inv_sqrt = None
+            if name in covs and covs[name].shape == (in_f, in_f):
                 cov = covs[name].to(device=W.device, dtype=torch.float32)
                 try:
-                    eigvals, eigvecs = torch.linalg.eigh(cov + self.eps * torch.eye(in_f, device=W.device))
-                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(torch.clamp(eigvals, min=self.eps))) @ eigvecs.T
+                    # Eigen-decomposition of activation covariance with clamping lambda_i >= 1e-4
+                    eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
+                    eigvals_clamped = torch.clamp(eigvals, min=1e-4)
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     M = W @ cov_sqrt
                 except Exception:
                     M = W
+                    cov_inv_sqrt = None
             else:
                 M = W
 
             U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+            layer_decomp_info[name] = (U, S, Vt, cov_inv_sqrt, max_r, r_floor)
+
             total_s = S.sum() + self.eps
             p = torch.clamp(S / total_s, min=self.eps, max=1.0)
             entropy = -torch.sum(p * torch.log(p)).item()
             entropy = max(entropy, 1e-4)
 
-            for i, s_val in enumerate(S):
-                # Score component by singular energy relative to entropy
-                score = (s_val.item() ** 2) / entropy
-                components.append((name, i, s_val.item(), score))
+            # Residual candidates beyond the guaranteed minimum rank floor
+            for i in range(r_floor, max_r):
+                s_val = S[i].item()
+                score = (s_val ** 2) / entropy
+                residual_candidates.append((name, i, s_val, score))
 
+        # Step 2: Allocate ranks with per-layer minimum rank guarantee r_l >= 16
         if self.rank is not None:
-            allocated_ranks = {name: min(self.rank, mod.in_features, mod.out_features) for name, mod in target_layers}
+            allocated_ranks = {
+                name: max(layer_decomp_info[name][5], min(self.rank, layer_decomp_info[name][4]))
+                for name, _ in target_layers
+            }
         else:
-            # Sort components globally by energy-entropy score
-            components.sort(key=lambda x: x[3], reverse=True)
-            total_components = len(components)
-            keep_count = max(len(target_layers), int(total_components * self.total_budget_ratio))
-            keep_set = set((c[0], c[1]) for c in components[:keep_count])
+            # Initialize each layer with its guaranteed minimum rank floor
+            allocated_ranks = {name: layer_decomp_info[name][5] for name, _ in target_layers}
+            base_allocated = sum(allocated_ranks.values())
+            total_possible = sum(layer_decomp_info[name][4] for name, _ in target_layers)
+            target_total = max(base_allocated, min(total_possible, int(total_possible * self.total_budget_ratio)))
+            residual_budget = target_total - base_allocated
 
-            allocated_ranks = {}
-            for name, module in target_layers:
-                layer_rank = len([i for (n, i) in keep_set if n == name])
-                max_r = min(module.in_features, module.out_features)
-                allocated_ranks[name] = max(1, min(layer_rank, max_r))
+            # Distribute residual budget to highest information-entropy components
+            residual_candidates.sort(key=lambda x: x[3], reverse=True)
+            for c in residual_candidates[:residual_budget]:
+                allocated_ranks[c[0]] += 1
 
-        # Perform factorized replacement with symmetric square root singular values
+        # Step 3: Perform factorized replacement with activation-covariance alignment
         for name, module in target_layers:
             r = allocated_ranks[name]
             in_f = module.in_features
@@ -215,12 +235,25 @@ class EntropyBudgetCompressor(BaseCompressor):
             device = module.weight.device
             dtype = module.weight.dtype
 
-            W = module.weight.data.float()
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            U, S, Vt, cov_inv_sqrt, max_r, _ = layer_decomp_info[name]
+            r = max(1, min(r, max_r))
 
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+            U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+            if cov_inv_sqrt is not None:
+                # Align singular vectors with empirical activation covariance
+                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
+                # Symmetrically normalize factor magnitudes
+                norm_u = torch.norm(U_r, p="fro").clamp_min(1e-8)
+                norm_v = torch.norm(V_r, p="fro").clamp_min(1e-8)
+                scale = torch.sqrt(norm_u / norm_v)
+                U_r = U_r / scale
+                V_r = V_r * scale
+            else:
+                V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+
+            U_r = U_r.to(dtype=dtype, device=device)
+            V_r = V_r.to(dtype=dtype, device=device)
 
             svd_layer = SVDLinear(
                 in_features=in_f,

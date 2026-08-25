@@ -18,19 +18,31 @@ _PRIME3 = 3266489917
 
 
 def fast_hash_and_sign(
-    indices_i: torch.Tensor, indices_j: torch.Tensor, n_buckets: int
+    indices_i: Union[int, torch.Tensor],
+    indices_j: Optional[Union[int, torch.Tensor]] = None,
+    n_buckets: int = 1024,
+    device: Optional[torch.device] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Vectorized hash index mapping and unbiased sign generation:
-    h(i, j) = ((i * PRIME1 + j * PRIME2) ^ PRIME3) % n_buckets
-    xi(i, j) = 2 * (((i * PRIME2 + j * PRIME1) >> 15) & 1) - 1  in {-1, +1}
+    Memory-efficient vectorized hash index mapping and unbiased sign generation.
+    Supports either passing integer dimensions (out_features, in_features) to generate
+    broadcasting coordinates without expanding full tensors, or passing explicit 2D index tensors.
     """
-    mixed = (indices_i * _PRIME1 + indices_j * _PRIME2) ^ _PRIME3
-    hash_idx = (mixed % n_buckets).long()
+    if isinstance(indices_i, int) and isinstance(indices_j, int):
+        i_vec = torch.arange(indices_i, device=device, dtype=torch.int64).unsqueeze(1)
+        j_vec = torch.arange(indices_j, device=device, dtype=torch.int64).unsqueeze(0)
+    elif isinstance(indices_i, torch.Tensor) and isinstance(indices_j, torch.Tensor):
+        i_vec = indices_i.long()
+        j_vec = indices_j.long()
+    else:
+        raise ValueError("indices_i and indices_j must be both integers or both torch.Tensors")
 
-    sign_mix = (indices_i * _PRIME2 + indices_j * _PRIME1)
+    mixed = (i_vec * _PRIME1 + j_vec * _PRIME2) ^ _PRIME3
+    hash_idx = (mixed % n_buckets).to(torch.int32)
+
+    sign_mix = i_vec * _PRIME2 + j_vec * _PRIME1
     sign_bit = (sign_mix >> 15) & 1
-    sign_val = (sign_bit.float() * 2.0 - 1.0)
+    sign_val = (sign_bit.to(torch.int8) * 2 - 1)
     return hash_idx, sign_val
 
 
@@ -68,16 +80,16 @@ class HashedLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        # Precompute hash table indices and sign masks
-        i_idx = torch.arange(out_features, device=device).unsqueeze(1).expand(-1, in_features)
-        j_idx = torch.arange(in_features, device=device).unsqueeze(0).expand(out_features, -1)
-        hash_idx, sign_val = fast_hash_and_sign(i_idx, j_idx, self.n_buckets)
+        # Efficient coordinate broadcasting without dense memory explosion
+        hash_idx, sign_val = fast_hash_and_sign(
+            out_features, in_features, self.n_buckets, device=device
+        )
 
         self.register_buffer("hash_idx", hash_idx)
         if use_sign:
-            self.register_buffer("sign_val", sign_val.to(dtype=dtype or torch.float32))
+            self.register_buffer("sign_val", sign_val)
         else:
-            self.register_buffer("sign_val", torch.ones_like(sign_val, dtype=dtype or torch.float32))
+            self.register_buffer("sign_val", torch.ones_like(sign_val, dtype=torch.int8))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -86,13 +98,16 @@ class HashedLinear(nn.Module):
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
-        W = self.weight_table[self.hash_idx] * self.sign_val
+        W = self.get_weight()
         out = F.linear(x_flat, W, self.bias)
         return out.view(*orig_shape[:-1], self.out_features)
 
     def get_weight(self) -> torch.Tensor:
         """Materialize full reconstructed weight matrix."""
-        return self.weight_table[self.hash_idx] * self.sign_val
+        W = self.weight_table[self.hash_idx.long()]
+        if self.use_sign and self.sign_val is not None:
+            W = W * self.sign_val.to(dtype=self.weight_table.dtype)
+        return W
 
     @classmethod
     def from_linear(
@@ -102,7 +117,7 @@ class HashedLinear(nn.Module):
         use_sign: bool = True,
     ) -> "HashedLinear":
         """
-        Create HashedLinear from existing nn.Linear using vectorized scatter-averaging.
+        Create HashedLinear from existing nn.Linear using memory-efficient scatter-averaging.
         """
         W = linear.weight.data
         bias = linear.bias.data if linear.bias is not None else None
@@ -118,17 +133,16 @@ class HashedLinear(nn.Module):
             device=W.device,
         )
 
-        # Vectorized initialization using torch.scatter_add_ in O(out_f * in_f)
+        # Memory-efficient scatter accumulation without allocating dense intermediate clones
         W_flat = W.float().flatten()
-        hash_flat = hashed.hash_idx.flatten()
-        sign_flat = hashed.sign_val.flatten()
+        hash_flat = hashed.hash_idx.flatten().long()
+        sign_flat = hashed.sign_val.flatten().to(dtype=torch.float32)
         weighted_W = W_flat * sign_flat
 
         table_accum = torch.zeros(hashed.n_buckets, dtype=torch.float32, device=W.device)
-        counts = torch.zeros(hashed.n_buckets, dtype=torch.float32, device=W.device)
+        counts = torch.bincount(hash_flat, minlength=hashed.n_buckets).float()
 
         table_accum.scatter_add_(0, hash_flat, weighted_W)
-        counts.scatter_add_(0, hash_flat, torch.ones_like(W_flat))
 
         # Safe mean with zero-count handling
         non_zero = counts > 0

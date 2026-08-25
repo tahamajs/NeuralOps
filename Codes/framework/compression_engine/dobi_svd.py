@@ -36,7 +36,7 @@ class DobiSVDLinearLayer(nn.Module):
         out_features: int,
         rank: int,
         bias: bool = True,
-        init_gate_val: float = 2.0,
+        init_gate_val: float = 2.5,
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None,
     ) -> None:
@@ -47,7 +47,7 @@ class DobiSVDLinearLayer(nn.Module):
 
         self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-        # Learnable spectral gate parameter initialized to pass ~90% through sigmoid
+        # Learnable spectral gate parameter initialized to +2.5 so sigma(alpha) ~ 0.92 for near-identity pass-through at step 0
         self.gate = nn.Parameter(torch.full((self.rank,), fill_value=init_gate_val, dtype=dtype, device=device))
 
         if bias:
@@ -102,6 +102,7 @@ class DobiSVDCompressor(BaseCompressor):
         model: nn.Module,
         init_rank_ratio: float = 0.5,
         rank: Optional[int] = None,
+        init_gate_val: float = 2.5,
         target_modules: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -112,18 +113,25 @@ class DobiSVDCompressor(BaseCompressor):
                 cfg, "dobi_init_rank_ratio", getattr(cfg, "init_rank_ratio", init_rank_ratio)
             )
             rank = getattr(cfg, "dobi_rank", getattr(cfg, "rank", rank))
+            init_gate_val = getattr(cfg, "init_gate_val", init_gate_val)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
 
         self.init_rank_ratio = float(init_rank_ratio)
         self.rank = rank
+        self.init_gate_val = float(init_gate_val)
         self.target_modules = target_modules
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if not isinstance(module, nn.Linear):
             return False
         if isinstance(module, DobiSVDLinearLayer):
+            return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if min(module.in_features, module.out_features) < 16:
             return False
         if self.target_modules is None:
             return True
@@ -161,6 +169,7 @@ class DobiSVDCompressor(BaseCompressor):
             out_features=out_f,
             rank=r,
             bias=layer.bias is not None,
+            init_gate_val=self.init_gate_val,
             dtype=dtype,
             device=device,
         )

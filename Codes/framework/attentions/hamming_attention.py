@@ -123,9 +123,9 @@ class HammingAttention(BaseAttention):
         k_b = self._binarize(k, self.k_scale)
 
         dot = torch.matmul(q_b, k_b.transpose(-2, -1))  # [B, H, L, L]
-        # Calibrated pseudo-Hamming logit formulation
-        scale = (math.sqrt(Dh))
-        scores = (dot * self.temp) / scale
+        scale = 1.0 / math.sqrt(Dh)
+        beta = torch.clamp(self.temp, min=0.1, max=1.0)
+        scores = dot * scale * beta
 
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
@@ -137,7 +137,15 @@ class HammingAttention(BaseAttention):
             thresh = top_vals[..., -1:]
             scores = scores.masked_fill(scores < thresh, -10000.0)
 
-        probs = F.softmax(scores, dim=-1)
+        # Log-sum-exp stabilization
+        max_scores = scores.amax(dim=-1, keepdim=True)
+        max_scores = torch.where(max_scores < -1e8, torch.zeros_like(max_scores), max_scores)
+        scores_stab = scores - max_scores
+        probs = F.softmax(scores_stab, dim=-1)
+        probs = torch.nan_to_num(probs, nan=0.0)
+        probs = probs.masked_fill(~key_valid_4d, 0.0)
+        denom = probs.sum(dim=-1, keepdim=True).clamp(min=1e-9)
+        probs = probs / denom
         probs = self.dropout(probs)
 
         if head_mask is not None:

@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 from .hashed_linear import HashedLinear
@@ -70,11 +71,8 @@ class HashedNetCompressor(BaseCompressor):
                 new_layer = HashedLinear.from_linear(
                     module, n_buckets=self.n_buckets, use_sign=self.use_sign
                 )
-                parent = self._get_parent(name)
-                if parent is not None:
-                    child_name = name.split(".")[-1]
-                    setattr(parent, child_name, new_layer)
-                    self.compressed_layers.append(name)
+                replace_module(self.model, name, new_layer)
+                self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -92,15 +90,6 @@ class HashedNetCompressor(BaseCompressor):
         return HashedLinear.from_linear(
             linear, n_buckets=self.n_buckets, use_sign=self.use_sign
         )
-
-    def _get_parent(self, full_name: str) -> Optional[nn.Module]:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part, None)
-            if parent is None:
-                return None
-        return parent
 
 
 @COMPRESSOR_REGISTRY.register("hashed_net")

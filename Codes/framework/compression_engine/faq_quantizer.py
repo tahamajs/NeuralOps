@@ -129,24 +129,28 @@ class FAQQuantizer(BaseCompressor):
         self.use_ste = bool(use_ste)
 
     def _collect_activation_scales(self) -> Dict[str, torch.Tensor]:
-        """Collect channel-wise input activation scales per Linear layer via forward hooks."""
-        act_scales: Dict[str, torch.Tensor] = {}
+        """Collect channel-wise input activation scales via empirical calibration hooks with running covariance."""
+        running_cov: Dict[str, torch.Tensor] = {}
+        sample_counts: Dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str) -> Any:
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
-                    # Compute mean/max magnitude per input channel (last dimension)
                     if x.ndim >= 2:
                         flat_x = x.reshape(-1, x.shape[-1])
-                        channel_scale = torch.mean(torch.abs(flat_x), dim=0)
                     else:
-                        channel_scale = torch.abs(x)
-                    if layer_name in act_scales:
-                        act_scales[layer_name] = 0.5 * (act_scales[layer_name] + channel_scale.cpu())
-                    else:
-                        act_scales[layer_name] = channel_scale.cpu()
+                        flat_x = x.unsqueeze(0)
+                    n_samples = flat_x.shape[0]
+                    if n_samples > 0:
+                        batch_cov = torch.matmul(flat_x.T, flat_x).cpu()
+                        if layer_name not in running_cov:
+                            running_cov[layer_name] = batch_cov
+                            sample_counts[layer_name] = n_samples
+                        else:
+                            running_cov[layer_name] += batch_cov
+                            sample_counts[layer_name] += n_samples
 
             return hook
 
@@ -170,12 +174,15 @@ class FAQQuantizer(BaseCompressor):
                         dev = first_p.device if first_p is not None else torch.device("cpu")
                         self.model(self.calibration_data.to(dev))
                     elif hasattr(self.calibration_data, "__iter__"):
-                        for batch in self.calibration_data:
+                        for idx, batch in enumerate(self.calibration_data):
                             if isinstance(batch, torch.Tensor):
-                                self.model(batch)
+                                first_p = next(self.model.parameters(), None)
+                                dev = first_p.device if first_p is not None else torch.device("cpu")
+                                self.model(batch.to(dev))
                             elif isinstance(batch, dict):
                                 self.model(**batch)
-                            break
+                            if idx >= 32:
+                                break
                 else:
                     # Synthetic calibration forward pass
                     first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
@@ -186,23 +193,25 @@ class FAQQuantizer(BaseCompressor):
                         try:
                             self.model(dummy_x)
                         except Exception:
-                            # If model doesn't accept tensor directly, run per-layer synthetic
-                            for name, module in self.model.named_modules():
-                                if isinstance(module, nn.Linear):
-                                    act_scales[name] = torch.ones(module.in_features)
+                            pass
             except Exception:
-                # Fallback to uniform activation scales
-                for name, module in self.model.named_modules():
-                    if isinstance(module, nn.Linear):
-                        act_scales[name] = torch.ones(module.in_features)
+                pass
 
         for h in hooks:
             h.remove()
 
-        # Ensure all linear layers have an entry
+        act_scales: Dict[str, torch.Tensor] = {}
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and name not in act_scales:
-                act_scales[name] = torch.ones(module.in_features)
+            if isinstance(module, nn.Linear):
+                if name in running_cov and sample_counts.get(name, 0) > 0:
+                    cov = running_cov[name] / float(max(sample_counts[name], 1))
+                    # Diagonal of covariance is empirical channel variance / second moment
+                    var_diag = torch.diagonal(cov)
+                    # Clamping with eps=1e-6 to prevent zero-variance division by zero
+                    channel_scale = torch.sqrt(torch.clamp(var_diag, min=1e-6))
+                    act_scales[name] = channel_scale
+                else:
+                    act_scales[name] = torch.ones(module.in_features)
 
         return act_scales
 

@@ -346,8 +346,80 @@ def apply_block_mask(
     masked_weight = W * full_mask
     return masked_weight.to(dtype=weight.dtype), full_mask
 
+
+def recalibrate_layernorms(
+    model: nn.Module,
+    calibration_inputs: Optional[Any] = None,
+    tokenizer: Optional[Any] = None,
+    calibration_loader: Optional[Any] = None,
+    calibration_texts: Optional[List[str]] = None,
+    device: Optional[torch.device] = None,
+) -> None:
+    """
+    Recalibrates LayerNorm and RMSNorm scaling parameters post-compression
+    to restore representation variance.
+    """
+    norm_modules = []
+    for name, m in model.named_modules():
+        if isinstance(m, nn.LayerNorm) or "norm" in m.__class__.__name__.lower():
+            if hasattr(m, "weight") and m.weight is not None:
+                norm_modules.append(m)
+
+    if not norm_modules:
+        return
+
+    if calibration_inputs is None:
+        calibration_inputs = get_calibration_tensors(
+            model,
+            tokenizer=tokenizer,
+            calibration_loader=calibration_loader,
+            calibration_texts=calibration_texts,
+            device=device,
+        )
+
+    scales: Dict[nn.Module, float] = {}
+    hooks = []
+
+    def make_hook(mod: nn.Module):
+        def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], out: Any):
+            if inp and isinstance(inp[0], torch.Tensor):
+                x = inp[0].detach().float()
+                std = torch.sqrt(torch.var(x, dim=-1, keepdim=True) + 1e-6).mean().item()
+                if std > 0 and math.isfinite(std):
+                    scales[mod] = std
+        return hook
+
+    for m in norm_modules:
+        hooks.append(m.register_forward_hook(make_hook(m)))
+
+    model.eval()
+    with torch.no_grad():
+        try:
+            if isinstance(calibration_inputs, dict):
+                model(**calibration_inputs)
+            elif isinstance(calibration_inputs, torch.Tensor):
+                model(calibration_inputs)
+            elif isinstance(calibration_inputs, (list, tuple)):
+                model(*calibration_inputs)
+        except Exception:
+            pass
+
+    for h in hooks:
+        h.remove()
+
+    for m, std in scales.items():
+        if hasattr(m, "weight") and m.weight is not None:
+            with torch.no_grad():
+                if std > 1e-4:
+                    correction_factor = 1.0 / std
+                    dampened = 0.8 + 0.2 * correction_factor
+                    dampened = max(0.5, min(2.0, dampened))
+                    m.weight.data.mul_(dampened)
+
+
 # FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
 # FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
 # FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
 # FIX APPLIED: SparseGPT Hessian damping H + lambda I
 # FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+

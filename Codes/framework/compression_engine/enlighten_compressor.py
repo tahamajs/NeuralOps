@@ -24,6 +24,7 @@ class ENLightenCompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float()
+                norm_w = torch.linalg.norm(W, ord="fro")
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                 r = max(1, min(self.rank, len(S), min(W.shape)))
                 U_r = U[:, :r]
@@ -46,7 +47,11 @@ class ENLightenCompressor(BaseCompressor):
                         mask.scatter_(1, top_idx, 1.0)
                         residual_sp[:, j:end_j] = sub * mask
 
-                W_new = L + residual_sp
+                W_recon = L + residual_sp
+                recon_norm = torch.linalg.norm(W_recon, ord="fro")
+                # Balanced scale factor (W_F / ||L + R||_F) to preserve global matrix Frobenius norm post-decomposition
+                scale = norm_w / (recon_norm + 1e-12) if recon_norm > 1e-12 else 1.0
+                W_new = W_recon * scale
                 module.weight.data = W_new.to(
                     dtype=module.weight.dtype, device=module.weight.device
                 )

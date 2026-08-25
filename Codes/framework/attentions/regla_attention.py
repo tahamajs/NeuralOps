@@ -26,6 +26,7 @@ from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -86,7 +87,9 @@ class ReGLAAttention(BaseAttention):
         v = self.v_proj(x).view(B, L, self.heads, self.head_dim).transpose(1, 2)
         g = self.gate_proj(x).view(B, L, self.heads, self.head_dim).transpose(1, 2)
 
-        k_gated = k * torch.sigmoid(g)
+        # Strictly non-negative activation to prevent division by zero / negative denominators
+        q = F.elu(q) + 1.0
+        k_gated = F.elu(k * torch.sigmoid(g)) + 1.0
 
         if attention_mask is not None:
             if attention_mask.dim() == 4:
@@ -103,7 +106,7 @@ class ReGLAAttention(BaseAttention):
         z = k_gated.sum(dim=2, keepdim=True)
 
         num = torch.matmul(q, kv)
-        den = torch.matmul(q, z.transpose(-2, -1)) + 1e-5
+        den = torch.matmul(q, z.transpose(-2, -1)).clamp(min=1e-5)
         out = num / den
 
         out = out.transpose(1, 2).contiguous().view(B, L, D)

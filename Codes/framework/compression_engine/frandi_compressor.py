@@ -83,10 +83,11 @@ class FRanDILinear(nn.Module):
 
         if cov_matrix is not None and cov_matrix.shape == (in_f, in_f):
             try:
-                # Sqrt of covariance
-                L, V = torch.linalg.eigh(cov_matrix.float() + 1e-5 * torch.eye(in_f, device=cov_matrix.device))
-                L_sqrt = torch.diag(torch.sqrt(L.clamp_min(1e-6)))
-                L_inv_sqrt = torch.diag(1.0 / torch.sqrt(L.clamp_min(1e-6)))
+                # Sqrt of covariance with eigenvalue clamping lambda_i >= 1e-4
+                L, V = torch.linalg.eigh(cov_matrix.float() + 1e-4 * torch.eye(in_f, device=cov_matrix.device))
+                L_clamped = torch.clamp(L, min=1e-4)
+                L_sqrt = torch.diag(torch.sqrt(L_clamped))
+                L_inv_sqrt = torch.diag(1.0 / torch.sqrt(L_clamped))
                 C_sqrt = torch.matmul(torch.matmul(V, L_sqrt), V.t())
                 C_inv_sqrt = torch.matmul(torch.matmul(V, L_inv_sqrt), V.t())
 
@@ -94,21 +95,32 @@ class FRanDILinear(nn.Module):
                 U, S, Vt = torch.linalg.svd(W_scaled, full_matrices=False)
 
                 r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
-                B_data = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-                A_scaled = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
+                r = max(1, min(r, out_f, in_f))
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+                A_scaled = sqrt_S.unsqueeze(1) * Vt[:r, :]
                 A_data = torch.matmul(A_scaled, C_inv_sqrt)
+
+                # Symmetrically normalize factor magnitudes between A and B
+                norm_B = torch.norm(B_data, p="fro").clamp_min(1e-8)
+                norm_A = torch.norm(A_data, p="fro").clamp_min(1e-8)
+                scale_factor = torch.sqrt(norm_B / norm_A)
+                B_data = B_data / scale_factor
+                A_data = A_data * scale_factor
             except Exception:
                 U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
                 r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
-                B_data = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-                A_data = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
+                r = max(1, min(r, out_f, in_f))
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+                A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
         else:
             U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
             r = cls._select_rank(S, rank=rank, energy_threshold=energy_threshold)
-            B_data = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-            A_data = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
-
-        r = max(1, min(r, out_f, in_f))
+            r = max(1, min(r, out_f, in_f))
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+            A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
         frandi_layer = cls(
             in_features=in_f,
             out_features=out_f,
@@ -236,10 +248,15 @@ class FRanDICompressor(BaseCompressor):
 
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and not isinstance(module, FRanDILinear):
+                name_lower = name.lower()
+                if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+                    continue
                 if self.target_layers and not any(t in name for t in self.target_layers):
                     continue
 
                 max_rank = min(module.in_features, module.out_features)
+                if max_rank < 16:
+                    continue
                 r = min(self.rank, max_rank)
                 if r >= max_rank and self.energy_threshold is None and max_rank > 4:
                     continue

@@ -54,14 +54,8 @@ class SVDSingleHead(nn.Module):
         try:
             U, S, Vh = torch.linalg.svd(x_flat, full_matrices=False)
             k = min(self.svd_rank, len(S))
-            top_s = S[:k]
-            top_Vh = Vh[:k, :]
-            # Softmax-weighted singular energy distribution
-            s_max = top_s.max()
-            exp_s = torch.exp(top_s - s_max)
-            softmax_s = exp_s / (exp_s.sum() + 1e-12)
-            weighted_U = U[:, :k] * softmax_s.view(1, -1)
-            output_flat = torch.matmul(weighted_U, top_Vh)
+            weighted_U = U[:, :k] * S[:k].view(1, -1)
+            output_flat = torch.matmul(weighted_U, Vh[:k, :])
             output = output_flat.reshape(batch_size, seq_len, self.hidden_size).to(dtype=hidden_states.dtype)
             return output
         except Exception:
