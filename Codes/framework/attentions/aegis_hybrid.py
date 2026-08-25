@@ -29,6 +29,35 @@ class AegisHybridConfig:
     gate_init_bias: float = 1.8
 
 
+class FactorizedLinear(nn.Module):
+    r"""Factorized linear projection with reconstructed weight property for compatibility."""
+
+    def __init__(self, lin1: nn.Linear, lin2: nn.Linear) -> None:
+        super().__init__()
+        self.lin1 = lin1
+        self.lin2 = lin2
+
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.lin2.weight, self.lin1.weight)
+
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return getattr(self.lin2, "bias", None)
+
+    @property
+    def in_features(self) -> int:
+        return self.lin1.in_features
+
+    @property
+    def out_features(self) -> int:
+        return self.lin2.out_features
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.lin2(self.lin1(x))
+
+
 @ATTENTION_REGISTRY.register("aegis_hybrid")
 @ATTENTION_REGISTRY.register("aegis_hybrid_attn")
 class AegisHybridAttention(nn.Module):
@@ -95,18 +124,83 @@ class AegisHybridAttention(nn.Module):
         if pretrained_attn is not None:
             self._copy_pretrained(pretrained_attn)
 
+    @property
+    def q_proj(self) -> "FactorizedLinear":
+        return FactorizedLinear(self.q_proj1, self.q_proj2)
+
+    @property
+    def k_proj(self) -> "FactorizedLinear":
+        return FactorizedLinear(self.k_proj1, self.k_proj2)
+
+    @property
+    def v_proj(self) -> "FactorizedLinear":
+        return FactorizedLinear(self.v_proj1, self.v_proj2)
+
+    @property
+    def out_proj(self) -> "FactorizedLinear":
+        return FactorizedLinear(self.out_proj1, self.out_proj2)
+
+    # T5, BERT, DistilBERT, RoBERTa compatibility aliases
+    @property
+    def q(self) -> "FactorizedLinear":
+        return self.q_proj
+
+    @property
+    def k(self) -> "FactorizedLinear":
+        return self.k_proj
+
+    @property
+    def v(self) -> "FactorizedLinear":
+        return self.v_proj
+
+    @property
+    def o(self) -> "FactorizedLinear":
+        return self.out_proj
+
+    @property
+    def query(self) -> "FactorizedLinear":
+        return self.q_proj
+
+    @property
+    def key(self) -> "FactorizedLinear":
+        return self.k_proj
+
+    @property
+    def value(self) -> "FactorizedLinear":
+        return self.v_proj
+
+    @property
+    def dense(self) -> "FactorizedLinear":
+        return self.out_proj
+
+    @property
+    def q_lin(self) -> "FactorizedLinear":
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> "FactorizedLinear":
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> "FactorizedLinear":
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> "FactorizedLinear":
+        return self.out_proj
+
     def _copy_pretrained(self, old_attn: nn.Module) -> None:
-        q_src = getattr(old_attn, "q_lin", getattr(old_attn, "query", None))
-        k_src = getattr(old_attn, "k_lin", getattr(old_attn, "key", None))
-        v_src = getattr(old_attn, "v_lin", getattr(old_attn, "value", None))
-        out_src = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None))
-        if q_src is not None:
+        q_src = getattr(old_attn, "q_lin", getattr(old_attn, "query", getattr(old_attn, "q_proj", getattr(old_attn, "q", None))))
+        k_src = getattr(old_attn, "k_lin", getattr(old_attn, "key", getattr(old_attn, "k_proj", getattr(old_attn, "k", None))))
+        v_src = getattr(old_attn, "v_lin", getattr(old_attn, "value", getattr(old_attn, "v_proj", getattr(old_attn, "v", None))))
+        out_src = getattr(old_attn, "out_lin", getattr(old_attn, "dense", getattr(old_attn, "out_proj", getattr(old_attn, "o", None))))
+        if q_src is not None and hasattr(q_src, "weight"):
             self._svd_init(q_src, self.q_proj1, self.q_proj2, self.rank)
-        if k_src is not None:
+        if k_src is not None and hasattr(k_src, "weight"):
             self._svd_init(k_src, self.k_proj1, self.k_proj2, self.rank)
-        if v_src is not None:
+        if v_src is not None and hasattr(v_src, "weight"):
             self._svd_init(v_src, self.v_proj1, self.v_proj2, self.rank)
-        if out_src is not None:
+        if out_src is not None and hasattr(out_src, "weight"):
             self._svd_init(out_src, self.out_proj1, self.out_proj2, self.rank)
 
     @classmethod

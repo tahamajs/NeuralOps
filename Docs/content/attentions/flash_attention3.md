@@ -247,3 +247,10 @@ class FlashAttention3(BaseAttention):
 
         return self.out_proj(out), None
 ```
+
+---
+## 8. Seminal Literature & Academic References
+
+1. **Shah, J., Dao, T., Subramanian, P., et al. (2024)**. *FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision*. arXiv preprint [arXiv:2407.08608](https://arxiv.org/abs/2407.08608).
+2. **Dao, T. (2023)**. *FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning*. In International Conference on Learning Representations (ICLR 2024). [arXiv:2307.08691](https://arxiv.org/abs/2307.08691).
+3. **Dao, T., Fu, D. Y., Ermon, S., Rudra, A., & Ré, C. (2022)**. *FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness*. In Advances in Neural Information Processing Systems (NeurIPS 2022).

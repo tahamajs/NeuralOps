@@ -70,6 +70,23 @@ class FactorisedLinear(nn.Module):
         elif self.up.bias is not None:
             self.up.bias.data.zero_()
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.up.weight, self.down.weight)
+
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return self.up.bias
+
+    @property
+    def in_features(self) -> int:
+        return self.down.in_features
+
+    @property
+    def out_features(self) -> int:
+        return self.up.out_features
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.up(self.down(x))
 
@@ -82,14 +99,14 @@ def local_window_attention(
     temperature: float = 1.0,
     token_valid: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
-    r"""Local sliding-window attention with FP16 safe masking."""
+    r"""Local sliding-window attention with dynamic dtype safe masking."""
     B, H, N, D = Q.shape
     scale = (D**-0.5) / temperature
     idx = torch.arange(N, device=Q.device)
     dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
     mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
     scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-    mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
+    mask_val = torch.finfo(scores.dtype).min if scores.dtype.is_floating_point else -1e4
     scores = scores.masked_fill(~mask, mask_val)
     if token_valid is not None:
         scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), mask_val)
@@ -104,6 +121,7 @@ def kernel_linear_attention(
     V: torch.Tensor,
     rff_proj: torch.Tensor,
     use_zero_sum: bool = True,
+    max_clamp: float = 11.0,
 ) -> torch.Tensor:
     r"""Global linear attention with positive kernel feature maps."""
     B, H, N, D = Q.shape
@@ -118,8 +136,8 @@ def kernel_linear_attention(
     Q_norm = F.normalize(Q_f, p=2, dim=-1)
     K_norm = F.normalize(K_f, p=2, dim=-1)
 
-    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj_f).clamp(max=11.0)
-    K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj_f).clamp(max=11.0)
+    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj_f).clamp(max=max_clamp)
+    K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj_f).clamp(max=max_clamp)
     Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
     K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
 
@@ -132,6 +150,9 @@ def kernel_linear_attention(
     return ctx.to(orig_dtype)
 
 
+@ATTENTION_REGISTRY.register("aegis_v1_module")
+@ATTENTION_REGISTRY.register("AegisAttentionV1")
+@ATTENTION_REGISTRY.register("aegis_v1")
 class AegisAttentionV1(nn.Module):
     r"""AEGIS-Attention V1 Multi-Head Layer."""
 
@@ -210,6 +231,55 @@ class AegisAttentionV1(nn.Module):
 
         self.dropout: nn.Dropout = nn.Dropout(self.cfg.dropout)
 
+    # T5, BERT, DistilBERT, RoBERTa compatibility aliases
+    @property
+    def q(self) -> FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def k(self) -> FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def v(self) -> FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def o(self) -> FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def query(self) -> FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def dense(self) -> FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def q_lin(self) -> FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> FactorisedLinear:
+        return self.out_proj
+
     @classmethod
     def from_distilbert_pretrained(
         cls, old_attn: nn.Module, model_config: Optional[Any] = None, **kwargs: Any
@@ -241,7 +311,8 @@ class AegisAttentionV1(nn.Module):
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
                     mask = attention_mask[:, None, None, :].to(attn.dtype)
-                    attn = attn + (1.0 - mask) * -10000.0
+                    mask_val = torch.finfo(attn.dtype).min if attn.dtype.is_floating_point else -1e4
+                    attn = attn + (1.0 - mask) * mask_val
                 elif attention_mask.dim() == 4:
                     attn = attn + attention_mask.to(attn.dtype)
             attn = F.softmax(attn, dim=-1)
@@ -262,14 +333,25 @@ class AegisAttentionV1(nn.Module):
         mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
         token_valid: Optional[torch.Tensor] = None
         if mask is not None:
-            if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-                token_valid = mask[:, 0, 0, :] > -10000.0
-            elif mask.dim() == 4:
-                token_valid = mask.squeeze(1).squeeze(1) > -10000.0
-            elif mask.dim() == 3:
-                token_valid = mask.squeeze(1).bool()
-            elif mask.dim() == 2:
-                token_valid = mask.bool()
+            if mask.dtype in (torch.float16, torch.float32, torch.float64, torch.bfloat16):
+                cutoff = (torch.finfo(mask.dtype).min / 2) if mask.min() < -100.0 else 0.5
+                if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
+                    token_valid = mask[:, 0, 0, :] > cutoff
+                elif mask.dim() == 4:
+                    token_valid = mask.squeeze(1).squeeze(1) > cutoff
+                elif mask.dim() == 3:
+                    token_valid = mask.squeeze(1) > cutoff
+                elif mask.dim() == 2:
+                    token_valid = mask > cutoff
+            else:
+                if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
+                    token_valid = mask[:, 0, 0, :].bool()
+                elif mask.dim() == 4:
+                    token_valid = mask.squeeze(1).squeeze(1).bool()
+                elif mask.dim() == 3:
+                    token_valid = mask.squeeze(1).bool()
+                elif mask.dim() == 2:
+                    token_valid = mask.bool()
 
         ctx_local = local_window_attention(
             Q_local, K_local, V_local, self.cfg.local_window, self.cfg.temperature, token_valid

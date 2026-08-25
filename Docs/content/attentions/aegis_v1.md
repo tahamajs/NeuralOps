@@ -484,3 +484,20 @@ def inject_aegis_v1(
         layer.attention = new_attn
     return new_attn
 ```
+
+---
+## 8. Computational Complexity Analysis
+
+| Stage | Time Complexity | Memory Complexity | KV Cache Scaling |
+| :--- | :--- | :--- | :---: |
+| **Local Sliding-Window Block** | $\mathcal{O}(B \cdot N \cdot W \cdot d_k)$ | $\mathcal{O}(B \cdot N \cdot W)$ | $\mathcal{O}(W \cdot d_k)$ constant |
+| **Global Random Feature Linear Recurrence** | $\mathcal{O}(B \cdot N \cdot M \cdot d_k)$ | $\mathcal{O}(B \cdot M \cdot d_k)$ | $\mathcal{O}(M \cdot d_k)$ constant |
+| **Gated Blending** | $\mathcal{O}(B \cdot N \cdot D)$ | $\mathcal{O}(B \cdot N \cdot D)$ | Streaming memory |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Gu, A., & Dao, T. (2023)**. *Mamba: Linear-Time Sequence Modeling with Selective State Spaces*. arXiv preprint [arXiv:2312.00752](https://arxiv.org/abs/2312.00752).
+2. **Yang, S., Wang, B., Shen, Y., Panda, R., & Kim, Y. (2023)**. *Gated Linear Attention Transformers with Hardware-Efficient Training*. In ICML 2024. [arXiv:2312.06635](https://arxiv.org/abs/2312.06635).
+3. **Beltagy, I., Peters, M. E., & Cohan, A. (2020)**. *Longformer: The Long-Document Transformer*. arXiv preprint [arXiv:2004.05150](https://arxiv.org/abs/2004.05150).

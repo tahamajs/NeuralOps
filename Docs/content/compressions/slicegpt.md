@@ -373,3 +373,20 @@ def slicegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
 # FIX APPLIED: SparseGPT Hessian damping H + lambda I
 # FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
 ```
+
+---
+## 8. Computational Complexity Analysis
+
+| Dimension | Dense Transformer | SliceGPT Compressed ($s = 0.25$) | Savings |
+| :--- | :--- | :--- | :---: |
+| **Hidden Dimension ($D$)** | $D$ | $(1 - s) D$ | $25\%$ reduction |
+| **Weights Parameter Footprint** | $D^2$ per projection | $(1 - s)^2 D^2$ | $\approx 43.7\%$ reduction |
+| **Attention Computation Time** | $\mathcal{O}(N^2 D)$ | $\mathcal{O}(N^2 (1 - s) D)$ | $25\%$ latency speedup |
+| **Feed-Forward Computation Time** | $\mathcal{O}(N D d_{\text{ffn}})$ | $\mathcal{O}(N (1 - s)^2 D d_{\text{ffn}})$ | $\approx 43.7\%$ speedup |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Ashkboos, S., Mohtashami, A., Croci, M. L., Li, B. Z., Cameron, M., Alistarh, D., Hoefler, T., & Jaggi, M. (2024)**. *SliceGPT: Compress Large Language Models by Deleting Rows and Columns*. In International Conference on Learning Representations (ICLR 2024). [arXiv:2401.15024](https://arxiv.org/abs/2401.15024).
+2. **Frantar, E., & Alistarh, D. (2023)**. *SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot*. In ICML 2023.

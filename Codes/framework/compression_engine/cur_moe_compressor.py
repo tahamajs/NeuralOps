@@ -36,6 +36,8 @@ def tikhonov_pinv(U_mat: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
         return torch.linalg.pinv(U_mat, rcond=eps)
 
 
+@COMPRESSOR_REGISTRY.register("cur_moe")
+@COMPRESSOR_REGISTRY.register("cur_moe_compressor")
 class CURMoECompressor(BaseCompressor):
     """
     Compresses Mixture of Experts (MoE) layers using CUR cross-approximation.

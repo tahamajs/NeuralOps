@@ -69,6 +69,23 @@ class FactorisedLinear(nn.Module):
         elif self.up.bias is not None:
             self.up.bias.data.zero_()
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return torch.matmul(self.up.weight, self.down.weight)
+
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return self.up.bias
+
+    @property
+    def in_features(self) -> int:
+        return self.down.in_features
+
+    @property
+    def out_features(self) -> int:
+        return self.up.out_features
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.up(self.down(x))
 

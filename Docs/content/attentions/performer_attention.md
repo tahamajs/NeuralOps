@@ -519,3 +519,21 @@ def inject_performer(
     layer.attention = new_attn
     return new_attn
 ```
+
+---
+
+## 8. Computational Complexity Analysis
+
+| Operation | Standard Multi-Head Attention | Performer Attention (FAVOR+) | Theoretical Advantage |
+| :--- | :--- | :--- | :--- |
+| **Attention Matrix Scoring** | $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$ | $\mathcal{O}(B \cdot H \cdot N \cdot M \cdot d)$ | Linear time in $N$ ($M \ll N$) |
+| **Peak Activation Memory** | $\mathcal{O}(B \cdot H \cdot N^2)$ | $\mathcal{O}(B \cdot H \cdot (N \cdot M + M \cdot d))$ | Linear working memory |
+| **Causal Recurrent State** | $\mathcal{O}(N^2)$ cache | $\mathcal{O}(M \cdot d)$ constant state | Enables infinite context streaming |
+
+---
+
+## 9. Seminal Literature & Academic References
+
+1. **Choromanski, K., Likhosherstov, V., Dohan, D., Song, X., Gane, A., Sarlos, T., Hawkins, P., Davis, J., Mohiuddin, A., Kaiser, L., Belanger, D., Colwell, L., & Weller, A. (2021)**. *Rethinking Attention with Performers*. In International Conference on Learning Representations (ICLR 2021). [arXiv:2009.14794](https://arxiv.org/abs/2009.14794).
+2. **Rahimi, A., & Recht, B. (2007)**. *Random Features for Large-Scale Kernel Machines*. In Advances in Neural Information Processing Systems (NeurIPS 2007).
+3. **Katharopoulos, A., Vyas, A., Pappas, N., & Fleuret, F. (2020)**. *Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention*. In ICML 2020.

@@ -57,6 +57,11 @@ class SVDLinear(nn.Module):
             if bias is not None and self.bias is not None:
                 self.bias.data.copy_(bias)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        return (self.U * self.S.unsqueeze(0)) @ self.V.t()
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [..., in_features]
         # V: [in_features, rank]
