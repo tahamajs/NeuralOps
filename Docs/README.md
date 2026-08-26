@@ -113,8 +113,14 @@ python Codes/framework/eval_all_models_datasets.py \
     --attn_type svd_linear_attention \
     --device cuda
 
-# 3. Launch comprehensive multi-track sweep on GPU cluster
+# 3. Run validation quality scripts (F1, MCC, PPL, Fidelity)
+python Codes/framework/run_validation_metrics.py
+
+# 4. Launch comprehensive multi-track sweep on GPU cluster
 bash run_on_gpu_server.sh --mode comprehensive --gpus 0,1,2,3
+
+# 5. Monitor sweep with live interactive dashboard
+python Codes/framework/web/live_monitor.py
 ```
 
 For full benchmarking parameters and distributed options, see [`content/benchmark_execution_guide.md`](./content/benchmark_execution_guide.md).
