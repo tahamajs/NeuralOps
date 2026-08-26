@@ -959,6 +959,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     }
 
 def _build_stats_response() -> str:
+    print('DEBUG ep1 log:', (PROJECT_DIR / 'run_quality_ep1.log').exists(), flush=True)
+    print('DEBUG PROJECT_DIR:', PROJECT_DIR, flush=True)
     """Build the full stats JSON response with rich detail fields and comparative analytics."""
     gpu = get_gpu_stats()
     results = get_completed_results()
@@ -1058,17 +1060,27 @@ def _build_stats_response() -> str:
         if fast_info.get("progress"):
             progress.update(fast_info["progress"])
 
+    runs_list_all = RunManager.list_runs()
+    active_run_info = runs_list_all[0] if runs_list_all else {
+        "run_id": "run_active",
+        "name": "Phase 2 Quality Screening (1-Seed 1-Epoch)",
+        "is_active": True,
+        "module_count": 20,
+        "completed": progress.get("completed", 0),
+    }
+    active_run_dict = {
+        "run_id": active_run_info.get("run_id", "run_active"),
+        "name": active_run_info.get("name", "Phase 2 Quality Screening (1-Seed 1-Epoch)"),
+        "is_active": True,
+        "module_count": active_run_info.get("num_combinations", len(mod_prog) or 20),
+        "completed": active_run_info.get("completed", progress.get("completed", 0)),
+    }
+
     response = {
         "gpu": gpu,
         "progress": progress,
         "is_running": is_running,
-        "active_run": {
-            "run_id": "run_active",
-            "name": "Phase 2 Quality Screening (1-Seed 1-Epoch)" if ((PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()) else ("Phase 2 Quality Screening (1 Seed, 20 Modules)" if ((PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()) else ("Phase 2 Quality Screening (20 Modules)" if ((PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()) else "Phase 2 Quality Sweep (Fast)")),
-            "is_active": True,
-            "module_count": 20 if ((PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists() or (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists() or (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()) else 6,
-            "completed": progress.get("completed", 0),
-        },
+        "active_run": active_run_dict,
         "live_progress": live_prog,
         "module_progress": mod_prog,
         "trajectories": trajectories,
