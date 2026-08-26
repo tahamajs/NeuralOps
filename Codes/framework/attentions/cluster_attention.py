@@ -211,7 +211,8 @@ def inject_cluster(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> ClusterAttention:
+,
+    **kwargs) -> ClusterAttention:
     num_clusters = getattr(comp_config, "num_clusters", 16)
     new_attn = ClusterAttention(
         config=model_config,

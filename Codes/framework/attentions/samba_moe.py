@@ -42,7 +42,7 @@ class SambaMoEBlock(BaseAttention):
 
         self.d_model = d_model
         self.n_heads = n_heads
-        self.swa_mamba = SAMBAM3Block(d_model, n_heads, window=window, config=config)
+        self.swa_mamba = SAMBAM3Block(config=config, d_model=d_model, n_heads=n_heads, window=window)
         self.moe = REAPMoE(d_model, n_experts, config=config)
         self.norm = nn.LayerNorm(d_model)
         self.aux_loss: torch.Tensor = torch.tensor(0.0)

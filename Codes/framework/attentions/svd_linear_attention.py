@@ -662,6 +662,12 @@ class SVDLinearAttention(BaseAttention):
         2. "linear" with `use_decay_gating=False` -> Standard non-decayed $\mathcal{O}(N)$ Linear Kernel Attention.
         3. "linear" or "decay" with `use_decay_gating=True` -> Data-Dependent Exponential Decay Recurrent Attention.
         """
+        query = kwargs.get("query", None)
+        key = kwargs.get("key", None)
+        mask = kwargs.get("mask", None)
+        return_state = kwargs.get("return_state", False)
+        past_state = kwargs.get("past_state", None)
+
         if hidden_states is None:
             hidden_states = query if query is not None else key
         if attention_mask is None:

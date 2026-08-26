@@ -185,7 +185,8 @@ def inject_galerkin(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> GalerkinAttention:
+,
+    **kwargs) -> GalerkinAttention:
     rank = getattr(comp_config, "galerkin_rank", getattr(comp_config, "rank", 64))
     dropout = getattr(comp_config, "dropout", 0.1)
     new_attn = GalerkinAttention(

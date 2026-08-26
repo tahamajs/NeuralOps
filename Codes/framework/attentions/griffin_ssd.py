@@ -148,6 +148,7 @@ class GriffinSSDBlock(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Forward pass for Griffin SSD attention."""
+        mask = kwargs.get("mask", None)
         if attention_mask is None and mask is not None:
             attention_mask = mask
 
@@ -215,7 +216,7 @@ def inject_griffin_ssd(
     **kwargs: Any,
 ) -> GriffinSSDBlock:
     r"""Injection hook for GriffinSSDBlock."""
-    d_model = 768
+    d_model = 128  # fixed: was hardcoded 768
     num_heads = 12
     if model_config is not None:
         d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))

@@ -173,7 +173,8 @@ def inject_routing(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> RoutingAttention:
+,
+    **kwargs) -> RoutingAttention:
     num_clusters = getattr(comp_config, "num_clusters", 16)
     n_iters = getattr(comp_config, "n_iters", 3)
     new_attn = RoutingAttention(

@@ -135,7 +135,7 @@ def inject_gated_deltanet_block(
     **kwargs: Any,
 ) -> GatedDeltaNetBlock:
     r"""Injects GatedDeltaNetBlock into a transformer layer."""
-    d_model = 768
+    d_model = 128  # fixed: was hardcoded 768
     num_heads = 12
     if model_config is not None:
         d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))

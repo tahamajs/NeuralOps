@@ -271,7 +271,8 @@ def inject_minimal_svd(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-) -> MinimalSVDAttention:
+,
+    **kwargs) -> MinimalSVDAttention:
     r"""Injection hook for MinimalSVDAttention into transformer layer."""
     energy: float = getattr(comp_config, "svd_energy", 0.95)
     dropout: float = getattr(comp_config, "dropout", 0.1)

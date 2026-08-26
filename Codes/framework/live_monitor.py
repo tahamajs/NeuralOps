@@ -523,7 +523,7 @@ def generate_latex_table(results: List[Dict[str, Any]]) -> str:
         mem_str = f"{m['avg_mem_mb']:.1f}" if m['avg_mem_mb'] > 0 else "--"
         rate_str = f"{m['success_rate_pct']:.1f}" + r"\%"
         
-        lines.append(f"\texttt{{{mod_name}}} & \textsc{{{trk_name}}} & {fwd_str} & {bwd_str} & \textbf{{{tot_str}}} & {mem_str} & {rate_str} \\")
+        lines.append(rf"\texttt{{{mod_name}}} & \textsc{{{trk_name}}} & {fwd_str} & {bwd_str} & \textbf{{{tot_str}}} & {mem_str} & {rate_str} \\")
         
     lines.extend([
         r"\bottomrule",
