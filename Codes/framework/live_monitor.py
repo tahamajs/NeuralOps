@@ -877,6 +877,35 @@ def _build_stats_response() -> str:
     is_running = is_sweep_running()
     comparative = compute_comparative_analytics(results)
 
+    trajectories = {}
+    det_candidates = [
+        PROJECT_DIR / "results" / "run_quality_fast" / "detailed_results.json",
+        Path("results/run_quality_fast/detailed_results.json"),
+        PROJECT_DIR / "results" / "run_quality_pretrained" / "detailed_results.json",
+        Path("results/run_quality_pretrained/detailed_results.json"),
+    ]
+    for dpath in det_candidates:
+        if dpath.exists() and dpath.stat().st_size > 0:
+            try:
+                with open(dpath, "r", encoding="utf-8") as f:
+                    det_items = json.load(f)
+                    for item in det_items:
+                        m_name = item.get("module_name", item.get("module"))
+                        if m_name and "trajectories" in item and item["trajectories"]:
+                            loss_list = item["trajectories"].get("loss", [])
+                            if len(loss_list) > 100:
+                                stride = max(1, len(loss_list) // 100)
+                                ds_loss = [loss_list[i] for i in range(0, len(loss_list), stride)]
+                            else:
+                                ds_loss = loss_list
+                            trajectories[m_name] = {
+                                "loss": ds_loss,
+                                "grad_norm": item["trajectories"].get("grad_norm", [])[:100],
+                                "fwd_latency_ms": item["trajectories"].get("fwd_latency_ms", [])[:100],
+                            }
+            except Exception:
+                pass
+
     serializable_results = [
         {
             "id": idx,
@@ -897,6 +926,7 @@ def _build_stats_response() -> str:
             "ci_upper": r.get("ci_upper"),
             "error_detail": r.get("error_detail", "None / Success"),
             "time": r["timestamp"].strftime("%H:%M:%S") if isinstance(r["timestamp"], datetime) else str(r["timestamp"]),
+            "trajectories": trajectories.get(r["module"], {}),
         }
         for idx, r in enumerate(results, 1)
     ]
@@ -943,6 +973,7 @@ def _build_stats_response() -> str:
         },
         "live_progress": live_prog,
         "module_progress": mod_prog,
+        "trajectories": trajectories,
         "results": serializable_results,
         "recent_results": serializable_results[-20:][::-1],
         "all_results_count": len(results),
