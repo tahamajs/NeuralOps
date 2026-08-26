@@ -133,7 +133,7 @@ class LEKAv2Attention(BaseAttention):
 
         scores = self.landmark_scorer(K_features).squeeze(-1)
         # Always prioritize [CLS] token at index 0
-        scores[:, :, 0] = 1e6
+        scores[:, :, 0] = 1e4
         L = L_max
         _, idx = scores.topk(L, dim=-1)
 

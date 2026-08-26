@@ -66,7 +66,7 @@ class TokenRouter(nn.Module):
             scores = scores.masked_fill(~valid_mask, -10000.0)
 
         # Always guarantee preservation of [CLS] (index 0)
-        scores[:, 0] = 1e6
+        scores[:, 0] = 1e4
 
         keep = max(self.min_tokens, min(N, int(N * self.keep_ratio)))
         idx = scores.topk(keep, dim=1).indices

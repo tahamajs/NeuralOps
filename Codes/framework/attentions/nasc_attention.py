@@ -25,7 +25,7 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
     m = x.max(dim=dim, keepdim=True).values
     z = x - m
     exp_z = torch.exp(z / temperature)
-    exp_neg_m = torch.exp((-m) / temperature).clamp(max=1e10)
+    exp_neg_m = torch.exp((-m) / temperature).clamp(max=1e4)
     p = F.relu(exp_z - exp_neg_m)
     return (p / (p.sum(dim=dim, keepdim=True) + 1e-8)).to(orig_dtype)
 
