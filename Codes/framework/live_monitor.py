@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import http.server
 import json
+import math
 import os
 import re
 import socketserver
@@ -114,7 +115,12 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     # Check active Phase 2 summary.csv first
-    if (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists():
+    if (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_quality_ep1" / "summary.csv",
+            Path("results/run_quality_ep1/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_quality_screening_fast" / "summary.csv",
             Path("results/run_quality_screening_fast/summary.csv"),
@@ -191,6 +197,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
                 pass
     
     log_candidates = [
+        PROJECT_DIR / "run_quality_ep1.log",
+        Path("run_quality_ep1.log"),
         PROJECT_DIR / "run_quality_screening_fast.log",
         Path("run_quality_screening_fast.log"),
         PROJECT_DIR / "run_quality_screening.log",
@@ -658,11 +666,14 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     Parses run_quality_fast.log and results/run_quality_fast/summary.csv
     to provide per-module, per-seed, per-epoch live status, metrics, and ETA.
     """
-    is_screening_fast = (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
+    is_screening_ep1 = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
+    is_screening_fast = is_screening_ep1 or (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
     is_screening = is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
     active_module_list = SCREENING_MODULE_LIST if is_screening else FAST_MODULE_LIST
 
     log_candidates = [
+        PROJECT_DIR / "run_quality_ep1.log",
+        Path("run_quality_ep1.log"),
         PROJECT_DIR / "run_quality_screening_fast.log",
         Path("run_quality_screening_fast.log"),
         PROJECT_DIR / "run_quality_screening.log",
@@ -677,6 +688,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "run_quality_ep1" / "summary.csv",
+        Path("results/run_quality_ep1/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_screening_fast" / "summary.csv",
         Path("results/run_quality_screening_fast/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_screening" / "summary.csv",
@@ -781,9 +794,9 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     if 'parsed_seeds' in locals() and parsed_seeds:
         total_seeds = parsed_seeds
     seeds_order = [42] if total_seeds == 1 else [42, 123, 777]
-    total_epochs = 2 if is_screening else 3
+    total_epochs = 1 if is_screening_ep1 else (2 if is_screening else 3)
     max_steps_per_epoch = 526 if is_screening else 1052
-    pace_per_seed = 75.0 if is_screening else 160.0
+    pace_per_seed = 55.0 if is_screening_ep1 else (75.0 if is_screening else 160.0)
 
     total_units = len(active_module_list) * total_seeds
     units_completed = 0
@@ -958,6 +971,8 @@ def _build_stats_response() -> str:
 
     trajectories = {}
     det_candidates = [
+        PROJECT_DIR / "results" / "run_quality_ep1" / "detailed_results.json",
+        Path("results/run_quality_ep1/detailed_results.json"),
         PROJECT_DIR / "results" / "run_quality_screening_fast" / "detailed_results.json",
         Path("results/run_quality_screening_fast/detailed_results.json"),
         PROJECT_DIR / "results" / "run_quality_screening" / "detailed_results.json",
@@ -1069,7 +1084,7 @@ def _build_stats_response() -> str:
         "analytics": {"modules": analytics_modules},
         "comparative_analytics": comparative,
     }
-    return json.dumps(response)
+    return json.dumps(sanitize_json(response))
 
 
 def _cache_refresh_loop() -> None:
@@ -1183,6 +1198,17 @@ def _get_environment_info() -> str:
     return "\n".join(info_lines)
 
 
+
+def sanitize_json(obj):
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+    elif isinstance(obj, dict):
+        return {k: sanitize_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_json(v) for v in obj]
+    return obj
+
 class RunManager:
     """Manages benchmark run directories, historical indexing, and detached sweep execution."""
 
@@ -1209,7 +1235,8 @@ class RunManager:
         # 1. Check Active Run (Prioritize run_quality_fast)
         try:
             active_results = get_completed_results()
-            screen_fast_exists = (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
+            screen_ep1_exists = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
+            screen_fast_exists = screen_ep1_exists or (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
             screen_exists = screen_fast_exists or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
             fast_exists = (PROJECT_DIR / "results" / "run_quality_fast").exists() or (PROJECT_DIR / "run_quality_fast.log").exists()
             running = is_sweep_running()
@@ -1224,7 +1251,7 @@ class RunManager:
                     ts_str = ts_val.isoformat() if isinstance(ts_val, datetime) else str(ts_val)
 
                 num_c = 20 if screen_exists else 6
-                r_name = "Phase 2 Quality Screening (1 Seed, 20 Modules)" if screen_fast_exists else ("Phase 2 Quality Screening (20 Modules)" if screen_exists else "Phase 2 Quality Sweep (Fast)")
+                r_name = "Phase 2 Quality Screening (1-Seed 1-Epoch)" if screen_ep1_exists else ("Phase 2 Quality Screening (1 Seed, 20 Modules)" if screen_fast_exists else ("Phase 2 Quality Screening (20 Modules)" if screen_exists else "Phase 2 Quality Sweep (Fast)"))
 
                 runs.append({
                     "run_id": "run_active",
@@ -1669,7 +1696,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         # 1. API: List Runs (/api/runs)
         if req_path == "/api/runs":
             runs_list = RunManager.list_runs()
-            payload = json.dumps({"runs": runs_list}).encode("utf-8")
+            payload = json.dumps(sanitize_json({"runs": runs_list})).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1683,7 +1710,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             run_id = req_path.replace("/api/runs/", "").strip("/")
             run_data = RunManager.get_run_details(run_id)
             if run_data:
-                payload = json.dumps(run_data).encode("utf-8")
+                payload = json.dumps(sanitize_json(run_data)).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-type", "application/json; charset=utf-8")
                 self.send_header("Access-Control-Allow-Origin", "*")
@@ -1724,7 +1751,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             run_id = q_params.get("run_id", ["run_active"])[0]
             run_data = RunManager.get_run_details(run_id)
 
-            json_payload = json.dumps(run_data, indent=2).encode("utf-8")
+            json_payload = json.dumps(sanitize_json(run_data), indent=2).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1738,7 +1765,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         if req_path == "/api/export/latex-table":
             results = get_completed_results()
             latex_code = generate_latex_table(results)
-            payload = json.dumps({"latex": latex_code}).encode("utf-8")
+            payload = json.dumps(sanitize_json({"latex": latex_code})).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1749,7 +1776,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         if req_path == "/api/export/plot-data":
             results = get_completed_results()
-            plot_payload = json.dumps(generate_plot_data(results), indent=2).encode("utf-8")
+            plot_payload = json.dumps(sanitize_json(generate_plot_data(results)), indent=2).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1787,7 +1814,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         # 1. API: Start Run (/api/run/start)
         if req_path == "/api/run/start":
             res = RunManager.start_new_run(data)
-            resp_data = json.dumps(res).encode("utf-8")
+            resp_data = json.dumps(sanitize_json(res)).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1799,7 +1826,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         # 2. API: Stop Run (/api/run/stop)
         if req_path == "/api/run/stop":
             res = RunManager.stop_active_run()
-            resp_data = json.dumps(res).encode("utf-8")
+            resp_data = json.dumps(sanitize_json(res)).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1823,7 +1850,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 success = False
                 msg = "Unknown action"
 
-            resp_data = json.dumps({"success": success, "message": msg}).encode("utf-8")
+            resp_data = json.dumps(sanitize_json({"success": success, "message": msg})).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
