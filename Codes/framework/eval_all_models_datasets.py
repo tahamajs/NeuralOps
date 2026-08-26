@@ -749,7 +749,7 @@ def evaluate_single_combination_opt(
                 model.train()
             
             batch = get_dataset_batch(dataset, model_family, current_batch_size, seq_len, num_labels=num_labels, device=device, allow_synthetic=allow_synthetic)
-            filtered_batch = {k: v for k, v in batch.items() if k in ["input_ids", "attention_mask", "labels", "decoder_input_ids"]}
+            filtered_batch = _filter_batch(batch, model_family, model)
 
             # --- FLOPs Profiling (Warmup) ---
             flops_macs = 0.0
@@ -862,11 +862,12 @@ def evaluate_single_combination_opt(
                     with torch.no_grad():
                         for val_batch in loader:
                             inputs = {("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v) for k, v in val_batch.items()}
-                            filtered_inputs = {k: v for k, v in inputs.items() if k in ["input_ids", "attention_mask", "labels", "decoder_input_ids"]}
+                            filtered_inputs = _filter_batch(inputs, model_family, model)
+                            filtered_base_inputs = _filter_batch(inputs, model_family, baseline_model)
                             
                             with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
                                 out = model(**filtered_inputs)
-                                base_out = baseline_model(**filtered_inputs)
+                                base_out = baseline_model(**filtered_base_inputs)
                             
                             logits, _ = _extract_logits_and_loss(out, num_labels=num_labels, labels=inputs.get("labels"))
                             base_logits, _ = _extract_logits_and_loss(base_out, num_labels=num_labels, labels=inputs.get("labels"))
