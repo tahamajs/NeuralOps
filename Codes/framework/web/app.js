@@ -103,6 +103,7 @@ function populateRunSelectors() {
   availableRuns.forEach((r, idx) => {
     const opt = document.createElement("option");
     opt.value = r.run_id;
+    const statusIcon = r.is_active ? "⚡ [ACTIVE] " : "📁 ";
     const totalMods = r.num_combinations || r.module_count || 20;
     const countStr = `(${r.completed || 0}/${totalMods} modules)`;
     opt.textContent = `${statusIcon}${r.name || r.run_id} ${countStr}`;
