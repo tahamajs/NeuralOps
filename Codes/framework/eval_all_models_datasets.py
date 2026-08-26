@@ -717,7 +717,7 @@ def evaluate_single_combination_opt(
     )
     
     current_batch_size = batch_size
-    max_retries = 5
+    max_retries = 8
     retry_count = 0
     success = False
 
@@ -924,6 +924,8 @@ def evaluate_single_combination_opt(
                 current_batch_size = max(1, current_batch_size // 2)
                 retry_count += 1
                 if device.type == "cuda":
+                    import gc
+                    gc.collect()
                     torch.cuda.empty_cache()
             else:
                 logger.error("Evaluation FAILED for %s on %s/%s: %s", module_name, model_family, dataset, e)

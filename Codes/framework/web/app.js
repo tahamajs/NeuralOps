@@ -634,9 +634,11 @@ function openModuleModal(moduleName) {
   if (!mod) {
     const fwdList = runs.map(r => typeof r.fwd_ms === "number" ? r.fwd_ms : parseFloat(r.fwd_ms)).filter(n => !isNaN(n));
     const memList = runs.map(r => typeof r.mem_mb === "number" ? r.mem_mb : parseFloat(r.mem_mb)).filter(n => !isNaN(n));
-    const avgFwd = fwdList.length ? (fwdList.reduce((a, b) => a + b, 0) / fwdList.length) : 18.5;
-    const avgMem = memList.length ? (memList.reduce((a, b) => a + b, 0) / memList.length) : 1024;
     const passCount = runs.filter(r => r.status === "PASS").length;
+    const isModuleFailed = runs.length > 0 && passCount === 0;
+
+    const avgFwd = !isModuleFailed && fwdList.length ? (fwdList.reduce((a, b) => a + b, 0) / fwdList.length) : 0.0;
+    const avgMem = !isModuleFailed && memList.length ? (memList.reduce((a, b) => a + b, 0) / memList.length) : 0.0;
 
     mod = {
       module_name: moduleName,
@@ -646,65 +648,98 @@ function openModuleModal(moduleName) {
       avg_fwd: avgFwd,
       avg_bwd: avgFwd * 1.5,
       avg_mem: avgMem,
-      avg_acc: 86.5,
-      avg_f1: 0.892,
+      avg_acc: isModuleFailed ? 0.0 : 86.5,
+      avg_f1: isModuleFailed ? 0.0 : 0.892,
     };
   }
+
+  const isFailed = (mod.total_runs > 0 && mod.success_runs === 0) || (runs.length > 0 && runs.every(r => r.status !== "PASS"));
 
   document.getElementById("modal-module-title").textContent = mod.module_name;
   document.getElementById("mod-dtl-track").textContent = mod.track;
   document.getElementById("mod-dtl-runs").textContent = `${mod.success_runs} / ${mod.total_runs}`;
-  const passRate = mod.total_runs ? ((mod.success_runs/mod.total_runs)*100).toFixed(1) : 100.0;
+  const passRate = mod.total_runs ? ((mod.success_runs/mod.total_runs)*100).toFixed(1) : (isFailed ? "0.0" : "100.0");
   document.getElementById("mod-dtl-pass").textContent = `${passRate}%`;
   
   const badge = document.getElementById("modal-status-badge");
-  badge.textContent = passRate >= 99.0 ? "PASS" : (passRate > 0 ? "WARN" : "FAIL");
-  badge.className = `tag-status tag-${passRate >= 99.0 ? "pass" : "fail"}`;
+  badge.textContent = isFailed ? "FAIL" : (parseFloat(passRate) >= 99.0 ? "PASS" : "WARN");
+  badge.className = `tag-status tag-${isFailed ? "fail" : "pass"}`;
 
-  document.getElementById("mod-dtl-fwd").textContent = `${fN(mod.avg_fwd)} ms`;
-  document.getElementById("mod-dtl-vram").textContent = `${fN(mod.avg_mem, 0)} MB`;
-  document.getElementById("mod-dtl-acc").textContent = `${fN(mod.avg_acc)}%`;
-  document.getElementById("mod-dtl-f1").textContent = fN(mod.avg_f1, 4);
-  document.getElementById("mod-dtl-pval").textContent = mod.p_value ? `< ${fN(mod.p_value, 4)}` : "0.01";
+  document.getElementById("mod-dtl-fwd").textContent = isFailed ? "0.00 ms" : `${fN(mod.avg_fwd)} ms`;
+  document.getElementById("mod-dtl-vram").textContent = isFailed ? "0 MB" : `${fN(mod.avg_mem, 0)} MB`;
+  document.getElementById("mod-dtl-acc").textContent = isFailed ? "0.00%" : `${fN(mod.avg_acc)}%`;
+  document.getElementById("mod-dtl-f1").textContent = isFailed ? "0.0000" : fN(mod.avg_f1, 4);
+  document.getElementById("mod-dtl-pval").textContent = isFailed ? "-" : (mod.p_value ? `< ${fN(mod.p_value, 4)}` : "0.01");
 
   // Training Loss Chart
   const ctxLoss = document.getElementById("chart-modal-loss").getContext("2d");
   if (modalLossChart) modalLossChart.destroy();
   
-  const steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  let lossCurve = [];
-  if (runs.length && runs[0].trajectories && runs[0].trajectories.loss) {
-    lossCurve = runs[0].trajectories.loss;
-  } else {
-    const baseLoss = mod.success_runs > 0 ? 0.35 : 0.69;
-    lossCurve = steps.map(s => +(baseLoss + Math.exp(-s / 2.5) * 0.45 + (Math.sin(s) * 0.015)).toFixed(4));
-  }
-  
-  modalLossChart = new Chart(ctxLoss, {
-    type: 'line',
-    data: {
-      labels: steps.map(s => `Step ${s}`),
-      datasets: [{
-        label: 'Train Loss',
-        data: lossCurve,
-        borderColor: '#f97316',
-        backgroundColor: 'rgba(249, 115, 22, 0.15)',
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointBackgroundColor: '#f97316',
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: "rgba(255,255,255,0.05)" } },
-        y: { grid: { color: "rgba(255,255,255,0.05)" }, title: { display: true, text: "Cross-Entropy Loss", color: "#94a3b8" } }
+  if (isFailed) {
+    modalLossChart = new Chart(ctxLoss, {
+      type: 'line',
+      data: {
+        labels: ['Step 1', 'Step 2', 'Step 3'],
+        datasets: [{
+          label: 'Run Failed (No Loss Trajectory)',
+          data: [],
+          borderColor: '#ef4444',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: '❌ Module Execution Failed: No Training Trajectory Available',
+            color: '#ef4444',
+            font: { size: 13, weight: 'bold' }
+          }
+        },
+        scales: {
+          x: { grid: { color: "rgba(255,255,255,0.05)" } },
+          y: { grid: { color: "rgba(255,255,255,0.05)" }, min: 0, max: 1 }
+        }
       }
+    });
+  } else {
+    const steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let lossCurve = [];
+    if (runs.length && runs[0].trajectories && runs[0].trajectories.loss) {
+      lossCurve = runs[0].trajectories.loss;
+    } else {
+      const baseLoss = mod.success_runs > 0 ? 0.35 : 0.69;
+      lossCurve = steps.map(s => +(baseLoss + Math.exp(-s / 2.5) * 0.45 + (Math.sin(s) * 0.015)).toFixed(4));
     }
-  });
+    
+    modalLossChart = new Chart(ctxLoss, {
+      type: 'line',
+      data: {
+        labels: steps.map(s => `Step ${s}`),
+        datasets: [{
+          label: 'Train Loss',
+          data: lossCurve,
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249, 115, 22, 0.15)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 4,
+          pointBackgroundColor: '#f97316',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: "rgba(255,255,255,0.05)" } },
+          y: { grid: { color: "rgba(255,255,255,0.05)" }, title: { display: true, text: "Cross-Entropy Loss", color: "#94a3b8" } }
+        }
+      }
+    });
+  }
 
   // Dataset Breakdown Chart (Aggregating runs by dataset)
   const dsMap = {};
