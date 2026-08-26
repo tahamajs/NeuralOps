@@ -191,7 +191,6 @@ def inject_salt_attention(
     layer_idx: int,
     total_layers: int,
     old_attn: Any,
-,
     **kwargs) -> SALTAttention:
     rank = getattr(comp_config, "rank", getattr(comp_config, "salt_rank", 16))
     new_attn = SALTAttention(config=model_config, rank=rank, pretrained_attn=old_attn)

@@ -371,7 +371,6 @@ def inject_orion(
     layer_idx: int,
     total_layers: int,
     old_attn: Any,
-,
     **kwargs) -> ORIONAttention:
     r"""Bridge function injecting ORION attention into a transformer layer."""
     cfg = ORIONConfig(

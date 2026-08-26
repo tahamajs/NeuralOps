@@ -208,7 +208,6 @@ def inject_moba(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-,
     **kwargs) -> MoBAAttention:
     r"""
     Injection hook for MoBAAttention into transformer layer.

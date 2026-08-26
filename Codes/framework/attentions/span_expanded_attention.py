@@ -155,7 +155,6 @@ def inject_span_expanded(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-,
     **kwargs) -> SpanExpandedAttention:
     new_attn = SpanExpandedAttention(
         config=model_config,

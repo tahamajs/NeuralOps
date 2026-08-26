@@ -254,7 +254,6 @@ def inject_svd_mamba(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-,
     **kwargs) -> SVDMamba:
     d_model = model_config.hidden_size
     new_module = SVDMamba(d_model=d_model, config=model_config)

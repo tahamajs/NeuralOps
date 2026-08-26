@@ -203,7 +203,6 @@ def inject_leka_v1(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-,
     **kwargs) -> LEKAV1Attention:
     r"""
     Injection hook for LEKAV1Attention into transformer layer.

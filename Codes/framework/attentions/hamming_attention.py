@@ -174,7 +174,6 @@ def inject_hamming(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-,
     **kwargs) -> HammingAttention:
     new_attn = HammingAttention(
         config=model_config,

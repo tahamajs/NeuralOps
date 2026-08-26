@@ -269,7 +269,6 @@ def inject_svd_proj_attn(
     layer_idx: int,
     total_layers: int,
     old_attn: Any,
-,
     **kwargs) -> SVDProjectionAttention:
     """Inject SVD Projection Attention into target model layer."""
     rank: int = getattr(comp_config, "svd_rank", 32)
