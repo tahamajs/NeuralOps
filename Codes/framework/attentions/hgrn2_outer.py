@@ -215,13 +215,13 @@ def inject_hgrn2_outer(
     **kwargs: Any,
 ) -> HGRN2OuterBlock:
     r"""Injection hook for HGRN2OuterBlock."""
-    dim: int = 768
+    dim = 128
     num_heads: int = 12
     if model_config is not None:
         dim = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
         num_heads = getattr(model_config, "num_attention_heads", 12)
     elif hasattr(layer, "config"):
-        dim = getattr(layer.config, "hidden_size", 768)
+        dim = getattr(layer.config, "hidden_size", 128)
         num_heads = getattr(layer.config, "num_attention_heads", 12)
 
     new_block = HGRN2OuterBlock(dim=dim, num_heads=num_heads, config=model_config, **kwargs)
