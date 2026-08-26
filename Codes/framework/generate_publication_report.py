@@ -32,16 +32,16 @@ def _get_plt():
 
 
 def generate_latex_quality_table(records: List[Dict[str, Any]]) -> str:
-    """Generates a publication-grade LaTeX booktabs table with 95% CI and p-values."""
+    """Generates a publication-grade LaTeX booktabs table with 95% CI and Bonferroni-adjusted p-values."""
     lines = [
         r"\begin{table*}[t]",
         r"\centering",
         r"\small",
-        r"\caption{\textbf{Empirical Quality and Statistical Significance of Attention Architectures.} Evaluated across GLUE benchmark splits on NVIDIA RTX 4070 GPU over 3 independent random seeds ($n=3$). Confidence intervals are 95\% two-sided intervals based on Student's $t$-distribution. $p$-values are computed via paired two-tailed $t$-tests against standard \texttt{full} attention baseline.}",
+        r"\caption{\textbf{Empirical Quality and Statistical Significance of Attention Architectures.} Evaluated across GLUE benchmark splits on NVIDIA RTX 4070 GPU over 3 independent random seeds ($n=3$). Confidence intervals are 95\% two-sided intervals based on Student's $t$-distribution ($t_{\text{crit}}=4.303$). $p$-values are computed via paired two-tailed $t$-tests against standard \texttt{full} attention baseline, with Bonferroni multiple-comparison correction ($p_{\text{bonf}}$).}",
         r"\label{tab:quality_benchmark_results}",
-        r"\begin{tabular}{l l c c c c c c}",
+        r"\begin{tabular}{l l l c c c c c c c}",
         r"\toprule",
-        r"\textbf{Architecture} & \textbf{Model} & \textbf{Accuracy (\%)} & \textbf{95\% CI} & \textbf{$p$-value} & \textbf{F1 Score} & \textbf{Fidelity ($\rho$)} & \textbf{Fwd (ms)} \\",
+        r"\textbf{Architecture} & \textbf{Model} & \textbf{Dataset} & \textbf{Accuracy (\%)} & \textbf{95\% CI} & \textbf{$p_{\text{raw}}$} & \textbf{$p_{\text{bonf}}$} & \textbf{F1 Score} & \textbf{Fidelity ($\rho$)} & \textbf{Fwd (ms)} \\",
         r"\midrule",
     ]
 
@@ -51,11 +51,13 @@ def generate_latex_quality_table(records: List[Dict[str, Any]]) -> str:
     for r in sorted_recs:
         mod = r.get("module_name", "").replace("_", r"\_")
         model = r.get("model_family", "BERT").upper()
+        ds = r.get("dataset", "SST2").upper()
         acc = float(r.get("mean_accuracy", 0) or 0)
         std = float(r.get("std_accuracy", 0) or 0)
         ci_l = float(r.get("ci_lower", acc) or acc)
         ci_u = float(r.get("ci_upper", acc) or acc)
         p_val = float(r.get("p_value", 1.0) or 1.0)
+        p_bonf = float(r.get("metrics", {}).get("p_value_bonferroni", r.get("statistics", {}).get("p_value_bonferroni", min(1.0, p_val * 19))) if isinstance(r.get("metrics"), dict) else min(1.0, p_val * 19))
         f1 = float(r.get("f1_score", 0) or 0)
         fid = float(r.get("fidelity_score", 1.0) or 1.0)
         fwd = float(r.get("fwd_ms", 0) or 0)
@@ -63,6 +65,7 @@ def generate_latex_quality_table(records: List[Dict[str, Any]]) -> str:
         acc_str = f"{acc:.2f} \\pm {std:.2f}" if std > 0 else f"{acc:.2f}"
         ci_str = f"[{ci_l:.1f}, {ci_u:.1f}]"
         p_str = "--" if r.get("module_name") == "full" else (f"p < 0.01^{{**}}" if p_val < 0.01 else (f"{p_val:.3f}^*" if p_val < 0.05 else f"{p_val:.3f}"))
+        p_bonf_str = "--" if r.get("module_name") == "full" else (f"{p_bonf:.3f}^{{**}}" if p_bonf < 0.01 else (f"{p_bonf:.3f}^*" if p_bonf < 0.05 else f"{p_bonf:.3f}"))
         f1_str = f"{f1:.4f}"
         fid_str = f"{fid:.4f}"
         fwd_str = f"{fwd:.2f}"
@@ -72,7 +75,7 @@ def generate_latex_quality_table(records: List[Dict[str, Any]]) -> str:
         row_suffix = r"}" if is_baseline else ""
 
         lines.append(
-            f"{row_prefix}\\texttt{{{mod}}}{row_suffix} & {model} & {acc_str} & {ci_str} & {p_str} & {f1_str} & {fid_str} & {fwd_str} \\\\"
+            f"{row_prefix}\\texttt{{{mod}}}{row_suffix} & {model} & {ds} & {acc_str} & {ci_str} & {p_str} & {p_bonf_str} & {f1_str} & {fid_str} & {fwd_str} \\\\"
         )
 
     lines.extend([

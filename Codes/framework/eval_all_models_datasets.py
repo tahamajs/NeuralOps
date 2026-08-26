@@ -635,11 +635,14 @@ def get_dataset_batch(
 
             if val_tokenized is not None and len(val_tokenized) > 0:
                 is_cuda = (device.type == "cuda")
+                import os, sys
                 loader = torch.utils.data.DataLoader(
                     val_tokenized,
                     batch_size=batch_size,
                     shuffle=False,
                     pin_memory=is_cuda,
+                    num_workers=min(4, os.cpu_count() or 1) if not sys.platform.startswith("win") else 0,
+                    prefetch_factor=2 if (is_cuda and not sys.platform.startswith("win")) else None,
                 )
                 raw_batch = next(iter(loader))
                 batch = {
