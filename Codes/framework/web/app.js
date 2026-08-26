@@ -427,10 +427,10 @@ function getFilteredModules() {
     avg_fwd: m.avg_fwd ?? m.avg_fwd_ms,
     avg_bwd: m.avg_bwd ?? m.avg_bwd_ms,
     avg_mem: m.avg_mem ?? m.avg_mem_mb,
-    avg_acc: m.avg_acc ?? 0.865,
-    avg_f1: m.avg_f1 ?? 0.892,
-    avg_fidelity: m.avg_fidelity ?? 0.941,
-    avg_throughput: m.avg_throughput ?? 1420,
+    avg_acc: m.avg_acc ?? 0.0,
+    avg_f1: m.avg_f1 ?? 0.0,
+    avg_fidelity: m.avg_fidelity ?? 0.0,
+    avg_throughput: m.avg_throughput ?? 0.0,
     p_value: m.p_value ?? 0.01,
   })).filter(m => {
     if (analyticsFilters.track !== "ALL" && m.track !== analyticsFilters.track) return false;
@@ -648,8 +648,8 @@ function openModuleModal(moduleName) {
       avg_fwd: avgFwd,
       avg_bwd: avgFwd * 1.5,
       avg_mem: avgMem,
-      avg_acc: isModuleFailed ? 0.0 : 86.5,
-      avg_f1: isModuleFailed ? 0.0 : 0.892,
+      avg_acc: validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.acc_pct || r.acc || 0) || 0), 0) / validRuns.length) : 0.0,
+      avg_f1: validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.f1_score || r.f1 || 0) || 0), 0) / validRuns.length) : 0.0,
     };
   }
 
