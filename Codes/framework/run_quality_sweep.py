@@ -331,12 +331,63 @@ def evaluate_single_seed_run(
             allow_synthetic=allow_synthetic,
         )
 
-    # 4. Prepare Training Batch & Validation Set
-    batch = get_dataset_batch(
-        dataset, model_family, current_batch_size, seq_len,
-        num_labels=num_labels, device=device, allow_synthetic=allow_synthetic
-    )
-    filtered_batch = _filter_batch(batch, model_family, model)
+    # 4. Prepare Real Training DataLoader
+    from framework.data.prepare_datasets import GLUE_TASK_CONFIG
+    from datasets import load_dataset
+    from transformers import AutoTokenizer
+
+    tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
+    train_cache_key = (dataset.lower(), tok_name, seq_len, "train")
+
+    if train_cache_key not in _PREPARED_DATASET_CACHE and dataset.lower() in GLUE_TASK_CONFIG:
+        tokenizer = AutoTokenizer.from_pretrained(tok_name)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+            tokenizer.pad_token_id = tokenizer.eos_token_id
+        
+        config = GLUE_TASK_CONFIG[dataset.lower()]
+        k1, k2 = config["keys"]
+        try:
+            train_data = load_dataset("glue", dataset.lower(), split="train")
+            def tok_fn(ex):
+                args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
+                return tokenizer(*args, padding="max_length", truncation=True, max_length=seq_len)
+            
+            train_tokenized = train_data.map(tok_fn, batched=True, desc=f"Tokenizing {dataset} train")
+            train_tokenized.set_format(type="torch", columns=[c for c in ["input_ids", "attention_mask", "label"] if c in train_tokenized.column_names])
+            _PREPARED_DATASET_CACHE[train_cache_key] = train_tokenized
+        except Exception as e:
+            logger.warning(f"Failed to load train dataset for {dataset}: {e}")
+            _PREPARED_DATASET_CACHE[train_cache_key] = None
+    elif dataset.lower() not in GLUE_TASK_CONFIG:
+        _PREPARED_DATASET_CACHE[train_cache_key] = None
+
+    train_ds = _PREPARED_DATASET_CACHE.get(train_cache_key)
+    if train_ds is not None and len(train_ds) > 0 and not allow_synthetic:
+        train_loader = torch.utils.data.DataLoader(
+            train_ds, batch_size=current_batch_size, shuffle=True, drop_last=True
+        )
+    else:
+        single_batch = get_dataset_batch(
+            dataset, model_family, current_batch_size, seq_len,
+            num_labels=num_labels, device=device, allow_synthetic=allow_synthetic
+        )
+        train_loader = [single_batch]
+
+    actual_steps_per_epoch = len(train_loader)
+    if epochs > 0:
+        total_steps = actual_steps_per_epoch * epochs
+        if total_steps > max_steps:
+            max_steps = min(total_steps, 200)  # cap at 200 to prevent infinite sweeps
+
+    def get_infinite_batches(loader):
+        while True:
+            for b in loader:
+                yield {
+                    ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
+                    for k, v in b.items() if k in ["input_ids", "attention_mask", "label", "labels"]
+                }
+    batch_iter = get_infinite_batches(train_loader)
 
     # 5. Optimizer & Linear Warmup Scheduler
     no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight"]
@@ -353,12 +404,10 @@ def evaluate_single_seed_run(
     optimizer = AdamW(optimizer_grouped_parameters, lr=learning_rate)
 
     warmup_steps = max(1, int(max_steps * 0.1))
-    
     def lr_lambda(step: int) -> float:
         if step < warmup_steps:
             return float(step) / float(max(1, warmup_steps))
         return max(0.0, float(max_steps - step) / float(max(1, max_steps - warmup_steps)))
-
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
     # 6. Timed Training Loop with Step Trajectory Tracking
@@ -372,6 +421,9 @@ def evaluate_single_seed_run(
         bwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(max_steps)]
 
         for step in range(max_steps):
+            batch = next(batch_iter)
+            filtered_batch = _filter_batch(batch, model_family, model)
+            
             optimizer.zero_grad()
             fwd_start_events[step].record()
             with torch.amp.autocast('cuda'):
@@ -418,6 +470,9 @@ def evaluate_single_seed_run(
         peak_vram_mb = round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 2)
     else:
         for step in range(max_steps):
+            batch = next(batch_iter)
+            filtered_batch = _filter_batch(batch, model_family, model)
+
             optimizer.zero_grad()
             t0 = time.perf_counter()
             out = model(**filtered_batch)
