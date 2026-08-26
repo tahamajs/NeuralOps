@@ -136,7 +136,7 @@ class YourCustomCompressor(BaseCompressor):
         self, module: nn.Module, parent_name: str, layer_type: str
     ) -> None:
         r"""Identify and replace dense Linear child modules with compressed surrogates."""
-        for child_name, child in module.named_modules():
+        for child_name, child in list(module.named_children()):
             if isinstance(child, nn.Linear):
                 original_size = (child.weight.shape[0], child.weight.shape[1])
                 compressed_size = self._get_compressed_size(original_size)
