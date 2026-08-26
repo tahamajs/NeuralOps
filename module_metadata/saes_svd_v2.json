@@ -1,34 +1,27 @@
 {
   "module_name": "saes_svd_v2",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/saes_svd_v2.py",
   "class_name": "SAESSVDCompressorV2",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Spectrum-Aware Error Suppression SVD (SAES-SVD v2).",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "rank",
     "rank_ratio",
     "correcting_steps",
     "target_modules"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Spectrum-Aware Error Suppression SVD (SAES-SVD v2).",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 11274961714324722249607962045620150304
 }

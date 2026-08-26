@@ -1,13 +1,9 @@
 {
   "module_name": "swift_svd_act",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/swift_svd_act.py",
   "class_name": "SwiftSVDActivationCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Swift-SVD Activation-Aware Compressor.\n\nCaptures empirical input-output cross-covariances (C_XY = Y^T X / N) across calibration data,\ncomputes activation-aligned singular subspaces, performs symmetric square-root singular\nvalue splitting (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T), and replaces den",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "tokenizer",
     "calibration_loader",
@@ -15,21 +11,18 @@
     "rank",
     "target_modules"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Swift-SVD Activation-Aware Compressor.\n\nCaptures empirical input-output cross-covariances (C_XY = Y^T X / N) across calibration data,\ncomputes activation-aligned singular subspaces, performs symmetric square-root singular\nvalue splitting (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T), and replaces dense nn.Linear\nlayers with factorized SVDLinear modules.\n\nArgs:\n    model: Model to compress.\n    tokenizer: Optional tokenizer for text calibration.\n    calibration_loader: Optional DataLoader for calibration.\n    calibration_texts: Optional list of calibration text strings.\n    rank: Target low-rank bottleneck dimension r.\n    target_modules: Optional list of module name filters.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 115282345747571941188548859869301473255
 }

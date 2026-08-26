@@ -1,13 +1,9 @@
 {
   "module_name": "flat_llm",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/flat_llm.py",
   "class_name": "FLATLLMCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "FLAT-LLM Compressor: Activation-aware neuron and output channel pruning.",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "tokenizer",
     "keep_ratio",
@@ -17,27 +13,18 @@
     "device",
     "structured_24"
   ],
-  "forward_ops": [
-    "topk",
+  "ops": [
+    "linear",
     "matmul",
-    "reshape"
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "FLAT-LLM Compressor: Activation-aware neuron and output channel pruning.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 252752936575530323565886621594541529646
 }

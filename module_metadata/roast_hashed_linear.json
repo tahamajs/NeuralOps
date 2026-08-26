@@ -1,13 +1,9 @@
 {
   "module_name": "roast_hashed_linear",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/roast_hashed_linear.py",
   "class_name": "ROASTCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Replace all nn.Linear layers with ROASTLinear (hardware\u2011aware weight sharing).",
-  "init_params": [
+  "category": "compression",
+  "family": "sparse",
+  "params": [
     "in_features",
     "out_features",
     "n_buckets",
@@ -15,26 +11,15 @@
     "bias",
     "model"
   ],
-  "forward_ops": [
-    "linear",
-    "split"
+  "ops": [
+    "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Replace all nn.Linear layers with ROASTLinear (hardware\u2011aware weight sharing).",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.8200000000000001,
+  "bits": 4,
+  "hash_val": 89514651920707963676554071475313008532
 }

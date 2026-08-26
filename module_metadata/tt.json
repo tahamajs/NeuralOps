@@ -1,34 +1,27 @@
 {
   "module_name": "tt",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/tt.py",
   "class_name": "TokenCompressedAttention",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "Minimal wrapper delegating to an existing attention sub-module.\n\nArgs:\n    config: Model configuration.\n    comp_config: Compression configuration.\n    layer_idx: Index of current transformer layer.\n    num_layers: Total number of transformer layers.\n    old_attn: Pre-existing attention module to wr",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "comp_config",
     "layer_idx",
     "num_layers",
     "old_attn"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Minimal wrapper delegating to an existing attention sub-module.\n\nArgs:\n    config: Model configuration.\n    comp_config: Compression configuration.\n    layer_idx: Index of current transformer layer.\n    num_layers: Total number of transformer layers.\n    old_attn: Pre-existing attention module to wrap.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 54488054976716210928572857810298201269
 }

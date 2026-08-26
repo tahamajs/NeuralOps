@@ -1,13 +1,9 @@
 {
   "module_name": "subspace_projection",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/subspace_projection.py",
   "class_name": "SubspaceProjectionCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Subspace Projection Compression Engine.\nCompresses neural networks by projecting weight matrices onto their principal\nsubspaces, replacing dense linear layers with factorized SubspaceLinear modules.\n\nArgs:\n    model: PyTorch model to compress.\n    rank: Subspace rank.\n    method: Subspace decomposit",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "rank",
@@ -19,26 +15,17 @@
     "cfg",
     "target_layers"
   ],
-  "forward_ops": [
+  "ops": [
     "reshape",
     "linear",
-    "view",
-    "split"
+    "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Subspace Projection Compression Engine.\nCompresses neural networks by projecting weight matrices onto their principal\nsubspaces, replacing dense linear layers with factorized SubspaceLinear modules.\n\nArgs:\n    model: PyTorch model to compress.\n    rank: Subspace rank.\n    method: Subspace decomposition algorithm ('svd', 'randomized', 'pca').\n    cfg: Optional configuration object.\n    target_layers: Optional layer name filter.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 74282797599401399260110731580562639331
 }

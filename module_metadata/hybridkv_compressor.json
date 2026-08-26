@@ -1,13 +1,9 @@
 {
   "module_name": "hybridkv_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/hybridkv_compressor.py",
   "class_name": "HybridKVCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "HybridKV Compressor: Classifies attention projection heads into static/dynamic types\nand configures hierarchical dynamic KV cache budgets without altering model stationary weights.\n\nArgs:\n    model: PyTorch model.\n    budget: Overall fraction of KV cache budget to retain (default 0.3).\n    static_ra",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "max_cache_len",
     "num_sinks",
     "recent_window",
@@ -16,23 +12,18 @@
     "static_heads_mask",
     "model"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "HybridKV Compressor: Classifies attention projection heads into static/dynamic types\nand configures hierarchical dynamic KV cache budgets without altering model stationary weights.\n\nArgs:\n    model: PyTorch model.\n    budget: Overall fraction of KV cache budget to retain (default 0.3).\n    static_ratio: Fraction of budget allocated to static heads (default 0.7).\n    max_cache_len: Maximum KV cache capacity per head (default 128).\n    num_sinks: Number of sink tokens pinned for static heads (default 4).\n    recent_window: Number of recent tokens retained for dynamic heads (default 32).",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 276050475993277899393788632661392187758
 }

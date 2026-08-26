@@ -1,33 +1,26 @@
 {
   "module_name": "swift_svd",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/swift_svd.py",
   "class_name": "SwiftSVDCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Swift-SVD Compressor: Fast Closed-Form Truncated SVD.\n\nDecomposes dense weight matrices into rank-r factorized layers with symmetric\nsquare-root singular value splitting (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T)\nand replaces nn.Linear with factorized SVDLinear modules.\n\nArgs:\n    model: Model to ",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "rank",
     "rank_ratio",
     "target_modules"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Swift-SVD Compressor: Fast Closed-Form Truncated SVD.\n\nDecomposes dense weight matrices into rank-r factorized layers with symmetric\nsquare-root singular value splitting (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T)\nand replaces nn.Linear with factorized SVDLinear modules.\n\nArgs:\n    model: Model to compress.\n    rank: Target rank r. If None, computed from rank_ratio.\n    rank_ratio: Retention ratio of maximum rank (0.0 < rank_ratio <= 1.0).\n    target_modules: Optional list of layer name filters.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 280090005162804081382167997827780473431
 }

@@ -1,13 +1,9 @@
 {
   "module_name": "huffman_coder",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/huffman_coder.py",
   "class_name": "HuffmanCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "HuffmanCompressor: Model-wide entropy compression profiler and simulator.\n\nArgs:\n    model: PyTorch model.\n    quantize_bits: Pre-quantization bit-width before Huffman encoding (default 8).",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "symbol",
     "freq",
     "left",
@@ -15,23 +11,18 @@
     "model",
     "quantize_bits"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "docstring": "HuffmanCompressor: Model-wide entropy compression profiler and simulator.\n\nArgs:\n    model: PyTorch model.\n    quantize_bits: Pre-quantization bit-width before Huffman encoding (default 8).",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 166960004573637507119802531184946210465
 }

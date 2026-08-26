@@ -1,13 +1,9 @@
 {
   "module_name": "spectra_v2",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/spectra_v2.py",
   "class_name": "SpectraV2Attention",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "SPECTRA-v2 attention layer integrating block sparsity, top-$k$ routing, and RFF rectification.",
-  "init_params": [
+  "category": "attention",
+  "family": "kernel",
+  "params": [
     "head_dim",
     "rff_dim",
     "model_config",
@@ -17,29 +13,20 @@
     "bert_mode",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "matmul",
+    "cat",
     "softmax",
     "dropout",
     "view",
     "transpose"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "SPECTRA-v2 attention layer integrating block sparsity, top-$k$ routing, and RFF rectification.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 28873160065785373553343257723772456379
 }

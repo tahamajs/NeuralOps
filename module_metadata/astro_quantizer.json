@@ -1,13 +1,9 @@
 {
   "module_name": "astro_quantizer",
+  "class_name": "STEFakeQuantize",
   "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/astro_quantizer.py",
-  "class_name": "AstroQuantizer",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "AstroQuantizer: Uniform min-max / symmetric quantization engine for linear weights and biases.\n\nArgs:\n    model: PyTorch model.\n    bits: Bit-width for quantization (e.g. 4 or 8). Default 8.\n    symmetric: Whether to use symmetric quantization around 0. Default True.\n    per_channel: Whether to use ",
-  "init_params": [
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "bias",
@@ -17,25 +13,16 @@
     "model",
     "use_ste"
   ],
-  "forward_ops": [
+  "ops": [
+    "clamp",
     "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Straight-Through Estimator (STE) fake-quantization autograd function.\nClamps inputs to [qmin, qmax] in discrete integer space, de-quantizes back,\nand passes gradients through uninhibited where within clipping bounds.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 337753970793766220957567372448457046694
 }
