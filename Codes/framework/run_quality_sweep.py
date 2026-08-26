@@ -354,8 +354,8 @@ def evaluate_single_seed_run(
             dataset=dataset,
             seq_len=seq_len,
             device=device,
-            target_vram_ratio=0.80,
-            max_batch_cap=min(batch_size, 512),
+            target_vram_ratio=0.65,
+            max_batch_cap=min(batch_size, 64),
             min_batch_floor=16,
             allow_synthetic=allow_synthetic,
         )
@@ -735,10 +735,26 @@ def evaluate_single_seed_run(
     total_params = sum(p.numel() for p in model.parameters())
     flops_estimate = round(float(2 * total_params * seq_len * current_batch_size), 0)
 
+    try:
+        model.cpu()
+    except Exception:
+        pass
+    del model
+    if 'base_model' in locals():
+        try:
+            base_model.cpu()
+        except Exception:
+            pass
+        del base_model
+
     if is_cuda:
         import gc
         gc.collect()
         torch.cuda.empty_cache()
+        try:
+            torch.cuda.synchronize(device)
+        except Exception:
+            pass
 
     logger.info(
         "    --> Seed %d completed: Acc=%.2f%%, F1=%.4f, Fid=%.4f, Peak VRAM=%.1fMB",
@@ -1046,6 +1062,17 @@ def run_quality_benchmark_sweep(
                     mod_name, model_name.upper(), dataset_name.upper(),
                     time.time() - combo_t0, mean_acc, std_acc, ci_l, ci_u, p_val, avg_f1, avg_fid
                 )
+
+                # Purge GPU memory between combinations to prevent cross-module VRAM accumulation:
+                if torch.cuda.is_available():
+                    import gc
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                    try:
+                        torch.cuda.synchronize()
+                        torch.cuda.reset_peak_memory_stats()
+                    except Exception:
+                        pass
 
     total_wall_clock = time.time() - start_time
     gpu_hours = round(total_wall_clock / 3600.0, 4)
