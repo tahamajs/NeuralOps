@@ -268,7 +268,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
 
         # 5. Gradient with respect to V and input x
         grad_V = torch.matmul(grad_z.T, x_2d_c).to(V.dtype)  # [R, K_in]
-        grad_x = torch.matmul(grad_z, V_c).view(*grad_output.shape[:-1], x_2d.shape[-1]).to(x.dtype)
+        grad_x = torch.matmul(grad_z, V_c).view(*grad_output.shape[:-1], x_2d.shape[-1]).to(x_2d.dtype)
 
         return grad_x, grad_V, grad_U, grad_norm_weight, grad_bias, None, None
 
