@@ -132,6 +132,7 @@ for family in ["bert", "roberta", "t5", "distilbert", "gpt2"]:
 print(f"\n[Part 4] Testing End-to-End Benchmark Combination on GPU...")
 try:
     res = evaluate_single_combination_opt(
+        track="track1_svd",
         module_name="svd_linear_attention",
         module_type="attention",
         model_family="bert",
@@ -140,6 +141,7 @@ try:
         rank=16,
         batch_size=8,
         device=device,
+        allow_synthetic=True,
     )
     print(f"  [E2E PASS] svd_linear_attention | bert | sst2 -> Status: {res.status} | Fwd: {res.forward_latency_ms:.2f}ms | Acc: {res.accuracy_pct:.2f}% | F1: {res.f1_score:.4f}")
     e2e_pass = True

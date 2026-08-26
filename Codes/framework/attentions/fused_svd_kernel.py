@@ -207,20 +207,22 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
 
         # PyTorch Native Reference Implementation (Fallback / CPU / MPS)
         # RESEARCH FIX: Numerically identical reference implementation for CPU/MPS
-        z = F.linear(x_2d, V)  # [M, R]
+        z = F.linear(x_2d, V.to(x_2d.dtype))  # [M, R]
         if use_rms_norm:
             if z.dtype in (torch.float16, torch.bfloat16):
                 rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(z.dtype)
             else:
                 rms = torch.rsqrt(torch.mean(z ** 2, dim=-1, keepdim=True) + eps)
             z_hat = z * rms
-            z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
+            nw = norm_weight.to(z.dtype) if norm_weight is not None else None
+            z_norm = z_hat * nw if nw is not None else z_hat
         else:
             rms = torch.empty(0, device=x.device, dtype=x.dtype)
             z_hat = z
             z_norm = z
 
-        y_2d = F.linear(z_norm, U, bias)
+        b = bias.to(z_norm.dtype) if bias is not None else None
+        y_2d = F.linear(z_norm, U.to(z_norm.dtype), b)
 
         ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
         ctx.eps = eps
@@ -234,36 +236,39 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         use_rms_norm = ctx.use_rms_norm
 
         grad_output_2d = grad_output.reshape(-1, U.shape[0]).contiguous()
-        M, R = z.shape
+        dtype = grad_output_2d.dtype
+        device = grad_output_2d.device
+        z_norm_c = z_norm.to(dtype=dtype, device=device)
+        U_c = U.to(dtype=dtype, device=device)
+        V_c = V.to(dtype=dtype, device=device)
+        x_2d_c = x_2d.to(dtype=dtype, device=device)
+        z_hat_c = z_hat.to(dtype=dtype, device=device)
+        rms_c = rms.to(dtype=dtype, device=device)
 
         # 1. Gradient with respect to bias and U
-        grad_bias = grad_output_2d.sum(dim=0) if bias is not None else None
-        grad_U = torch.matmul(grad_output_2d.T, z_norm)  # [K_out, R]
+        grad_bias = grad_output_2d.sum(dim=0).to(bias.dtype) if bias is not None else None
+        grad_U = torch.matmul(grad_output_2d.T, z_norm_c).to(U.dtype)  # [K_out, R]
 
         # 2. Gradient backpropagated to z_norm
-        grad_z_norm = torch.matmul(grad_output_2d, U)  # [M, R]
+        grad_z_norm = torch.matmul(grad_output_2d, U_c)  # [M, R]
 
         if use_rms_norm:
-            # 3. Gradient with respect to norm_weight and z_hat
             if norm_weight is not None:
-                grad_norm_weight = (grad_z_norm * z_hat).sum(dim=0)
-                grad_z_hat = grad_z_norm * norm_weight
+                nw_c = norm_weight.to(dtype=dtype, device=device)
+                grad_norm_weight = (grad_z_norm * z_hat_c).sum(dim=0).to(norm_weight.dtype)
+                grad_z_hat = grad_z_norm * nw_c
             else:
                 grad_norm_weight = None
                 grad_z_hat = grad_z_norm
 
-            # 4. Exact analytical RMSNorm backward: d(z_hat) / dz
-            # z_hat = z / sqrt(mean(z^2) + eps)
-            # dL/dz = rms * (dL/dz_hat - z_hat * mean(dL/dz_hat * z_hat))
-            # RESEARCH FIX: Analytical gradient formulation eliminating numerical approximation error
-            grad_z = rms * (grad_z_hat - z_hat * torch.mean(grad_z_hat * z_hat, dim=-1, keepdim=True))
+            grad_z = rms_c * (grad_z_hat - z_hat_c * torch.mean(grad_z_hat * z_hat_c, dim=-1, keepdim=True))
         else:
             grad_norm_weight = None
             grad_z = grad_z_norm
 
         # 5. Gradient with respect to V and input x
-        grad_V = torch.matmul(grad_z.T, x_2d)  # [R, K_in]
-        grad_x = torch.matmul(grad_z, V).view(*grad_output.shape[:-1], x_2d.shape[-1])
+        grad_V = torch.matmul(grad_z.T, x_2d_c).to(V.dtype)  # [R, K_in]
+        grad_x = torch.matmul(grad_z, V_c).view(*grad_output.shape[:-1], x_2d.shape[-1]).to(x.dtype)
 
         return grad_x, grad_V, grad_U, grad_norm_weight, grad_bias, None, None
 
