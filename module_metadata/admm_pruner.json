@@ -1,38 +1,36 @@
 {
   "module_name": "admm_pruner",
+  "class_name": "ADMMSTEPrune",
   "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/admm_pruner.py",
-  "class_name": "ADMMMaskedLinear",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "Linear layer maintaining continuous weights and an ADMM-derived binary mask with STE gradient backprop.",
-  "init_params": [
+  "family": "sparse",
+  "params": [
     "in_features",
     "out_features",
     "bias",
     "dtype",
-    "device"
+    "device",
+    "model",
+    "sparsity",
+    "rho",
+    "max_iter",
+    "structured_24",
+    "block_size",
+    "dynamic_rho",
+    "use_ste",
+    "recalibrate_ln",
+    "tokenizer",
+    "calibration_loader",
+    "calibration_texts"
   ],
-  "forward_ops": [
+  "ops": [
     "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Straight-Through Estimator (STE) autograd function for ADMM sparse weights.\nForwards masked weights and passes gradients through uninhibited on backward pass.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.8,
+  "bits": 4,
+  "hash_val": 280907781126080942130634031728376630695
 }

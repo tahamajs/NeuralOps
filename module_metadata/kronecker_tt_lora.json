@@ -1,13 +1,9 @@
 {
   "module_name": "kronecker_tt_lora",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/kronecker_tt_lora.py",
   "class_name": "KroneckerTTLoRACompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear layers.\nInherits from BaseCompressor.",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "base_layer",
     "m1",
     "n1",
@@ -25,26 +21,15 @@
     "rank",
     "cfg"
   ],
-  "forward_ops": [
-    "linear",
-    "split"
+  "ops": [
+    "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear layers.\nInherits from BaseCompressor.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 86292273105830573176050298702588434624
 }

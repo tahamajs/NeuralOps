@@ -1,13 +1,9 @@
 {
   "module_name": "res_svd",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/res_svd.py",
   "class_name": "ResSVDCompressorRegistered",
-  "base_classes": [
-    "ResSVDCompressor"
-  ],
-  "docstring": "Spectral Residual LoRA (Res-SVD) Compressor.\n\nReplaces standard Linear layers with ResSVDLinear modules, truncating base weights\nat rank r (frozen) and initializing adapter matrices A, B directly from the residual error tail.",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "base_rank",
@@ -21,25 +17,15 @@
     "freeze_base",
     "target_modules"
   ],
-  "forward_ops": [
+  "ops": [
     "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 28774776452491535609984642988992079022
 }

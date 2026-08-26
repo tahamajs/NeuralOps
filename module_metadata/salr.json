@@ -1,13 +1,9 @@
 {
   "module_name": "salr",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/salr.py",
   "class_name": "SALRCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "SALR Compressor: Structure-Aware Low-Rank and Sparse Pruning.\n\nFactorizes dense nn.Linear layers into symmetric low-rank factors\n(U * sqrt(Sigma), sqrt(Sigma) * V^T) and applies structured sparse pruning\nto trailing singular components in the bottleneck.\n\nArgs:\n    model: PyTorch model.\n    rank: Ta",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "rank",
@@ -18,25 +14,15 @@
     "model",
     "target_modules"
   ],
-  "forward_ops": [
+  "ops": [
     "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "SALR Compressor: Structure-Aware Low-Rank and Sparse Pruning.\n\nFactorizes dense nn.Linear layers into symmetric low-rank factors\n(U * sqrt(Sigma), sqrt(Sigma) * V^T) and applies structured sparse pruning\nto trailing singular components in the bottleneck.\n\nArgs:\n    model: PyTorch model.\n    rank: Target rank r.\n    sparsity: Sparsity fraction within the rank bottleneck in [0.0, 1.0).\n    target_modules: Optional list of layer name filters.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 108041965411887222971693721180227054909
 }

@@ -1,37 +1,25 @@
 {
   "module_name": "mlorq_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/mlorq_compressor.py",
   "class_name": "MLoRQCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "total_memory_budget_mb",
     "bits_candidates"
   ],
-  "forward_ops": [
-    "svd"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "matmul (@)",
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "docstring": "",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 134679209578181760043961573165836840004
 }

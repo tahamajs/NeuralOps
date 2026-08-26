@@ -1,26 +1,21 @@
 {
   "module_name": "sdrm",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/sdrm.py",
   "class_name": "Sdrm",
-  "base_classes": [],
+  "category": "compression",
+  "family": "compression",
+  "params": [],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
   "docstring": "",
-  "init_params": [],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d^2)",
-    "space_complexity": "O(N d)",
-    "scaling_exponent": 1.0,
-    "description": "Linear / Efficient Scaled Operator"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Linear Projection",
-    "Key-Value State Caching",
-    "Associative Contraction",
-    "Residual Normalization"
-  ]
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 170635730997454149478898921236593028179
 }

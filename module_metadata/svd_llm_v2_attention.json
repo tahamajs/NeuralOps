@@ -1,43 +1,27 @@
 {
   "module_name": "svd_llm_v2_attention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/svd_llm_v2_attention.py",
   "class_name": "SVDLLMV2Attention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "SVD-factorized attention layer with explicit $U, \\Sigma, V^H$ matrix buffers.\n\nArgs:\n    config: Transformer configuration specifying `hidden_size`, `num_attention_heads`, and `dropout`.\n    rank: Target compression rank $r$.\n    energy_threshold: Singular value energy threshold fraction $\\tau \\in (",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "rank",
     "energy_threshold",
     "pretrained_attn"
   ],
-  "forward_ops": [
-    "permute",
+  "ops": [
     "softmax",
     "dropout",
     "matmul",
     "view",
     "transpose"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)",
-    "matmul (@)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "SVD-factorized attention layer with explicit $U, \\Sigma, V^H$ matrix buffers.\n\nArgs:\n    config: Transformer configuration specifying `hidden_size`, `num_attention_heads`, and `dropout`.\n    rank: Target compression rank $r$.\n    energy_threshold: Singular value energy threshold fraction $\\tau \\in (0, 1]$.\n    pretrained_attn: Optional source attention module for zero-shot SVD decomposition.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 187150913764696985851061585984286876048
 }

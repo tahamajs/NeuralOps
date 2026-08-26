@@ -1,13 +1,9 @@
 {
   "module_name": "aa_svd_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/aa_svd_compressor.py",
   "class_name": "AASVDCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Activation-Aware SVD Compressor with streaming EMA covariance accumulation\nand true module replacement.",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "rank",
@@ -20,27 +16,15 @@
     "ema_beta",
     "calibration_texts"
   ],
-  "forward_ops": [
-    "linear",
-    "reshape",
-    "matmul"
+  "ops": [
+    "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N m d)",
-    "space_complexity": "O(N m)",
-    "scaling_exponent": 1.0,
-    "description": "Kernelized Feature Map / Spectral Operator"
-  },
-  "family": "kernel",
-  "accent_color": "#a855f7",
-  "key_mechanisms": [
-    "Positive Orthogonal RFF",
-    "Kernel Feature Map phi(x)",
-    "Associative Re-ordering",
-    "Spectral Fourier Mode Decomp"
-  ]
+  "docstring": "Activation-Aware SVD Compressor with streaming EMA covariance accumulation\nand true module replacement.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 297775549946555992863894452720922385388
 }

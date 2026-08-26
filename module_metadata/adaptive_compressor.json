@@ -1,37 +1,26 @@
 {
   "module_name": "adaptive_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adaptive_compressor.py",
   "class_name": "AdaptiveTransformerCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Adaptive Transformer Compressor.\n\nCompresses nn.MultiheadAttention and nn.Linear layers using singular energy thresholding:\n    sum_{i=1}^r sigma_i^2 / sum_j sigma_j^2 >= energy_threshold\nwith symmetric square-root singular value allocation:\n    U_factor = U_r * sqrt(Sigma_r), V_factor = sqrt(Sigma_",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "energy_threshold",
     "min_rank",
     "target_modules"
   ],
-  "forward_ops": [
-    "svd"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "docstring": "Adaptive Transformer Compressor.\n\nCompresses nn.MultiheadAttention and nn.Linear layers using singular energy thresholding:\n    sum_{i=1}^r sigma_i^2 / sum_j sigma_j^2 >= energy_threshold\nwith symmetric square-root singular value allocation:\n    U_factor = U_r * sqrt(Sigma_r), V_factor = sqrt(Sigma_r) * V_r^T.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 207956569950425828302497640380674477602
 }

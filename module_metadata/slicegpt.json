@@ -1,13 +1,9 @@
 {
   "module_name": "slicegpt",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/slicegpt.py",
   "class_name": "SliceGPTCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Native PyTorch SliceGPT Compressor.\n\nApplies orthogonal transformation Q to rotate model representations onto principal\nactivation variance coordinates, followed by uniform or non-uniform projection head slicing.",
-  "init_params": [
+  "category": "compression",
+  "family": "sparse",
+  "params": [
     "model",
     "tokenizer",
     "sparsity",
@@ -16,25 +12,18 @@
     "calibration_texts",
     "device"
   ],
-  "forward_ops": [
-    "matmul"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "Native PyTorch SliceGPT Compressor.\n\nApplies orthogonal transformation Q to rotate model representations onto principal\nactivation variance coordinates, followed by uniform or non-uniform projection head slicing.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.81,
+  "bits": 4,
+  "hash_val": 80800369245332721749719186106588931521
 }

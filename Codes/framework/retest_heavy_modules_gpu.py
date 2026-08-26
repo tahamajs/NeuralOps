@@ -69,6 +69,9 @@ def run_gpu_retest(output_dir: str = "results/retest_heavy_modules"):
         "hgrn2_gated_deltanet",
         "hgrn2_outer",
         "kda_attention",
+        "griffin_ssd",
+        "hgrn2_layer",
+        "simple_ssm",
     ]
     models = ["bert", "roberta"]
     datasets = ["sst2", "mrpc"]

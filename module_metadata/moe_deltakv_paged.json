@@ -1,16 +1,12 @@
 {
   "module_name": "moe_deltakv_paged",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/moe_deltakv_paged.py",
   "class_name": "MoEDeltaKVPagedAttention",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "MoE-DeltaKV-Paged Hybrid Attention Module.\nCombines Mixture-of-Block-Attention (MoBA) with Paged Delta-KV cache compression.",
-  "init_params": [
+  "category": "attention",
+  "family": "moe",
+  "params": [
     "config"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "view",
     "topk",
@@ -18,22 +14,12 @@
     "dropout",
     "matmul"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "MoE-DeltaKV-Paged Hybrid Attention Module.\nCombines Mixture-of-Block-Attention (MoBA) with Paged Delta-KV cache compression.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 8,
+  "top_k": 2,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 30741674584989889921677955703546089953
 }

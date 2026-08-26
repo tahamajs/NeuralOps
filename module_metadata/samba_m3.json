@@ -1,35 +1,28 @@
 {
   "module_name": "samba_m3",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/samba_m3.py",
   "class_name": "SpectralMamba",
-  "base_classes": [
-    "nn.Module"
+  "category": "attention",
+  "family": "ssm",
+  "params": [
+    "d_model",
+    "config",
+    "n_heads",
+    "window"
+  ],
+  "ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "norm",
+    "matmul"
   ],
   "docstring": "Mamba with learnable spectral gating.",
-  "init_params": [
-    "d_model",
-    "config"
-  ],
-  "forward_ops": [
-    "sigmoid"
-  ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "rank": 16,
+  "d_state": 16,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 176938925959892391678977495088910916210
 }

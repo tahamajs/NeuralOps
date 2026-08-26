@@ -1,40 +1,26 @@
 {
   "module_name": "performer_attention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/performer_attention.py",
   "class_name": "PerformerAttention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "Performer Attention (FAVOR+).\n\nMathematical Formulation:\n    1. Positive Orthogonal Random Features:\n       $$\\phi(x) = \\frac{\\exp\\left(x W^\\top - \\frac{\\|x\\|^2}{2}\\right)}{\\sqrt{m}}$$\n       where $W \\in \\mathbb{R}^{m \\times d}$ is an orthogonal random projection matrix ($W W^\\top \\approx I$).\n    ",
-  "init_params": [
+  "category": "attention",
+  "family": "kernel",
+  "params": [
     "config",
     "rank",
     "eps",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "matmul",
     "dropout",
     "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "Performer Attention (FAVOR+).\n\nMathematical Formulation:\n    1. Positive Orthogonal Random Features:\n       $$\\phi(x) = \\frac{\\exp\\left(x W^\\top - \\frac{\\|x\\|^2}{2}\\right)}{\\sqrt{m}}$$\n       where $W \\in \\mathbb{R}^{m \\times d}$ is an orthogonal random projection matrix ($W W^\\top \\approx I$).\n    \n    2. Linear Attention Kernel Formulation:\n       $$\\operatorname{Attn}(Q, K, V) = \\frac{\\phi(Q) (\\phi(K)^\\top V)}{\\phi(Q) (\\phi(K)^\\top \\mathbf{1}_N) + \\epsilon}$$\n\nComplexity:\n    - Time: $\\mathcal{O}(B \\cdot H \\cdot N \\cdot m \\cdot d)$ linear.\n    - Memory: $\\mathcal{O}(B \\cdot H \\cdot (N \\cdot m + m \\cdot d))$.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 311613523596727484455462407356820846860
 }

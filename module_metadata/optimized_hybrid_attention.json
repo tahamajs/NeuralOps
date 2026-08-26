@@ -1,13 +1,9 @@
 {
   "module_name": "optimized_hybrid_attention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/optimized_hybrid_attention.py",
   "class_name": "OptimizedHybridAttention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "Optimized Hybrid Attention (OHA) combining sliding-window local and compressed global attention.\n\nMathematical Formulation:\n    1. Local Sliding-Window Path:\n       $$S^{\\text{local}}_{ij} = \\frac{Q_i K_j^\\top}{\\sqrt{d}} + M^{\\text{band}}_{ij}$$\n       $$O^{\\text{local}} = \\operatorname{Softmax}(S^{",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "rank",
     "window_size",
@@ -16,32 +12,20 @@
     "gate_bias",
     "pretrained_attn"
   ],
-  "forward_ops": [
-    "permute",
+  "ops": [
     "softmax",
     "dropout",
     "matmul",
     "einsum",
     "view",
-    "sigmoid",
     "transpose"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "Optimized Hybrid Attention (OHA) combining sliding-window local and compressed global attention.\n\nMathematical Formulation:\n    1. Local Sliding-Window Path:\n       $$S^{\\text{local}}_{ij} = \\frac{Q_i K_j^\\top}{\\sqrt{d}} + M^{\\text{band}}_{ij}$$\n       $$O^{\\text{local}} = \\operatorname{Softmax}(S^{\\text{local}}) V$$\n    \n    2. Sequence-Compressed Low-Rank Global Path:\n       $$\\widetilde{K} = \\operatorname{Softmax}(X W_K^{\\text{comp}}, \\text{dim}=N)^\\top K \\in \\mathbb{R}^{B \\times H \\times R \\times d}$$\n       $$\\widetilde{V} = \\operatorname{Softmax}(X W_V^{\\text{comp}}, \\text{dim}=N)^\\top V \\in \\mathbb{R}^{B \\times H \\times R \\times d}$$\n       $$O^{\\text{global}} = \\operatorname{Softmax}\\left(\\frac{Q \\widetilde{K}^\\top}{\\sqrt{d}}\\right) \\widetilde{V}$$\n    \n    3. Dynamic Gated Fusion:\n       $$g = \\sigma(X W_g + b_g) \\in \\mathbb{R}^{B \\times N \\times H}$$\n       $$O = g \\odot O^{\\text{local}} + (1 - g) \\odot O^{\\text{global}}$$\n\nComplexity:\n    - Local path: $\\mathcal{O}(B \\cdot H \\cdot N \\cdot W \\cdot d)$\n    - Global path: $\\mathcal{O}(B \\cdot H \\cdot N \\cdot R \\cdot d)$\n    - Total Complexity: $\\mathcal{O}(N \\cdot (W + R) \\cdot d)$ linear.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 40140482879539340298476786242074800707
 }

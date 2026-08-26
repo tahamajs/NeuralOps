@@ -1,13 +1,9 @@
 {
   "module_name": "mamba_shedder",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/mamba_shedder.py",
   "class_name": "MambaShedderCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Mamba-Shedder Compressor: Sensitivity-based channel pruning and layer shedding.",
-  "init_params": [
+  "category": "compression",
+  "family": "ssm",
+  "params": [
     "model",
     "tokenizer",
     "sparsity",
@@ -17,27 +13,18 @@
     "device",
     "structured_24"
   ],
-  "forward_ops": [
-    "split",
-    "topk",
-    "reshape"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Mamba-Shedder Compressor: Sensitivity-based channel pruning and layer shedding.",
+  "rank": 16,
+  "d_state": 16,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 233805849570039918623970325653740100950
 }

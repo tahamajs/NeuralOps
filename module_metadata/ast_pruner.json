@@ -1,13 +1,9 @@
 {
   "module_name": "ast_pruner",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/ast_pruner.py",
   "class_name": "ASTPruner",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "AST Pruner: Vectorized semi-structured 2:4 and N:M pruning engine with\nempirical Fisher calibration and PCA coordinate rotation.",
-  "init_params": [
+  "category": "compression",
+  "family": "sparse",
+  "params": [
     "model",
     "block_size",
     "n_keep",
@@ -20,27 +16,18 @@
     "calibration_texts",
     "device"
   ],
-  "forward_ops": [
+  "ops": [
+    "linear",
     "matmul",
-    "qr",
-    "reshape"
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "AST Pruner: Vectorized semi-structured 2:4 and N:M pruning engine with\nempirical Fisher calibration and PCA coordinate rotation.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.55,
+  "bits": 4,
+  "hash_val": 187864873157758157466371158952376424630
 }

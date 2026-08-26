@@ -1,13 +1,9 @@
 {
   "module_name": "adaptive_ranks",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adaptive_ranks.py",
   "class_name": "AdaptiveRanksCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Adaptive Ranks SVD Compressor.\n\nDynamically determines ranks per layer according to cumulative singular value energy threshold:\n    $$\\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)$$\nwith minimum rank floor $r_{\\min} = \\max(16, \\lfloor 0.15 \\cdot \\min(d_{in}, d_",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "energy_threshold",
     "min_rank",
@@ -17,25 +13,18 @@
     "calibration_texts",
     "device"
   ],
-  "forward_ops": [
-    "svd"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "Adaptive Ranks SVD Compressor.\n\nDynamically determines ranks per layer according to cumulative singular value energy threshold:\n    $$\\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)$$\nwith minimum rank floor $r_{\\min} = \\max(16, \\lfloor 0.15 \\cdot \\min(d_{in}, d_{out}) \\rfloor)$,\nactivation covariance whitening, and symmetrically distributed singular values:\n    $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = (\\sqrt{\\Sigma_r} V^\\top_{:r, :}) \\cdot \\operatorname{Cov}(X)^{-1/2}$$",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 97598357210188474147576683386681967679
 }

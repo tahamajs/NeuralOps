@@ -1,13 +1,9 @@
 {
   "module_name": "a3_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py",
   "class_name": "A3Compressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "A3 Compressor: Activation-Aware SVD with Fisher weighting and LayerNorm recalibration.",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "rank",
@@ -22,23 +18,15 @@
     "calibration_loader",
     "calibration_texts"
   ],
-  "forward_ops": [
+  "ops": [
     "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "A3 Compressor: Activation-Aware SVD with Fisher weighting and LayerNorm recalibration.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 13214063829052852525787076530711509430
 }

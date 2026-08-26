@@ -1,7 +1,7 @@
 {
   "module_name": "cur_moe",
   "class_name": "CurMoe",
-  "category": "attention",
+  "category": "compression",
   "family": "moe",
   "params": [],
   "ops": [
