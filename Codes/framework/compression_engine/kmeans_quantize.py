@@ -34,7 +34,10 @@ class KMeansSTEFunction(torch.autograd.Function):
         ctx: Any, grad_output: torch.Tensor
     ) -> Tuple[Optional[torch.Tensor], None, Optional[torch.Tensor], Optional[torch.Tensor]]:
         centroids, indices, x, bias = ctx.saved_tensors
-        W = centroids[indices].to(dtype=x.dtype)
+        dtype = grad_output.dtype
+        device = grad_output.device
+        W = centroids[indices].to(dtype=dtype, device=device)
+        x_cast = x.to(dtype=dtype, device=device)
 
         # Gradient w.r.t input x
         grad_x = grad_output.matmul(W) if ctx.needs_input_grad[2] else None
@@ -47,11 +50,11 @@ class KMeansSTEFunction(torch.autograd.Function):
         # Gradient w.r.t centroids
         grad_centroids = None
         if ctx.needs_input_grad[0]:
-            if x.ndim == 2:
-                grad_W = grad_output.t().matmul(x)
+            if x_cast.ndim == 2:
+                grad_W = grad_output.t().matmul(x_cast)
             else:
                 grad_output_flat = grad_output.reshape(-1, grad_output.shape[-1])
-                x_flat = x.reshape(-1, x.shape[-1])
+                x_flat = x_cast.reshape(-1, x_cast.shape[-1])
                 grad_W = grad_output_flat.t().matmul(x_flat)
 
             grad_centroids = torch.zeros_like(centroids)
