@@ -73,7 +73,7 @@ def get_gpu_stats() -> Dict[str, Any]:
                 "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw",
                 "--format=csv,noheader,nounits"
             ]
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
             if res.returncode == 0 and res.stdout.strip():
                 parts = [p.strip() for p in res.stdout.strip().split(",")]
                 gpu_util = float(parts[0]) if len(parts) > 0 else 0.0
@@ -114,6 +114,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     log_candidates = [
+        PROJECT_DIR / "run_quality_sweep_final_run.log",
+        Path("run_quality_sweep_final_run.log"),
         PROJECT_DIR / "adaptive_sweep_v3.log",
         Path("adaptive_sweep_v3.log"),
         PROJECT_DIR / "full_sweep_v2.log",
@@ -270,7 +272,7 @@ def get_completed_results() -> List[Dict[str, Any]]:
     return results
 
 
-def compute_eta_and_progress(results: List[Dict[str, Any]], total_combos: int = 720, window_size: int = 50) -> Dict[str, Any]:
+def compute_eta_and_progress(results: List[Dict[str, Any]], total_combos: int = 240, window_size: int = 50) -> Dict[str, Any]:
     """Calculates moving average seconds/combo over the last 50 entries and projects remaining time."""
     completed = len(results)
     remaining = max(0, total_combos - completed)
@@ -538,7 +540,7 @@ def is_sweep_running() -> bool:
     """Checks if the python benchmark launcher is actively running."""
     try:
         cmd = ["powershell", "-Command", "Get-Process python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id"]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
         return bool(res.stdout.strip())
     except Exception:
         return False
@@ -548,7 +550,7 @@ def _build_stats_response() -> str:
     """Build the full stats JSON response with rich detail fields and comparative analytics."""
     gpu = get_gpu_stats()
     results = get_completed_results()
-    progress = compute_eta_and_progress(results, total_combos=720, window_size=50)
+    progress = compute_eta_and_progress(results, total_combos=240, window_size=50)
     is_running = is_sweep_running()
     comparative = compute_comparative_analytics(results)
 
@@ -755,7 +757,7 @@ class RunManager:
                     "run_id": "run_active",
                     "name": "Live Adaptive Sweep (v3 - Active)",
                     "timestamp": ts_str,
-                    "num_combinations": 720,
+                    "num_combinations": 240,
                     "completed": len(active_results),
                     "pass": p_cnt,
                     "fail": f_cnt,
@@ -855,7 +857,7 @@ class RunManager:
                 "run_id": run_id,
                 "name": human_name,
                 "timestamp": ts_str,
-                "num_combinations": max(720, completed),
+                "num_combinations": max(240, completed),
                 "completed": completed,
                 "pass": p_cnt,
                 "fail": f_cnt,
