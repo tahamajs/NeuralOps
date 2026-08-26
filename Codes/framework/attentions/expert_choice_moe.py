@@ -76,7 +76,8 @@ class ExpertChoiceMoE(nn.Module):
             expert_out = self.experts[e](selected_x)
 
             # Scatter back weighted by gating score
-            out_flat.index_add_(0, topk_indices, expert_out * topk_vals.unsqueeze(-1))
+            update_val = (expert_out * topk_vals.unsqueeze(-1)).to(dtype=out_flat.dtype)
+            out_flat.index_add_(0, topk_indices, update_val)
 
         # Auxiliary entropy / balance loss
         prob_mean = F.softmax(logits / 1.0, dim=-1).mean(dim=0)

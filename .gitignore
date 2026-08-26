@@ -185,6 +185,8 @@ experiments/
 **/experiments/
 results/
 **/results/
+benchmark_results/
+**/benchmark_results/
 !Docs/results/
 Docs/results/*
 !Docs/results/README.md
