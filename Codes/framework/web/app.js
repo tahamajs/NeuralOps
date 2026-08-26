@@ -77,6 +77,10 @@ async function fetchRunsList() {
     if (!res.ok) return;
     const data = await res.json();
     availableRuns = data.runs || [];
+    const activeRun = availableRuns.find(r => r.is_active || r.run_id === "run_active");
+    if (activeRun) {
+      selectedRunId = "run_active";
+    }
     populateRunSelectors();
   } catch (e) {
     console.warn("Failed to fetch runs list:", e);
@@ -152,7 +156,7 @@ async function onRunChanged(runId) {
 }
 
 async function fetchStats() {
-  if (isFetching || isHistorical) return;
+  if (isFetching) return;
   isFetching = true;
 
   try {
@@ -317,12 +321,17 @@ function renderTelemetry(data) {
   // Sweep status
   const sweepBadge = document.getElementById("sweep-status");
   if (sweepBadge) {
-    if (isHistorical) {
+    if (data.is_running) {
+      sweepBadge.textContent = "SWEEP ACTIVE (LIVE)";
+      sweepBadge.className = "badge badge-running";
+      const connB = document.getElementById("conn-status");
+      if (connB) {
+        connB.textContent = "ONLINE (LIVE)";
+        connB.className = "badge badge-online";
+      }
+    } else if (isHistorical) {
       sweepBadge.textContent = "HISTORICAL RUN";
       sweepBadge.className = "badge badge-idle";
-    } else if (data.is_running !== false) {
-      sweepBadge.textContent = "SWEEP ACTIVE";
-      sweepBadge.className = "badge badge-running";
     } else {
       sweepBadge.textContent = "SWEEP IDLE";
       sweepBadge.className = "badge badge-idle";
