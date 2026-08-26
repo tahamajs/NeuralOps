@@ -12,7 +12,7 @@ from framework.attentions.simple_ssm import SimpleSSM
 
 
 
-@ATTENTION_REGISTRY.register("spectral_mamba")
+# Internal spectral mamba block for SAMBA-M3
 class SpectralMamba(nn.Module):
     r"""
     Mamba with learnable spectral gating.
@@ -45,17 +45,24 @@ class SAMBAM3Block(nn.Module):
 
     def __init__(
         self,
-        d_model: int = 768,
-        n_heads: int = 12,
-        window: int = 128,
         config: Optional[Any] = None,
+        d_model: Optional[int] = None,
+        n_heads: Optional[int] = None,
+        window: int = 128,
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        if config is not None:
-            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
-            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", n_heads))
-            window = getattr(config, "window_size", window)
+        if isinstance(config, int):
+            d_model = config
+            config = None
+        if d_model is None:
+            if config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "d_model", 768))
+            else:
+                d_model = kwargs.get("hidden_size", 768)
+        if n_heads is None:
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", kwargs.get("num_attention_heads", 12)))
+        window = getattr(config, "window_size", window)
 
         self.d_model = d_model
         self.n_heads = n_heads
@@ -102,7 +109,13 @@ class SAMBAM3Block(nn.Module):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, L, D = hidden_states.shape

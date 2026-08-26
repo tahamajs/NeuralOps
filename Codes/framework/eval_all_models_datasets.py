@@ -103,6 +103,11 @@ class BenchmarkResult:
     flops_macs: float = 0.0
     throughput_tokens_sec: float = 0.0
     latency_variance_ms: float = 0.0
+    ci_lower: Optional[float] = None
+    ci_upper: Optional[float] = None
+    p_value_vs_baseline: Optional[float] = None
+    mean_seed_acc: Optional[float] = None
+    std_seed_acc: Optional[float] = None
     
     trajectories: Dict[str, List[float]] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -346,35 +351,7 @@ def build_model_instance(
     model.eval()
     return model, cfg
 
-def _extract_logits_and_loss(outputs: Any, num_labels: int = 2, labels: Optional[torch.Tensor] = None) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
-    """Unified logit/loss extraction across all HF model output types."""
-    loss = None
-    logits = None
-    
-    if hasattr(outputs, "loss") and outputs.loss is not None:
-        loss = outputs.loss
-    if hasattr(outputs, "logits"):
-        logits = outputs.logits
-    elif hasattr(outputs, "last_hidden_state"):
-        hs = outputs.last_hidden_state
-        logits = hs.mean(dim=1)[:, :num_labels]
-        if labels is not None and logits.shape[-1] == num_labels:
-            loss = F.cross_entropy(logits, labels)
-        elif loss is None:
-            loss = hs.mean()
-    elif isinstance(outputs, (tuple, list)):
-        first = outputs[0]
-        if first.dim() == 3:
-            logits = first[:, 0, :]
-            if logits.shape[-1] != num_labels:
-                logits = logits[:, :num_labels]
-        else:
-            logits = first
-            if logits.dim() == 0:
-                loss = logits
-                logits = None
-    
-    return logits, loss
+# (Unified logit/loss extractor defined below)
 
 
 # -----------------------------------------------------------------------------
@@ -752,7 +729,7 @@ def evaluate_single_combination_opt(
             
             # --- Load Models ---
             num_labels = 1 if dataset.lower() == "stsb" else 2
-            model, cfg = get_base_model_cached(model_family, num_labels, seq_len, device, dataset)
+            model, cfg = get_base_model_cached(model_family=model_family, num_labels=num_labels, hidden_size=128, num_heads=4, num_layers=2, device=device)
             model.train()
             
             # --- Inject Module ---
@@ -867,7 +844,7 @@ def evaluate_single_combination_opt(
             batches_for_fidelity = 0
             
             # Get baseline model for Fidelity (Zero-Shot Drift)
-            baseline_model, _ = get_base_model_cached(model_family, num_labels, seq_len, device, dataset)
+            baseline_model, _ = get_base_model_cached(model_family=model_family, num_labels=num_labels, hidden_size=128, num_heads=4, num_layers=2, device=device)
             baseline_model.eval()
             baseline_model = baseline_model.to(device)
             
@@ -921,7 +898,11 @@ def evaluate_single_combination_opt(
                                 result.perplexity = round(float(math.exp(min(result.loss, 100))), 4)
                         else:
                             result.accuracy_pct = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
-                            result.f1_score = round(float(f1_score(all_labels, all_preds, average='macro' if num_labels > 2 else 'binary')), 4)
+                            avg = 'binary' if len(set(all_labels)) <= 2 and num_labels <= 2 else 'macro'
+                            try:
+                                result.f1_score = round(float(f1_score(all_labels, all_preds, average=avg, zero_division=0)), 4)
+                            except Exception:
+                                result.f1_score = 0.0
                     
                     if batches_for_fidelity > 0:
                         result.fidelity_score = round(sum_cosine_sim / batches_for_fidelity, 4)

@@ -92,7 +92,13 @@ class HGRN2GatedDeltaNet(BaseAttention):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Forward propagation across hybrid HGRN-2 and Gated DeltaNet branches."""
