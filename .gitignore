@@ -183,13 +183,16 @@ Codes/MasterHttpRelayVPN
 # ============================================================
 experiments/
 **/experiments/
-results/
-**/results/
 benchmark_results/
 **/benchmark_results/
+!results/
+!results/**
+!submissions/
+!submissions/**
+!paper/**/*.pdf
+!submissions/**/*.pdf
 !Docs/results/
-Docs/results/*
-!Docs/results/README.md
+!Docs/results/**
 test_experiments/
 **/test_experiments/
 test_results/
@@ -208,6 +211,7 @@ test_marker.txt
 Codes/framework/kaggle_deploy_*/
 kaggle_deploy_temp/
 results_kaggle_gpu/
+
 
 *.zip
 *.tar.gz
