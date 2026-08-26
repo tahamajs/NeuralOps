@@ -1,31 +1,31 @@
 {
   "module_name": "goldfinch_ahn",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/goldfinch_ahn.py",
   "class_name": "GatedDeltaNetLayer",
-  "base_classes": [
-    "nn.Module"
+  "category": "attention",
+  "family": "linear",
+  "params": [
+    "d_model",
+    "use_spectral_norm",
+    "config",
+    "rank",
+    "window_size",
+    "is_causal",
+    "pretrained_attn",
+    "gate_init_bias"
+  ],
+  "ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "matmul"
   ],
   "docstring": "Gated DeltaNet Recurrent Memory Layer.",
-  "init_params": [
-    "d_model",
-    "use_spectral_norm"
-  ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 62826370612203848075498079579085205497
 }

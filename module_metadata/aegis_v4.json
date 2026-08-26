@@ -1,13 +1,9 @@
 {
   "module_name": "aegis_v4",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/aegis_v4.py",
   "class_name": "AegisAttention",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "AEGIS-Attention V4 Multi-Head Layer.\n\nDecouples multi-head attention into localized sliding-window heads and global kernelized linear heads,\ncombined with adaptive multi-head gating and SVD-factorized linear projections.\n\nComplexity:\n    - Local Heads: $\\mathcal{O}(B \\cdot H_l \\cdot N \\cdot W_{\\text",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "pretrained_weight",
     "pretrained_bias",
     "energy",
@@ -19,29 +15,19 @@
     "bert_mode",
     "config"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "view",
     "softmax",
-    "sigmoid",
+    "cat",
     "matmul"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "AEGIS-Attention V4 Multi-Head Layer.\n\nDecouples multi-head attention into localized sliding-window heads and global kernelized linear heads,\ncombined with adaptive multi-head gating and SVD-factorized linear projections.\n\nComplexity:\n    - Local Heads: $\\mathcal{O}(B \\cdot H_l \\cdot N \\cdot W_{\\text{local}} \\cdot d_h)$.\n    - Global Heads: $\\mathcal{O}(B \\cdot H_g \\cdot N \\cdot F \\cdot d_h)$.\n    - Projections: $\\mathcal{O}(B \\cdot N \\cdot D \\cdot r)$.\n\nTensor Dimensions:\n    - Input: $[B, N, D]$\n    - Output: $[B, N, D]$",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 182962962144322677868996163501443056003
 }
