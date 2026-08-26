@@ -110,6 +110,7 @@ class SpanExpandedAttention(BaseAttention):
 
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
 
+        kv_cache = past_key_value if past_key_value is not None else kwargs.get("kv_cache", None)
         if kv_cache is not None:
             k_cache, v_cache = kv_cache
             k = k_cache.unsqueeze(1).expand(-1, H, -1, -1)
@@ -154,7 +155,8 @@ def inject_span_expanded(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> SpanExpandedAttention:
+,
+    **kwargs) -> SpanExpandedAttention:
     new_attn = SpanExpandedAttention(
         config=model_config,
         expansion_span=getattr(comp_config, "expansion_span", 1024),

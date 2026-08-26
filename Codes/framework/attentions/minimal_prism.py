@@ -258,7 +258,8 @@ def inject_minimal_prism(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-) -> MinimalPRISMAttention:
+,
+    **kwargs) -> MinimalPRISMAttention:
     r"""Injection hook for MinimalPRISMAttention into transformer layer."""
     new_attn = MinimalPRISMAttention(
         model_config=model_config,

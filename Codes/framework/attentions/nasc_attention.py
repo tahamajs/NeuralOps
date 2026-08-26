@@ -285,7 +285,8 @@ def inject_nasc(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-) -> NASCAttention:
+,
+    **kwargs) -> NASCAttention:
     rank = getattr(comp_config, "rank", 16)
     window_size = getattr(comp_config, "window_size", 64)
     block_size = getattr(comp_config, "block_size", 32)

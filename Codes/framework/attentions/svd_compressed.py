@@ -403,7 +403,8 @@ def inject_all_layers(
     add_sparse: bool,
     sparsity: float,
     config: Any,
-) -> None:
+,
+    **kwargs) -> None:
     r"""Inject SVDCompressedAttention into all transformer layers of model."""
     for layer_idx in range(len(model.distilbert.transformer.layer)):
         distil_layer = model.distilbert.transformer.layer[layer_idx]
@@ -658,7 +659,8 @@ def inject_svd_compressed(
     layer_idx: int,
     total_layers: int,
     old_attn: Any,
-) -> SVDCompressedAttention:
+,
+    **kwargs) -> SVDCompressedAttention:
     r"""Bridge helper injecting SVDCompressedAttention into a transformer layer."""
     rank = getattr(comp_config, "rank", 32)
     dropout = getattr(comp_config, "dropout", 0.1)

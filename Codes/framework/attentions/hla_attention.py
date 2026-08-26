@@ -195,7 +195,7 @@ def inject_hla(
     **kwargs: Any,
 ) -> HLAAttention:
     r"""Injection hook for HLAAttention."""
-    d_model = 768
+    d_model = 128  # fixed: was hardcoded 768
     num_heads = 12
     if model_config is not None:
         d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))

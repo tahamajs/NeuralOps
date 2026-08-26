@@ -273,7 +273,8 @@ def inject_minimal_aurora(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-) -> MinimalAURORAAttention:
+,
+    **kwargs) -> MinimalAURORAAttention:
     r"""Injection hook for MinimalAURORAAttention into transformer layer."""
     new_attn = MinimalAURORAAttention(
         model_config=model_config,
