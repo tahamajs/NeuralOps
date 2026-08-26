@@ -104,51 +104,52 @@ class HGRN2OuterBlock(BaseAttention):
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
-    def _outer_scan(
+    def _outer_scan_parallel(
         self,
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
         f: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
-        reverse: bool = False,
-    ) -> torch.Tensor:
-        """Sequential outer-product state recurrence."""
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Parallel outer-product attention scan (zero Python loops)."""
         B, H, L, d = q.shape
-        S = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
-        z = torch.zeros(B, H, d, 1, device=q.device, dtype=q.dtype)
-        outputs = []
 
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            q_t = q[:, :, t, :]  # [B, H, d]
-            k_t = k[:, :, t, :]  # [B, H, d]
-            v_t = v[:, :, t, :]  # [B, H, d]
-            f_t = f[:, :, t].unsqueeze(-1).unsqueeze(-1)  # [B, H, 1, 1]
+        # Log f for continuous retention decay
+        log_f = torch.log(f.clamp(min=1e-4, max=1.0 - 1e-4))  # [B, H, L]
+        C = torch.cumsum(log_f, dim=-1)                       # [B, H, L]
+        C_diff = C.unsqueeze(-1) - C.unsqueeze(-2)            # [B, H, L, L]
 
-            # S = f * S + (1 - f) * (k_t @ v_t^T)
-            kv_outer = k_t.unsqueeze(-1) @ v_t.unsqueeze(-2)
-            S_next = f_t * S + (1.0 - f_t) * kv_outer
-            z_next = f_t * z + (1.0 - f_t) * k_t.unsqueeze(-1)
+        # 1. Forward causal decay matrix
+        tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        D_causal = torch.exp(C_diff.clamp(min=-40.0, max=0.0)) * tril_mask.float()  # [B, H, L, L]
 
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1, 1)
-                S = torch.where(m_t, S_next, S)
-                z = torch.where(m_t, z_next, z)
-            else:
-                S = S_next
-                z = z_next
+        # 2. Backward anticausal decay matrix
+        triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        D_anti = torch.exp((-C_diff).clamp(min=-40.0, max=0.0)) * triu_mask.float()  # [B, H, L, L]
 
-            # Normalized Readout: (S @ q_t) / (z^T @ q_t + eps)
-            num = (S @ q_t.unsqueeze(-1)).squeeze(-1)
-            denom = (z.transpose(-1, -2) @ q_t.unsqueeze(-1)).squeeze(-1) + 1e-5
-            y_t = num / denom.clamp(min=1e-5)
-            outputs.append(y_t)
+        attn_scores = (q @ k.transpose(-1, -2))  # [B, H, L, L]
+        weight_in = (1.0 - f).unsqueeze(-1)      # [B, H, L, 1]
+        v_scaled = v * weight_in                 # [B, H, L, d]
 
-        if reverse:
-            outputs.reverse()
+        if mask is not None:
+            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
+            D_causal = D_causal * mask_2d
+            D_anti = D_anti * mask_2d
 
-        return torch.stack(outputs, dim=2)  # [B, H, L, d]
+        # Numerator: (attn_scores * D) @ v_scaled
+        num_fwd = (attn_scores * D_causal) @ v_scaled  # [B, H, L, d]
+        num_bwd = (attn_scores * D_anti) @ v_scaled    # [B, H, L, d]
+
+        # Denominator: (attn_scores * D) @ (1 - f)
+        denom_fwd = (attn_scores * D_causal) @ weight_in  # [B, H, L, 1]
+        denom_bwd = (attn_scores * D_anti) @ weight_in    # [B, H, L, 1]
+
+        y_fwd = num_fwd / (denom_fwd + 1e-4).clamp(min=1e-4)
+        y_bwd = num_bwd / (denom_bwd + 1e-4).clamp(min=1e-4)
+
+        return y_fwd, y_bwd
 
     def forward(
         self,
@@ -190,9 +191,14 @@ class HGRN2OuterBlock(BaseAttention):
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
-        # 4. Bidirectional Outer Product Recurrence
-        y_fwd = self._outer_scan(q, k, v, f, mask=mask_bool, reverse=False)
-        y_bwd = self._outer_scan(q, k, v, f, mask=mask_bool, reverse=True)
+        # 4. Parallel Bidirectional Outer Product Recurrence
+        if self.training and q.requires_grad:
+            y_fwd, y_bwd = torch.utils.checkpoint.checkpoint(
+                self._outer_scan_parallel, q, k, v, f, mask_bool, use_reentrant=False
+            )
+        else:
+            y_fwd, y_bwd = self._outer_scan_parallel(q, k, v, f, mask_bool)
+
         y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
 
         y = y.transpose(1, 2).contiguous().view(B, L, D)
