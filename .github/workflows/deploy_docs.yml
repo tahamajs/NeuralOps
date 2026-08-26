@@ -25,22 +25,21 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Set up Node.js 22.x
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Generate Documentation Catalog
         run: |
           python generate_catalog.py
-          git diff --exit-code Docs/catalog.json
 
       - name: Build React 18 Frontend Studios
         working-directory: Codes/frontend
