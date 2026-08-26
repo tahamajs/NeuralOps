@@ -35,6 +35,20 @@ class AegisSpectronFP8Config:
     dropout: float = 0.1
     router_init_bias: Tuple[float, float, float] = (2.5, 1.5, 1.5)
 
+    def __init__(self, **kwargs):
+        self.hidden_size = kwargs.get("hidden_size", 768)
+        self.num_heads = kwargs.get("num_heads", 4)
+        self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
+        self.window_size = kwargs.get("window_size", 64)
+        self.svd_rank = kwargs.get("svd_rank", 128)
+        self.temperature = kwargs.get("temperature", 1.0)
+        self.lambda_cost = kwargs.get("lambda_cost", 0.1)
+        self.c_loc = kwargs.get("c_loc", 0.5)
+        self.c_glob = kwargs.get("c_glob", 0.8)
+        self.c_lin = kwargs.get("c_lin", 1.0)
+        self.dropout = kwargs.get("dropout", 0.1)
+        self.router_init_bias = kwargs.get("router_init_bias", (2.5, 1.5, 1.5))
+
 
 class SpectronSpectralEntropyRouter(nn.Module):
     r"""
