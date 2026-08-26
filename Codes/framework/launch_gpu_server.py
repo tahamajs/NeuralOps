@@ -191,6 +191,10 @@ def run_gpu_benchmark_sweep_opt(
             torch.set_float32_matmul_precision('high')
         except Exception:
             pass
+        try:
+            torch.cuda.set_per_process_memory_fraction(0.95)
+        except Exception:
+            pass
         if hasattr(torch.backends.cuda.matmul, "allow_tf32"):
             torch.backends.cuda.matmul.allow_tf32 = True
         if hasattr(torch.backends.cudnn, "allow_tf32"):
@@ -277,13 +281,13 @@ def main() -> None:
     parser.add_argument("--models", type=str, default="bert,roberta,t5")
     parser.add_argument("--datasets", type=str, default="sst2,mrpc")
     parser.add_argument("--precision", type=str, default="fp16")
-    parser.add_argument("--batch_size", type=int, default=1024)
-    parser.add_argument("--seq_len", type=int, default=128)
-    parser.add_argument("--max_steps", type=int, default=10)
+    parser.add_argument("--batch_size", type=int, default=2048)
+    parser.add_argument("--seq_len", type=int, default=192)
+    parser.add_argument("--max_steps", type=int, default=15)
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--workers", type=int, default=1, help="Number of worker threads")
     parser.add_argument("--tracks", type=str, default=None)
-    parser.add_argument("--output_dir", type=str, default="./results/full_validation")
+    parser.add_argument("--output_dir", type=str, default="./results/full_validation_v2")
     args = parser.parse_args()
 
     models = [m.strip().lower() for m in args.models.split(",") if m.strip()]
