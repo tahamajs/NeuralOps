@@ -263,7 +263,6 @@ def inject_minimal_nova(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-,
     **kwargs) -> MinimalNOVAAttention:
     r"""Injection hook for MinimalNOVAAttention into transformer layer."""
     new_attn = MinimalNOVAAttention(

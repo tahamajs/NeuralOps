@@ -269,7 +269,6 @@ def inject_minimal_svd_v2(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-,
     **kwargs) -> MinimalSVDAttentionV2:
     r"""Injection hook for MinimalSVDAttentionV2 into transformer layer."""
     energy: float = getattr(comp_config, "svd_energy", 0.95)

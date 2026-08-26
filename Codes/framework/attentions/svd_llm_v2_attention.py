@@ -209,7 +209,6 @@ def inject_svd_llm_v2(
     layer_idx: int,
     total_layers: int,
     old_attn: Any,
-,
     **kwargs) -> SVDLLMV2Attention:
     r"""Bridge helper injecting SVDLLMV2Attention into a target transformer layer."""
     rank = getattr(comp_config, "rank", 64)
