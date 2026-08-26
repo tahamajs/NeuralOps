@@ -396,15 +396,15 @@ def evaluate_single_seed_run(
     train_ds = _PREPARED_DATASET_CACHE.get(train_cache_key)
     if train_ds is not None and len(train_ds) > 0 and not allow_synthetic_local:
         import os
-        workers = min(8, os.cpu_count() or 1)
+        workers = min(2, os.cpu_count() or 1)
         train_loader = torch.utils.data.DataLoader(
             train_ds,
             batch_size=current_batch_size,
             shuffle=True,
             drop_last=True,
             num_workers=workers,
-            pin_memory=is_cuda,
-            prefetch_factor=8 if workers > 0 else None,
+            pin_memory=False,
+            prefetch_factor=2 if workers > 0 else None,
             persistent_workers=(workers > 0),
         )
     else:
@@ -585,14 +585,14 @@ def evaluate_single_seed_run(
     val_tokenized = _PREPARED_DATASET_CACHE.get(dataset_cache_key)
     if val_tokenized is not None and len(val_tokenized) > 0:
         import os
-        val_workers = min(8, os.cpu_count() or 1)
+        val_workers = min(2, os.cpu_count() or 1)
         loader = torch.utils.data.DataLoader(
             val_tokenized,
             batch_size=current_batch_size,
             shuffle=False,
             num_workers=val_workers,
-            pin_memory=is_cuda,
-            prefetch_factor=8 if val_workers > 0 else None,
+            pin_memory=False,
+            prefetch_factor=2 if val_workers > 0 else None,
             persistent_workers=(val_workers > 0),
         )
         with torch.no_grad():
