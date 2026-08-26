@@ -236,10 +236,10 @@ class SVDLinear(nn.Module):
 @ATTENTION_REGISTRY.register("svd_linear")
 @ATTENTION_REGISTRY.register("svd_linear_attention")
 @ATTENTION_REGISTRY.register("svd_attention")
-@ATTENTION_REGISTRY.register("projection_factorized_attn")
-@ATTENTION_REGISTRY.register("svd_linear_decay")
-@ATTENTION_REGISTRY.register("decay_linear_attn")
-@ATTENTION_REGISTRY.register("gated_linear_attn")
+# alias
+# alias
+# alias
+# alias
 class SVDLinearAttention(BaseAttention):
     r"""
     Multi-Head Attention with SVD-Factorized Projections, Kernel Linear Attention,
@@ -644,16 +644,16 @@ class SVDLinearAttention(BaseAttention):
 
     def forward(
         self,
-        hidden_states: Optional[torch.Tensor] = None,
-        query: Optional[torch.Tensor] = None,
-        key: Optional[torch.Tensor] = None,
-        value: Optional[torch.Tensor] = None,
+        hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-        mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
-        past_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        return_state: bool = False,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        *args: Any,
         **kwargs: Any,
     ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], Tuple[torch.Tensor, Optional[torch.Tensor], Tuple[torch.Tensor, torch.Tensor]]]:
         r"""

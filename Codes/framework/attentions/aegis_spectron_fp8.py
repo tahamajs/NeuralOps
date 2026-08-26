@@ -238,7 +238,14 @@ class AegisSpectronFP8Attention(BaseAttention):
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
+        head_mask: Optional[torch.Tensor] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, D = hidden_states.shape
@@ -265,7 +272,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         return final_out, None
 
 
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8")
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8_fn")
 @ATTENTION_REGISTRY.register("aegis_spectron_fp8_inject")
 def inject_aegis_spectron_fp8(
     layer: Any = None,

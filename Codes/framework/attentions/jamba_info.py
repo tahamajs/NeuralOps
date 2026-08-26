@@ -58,7 +58,7 @@ class JambaInfoBlock(BaseAttention):
         self.out_proj: nn.Linear = nn.Linear(self.dim, self.dim)
 
         self.bottleneck: InfoMambaConceptBottleneck = InfoMambaConceptBottleneck(self.dim)
-        self.ssm: SimpleSSM = SimpleSSM(self.dim)
+        self.ssm: SimpleSSM = SimpleSSM(d_model=self.dim, config=config)
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
@@ -90,10 +90,16 @@ class JambaInfoBlock(BaseAttention):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
-        mask: Optional[torch.Tensor] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        mask = kwargs.get('mask', None)
         if attention_mask is None and mask is not None:
             attention_mask = mask
         x = hidden_states

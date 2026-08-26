@@ -64,7 +64,7 @@ class TokenCompressedAttention(nn.Module):
         return res, None
 
 
-@ATTENTION_REGISTRY.register("token_compressed")
+# token_compressed handled by token_compressed.py
 def inject_token_compressed(
     layer: Any,
     config: Any,

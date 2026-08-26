@@ -50,6 +50,11 @@ MASTER_CSV_COLUMNS: List[str] = [
     "latency_variance_ms",
     "perplexity",
     "grad_norm",
+    "ci_lower",
+    "ci_upper",
+    "p_value_vs_baseline",
+    "mean_seed_acc",
+    "std_seed_acc",
 ]
 
 
