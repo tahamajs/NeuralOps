@@ -56,7 +56,7 @@ class UnifiedRoPE(BaseAttention):
         if dim is None:
             dim = getattr(config, "hidden_size", getattr(config, "d_model", 768)) if config is not None else 768
         if num_heads is None:
-            num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12)) if config is not None else 12
+            num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 4)) if config is not None else 12
 
         self.hidden_size: int = dim
         self.num_heads: int = max(1, num_heads)

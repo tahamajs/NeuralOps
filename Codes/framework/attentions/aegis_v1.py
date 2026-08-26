@@ -165,7 +165,7 @@ class AegisAttentionV1(nn.Module):
     ) -> None:
         super().__init__()
         self.hidden_size: int = getattr(model_config, "hidden_size", 768)
-        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 4)
         self.head_dim: int = self.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
         self.cfg: AegisConfigV1 = aegis_cfg if aegis_cfg is not None else AegisConfigV1()
@@ -290,7 +290,7 @@ class AegisAttentionV1(nn.Module):
                 pass
             model_config = DummyConfig()
             model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 12))
+            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
         return cls(model_config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def forward(

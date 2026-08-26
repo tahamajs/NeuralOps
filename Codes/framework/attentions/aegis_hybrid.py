@@ -213,7 +213,7 @@ class AegisHybridAttention(nn.Module):
                 pass
             model_config = DummyConfig()
             model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 12))
+            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
     @staticmethod

@@ -23,11 +23,11 @@ def inject_mamba(
     r"""Injection hook that instantiates Mamba and wires it into a transformer layer."""
     from framework.attentions.mamba import Mamba
 
-    d_model = 768
+    d_model = 128
     if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
     elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 768))
+        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 128))
 
     new_module = Mamba(d_model=d_model, config=model_config, **kwargs)
 

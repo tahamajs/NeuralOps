@@ -117,7 +117,7 @@ class LoRAAttention(BaseAttention):
             hidden_size = getattr(model_config, "hidden_size", 768)
             pretrained_attn = MockAttn(hidden_size)
 
-        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 4)
         hidden_size: int = getattr(model_config, "hidden_size", 768)
         self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim

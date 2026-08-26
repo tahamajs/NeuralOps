@@ -29,7 +29,7 @@ class MixAttentionMoSKA(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         self.dim: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim
         self.fasa_keep_ratio: float = fasa_keep_ratio

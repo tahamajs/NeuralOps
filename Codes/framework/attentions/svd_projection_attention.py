@@ -120,7 +120,7 @@ class SVDProjectionAttention(nn.Module):
             "svd_rank",
             rank if rank is not None else getattr(model_config, "rank", 32),
         )
-        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 4)
         hidden_size: int = getattr(model_config, "hidden_size", 768)
         self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim

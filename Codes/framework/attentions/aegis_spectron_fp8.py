@@ -23,7 +23,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 class AegisSpectronFP8Config:
     r"""Hyperparameter configuration dataclass for Aegis-Spectron-FP8."""
     hidden_size: int = 768
-    num_heads: int = 12
+    num_heads = 4
     head_dim: int = 64
     window_size: int = 64
     svd_rank: int = 128
@@ -169,7 +169,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 pass
             model_config = DummyConfig()
             model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 12))
+            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def _local_branch(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:

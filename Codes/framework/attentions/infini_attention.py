@@ -28,7 +28,7 @@ class InfiniAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.compress_dim: int = compress_dim

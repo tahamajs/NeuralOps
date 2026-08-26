@@ -49,18 +49,18 @@ class FactorisedMatrixState(BaseAttention):
         super().__init__(config, rank)
         if d_model is None:
             if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                d_model = getattr(config, "hidden_size", getattr(config, "dim", 128))
             else:
-                d_model = kwargs.get("hidden_size", 768)
+                d_model = kwargs.get("hidden_size", 128)
 
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(config, "num_attention_heads", 12)
+                num_heads = getattr(config, "num_attention_heads", 4)
             else:
-                num_heads = kwargs.get("num_attention_heads", 12)
+                num_heads = kwargs.get("num_attention_heads", 4)
 
         self.d_model: int = int(d_model)
         self.num_heads: int = int(num_heads)
@@ -202,15 +202,15 @@ def inject_factorised_matrix_state(
     **kwargs: Any,
 ) -> FactorisedMatrixState:
     r"""Injection hook for FactorisedMatrixState."""
-    d_model = 768
-    num_heads = 12
+    d_model = 128
+    num_heads = 4
     rank = getattr(comp_config, "rank", 32) if comp_config else 32
     if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-        num_heads = getattr(model_config, "num_attention_heads", 12)
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
+        num_heads = getattr(model_config, "num_attention_heads", 4)
     elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", 768)
-        num_heads = getattr(layer.config, "num_attention_heads", 12)
+        d_model = getattr(layer.config, "hidden_size", 128)
+        num_heads = getattr(layer.config, "num_attention_heads", 4)
 
     new_block = FactorisedMatrixState(config=model_config, rank=rank, d_model=d_model, num_heads=num_heads, **kwargs)
     src_attn = old_attn if old_attn is not None else layer
