@@ -785,7 +785,7 @@ def run_quality_benchmark_sweep(
     active_modules = modules or DEFAULT_QUALITY_MODULES
     active_models = models or ["bert", "roberta"]
     active_datasets = datasets or ["sst2", "mrpc"]
-    active_seeds = seeds or [42, 123, 777]
+    active_seeds = seeds if seeds is not None else [42]
 
     now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_id = f"run_quality_{now_str}"
@@ -1055,7 +1055,7 @@ def main():
     parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names")
     parser.add_argument("--models", type=str, default="bert,roberta,distilbert,t5", help="Comma-separated model families")
     parser.add_argument("--datasets", type=str, default="sst2,mrpc,cola,stsb", help="Comma-separated GLUE datasets")
-    parser.add_argument("--seeds", type=str, default="42,123,777", help="Comma-separated random seeds")
+    parser.add_argument("--seeds", type=str, default="42", help="Comma-separated random seeds")
     parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--max_steps", type=int, default=20, help="Training steps per seed")
     parser.add_argument("--lr", type=float, default=3e-5, help="Learning rate for AdamW")
