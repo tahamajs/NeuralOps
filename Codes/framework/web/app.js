@@ -1704,6 +1704,16 @@ function renderModuleProgressTable(moduleProgress) {
     const lossStr = (m.loss !== null && m.loss !== undefined && !isNaN(m.loss)) ? Number(m.loss).toFixed(4) : "-";
     const pct = typeof m.progress_percent === 'number' ? m.progress_percent : 0;
 
+    let durStr = "-";
+    let durStyle = "color:#94a3b8;";
+    if (m.status === "completed") {
+      durStr = m.duration_formatted || (m.duration_seconds ? `${Math.floor(m.duration_seconds / 60)}m ${Math.floor(m.duration_seconds % 60)}s` : "Done");
+      durStyle = "color:#10b981; font-weight:600;";
+    } else if (m.status === "running") {
+      durStr = m.duration_formatted || (m.elapsed_seconds ? `${Math.floor(m.elapsed_seconds / 60)}m ${Math.floor(m.elapsed_seconds % 60)}s elapsed` : "running...");
+      durStyle = "color:#f59e0b; font-weight:600;";
+    }
+
     tr.innerHTML = `
       <td class="tag-module" style="font-weight:600; cursor:pointer;" onclick="openModuleModal('${m.module}')">${m.module}</td>
       <td>${stTag}</td>
@@ -1715,6 +1725,7 @@ function renderModuleProgressTable(moduleProgress) {
       <td class="val-hl" style="font-weight:700; color:#38bdf8;">${accStr}</td>
       <td>${f1Str}</td>
       <td>${fidStr}</td>
+      <td style="${durStyle}">${durStr}</td>
       <td style="min-width:110px;">
         <div style="display:flex; align-items:center; gap:6px;">
           <div style="flex:1; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
