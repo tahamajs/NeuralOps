@@ -1716,6 +1716,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         req_path = self.path.split('?')[0]
         query_str = self.path.split('?')[1] if '?' in self.path else ""
 
+        if req_path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
+
         # 1. API: List Runs (/api/runs)
         if req_path == "/api/runs":
             runs_list = RunManager.list_runs()
