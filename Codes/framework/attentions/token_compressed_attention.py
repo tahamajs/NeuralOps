@@ -95,12 +95,12 @@ class TokenCompressedAttention(BaseAttention):
         k_keep = max(2, min(L, int(L * self.compression_ratio)))
 
         # Token 0 is always [CLS] - give it highest importance
-        total_importance[:, 0] = 1e6
+        total_importance[:, 0] = 1e4
 
         if mask is not None:
             if mask.dim() == 2:
-                total_importance = total_importance.masked_fill(mask == 0, -1e6)
-                total_importance[:, 0] = 1e6
+                total_importance = total_importance.masked_fill(mask == 0, -10000.0)
+                total_importance[:, 0] = 1e4
 
         _, top_indices = torch.topk(total_importance, k_keep, dim=-1)  # (B, k_keep)
         # Sort indices to preserve sequence ordering

@@ -26,7 +26,7 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
     z = x - m
     # softpick = relu(exp(z) - exp(-m))
     exp_z = torch.exp(z / temperature)
-    exp_neg_m = torch.exp((-m) / temperature).clamp(max=1e10)
+    exp_neg_m = torch.exp((-m) / temperature).clamp(max=1e4)
     p = F.relu(exp_z - exp_neg_m)
     return (p / (p.sum(dim=dim, keepdim=True) + 1e-8)).to(orig_dtype)
 
@@ -101,7 +101,7 @@ class LEKAV3Attention(BaseAttention):
         pad = ~valid_mask.unsqueeze(1)  # [B,1,N] bool
         scores = scores.masked_fill(pad.bool(), -10000.0)
         # Always prioritize [CLS] token at index 0
-        scores[:, :, 0] = 1e6
+        scores[:, :, 0] = 1e4
         L = min(self.num_landmarks, N)
         _, idx = scores.topk(L, dim=-1)
 

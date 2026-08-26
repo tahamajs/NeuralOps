@@ -79,13 +79,13 @@ class MixAttentionMoSKA(BaseAttention):
         if mask is not None:
             if mask.dim() == 2:
                 mask_2d = mask.bool() if mask.dtype == torch.bool else mask > 0
-                importance = importance.masked_fill(~mask_2d, -1e6)
+                importance = importance.masked_fill(~mask_2d, -10000.0)
             elif mask.dim() == 4:
                 mask_2d = mask[:, 0, 0, :] > -10000.0 if mask.min() < -1000 else mask[:, 0, 0, :] > 0
-                importance = importance.masked_fill(~mask_2d, -1e6)
+                importance = importance.masked_fill(~mask_2d, -10000.0)
 
         # Always protect [CLS] token at index 0 unconditionally
-        importance[:, 0] = 1e9
+        importance[:, 0] = 1e4
 
         keep = max(2, min(L, int(L * self.fasa_keep_ratio)))
         _, idx = torch.topk(importance, keep, dim=-1)
@@ -119,6 +119,7 @@ class MixAttentionMoSKA(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        mask = kwargs.get('mask', None)
         if attention_mask is None and mask is not None:
             attention_mask = mask
 

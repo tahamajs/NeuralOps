@@ -146,7 +146,7 @@ class HammingAttention(BaseAttention):
 
         # Log-sum-exp stabilization
         max_scores = scores.amax(dim=-1, keepdim=True)
-        max_scores = torch.where(max_scores < -1e8, torch.zeros_like(max_scores), max_scores)
+        max_scores = torch.where(max_scores < -5000.0, torch.zeros_like(max_scores), max_scores)
         scores_stab = scores - max_scores
         probs = F.softmax(scores_stab, dim=-1)
         probs = torch.nan_to_num(probs, nan=0.0)

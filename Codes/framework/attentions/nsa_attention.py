@@ -18,6 +18,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("nsa")
+@ATTENTION_REGISTRY.register("nsa_attention")
 class NativeSparseAttention(BaseAttention):
     r"""
     Native Sparse Attention layer combining local windowing and global top-$k$ selection.
@@ -129,7 +130,7 @@ class NativeSparseAttention(BaseAttention):
             total_mask = local_mask_4d & key_valid_4d
         else:
             # Vectorized top-k selection for non-local tokens
-            non_local_scores = scores.masked_fill(local_mask_4d | (~key_valid_4d), -1e9)
+            non_local_scores = scores.masked_fill(local_mask_4d | (~key_valid_4d), -10000.0)
             k_val = min(self.top_k, max(1, L - (2 * self.window_size + 1)))
             _, topk_ind = torch.topk(non_local_scores, k=k_val, dim=-1)  # [B, H, L, k_val]
             topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, True)
