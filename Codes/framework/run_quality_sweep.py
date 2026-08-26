@@ -822,8 +822,6 @@ def run_quality_benchmark_sweep(
                 hidden_size, num_heads, num_layers = 768, 12, 6
             else:
                 hidden_size, num_heads, num_layers = 768, 12, 12
-        if batch_size == 128:
-            batch_size = 16
 
     config_dict = {
         "run_id": run_id,

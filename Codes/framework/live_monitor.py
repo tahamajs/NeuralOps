@@ -114,7 +114,12 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     # Check active Phase 2 summary.csv first
-    if (PROJECT_DIR / "results" / "run_quality_fast").exists():
+    if (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_quality_screening" / "summary.csv",
+            Path("results/run_quality_screening/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_quality_fast").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_quality_fast" / "summary.csv",
             Path("results/run_quality_fast/summary.csv"),
@@ -181,6 +186,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
                 pass
     
     log_candidates = [
+        PROJECT_DIR / "run_quality_screening.log",
+        Path("run_quality_screening.log"),
         PROJECT_DIR / "run_quality_fast.log",
         Path("run_quality_fast.log"),
         PROJECT_DIR / "run_quality_pretrained.log",
@@ -622,6 +629,14 @@ def is_sweep_running() -> bool:
 
 
 
+SCREENING_MODULE_LIST = [
+    "full", "svd_linear_attention", "minimal_svd", "aegis_v6", "leka_v3",
+    "nasc_attention", "svd_mamba", "mamba", "samba_m3", "gated_deltanet_block",
+    "griffin_ssd", "jamba2", "spectron", "block_transformer_hiba",
+    "performer_attention", "cosformer", "linformer_attention",
+    "galerkin_attention", "adaptive_span", "soa_attn",
+]
+
 FAST_MODULE_LIST = [
     "full",
     "svd_linear_attention",
@@ -636,7 +651,12 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     Parses run_quality_fast.log and results/run_quality_fast/summary.csv
     to provide per-module, per-seed, per-epoch live status, metrics, and ETA.
     """
+    is_screening = (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
+    active_module_list = SCREENING_MODULE_LIST if is_screening else FAST_MODULE_LIST
+
     log_candidates = [
+        PROJECT_DIR / "run_quality_screening.log",
+        Path("run_quality_screening.log"),
         PROJECT_DIR / "run_quality_fast.log",
         Path("run_quality_fast.log"),
     ]
@@ -647,6 +667,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "run_quality_screening" / "summary.csv",
+        Path("results/run_quality_screening/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_fast" / "summary.csv",
         Path("results/run_quality_fast/summary.csv"),
     ]
@@ -723,11 +745,11 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     modules_progress = []
     total_seeds = 3
     seeds_order = [42, 123, 777]
-    total_units = len(FAST_MODULE_LIST) * total_seeds
+    total_units = len(active_module_list) * total_seeds
     units_completed = 0
-    curr_idx = FAST_MODULE_LIST.index(current_mod) if current_mod in FAST_MODULE_LIST else 0
+    curr_idx = active_module_list.index(current_mod) if current_mod in active_module_list else 0
 
-    for idx, mod in enumerate(FAST_MODULE_LIST):
+    for idx, mod in enumerate(active_module_list):
         if mod in completed_modules:
             info = completed_modules[mod]
             modules_progress.append({
@@ -856,7 +878,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
         "module_progress": modules_progress,
         "progress": {
             "completed": len(completed_modules),
-            "total": 6,
+            "total": len(active_module_list),
             "percent": overall_pct,
             "eta_seconds": total_eta_sec,
             "eta_formatted": total_eta_str,
@@ -879,6 +901,8 @@ def _build_stats_response() -> str:
 
     trajectories = {}
     det_candidates = [
+        PROJECT_DIR / "results" / "run_quality_screening" / "detailed_results.json",
+        Path("results/run_quality_screening/detailed_results.json"),
         PROJECT_DIR / "results" / "run_quality_fast" / "detailed_results.json",
         Path("results/run_quality_fast/detailed_results.json"),
         PROJECT_DIR / "results" / "run_quality_pretrained" / "detailed_results.json",
@@ -1126,9 +1150,10 @@ class RunManager:
         # 1. Check Active Run (Prioritize run_quality_fast)
         try:
             active_results = get_completed_results()
+            screen_exists = (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
             fast_exists = (PROJECT_DIR / "results" / "run_quality_fast").exists() or (PROJECT_DIR / "run_quality_fast.log").exists()
             running = is_sweep_running()
-            if running or fast_exists or active_results:
+            if running or screen_exists or fast_exists or active_results:
                 is_active = True
                 p_cnt = sum(1 for r in active_results if r.get("status") == "PASS")
                 f_cnt = sum(1 for r in active_results if r.get("status") == "FAIL")
@@ -1138,11 +1163,14 @@ class RunManager:
                     ts_val = active_results[0]["timestamp"]
                     ts_str = ts_val.isoformat() if isinstance(ts_val, datetime) else str(ts_val)
 
+                num_c = 20 if screen_exists else 6
+                r_name = "Phase 2 Quality Screening (20 Modules)" if screen_exists else "Phase 2 Quality Sweep (Fast)"
+
                 runs.append({
                     "run_id": "run_active",
-                    "name": "Phase 2 Quality Sweep (Fast)",
+                    "name": r_name,
                     "timestamp": ts_str,
-                    "num_combinations": 6,
+                    "num_combinations": num_c,
                     "completed": len(active_results),
                     "pass": p_cnt,
                     "fail": f_cnt,
