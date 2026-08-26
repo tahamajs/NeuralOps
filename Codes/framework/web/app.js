@@ -169,6 +169,12 @@ function renderTelemetry(data) {
         <td>${fN(bwd)}</td>
         <td>${fN(mem, 0)}</td>
       `;
+      tr.onclick = () => openModuleModal(modName);
+      tbody.appendChild(tr);
+    });
+  }
+}
+
 let liveLossChart = null;
 let gpuHistoryChart = null;
 let gpuHistoryData = { labels: [], util: [], vram: [], power: [] };
