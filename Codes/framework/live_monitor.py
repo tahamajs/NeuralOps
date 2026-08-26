@@ -127,6 +127,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
         PROJECT_DIR / "comprehensive_run_detached.log",
         Path("benchmark_local.log"),
         PROJECT_DIR / "benchmark_local.log",
+        PROJECT_DIR / "missing_modules.log",
+        Path("missing_modules.log"),
     ]
     target_log = None
     for p in log_candidates:
