@@ -369,6 +369,8 @@ def _filter_batch(batch: Dict[str, torch.Tensor], model_family: str, model: nn.M
     if "gpt2" in family:
         allowed = {"input_ids", "attention_mask", "labels"}
         b = {k: v for k, v in b.items() if k in allowed}
+        if "labels" in b and isinstance(b["labels"], torch.Tensor) and b["labels"].dim() == 1:
+            b.pop("labels", None)
     try:
         sig = inspect.signature(model.forward)
         valid = set(sig.parameters.keys()) - {"self"}
