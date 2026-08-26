@@ -62,13 +62,13 @@ def run_gpu_retest(output_dir: str = "results/retest_heavy_modules"):
     modules_to_test = [
         "factorised_matrix_state",
         "mamba_svd_flash",
+        "aegis_spectron_fp8",
         "gated_delta_net",
         "gated_deltanet_block",
-        "simple_ssm",
-        "griffin_ssd",
-        "hgrn2_layer",
-        "hgrn2_outer",
+        "gated_linear_attention",
         "hgrn2_gated_deltanet",
+        "hgrn2_outer",
+        "kda_attention",
     ]
     models = ["bert", "roberta"]
     datasets = ["sst2", "mrpc"]
