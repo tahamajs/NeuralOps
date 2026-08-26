@@ -697,6 +697,77 @@ def get_base_model_cached(
     return cloned_model, cfg
 
 # -----------------------------------------------------------------------------
+# Adaptive Memory-Aware Batch Sizer (Proactive Memory Probe)
+# -----------------------------------------------------------------------------
+
+def probe_optimal_batch_size(
+    model: nn.Module,
+    model_family: str,
+    dataset: str,
+    seq_len: int,
+    device: torch.device,
+    target_vram_ratio: float = 0.88,
+    max_batch_cap: int = 1024,
+    min_batch_floor: int = 4,
+    allow_synthetic: bool = True,
+) -> int:
+    """
+    Performs a fast memory probe on CUDA with a tiny batch (B=4).
+    Measures peak VRAM during forward pass, calculates marginal VRAM per sample,
+    and returns the optimal batch size that safely utilizes target_vram_ratio of total VRAM.
+    """
+    if device.type != "cuda":
+        return 64
+
+    torch.cuda.synchronize(device)
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats(device)
+
+    idle_vram = torch.cuda.memory_allocated(device)
+    total_vram = torch.cuda.get_device_properties(device).total_memory
+    target_usable_vram = total_vram * target_vram_ratio
+
+    probe_b = 4
+    num_labels = 1 if dataset.lower() == "stsb" else 2
+    try:
+        probe_batch = get_dataset_batch(
+            dataset, model_family, probe_b, seq_len,
+            num_labels=num_labels, device=device, allow_synthetic=allow_synthetic
+        )
+        filtered_batch = _filter_batch(probe_batch, model_family, model)
+
+        with torch.amp.autocast('cuda'):
+            out = model(**filtered_batch)
+
+        torch.cuda.synchronize(device)
+        peak_vram = torch.cuda.max_memory_allocated(device)
+
+        activation_vram = max(1024 * 1024.0, peak_vram - idle_vram)
+        mem_per_sample = activation_vram / float(probe_b)
+
+        remaining_vram = max(1024 * 1024.0, target_usable_vram - idle_vram)
+        estimated_max_b = int(remaining_vram / mem_per_sample)
+
+        # Snap to powers of 2 for tensor core efficiency
+        powers_of_2 = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        selected_b = min_batch_floor
+        for p in powers_of_2:
+            if p <= estimated_max_b and p <= max_batch_cap:
+                selected_b = p
+
+        logger.info("Adaptive Batch Sizer: probe peak=%.1fMB, per_sample=%.2fMB -> auto-selected batch_size=%d",
+                    peak_vram / (1024*1024), mem_per_sample / (1024*1024), selected_b)
+        return max(min_batch_floor, min(selected_b, max_batch_cap))
+    except Exception as e:
+        logger.warning("Memory probe failed (%s), defaulting to batch size 128", e)
+        return 128
+    finally:
+        gc.collect()
+        torch.cuda.empty_cache()
+
+
+# -----------------------------------------------------------------------------
 # Non-Blocking CUDA Event Timed Single Combination Evaluator
 # -----------------------------------------------------------------------------
 
@@ -748,6 +819,20 @@ def evaluate_single_combination_opt(
             model = model.to(device)
             if hasattr(model, "train"):
                 model.train()
+
+            # --- Adaptive Memory Probe on Initial Attempt ---
+            if retry_count == 0 and is_cuda:
+                current_batch_size = probe_optimal_batch_size(
+                    model=model,
+                    model_family=model_family,
+                    dataset=dataset,
+                    seq_len=seq_len,
+                    device=device,
+                    target_vram_ratio=0.88,
+                    max_batch_cap=min(batch_size, 1024) if batch_size > 0 else 1024,
+                    min_batch_floor=4,
+                    allow_synthetic=allow_synthetic,
+                )
             
             batch = get_dataset_batch(dataset, model_family, current_batch_size, seq_len, num_labels=num_labels, device=device, allow_synthetic=allow_synthetic)
             filtered_batch = _filter_batch(batch, model_family, model)
