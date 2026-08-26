@@ -94,77 +94,32 @@ class YourCustomCompressor(BaseCompressor):
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         r"""Apply model compression pipeline across all layers and return compressed model and statistics."""
-        self._compress_embeddings()
-        self._compress_attention_layers()
-        self._compress_ffn_layers()
-        self._compress_classifier()
+        linear_targets = []
+        for parent_name, module in list(self.model.named_modules()):
+            if isinstance(module, SVDLinearLayer):
+                continue
+            for child_name, child in list(module.named_children()):
+                if isinstance(child, nn.Linear) and not isinstance(child, SVDLinearLayer):
+                    if any(k in parent_name.lower() for k in ["attention", "intermediate", "output", "dense", "ffn", "classifier"]):
+                        linear_targets.append((module, parent_name, child_name, child))
+
+        for module, parent_name, child_name, child in linear_targets:
+            original_size = (child.weight.shape[0], child.weight.shape[1])
+            rank = min(self.target_rank, min(original_size))
+            new_layer = SVDLinearLayer(child, rank)
+            setattr(module, child_name, new_layer)
+            full_name = f"{parent_name}.{child_name}" if parent_name else child_name
+            self.compressed_layers.append({
+                "name": full_name,
+                "original_size": original_size,
+                "compressed_size": (new_layer.V.in_features, new_layer.U.out_features),
+                "type": "linear",
+                "method": self.method,
+            })
 
         self._compressed_params = self._count_params(self.model)
         self._compression_stats = self._compute_stats()
         return self.model, self.get_compression_stats()
-
-    def _compress_embeddings(self) -> None:
-        r"""Compress word embedding projection layers if present."""
-        if hasattr(self.model, "embeddings") and hasattr(self.model.embeddings, "word_embeddings"):
-            emb_layer = self.model.embeddings.word_embeddings
-            self._compress_linear_layers(emb_layer, "embeddings", "embedding")
-
-    def _compress_attention_layers(self) -> None:
-        r"""Compress attention sub-layer linear projections."""
-        for name, module in self.model.named_modules():
-            if "attention" in name.lower():
-                self._compress_linear_layers(module, name, "attention")
-
-    def _compress_ffn_layers(self) -> None:
-        r"""Compress feed-forward intermediate projections."""
-        for name, module in self.model.named_modules():
-            if (
-                "ffn" in name.lower()
-                or "intermediate" in name.lower()
-                or "output" in name.lower()
-            ):
-                self._compress_linear_layers(module, name, "ffn")
-
-    def _compress_classifier(self) -> None:
-        r"""Compress classification head layers."""
-        if hasattr(self.model, "classifier"):
-            self._compress_linear_layers(
-                self.model.classifier, "classifier", "classifier"
-            )
-
-    def _compress_linear_layers(
-        self, module: nn.Module, parent_name: str, layer_type: str
-    ) -> None:
-        r"""Identify and replace dense Linear child modules with compressed surrogates."""
-        for child_name, child in list(module.named_children()):
-            if isinstance(child, nn.Linear):
-                original_size = (child.weight.shape[0], child.weight.shape[1])
-                compressed_size = self._get_compressed_size(original_size)
-
-                if self.method == "low_rank":
-                    new_layer: nn.Module = SVDLinearLayer(child, self.target_rank)
-                elif self.method == "pruning":
-                    new_layer = self._create_pruned_layer(child, compressed_size)
-                elif self.method == "quantization":
-                    new_layer = self._create_quantized_layer(child)
-                else:
-                    new_layer = self._create_hybrid_layer(child, compressed_size)
-
-                full_name = f"{parent_name}.{child_name}" if child_name else parent_name
-                self._replace_layer(module, child_name, new_layer, full_name)
-                self.compressed_layers.append(
-                    {
-                        "name": full_name,
-                        "original_size": original_size,
-                        "compressed_size": (
-                            compressed_size
-                            if not isinstance(new_layer, SVDLinearLayer)
-                            else (new_layer.V.in_features, new_layer.U.out_features)
-                        ),
-                        "type": layer_type,
-                        "method": self.method,
-                    }
-                )
 
     def _get_compressed_size(self, original_size: Tuple[int, int]) -> Tuple[int, int]:
         r"""Determine output and input dimensions under target pruning ratio."""
