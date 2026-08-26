@@ -123,14 +123,14 @@ def compute_t_test_p_value(mod_accs: List[float], base_accs: List[float]) -> flo
     """Computes paired Student's t-test 2-tailed p-value across seeds."""
     if len(mod_accs) < 2 or len(base_accs) < 2 or len(mod_accs) != len(base_accs):
         return 1.0
-    
+
     diffs = np.array(mod_accs) - np.array(base_accs)
     mean_diff = np.mean(diffs)
     std_diff = np.std(diffs, ddof=1)
-    
+
     if std_diff < 1e-7:
         return 1.0 if abs(mean_diff) < 1e-5 else 0.001
-        
+
     n = len(diffs)
     t_stat = mean_diff / (std_diff / math.sqrt(n))
     df = n - 1
@@ -146,6 +146,46 @@ def compute_t_test_p_value(mod_accs: List[float], base_accs: List[float]) -> flo
         return round(p_val, 4)
 
 
+def compute_bh_fdr(p_values: List[float]) -> List[float]:
+    """Computes Benjamini-Hochberg (B-H) False Discovery Rate adjusted p-values."""
+    n = len(p_values)
+    if n == 0:
+        return []
+    sorted_indices = np.argsort(p_values)
+    sorted_p = np.array(p_values)[sorted_indices]
+    adjusted_p = np.zeros(n)
+
+    cummin = 1.0
+    for i in range(n - 1, -1, -1):
+        rank = i + 1
+        adj = (sorted_p[i] * n) / rank
+        cummin = min(cummin, adj)
+        adjusted_p[i] = min(1.0, max(0.0, cummin))
+
+    original_order_p = np.zeros(n)
+    original_order_p[sorted_indices] = adjusted_p
+    return [round(float(p), 4) for p in original_order_p]
+
+
+def compute_bootstrap_ci(accs: List[float], n_bootstraps: int = 1000, ci_level: float = 0.95) -> Tuple[float, float]:
+    """Computes non-parametric seed-level Bootstrap 95% Confidence Interval."""
+    if not accs:
+        return (0.0, 0.0)
+    if len(accs) == 1:
+        return (round(accs[0], 2), round(accs[0], 2))
+
+    np.random.seed(42)
+    boot_means = []
+    for _ in range(n_bootstraps):
+        sample = np.random.choice(accs, size=len(accs), replace=True)
+        boot_means.append(float(np.mean(sample)))
+
+    alpha = (1.0 - ci_level) / 2.0
+    low = float(np.percentile(boot_means, alpha * 100))
+    high = float(np.percentile(boot_means, (1.0 - alpha) * 100))
+    return (round(low, 2), round(high, 2))
+
+
 def compute_confidence_interval_95(accs: List[float]) -> Tuple[float, float]:
     """Computes 95% Confidence Interval for small sample n=3 (t_crit = 4.303)."""
     if not accs:
@@ -153,16 +193,45 @@ def compute_confidence_interval_95(accs: List[float]) -> Tuple[float, float]:
     mean = float(np.mean(accs))
     if len(accs) == 1:
         return (round(mean, 2), round(mean, 2))
-    
+
     std = float(np.std(accs, ddof=1))
     n = len(accs)
     t_crit_table = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571}
     t_crit = t_crit_table.get(n - 1, 1.96)
-    
+
     margin = t_crit * (std / math.sqrt(n))
     ci_lower = max(0.0, round(mean - margin, 2))
     ci_upper = min(100.0, round(mean + margin, 2))
     return (ci_lower, ci_upper)
+
+
+def profile_empirical_flops(model: nn.Module, batch: Dict[str, torch.Tensor], device: torch.device) -> float:
+    """Profiles empirical FLOPs using torch.profiler with analytical fallback."""
+    try:
+        activities = [torch.profiler.ProfilerActivity.CPU]
+        if device.type == "cuda":
+            activities.append(torch.profiler.ProfilerActivity.CUDA)
+
+        with torch.profiler.profile(
+            activities=activities,
+            record_shapes=True,
+            with_flops=True,
+        ) as prof:
+            filtered_batch = _filter_batch(batch, "bert", model)
+            with torch.no_grad():
+                model(**filtered_batch)
+
+        total_flops = sum(evt.flops for evt in prof.key_averages() if hasattr(evt, "flops") and evt.flops is not None)
+        if total_flops > 0:
+            return float(total_flops)
+    except Exception:
+        pass
+
+    # Analytical FLOP fallback: 2 * params * seq_len * batch_size
+    total_params = sum(p.numel() for p in model.parameters())
+    seq_len = batch.get("input_ids", torch.zeros(1, 128)).shape[1]
+    batch_size = batch.get("input_ids", torch.zeros(1, 128)).shape[0]
+    return float(2 * total_params * seq_len * batch_size)
 
 
 def _get_git_commit() -> str:
