@@ -710,9 +710,9 @@ def probe_optimal_batch_size(
     dataset: str,
     seq_len: int,
     device: torch.device,
-    target_vram_ratio: float = 0.80,
-    max_batch_cap: int = 1024,
-    min_batch_floor: int = 4,
+    target_vram_ratio: float = 0.50,
+    max_batch_cap: int = 64,
+    min_batch_floor: int = 8,
     allow_synthetic: bool = True,
 ) -> int:
     """
