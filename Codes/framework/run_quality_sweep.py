@@ -859,11 +859,32 @@ def run_quality_benchmark_sweep(
         "f1_score", "fidelity_score", "fwd_ms", "bwd_ms", "peak_vram_mb",
         "throughput_tokens_sec", "flops_macs", "timestamp"
     ]
-    with open(summary_csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(csv_headers)
+    completed_combos = set()
+    if summary_csv_path.exists() and summary_csv_path.stat().st_size > 0:
+        try:
+            with open(summary_csv_path, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    m_n = row.get("module_name")
+                    mod_f = row.get("model_family", "").lower()
+                    ds_n = row.get("dataset", "").lower()
+                    if m_n and mod_f and ds_n:
+                        completed_combos.add((mod_f, ds_n, m_n))
+        except Exception:
+            pass
+    else:
+        with open(summary_csv_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(csv_headers)
 
     detailed_results: List[Dict[str, Any]] = []
+    if detailed_json_path.exists() and detailed_json_path.stat().st_size > 0:
+        try:
+            with open(detailed_json_path, "r", encoding="utf-8") as f:
+                detailed_results = json.load(f)
+        except Exception:
+            detailed_results = []
+
     baseline_logits_cache: Dict[Tuple[str, str, int], torch.Tensor] = {}
     baseline_acc_cache: Dict[Tuple[str, str], List[float]] = {}
 
@@ -877,6 +898,9 @@ def run_quality_benchmark_sweep(
         for dataset_name in active_datasets:
             for mod_name in sorted_modules:
                 combo_idx += 1
+                if (model_name.lower(), dataset_name.lower(), mod_name) in completed_combos:
+                    logger.info(f"[{combo_idx}/{total_combos}] Skipping already-completed {mod_name} on {model_name.upper()} / {dataset_name.upper()}...")
+                    continue
                 combo_t0 = time.time()
                 logger.info(
                     "[%d/%d] Evaluating %s on %s / %s across %d seeds...",
