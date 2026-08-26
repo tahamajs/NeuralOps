@@ -1,0 +1,28 @@
+{
+  "module_name": "fasa",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/fasa.py",
+  "class_name": "FASAAttention",
+  "base_classes": [
+    "MixAttentionMoSKA"
+  ],
+  "docstring": "FASA: Frequency/Variance-Aware Sparse Attention.\nInherits directly from MixAttentionMoSKA with full [CLS] token protection and variance-based pruning.",
+  "init_params": [],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

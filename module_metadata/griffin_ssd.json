@@ -1,0 +1,42 @@
+{
+  "module_name": "griffin_ssd",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/griffin_ssd.py",
+  "class_name": "GriffinSSDBlock",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Griffin Hybrid Block combining local window attention with global SSD linear attention.\n\nMathematical Mechanism:\n    Combines a bidirectional local sliding-window attention with window size $W$ and a global linear SSD kernel:\n    $$\\begin{aligned}\n    \\text{Local Attn: } & S_{\\text{local}} = \\frac{Q",
+  "init_params": [
+    "config",
+    "rank",
+    "window_size",
+    "d_model",
+    "num_heads"
+  ],
+  "forward_ops": [
+    "transpose",
+    "softmax",
+    "matmul",
+    "view",
+    "sigmoid"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

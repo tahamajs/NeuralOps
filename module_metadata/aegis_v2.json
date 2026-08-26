@@ -1,0 +1,42 @@
+{
+  "module_name": "aegis_v2",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/aegis_v2.py",
+  "class_name": "AegisAttentionV2",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Aegis-Attention V2 Layer.\n\nMathematical Formulation:\n    1. Low-Rank Projection:\n       $$Q = X W_{Q1} W_{Q2}, \\quad K = X W_{K1} W_{K2}, \\quad V = X W_{V1} W_{V2}$$\n       with $W_1 \\in \\mathbb{R}^{D \\times r}, W_2 \\in \\mathbb{R}^{r \\times D}$.\n\n    2. Local Band Attention:\n       $$A^{\\text{local}",
+  "init_params": [
+    "config",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "view",
+    "softmax",
+    "dropout",
+    "einsum",
+    "permute",
+    "matmul",
+    "reshape",
+    "sigmoid"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "module_name": "samba_moe",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/samba_moe.py",
+  "class_name": "SambaMoEBlock",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "SambaMoE: SAMBA-M3 + REAP-MoE Hybrid Architecture with pretrained weight copying.",
+  "init_params": [
+    "config",
+    "d_model",
+    "n_heads",
+    "n_experts",
+    "window",
+    "rank",
+    "pretrained_attn"
+  ],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

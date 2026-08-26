@@ -1,0 +1,37 @@
+{
+  "module_name": "cur_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cur_compressor.py",
+  "class_name": "CURCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Compressor that replaces eligible Linear layers with CURLinear.",
+  "init_params": [
+    "model",
+    "rank",
+    "method",
+    "cfg",
+    "target_names",
+    "deterministic"
+  ],
+  "forward_ops": [
+    "split"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N r d)",
+    "space_complexity": "O(r(N + d))",
+    "scaling_exponent": 1.0,
+    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
+  },
+  "family": "linear",
+  "accent_color": "#38bdf8",
+  "key_mechanisms": [
+    "Truncated SVD / Factorization",
+    "Orthogonal Basis U and V^T",
+    "Singular Spectrum Truncation",
+    "Rank Bottleneck Projection"
+  ]
+}

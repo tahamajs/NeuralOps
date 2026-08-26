@@ -1,0 +1,41 @@
+{
+  "module_name": "leka_v1",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/leka_v1.py",
+  "class_name": "LEKAV1Attention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "LEKAv1: Linear-time Efficient Kernel Attention (Basic Random Fourier Features).\n\nMathematical Mechanism:\n    Approximates the Gaussian RBF kernel via Random Fourier Feature (RFF) mapping $\\phi(x)$:\n    $$\\begin{aligned}\n    \\phi(x) &= \\frac{1}{\\sqrt{F}} \\left[\\cos(x W_{\\text{proj}}), \\; \\sin(x W_{\\t",
+  "init_params": [
+    "config",
+    "comp_config",
+    "layer_idx",
+    "total_layers",
+    "bert_mode",
+    "rank"
+  ],
+  "forward_ops": [
+    "einsum",
+    "view",
+    "permute"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

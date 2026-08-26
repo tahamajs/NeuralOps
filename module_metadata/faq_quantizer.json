@@ -1,0 +1,44 @@
+{
+  "module_name": "faq_quantizer",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/faq_quantizer.py",
+  "class_name": "FAQQuantizer",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "FAQQuantizer: Feature-Activation-Aware Quantization.\nCollects activation statistics to scale channel-wise quantization step sizes,\nminimizing activation-weighted reconstruction distortion.\n\nArgs:\n    model: PyTorch model.\n    tokenizer: Optional tokenizer for text-based calibration.\n    bits: Quanti",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "bias",
+    "bits",
+    "symmetric",
+    "model",
+    "tokenizer",
+    "calibration_texts",
+    "calibration_data",
+    "alpha",
+    "use_ste"
+  ],
+  "forward_ops": [
+    "linear"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

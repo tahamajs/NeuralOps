@@ -1,0 +1,43 @@
+{
+  "module_name": "routing_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/routing_attention.py",
+  "class_name": "RoutingAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Routing Attention layer clustering queries and keys via online $k$-means.\n\nMathematical Formulation:\n    1. Online $k$-Means Cluster Assignment:\n       $$c_i = \\operatorname{arg\\,min}_{k \\in \\{1, \\dots, K\\}} \\|Q_i - \\mu_k\\|_2^2, \\quad \\forall i \\in \\{1, \\dots, L\\}$$\n    \n    2. Masked Intra-Cluster ",
+  "init_params": [
+    "config",
+    "rank",
+    "num_clusters",
+    "n_iters",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "permute",
+    "softmax",
+    "dropout",
+    "matmul",
+    "view",
+    "transpose"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "module_name": "xattention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/xattention.py",
+  "class_name": "XAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "XAttention: Block-Sparse Attention Mechanism with Unified Probability Normalization.\n\nMathematical Formulation:\n    1. Block Partitioning:\n       Sequence $N$ is divided into $M = \\lceil N / B_s \\rceil$ blocks of size $B_s$.\n    \n    2. Coarse Block Summaries & Routing:\n       $\\bar{Q}_i = \\frac{1}{",
+  "init_params": [
+    "config",
+    "rank",
+    "block_size",
+    "sparsity",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "permute",
+    "view",
+    "topk",
+    "matmul",
+    "softmax",
+    "dropout",
+    "transpose"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

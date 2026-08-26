@@ -1,0 +1,48 @@
+{
+  "module_name": "dynamic_rank",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/dynamic_rank.py",
+  "class_name": "DynamicEntropySVDCompressorRegistered",
+  "base_classes": [
+    "DynamicEntropySVDCompressor"
+  ],
+  "docstring": "Dynamic Entropy SVD Compressor.\n\n1. Computes singular entropy H(Sigma_l) on layer activation covariances or weights.\n2. Allocates layer ranks within [min_rank, max_rank] subject to parameter/rank budget.\n3. Replaces nn.Linear layers with DynamicSVDLinear factorized modules.",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "dtype",
+    "device",
+    "model",
+    "min_rank",
+    "max_rank",
+    "target_param_ratio",
+    "total_rank_budget",
+    "target_rank",
+    "calibration_loader",
+    "calibration_texts",
+    "target_modules"
+  ],
+  "forward_ops": [
+    "linear"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "module_name": "nmf_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/nmf_compressor.py",
+  "class_name": "NMFCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Non-negative Matrix Factorization (NMF) Compressor.\nDecomposes linear layer weights into low-rank non-negative factors.\n\nArgs:\n    model: Model to compress.\n    rank: Target rank for NMF factorization.\n    max_iter: Maximum multiplicative update iterations.\n    cfg: Optional configuration object.\n  ",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "shift",
+    "bias",
+    "dtype",
+    "device",
+    "model",
+    "max_iter",
+    "cfg",
+    "target_layers"
+  ],
+  "forward_ops": [
+    "reshape",
+    "linear",
+    "view",
+    "split"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "module_name": "granite_hybrid",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/granite_hybrid.py",
+  "class_name": "Mamba2",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Simplified Mamba-2 State Space Model (SSM) block stub.\n\nMathematical Mechanism:\n    Given an input sequence $X \\in \\mathbb{R}^{B \\times L \\times D}$, the input is projected:\n    $$\\begin{aligned}\n    [X_{\\text{ssm}}, Z] &= \\text{Linear}(X) \\in \\mathbb{R}^{B \\times L \\times 2D_{\\text{inner}}} \\\\\n    ",
+  "init_params": [
+    "d_model",
+    "d_state",
+    "d_conv",
+    "expand"
+  ],
+  "forward_ops": [
+    "chunk",
+    "transpose",
+    "silu",
+    "conv1d"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

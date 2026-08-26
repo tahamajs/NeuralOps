@@ -1,0 +1,42 @@
+{
+  "module_name": "eat",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/eat.py",
+  "class_name": "EATBlock",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Efficient Attention Transformer (EAT) Attention Module with Progressive Token Pruning.",
+  "init_params": [
+    "d_model",
+    "n_heads",
+    "prune_layer",
+    "config",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "matmul"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}
