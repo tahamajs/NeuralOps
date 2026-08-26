@@ -1,0 +1,41 @@
+{
+  "module_name": "token_compressed_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/token_compressed_attention.py",
+  "class_name": "TokenCompressedAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Token-Compressed Attention Module.\nCompresses Key and Value sequence tokens using energy/norm selection while preserving [CLS] (index 0).",
+  "init_params": [
+    "config",
+    "rank",
+    "compression_ratio",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "matmul"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

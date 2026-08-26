@@ -1,0 +1,41 @@
+{
+  "module_name": "adaptive_ranks",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adaptive_ranks.py",
+  "class_name": "AdaptiveRanksCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Adaptive Ranks SVD Compressor.\n\nDynamically determines ranks per layer according to cumulative singular value energy threshold:\n    $$\\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)$$\nwith minimum rank floor $r_{\\min} = \\max(16, \\lfloor 0.15 \\cdot \\min(d_{in}, d_",
+  "init_params": [
+    "model",
+    "energy_threshold",
+    "min_rank",
+    "target_modules",
+    "tokenizer",
+    "calibration_loader",
+    "calibration_texts",
+    "device"
+  ],
+  "forward_ops": [
+    "svd"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

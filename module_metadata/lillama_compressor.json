@@ -1,0 +1,41 @@
+{
+  "module_name": "lillama_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/lillama_compressor.py",
+  "class_name": "LiLLaMACompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "LiLLaMA Compressor: Local activation cross-covariance SVD distillation.",
+  "init_params": [
+    "model",
+    "tokenizer",
+    "rank",
+    "calibration_texts",
+    "calibration_loader",
+    "device"
+  ],
+  "forward_ops": [
+    "svd",
+    "matmul",
+    "reshape"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

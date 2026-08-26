@@ -1,0 +1,47 @@
+{
+  "module_name": "halo_regla",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/halo_regla.py",
+  "class_name": "HALOReGLAAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention.",
+  "init_params": [
+    "dim",
+    "max_seq_len",
+    "config",
+    "rank",
+    "hybrid_ratio",
+    "pretrained_attn",
+    "gate_init_bias"
+  ],
+  "forward_ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "matmul",
+    "einsum",
+    "view",
+    "permute",
+    "sigmoid"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

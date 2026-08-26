@@ -1,0 +1,44 @@
+{
+  "module_name": "adaptive_sparse_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/adaptive_sparse_attention.py",
+  "class_name": "AdaptiveSparseAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Adaptive Sparse Multi-Head Attention.\n\nMathematical Formulation:\n    1. Query-Key Attention Scores:\n       $$S_{ij} = \\frac{Q_i K_j^\\top}{\\sqrt{d}}$$\n    \n    2. Adaptive Dynamic Sparsification:\n       Per-head learnable sparsity ratio $\\gamma_h = \\sigma(\\text{logit}_h)$.\n       Top-$k$ active key p",
+  "init_params": [
+    "config",
+    "rank",
+    "sparsity_ratio",
+    "dropout",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "matmul",
+    "view",
+    "sigmoid",
+    "topk"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "module_name": "test_syntax",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/test_syntax.py",
+  "class_name": "TestSyntax",
+  "base_classes": [],
+  "docstring": "",
+  "init_params": [],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N d^2)",
+    "space_complexity": "O(N d)",
+    "scaling_exponent": 1.0,
+    "description": "Linear / Efficient Scaled Operator"
+  },
+  "family": "linear",
+  "accent_color": "#38bdf8",
+  "key_mechanisms": [
+    "Linear Projection",
+    "Key-Value State Caching",
+    "Associative Contraction",
+    "Residual Normalization"
+  ]
+}

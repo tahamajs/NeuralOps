@@ -1,0 +1,26 @@
+{
+  "module_name": "saes_svd_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/saes_svd_compressor.py",
+  "class_name": "SaesSvdCompressor",
+  "base_classes": [],
+  "docstring": "",
+  "init_params": [],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N r d)",
+    "space_complexity": "O(r(N + d))",
+    "scaling_exponent": 1.0,
+    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
+  },
+  "family": "linear",
+  "accent_color": "#38bdf8",
+  "key_mechanisms": [
+    "Truncated SVD / Factorization",
+    "Orthogonal Basis U and V^T",
+    "Singular Spectrum Truncation",
+    "Rank Bottleneck Projection"
+  ]
+}

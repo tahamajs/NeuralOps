@@ -1,0 +1,49 @@
+{
+  "module_name": "reap_moe",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/reap_moe.py",
+  "class_name": "REAPMoEAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "REAP-MoE Attention Block combining Multi-Head Attention with REAP MoE feed-forward transformation.",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "d_model",
+    "n_experts",
+    "top_k",
+    "noise_std",
+    "use_svd",
+    "config",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "topk",
+    "softmax",
+    "view",
+    "transpose",
+    "dropout",
+    "matmul"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "matmul (@)",
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

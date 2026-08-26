@@ -1,0 +1,44 @@
+{
+  "module_name": "lora_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/lora_attention.py",
+  "class_name": "LoRAAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "LoRA Parameter-Efficient Fine-Tuning Attention Module.\n\nMathematical Mechanism:\n    Replaces standard query, key, value, and output linear projections with LoRA adapters:\n    $$\\begin{aligned}\n    Q &= \\text{LoRA}_Q(X), \\quad K = \\text{LoRA}_K(X), \\quad V = \\text{LoRA}_V(X) \\\\\n    S &= \\frac{Q K^\\to",
+  "init_params": [
+    "original_layer",
+    "rank",
+    "alpha",
+    "dropout",
+    "model_config",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "linear",
+    "dropout",
+    "transpose",
+    "softmax",
+    "matmul",
+    "view"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

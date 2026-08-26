@@ -1,0 +1,39 @@
+{
+  "module_name": "armor_pruner",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/armor_pruner.py",
+  "class_name": "ARMORLinear",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Decoupled Sparse + Low-Rank Residual Layer.\nMaintains clean gradient flow to both the sparse weight core and low-rank adapter branches.",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "dtype",
+    "device"
+  ],
+  "forward_ops": [
+    "linear"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

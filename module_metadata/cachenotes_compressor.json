@@ -1,0 +1,42 @@
+{
+  "module_name": "cachenotes_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cachenotes_compressor.py",
+  "class_name": "CacheNotesCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "CacheNotes Compressor: Decouples static weight compression from KV cache dynamic pruning.\nCompresses static model weights using CPT-guided low-rank SVD without zeroing out entire output channels.\n\nArgs:\n    model: PyTorch model.\n    task_type: Target downstream task ('qa', 'summarize', 'code', 'reas",
+  "init_params": [
+    "model",
+    "task_type",
+    "keep_ratio",
+    "recalibrate_ln",
+    "tokenizer",
+    "calibration_loader",
+    "calibration_texts",
+    "device"
+  ],
+  "forward_ops": [
+    "svd",
+    "matmul"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

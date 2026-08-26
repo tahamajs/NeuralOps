@@ -1,0 +1,43 @@
+{
+  "module_name": "cr_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cr_compressor.py",
+  "class_name": "CRCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "CR (Column-Row / Interpolative Decomposition) Compressor.\nDecomposes linear layers into skeleton column bases and interpolative projections.\n\nArgs:\n    model: PyTorch model.\n    rank: Rank parameter (number of skeleton columns).\n    cfg: Optional configuration object.\n    target_layers: Optional tar",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "dtype",
+    "device",
+    "model",
+    "cfg",
+    "target_layers"
+  ],
+  "forward_ops": [
+    "reshape",
+    "linear",
+    "view",
+    "split"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

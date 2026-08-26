@@ -1,0 +1,39 @@
+{
+  "module_name": "kda_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/kda_attention.py",
+  "class_name": "KDAAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Kernelized Decay Attention (KDA) Bidirectional Mechanism.\n\nImplements bidirectional linear recurrent state tracking with a learned gating decay parameter $\\beta$:\n$$\\begin{aligned}\n\\vec{S}_t &= \\sigma(\\beta) \\odot \\vec{S}_{t-1} + \\tilde{k}_t v_t^\\top, \\quad \\vec{z}_t = \\sigma(\\beta) \\odot \\vec{z}_{t",
+  "init_params": [
+    "config",
+    "rank",
+    "d_model",
+    "num_heads"
+  ],
+  "forward_ops": [
+    "transpose",
+    "view",
+    "sigmoid"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}
