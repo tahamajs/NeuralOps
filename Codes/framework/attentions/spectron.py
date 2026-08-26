@@ -151,7 +151,7 @@ class LowRankSparseLinear(nn.Module):
         up: nn.Linear,
         sparse_weight: torch.Tensor,
         bias: Optional[torch.Tensor] = None,
-    ) -> None:
+    **kwargs) -> None:
         super().__init__()
         self.down: nn.Linear = down
         self.up: nn.Linear = up
@@ -225,9 +225,9 @@ class SpectronAttention(nn.Module):
             model_config.num_attention_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 12))
 
         self.num_heads: int = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
-        self.head_dim: int = getattr(model_config, "hidden_size", 768) // self.num_heads if model_config is not None else 64
+        self.head_dim: int = getattr(model_config, "hidden_size", 128) // self.num_heads if model_config is not None else 64
         self.all_head_size: int = self.num_heads * self.head_dim
-        self.hidden_size: int = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
+        self.hidden_size: int = getattr(model_config, "hidden_size", 128) if model_config is not None else 768
 
         if ranks is None:
             ranks = {"q": 64, "k": 64, "v": 64, "o": 64}
@@ -418,8 +418,8 @@ def gather_attention_weights(model: Any) -> Tuple[List[np.ndarray], List[str]]:
 
 
 def inject_spectron(
-    model: Any, rank_dict: Dict[str, int], args: Any, config: Any
-) -> None:
+    model: Any, rank_dict: Dict[str, int], args: Any, config: Any,
+    **kwargs) -> None:
     r"""Inject SpectronAttention into all DistilBERT transformer layers."""
     for lid in range(len(model.distilbert.transformer.layer)):
         distil_layer = model.distilbert.transformer.layer[lid]
@@ -478,8 +478,8 @@ class SparsePruningCallback(TrainerCallback):
     r"""Trainer callback periodically magnitude-pruning sparse residual parameters."""
 
     def __init__(
-        self, model: Any, prune_freq: int = 200, final_sparsity: float = 0.7
-    ) -> None:
+        self, model: Any, prune_freq: int = 200, final_sparsity: float = 0.7,
+    **kwargs) -> None:
         self.model: Any = model
         self.prune_freq: int = prune_freq
         self.final_sparsity: float = final_sparsity
