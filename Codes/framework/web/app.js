@@ -24,7 +24,11 @@ let modalLossChart = null;
 let modalBreakdownChart = null;
 
 // Helper: safe formatting
-const fN = (val, dec = 2) => typeof val === 'number' ? val.toFixed(dec) : '-';
+const fN = (val, dec = 2) => {
+  if (val === null || val === undefined || val === '' || val === '-') return '-';
+  const n = typeof val === 'number' ? val : parseFloat(val);
+  return (!isNaN(n) && isFinite(n)) ? n.toFixed(dec) : '-';
+};
 
 function switchTab(tabId) {
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
