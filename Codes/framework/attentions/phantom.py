@@ -241,7 +241,7 @@ class PHANTOMAttention(BaseAttention):
 
         model_config = config or kwargs.get("model_config", None)
         hidden_size = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
-        num_heads = getattr(model_config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        num_heads = getattr(model_config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.num_heads: int = num_heads
         self.head_dim: int = hidden_size // num_heads if num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim

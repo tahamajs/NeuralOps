@@ -60,9 +60,9 @@ class DecayLinearAttention(BaseAttention):
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(config, "num_attention_heads", 12)
+                num_heads = getattr(config, "num_attention_heads", 4)
             else:
-                num_heads = kwargs.get("num_attention_heads", 12)
+                num_heads = kwargs.get("num_attention_heads", 4)
 
         self.dim: int = int(d_model)
         self.num_heads: int = int(num_heads)
@@ -203,13 +203,13 @@ def inject_decay_linear(
 ) -> DecayLinearAttention:
     r"""Injection hook for DecayLinearAttention."""
     d_model = 128  # fixed: was hardcoded 768
-    num_heads = 12
+    num_heads = 4
     if model_config is not None:
         d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-        num_heads = getattr(model_config, "num_attention_heads", 12)
+        num_heads = getattr(model_config, "num_attention_heads", 4)
     elif hasattr(layer, "config"):
         d_model = getattr(layer.config, "hidden_size", 768)
-        num_heads = getattr(layer.config, "num_attention_heads", 12)
+        num_heads = getattr(layer.config, "num_attention_heads", 4)
 
     new_block = DecayLinearAttention(config=model_config, d_model=d_model, num_heads=num_heads, **kwargs)
     src_attn = old_attn if old_attn is not None else layer

@@ -30,7 +30,7 @@ class ProgressiveTokenPruning(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         self.d_model = getattr(config, "hidden_size", d_model or kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim = self.d_model // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
         self.keep_ratio = keep_ratio

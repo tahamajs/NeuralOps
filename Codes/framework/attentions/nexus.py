@@ -174,7 +174,7 @@ class SeerGating(nn.Module):
         gate_rank: int,
         top_k: int,
         temperature: float = 1.0,
-    ) -> None:
+    **kwargs) -> None:
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = head_dim
@@ -441,7 +441,7 @@ class NEXUSAttention(BaseAttention):
         total_layers: int = 6,
         pretrained_attn: Optional[nn.Module] = None,
         bert_mode: bool = False,
-    ) -> None:
+    **kwargs) -> None:
         super().__init__(model_config)
         self.num_heads: int = model_config.num_attention_heads
         self.head_dim: int = model_config.hidden_size // self.num_heads
@@ -600,7 +600,7 @@ def inject_nexus_into_distilbert(
     layer_idx: int,
     total_layers: int,
     old_attn: Any,
-) -> NEXUSAttention:
+    **kwargs) -> NEXUSAttention:
     r"""Replace the layer's attention sub-layer with NEXUS and copy pretrained weights."""
     new_attn = NEXUSAttention(
         model_config=model_config,
@@ -629,7 +629,7 @@ def inject_nexus(
     layer_idx: int,
     total_layers: int,
     old_attn: Any,
-) -> NEXUSAttention:
+    **kwargs) -> NEXUSAttention:
     r"""Registry bridge converting generic CompressionConfig into NEXUSConfig."""
     nexus_cfg = NEXUSConfig(
         block_size=getattr(comp_config, "block_size", 32),

@@ -55,7 +55,7 @@ class HGRN2OuterBlock(BaseAttention):
             elif config is not None:
                 dim = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
         if dim is None:
-            dim = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
+            dim = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 128)))
 
         if hasattr(dim, "hidden_size"):
             dim = dim.hidden_size
@@ -216,13 +216,13 @@ def inject_hgrn2_outer(
 ) -> HGRN2OuterBlock:
     r"""Injection hook for HGRN2OuterBlock."""
     dim = 128
-    num_heads: int = 12
+    num_heads = 4
     if model_config is not None:
-        dim = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-        num_heads = getattr(model_config, "num_attention_heads", 12)
+        dim = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
+        num_heads = getattr(model_config, "num_attention_heads", 4)
     elif hasattr(layer, "config"):
         dim = getattr(layer.config, "hidden_size", 128)
-        num_heads = getattr(layer.config, "num_attention_heads", 12)
+        num_heads = getattr(layer.config, "num_attention_heads", 4)
 
     new_block = HGRN2OuterBlock(dim=dim, num_heads=num_heads, config=model_config, **kwargs)
     src_attn = old_attn if old_attn is not None else layer

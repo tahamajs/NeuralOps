@@ -139,7 +139,7 @@ def inject_mla(
         def __init__(self, cfg,
         **kwargs):
             self.hidden_size = getattr(cfg, "hidden_size", 768)
-            self.num_attention_heads = getattr(cfg, "num_attention_heads", 12)
+            self.num_attention_heads = getattr(cfg, "num_attention_heads", 4)
             self.dropout = getattr(cfg, "attention_probs_dropout_prob", getattr(cfg, "dropout", 0.1))
             self.mla_rank = rank
 
