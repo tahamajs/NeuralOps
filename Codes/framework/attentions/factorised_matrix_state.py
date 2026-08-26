@@ -77,6 +77,7 @@ class FactorisedMatrixState(BaseAttention):
         self.W_res = nn.Linear(self.d_model, self.d_model, bias=True)
 
         self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
+        self.use_checkpointing: bool = kwargs.get("use_checkpointing", True)
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights."""
@@ -175,9 +176,17 @@ class FactorisedMatrixState(BaseAttention):
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
-        y_fwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=False)
-        y_bwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=True)
-        y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
+        if self.training and self.use_checkpointing and hidden_states.requires_grad:
+            import torch.utils.checkpoint as cp
+            def _scan_fn(q_, k_, v_, decay_, mask_):
+                yf = self._matrix_scan(q_, k_, v_, decay_, mask=mask_, reverse=False)
+                yb = self._matrix_scan(q_, k_, v_, decay_, mask=mask_, reverse=True)
+                return 0.5 * (yf + yb)
+            y = cp.checkpoint(_scan_fn, q, k, v, decay, mask_bool, use_reentrant=False)
+        else:
+            y_fwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=False)
+            y_bwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=True)
+            y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
 
         y = y.transpose(1, 2).contiguous().view(B, L, D)
 
