@@ -74,7 +74,7 @@ class HymbaTransXBlock(BaseAttention):
         self.W_q2 = nn.Linear(self.dim, self.dim, bias=False)
         self.W_k2 = nn.Linear(self.dim, self.dim, bias=False)
         self.W_v = nn.Linear(self.dim, self.dim, bias=False)
-        self.mamba = SimpleSSM(self.dim)
+        self.mamba = SimpleSSM(d_model=self.dim, config=config)
         self.out_proj = nn.Linear(self.dim, self.dim)
         self.alpha = nn.Parameter(torch.tensor(0.5))
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
@@ -108,7 +108,13 @@ class HymbaTransXBlock(BaseAttention):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         x = hidden_states

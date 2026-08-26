@@ -14,9 +14,9 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("token_compressed")
-@ATTENTION_REGISTRY.register("token_compressed_attention")
-@ATTENTION_REGISTRY.register("token_compressed_module")
+# canonical token_compressed in token_compressed.py
+# canonical in token_compressed.py
+# canonical in token_compressed.py
 class TokenCompressedAttention(BaseAttention):
     r"""
     Token-Compressed Attention Module.
@@ -122,7 +122,13 @@ class TokenCompressedAttention(BaseAttention):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, L, D = hidden_states.shape

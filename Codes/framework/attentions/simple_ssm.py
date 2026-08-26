@@ -50,6 +50,9 @@ class SimpleSSM(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        if isinstance(config, int):
+            d_model = config
+            config = None
         if d_model is None:
             if config is not None:
                 d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
@@ -144,7 +147,13 @@ class SimpleSSM(BaseAttention):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Compute SSM recurrence over sequence tokens."""
