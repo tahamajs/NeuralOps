@@ -95,12 +95,12 @@ class ProgressiveTokenPruning(BaseAttention):
 
         scores = torch.sigmoid(self.score_network(x)).squeeze(-1)  # (B, L)
         # Always guarantee preservation of [CLS] (index 0)
-        scores[:, 0] = 1e6
+        scores[:, 0] = 1e4
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                scores = scores.masked_fill(attention_mask == 0, -1e6)
-                scores[:, 0] = 1e6
+                scores = scores.masked_fill(attention_mask == 0, -10000.0)
+                scores[:, 0] = 1e4
 
         k = max(2, min(L, int(L * self.keep_ratio)))
         _, top_indices = torch.topk(scores, k, dim=-1)

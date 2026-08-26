@@ -34,23 +34,23 @@ def entmax15_bisect(
     # If mask is provided, mask out invalid keys with large negative value
     if valid_mask is not None:
         # valid_mask: broadcastable to scores [B, H, L, S]
-        scores_valid = scores.masked_fill(~valid_mask, -1e9)
+        scores_valid = scores.masked_fill(~valid_mask, -10000.0)
     else:
         scores_valid = scores
 
     # Shift scores for numerical stability
     max_scores = scores_valid.amax(dim=dim, keepdim=True)
     # Clamp -inf max_scores if all are masked
-    max_scores = torch.where(max_scores < -1e8, torch.zeros_like(max_scores), max_scores)
+    max_scores = torch.where(max_scores < -5000.0, torch.zeros_like(max_scores), max_scores)
     scores_shift = scores_valid - max_scores
     scaled = scores_shift * alpha_minus_1
 
     # Bisection search interval bounded ONLY by valid tokens
     if valid_mask is not None:
-        scaled_for_min = scaled.masked_fill(~valid_mask, 1e9)
+        scaled_for_min = scaled.masked_fill(~valid_mask, 10000.0)
         tau_lo = scaled_for_min.amin(dim=dim, keepdim=True) - 1.0
         # If all tokens were invalid in some row, clamp tau_lo
-        tau_lo = torch.where(tau_lo > 1e8, torch.zeros_like(tau_lo) - 1.0, tau_lo)
+        tau_lo = torch.where(tau_lo > 5000.0, torch.zeros_like(tau_lo) - 1.0, tau_lo)
     else:
         tau_lo = scaled.amin(dim=dim, keepdim=True) - 1.0
     
