@@ -7,11 +7,33 @@ on:
     branches: [ main ]
 
 jobs:
-  test-suite:
+  syntax-check:
+    name: Bytecode & Syntax Compilation
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Syntax and Bytecode Check
+      run: |
+        python -m py_compile Codes/framework/attentions/*.py
+        python -m py_compile Codes/framework/compression_engine/*.py
+        python -m py_compile Codes/framework/*.py
+
+  unit-tests:
+    name: Unit & Statistics Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
 
     steps:
     - uses: actions/checkout@v4
@@ -27,14 +49,36 @@ jobs:
         pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
         pip install transformers datasets accelerate scikit-learn scipy numpy pandas matplotlib seaborn tabulate pydantic psutil tqdm pytest pytest-cov codecarbon
 
-    - name: Syntax and Bytecode Compilation Check
-      run: |
-        python -m py_compile Codes/framework/attentions/*.py
-        python -m py_compile Codes/framework/compression_engine/*.py
-        python -m py_compile Codes/framework/*.py
-
-    - name: Run Test Suite
+    - name: Run Core & Extended Unit Tests
       env:
         PYTHONPATH: Codes:.
       run: |
-        python -m pytest Codes/framework/tests/ -v --tb=short -k "not gpu" || true
+        python -m pytest Codes/framework/tests/test_advanced_statistics.py \
+                         Codes/framework/tests/test_parquet_and_storage.py \
+                         Codes/framework/tests/test_extended_loaders.py \
+                         Codes/framework/tests/test_attention_injection.py \
+                         -v --tb=short
+
+    - name: Run Full Test Suite
+      env:
+        PYTHONPATH: Codes:.
+      run: |
+        python -m pytest Codes/framework/tests/ -v --tb=short -k "not gpu and not slow" || true
+
+  packaging-and-reproducibility:
+    name: Submission Packager & Smoke Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Test Dual-Conference Packager (NeurIPS & ICLR)
+      run: |
+        python prepare_submission.py --target neurips
+        python prepare_submission.py --target iclr
+        test -f submissions/neurips_supplementary_material.zip
+        test -f submissions/iclr_supplementary_material.zip
