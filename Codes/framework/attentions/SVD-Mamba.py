@@ -202,16 +202,40 @@ class SVDMamba(BaseAttention):
 
         A = -torch.exp(self.A_log)                # [d_state]
 
-        h = x_conv.new_zeros(batch, self.inner_dim, self.d_state)
-        outputs = []
-        for t in range(seqlen):
-            dt = delta[:, t]                      # [B, inner]
-            decay = torch.exp(dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0))
-            input_term = dt.unsqueeze(-1) * B[:, t, None, :] * x_conv[:, t, :, None]
-            h = decay * h + input_term
-            y_t = (C[:, t, None, :] * h).sum(dim=-1)
-            outputs.append(y_t)
-        y = torch.stack(outputs, dim=1)           # [B, L, inner]
+        # Vectorized / Chunked Associative Parallel Scan
+        log_alpha = delta.unsqueeze(-1) * A.view(1, 1, 1, -1) # [B, L, inner, d_state]
+        u = delta.unsqueeze(-1) * B.unsqueeze(2) * x_conv.unsqueeze(-1) # [B, L, inner, d_state]
+
+        chunk_size = 16
+        num_chunks = (seqlen + chunk_size - 1) // chunk_size
+        h_running = x_conv.new_zeros(batch, self.inner_dim, self.d_state)
+        y_chunks = []
+        mask = torch.tril(torch.ones(chunk_size, chunk_size, device=hidden_states.device, dtype=torch.bool))
+
+        for c in range(num_chunks):
+            s_idx = c * chunk_size
+            e_idx = min(seqlen, s_idx + chunk_size)
+            k_len = e_idx - s_idx
+
+            u_c = u[:, s_idx:e_idx] # [B, K, inner, d_state]
+            log_a_c = log_alpha[:, s_idx:e_idx]
+            lambda_c = torch.cumsum(log_a_c, dim=1)
+
+            lam = lambda_c.permute(0, 2, 3, 1) # [B, inner, d_state, K]
+            lam_diff = lam.unsqueeze(-1) - lam.unsqueeze(-2)
+            cur_mask = mask[:k_len, :k_len]
+            decay_w = torch.exp(torch.where(cur_mask, lam_diff, torch.tensor(-1e4, device=hidden_states.device, dtype=lam.dtype)))
+
+            h_from_prev = torch.exp(lambda_c) * h_running.unsqueeze(1)
+            u_p = u_c.permute(0, 2, 3, 1)
+            h_intra = torch.matmul(decay_w, u_p.unsqueeze(-1)).squeeze(-1).permute(0, 3, 1, 2)
+
+            h_chunk = h_from_prev + h_intra # [B, K, inner, d_state]
+            y_c = (C[:, s_idx:e_idx].unsqueeze(2) * h_chunk).sum(dim=-1)
+            y_chunks.append(y_c)
+            h_running = h_chunk[:, -1]
+
+        y = torch.cat(y_chunks, dim=1)           # [B, L, inner]
 
         y = y + self.D * x_conv                    # skip connection
         y = y * F.silu(z)                          # gate
