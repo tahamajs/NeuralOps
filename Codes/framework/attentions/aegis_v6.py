@@ -21,7 +21,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 class AegisConfigV3:
     hidden_size: int = 768
     num_heads = 4
-    num_attention_heads: int = 12
+    num_attention_heads: int = 4
     head_dim: int = 64
     window_size: int = 64
     svd_rank: int = 128
@@ -39,6 +39,28 @@ class AegisConfigV3:
     kernel_use_float64: bool = False
     kernel_seed: Optional[int] = None
     fusion_gate_bias: float = 1.8
+
+    def __init__(self, **kwargs):
+        self.hidden_size = kwargs.get("hidden_size", 128)
+        self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 4))
+        self.num_attention_heads = self.num_heads
+        self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
+        self.window_size = kwargs.get("window_size", 64)
+        self.svd_rank = kwargs.get("svd_rank", min(128, self.hidden_size))
+        self.low_rank_update = kwargs.get("low_rank_update", 16)
+        self.kernel_feature_dim = kwargs.get("kernel_feature_dim", 128)
+        self.dropout = kwargs.get("dropout", 0.1)
+        self.use_query_gate = kwargs.get("use_query_gate", True)
+        self.use_input_gate = kwargs.get("use_input_gate", True)
+        self.use_pre_norm = kwargs.get("use_pre_norm", False)
+        self.long_context_threshold = kwargs.get("long_context_threshold", 2048)
+        self.max_global_tokens = kwargs.get("max_global_tokens", 1024)
+        self.kernel_method = kwargs.get("kernel_method", "orthogonal")
+        self.kernel_clamp_min = kwargs.get("kernel_clamp_min", -20.0)
+        self.kernel_clamp_max = kwargs.get("kernel_clamp_max", 20.0)
+        self.kernel_use_float64 = kwargs.get("kernel_use_float64", False)
+        self.kernel_seed = kwargs.get("kernel_seed", None)
+        self.fusion_gate_bias = kwargs.get("fusion_gate_bias", 1.8)
 
     def __post_init__(self):
         self.num_attention_heads = self.num_heads
