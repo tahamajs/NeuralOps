@@ -162,6 +162,48 @@ PYTHONPATH=Codes python3 Codes/framework/parallel_track_checker.py \
 
 ---
 
+---
+
+## 🏆 Two-Phase Benchmark Suite (NeurIPS / ICLR Submission Track)
+
+NeuralOps features an end-to-end automated two-phase evaluation framework designed to produce publication-grade empirical results with rigorous multi-seed statistical significance analysis.
+
+### Single-Command Reproducibility
+
+```bash
+# On Linux / macOS:
+./run_full_benchmark.sh
+
+# On Windows / Remote CUDA Host:
+run_full_benchmark.bat
+```
+
+### Benchmark Architecture
+
+1. **Phase 1: High-Throughput Adaptive Efficiency Sweep**
+   - Evaluates all 236 Attention and 107 Compression mechanisms across 720 combinations.
+   - Proactively measures VRAM footprint via micro-batch memory probing to prevent CUDA OOMs.
+   - Captures Forward/Backward latencies, peak memory, throughput (tokens/sec), and analytical FLOPs/MACs.
+
+2. **Phase 2: Multi-Seed Statistical Quality Benchmark**
+   - **20 Architectures**: `full`, `svd_linear_attention`, `svd_mamba`, `mamba`, `samba_m3`, `gated_deltanet_block`, `griffin_ssd`, `performer_attention`, `cosformer`, `linformer_attention`, `galerkin_attention`, `adaptive_span`, `soa_attn`, `aegis_v6`, `block_transformer_hiba`, `leka_v3`, `nasc_attention`, `minimal_svd`, `jamba2`, `spectron`.
+   - **Model Diversity**: `BERT`, `RoBERTa`, `DistilBERT`, `T5` (Encoder classification head).
+   - **GLUE Tasks**: `SST-2` (Accuracy, F1), `MRPC` (Accuracy, F1), `CoLA` (Matthews Correlation Coefficient), `STS-B` (Pearson & Spearman correlation).
+   - **Multi-Seed Protocol**: Evaluated over 3 independent seeds (`42, 123, 777`) with `AdamW(lr=3e-5, weight_decay=0.01)` and 10% linear warmup.
+   - **Statistical Significance**: Computes sample mean ($\mu$), standard deviation ($\sigma$), 95% Student's $t$ Confidence Intervals, paired two-tailed $t$-tests vs baseline `full`, and family-wise Bonferroni ($p_{\text{bonf}}$) / Benjamini-Hochberg FDR adjustments.
+
+### Generated Publication Artifacts
+
+Each quality run outputs into `results/run_quality_<YYYYMMDD_HHMMSS>/`:
+- `LATEX_QUALITY_TABLE.tex` – Publication-grade booktabs table with 95% CIs and Bonferroni-corrected $p$-values.
+- `LATEX_EFFICIENCY_TABLE.tex` – Dense computational efficiency matrix.
+- `plots/accuracy_vs_latency_pareto.png` / `.pdf` – High-resolution Pareto frontier.
+- `plots/top5_radar_multimetric.png` / `.pdf` – 5-axis polar radar visualization.
+- `plots/accuracy_heatmap.png` / `.pdf` – GLUE multi-task performance heatmap.
+- `QUALITY_BENCHMARK_REPORT.md` – Complete executive summary report.
+
+---
+
 ## 🏛️ Full-Stack Research Workspace
 
 - **Frontend UI (React 18 + Vite + TailwindCSS)**: Located in [`Codes/frontend/`](file:///Users/tahamajs/Documents/uni/Project/Codes/frontend/). Features interactive 3D latent space visualizers, Pareto frontier analysis, and real-time telemetry.
