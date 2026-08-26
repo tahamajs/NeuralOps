@@ -157,15 +157,24 @@ def get_completed_results() -> List[Dict[str, Any]]:
                 
                 fwd_m = re.search(r'fwd:\s*([0-9.]+)ms', details)
                 if fwd_m:
-                    fwd_ms = fwd_m.group(1)
+                    try:
+                        fwd_ms = float(fwd_m.group(1))
+                    except ValueError:
+                        fwd_ms = None
                     
                 bwd_m = re.search(r'bwd:\s*([0-9.]+)ms', details)
                 if bwd_m:
-                    bwd_ms = bwd_m.group(1)
+                    try:
+                        bwd_ms = float(bwd_m.group(1))
+                    except ValueError:
+                        bwd_ms = None
                     
                 mem_m = re.search(r'mem:\s*([0-9.]+)MB', details)
                 if mem_m:
-                    mem_mb = mem_m.group(1)
+                    try:
+                        mem_mb = float(mem_m.group(1))
+                    except ValueError:
+                        mem_mb = None
 
                 try:
                     ts = datetime.strptime(ts_str.split(",")[0], "%Y-%m-%d %H:%M:%S")
