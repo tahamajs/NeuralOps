@@ -56,12 +56,14 @@ logger = logging.getLogger("QualitySweep")
 DEFAULT_QUALITY_MODULES = [
     "full",
     "svd_linear_attention",
+    "svd_mamba",
     "mamba",
     "samba_m3",
+    "gated_deltanet_block",
     "performer_attention",
     "linformer_attention",
     "galerkin_attention",
-    "adaptive_span_attention",
+    "adaptive_span",
     "soa_attn",
     "aegis_v6",
     "block_transformer_hiba",
@@ -70,6 +72,8 @@ DEFAULT_QUALITY_MODULES = [
     "griffin_ssd",
     "cosformer",
     "minimal_svd",
+    "jamba2",
+    "spectron",
 ]
 
 
