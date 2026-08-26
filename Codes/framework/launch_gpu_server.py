@@ -276,14 +276,14 @@ def main() -> None:
     parser.add_argument("--mode", type=str, default="comprehensive", help="Execution mode (comprehensive, fast, diagnostics)")
     parser.add_argument("--models", type=str, default="bert,roberta,t5")
     parser.add_argument("--datasets", type=str, default="sst2,mrpc")
-    parser.add_argument("--precision", type=str, default="bf16")
-    parser.add_argument("--batch_size", type=int, default=128)
-    parser.add_argument("--seq_len", type=int, default=256)
+    parser.add_argument("--precision", type=str, default="fp16")
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--seq_len", type=int, default=128)
     parser.add_argument("--max_steps", type=int, default=5)
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--workers", type=int, default=1, help="Number of worker threads")
     parser.add_argument("--tracks", type=str, default=None)
-    parser.add_argument("--output_dir", type=str, default="./results/gpu_server")
+    parser.add_argument("--output_dir", type=str, default="./results/full_validation")
     args = parser.parse_args()
 
     models = [m.strip().lower() for m in args.models.split(",") if m.strip()]
