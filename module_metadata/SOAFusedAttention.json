@@ -1,13 +1,9 @@
 {
   "module_name": "SOAFusedAttention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/SOAFusedAttention.py",
   "class_name": "SOAFusedAttention",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "Fused SOA Attention module factorizing Q/K/V projections with low-rank bottlenecks.",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "down",
     "up",
     "model_config",
@@ -15,29 +11,19 @@
     "dropout",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "softmax",
     "dropout",
     "matmul",
     "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Fused SOA Attention module factorizing Q/K/V projections with low-rank bottlenecks.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 59088681372739326135209165862717021011
 }

@@ -1,34 +1,24 @@
 {
   "module_name": "gated_deltanet_block",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/gated_deltanet_block.py",
   "class_name": "GatedDeltaNetBlock",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "Gated DeltaNet Transformer Block with Pretrained Weight Transfer.\n\nMathematical Formulation:\n    $$\\text{Output} = \\begin{cases}\n        \\text{LayerNorm}(X + \\text{MHA}(X, X, X)), & \\text{if } \\text{use\\_full\\_attention} \\\\\n        \\text{LayerNorm}(X + \\text{GatedDeltaNet}(X)), & \\text{otherwise}\n  ",
-  "init_params": [
+  "category": "attention",
+  "family": "ssm",
+  "params": [
     "config",
     "rank",
     "d_model",
     "num_heads",
     "use_full_attention"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "ops": [
+    "norm"
+  ],
+  "docstring": "Gated DeltaNet Transformer Block with Pretrained Weight Transfer.\n\nMathematical Formulation:\n    $$\\text{Output} = \\begin{cases}\n        \\text{LayerNorm}(X + \\text{MHA}(X, X, X)), & \\text{if } \\text{use\\_full\\_attention} \\\\\n        \\text{LayerNorm}(X + \\text{GatedDeltaNet}(X)), & \\text{otherwise}\n    \\end{cases}$$",
+  "rank": 32,
+  "d_state": 16,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 59238827597522638486713671671801408352
 }
