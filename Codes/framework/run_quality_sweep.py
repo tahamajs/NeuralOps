@@ -748,8 +748,8 @@ def run_quality_benchmark_sweep(
 def main():
     parser = argparse.ArgumentParser(description="NeuralOps Phase 2 Multi-Seed Quality Benchmark Suite")
     parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names")
-    parser.add_argument("--models", type=str, default="bert,roberta", help="Comma-separated model families")
-    parser.add_argument("--datasets", type=str, default="sst2,mrpc", help="Comma-separated GLUE datasets")
+    parser.add_argument("--models", type=str, default="bert,roberta,distilbert,t5", help="Comma-separated model families")
+    parser.add_argument("--datasets", type=str, default="sst2,mrpc,cola,stsb", help="Comma-separated GLUE datasets")
     parser.add_argument("--seeds", type=str, default="42,123,777", help="Comma-separated random seeds")
     parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--max_steps", type=int, default=20, help="Training steps per seed")

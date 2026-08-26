@@ -28,8 +28,8 @@ def wait_for_efficiency_and_run_quality(
     max_steps: int = 20,
     epochs: int = 3,
     seeds: str = "42,123,777",
-    models: str = "bert,roberta",
-    datasets: str = "sst2,mrpc",
+    models: str = "bert,roberta,distilbert,t5",
+    datasets: str = "sst2,mrpc,cola,stsb",
     precision: str = "fp16",
 ):
     logger.info("================================================================================")
