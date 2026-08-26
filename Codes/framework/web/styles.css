@@ -159,6 +159,11 @@ body {
 .action-buttons-small button { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 4px; cursor: pointer; transition: 0.2s; }
 .action-buttons-small button:hover { background: rgba(255,255,255,0.1); color: white; }
 
+.loss-meta-badges { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.meta-badge { font-family: var(--font-mono); font-size: 0.7rem; background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); }
+.badge-module { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border-color: rgba(56, 189, 248, 0.3); font-weight: 700; }
+.badge-time { background: rgba(16, 185, 129, 0.15); color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
+
 .search-wrap input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.5rem 1rem; border-radius: 99px; font-size: 0.8rem; width: 250px; outline: none; font-family: var(--font-sans); }
 .search-wrap input:focus { border-color: var(--accent-blue); }
 
