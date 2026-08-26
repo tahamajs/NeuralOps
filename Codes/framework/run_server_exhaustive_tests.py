@@ -18,8 +18,7 @@ sys.path.insert(0, str(base_dir))
 
 import torch
 import torch.nn as nn
-from framework.attentions import ATTENTION_REGISTRY
-from framework.compression_engine import COMPRESSOR_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from framework.eval_all_models_datasets import (
     TRACK_MODULES,
     build_model_instance,
@@ -48,32 +47,33 @@ print("\n[Part 1] Testing ALL Benchmark Track Attention Modules on CUDA (FP16 + 
 attn_passed = 0
 attn_failed = []
 
-for track, module_list in TRACK_MODULES.items():
-    print(f"\n--- Testing {track} ({len(module_list)} modules) ---")
-    for mod_info in module_list:
-        name = mod_info["name"]
-        mtype = mod_info.get("type", "attention")
-        try:
-            model, cfg = build_model_instance("bert", num_labels=2, hidden_size=128, num_heads=4, num_layers=2, device=device)
-            model, _ = apply_module_to_model(model, name, mtype, rank=16, device=device)
-            model.train()
-            
-            input_ids = torch.randint(0, 1000, (2, 32), device=device)
-            attention_mask = torch.ones((2, 32), device=device)
-            labels = torch.tensor([0, 1], device=device)
-            
-            with torch.amp.autocast(device_type="cuda" if torch.cuda.is_available() else "cpu"):
-                out = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-                logits, loss = _extract_logits_and_loss(out, num_labels=2, labels=labels)
-                if loss is None:
-                    loss = logits.mean()
-            
-            loss.backward()
-            attn_passed += 1
-            print(f"  [PASS] {track} | {name} ({mtype})")
-        except Exception as e:
-            attn_failed.append((track, name, str(e)))
-            print(f"  [FAIL] {track} | {name} ({mtype}): {e}")
+for track, cat_dict in TRACK_MODULES.items():
+    total_in_track = sum(len(v) for v in cat_dict.values())
+    print(f"\n--- Testing {track} ({total_in_track} modules) ---")
+    for cat_name, module_names in cat_dict.items():
+        mtype = "attention" if "attn" in cat_name else "compressor"
+        for name in module_names:
+            try:
+                model, cfg = build_model_instance("bert", num_labels=2, hidden_size=128, num_heads=4, num_layers=2, device=device)
+                model, _ = apply_module_to_model(model, name, mtype, rank=16, device=device)
+                model.train()
+                
+                input_ids = torch.randint(0, 1000, (2, 32), device=device)
+                attention_mask = torch.ones((2, 32), device=device)
+                labels = torch.tensor([0, 1], device=device)
+                
+                with torch.amp.autocast(device_type="cuda" if torch.cuda.is_available() else "cpu"):
+                    out = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+                    logits, loss = _extract_logits_and_loss(out, num_labels=2, labels=labels)
+                    if loss is None:
+                        loss = logits.mean()
+                
+                loss.backward()
+                attn_passed += 1
+                print(f"  [PASS] {track} | {name} ({mtype})")
+            except Exception as e:
+                attn_failed.append((track, name, str(e)))
+                print(f"  [FAIL] {track} | {name} ({mtype}): {e}")
 
 # -------------------------------------------------------------
 # Part 2: Exhaustive Compressor Module Validation on CUDA
@@ -150,7 +150,7 @@ except Exception as e:
 print("\n" + "=" * 70)
 print("FINAL GPU SERVER VERIFICATION SUMMARY")
 print("=" * 70)
-total_track_mods = sum(len(v) for v in TRACK_MODULES.values())
+total_track_mods = sum(sum(len(mods) for mods in cat.values()) for cat in TRACK_MODULES.values())
 print(f"Track Modules Tested:       {total_track_mods} (PASSED: {attn_passed}, FAILED: {len(attn_failed)})")
 print(f"Compressor Modules Tested:  {len(COMPRESSOR_REGISTRY)} (PASSED: {comp_passed}, FAILED: {len(comp_failed)})")
 print(f"Model Architectures Tested: 5 (PASSED: {arch_passed}, FAILED: {len(arch_failed)})")
