@@ -455,15 +455,16 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
     # Format module leaderboard list
     leaderboard = []
     for mod, data in module_stats.items():
-        avg_fwd = round(sum(data["fwd_list"]) / len(data["fwd_list"]), 2) if data["fwd_list"] else 0.0
-        avg_bwd = round(sum(data["bwd_list"]) / len(data["bwd_list"]), 2) if data["bwd_list"] else 0.0
-        avg_mem = round(sum(data["mem_list"]) / len(data["mem_list"]), 1) if data["mem_list"] else 0.0
-        avg_acc = round(sum(data["acc_list"]) / len(data["acc_list"]), 2) if data["acc_list"] else 0.0
-        avg_f1 = round(sum(data["f1_list"]) / len(data["f1_list"]), 4) if data["f1_list"] else 0.0
-        avg_fid = round(sum(data["fid_list"]) / len(data["fid_list"]), 4) if data["fid_list"] else 0.0
-        avg_thru = round(sum(data["thru_list"]) / len(data["thru_list"]), 1) if data["thru_list"] else 0.0
-        total_lat = round(avg_fwd + avg_bwd, 2)
-        succ_rate = round((data["success_count"] / max(1, data["total_runs"])) * 100.0, 1)
+        succ_cnt = data["success_count"]
+        avg_fwd = round(sum(data["fwd_list"]) / len(data["fwd_list"]), 2) if data["fwd_list"] else None
+        avg_bwd = round(sum(data["bwd_list"]) / len(data["bwd_list"]), 2) if data["bwd_list"] else None
+        avg_mem = round(sum(data["mem_list"]) / len(data["mem_list"]), 1) if data["mem_list"] else None
+        avg_acc = round(sum(data["acc_list"]) / len(data["acc_list"]), 2) if data["acc_list"] else None
+        avg_f1 = round(sum(data["f1_list"]) / len(data["f1_list"]), 4) if data["f1_list"] else None
+        avg_fid = round(sum(data["fid_list"]) / len(data["fid_list"]), 4) if data["fid_list"] else None
+        avg_thru = round(sum(data["thru_list"]) / len(data["thru_list"]), 1) if data["thru_list"] else None
+        total_lat = round(avg_fwd + avg_bwd, 2) if (avg_fwd is not None and avg_bwd is not None) else None
+        succ_rate = round((succ_cnt / max(1, data["total_runs"])) * 100.0, 1)
 
         leaderboard.append({
             "module": mod,
@@ -476,15 +477,15 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
             "avg_f1": avg_f1,
             "avg_fidelity": avg_fid,
             "avg_throughput": avg_thru,
-            "success_count": data["success_count"],
+            "success_count": succ_cnt,
             "timeout_count": data["timeout_count"],
             "fail_count": data["fail_count"],
             "total_runs": data["total_runs"],
             "success_rate_pct": succ_rate,
         })
 
-    # Sort leaderboard: primary = avg_fwd_ms ascending (put 0/incomplete at end)
-    leaderboard.sort(key=lambda x: (x["avg_fwd_ms"] == 0, x["avg_fwd_ms"]))
+    # Sort leaderboard: valid modules first (avg_fwd_ms ascending), failed/incomplete at bottom
+    leaderboard.sort(key=lambda x: (x["avg_fwd_ms"] is None, x["avg_fwd_ms"] or 999999))
 
     # Format Model Breakdown
     model_breakdown = {}

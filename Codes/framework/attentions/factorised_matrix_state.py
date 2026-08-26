@@ -107,38 +107,33 @@ class FactorisedMatrixState(BaseAttention):
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
     ) -> torch.Tensor:
-        """Sequential factorized matrix scan."""
+        """Vectorized parallel associative matrix scan."""
         B, H, L, d = q.shape
-        S = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
-        z = torch.zeros(B, H, d, 1, device=q.device, dtype=q.dtype)
-        outputs = []
-
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            q_t = q[:, :, t, :]  # [B, H, d]
-            k_t = k[:, :, t, :]  # [B, H, d]
-            v_t = v[:, :, t, :]  # [B, H, d]
-
-            S_next = decay * S + (k_t.unsqueeze(-1) @ v_t.unsqueeze(-2))
-            z_next = decay * z + k_t.unsqueeze(-1)
-
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1, 1)
-                S = torch.where(m_t, S_next, S)
-                z = torch.where(m_t, z_next, z)
-            else:
-                S = S_next
-                z = z_next
-
-            num = (S @ q_t.unsqueeze(-1)).squeeze(-1)
-            denom = (z.transpose(-1, -2) @ q_t.unsqueeze(-1)).squeeze(-1) + 1e-5
-            y_t = num / denom.clamp(min=1e-5)
-            outputs.append(y_t)
+        pos = torch.arange(L, device=q.device, dtype=torch.float32)
+        diff = pos.unsqueeze(1) - pos.unsqueeze(0)  # [L, L], diff[i, j] = i - j
 
         if reverse:
-            outputs.reverse()
+            causal_mask = (diff <= 0).to(q.dtype)
+            abs_diff = (-diff).clamp(min=0.0)
+        else:
+            causal_mask = (diff >= 0).to(q.dtype)
+            abs_diff = diff.clamp(min=0.0)
 
-        return torch.stack(outputs, dim=2)
+        # decay is [1, H, 1, 1] or [H, 1, 1] -> [H, 1, 1]
+        decay_h = decay.squeeze(0) if decay.dim() == 4 else decay
+        decay_matrix = torch.pow(decay_h, abs_diff.unsqueeze(0)) * causal_mask.unsqueeze(0)  # [H, L, L]
+
+        # Dot product scores: [B, H, L, L]
+        scores = (q @ k.transpose(-1, -2)) * decay_matrix.unsqueeze(0)
+
+        if mask is not None:
+            # mask: [B, L] -> [B, 1, 1, L]
+            m = mask.view(B, 1, 1, L).to(q.dtype)
+            scores = scores * m
+
+        denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-5)
+        y = (scores @ v) / denom  # [B, H, L, d]
+        return y
 
     def forward(
         self,
