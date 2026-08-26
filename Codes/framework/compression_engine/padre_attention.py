@@ -85,7 +85,7 @@ class PADReAttention(BaseAttention):
                 if attention_mask.shape[-2] == attention_mask.shape[-1]:
                     # Additive mask: 0 = attend, large negative = mask
                     attn_weights = attn_weights * (
-                        attention_mask[:, 0, 0, :] > -1e9
+                        attention_mask[:, 0, 0, :] > -10000.0
                     ).unsqueeze(1).unsqueeze(2).to(attn_weights.dtype)
                 else:
                     attn_weights = attn_weights * attention_mask.to(attn_weights.dtype)
