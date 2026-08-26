@@ -80,6 +80,12 @@ class A3FactorizedLinear(nn.Module):
         """Reconstructed effective weight matrix (out_features, in_features)."""
         return torch.matmul(self.U, self.V)
 
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
+        """Sets the low-rank factor parameters."""
+        with torch.no_grad():
+            self.U.data.copy_(U_factor.to(device=self.U.device, dtype=self.U.dtype))
+            self.V.data.copy_(V_factor.to(device=self.V.device, dtype=self.V.dtype))
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Two-stage linear transformation: (..., in_features) -> (..., rank) -> (..., out_features)
         latent = F.linear(x, self.V)
