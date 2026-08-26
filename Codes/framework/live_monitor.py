@@ -1036,13 +1036,11 @@ def _build_stats_response() -> str:
 
     analytics_modules = []
     for m in comparative.get("module_leaderboard", []):
-        is_p2 = (m.get("track") == "quality_phase2" or m.get("track") == "track1_svd")
-        multiplier = 3 if is_p2 and m["total_runs"] <= 4 else 1
         analytics_modules.append({
             "module_name": m["module"],
             "track": m["track"],
-            "total_runs": m["total_runs"] * multiplier,
-            "success_runs": m["success_count"] * multiplier,
+            "total_runs": m["total_runs"],
+            "success_runs": m["success_count"],
             "avg_fwd": m["avg_fwd_ms"],
             "avg_bwd": m["avg_bwd_ms"],
             "avg_mem": m["avg_mem_mb"],
