@@ -51,7 +51,7 @@ for track, cat_dict in TRACK_MODULES.items():
     total_in_track = sum(len(v) for v in cat_dict.values())
     print(f"\n--- Testing {track} ({total_in_track} modules) ---")
     for cat_name, module_names in cat_dict.items():
-        mtype = "attention" if "attn" in cat_name else "compressor"
+        mtype = "attention" if "atten" in cat_name else "compressor"
         for name in module_names:
             try:
                 model, cfg = build_model_instance("bert", num_labels=2, hidden_size=128, num_heads=4, num_layers=2, device=device)
