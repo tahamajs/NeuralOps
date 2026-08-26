@@ -61,8 +61,8 @@ def get_gpu_stats() -> Dict[str, Any]:
     gpu_util, mem_used, mem_total, temp, power = 0.0, 0.0, 8188.0, 0.0, 0.0
     
     nvsmi_candidates = [
-        "nvidia-smi",
         r"C:\Windows\System32\nvidia-smi.exe",
+        "nvidia-smi",
         r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe",
     ]
     
@@ -109,9 +109,65 @@ def get_gpu_stats() -> Dict[str, Any]:
 
 
 def get_completed_results() -> List[Dict[str, Any]]:
-    """Parses comprehensive_run_detached.log and returns structured results with error details."""
+    """Parses active quality sweep summary.csv or comprehensive_run_detached.log."""
     results = []
     error_map = {}
+    
+    # Check active Phase 2 summary.csv first
+    active_csv_candidates = [
+        PROJECT_DIR / "results" / "run_quality_fixed_final" / "summary.csv",
+        Path("results/run_quality_fixed_final/summary.csv"),
+    ]
+    for acsv in active_csv_candidates:
+        if acsv.exists() and acsv.stat().st_size > 0:
+            try:
+                import csv
+                with open(acsv, "r", encoding="utf-8", errors="ignore") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        mod = row.get("module_name", row.get("module", ""))
+                        if not mod:
+                            continue
+                        fwd = float(row["fwd_ms"]) if row.get("fwd_ms") and row["fwd_ms"] not in ("-", "") else None
+                        bwd = float(row["bwd_ms"]) if row.get("bwd_ms") and row["bwd_ms"] not in ("-", "") else None
+                        mem = float(row["peak_vram_mb"]) if row.get("peak_vram_mb") and row["peak_vram_mb"] not in ("-", "") else None
+                        acc = float(row["mean_accuracy"]) if row.get("mean_accuracy") and row["mean_accuracy"] not in ("-", "") else None
+                        f1 = float(row["f1_score"]) if row.get("f1_score") and row["f1_score"] not in ("-", "") else None
+                        fid = float(row["fidelity_score"]) if row.get("fidelity_score") and row["fidelity_score"] not in ("-", "") else None
+                        thru = float(row["throughput_tokens_sec"]) if row.get("throughput_tokens_sec") and row["throughput_tokens_sec"] not in ("-", "") else None
+                        pval = float(row["p_value"]) if row.get("p_value") and row["p_value"] not in ("-", "") else None
+                        ci_lower = float(row["ci_lower"]) if row.get("ci_lower") and row["ci_lower"] not in ("-", "") else None
+                        ci_upper = float(row["ci_upper"]) if row.get("ci_upper") and row["ci_upper"] not in ("-", "") else None
+                        
+                        ts_val = row.get("timestamp", datetime.now().isoformat())
+                        try:
+                            ts = datetime.fromisoformat(ts_val)
+                        except Exception:
+                            ts = datetime.now()
+                            
+                        results.append({
+                            "timestamp": ts,
+                            "track": "quality_phase2",
+                            "module": mod,
+                            "model": row.get("model_family", "BERT").upper(),
+                            "dataset": row.get("dataset", "SST2").upper(),
+                            "status": row.get("status", "PASS").upper(),
+                            "fwd_ms": fwd,
+                            "bwd_ms": bwd,
+                            "mem_mb": mem,
+                            "acc_pct": acc,
+                            "f1_score": f1,
+                            "fidelity_score": fid,
+                            "throughput": thru,
+                            "p_value": pval,
+                            "ci_lower": ci_lower,
+                            "ci_upper": ci_upper,
+                            "error_detail": "None / Success",
+                        })
+                if results:
+                    return results
+            except Exception:
+                pass
     
     log_candidates = [
         PROJECT_DIR / "run_quality_sweep_final_run.log",
@@ -539,9 +595,13 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
 def is_sweep_running() -> bool:
     """Checks if the python benchmark launcher is actively running."""
     try:
-        cmd = ["powershell", "-Command", "Get-Process python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id"]
+        cmd = ["powershell", "-Command", "Get-WmiObject Win32_Process -Filter \"name='python.exe'\" | Select-Object -ExpandProperty CommandLine"]
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-        return bool(res.stdout.strip())
+        if res.returncode == 0:
+            for line in res.stdout.strip().splitlines():
+                if "run_quality_sweep.py" in line or "eval_all_models_datasets.py" in line:
+                    return True
+        return False
     except Exception:
         return False
 
@@ -755,7 +815,7 @@ class RunManager:
                 ts_str = active_results[0]["timestamp"].isoformat() if isinstance(active_results[0]["timestamp"], datetime) else str(active_results[0]["timestamp"])
                 runs.append({
                     "run_id": "run_active",
-                    "name": "Live Adaptive Sweep (v3 - Active)",
+                    "name": "Phase 2 Quality Sweep (Active)",
                     "timestamp": ts_str,
                     "num_combinations": 240,
                     "completed": len(active_results),
@@ -806,6 +866,8 @@ class RunManager:
     def _parse_single_run_dir(cls, dir_path: Path, runs_list: List[Dict[str, Any]]) -> None:
         """Helper to parse a single run folder and append metadata to runs_list."""
         run_id = dir_path.name
+        if run_id == "run_quality_fixed_final" and is_sweep_running():
+            return
         cfg_file = dir_path / "config.json"
         sum_file = dir_path / "summary.csv"
         bench_csv = dir_path / "benchmark_summary.csv"
@@ -895,7 +957,7 @@ class RunManager:
 
             return {
                 "run_id": "run_active",
-                "name": "Live Adaptive Sweep (v3 - Active)",
+                "name": "Phase 2 Quality Sweep (Active)",
                 "is_active": True,
                 "timestamp": datetime.now().isoformat(),
                 "config": {
@@ -1068,6 +1130,8 @@ class RunManager:
                 "total": len(results),
             },
             "results": results,
+            "gpu": get_gpu_stats(),
+            "progress": compute_eta_and_progress(results, total_combos=240),
         }
 
     @classmethod

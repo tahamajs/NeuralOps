@@ -1,0 +1,150 @@
+[
+  {
+    "run_id": "run_quality_20260826_182415",
+    "module_name": "full",
+    "model_family": "BERT",
+    "dataset": "SST2",
+    "status": "PASS",
+    "metrics": {
+      "accuracy": 52.34,
+      "accuracy_std": 0.0,
+      "ci_lower": 52.34,
+      "ci_upper": 52.34,
+      "p_value_vs_baseline": 1.0,
+      "p_value_bonferroni": 1.0,
+      "f1": 0.6872,
+      "mcc": null,
+      "pearson": null,
+      "spearman": null,
+      "perplexity": null
+    },
+    "efficiency": {
+      "fwd_ms": 439.02,
+      "bwd_ms": 272.05,
+      "peak_vram_mb": 0.0,
+      "flops": 143726280704.0,
+      "throughput_tokens_sec": 23041.3
+    },
+    "fidelity": 1.0,
+    "statistics": {
+      "ci_95": [
+        52.34,
+        52.34
+      ],
+      "paired_t_pvalue": 1.0,
+      "p_value_bonferroni": 1.0,
+      "sample_size": 1
+    },
+    "trajectories": {
+      "loss": [
+        0.6912,
+        0.6845,
+        0.6901,
+        0.6893,
+        0.6866
+      ],
+      "grad_norm": [
+        0.1827,
+        0.771,
+        0.199,
+        0.264,
+        0.2398
+      ],
+      "fwd_latency_ms": [
+        439.02
+      ]
+    },
+    "seeds": [
+      {
+        "seed": 42,
+        "accuracy_pct": 52.34,
+        "f1_score": 0.6872,
+        "fidelity_score": 1.0,
+        "fwd_latency_ms": 439.02,
+        "bwd_latency_ms": 272.05,
+        "peak_vram_mb": 0.0,
+        "throughput_tokens_sec": 23041.3,
+        "flops_macs": 143726280704.0,
+        "loss_trajectory": [
+          0.6912,
+          0.6845,
+          0.6901,
+          0.6893,
+          0.6866
+        ],
+        "grad_norm_trajectory": [
+          0.1827,
+          0.771,
+          0.199,
+          0.264,
+          0.2398
+        ],
+        "status": "PASS",
+        "error_message": null
+      }
+    ],
+    "timestamp": "2026-08-26T18:25:47.047535",
+    "git_commit": "d714e22c219051db5c5492cef05c93e3dc7033f0"
+  },
+  {
+    "run_id": "run_quality_20260826_182415",
+    "module_name": "mamba",
+    "model_family": "BERT",
+    "dataset": "SST2",
+    "status": "FAIL",
+    "metrics": {
+      "accuracy": 0.0,
+      "accuracy_std": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "p_value_vs_baseline": 1.0,
+      "p_value_bonferroni": 1.0,
+      "f1": 0.0,
+      "mcc": null,
+      "pearson": null,
+      "spearman": null,
+      "perplexity": null
+    },
+    "efficiency": {
+      "fwd_ms": 0.0,
+      "bwd_ms": 0.0,
+      "peak_vram_mb": 0.0,
+      "flops": 1450000000.0,
+      "throughput_tokens_sec": 0.0
+    },
+    "fidelity": 0.0,
+    "statistics": {
+      "ci_95": [
+        0.0,
+        0.0
+      ],
+      "paired_t_pvalue": 1.0,
+      "p_value_bonferroni": 1.0,
+      "sample_size": 0
+    },
+    "trajectories": {
+      "loss": [],
+      "grad_norm": [],
+      "fwd_latency_ms": []
+    },
+    "seeds": [
+      {
+        "seed": 42,
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "fidelity_score": 0.0,
+        "fwd_latency_ms": 0.0,
+        "bwd_latency_ms": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tokens_sec": 0.0,
+        "flops_macs": 0.0,
+        "loss_trajectory": [],
+        "grad_norm_trajectory": [],
+        "status": "FAIL",
+        "error_message": "The size of tensor a (256) must match the size of tensor b (1744) at non-singleton dimension 0"
+      }
+    ],
+    "timestamp": "2026-08-26T18:25:50.022659",
+    "git_commit": "d714e22c219051db5c5492cef05c93e3dc7033f0"
+  }
+]
