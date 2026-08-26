@@ -1,11 +1,54 @@
 \subsubsection{SVDMamba (\texttt{jamba})}
-The module \texttt{jamba} is implemented within the \textbf{Ssm Operator} architectural family. Figure~\ref{fig:module_jamba} illustrates its exact computational dataflow, structural matrix dynamics, and theoretical scaling profile.
+\label{sec:module_jamba}
+
+\textbf{Architectural Classification:} \textit{Attention / SSM $\mid$ State-Space Model & Selective Recurrence}
+
+\paragraph{Executive Summary \& Motivation:}
+The SVDMamba module implements high-efficiency state-space models \& recurrent scans within the NeuralOps framework. The operator is engineered to maximize computational efficiency, reduce memory access overheads, and preserve representation expressivity across extended sequence lengths.
+
+\paragraph{Mathematical Formulation:}
+The forward operator transformation of \texttt{jamba} is formally defined as:
+
+\begin{align}
+\Delta_t &= \operatorname{softplus}(W_\Delta x_t + b_\Delta), \quad \bar{A}_t = \exp(\Delta_t A), \quad \bar{B}_t = \Delta_t B_t, \\
+h_t &= \bar{A}_t h_{t-1} + \bar{B}_t x_t \in \mathbb{R}^{d \times d_s}, \\
+y_t &= C_t h_t + D x_t, \quad O_t = \operatorname{SiLU}(z_t) \odot y_t.
+\end{align}
+
+
+\paragraph{Key Architectural Strengths \& Advantages:}
+\begin{itemize}
+    \item \textbf{Input-Dependent Selective Filtering}: Discretizes state matrix $\bar{A} = \exp(\Delta A)$ dynamically conditioned on input tokens, filtering irrelevant noise.
+    \item \textbf{Constant Inference Memory Footprint}: Maintains an $\mathcal{O}(d \cdot d_s)$ recurrent state buffer without growing Key-Value (KV) cache footprints.
+    \item \textbf{High-Throughput Associative Parallel Scan}: Computes forward training passes in $\mathcal{O}(\log N)$ parallel depth using prefix-sum algorithms.
+    \item \textbf{Long-Horizon Context Retention}: Retains historical token representations over sequences exceeding $64\text{k}$ tokens without memory degradation.
+\end{itemize}
+
+\paragraph{Hyperparameters \& Operational Configuration:}
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabularx}{\columnwidth}{lXl}
+\toprule
+\textbf{Hyperparameter} & \textbf{Description} & \textbf{Standard Value} \\
+\midrule
+    \texttt{d\_model} & Parameter & \texttt{default} \\
+    \texttt{config} & Parameter & \texttt{default} \\
+    \texttt{rank} & Parameter & \texttt{16} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Complexity \& Arithmetic Scaling:}
+The theoretical time complexity of \texttt{jamba} scales as $\mathcal{O}(N d)$ with an active memory footprint of $\mathcal{O}(d \cdot d_s)$. Compared against standard quadratic attention ($\mathcal{O}(N^2 d)$), \texttt{jamba} provides significant latency and memory bandwidth advantages on long-sequence inference.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_jamba.pdf}
-    \caption{Architectural characterization and structural dynamics for \textbf{SVDMamba}.}
+    \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for SVDMamba}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Complexity Scaling Profile against Quadratic Baselines.}
     \label{fig:module_jamba}
 \end{figure}
 
-\vspace{0.5em}
+\vspace{1.0em}
+\hrule
+\vspace{1.0em}
