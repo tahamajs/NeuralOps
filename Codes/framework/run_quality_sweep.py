@@ -354,8 +354,8 @@ def evaluate_single_seed_run(
             dataset=dataset,
             seq_len=seq_len,
             device=device,
-            target_vram_ratio=0.65,
-            max_batch_cap=min(batch_size, 64),
+            target_vram_ratio=0.45,
+            max_batch_cap=min(batch_size, 32),
             min_batch_floor=16,
             allow_synthetic=allow_synthetic,
         )
