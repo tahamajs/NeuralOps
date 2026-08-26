@@ -11,9 +11,9 @@
 
 | Verification Requirement | Target Condition | Audited Value | Status |
 | :--- | :---: | :---: | :---: |
-| **Sweep Completion** | Finished (720 Expected Rows) | **690 Rows Present** | **PASS** |
-| **Unique Module Coverage** | Complete Architecture Set | **115 Unique Modules** | **PASS** |
-| **PASS / SUCCESS Rate** | Valid Telemetry | **620 / 690 (89.9%)** | **PASS** |
+| **Sweep Completion** | Finished (720 Expected Rows) | **774 Rows Present** | **PASS** |
+| **Unique Module Coverage** | Complete Architecture Set | **129 Unique Modules** | **PASS** |
+| **PASS / SUCCESS Rate** | Valid Telemetry | **704 / 774 (91.0%)** | **PASS** |
 | **Latency & VRAM Fields** | Non-null, finite positive floats | **0 Nulls / 0 NaNs in Latencies** | **PASS** |
 | **Timeout Isolation & Blacklist** | Gracefully caught & isolated | **6 Timeouts Isolated** | **PASS** |
 | **Quality Metric Separation** | Empty / NA for Phase 1 | **Clean Phase 1 Isolation** | **PASS** |
@@ -24,20 +24,20 @@
 ## 2. Matrix Breakdown & Status Distribution
 
 ### Execution Statuses
-- **PASS / SUCCESS:** `620` combinations (`89.86%`)
-- **FAIL (Handled):** `64` combinations (`9.28%`)
-- **TIMEOUT / SKIPPED:** `6` combinations (`0.87%`)
+- **PASS / SUCCESS:** `704` combinations (`90.96%`)
+- **FAIL (Handled):** `64` combinations (`8.27%`)
+- **TIMEOUT / SKIPPED:** `6` combinations (`0.78%`)
 
 ### Track Breakdown
-- **track1_svd:** 168 combinations
+- **track1_svd:** 252 combinations
 - **track2_ssm:** 156 combinations
 - **track3_moe:** 126 combinations
 - **track4_kernel_quant:** 120 combinations
 - **track5_pruning:** 120 combinations
 
 ### Model & Dataset Combinations
-- **Model Families Evaluated:** `bert` (230), `roberta` (230), `t5` (230)
-- **Datasets Evaluated:** `sst2` (345), `mrpc` (345)
+- **Model Families Evaluated:** `bert` (258), `roberta` (258), `t5` (258)
+- **Datasets Evaluated:** `sst2` (387), `mrpc` (387)
 
 ---
 
@@ -45,12 +45,12 @@
 
 | Performance Metric | Valid Records | Null Count | Min Value | Mean Value | Max Value |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| `forward_latency_ms` | 620 | 0 | 5.92 | 264.69 | 3361.68 |
-| `backward_latency_ms` | 620 | 0 | 9.54 | 642.10 | 6830.29 |
-| `total_step_latency_ms` | 620 | 0 | 16.58 | 906.80 | 9033.98 |
-| `throughput_samples_per_sec` | 620 | 0 | 0.00 | 0.00 | 0.00 |
-| `speedup_vs_baseline` | 620 | 0 | 1.00 | 1.00 | 1.00 |
-| `param_count` | 620 | 0 | 4015494.00 | 5447640.88 | 11945250.00 |
+| `forward_latency_ms` | 704 | 0 | 5.92 | 242.20 | 3361.68 |
+| `backward_latency_ms` | 704 | 0 | 9.54 | 585.39 | 6830.29 |
+| `total_step_latency_ms` | 704 | 0 | 16.58 | 827.59 | 9033.98 |
+| `throughput_samples_per_sec` | 704 | 0 | 0.00 | 1183.08 | 17556.00 |
+| `speedup_vs_baseline` | 704 | 0 | 0.03 | 1.00 | 1.99 |
+| `param_count` | 704 | 0 | 4015494.00 | 5539171.33 | 11945250.00 |
 
 ---
 
@@ -58,7 +58,7 @@
 
 | Track Paradigm | Combinations | Forward Latency (ms) | Backward Latency (ms) | Total Step Latency (ms) |
 | :--- | :---: | :---: | :---: | :---: |
-| **track1_svd** | 158 | 89.86 ms | 208.39 ms | 298.25 ms |
+| **track1_svd** | 242 | 85.12 ms | 193.94 ms | 279.06 ms |
 | **track2_ssm** | 144 | 677.17 ms | 1636.73 ms | 2313.91 ms |
 | **track3_moe** | 96 | 259.17 ms | 634.35 ms | 893.52 ms |
 | **track4_kernel_quant** | 102 | 252.00 ms | 645.55 ms | 897.55 ms |
@@ -85,15 +85,3 @@
 1. All required fields for the paper's efficiency tables (Table 3, Table 4, Appendix Telemetry Tables) are **present, verified, and backed by actual CSV measurements**.
 2. The benchmark run is complete with 0 hanging processes.
 3. The dataset is ready for final paper publication.
-
-
----
-
-## 7. Per-Module Execution Status
-
-See the complete detailed table in [`MODULE_EXECUTION_STATUS.md`](MODULE_EXECUTION_STATUS.md).
-
-- **Total Modules in Codebase:** `226`
-- **Total Modules RUN on GPU:** `113`
-- **Total Modules Skipped / Blacklisted:** `0`
-- **Total Modules Not Run (Deferred):** `113`

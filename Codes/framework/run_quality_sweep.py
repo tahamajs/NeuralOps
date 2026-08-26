@@ -325,7 +325,7 @@ def evaluate_single_seed_run(
             dataset=dataset,
             seq_len=seq_len,
             device=device,
-            target_vram_ratio=0.88,
+            target_vram_ratio=0.80,
             max_batch_cap=min(batch_size, 512),
             min_batch_floor=16,
             allow_synthetic=allow_synthetic,
@@ -559,6 +559,11 @@ def evaluate_single_seed_run(
     # Compute Theoretical FLOPs / MACs
     total_params = sum(p.numel() for p in model.parameters())
     flops_estimate = round(float(2 * total_params * seq_len * current_batch_size), 0)
+
+    if is_cuda:
+        import gc
+        gc.collect()
+        torch.cuda.empty_cache()
 
     return SeedResult(
         seed=seed,
