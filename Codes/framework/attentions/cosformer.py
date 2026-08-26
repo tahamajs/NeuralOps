@@ -52,7 +52,7 @@ class CosformerAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", 12)
+        self.num_heads: int = getattr(config, "num_attention_heads", 4)
         hidden_size: int = getattr(config, "hidden_size", 768)
         self.head_dim: int = hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
@@ -179,7 +179,7 @@ def inject_cosformer(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> CosformerAttention:
+    **kwargs) -> CosformerAttention:
     max_seq_len = getattr(comp_config, "max_seq_len", 512)
     new_attn = CosformerAttention(
         config=model_config,

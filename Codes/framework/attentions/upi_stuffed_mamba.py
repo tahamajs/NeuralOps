@@ -55,9 +55,9 @@ class UPIMambaBlock(BaseAttention):
         super().__init__(config, rank)
         if dim is None and d_model is None:
             if config is not None:
-                dim = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                dim = getattr(config, "hidden_size", getattr(config, "dim", 128))
             else:
-                dim = kwargs.get("hidden_size", 768)
+                dim = kwargs.get("hidden_size", 128)
         else:
             dim = dim or d_model
 
@@ -209,11 +209,11 @@ def inject_upi_mamba(
     **kwargs: Any,
 ) -> UPIMambaBlock:
     r"""Bridge helper injecting UPIMambaBlock into a transformer layer."""
-    dim: int = 768
+    dim = 128
     if model_config is not None:
         dim = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
     elif hasattr(layer, "config"):
-        dim = getattr(layer.config, "hidden_size", 768)
+        dim = getattr(layer.config, "hidden_size", 128)
 
     new_block = UPIMambaBlock(config=model_config, dim=dim, **kwargs)
     src_attn = old_attn if old_attn is not None else layer

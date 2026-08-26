@@ -21,7 +21,7 @@ class FUSIONATTN(BaseAttention):
         self,
         config: Optional[Any] = None,
         hidden_size: int = 768,
-        num_heads: int = 12,
+        num_heads = 4,
         block_size: int = 64,
         top_k_blocks: int = 4,
         rank: Optional[int] = 64,

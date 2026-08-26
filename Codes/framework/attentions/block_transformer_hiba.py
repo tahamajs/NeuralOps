@@ -29,7 +29,7 @@ class BlockTransformerHIBA(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim = self.dim // self.num_heads
         self.block_size = block_size
         self.top_k_inter = top_k_inter

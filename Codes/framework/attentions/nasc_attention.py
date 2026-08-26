@@ -91,7 +91,7 @@ class NASCAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads = getattr(config, "num_attention_heads", 12)
+        self.num_heads = getattr(config, "num_attention_heads", 4)
         self.hidden_size = getattr(config, "hidden_size", 768)
         self.head_dim = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.window_size = window_size

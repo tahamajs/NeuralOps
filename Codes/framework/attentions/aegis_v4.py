@@ -220,10 +220,10 @@ class AegisAttention(nn.Module):
                 pass
             model_config = DummyConfig()
             model_config.hidden_size = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 12))
+            model_config.num_attention_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 4))
 
         self.hidden_size: int = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
-        self.num_heads: int = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 4) if model_config is not None else 12
         self.head_dim: int = self.hidden_size // max(1, self.num_heads)
         self.all_head_size: int = self.num_heads * self.head_dim
         self.cfg: AegisConfig = aegis_cfg if aegis_cfg is not None else AegisConfig()

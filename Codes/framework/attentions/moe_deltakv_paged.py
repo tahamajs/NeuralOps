@@ -90,7 +90,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
     def __init__(self, config: Optional[Any] = None, **kwargs: Any) -> None:
         super().__init__()
         self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim: int = self.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
 

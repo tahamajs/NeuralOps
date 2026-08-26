@@ -61,7 +61,7 @@ class SAMBAM3Block(nn.Module):
             else:
                 d_model = kwargs.get("hidden_size", 768)
         if n_heads is None:
-            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", kwargs.get("num_attention_heads", 12)))
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", kwargs.get("num_attention_heads", 4)))
         window = getattr(config, "window_size", window)
 
         self.d_model = d_model

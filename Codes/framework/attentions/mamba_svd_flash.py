@@ -63,9 +63,9 @@ class MambaSVDFlash(BaseAttention):
         else:
             config_obj = config
             if isinstance(config, dict):
-                dim = d_model or hidden_size or config.get("hidden_size", config.get("dim", 768))
+                dim = d_model or hidden_size or config.get("hidden_size", config.get("dim", 128))
             else:
-                dim = d_model or hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768))
+                dim = d_model or hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 128))
         super().__init__(config_obj, rank)
         self.d_model: int = dim or 128
         self.rank: int = rank or 16
@@ -78,7 +78,7 @@ class MambaSVDFlash(BaseAttention):
         self.proj_c = nn.Linear(self.d_model, self.d_model, bias=True)
 
         # Attention path projections
-        self.num_heads = num_heads or getattr(config_obj, "num_attention_heads", 12) or 12
+        self.num_heads = num_heads or getattr(config_obj, "num_attention_heads", 4) or 12
         if self.d_model % self.num_heads != 0:
             self.num_heads = 1
         self.head_dim = self.d_model // self.num_heads
@@ -261,11 +261,11 @@ def inject_mamba_svd_flash(
     **kwargs: Any,
 ) -> MambaSVDFlash:
     r"""Injection hook for :class:`MambaSVDFlash`."""
-    d_model: int = 768
+    d_model = 128
     if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
     elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 768))
+        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 128))
 
     new_module = MambaSVDFlash(d_model=d_model, config=model_config, **kwargs)
     src_attn = old_attn if old_attn is not None else layer

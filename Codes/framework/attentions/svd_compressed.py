@@ -183,7 +183,7 @@ class SVDCompressedAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(model_config)
-        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 4)
         self.head_dim: int = getattr(model_config, "hidden_size", 768) // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
         self.hidden_size: int = getattr(model_config, "hidden_size", 768)
