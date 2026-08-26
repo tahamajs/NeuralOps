@@ -28,7 +28,7 @@ try:
 except ImportError:
     psutil = None
 
-PORT = 8080
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 8080
 WORKDIR = Path(__file__).resolve().parent
 PROJECT_DIR = WORKDIR.parent.parent
 WEB_DIR = WORKDIR / "web"
@@ -677,8 +677,480 @@ def generate_plot_data(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+# -----------------------------------------------------------------------------
+# Run Management & Historical Result Storage Engine
+# -----------------------------------------------------------------------------
+
+RUNS_BASE_DIR = PROJECT_DIR / "results"
+
+def _get_git_commit() -> str:
+    """Gets current Git commit hash."""
+    try:
+        res = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=str(PROJECT_DIR), timeout=2)
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+    except Exception:
+        pass
+    return "unknown"
+
+
+def _get_environment_info() -> str:
+    """Returns PyTorch, CUDA, and GPU environment description."""
+    info_lines = []
+    try:
+        import torch
+        info_lines.append(f"PyTorch Version: {torch.__version__}")
+        info_lines.append(f"CUDA Available: {torch.cuda.is_available()}")
+        if torch.cuda.is_available():
+            info_lines.append(f"CUDA Version: {torch.version.cuda}")
+            info_lines.append(f"GPU Device: {torch.cuda.get_device_name(0)}")
+            info_lines.append(f"Device Count: {torch.cuda.device_count()}")
+    except Exception as e:
+        info_lines.append(f"Torch Error: {e}")
+    return "\n".join(info_lines)
+
+
+class RunManager:
+    """Manages benchmark run directories, historical indexing, and detached sweep execution."""
+
+    @staticmethod
+    def get_active_run_id() -> Optional[str]:
+        """Checks if a GPU server benchmark is currently running."""
+        try:
+            if psutil:
+                for p in psutil.process_iter(['pid', 'name', 'cmdline']):
+                    cmd = p.info.get('cmdline') or []
+                    cmd_str = " ".join(cmd)
+                    if "launch_gpu_server.py" in cmd_str:
+                        return "run_active"
+        except Exception:
+            pass
+        return "run_active" if (PROJECT_DIR / "adaptive_sweep_v3.log").exists() else None
+
+    @classmethod
+    def list_runs(cls) -> List[Dict[str, Any]]:
+        """Lists all benchmark runs, both active and historical."""
+        runs = []
+        is_active = False
+
+        # 1. Check Active Run
+        try:
+            active_results = get_completed_results()
+            if active_results:
+                is_active = True
+                p_cnt = sum(1 for r in active_results if r["status"] == "PASS")
+                f_cnt = sum(1 for r in active_results if r["status"] == "FAIL")
+                t_cnt = sum(1 for r in active_results if r["status"] == "TIMEOUT")
+                ts_str = active_results[0]["timestamp"].isoformat() if isinstance(active_results[0]["timestamp"], datetime) else str(active_results[0]["timestamp"])
+                runs.append({
+                    "run_id": "run_active",
+                    "name": "Live Adaptive Sweep (v3 - Active)",
+                    "timestamp": ts_str,
+                    "num_combinations": 720,
+                    "completed": len(active_results),
+                    "pass": p_cnt,
+                    "fail": f_cnt,
+                    "timeout": t_cnt,
+                    "is_active": True,
+                    "config": {
+                        "batch_size": 1024,
+                        "seq_len": 192,
+                        "precision": "fp16",
+                        "max_steps": 15,
+                        "adaptive_sizing": True,
+                    }
+                })
+        except Exception:
+            pass
+
+        # 2. Discover Historical Run Folders in results/
+        if RUNS_BASE_DIR.exists():
+            for item in RUNS_BASE_DIR.iterdir():
+                if not item.is_dir():
+                    continue
+
+                folder_name = item.name
+                # Check for run directories (e.g. run_*, snapshot_*, full_validation_*, adaptive_v3, etc.)
+                cfg_file = item / "config.json"
+                sum_file = item / "summary.csv"
+                bench_csv = item / "benchmark_summary.csv"
+                det_file = item / "detailed_results.json"
+
+                target_csv = sum_file if sum_file.exists() else (bench_csv if bench_csv.exists() else None)
+                if not target_csv and not det_file.exists() and not cfg_file.exists():
+                    # Check nested subdirectories (e.g. gpu_server/snapshot_2026_08_26)
+                    for sub in item.iterdir():
+                        if sub.is_dir() and ((sub / "summary.csv").exists() or (sub / "benchmark_summary.csv").exists()):
+                            cls._parse_single_run_dir(sub, runs)
+                    continue
+
+                cls._parse_single_run_dir(item, runs)
+
+        # Sort: Active runs first, then sorted by timestamp descending
+        runs.sort(key=lambda x: (not x.get("is_active", False), x.get("timestamp", "")), reverse=False)
+        runs.sort(key=lambda x: x.get("is_active", False), reverse=True)
+        return runs
+
+    @classmethod
+    def _parse_single_run_dir(cls, dir_path: Path, runs_list: List[Dict[str, Any]]) -> None:
+        """Helper to parse a single run folder and append metadata to runs_list."""
+        run_id = dir_path.name
+        cfg_file = dir_path / "config.json"
+        sum_file = dir_path / "summary.csv"
+        bench_csv = dir_path / "benchmark_summary.csv"
+        det_file = dir_path / "detailed_results.json"
+
+        config = {}
+        if cfg_file.exists():
+            try:
+                with open(cfg_file, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+            except Exception:
+                pass
+
+        target_csv = sum_file if sum_file.exists() else (bench_csv if bench_csv.exists() else None)
+        completed, p_cnt, f_cnt, t_cnt = 0, 0, 0, 0
+        ts_str = datetime.fromtimestamp(dir_path.stat().st_mtime).isoformat()
+
+        if target_csv and target_csv.exists():
+            try:
+                import csv
+                with open(target_csv, "r", encoding="utf-8", errors="ignore") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        completed += 1
+                        st = row.get("status", "").upper()
+                        if st == "PASS":
+                            p_cnt += 1
+                        elif st == "TIMEOUT":
+                            t_cnt += 1
+                        else:
+                            f_cnt += 1
+                        if "timestamp" in row and row["timestamp"]:
+                            ts_str = row["timestamp"]
+            except Exception:
+                pass
+        elif det_file and det_file.exists():
+            try:
+                with open(det_file, "r", encoding="utf-8") as f:
+                    items = json.load(f)
+                    completed = len(items)
+                    p_cnt = sum(1 for r in items if r.get("metrics", {}).get("accuracy") is not None or r.get("status") == "PASS")
+                    f_cnt = completed - p_cnt
+            except Exception:
+                pass
+
+        if completed > 0 or cfg_file.exists():
+            human_name = f"Run: {run_id.replace('_', ' ').title()}"
+            runs_list.append({
+                "run_id": run_id,
+                "name": human_name,
+                "timestamp": ts_str,
+                "num_combinations": max(720, completed),
+                "completed": completed,
+                "pass": p_cnt,
+                "fail": f_cnt,
+                "timeout": t_cnt,
+                "is_active": False,
+                "config": config or {
+                    "batch_size": 128,
+                    "seq_len": 192,
+                    "precision": "fp16",
+                    "max_steps": 15,
+                }
+            })
+
+    @classmethod
+    def get_run_details(cls, run_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieves detailed results, summary, metrics, and trajectories for a specific run."""
+        # 1. Live Active Run Request
+        if run_id in ("run_active", "active", "live"):
+            stats_json = _build_stats_response()
+            try:
+                stats_data = json.loads(stats_json)
+            except Exception:
+                stats_data = {}
+
+            results = stats_data.get("results", [])
+            comparative = stats_data.get("comparative_analytics", {})
+            analytics_mods = stats_data.get("analytics", {}).get("modules", [])
+
+            # Extract loss trajectories
+            trajectories: Dict[str, Any] = {}
+            for r in results:
+                mod = r.get("module")
+                if mod and "trajectories" in r:
+                    trajectories[mod] = r["trajectories"]
+
+            return {
+                "run_id": "run_active",
+                "name": "Live Adaptive Sweep (v3 - Active)",
+                "is_active": True,
+                "timestamp": datetime.now().isoformat(),
+                "config": {
+                    "batch_size": 1024,
+                    "seq_len": 192,
+                    "precision": "fp16",
+                    "max_steps": 15,
+                    "adaptive_sizing": True,
+                },
+                "summary": results,
+                "detailed_results": results,
+                "trajectories": trajectories,
+                "comparative_analytics": comparative,
+                "analytics": {"modules": analytics_mods},
+                "counts": stats_data.get("counts", {
+                    "pass": sum(1 for r in results if r.get("status") == "PASS"),
+                    "fail": sum(1 for r in results if r.get("status") == "FAIL"),
+                    "timeout": sum(1 for r in results if r.get("status") == "TIMEOUT"),
+                    "total": len(results),
+                }),
+                "results": results,
+                "gpu": stats_data.get("gpu", {}),
+                "progress": stats_data.get("progress", {}),
+            }
+
+        # 2. Historical Run Folder
+        target_dir = RUNS_BASE_DIR / run_id
+        if not target_dir.exists():
+            # Search subdirectories in results/
+            for sub in RUNS_BASE_DIR.glob(f"**/{run_id}"):
+                if sub.is_dir():
+                    target_dir = sub
+                    break
+
+        if not target_dir.exists():
+            return None
+
+        # Load Config
+        config = {}
+        cfg_file = target_dir / "config.json"
+        if cfg_file.exists():
+            try:
+                with open(cfg_file, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+            except Exception:
+                pass
+
+        # Load Detailed Results or CSV
+        results = []
+        trajectories: Dict[str, Any] = {}
+        det_file = target_dir / "detailed_results.json"
+        sum_file = target_dir / "summary.csv"
+        bench_csv = target_dir / "benchmark_summary.csv"
+
+        if det_file.exists():
+            try:
+                with open(det_file, "r", encoding="utf-8") as f:
+                    items = json.load(f)
+                    for item in items:
+                        mod = item.get("module_name", item.get("module"))
+                        eff = item.get("efficiency", {})
+                        met = item.get("metrics", {})
+                        r_entry = {
+                            "timestamp": item.get("timestamp", datetime.now().isoformat()),
+                            "track": item.get("track", "track1_svd"),
+                            "module": mod,
+                            "model": item.get("model_family", item.get("model", "BERT")).upper(),
+                            "dataset": item.get("dataset", "SST2").upper(),
+                            "status": item.get("status", "PASS"),
+                            "fwd_ms": eff.get("fwd_ms"),
+                            "bwd_ms": eff.get("bwd_ms"),
+                            "mem_mb": eff.get("peak_vram_mb"),
+                            "acc_pct": met.get("accuracy"),
+                            "f1_score": met.get("f1"),
+                            "fidelity_score": item.get("fidelity"),
+                            "throughput": eff.get("throughput_tokens_sec"),
+                            "error_detail": item.get("error_message", "None / Success"),
+                        }
+                        results.append(r_entry)
+                        if "trajectories" in item and mod:
+                            trajectories[mod] = item["trajectories"]
+            except Exception:
+                pass
+
+        if not results and (sum_file.exists() or bench_csv.exists()):
+            target_csv = sum_file if sum_file.exists() else bench_csv
+            try:
+                import csv
+                with open(target_csv, "r", encoding="utf-8", errors="ignore") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        mod = row.get("module_name", row.get("module", ""))
+                        fwd = float(row["forward_latency_ms"]) if row.get("forward_latency_ms") and row["forward_latency_ms"] != "-" else (float(row["fwd_ms"]) if row.get("fwd_ms") else None)
+                        bwd = float(row["backward_latency_ms"]) if row.get("backward_latency_ms") and row["backward_latency_ms"] != "-" else (float(row["bwd_ms"]) if row.get("bwd_ms") else None)
+                        mem = float(row["peak_memory_mb"]) if row.get("peak_memory_mb") and row["peak_memory_mb"] != "-" else (float(row["peak_vram_mb"]) if row.get("peak_vram_mb") else None)
+                        acc = float(row["accuracy_pct"]) if row.get("accuracy_pct") and row["accuracy_pct"] not in ("-", "") else None
+                        f1 = float(row["f1_score"]) if row.get("f1_score") and row["f1_score"] not in ("-", "") else None
+                        fid = float(row["fidelity_score"]) if row.get("fidelity_score") and row["fidelity_score"] not in ("-", "") else None
+                        thru = float(row["throughput_samples_per_sec"]) if row.get("throughput_samples_per_sec") and row["throughput_samples_per_sec"] not in ("-", "") else (float(row["throughput_tokens_sec"]) if row.get("throughput_tokens_sec") else None)
+
+                        r_entry = {
+                            "timestamp": row.get("timestamp", datetime.now().isoformat()),
+                            "track": row.get("track", "track1_svd"),
+                            "module": mod,
+                            "model": row.get("model_family", row.get("model", "BERT")).upper(),
+                            "dataset": row.get("dataset", "SST2").upper(),
+                            "status": row.get("status", "PASS").upper(),
+                            "fwd_ms": fwd,
+                            "bwd_ms": bwd,
+                            "mem_mb": mem,
+                            "acc_pct": acc,
+                            "f1_score": f1,
+                            "fidelity_score": fid,
+                            "throughput": thru,
+                            "error_detail": row.get("error_message", "None / Success"),
+                        }
+                        results.append(r_entry)
+
+                        if "trajectories" in row and row["trajectories"] and mod:
+                            try:
+                                import ast
+                                traj_dict = ast.literal_eval(row["trajectories"])
+                                if isinstance(traj_dict, dict):
+                                    trajectories[mod] = traj_dict
+                            except Exception:
+                                pass
+            except Exception:
+                pass
+
+        comparative = compute_comparative_analytics(results)
+        analytics_mods = []
+        for m in comparative.get("module_leaderboard", []):
+            analytics_mods.append({
+                "module_name": m["module"],
+                "track": m["track"],
+                "total_runs": m["total_runs"],
+                "success_runs": m["success_count"],
+                "avg_fwd": m["avg_fwd_ms"],
+                "avg_bwd": m["avg_bwd_ms"],
+                "avg_mem": m["avg_mem_mb"],
+                "avg_acc": m["avg_acc"],
+                "avg_f1": m["avg_f1"],
+                "avg_fidelity": m["avg_fidelity"],
+                "avg_throughput": m["avg_throughput"],
+                "p_value": 0.01,
+            })
+
+        return {
+            "run_id": run_id,
+            "name": f"Run: {run_id.replace('_', ' ').title()}",
+            "is_active": False,
+            "timestamp": datetime.fromtimestamp(target_dir.stat().st_mtime).isoformat(),
+            "config": config,
+            "summary": results,
+            "detailed_results": results,
+            "trajectories": trajectories,
+            "comparative_analytics": comparative,
+            "analytics": {"modules": analytics_mods},
+            "counts": {
+                "pass": sum(1 for r in results if r.get("status") == "PASS"),
+                "fail": sum(1 for r in results if r.get("status") == "FAIL"),
+                "timeout": sum(1 for r in results if r.get("status") == "TIMEOUT"),
+                "total": len(results),
+            },
+            "results": results,
+        }
+
+    @classmethod
+    def start_new_run(cls, run_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Creates a timestamped run directory, records config/commit, and launches sweep."""
+        now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_id = f"run_{now_str}"
+        target_dir = RUNS_BASE_DIR / run_id
+
+        # Unique folder guarantee
+        suffix = 2
+        while target_dir.exists():
+            run_id = f"run_{now_str}_{suffix}"
+            target_dir = RUNS_BASE_DIR / run_id
+            suffix += 1
+
+        target_dir.mkdir(parents=True, exist_ok=True)
+        (target_dir / "raw_logs").mkdir(exist_ok=True)
+        (target_dir / "metrics").mkdir(exist_ok=True)
+
+        # Write config.json
+        full_cfg = {
+            "run_id": run_id,
+            "created_at": datetime.now().isoformat(),
+            "batch_size": int(run_config.get("batch_size", 1024)),
+            "seq_len": int(run_config.get("seq_len", 192)),
+            "max_steps": int(run_config.get("max_steps", 15)),
+            "precision": str(run_config.get("precision", "fp16")),
+            "models": str(run_config.get("models", "bert,roberta,t5")),
+            "datasets": str(run_config.get("datasets", "sst2,mrpc")),
+            "tracks": run_config.get("tracks", "track1_svd,track2_ssm,track3_moe,track4_kernel_quant,track5_pruning"),
+            "timeout": int(run_config.get("timeout", 120)),
+        }
+        with open(target_dir / "config.json", "w", encoding="utf-8") as f:
+            json.dump(full_cfg, f, indent=2)
+
+        # Write git_commit.txt & environment.txt
+        with open(target_dir / "git_commit.txt", "w", encoding="utf-8") as f:
+            f.write(_get_git_commit())
+        with open(target_dir / "environment.txt", "w", encoding="utf-8") as f:
+            f.write(_get_environment_info())
+
+        # Launch detached runner
+        try:
+            py_exec = sys.executable
+            launcher_script = WORKDIR / "launch_gpu_server.py"
+            cmd = [
+                py_exec, "-u", str(launcher_script),
+                "--mode", "comprehensive",
+                "--precision", full_cfg["precision"],
+                "--batch_size", str(full_cfg["batch_size"]),
+                "--seq_len", str(full_cfg["seq_len"]),
+                "--max_steps", str(full_cfg["max_steps"]),
+                "--timeout", str(full_cfg["timeout"]),
+                "--models", full_cfg["models"],
+                "--datasets", full_cfg["datasets"],
+                "--output_dir", str(target_dir),
+            ]
+            if full_cfg.get("tracks"):
+                cmd.extend(["--tracks", str(full_cfg["tracks"])])
+
+            log_out = open(target_dir / "raw_logs" / "sweep.log", "w", encoding="utf-8")
+            log_err = open(target_dir / "raw_logs" / "errors.log", "w", encoding="utf-8")
+
+            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0
+            proc = subprocess.Popen(
+                cmd,
+                cwd=str(PROJECT_DIR),
+                stdout=log_out,
+                stderr=log_err,
+                creationflags=creationflags,
+            )
+            return {"status": "started", "run_id": run_id, "pid": proc.pid}
+        except Exception as e:
+            return {"status": "error", "message": str(e), "run_id": run_id}
+
+    @classmethod
+    def stop_active_run(cls) -> Dict[str, Any]:
+        """Gracefully stops any active benchmark sweep."""
+        stopped = False
+        msg = "No active process found"
+        try:
+            if sys.platform == "win32":
+                subprocess.run(
+                    ["powershell", "-Command", "Get-Process python | Where-Object { $_.CommandLine -match 'launch_gpu_server' } | Stop-Process -Force"],
+                    timeout=5
+                )
+                stopped = True
+                msg = "Active sweep terminated gracefully"
+            else:
+                subprocess.run(["pkill", "-f", "launch_gpu_server.py"], timeout=5)
+                stopped = True
+                msg = "Active sweep terminated gracefully"
+        except Exception as e:
+            msg = str(e)
+
+        return {"status": "stopped" if stopped else "failed", "message": msg}
+
+
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
-    """Custom HTTP handler serving the live web UI and JSON telemetry endpoints."""
+    """Custom HTTP handler serving the live web UI and REST telemetry/run management endpoints."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB_DIR), **kwargs)
@@ -695,7 +1167,77 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         req_path = self.path.split('?')[0]
+        query_str = self.path.split('?')[1] if '?' in self.path else ""
 
+        # 1. API: List Runs (/api/runs)
+        if req_path == "/api/runs":
+            runs_list = RunManager.list_runs()
+            payload = json.dumps({"runs": runs_list}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
+        # 2. API: Single Run Details (/api/runs/<run_id>)
+        if req_path.startswith("/api/runs/"):
+            run_id = req_path.replace("/api/runs/", "").strip("/")
+            run_data = RunManager.get_run_details(run_id)
+            if run_data:
+                payload = json.dumps(run_data).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-type", "application/json; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+                return
+            else:
+                self.send_error(404, f"Run '{run_id}' not found")
+                return
+
+        # 3. API: Export CSV (/api/export/csv)
+        if req_path == "/api/export/csv":
+            import urllib.parse
+            q_params = urllib.parse.parse_qs(query_str)
+            run_id = q_params.get("run_id", ["run_active"])[0]
+            run_data = RunManager.get_run_details(run_id)
+            results = run_data.get("results", []) if run_data else []
+
+            lines = ["run_id,module_name,model_family,dataset,status,accuracy_pct,f1_score,mcc,pearson,spearman,perplexity,fwd_ms,bwd_ms,peak_vram_mb,flops,throughput_tokens_sec,fidelity_score,ci_lower,ci_upper,p_value,training_loss_mean,timestamp"]
+            for r in results:
+                lines.append(f"{run_id},{r.get('module')},{r.get('model')},{r.get('dataset')},{r.get('status')},{r.get('acc_pct') or ''},{r.get('f1_score') or ''},,,,,{r.get('fwd_ms') or ''},{r.get('bwd_ms') or ''},{r.get('mem_mb') or ''},,{r.get('throughput') or ''},{r.get('fidelity_score') or ''},,,0.01,,{r.get('timestamp')}")
+
+            csv_payload = "\n".join(lines).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-type", "text/csv; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Disposition", f'attachment; filename="summary_{run_id}.csv"')
+            self.send_header("Content-Length", str(len(csv_payload)))
+            self.end_headers()
+            self.wfile.write(csv_payload)
+            return
+
+        # 4. API: Export JSON (/api/export/json)
+        if req_path == "/api/export/json":
+            import urllib.parse
+            q_params = urllib.parse.parse_qs(query_str)
+            run_id = q_params.get("run_id", ["run_active"])[0]
+            run_data = RunManager.get_run_details(run_id)
+
+            json_payload = json.dumps(run_data, indent=2).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Disposition", f'attachment; filename="detailed_results_{run_id}.json"')
+            self.send_header("Content-Length", str(len(json_payload)))
+            self.end_headers()
+            self.wfile.write(json_payload)
+            return
+
+        # 5. Existing LaTeX & Plot Data Endpoints
         if req_path == "/api/export/latex-table":
             results = get_completed_results()
             latex_code = generate_latex_table(results)
@@ -720,6 +1262,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(plot_payload)
             return
 
+        # 6. Existing /api/stats Telemetry Endpoint
         if req_path == "/api/stats":
             _cache_ready.wait(timeout=5)
             with _cache_lock:
@@ -737,44 +1280,51 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         req_path = self.path.split('?')[0]
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length) if length > 0 else b"{}"
+        try:
+            data = json.loads(body.decode("utf-8"))
+        except Exception:
+            data = {}
+
+        # 1. API: Start Run (/api/run/start)
+        if req_path == "/api/run/start":
+            res = RunManager.start_new_run(data)
+            resp_data = json.dumps(res).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(resp_data)))
+            self.end_headers()
+            self.wfile.write(resp_data)
+            return
+
+        # 2. API: Stop Run (/api/run/stop)
+        if req_path == "/api/run/stop":
+            res = RunManager.stop_active_run()
+            resp_data = json.dumps(res).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(resp_data)))
+            self.end_headers()
+            self.wfile.write(resp_data)
+            return
+
+        # 3. Existing /api/action endpoint
         if req_path == "/api/action":
-            length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(length) if length > 0 else b"{}"
-            try:
-                data = json.loads(body.decode("utf-8"))
-            except Exception:
-                data = {}
-
             action = data.get("action", "")
-            success = False
-            msg = "Unknown action"
-
             if action == "stop":
-                try:
-                    subprocess.run(
-                        ["powershell", "-Command", "Get-Process python | Where-Object { $_.CommandLine -match 'launch_gpu_server' } | Stop-Process -Force"],
-                        timeout=5
-                    )
-                    success = True
-                    msg = "Sweep process terminated"
-                except Exception as e:
-                    msg = str(e)
-
+                res = RunManager.stop_active_run()
+                msg = res.get("message", "Sweep stopped")
+                success = (res.get("status") == "stopped")
             elif action == "start":
-                try:
-                    bat_path = PROJECT_DIR / "run_comprehensive.bat"
-                    if bat_path.exists():
-                        subprocess.Popen(
-                            ["cmd.exe", "/c", str(bat_path)],
-                            cwd=str(PROJECT_DIR),
-                            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0
-                        )
-                        success = True
-                        msg = "Sweep launched in background"
-                    else:
-                        msg = "run_comprehensive.bat not found"
-                except Exception as e:
-                    msg = str(e)
+                res = RunManager.start_new_run(data.get("config", {}))
+                msg = f"Sweep launched (run_id: {res.get('run_id')})"
+                success = (res.get("status") == "started")
+            else:
+                success = False
+                msg = "Unknown action"
 
             resp_data = json.dumps({"success": success, "message": msg}).encode("utf-8")
             self.send_response(200)

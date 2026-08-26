@@ -20,18 +20,39 @@
         <div>
           <div class="brand-title-wrap">
             <h1>NeuralOps Live View</h1>
-            <span class="version-tag">v2.5 Analytics Suite</span>
+            <span class="version-tag">v3.0 Multi-Run Studio</span>
           </div>
           <p class="subtitle">Universal SVD & Attention GPU Benchmark Suite</p>
         </div>
       </div>
+      
+      <!-- Run Management Controls -->
+      <div class="run-selector-container">
+        <div class="run-selector-wrap">
+          <label for="run-select" class="run-label">Selected Run:</label>
+          <select id="run-select" class="run-select" onchange="onRunChanged(this.value)">
+            <option value="run_active">⚡ Live Adaptive Sweep (Active)</option>
+          </select>
+        </div>
+        <div class="action-buttons">
+          <button id="btn-new-run" class="btn btn-primary" onclick="openNewRunModal()">
+            <span class="btn-icon">➕</span> New Run
+          </button>
+          <button id="btn-stop" class="btn btn-danger" onclick="stopCurrentRun()">
+            <span class="btn-icon">🛑</span> Stop Run
+          </button>
+          <button id="btn-export-csv" class="btn btn-secondary" onclick="exportCurrentCSV()">
+            <span class="btn-icon">📊</span> Export CSV
+          </button>
+          <button id="btn-export-json" class="btn btn-secondary" onclick="exportCurrentJSON()">
+            <span class="btn-icon">📦</span> Export JSON
+          </button>
+        </div>
+      </div>
+
       <div class="nav-controls">
         <div id="conn-status" class="badge badge-online">Connecting...</div>
-        <div id="sweep-status" class="badge badge-running">Sweep Active</div>
-        <div class="action-buttons">
-          <button id="btn-stop" class="btn btn-danger" onclick="triggerAction('stop')">Stop Sweep</button>
-          <button id="btn-start" class="btn btn-success" onclick="triggerAction('start')">Start Sweep</button>
-        </div>
+        <div id="sweep-status" class="badge badge-running">Active Run</div>
       </div>
     </header>
 
@@ -43,6 +64,12 @@
       <button class="tab-btn" id="tab-analytics-btn" onclick="switchTab('analytics')">
         <span class="tab-icon">🔬</span> Comparative Analytics Lab
         <span class="tab-pill-badge" id="tab-module-count">0 Modules</span>
+      </button>
+      <button class="tab-btn" id="tab-compare-btn" onclick="switchTab('compare')">
+        <span class="tab-icon">⚖️</span> Compare Runs (Diff)
+      </button>
+      <button class="tab-btn" id="tab-visuals-btn" onclick="switchTab('visuals')">
+        <span class="tab-icon">📈</span> Advanced Visualizations
       </button>
     </nav>
 
@@ -340,6 +367,185 @@
           </table>
         </div>
       </section>
+    <!-- VIEW 3: Historical Comparison Studio (Diff View) -->
+    <div id="view-compare" class="tab-content">
+      <!-- Selector & Delta Controls -->
+      <section class="analytics-card">
+        <div class="card-header-flex">
+          <div>
+            <h2>⚖️ Multi-Run Head-to-Head Comparison (Diff View)</h2>
+            <p class="section-desc">Select two benchmark runs to overlay performance curves and inspect delta improvements.</p>
+          </div>
+        </div>
+        <div class="compare-selectors-grid">
+          <div class="filter-item">
+            <label>Baseline Run (A):</label>
+            <select id="compare-run-a" onchange="updateRunComparison()">
+              <!-- Injected by JS -->
+            </select>
+          </div>
+          <div class="compare-vs-badge">VS</div>
+          <div class="filter-item">
+            <label>Candidate Run (B):</label>
+            <select id="compare-run-b" onchange="updateRunComparison()">
+              <!-- Injected by JS -->
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>Metric Focus:</label>
+            <select id="compare-metric-select" onchange="updateRunComparison()">
+              <option value="fwd">Forward Latency (ms)</option>
+              <option value="vram">Peak VRAM (MB)</option>
+              <option value="acc">Accuracy (%)</option>
+              <option value="f1">F1 Score</option>
+              <option value="throughput">Throughput (samples/s)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Delta Summary Cards -->
+      <section class="telemetry-grid">
+        <div class="telemetry-card">
+          <div class="card-header">
+            <span class="card-label">Avg Fwd Latency Delta</span>
+            <span class="card-icon">⚡</span>
+          </div>
+          <div class="card-value" id="diff-fwd-val">-</div>
+          <div class="card-sub" id="diff-fwd-sub">Run B vs Run A</div>
+        </div>
+        <div class="telemetry-card">
+          <div class="card-header">
+            <span class="card-label">Peak VRAM Savings</span>
+            <span class="card-icon">🧠</span>
+          </div>
+          <div class="card-value" id="diff-vram-val">-</div>
+          <div class="card-sub" id="diff-vram-sub">Run B vs Run A</div>
+        </div>
+        <div class="telemetry-card">
+          <div class="card-header">
+            <span class="card-label">Accuracy Delta</span>
+            <span class="card-icon">🎯</span>
+          </div>
+          <div class="card-value" id="diff-acc-val">-</div>
+          <div class="card-sub" id="diff-acc-sub">Run B vs Run A</div>
+        </div>
+        <div class="telemetry-card">
+          <div class="card-header">
+            <span class="card-label">Passing Rate Delta</span>
+            <span class="card-icon">✅</span>
+          </div>
+          <div class="card-value" id="diff-pass-val">-</div>
+          <div class="card-sub" id="diff-pass-sub">Run B vs Run A</div>
+        </div>
+      </section>
+
+      <!-- Compare Chart -->
+      <section class="analytics-card">
+        <div class="card-header-flex">
+          <h3>📊 Head-to-Head Module Metric Overlay (Run A vs Run B)</h3>
+          <button class="btn btn-secondary btn-sm" onclick="downloadChartImage('chart-compare-bar', 'run_comparison.png')">📥 Export PNG</button>
+        </div>
+        <div class="chart-container" style="height: 380px;">
+          <canvas id="chart-compare-bar"></canvas>
+        </div>
+      </section>
+
+      <!-- Run Diff Table -->
+      <section class="table-section">
+        <div class="table-header-flex">
+          <div>
+            <h2>📋 Run Delta Matrix Table</h2>
+            <span class="table-sub">Per-module delta comparisons between Run A and Run B</span>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="live-table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Track</th>
+                <th>Run A Fwd (ms)</th>
+                <th>Run B Fwd (ms)</th>
+                <th>Δ Fwd</th>
+                <th>Run A VRAM (MB)</th>
+                <th>Run B VRAM (MB)</th>
+                <th>Δ VRAM</th>
+                <th>Run A Acc</th>
+                <th>Run B Acc</th>
+                <th>Δ Acc</th>
+              </tr>
+            </thead>
+            <tbody id="compare-tbody">
+              <tr><td colspan="11" class="loading-cell">Select runs to compare...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- VIEW 4: Advanced Visualizations -->
+    <div id="view-visuals" class="tab-content">
+      <!-- Row 1: Loss Overlay & Heatmap -->
+      <section class="charts-dual-grid">
+        <!-- Loss Trajectory Overlay Card -->
+        <div class="analytics-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>📉 Multi-Module Training Loss Convergence Overlay</h3>
+              <p class="section-desc">Overlay step-by-step training trajectories across selected modules</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="downloadChartImage('chart-loss-overlay', 'loss_overlay.png')">📥 Export PNG</button>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-loss-overlay"></canvas>
+          </div>
+        </div>
+
+        <!-- Latency vs VRAM Bubble Scatter -->
+        <div class="analytics-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>🎯 Efficiency Frontier (Latency vs VRAM vs Accuracy)</h3>
+              <p class="section-desc">X: Fwd Latency, Y: Peak VRAM, Bubble Radius: Accuracy %</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="downloadChartImage('chart-bubble-scatter', 'efficiency_frontier.png')">📥 Export PNG</button>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-bubble-scatter"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Row 2: Performance Heatmap & Model Family Distribution -->
+      <section class="charts-dual-grid">
+        <!-- Performance Matrix Heatmap -->
+        <div class="analytics-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>🗺️ Performance & Accuracy Matrix Heatmap</h3>
+              <p class="section-desc">Accuracy / F1 distribution per Module across GLUE benchmark splits</p>
+            </div>
+          </div>
+          <div class="heatmap-wrapper" id="heatmap-container">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Model Family Distribution Chart -->
+        <div class="analytics-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>🏛️ Model Architecture Latency Distribution</h3>
+              <p class="section-desc">Latency scaling across BERT, RoBERTa, and T5 per module</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="downloadChartImage('chart-model-dist', 'model_distribution.png')">📥 Export PNG</button>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-model-dist"></canvas>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- Footer -->
@@ -347,6 +553,70 @@
       <span>NeuralOps Universal Benchmark Matrix</span>
       <span>Live Analytics Dashboard</span>
     </footer>
+  </div>
+
+  <!-- New Run Configuration Modal -->
+  <div id="new-run-modal" class="modal-overlay" onclick="closeNewRunModal(event)">
+    <div class="modal-card" style="max-width: 600px;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="tag-status tag-pass">NEW EXPERIMENT</span>
+          <h3>Launch New Benchmark Sweep</h3>
+        </div>
+        <button class="modal-close-btn" onclick="hideNewRunModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="new-run-form" onsubmit="submitNewRun(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Batch Size:</label>
+              <input type="number" id="form-batch-size" value="1024" min="1" max="4096" required>
+            </div>
+            <div class="form-group">
+              <label>Sequence Length:</label>
+              <input type="number" id="form-seq-len" value="192" min="32" max="2048" required>
+            </div>
+            <div class="form-group">
+              <label>Max Steps:</label>
+              <input type="number" id="form-max-steps" value="15" min="1" max="100" required>
+            </div>
+            <div class="form-group">
+              <label>Precision:</label>
+              <select id="form-precision">
+                <option value="fp16">FP16 (AMP - TensorCore)</option>
+                <option value="bf16">BF16</option>
+                <option value="fp32">FP32 Full Precision</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Models (comma separated):</label>
+              <input type="text" id="form-models" value="bert,roberta,t5" required>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Datasets (comma separated):</label>
+              <input type="text" id="form-datasets" value="sst2,mrpc" required>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Benchmark Tracks:</label>
+              <select id="form-tracks">
+                <option value="track1_svd,track2_ssm,track3_moe,track4_kernel_quant,track5_pruning">All 5 Tracks (Complete Matrix)</option>
+                <option value="track1_svd">Track 1: SVD Attentions</option>
+                <option value="track2_ssm">Track 2: SSM & Recurrent</option>
+                <option value="track3_moe">Track 3: MoE & Hybrid</option>
+                <option value="track4_kernel_quant">Track 4: Kernel & Quant</option>
+                <option value="track5_pruning">Track 5: Pruning & Sparsity</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-actions" style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="hideNewRunModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">⚡ Launch Sweep</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <!-- Detailed Module Modal -->
