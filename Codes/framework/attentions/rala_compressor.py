@@ -38,7 +38,8 @@ class RALALinearAttention(nn.Module):
         config: Model configuration specifying `hidden_size`, `num_attention_heads`, and optional `rala_rank`.
     """
 
-    def __init__(self, config: Any) -> None:
+    def __init__(self, config: Any,
+        **kwargs) -> None:
         super().__init__()
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads

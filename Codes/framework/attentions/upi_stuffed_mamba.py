@@ -211,7 +211,7 @@ def inject_upi_mamba(
     r"""Bridge helper injecting UPIMambaBlock into a transformer layer."""
     dim: int = 768
     if model_config is not None:
-        dim = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        dim = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
     elif hasattr(layer, "config"):
         dim = getattr(layer.config, "hidden_size", 768)
 

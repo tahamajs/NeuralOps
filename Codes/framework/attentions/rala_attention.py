@@ -32,7 +32,8 @@ class RALALinearAttention(nn.Module):
         - Output: Tuple of $([B, N, D], \text{None})$.
     """
 
-    def __init__(self, config: Any) -> None:
+    def __init__(self, config: Any,
+        **kwargs) -> None:
         super().__init__()
         if config.hidden_size % config.num_attention_heads != 0:
             raise ValueError("hidden_size must be divisible by num_attention_heads")

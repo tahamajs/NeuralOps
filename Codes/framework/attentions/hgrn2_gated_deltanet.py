@@ -127,7 +127,7 @@ def inject_hgrn2_gated_deltanet(
     **kwargs: Any,
 ) -> HGRN2GatedDeltaNet:
     r"""Injection hook for HGRN2GatedDeltaNet."""
-    d_model = 768
+    d_model = 128  # was hardcoded 768
     num_heads = 12
     if model_config is not None:
         d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
