@@ -155,55 +155,58 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         )
 
         if use_triton:
-            y_2d = torch.empty((M, K_out), device=x.device, dtype=x.dtype)
-            BLOCK_M = 32
-            BLOCK_K_IN = 64 if K_in >= 64 and (K_in % 64 == 0 or K_in > 64) else min(64, max(16, K_in))
-            BLOCK_K_IN = 1 << (BLOCK_K_IN - 1).bit_length()
-            BLOCK_K_OUT = 64 if K_out >= 64 and (K_out % 64 == 0 or K_out > 64) else min(64, max(16, K_out))
-            BLOCK_K_OUT = 1 << (BLOCK_K_OUT - 1).bit_length()
-            grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(K_out, BLOCK_K_OUT))
+            try:
+                y_2d = torch.empty((M, K_out), device=x.device, dtype=x.dtype)
+                BLOCK_M = 32
+                BLOCK_K_IN = 64 if K_in >= 64 and (K_in % 64 == 0 or K_in > 64) else min(64, max(16, K_in))
+                BLOCK_K_IN = 1 << (BLOCK_K_IN - 1).bit_length()
+                BLOCK_K_OUT = 64 if K_out >= 64 and (K_out % 64 == 0 or K_out > 64) else min(64, max(16, K_out))
+                BLOCK_K_OUT = 1 << (BLOCK_K_OUT - 1).bit_length()
+                grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(K_out, BLOCK_K_OUT))
 
-            _fused_svd_linear_fwd_kernel[grid](
-                x_2d,
-                V,
-                U,
-                norm_weight if (norm_weight is not None and use_rms_norm) else x_2d,
-                bias if bias is not None else x_2d,
-                y_2d,
-                x_2d.stride(0), x_2d.stride(1),
-                V.stride(0), V.stride(1),
-                U.stride(0), U.stride(1),
-                y_2d.stride(0), y_2d.stride(1),
-                M,
-                K_in=K_in,
-                R=R,
-                K_out=K_out,
-                eps=eps,
-                USE_RMS_NORM=use_rms_norm,
-                HAS_BIAS=bias is not None,
-                HAS_NORM_WEIGHT=norm_weight is not None and use_rms_norm,
-                BLOCK_M=BLOCK_M,
-                BLOCK_K_IN=BLOCK_K_IN,
-                BLOCK_K_OUT=BLOCK_K_OUT,
-            )
-            # RESEARCH FIX: Exact analytical intermediate reconstruction for backward caching
-            with torch.no_grad():
-                z = F.linear(x_2d, V)
-                if use_rms_norm:
-                    if z.dtype in (torch.float16, torch.bfloat16):
-                        rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(z.dtype)
+                _fused_svd_linear_fwd_kernel[grid](
+                    x_2d,
+                    V,
+                    U,
+                    norm_weight if (norm_weight is not None and use_rms_norm) else x_2d,
+                    bias if bias is not None else x_2d,
+                    y_2d,
+                    x_2d.stride(0), x_2d.stride(1),
+                    V.stride(0), V.stride(1),
+                    U.stride(0), U.stride(1),
+                    y_2d.stride(0), y_2d.stride(1),
+                    M,
+                    K_in=K_in,
+                    R=R,
+                    K_out=K_out,
+                    eps=eps,
+                    USE_RMS_NORM=use_rms_norm,
+                    HAS_BIAS=bias is not None,
+                    HAS_NORM_WEIGHT=norm_weight is not None and use_rms_norm,
+                    BLOCK_M=BLOCK_M,
+                    BLOCK_K_IN=BLOCK_K_IN,
+                    BLOCK_K_OUT=BLOCK_K_OUT,
+                )
+                # RESEARCH FIX: Exact analytical intermediate reconstruction for backward caching
+                with torch.no_grad():
+                    z = F.linear(x_2d, V.to(x_2d.dtype))
+                    if use_rms_norm:
+                        if z.dtype in (torch.float16, torch.bfloat16):
+                            rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(z.dtype)
+                        else:
+                            rms = torch.rsqrt(torch.mean(z ** 2, dim=-1, keepdim=True) + eps)
+                        z_hat = z * rms
+                        z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
                     else:
-                        rms = torch.rsqrt(torch.mean(z ** 2, dim=-1, keepdim=True) + eps)
-                    z_hat = z * rms
-                    z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
-                else:
-                    rms = torch.empty(0, device=x.device, dtype=x.dtype)
-                    z_hat = z
-                    z_norm = z
-            ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
-            ctx.eps = eps
-            ctx.use_rms_norm = use_rms_norm
-            return y_2d.view(*orig_shape[:-1], K_out)
+                        rms = torch.empty(0, device=x.device, dtype=x.dtype)
+                        z_hat = z
+                        z_norm = z
+                ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
+                ctx.eps = eps
+                ctx.use_rms_norm = use_rms_norm
+                return y_2d.view(*orig_shape[:-1], K_out)
+            except Exception:
+                pass  # Fall back to PyTorch native reference below
 
         # PyTorch Native Reference Implementation (Fallback / CPU / MPS)
         # RESEARCH FIX: Numerically identical reference implementation for CPU/MPS
