@@ -1,13 +1,9 @@
 {
   "module_name": "minimal_svd_v2",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/minimal_svd_v2.py",
   "class_name": "MinimalSVDAttentionV2",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "MinimalSVD v2: Clean SVD-Factorized Attention for Transformers.\n\nMathematical Mechanism:\n    Replaces projection matrices with truncated SVD low-rank factors:\n    $$\\begin{aligned}\n    Q &= \\text{FactorisedLinear}_Q(X) \\\\\n    K &= \\text{FactorisedLinear}_K(X) \\\\\n    V &= \\text{FactorisedLinear}_V(X)",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "in_features",
     "out_features",
     "rank",
@@ -17,29 +13,19 @@
     "dropout",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "softmax",
     "dropout",
     "matmul",
     "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "MinimalSVD v2: Clean SVD-Factorized Attention for Transformers.\n\nMathematical Mechanism:\n    Replaces projection matrices with truncated SVD low-rank factors:\n    $$\\begin{aligned}\n    Q &= \\text{FactorisedLinear}_Q(X) \\\\\n    K &= \\text{FactorisedLinear}_K(X) \\\\\n    V &= \\text{FactorisedLinear}_V(X) \\\\\n    S &= \\frac{Q K^\\top}{\\sqrt{d_k}} + M_{\\text{mask}} \\\\\n    A &= \\text{softmax}(S, \\text{dim}=-1) \\\\\n    O &= \\text{FactorisedLinear}_O(A V)\n    \\end{aligned}$$\n\nComputational Complexity:\n    - Projections: $\\mathcal{O}(B \\cdot N \\cdot r \\cdot D)$\n    - Attention: $\\mathcal{O}(B \\cdot H \\cdot N^2 \\cdot d_k)$ time, $\\mathcal{O}(B \\cdot H \\cdot N^2)$ space.\n\nTensor Dimensions:\n    - Input `hidden_states`: `[B, N, D]`\n    - Output: Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 186185753844222972739748558872511201255
 }

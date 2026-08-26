@@ -1,13 +1,9 @@
 {
   "module_name": "template_compressor",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/template_compressor.py",
   "class_name": "YourCustomCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Modular template compressor supporting SVD, pruning, quantization, and hybrid modes.\n\nArgs:\n    model: Target PyTorch neural network module.\n    target_sparsity: Structured pruning target sparsity ratio $\\rho \\in [0, 1)$.\n    target_rank: Low-rank decomposition rank $r$.\n    method: Compression meth",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "original_layer",
     "rank",
     "model",
@@ -15,21 +11,18 @@
     "target_rank",
     "method"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Modular template compressor supporting SVD, pruning, quantization, and hybrid modes.\n\nArgs:\n    model: Target PyTorch neural network module.\n    target_sparsity: Structured pruning target sparsity ratio $\\rho \\in [0, 1)$.\n    target_rank: Low-rank decomposition rank $r$.\n    method: Compression method strategy (`'low_rank'`, `'pruning'`, `'quantization'`, `'standard'`).\n    **kwargs: Extensible compressor configuration arguments.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 292546521464504024371011899352735338694
 }

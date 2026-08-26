@@ -1,13 +1,9 @@
 {
   "module_name": "dobi_svd",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/dobi_svd.py",
   "class_name": "DobiSVDCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Dobi-SVD Compressor: Differentiable SVD with learnable spectral gating.\n\nExtracts truncated SVD factors from pretrained nn.Linear weights with symmetric\nsquare-root singular value distribution (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T),\nand replaces layers with DobiSVDLinearLayer containing learna",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "rank",
@@ -19,26 +15,15 @@
     "init_rank_ratio",
     "target_modules"
   ],
-  "forward_ops": [
-    "linear",
-    "sigmoid"
+  "ops": [
+    "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "Dobi-SVD Compressor: Differentiable SVD with learnable spectral gating.\n\nExtracts truncated SVD factors from pretrained nn.Linear weights with symmetric\nsquare-root singular value distribution (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T),\nand replaces layers with DobiSVDLinearLayer containing learnable gating parameters.\n\nArgs:\n    model: PyTorch model.\n    init_rank_ratio: Fraction of max rank for initial bottleneck (0.0 < ratio <= 1.0).\n    rank: Optional target rank override.\n    target_modules: Optional list of layer name filters.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 249242255071036562460975677344738233468
 }

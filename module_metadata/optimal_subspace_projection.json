@@ -1,13 +1,9 @@
 {
   "module_name": "optimal_subspace_projection",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/optimal_subspace_projection.py",
   "class_name": "OptimalSubspaceProjectionCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Optimal Subspace Projection Compressor using activation-aware randomized SVD.",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "calibration_loader",
     "rank_ratio",
@@ -16,28 +12,18 @@
     "calibration_texts",
     "device"
   ],
-  "forward_ops": [
+  "ops": [
+    "linear",
     "matmul",
-    "qr",
-    "svd",
-    "reshape"
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "Optimal Subspace Projection Compressor using activation-aware randomized SVD.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 327824798790387160335219664471916397141
 }

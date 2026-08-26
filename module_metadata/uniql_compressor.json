@@ -1,37 +1,25 @@
 {
   "module_name": "uniql_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/uniql_compressor.py",
   "class_name": "UniQLCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "rank",
     "bits"
   ],
-  "forward_ops": [
-    "svd"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "matmul (@)",
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "docstring": "",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 247564660500907099860503426424527614175
 }

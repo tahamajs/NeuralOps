@@ -1,36 +1,27 @@
 {
   "module_name": "adasvd_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adasvd_compressor.py",
   "class_name": "AdaSVDCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Adaptive SVD Compressor (AdaSVD).\n\nAssigns SVD ranks dynamically across layers proportional to spectral importance\n(nuclear norm ||W||_* = sum(sigma_i)), initializes factorized matrices with\nsymmetric square-root singular value distribution (A = U * sqrt(Sigma), B = sqrt(Sigma) * V^T),\nrefines facto",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "rank",
     "target_param_ratio",
     "num_iters",
     "target_modules"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "complexity": {
-    "time_complexity": "O(N m d)",
-    "space_complexity": "O(N m)",
-    "scaling_exponent": 1.0,
-    "description": "Kernelized Feature Map / Spectral Operator"
-  },
-  "family": "kernel",
-  "accent_color": "#a855f7",
-  "key_mechanisms": [
-    "Positive Orthogonal RFF",
-    "Kernel Feature Map phi(x)",
-    "Associative Re-ordering",
-    "Spectral Fourier Mode Decomp"
-  ]
+  "docstring": "Adaptive SVD Compressor (AdaSVD).\n\nAssigns SVD ranks dynamically across layers proportional to spectral importance\n(nuclear norm ||W||_* = sum(sigma_i)), initializes factorized matrices with\nsymmetric square-root singular value distribution (A = U * sqrt(Sigma), B = sqrt(Sigma) * V^T),\nrefines factors via Alternating Least Squares (ALS), and replaces dense nn.Linear layers\nwith factorized SVDLinear modules.\n\nArgs:\n    model: PyTorch neural network to compress.\n    rank: Optional baseline rank for all layers or global target rank.\n    target_param_ratio: Target parameter retention ratio (e.g. 0.7 for 30% reduction).\n    num_iters: Number of alternating least squares refinement iterations.\n    target_modules: Optional list of module name substrings to target.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 240951343454300061049532962383599806077
 }

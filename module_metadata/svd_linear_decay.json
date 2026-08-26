@@ -1,28 +1,21 @@
 {
   "module_name": "svd_linear_decay",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/svd_linear_decay.py",
   "class_name": "DecayGatedLinearAttention",
-  "base_classes": [
-    "SVDLinearAttention"
+  "category": "attention",
+  "family": "ssm",
+  "params": [],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
   "docstring": "Decay Gated SVD Linear Attention.",
-  "init_params": [],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "rank": 16,
+  "d_state": 16,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 30059668573567851561927752237177722071
 }

@@ -1,43 +1,36 @@
 {
   "module_name": "vspec",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/vspec.py",
   "class_name": "VSpecAttention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "VSpec++ Attention: Variational Spectral Token-Adaptive Attention Module.",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "hidden_dim",
     "rank",
+    "n_heads",
+    "keep_ratio",
+    "min_tokens",
+    "weight",
+    "in_dim",
+    "out_dim",
     "config",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "chunk",
-    "sigmoid",
+    "clamp",
+    "topk",
+    "matmul",
     "transpose",
     "softmax",
     "dropout",
-    "matmul",
     "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "VSpec++ Attention: Variational Spectral Token-Adaptive Attention Module.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 152578875026055931924213720036744733651
 }

@@ -1,13 +1,9 @@
 {
   "module_name": "zerokv_neo_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/zerokv_neo_compressor.py",
   "class_name": "ZeroKVNeoCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "ZeroKV-Neo Compressor: L2-norm weight pruning preserving attention sinks and heavy hitters.\n\nArgs:\n    model: PyTorch model.\n    keep_ratio: Fraction of output neurons to retain (default 0.3).\n    num_attention_sinks: Number of initial sink channels pinned (default 4).\n    heavy_hitter_ratio: Fracti",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "max_cache_len",
     "num_attention_sinks",
     "recent_window",
@@ -15,25 +11,18 @@
     "keep_ratio",
     "heavy_hitter_ratio"
   ],
-  "forward_ops": [
-    "topk"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "ZeroKV-Neo Compressor: L2-norm weight pruning preserving attention sinks and heavy hitters.\n\nArgs:\n    model: PyTorch model.\n    keep_ratio: Fraction of output neurons to retain (default 0.3).\n    num_attention_sinks: Number of initial sink channels pinned (default 4).\n    heavy_hitter_ratio: Fraction allocated to heavy hitters (default 0.1).",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 297948109378218338619993022953070320108
 }

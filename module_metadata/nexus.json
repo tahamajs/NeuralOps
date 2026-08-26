@@ -1,15 +1,16 @@
 {
   "module_name": "nexus",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/nexus.py",
   "class_name": "NEXUSAttention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "NEXUS: Neural Efficient X-scoring Unified Sparse Attention.\n\nUnified multi-scale sparse attention with training-free block scoring, learnable gating,\nfine-grained stripe masking, and global RFF linear rectification.\n\nArgs:\n    model_config: Transformer configuration object containing `num_attention_",
-  "init_params": [
-    "cfg",
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "head_dim",
+    "num_heads",
+    "gate_rank",
+    "top_k",
+    "temperature",
+    "cfg",
+    "rff_features",
     "model_config",
     "nexus_cfg",
     "layer_idx",
@@ -17,29 +18,22 @@
     "pretrained_attn",
     "bert_mode"
   ],
-  "forward_ops": [
+  "ops": [
+    "view",
+    "clamp",
     "matmul",
+    "cat",
     "softmax",
     "transpose",
-    "view",
+    "einsum",
     "dropout"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "NEXUS: Neural Efficient X-scoring Unified Sparse Attention.\n\nUnified multi-scale sparse attention with training-free block scoring, learnable gating,\nfine-grained stripe masking, and global RFF linear rectification.\n\nArgs:\n    model_config: Transformer configuration object containing `num_attention_heads` and `hidden_size`.\n    nexus_cfg: NEXUSConfig instance with architectural hyperparameters.\n    layer_idx: Index of current layer within the stacked transformer ($0 \\le l < L$).\n    total_layers: Total transformer depth.\n    pretrained_attn: Optional source attention module to initialize weights from.\n    bert_mode: Flag indicating BERT-style bidirectional execution.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 91002091745461340728904841184074469850
 }

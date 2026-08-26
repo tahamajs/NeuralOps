@@ -1,26 +1,21 @@
 {
   "module_name": "soka",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/soka.py",
   "class_name": "Soka",
-  "base_classes": [],
+  "category": "compression",
+  "family": "compression",
+  "params": [],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
   "docstring": "",
-  "init_params": [],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 33638132686825705893555004954263922798
 }
