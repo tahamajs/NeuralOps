@@ -1,13 +1,9 @@
 {
   "module_name": "compressed_attention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/compressed_attention.py",
   "class_name": "CompressedAttentionLayer2",
-  "base_classes": [
-    "CompressedAttentionLayer"
-  ],
-  "docstring": "SVD-Compressed Multi-Head Attention Layer with Truncated SVD Projections.",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "original_layer",
     "rank_qkv",
     "rank_out",
@@ -15,7 +11,7 @@
     "config",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "chunk",
     "transpose",
     "softmax",
@@ -23,22 +19,12 @@
     "view",
     "matmul"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 127338793499271472767513769999388578646
 }

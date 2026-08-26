@@ -1,13 +1,9 @@
 {
   "module_name": "flash_attention3_fp8",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/flash_attention3_fp8.py",
   "class_name": "FlashAttention3FP8",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "FlashAttention-3 FP8 Hardware-Accelerated Multi-Head Attention.\n\nMathematical Formulation:\n    1. FP8 Quantization:\n       $$Q_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(Q), \\quad K_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(K), \\quad V_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(V)$$\n",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "rank",
     "d_model",
@@ -15,26 +11,16 @@
     "use_fp8",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "view",
     "transpose"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "FlashAttention-3 FP8 Hardware-Accelerated Multi-Head Attention.\n\nMathematical Formulation:\n    1. FP8 Quantization:\n       $$Q_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(Q), \\quad K_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(K), \\quad V_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(V)$$\n    2. Exact Tiled Kernel Reduction:\n       $$O = \\text{FlashAttn3}(Q_{\\text{fp8}}, K_{\\text{fp8}}, V_{\\text{fp8}})$$\n    3. Output Projection:\n       $$\\text{Output} = \\operatorname{cast}_{\\text{dtype}}(O) W_{\\text{out}}^\\top + b_{\\text{out}}$$\n\nComplexity:\n    - Compute: $\\mathcal{O}(B \\cdot H \\cdot L^2 \\cdot d_h)$ with $2\\times$ FP8 Tensor Core throughput.\n    - Memory Bandwidth: $50\\%$ reduction in SRAM-HBM traffic compared to FP16/BF16.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 8,
+  "hash_val": 191841474017303014362502730963879558914
 }

@@ -1,13 +1,9 @@
 {
   "module_name": "adaptive_svd_attention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/adaptive_svd_attention.py",
   "class_name": "AdaptiveSVDAttention",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "Multi-Head Attention with Adaptive SVD + Residual factorized projections.",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "in_features",
     "out_features",
     "svd_rank",
@@ -19,7 +15,7 @@
     "energy_threshold",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "linear",
     "transpose",
     "softmax",
@@ -27,22 +23,12 @@
     "matmul",
     "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "Multi-Head Attention with Adaptive SVD + Residual factorized projections.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 319912418361027088147777551387204516192
 }

@@ -1,43 +1,30 @@
 {
   "module_name": "hamming_attention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hamming_attention.py",
   "class_name": "HammingAttention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "Hamming Attention Distillation (HAD) Module.\n\nMathematical Formulation:\n    1. Pseudo-Binarization via Tanh Relaxation:\n       $$Q_b = \\tanh(5.0 \\cdot \\gamma_Q \\odot Q) \\in [-1, 1]^{B \\times H \\times L \\times d_k}$$\n       $$K_b = \\tanh(5.0 \\cdot \\gamma_K \\odot K) \\in [-1, 1]^{B \\times H \\times L \\t",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "rank",
     "distill_temperature",
     "sparsity_ratio",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "matmul",
+    "clamp",
     "softmax",
     "dropout",
     "view",
     "topk"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "Hamming Attention Distillation (HAD) Module.\n\nMathematical Formulation:\n    1. Pseudo-Binarization via Tanh Relaxation:\n       $$Q_b = \\tanh(5.0 \\cdot \\gamma_Q \\odot Q) \\in [-1, 1]^{B \\times H \\times L \\times d_k}$$\n       $$K_b = \\tanh(5.0 \\cdot \\gamma_K \\odot K) \\in [-1, 1]^{B \\times H \\times L \\times d_k}$$\n    \n    2. Pairwise Continuous Hamming Distance:\n       $$D_H(Q_b, K_b) = \\frac{d_k - Q_b K_b^\\top}{2}$$\n    \n    3. Calibrated Logit Formulation:\n       $$S = -\\tau \\cdot \\frac{D_H(Q_b, K_b)}{\\sqrt{d_k}} = \\tau \\cdot \\frac{Q_b K_b^\\top - d_k}{2\\sqrt{d_k}}$$\n       where $\\tau$ is a calibrated temperature parameter restoring full attention dynamic range.\n    \n    4. Attention Context:\n       $$P = \\operatorname{Softmax}(S + M)$$\n       $$O = P V W_O$$\n\nComplexity:\n    - Time: $\\mathcal{O}(B \\cdot H \\cdot L^2 \\cdot d_k)$\n    - Space: $\\mathcal{O}(B \\cdot H \\cdot L^2)$",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 96220923684164170040499075183029085737
 }

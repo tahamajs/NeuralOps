@@ -1,21 +1,18 @@
 {
   "module_name": "lora_attention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/lora_attention.py",
   "class_name": "LoRAAttention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "LoRA Parameter-Efficient Fine-Tuning Attention Module.\n\nMathematical Mechanism:\n    Replaces standard query, key, value, and output linear projections with LoRA adapters:\n    $$\\begin{aligned}\n    Q &= \\text{LoRA}_Q(X), \\quad K = \\text{LoRA}_K(X), \\quad V = \\text{LoRA}_V(X) \\\\\n    S &= \\frac{Q K^\\to",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "original_layer",
     "rank",
     "alpha",
     "dropout",
     "model_config",
-    "pretrained_attn"
+    "pretrained_attn",
+    "d"
   ],
-  "forward_ops": [
+  "ops": [
     "linear",
     "dropout",
     "transpose",
@@ -23,22 +20,12 @@
     "matmul",
     "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "LoRA Parameter-Efficient Fine-Tuning Attention Module.\n\nMathematical Mechanism:\n    Replaces standard query, key, value, and output linear projections with LoRA adapters:\n    $$\\begin{aligned}\n    Q &= \\text{LoRA}_Q(X), \\quad K = \\text{LoRA}_K(X), \\quad V = \\text{LoRA}_V(X) \\\\\n    S &= \\frac{Q K^\\top}{\\sqrt{d_k}} + M_{\\text{mask}} \\\\\n    P &= \\text{softmax}(S, \\text{dim}=-1) \\\\\n    O &= \\text{LoRA}_O(P V)\n    \\end{aligned}$$\n\nComputational Complexity:\n    - Attention Map: $\\mathcal{O}(B \\cdot H \\cdot N^2 \\cdot d_k)$ time, $\\mathcal{O}(B \\cdot H \\cdot N^2)$ space.\n    - LoRA Projections: $\\mathcal{O}(B \\cdot N \\cdot (D^2 + 2 D r))$ time.\n\nTensor Dimensions:\n    - Input `hidden_states`: `[B, N, D]`\n    - Output: Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 282330618684993108478145843514527538056
 }
