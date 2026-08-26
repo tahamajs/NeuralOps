@@ -124,6 +124,41 @@
         </div>
       </section>
 
+      <!-- Live Training Loss & GPU Telemetry History Grid -->
+      <section class="charts-dual-grid">
+        <!-- Live Training Loss Card -->
+        <div class="analytics-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>📉 Live Training Loss Trajectory</h3>
+              <p class="section-desc" id="live-loss-note">Live loss convergence of active combination</p>
+            </div>
+            <div class="loss-meta-badges">
+              <span class="meta-badge badge-module" id="live-loss-module">svd_linear_attention</span>
+              <span class="meta-badge" id="live-loss-model">BERT</span>
+              <span class="meta-badge" id="live-loss-dataset">SST-2</span>
+              <span class="meta-badge badge-time" id="live-loss-time">Live</span>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-live-loss"></canvas>
+          </div>
+        </div>
+
+        <!-- GPU Hardware History Card -->
+        <div class="analytics-card">
+          <div class="card-header-flex">
+            <div>
+              <h3>⚡ GPU Telemetry Time-Series</h3>
+              <p class="section-desc">Historical GPU Core %, VRAM Allocation, and Power</p>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-gpu-history"></canvas>
+          </div>
+        </div>
+      </section>
+
       <!-- Live Execution Table -->
       <section class="table-section">
         <div class="table-header-flex">
