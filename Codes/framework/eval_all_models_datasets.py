@@ -706,6 +706,7 @@ def evaluate_single_combination_opt(
     device: torch.device = torch.device("cpu"), results_dir: str = "./results/gpu_server", allow_synthetic: bool = False,
 ) -> BenchmarkResult:
     import numpy as np
+    import gc
     from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
     from scipy.stats import pearsonr, spearmanr
     from torch.profiler import profile, record_function, ProfilerActivity
