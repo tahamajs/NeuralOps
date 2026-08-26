@@ -96,10 +96,10 @@ def select_top_modules_from_efficiency(efficiency_run_dir: Path, top_k: int = 15
     
     # Fallback list if efficiency results are partial
     fallback_defaults = [
-        "svd_linear_attention", "mamba", "samba_m3", "performer_attention",
-        "linformer_attention", "galerkin_attention", "adaptive_span_attention",
+        "svd_linear_attention", "svd_mamba", "mamba", "samba_m3", "gated_deltanet_block",
+        "performer_attention", "linformer_attention", "galerkin_attention", "adaptive_span",
         "soa_attn", "aegis_v6", "block_transformer_hiba", "leka_v3",
-        "nasc_attention", "griffin_ssd", "cosformer", "minimal_svd"
+        "nasc_attention", "griffin_ssd", "cosformer", "minimal_svd", "jamba2", "spectron"
     ]
     for fb in fallback_defaults:
         if fb not in top_names and len(top_names) < top_k:
