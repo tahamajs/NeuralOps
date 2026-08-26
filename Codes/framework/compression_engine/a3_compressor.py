@@ -105,7 +105,7 @@ class A3FactorizedLinear(nn.Module):
             device=linear.weight.device,
         )
         if U_factor is not None and V_factor is not None:
-            layer.set_low_rank_factors(U_factor, V_factor)
+            layer.U.data.copy_(U_factor); layer.V.data.copy_(V_factor)
         if linear.bias is not None:
             layer.bias.data.copy_(linear.bias.data)
         return layer

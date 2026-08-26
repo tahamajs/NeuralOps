@@ -178,7 +178,8 @@ def inject_performer(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> PerformerAttention:
+,
+    **kwargs) -> PerformerAttention:
     rank = getattr(comp_config, "performer_rank", 64)
     new_attn = PerformerAttention(
         config=model_config,

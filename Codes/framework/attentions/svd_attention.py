@@ -72,11 +72,7 @@ class SVDLinearAttention(nn.Module):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Forward pass of SVD-compressed multi-head attention on device."""
-        if hidden_states is None:
-            hidden_states = query if query is not None else key
-        if attention_mask is None:
-            attention_mask = mask
-
+        # Removed undefined variable references
         batch_size, seq_len, _ = hidden_states.shape
         device = hidden_states.device
         dtype = hidden_states.dtype

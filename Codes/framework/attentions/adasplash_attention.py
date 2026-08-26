@@ -226,7 +226,8 @@ def inject_adasplash(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> AdaSplashAttention:
+,
+    **kwargs) -> AdaSplashAttention:
     alpha = getattr(comp_config, "alpha", 1.5)
     new_attn = AdaSplashAttention(
         config=model_config,

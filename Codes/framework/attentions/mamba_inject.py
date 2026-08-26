@@ -21,7 +21,7 @@ def inject_mamba(
     **kwargs: Any,
 ) -> Any:
     r"""Injection hook that instantiates Mamba and wires it into a transformer layer."""
-    from framework.attentions.Mamba import Mamba
+    from framework.attentions.mamba import Mamba
 
     d_model = 768
     if model_config is not None:

@@ -166,7 +166,8 @@ def inject_adaptive_sparse(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> AdaptiveSparseAttention:
+,
+    **kwargs) -> AdaptiveSparseAttention:
     sparsity_ratio = getattr(comp_config, "adaptive_sparsity_ratio", 0.5)
     dropout = getattr(comp_config, "dropout", 0.1)
     new_attn = AdaptiveSparseAttention(

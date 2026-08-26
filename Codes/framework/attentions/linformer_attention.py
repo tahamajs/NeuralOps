@@ -130,7 +130,8 @@ class LinformerAttention(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("linformer_inject")
-def inject_linformer(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_linformer(layer, model_config, comp_config, layer_idx, total_layers, old_attn,
+    **kwargs):
     k = getattr(comp_config, "linformer_k", 64)
     max_seq_len = getattr(model_config, "max_position_embeddings", 512)
     new_attn = LinformerAttention(model_config, k=k, max_seq_len=max_seq_len, pretrained_attn=old_attn)
