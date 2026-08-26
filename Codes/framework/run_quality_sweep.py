@@ -479,6 +479,26 @@ def evaluate_single_seed_run(
                     all_preds.extend(preds.cpu().numpy())
                     if "labels" in inputs:
                         all_labels.extend(inputs["labels"].cpu().numpy())
+    else:
+        # Synthetic / fast validation fallback
+        val_batch = get_dataset_batch(
+            dataset, model_family, current_batch_size, seq_len,
+            num_labels=num_labels, device=device, allow_synthetic=allow_synthetic
+        )
+        filtered_inputs = _filter_batch(val_batch, model_family, model)
+        with torch.no_grad():
+            with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
+                val_out = model(**filtered_inputs)
+            val_logits = getattr(val_out, "logits", val_out[0] if isinstance(val_out, (tuple, list)) else None)
+            if val_logits is not None:
+                all_module_logits.append(val_logits.cpu())
+                if num_labels == 1:
+                    preds = val_logits.squeeze()
+                else:
+                    preds = torch.argmax(val_logits, dim=-1)
+                all_preds.extend(preds.cpu().numpy())
+                if "labels" in val_batch:
+                    all_labels.extend(val_batch["labels"].cpu().numpy())
 
     # Compute GLUE Metrics (Accuracy, F1, MCC, Pearson, Spearman)
     acc_pct = 0.0
@@ -567,9 +587,13 @@ def run_quality_benchmark_sweep(
     weight_decay: float = 0.01,
     batch_size: int = 128,
     seq_len: int = 128,
+    hidden_size: int = 128,
+    num_heads: int = 4,
+    num_layers: int = 2,
     timeout: int = 120,
     precision: str = "fp16",
     output_dir: Optional[str] = None,
+    allow_synthetic: bool = False,
 ) -> str:
     """Orchestrates Phase 2 Quality Sweep across all selected modules and random seeds."""
     active_modules = modules or DEFAULT_QUALITY_MODULES
@@ -679,8 +703,11 @@ def run_quality_benchmark_sweep(
                             weight_decay=weight_decay,
                             batch_size=batch_size,
                             seq_len=seq_len,
+                            hidden_size=hidden_size,
+                            num_heads=num_heads,
+                            num_layers=num_layers,
                             device=device,
-                            allow_synthetic=False,
+                            allow_synthetic=allow_synthetic,
                             baseline_logits_cache=baseline_logits_cache,
                         )
                         seed_results.append(res_seed)
@@ -758,7 +785,7 @@ def run_quality_benchmark_sweep(
                         "ci_lower": ci_l,
                         "ci_upper": ci_u,
                         "p_value_vs_baseline": p_val,
-                        "p_value_bonferroni": min(1.0, round(p_val * max(1, len(modules_to_evaluate) - 1), 4)) if mod_name != "full" else 1.0,
+                        "p_value_bonferroni": min(1.0, round(p_val * max(1, len(active_modules) - 1), 4)) if mod_name != "full" else 1.0,
                         "f1": avg_f1,
                         "mcc": valid_seeds[0].accuracy_pct if dataset_name.lower() == "cola" and valid_seeds else None,
                         "pearson": avg_f1 if dataset_name.lower() == "stsb" and valid_seeds else None,
@@ -776,7 +803,7 @@ def run_quality_benchmark_sweep(
                     "statistics": {
                         "ci_95": [ci_l, ci_u],
                         "paired_t_pvalue": p_val,
-                        "p_value_bonferroni": min(1.0, round(p_val * max(1, len(modules_to_evaluate) - 1), 4)) if mod_name != "full" else 1.0,
+                        "p_value_bonferroni": min(1.0, round(p_val * max(1, len(active_modules) - 1), 4)) if mod_name != "full" else 1.0,
                         "sample_size": len(valid_seeds),
                     },
                     "trajectories": {

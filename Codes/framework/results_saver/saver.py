@@ -144,22 +144,27 @@ def sqlite_file_lock(lock_file_path: Union[str, Path], timeout: float = 30.0):
     try:
         lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR)
         # Attempt non-blocking lock with retry loop until timeout expires
-        acquired = False
-        while time.time() - start_time < timeout:
-            try:
-                import fcntl
-                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                acquired = True
-                break
-            except (BlockingIOError, OSError, ImportError):
-                time.sleep(0.05)
+        has_fcntl = True
+        try:
+            import fcntl
+        except ImportError:
+            has_fcntl = False
 
-        if not acquired:
-            try:
-                import fcntl
-                fcntl.flock(lock_fd, fcntl.LOCK_EX)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-                pass
+        if has_fcntl:
+            acquired = False
+            while time.time() - start_time < timeout:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    acquired = True
+                    break
+                except (BlockingIOError, OSError):
+                    time.sleep(0.05)
+
+            if not acquired:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_EX)
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError):
+                    pass
 
         yield
     finally:
