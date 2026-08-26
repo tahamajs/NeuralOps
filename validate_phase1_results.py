@@ -17,6 +17,8 @@ def run_validation():
 
     # 1. Locate primary summary CSV
     candidates = [
+        "results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv",
+        "results/benchmark_summary_v2.csv",
         "results/gpu_server/snapshot_2026_08_26/benchmark_summary.csv",
         "results/gpu_server/benchmark_summary.csv",
         "results/benchmark_summary.csv",
