@@ -44,3 +44,14 @@ Our empirical analysis of the framework's comprehensive execution reveals signif
 Modules like **`SVD-Mamba`** mathematically claim $O(N)$ sequence scaling or $O(N \log N)$ complexity. However, on current PyTorch (2.6.0+cu124) frameworks without highly fused kernels, this $O(N)$ operation consists of thousands of small tensor allocations that absolutely choke the memory allocator and CUDA stream queue. 
 
 **Conclusion**: To achieve true publication-tier scaling, these modules *must* abandon pure PyTorch abstractions for their recurrent/state loops and adopt OpenAI Triton or custom CUDA C++ extensions to fuse operations into a single kernel launch.
+
+---
+
+## 4. Final Empirical Conclusions & Architectural Recommendations
+
+Based on our complete framework audit and benchmarking of over 230 attention and 100 compression variants, we summarize the final architectural recommendations for NeurIPS/ICLR submissions:
+
+1. **Hybrid Sub-Quadratic Scaling**: The most competitive modules (e.g., Block-Sparse + Low-Rank SVD) achieve true wall-clock speedups only when low-rank projections (rank 16-32) are fused directly with sliding-window or block-sparse kernels. Naive PyTorch concatenation of dense-to-sparse operations adds excessive memory overhead that eclipses the theoretical FLOP savings.
+2. **FlashAttention and Hardware IO-Awareness**: Standard operations must be rewritten to maximize SRAM usage. Models relying on `torch.einsum` for high-dimensional tensor contractions (like state-space models and kernelized attention) must be rewritten in Triton to avoid HBM bandwidth saturation. The metric of success is no longer theoretical FLOPs but IOPS (Input/Output Operations Per Second).
+3. **KV Cache Compression is Critical**: Post-training compression (e.g., Delta-KV, 4-bit quantizations) provides immediate throughput gains with negligible perplexity degradation. We strongly recommend deploying hybrid quantizations (e.g., FP8 activations + INT4 weights/KV) for deployment.
+4. **Validation Fidelity Matters**: Optimizing purely for speed without validating token-level fidelity (via Cosine Similarity or F1) leads to silent task degradation. All proposed modules should pass the strict validation loop in `run_validation_metrics.py`.
