@@ -115,6 +115,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
     
     # Check active Phase 2 summary.csv first
     active_csv_candidates = [
+        PROJECT_DIR / "results" / "run_quality_pretrained" / "summary.csv",
+        Path("results/run_quality_pretrained/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_fixed_final" / "summary.csv",
         Path("results/run_quality_fixed_final/summary.csv"),
     ]
@@ -170,6 +172,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
                 pass
     
     log_candidates = [
+        PROJECT_DIR / "run_quality_pretrained.log",
+        Path("run_quality_pretrained.log"),
         PROJECT_DIR / "run_quality_sweep_final_run.log",
         Path("run_quality_sweep_final_run.log"),
         PROJECT_DIR / "adaptive_sweep_v3.log",
@@ -610,7 +614,9 @@ def _build_stats_response() -> str:
     """Build the full stats JSON response with rich detail fields and comparative analytics."""
     gpu = get_gpu_stats()
     results = get_completed_results()
-    progress = compute_eta_and_progress(results, total_combos=240, window_size=50)
+    is_pre = (PROJECT_DIR / "results" / "run_quality_pretrained" / "summary.csv").exists()
+    tot_comb = 60 if is_pre else 240
+    progress = compute_eta_and_progress(results, total_combos=tot_comb, window_size=50)
     is_running = is_sweep_running()
     comparative = compute_comparative_analytics(results)
 
@@ -826,7 +832,7 @@ class RunManager:
                     "run_id": "run_active",
                     "name": "Phase 2 Quality Sweep (Active)",
                     "timestamp": ts_str,
-                    "num_combinations": 240,
+                    "num_combinations": 60 if (PROJECT_DIR / "results" / "run_quality_pretrained" / "summary.csv").exists() else 240,
                     "completed": len(active_results),
                     "pass": p_cnt,
                     "fail": f_cnt,
@@ -877,7 +883,7 @@ class RunManager:
         run_id = dir_path.name
         if run_id in ("run_quality_", "run_quality_fixed_1", "run_quality_20260826_175056"):
             return
-        if run_id == "run_quality_fixed_final" and is_sweep_running():
+        if run_id in ("run_quality_fixed_final", "run_quality_pretrained") and is_sweep_running():
             return
         cfg_file = dir_path / "config.json"
         sum_file = dir_path / "summary.csv"
