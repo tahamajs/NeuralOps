@@ -1,0 +1,47 @@
+{
+  "module_name": "SVD-Mamba",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/SVD-Mamba.py",
+  "class_name": "SVDMamba",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "SVD-Mamba module.\n\nCombines:\n- SVD-factorized input projections\n- Causal depthwise convolution\n- Selective state space (Mamba core)\n- Global SVD token mixing (residual branch)",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "config",
+    "d_model",
+    "d_state",
+    "d_conv",
+    "expand",
+    "dt_rank",
+    "global_rank"
+  ],
+  "forward_ops": [
+    "chunk",
+    "transpose",
+    "conv1d",
+    "silu"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "matmul (@)",
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

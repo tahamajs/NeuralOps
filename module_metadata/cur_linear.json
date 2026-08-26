@@ -1,0 +1,40 @@
+{
+  "module_name": "cur_linear",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cur_linear.py",
+  "class_name": "CURLinear",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Linear layer whose weight matrix is factorized via CUR cross-approximation:\nW \u2248 C @ U @ R\n- C in R^{out_features x rank}: selected columns of W\n- U in R^{rank x rank}: Moore-Penrose pseudo-inverse core matrix\n- R in R^{rank x in_features}: selected rows of W\n\nExecutes forward pass in factorized form",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "method",
+    "dtype",
+    "device"
+  ],
+  "forward_ops": [
+    "reshape",
+    "linear",
+    "view"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

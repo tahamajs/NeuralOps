@@ -1,0 +1,40 @@
+{
+  "module_name": "roast_hashed_linear",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/roast_hashed_linear.py",
+  "class_name": "ROASTCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Replace all nn.Linear layers with ROASTLinear (hardware\u2011aware weight sharing).",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "n_buckets",
+    "tile_size",
+    "bias",
+    "model"
+  ],
+  "forward_ops": [
+    "linear",
+    "split"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

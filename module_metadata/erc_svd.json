@@ -1,0 +1,33 @@
+{
+  "module_name": "erc_svd",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/erc_svd.py",
+  "class_name": "ERCCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Error-Controlled SVD (ERC-SVD) Compressor.\n\nFinds the minimal rank r for each linear layer such that the relative Frobenius reconstruction\nerror ||W - W_r||_F / ||W||_F is guaranteed to be <= allowed_error (i.e. singular energy retention\nsum_{i=1}^r sigma_i^2 / sum_j sigma_j^2 >= 1 - allowed_error^2",
+  "init_params": [
+    "model",
+    "allowed_error",
+    "rank",
+    "target_modules"
+  ],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N r d)",
+    "space_complexity": "O(r(N + d))",
+    "scaling_exponent": 1.0,
+    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
+  },
+  "family": "linear",
+  "accent_color": "#38bdf8",
+  "key_mechanisms": [
+    "Truncated SVD / Factorization",
+    "Orthogonal Basis U and V^T",
+    "Singular Spectrum Truncation",
+    "Rank Bottleneck Projection"
+  ]
+}

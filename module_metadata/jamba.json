@@ -1,0 +1,32 @@
+{
+  "module_name": "jamba",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/jamba.py",
+  "class_name": "SVDMamba",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "",
+  "init_params": [
+    "d_model",
+    "config",
+    "rank"
+  ],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

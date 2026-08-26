@@ -1,0 +1,41 @@
+{
+  "module_name": "wgqa_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/wgqa_attention.py",
+  "class_name": "WeightedGroupedQueryAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Weighted Grouped-Query Attention with learnable per-channel KV importance weights\nand head-pooling pretrained weight transfer.",
+  "init_params": [
+    "config",
+    "num_kv_heads",
+    "rank",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "view",
+    "transpose",
+    "softmax",
+    "dropout",
+    "matmul"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "module_name": "kronecker_linear",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/kronecker_linear.py",
+  "class_name": "KroneckerLinear",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Linear layer whose weight matrix is parameterised as the Kronecker product\nof two smaller factor matrices: W = A \u2297 B.\n\nFor W in R^{out_features x in_features}, with out_features = m1 * m2 and\nin_features = n1 * n2:\n- A in R^{m1 x n1}\n- B in R^{m2 x n2}\n\nForward contraction uses the vectorization ide",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "bias",
+    "rank",
+    "m1",
+    "n1",
+    "m2",
+    "n2",
+    "dtype",
+    "device"
+  ],
+  "forward_ops": [
+    "reshape",
+    "matmul",
+    "linear",
+    "transpose"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

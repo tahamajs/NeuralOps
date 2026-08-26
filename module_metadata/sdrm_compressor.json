@@ -1,0 +1,36 @@
+{
+  "module_name": "sdrm_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/sdrm_compressor.py",
+  "class_name": "SDRMCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "SDRM: Scaled Dimension Rank Modulation.\nAssigns layer rank proportional to parameter budget for edge inference.",
+  "init_params": [
+    "model",
+    "total_param_ratio"
+  ],
+  "forward_ops": [
+    "svd"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)",
+    "matmul (@)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N r d)",
+    "space_complexity": "O(r(N + d))",
+    "scaling_exponent": 1.0,
+    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
+  },
+  "family": "linear",
+  "accent_color": "#38bdf8",
+  "key_mechanisms": [
+    "Truncated SVD / Factorization",
+    "Orthogonal Basis U and V^T",
+    "Singular Spectrum Truncation",
+    "Rank Bottleneck Projection"
+  ]
+}

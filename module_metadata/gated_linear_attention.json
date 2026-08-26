@@ -1,0 +1,40 @@
+{
+  "module_name": "gated_linear_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/gated_linear_attention.py",
+  "class_name": "GatedLinearAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Gated Linear Attention (GLA) Bidirectional Module.\n\nMathematical Formulation:\n    For input sequence $X \\in \\mathbb{R}^{B \\times L \\times D}$:\n    1. **Multi-Head Projections:**\n       $$Q = X W_q, \\quad K = X W_k, \\quad V = X W_v, \\quad Z = X W_z$$\n       $$\\phi(Q) = \\text{ELU}(Q) + 1, \\quad \\phi(K",
+  "init_params": [
+    "config",
+    "rank",
+    "d_model",
+    "num_heads"
+  ],
+  "forward_ops": [
+    "transpose",
+    "sigmoid",
+    "view",
+    "silu"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

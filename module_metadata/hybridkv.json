@@ -1,0 +1,26 @@
+{
+  "module_name": "hybridkv",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/hybridkv.py",
+  "class_name": "Hybridkv",
+  "base_classes": [],
+  "docstring": "",
+  "init_params": [],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N d / \\gamma)",
+    "space_complexity": "O(N d \\cdot b)",
+    "scaling_exponent": 0.95,
+    "description": "Non-linear / Sub-byte Quantization"
+  },
+  "family": "compression",
+  "accent_color": "#06b6d4",
+  "key_mechanisms": [
+    "Affine Scaling & Zero-Point",
+    "Hessian-Weighted Error Min",
+    "Asymmetric Codebook Mapping",
+    "Outlier Channel Isolation"
+  ]
+}

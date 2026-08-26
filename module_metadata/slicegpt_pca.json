@@ -1,0 +1,41 @@
+{
+  "module_name": "slicegpt_pca",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/slicegpt_pca.py",
+  "class_name": "SliceGPTPCACompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "SliceGPT PCA-based compressor that performs activation-aware principal coordinate\nprojection and dimension pruning on Linear layers.",
+  "init_params": [
+    "model",
+    "calibration_loader",
+    "sparsity",
+    "tokenizer",
+    "calibration_texts"
+  ],
+  "forward_ops": [
+    "matmul",
+    "qr",
+    "cumsum",
+    "reshape"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

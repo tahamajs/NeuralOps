@@ -1,0 +1,41 @@
+{
+  "module_name": "tt_linear",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/tt_linear.py",
+  "class_name": "TTLinearLayer",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Tensor-Train (TT) Linear Layer.\nRepresents weight matrix W in R^{out_features x in_features} as a sequence\nof d TT-cores: G_1, G_2, ..., G_d where core G_k has shape (r_{k-1}, p_k, q_k, r_k)\nwith boundary ranks r_0 = r_d = 1.",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "tt_rank",
+    "bias",
+    "shape",
+    "dtype",
+    "device"
+  ],
+  "forward_ops": [
+    "reshape",
+    "view",
+    "linear",
+    "permute"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

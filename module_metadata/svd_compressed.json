@@ -1,0 +1,45 @@
+{
+  "module_name": "svd_compressed",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/svd_compressed.py",
+  "class_name": "SVDCompressedAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Multi-head attention with truncated SVD projections and optional sparse residuals.\n\nArgs:\n    model_config: Transformer model configuration.\n    dropout: Dropout rate for attention weights.\n    layer_idx: Layer index in transformer network.\n    pretrained_attn: Source attention module for weight fac",
+  "init_params": [
+    "model_config",
+    "dropout",
+    "layer_idx",
+    "pretrained_attn",
+    "ranks",
+    "add_sparse",
+    "sparsity_level"
+  ],
+  "forward_ops": [
+    "softmax",
+    "dropout",
+    "matmul",
+    "view",
+    "transpose",
+    "linear"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "module_name": "hla_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hla_attention.py",
+  "class_name": "HLAAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Hadamard Linear Attention (HLA) Bidirectional Module.\n\nMathematical Mechanism:\n    Maintains multi-head associative causal/anti-causal matrix states $S_t \\in \\mathbb{R}^{B \\times H \\times d_k \\times d_k}$:\n    $$\\begin{aligned}\n    \\phi(Q) &= \\text{ELU}(Q) + 1, \\quad \\phi(K) = \\text{ELU}(K) + 1 \\\\\n ",
+  "init_params": [
+    "config",
+    "rank",
+    "d_model",
+    "num_heads"
+  ],
+  "forward_ops": [
+    "transpose",
+    "view",
+    "sigmoid"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

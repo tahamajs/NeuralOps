@@ -1,0 +1,40 @@
+{
+  "module_name": "factorised_matrix_state",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/factorised_matrix_state.py",
+  "class_name": "FactorisedMatrixState",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Bidirectional Factorised Matrix State Recurrent Linear Attention.\n\nMathematical Formulation:\n    1. Multi-Head Normalized Projections:\n       $$Q = X W_q, \\quad K = X W_k, \\quad V = X W_v$$\n       $$\\tilde{q} = \\text{RMSNorm}(Q), \\quad \\tilde{k} = \\text{RMSNorm}(K) / \\sqrt{d_k}$$\n    2. Bidirectiona",
+  "init_params": [
+    "config",
+    "rank",
+    "d_model",
+    "num_heads"
+  ],
+  "forward_ops": [
+    "transpose",
+    "view",
+    "sigmoid"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "matmul (@)",
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

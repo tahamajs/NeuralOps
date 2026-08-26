@@ -1,0 +1,46 @@
+{
+  "module_name": "aegis_v3",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/aegis_v3.py",
+  "class_name": "AegisAttention",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "AEGIS-Attention V3 multi-head attention module.",
+  "init_params": [
+    "pretrained_weight",
+    "pretrained_bias",
+    "energy",
+    "min_rank",
+    "max_rank",
+    "model_config",
+    "aegis_cfg",
+    "pretrained_attn",
+    "bert_mode"
+  ],
+  "forward_ops": [
+    "transpose",
+    "view",
+    "softmax",
+    "sigmoid",
+    "matmul"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

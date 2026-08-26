@@ -1,0 +1,36 @@
+{
+  "module_name": "adasvd_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adasvd_compressor.py",
+  "class_name": "AdaSVDCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Adaptive SVD Compressor (AdaSVD).\n\nAssigns SVD ranks dynamically across layers proportional to spectral importance\n(nuclear norm ||W||_* = sum(sigma_i)), initializes factorized matrices with\nsymmetric square-root singular value distribution (A = U * sqrt(Sigma), B = sqrt(Sigma) * V^T),\nrefines facto",
+  "init_params": [
+    "model",
+    "rank",
+    "target_param_ratio",
+    "num_iters",
+    "target_modules"
+  ],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N m d)",
+    "space_complexity": "O(N m)",
+    "scaling_exponent": 1.0,
+    "description": "Kernelized Feature Map / Spectral Operator"
+  },
+  "family": "kernel",
+  "accent_color": "#a855f7",
+  "key_mechanisms": [
+    "Positive Orthogonal RFF",
+    "Kernel Feature Map phi(x)",
+    "Associative Re-ordering",
+    "Spectral Fourier Mode Decomp"
+  ]
+}

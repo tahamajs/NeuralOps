@@ -1,0 +1,37 @@
+{
+  "module_name": "kmeans_quantize",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/kmeans_quantize.py",
+  "class_name": "KMeansCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "KMeansCompressor: Vector quantization via scalar k-means clustering of weight parameters.\n\nArgs:\n    model: PyTorch model.\n    n_clusters: Number of centroid codebook entries (default 256 -> 8 bits, 16 -> 4 bits).\n    bits: Optional bitwidth constraint (e.g. 4 or 8) which sets n_clusters = 2**bits.",
+  "init_params": [
+    "linear",
+    "n_clusters",
+    "model",
+    "bits"
+  ],
+  "forward_ops": [
+    "linear"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d / \\gamma)",
+    "space_complexity": "O(N d \\cdot b)",
+    "scaling_exponent": 0.95,
+    "description": "Non-linear / Sub-byte Quantization"
+  },
+  "family": "compression",
+  "accent_color": "#06b6d4",
+  "key_mechanisms": [
+    "Affine Scaling & Zero-Point",
+    "Hessian-Weighted Error Min",
+    "Asymmetric Codebook Mapping",
+    "Outlier Channel Isolation"
+  ]
+}

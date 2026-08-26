@@ -1,0 +1,44 @@
+{
+  "module_name": "dobi_svd",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/dobi_svd.py",
+  "class_name": "DobiSVDCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Dobi-SVD Compressor: Differentiable SVD with learnable spectral gating.\n\nExtracts truncated SVD factors from pretrained nn.Linear weights with symmetric\nsquare-root singular value distribution (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T),\nand replaces layers with DobiSVDLinearLayer containing learna",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "init_gate_val",
+    "dtype",
+    "device",
+    "model",
+    "init_rank_ratio",
+    "target_modules"
+  ],
+  "forward_ops": [
+    "linear",
+    "sigmoid"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

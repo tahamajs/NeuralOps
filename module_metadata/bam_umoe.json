@@ -1,0 +1,49 @@
+{
+  "module_name": "bam_umoe",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/bam_umoe.py",
+  "class_name": "BAMUMoEBlock",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "BAM Unified Mixture of Experts Attention Block.\n\nReplaces standard linear attention projections and feed-forward networks with\nparameter-efficient top-k conditional computation blocks with full self-attention\nand pretrained weight copying.",
+  "init_params": [
+    "dim",
+    "num_experts",
+    "top_k",
+    "output_dim",
+    "noise_std",
+    "config",
+    "rank",
+    "layer_id",
+    "num_layers",
+    "old_attn",
+    "comp_config"
+  ],
+  "forward_ops": [
+    "topk",
+    "softmax",
+    "view",
+    "transpose",
+    "dropout",
+    "matmul"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

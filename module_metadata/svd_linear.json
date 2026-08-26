@@ -1,0 +1,37 @@
+{
+  "module_name": "svd_linear",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/svd_linear.py",
+  "class_name": "SVDLinearCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Compresses model by replacing Linear layers with SVDLinearLayer.",
+  "init_params": [
+    "linear_layer",
+    "rank",
+    "use_fused_kernel",
+    "use_rms_norm",
+    "eps",
+    "model"
+  ],
+  "forward_ops": [
+    "matmul"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N m d)",
+    "space_complexity": "O(N m)",
+    "scaling_exponent": 1.0,
+    "description": "Kernelized Feature Map / Spectral Operator"
+  },
+  "family": "kernel",
+  "accent_color": "#a855f7",
+  "key_mechanisms": [
+    "Positive Orthogonal RFF",
+    "Kernel Feature Map phi(x)",
+    "Associative Re-ordering",
+    "Spectral Fourier Mode Decomp"
+  ]
+}

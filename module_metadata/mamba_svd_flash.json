@@ -1,0 +1,41 @@
+{
+  "module_name": "mamba_svd_flash",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/mamba_svd_flash.py",
+  "class_name": "MambaSVDFlash",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "MambaSVD-Flash Hybrid Bidirectional Attention Module.\n\nAddresses the memory-bandwidth bottleneck of long-context state-space models by fusing \nbidirectional selective state-space recurrent dynamics with online Singular Value Decomposition of \nstate transitions, alongside a bidirectional FlashAttenti",
+  "init_params": [
+    "config",
+    "rank",
+    "d_model",
+    "hidden_size",
+    "num_heads"
+  ],
+  "forward_ops": [
+    "view",
+    "transpose",
+    "reshape",
+    "sigmoid"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}
