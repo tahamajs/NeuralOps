@@ -275,6 +275,8 @@ def evaluate_single_seed_run(
     device: torch.device = torch.device("cpu"),
     allow_synthetic: bool = False,
     baseline_logits_cache: Optional[Dict[Tuple[str, str, int], torch.Tensor]] = None,
+    pretrained: bool = False,
+    gradient_checkpointing: bool = False,
 ) -> SeedResult:
     """Executes a full training and validation pass for a single seed with AdamW + Linear Warmup."""
     from sklearn.metrics import accuracy_score, f1_score
@@ -292,14 +294,41 @@ def evaluate_single_seed_run(
     num_labels = 1 if dataset.lower() == "stsb" else 2
 
     # 1. Instantiate Model
-    model, cfg = get_base_model_cached(
-        model_family=model_family,
-        num_labels=num_labels,
-        hidden_size=hidden_size,
-        num_heads=num_heads,
-        num_layers=num_layers,
-        device=device,
-    )
+    if pretrained:
+        from transformers import AutoModelForSequenceClassification
+        model_name_map = {
+            "distilbert": "distilbert-base-uncased",
+            "bert": "bert-base-uncased",
+            "roberta": "roberta-base",
+        }
+        hf_model_id = model_name_map.get(model_family.lower(), "distilbert-base-uncased")
+        try:
+            model = AutoModelForSequenceClassification.from_pretrained(
+                hf_model_id,
+                num_labels=num_labels,
+            )
+            if gradient_checkpointing and hasattr(model, "gradient_checkpointing_enable"):
+                model.gradient_checkpointing_enable()
+            cfg = model.config
+        except Exception as e:
+            logger.warning("Could not load pretrained weights for %s: %s. Falling back to base model.", hf_model_id, e)
+            model, cfg = get_base_model_cached(
+                model_family=model_family,
+                num_labels=num_labels,
+                hidden_size=hidden_size,
+                num_heads=num_heads,
+                num_layers=num_layers,
+                device=device,
+            )
+    else:
+        model, cfg = get_base_model_cached(
+            model_family=model_family,
+            num_labels=num_labels,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_layers=num_layers,
+            device=device,
+        )
     model.train()
 
     # 2. Inject Attention / Compression Module (if not baseline full)
@@ -683,6 +712,8 @@ def run_quality_benchmark_sweep(
     precision: str = "fp16",
     output_dir: Optional[str] = None,
     allow_synthetic: bool = False,
+    pretrained: bool = False,
+    gradient_checkpointing: bool = False,
 ) -> str:
     """Orchestrates Phase 2 Quality Sweep across all selected modules and random seeds."""
     active_modules = modules or DEFAULT_QUALITY_MODULES
@@ -719,8 +750,19 @@ def run_quality_benchmark_sweep(
     else:
         device = torch.device("cpu")
 
+    if pretrained:
+        if hidden_size == 128:
+            if "distilbert" in active_models:
+                hidden_size, num_heads, num_layers = 768, 12, 6
+            else:
+                hidden_size, num_heads, num_layers = 768, 12, 12
+        if batch_size == 128:
+            batch_size = 16
+
     config_dict = {
         "run_id": run_id,
+        "pretrained": pretrained,
+        "gradient_checkpointing": gradient_checkpointing,
         "phase": 2,
         "type": "quality_sweep",
         "created_at": datetime.now().isoformat(),
@@ -798,6 +840,8 @@ def run_quality_benchmark_sweep(
                             device=device,
                             allow_synthetic=allow_synthetic,
                             baseline_logits_cache=baseline_logits_cache,
+                            pretrained=pretrained,
+                            gradient_checkpointing=gradient_checkpointing,
                         )
                         seed_results.append(res_seed)
                     except Exception as e:
@@ -957,6 +1001,8 @@ def main():
     parser.add_argument("--timeout", type=int, default=120, help="Hard timeout in seconds")
     parser.add_argument("--precision", type=str, default="fp16", help="Precision (fp16, bf16, fp32)")
     parser.add_argument("--output_dir", type=str, default=None, help="Target output directory")
+    parser.add_argument("--pretrained", action="store_true", default=False, help="Use real pretrained HuggingFace weights")
+    parser.add_argument("--gradient_checkpointing", action="store_true", default=False, help="Enable gradient checkpointing")
 
     args = parser.parse_args()
 
@@ -979,6 +1025,8 @@ def main():
         timeout=args.timeout,
         precision=args.precision,
         output_dir=args.output_dir,
+        pretrained=args.pretrained,
+        gradient_checkpointing=args.gradient_checkpointing,
     )
 
 
