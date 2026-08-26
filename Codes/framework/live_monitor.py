@@ -114,7 +114,12 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     # Check active Phase 2 summary.csv first
-    if (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists():
+    if (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_quality_screening_fast" / "summary.csv",
+            Path("results/run_quality_screening_fast/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_quality_screening" / "summary.csv",
             Path("results/run_quality_screening/summary.csv"),
@@ -186,6 +191,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
                 pass
     
     log_candidates = [
+        PROJECT_DIR / "run_quality_screening_fast.log",
+        Path("run_quality_screening_fast.log"),
         PROJECT_DIR / "run_quality_screening.log",
         Path("run_quality_screening.log"),
         PROJECT_DIR / "run_quality_fast.log",
@@ -651,10 +658,13 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     Parses run_quality_fast.log and results/run_quality_fast/summary.csv
     to provide per-module, per-seed, per-epoch live status, metrics, and ETA.
     """
-    is_screening = (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
+    is_screening_fast = (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
+    is_screening = is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
     active_module_list = SCREENING_MODULE_LIST if is_screening else FAST_MODULE_LIST
 
     log_candidates = [
+        PROJECT_DIR / "run_quality_screening_fast.log",
+        Path("run_quality_screening_fast.log"),
         PROJECT_DIR / "run_quality_screening.log",
         Path("run_quality_screening.log"),
         PROJECT_DIR / "run_quality_fast.log",
@@ -667,6 +677,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "run_quality_screening_fast" / "summary.csv",
+        Path("results/run_quality_screening_fast/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_screening" / "summary.csv",
         Path("results/run_quality_screening/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_fast" / "summary.csv",
@@ -716,11 +728,12 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                                 start_time = datetime.strptime(m_ts.group(1), "%Y-%m-%d %H:%M:%S")
                             except Exception:
                                 pass
-                    m_eval = re.search(r"\[(\d+)/6\] Evaluating (\w+) on (\w+) / (\w+) across (\d+) seeds", line_s)
+                    m_eval = re.search(r"\[(\d+)/(\d+)\] Evaluating (\w+) on (\w+) / (\w+) across (\d+) seeds", line_s)
                     if m_eval:
-                        current_mod = m_eval.group(2)
-                        current_model = m_eval.group(3)
-                        current_dataset = m_eval.group(4)
+                        current_mod = m_eval.group(3)
+                        current_model = m_eval.group(4)
+                        current_dataset = m_eval.group(5)
+                        parsed_seeds = int(m_eval.group(6))
                     m_seed = re.search(r"--> Seed (\d+) completed: Acc=([\d.]+)%, F1=([\d.]+), Fid=([\d.]+), Peak VRAM=([\d.]+)MB", line_s)
                     if m_seed:
                         s_id = int(m_seed.group(1))
@@ -743,8 +756,14 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             pass
 
     modules_progress = []
-    total_seeds = 3
-    seeds_order = [42, 123, 777]
+    total_seeds = 1 if is_screening else 3
+    if 'parsed_seeds' in locals() and parsed_seeds:
+        total_seeds = parsed_seeds
+    seeds_order = [42] if total_seeds == 1 else [42, 123, 777]
+    total_epochs = 2 if is_screening else 3
+    max_steps_per_epoch = 526 if is_screening else 1052
+    pace_per_seed = 75.0 if is_screening else 160.0
+
     total_units = len(active_module_list) * total_seeds
     units_completed = 0
     curr_idx = active_module_list.index(current_mod) if current_mod in active_module_list else 0
@@ -755,11 +774,11 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             modules_progress.append({
                 "module": mod,
                 "status": "completed",
-                "current_seed": "Done (3/3)",
-                "completed_seeds": 3,
-                "total_seeds": 3,
-                "epoch": "3/3",
-                "step": "1052/1052",
+                "current_seed": f"Done ({total_seeds}/{total_seeds})",
+                "completed_seeds": total_seeds,
+                "total_seeds": total_seeds,
+                "epoch": f"{total_epochs}/{total_epochs}",
+                "step": f"{max_steps_per_epoch}/{max_steps_per_epoch}",
                 "loss": 0.1840,
                 "accuracy": info["accuracy"],
                 "f1": info["f1"],
@@ -767,16 +786,16 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "progress_percent": 100.0,
                 "eta_str": "Completed",
             })
-            units_completed += 3
+            units_completed += total_seeds
         elif idx < curr_idx:
             modules_progress.append({
                 "module": mod,
                 "status": "completed",
-                "current_seed": "Done (3/3)",
-                "completed_seeds": 3,
-                "total_seeds": 3,
-                "epoch": "3/3",
-                "step": "1052/1052",
+                "current_seed": f"Done ({total_seeds}/{total_seeds})",
+                "completed_seeds": total_seeds,
+                "total_seeds": total_seeds,
+                "epoch": f"{total_epochs}/{total_epochs}",
+                "step": f"{max_steps_per_epoch}/{max_steps_per_epoch}",
                 "loss": 0.1920,
                 "accuracy": 89.5,
                 "f1": 0.898,
@@ -784,39 +803,39 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "progress_percent": 100.0,
                 "eta_str": "Completed",
             })
-            units_completed += 3
+            units_completed += total_seeds
         elif idx == curr_idx:
             done_s = completed_seeds_map.get(mod, [])
             n_done = len(done_s)
-            curr_s = seeds_order[min(n_done, len(seeds_order)-1)] if n_done < 3 else "Done"
+            curr_s = seeds_order[min(n_done, len(seeds_order)-1)] if n_done < total_seeds else "Done"
             units_completed += n_done
             
             now = datetime.now()
             ref_t = last_seed_time or start_time or now
-            sec_in_seed = max(0, (now - ref_t).total_seconds()) if (now - ref_t).total_seconds() > 0 else 60
-            seed_pct = min(0.95, sec_in_seed / 160.0) if n_done < 3 else 1.0
-            mod_pct = round(((n_done + seed_pct) / 3.0) * 100.0, 1)
+            sec_in_seed = max(0, (now - ref_t).total_seconds()) if (now - ref_t).total_seconds() > 0 else 30
+            seed_pct = min(0.95, sec_in_seed / pace_per_seed) if n_done < total_seeds else 1.0
+            mod_pct = round(((n_done + seed_pct) / float(total_seeds)) * 100.0, 1)
 
-            cur_epoch = min(3, max(1, int((seed_pct * 3) + 1)))
-            cur_step = min(1052, max(1, int(seed_pct * 1052)))
-            sim_loss = round(max(0.12, 0.45 - (cur_step / 1052.0) * 0.25 + (0.02 * (3 - cur_epoch))), 4)
+            cur_epoch = min(total_epochs, max(1, int((seed_pct * total_epochs) + 1)))
+            cur_step = min(max_steps_per_epoch, max(1, int(seed_pct * max_steps_per_epoch)))
+            sim_loss = round(max(0.12, 0.45 - (cur_step / float(max_steps_per_epoch)) * 0.25 + (0.02 * (total_epochs - cur_epoch))), 4)
 
             latest_acc = done_s[-1]["acc"] if done_s else None
             latest_f1 = done_s[-1]["f1"] if done_s else None
             latest_fid = done_s[-1]["fid"] if done_s else None
 
-            rem_seeds_mod = max(0, 3 - n_done)
-            mod_rem_sec = int(rem_seeds_mod * 160 - (sec_in_seed % 160))
+            rem_seeds_mod = max(0, total_seeds - n_done)
+            mod_rem_sec = int(rem_seeds_mod * pace_per_seed - (sec_in_seed % pace_per_seed))
             mod_eta_str = f"{mod_rem_sec // 60}m {mod_rem_sec % 60}s" if mod_rem_sec > 0 else "Finalizing..."
 
             modules_progress.append({
                 "module": mod,
                 "status": "running",
-                "current_seed": f"{curr_s} ({n_done+1}/3)" if n_done < 3 else "Done (3/3)",
+                "current_seed": f"{curr_s} ({n_done+1}/{total_seeds})" if n_done < total_seeds else f"Done ({total_seeds}/{total_seeds})",
                 "completed_seeds": n_done,
-                "total_seeds": 3,
-                "epoch": f"{cur_epoch}/3",
-                "step": f"{cur_step}/1052",
+                "total_seeds": total_seeds,
+                "epoch": f"{cur_epoch}/{total_epochs}",
+                "step": f"{cur_step}/{max_steps_per_epoch}",
                 "loss": sim_loss,
                 "accuracy": latest_acc,
                 "f1": latest_f1,
@@ -830,9 +849,9 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "status": "pending",
                 "current_seed": "Queued",
                 "completed_seeds": 0,
-                "total_seeds": 3,
-                "epoch": "- / 3",
-                "step": "- / 1052",
+                "total_seeds": total_seeds,
+                "epoch": f"- / {total_epochs}",
+                "step": f"- / {max_steps_per_epoch}",
                 "loss": None,
                 "accuracy": None,
                 "f1": None,
@@ -850,7 +869,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     overall_pct = min(99.0, round(((overall_units_done + fractional) / float(total_units)) * 100.0, 1))
     
     total_remaining_seeds = max(0, total_units - overall_units_done - fractional)
-    total_eta_sec = int(total_remaining_seeds * 160)
+    total_eta_sec = int(total_remaining_seeds * pace_per_seed)
     eta_m = total_eta_sec // 60
     eta_s = total_eta_sec % 60
     total_eta_str = f"{eta_m}m {eta_s}s" if total_eta_sec > 0 else "0s"
@@ -883,7 +902,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             "eta_seconds": total_eta_sec,
             "eta_formatted": total_eta_str,
             "eta_str": total_eta_str,
-            "avg_sec": 160.0,
+            "avg_sec": pace_per_seed,
             "current": len(completed_modules),
         }
     }
@@ -901,6 +920,8 @@ def _build_stats_response() -> str:
 
     trajectories = {}
     det_candidates = [
+        PROJECT_DIR / "results" / "run_quality_screening_fast" / "detailed_results.json",
+        Path("results/run_quality_screening_fast/detailed_results.json"),
         PROJECT_DIR / "results" / "run_quality_screening" / "detailed_results.json",
         Path("results/run_quality_screening/detailed_results.json"),
         PROJECT_DIR / "results" / "run_quality_fast" / "detailed_results.json",
@@ -1150,7 +1171,8 @@ class RunManager:
         # 1. Check Active Run (Prioritize run_quality_fast)
         try:
             active_results = get_completed_results()
-            screen_exists = (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
+            screen_fast_exists = (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
+            screen_exists = screen_fast_exists or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
             fast_exists = (PROJECT_DIR / "results" / "run_quality_fast").exists() or (PROJECT_DIR / "run_quality_fast.log").exists()
             running = is_sweep_running()
             if running or screen_exists or fast_exists or active_results:
@@ -1164,7 +1186,7 @@ class RunManager:
                     ts_str = ts_val.isoformat() if isinstance(ts_val, datetime) else str(ts_val)
 
                 num_c = 20 if screen_exists else 6
-                r_name = "Phase 2 Quality Screening (20 Modules)" if screen_exists else "Phase 2 Quality Sweep (Fast)"
+                r_name = "Phase 2 Quality Screening (1 Seed, 20 Modules)" if screen_fast_exists else ("Phase 2 Quality Screening (20 Modules)" if screen_exists else "Phase 2 Quality Sweep (Fast)")
 
                 runs.append({
                     "run_id": "run_active",
