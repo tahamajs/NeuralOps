@@ -168,7 +168,7 @@ class ORIONAttention(BaseAttention):
                 orion_cfg.svd_max_rank = max(rank, orion_cfg.svd_min_rank)
 
         hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768))) if cfg is not None else kwargs.get("hidden_size", 768)
-        num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 12)) if cfg is not None else kwargs.get("num_attention_heads", 12)
+        num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 4)) if cfg is not None else kwargs.get("num_attention_heads", 4)
 
         self.num_heads: int = max(1, num_heads)
         self.head_dim: int = hidden_size // self.num_heads

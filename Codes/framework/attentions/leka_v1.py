@@ -42,7 +42,7 @@ class LEKAV1Attention(BaseAttention):
         rank: Optional[int] = None,
     ) -> None:
         super().__init__(config, rank)
-        self.num_attention_heads: int = getattr(config, "num_attention_heads", 12)
+        self.num_attention_heads: int = getattr(config, "num_attention_heads", 4)
         hidden_size: int = getattr(config, "hidden_size", 768)
         self.attention_head_size: int = hidden_size // self.num_attention_heads if self.num_attention_heads > 0 else 64
         self.all_head_size: int = self.num_attention_heads * self.attention_head_size

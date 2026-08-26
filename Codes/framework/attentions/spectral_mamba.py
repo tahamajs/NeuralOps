@@ -74,7 +74,7 @@ class SpectralMambaAttention(BaseAttention):
     ) -> None:
         if not isinstance(config, SpectralMambaConfig):
             h_size = getattr(config, "hidden_size", 768) if config is not None else 768
-            n_heads = getattr(config, "num_attention_heads", 12) if config is not None else 12
+            n_heads = getattr(config, "num_attention_heads", 4) if config is not None else 12
             config = SpectralMambaConfig(
                 hidden_size=h_size,
                 num_attention_heads=n_heads,
@@ -133,7 +133,7 @@ class SpectralMambaAttention(BaseAttention):
                 pass
             model_config = DummyConfig()
             model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 12))
+            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def forward(
@@ -199,7 +199,7 @@ def inject_spectral_mamba(
     if model_config is None and hasattr(layer, "attention"):
         old_attn = layer.attention
     h_size = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
-    n_heads = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+    n_heads = getattr(model_config, "num_attention_heads", 4) if model_config is not None else 12
 
     cfg = SpectralMambaConfig(
         hidden_size=h_size,

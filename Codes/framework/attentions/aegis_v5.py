@@ -181,7 +181,7 @@ class AegisAttention(nn.Module):
         super().__init__()
         if model_config is None and config is not None:
             model_config = config
-        self.num_heads: int = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", 12)) if model_config is not None else 12
+        self.num_heads: int = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", 4)) if model_config is not None else 12
         self.hidden_size: int = getattr(model_config, "hidden_size", getattr(model_config, "d_model", 768)) if model_config is not None else 768
         self.head_dim: int = self.hidden_size // max(1, self.num_heads)
         self.all_head_size: int = self.num_heads * self.head_dim

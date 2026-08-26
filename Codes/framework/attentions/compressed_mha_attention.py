@@ -34,7 +34,7 @@ class CompressedDistilBertAttention(nn.Module):
         super().__init__()
         cfg = config or model_config
         self.hidden_size: int = getattr(cfg, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads: int = getattr(cfg, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads: int = getattr(cfg, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim: int = self.hidden_size // self.num_heads
         self.rank_qkv = rank_qkv
         self.rank_out = rank_out

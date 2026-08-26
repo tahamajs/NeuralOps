@@ -127,7 +127,7 @@ class REAPMoEAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim = self.dim // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
 

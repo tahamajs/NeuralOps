@@ -54,7 +54,7 @@ class HGRN2Layer(BaseAttention):
             elif config is not None:
                 d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
         if d_model is None:
-            d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
+            d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 128)))
 
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
@@ -186,7 +186,7 @@ def inject_hgrn2_layer(
     r"""Injection hook for HGRN2Layer."""
     d_model = 128
     if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
     elif hasattr(layer, "config"):
         d_model = getattr(layer.config, "hidden_size", 128)
 

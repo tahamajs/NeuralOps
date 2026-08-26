@@ -128,13 +128,13 @@ def inject_hgrn2_gated_deltanet(
 ) -> HGRN2GatedDeltaNet:
     r"""Injection hook for HGRN2GatedDeltaNet."""
     d_model = 128  # was hardcoded 768
-    num_heads = 12
+    num_heads = 4
     if model_config is not None:
         d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-        num_heads = getattr(model_config, "num_attention_heads", 12)
+        num_heads = getattr(model_config, "num_attention_heads", 4)
     elif hasattr(layer, "config"):
         d_model = getattr(layer.config, "hidden_size", 768)
-        num_heads = getattr(layer.config, "num_attention_heads", 12)
+        num_heads = getattr(layer.config, "num_attention_heads", 4)
 
     new_net = HGRN2GatedDeltaNet(
         d_model=d_model, num_heads=num_heads, config=model_config, **kwargs

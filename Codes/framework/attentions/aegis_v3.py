@@ -174,10 +174,10 @@ class AegisAttention(nn.Module):
         super().__init__()
         if model_config is None and pretrained_attn is not None:
             hidden_size = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None)).out_features
-            num_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 12))
+            num_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 4))
         else:
             hidden_size = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
-            num_heads = getattr(model_config, "num_attention_heads", 12) if model_config is not None else 12
+            num_heads = getattr(model_config, "num_attention_heads", 4) if model_config is not None else 12
 
         self.hidden_size: int = hidden_size
         self.num_heads: int = num_heads
@@ -261,7 +261,7 @@ class AegisAttention(nn.Module):
                 pass
             model_config = DummyConfig()
             model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 12))
+            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
         return cls(model_config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def forward(
