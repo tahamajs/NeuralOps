@@ -96,42 +96,42 @@ class GriffinSSDBlock(BaseAttention):
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
-    def _ssd_scan(
+    def _ssd_scan_parallel(
         self,
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
         decay: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
-        reverse: bool = False,
-    ) -> torch.Tensor:
-        """Multi-head associative SSD linear scan."""
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Parallel State-Space Duality (SSD) matrix scan."""
         B, H, L, d = q.shape
-        H_state = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
-        outputs = []
 
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            q_t = q[:, :, t, :]  # [B, H, d]
-            k_t = k[:, :, t, :]  # [B, H, d]
-            v_t = v[:, :, t, :]  # [B, H, d]
+        # Log decay per head: decay is [1, H, 1, 1]
+        log_decay = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))  # [1, H, 1, 1]
+        pos = torch.arange(L, device=q.device, dtype=q.dtype)
+        pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [L, L]
 
-            H_next = decay * H_state + (k_t.unsqueeze(-1) @ v_t.unsqueeze(-2))
+        # 1. Forward causal decay matrix
+        tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        D_causal = torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)) * tril_mask.float()
 
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1, 1)
-                H_state = torch.where(m_t, H_next, H_state)
-            else:
-                H_state = H_next
+        # 2. Backward anticausal decay matrix
+        triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        D_anti = torch.exp((-pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)) * triu_mask.float()
 
-            # y_t = q_t @ H_state
-            y_t = (q_t.unsqueeze(-2) @ H_state).squeeze(-2)
-            outputs.append(y_t)
+        attn_scores = (q @ k.transpose(-1, -2))  # [B, H, L, L]
 
-        if reverse:
-            outputs.reverse()
+        if mask is not None:
+            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
+            D_causal = D_causal * mask_2d
+            D_anti = D_anti * mask_2d
 
-        return torch.stack(outputs, dim=2)
+        y_fwd = (attn_scores * D_causal) @ v  # [B, H, L, d]
+        y_bwd = (attn_scores * D_anti) @ v    # [B, H, L, d]
+
+        return y_fwd, y_bwd
 
     def forward(
         self,
@@ -189,10 +189,16 @@ class GriffinSSDBlock(BaseAttention):
         # 3. Global Bidirectional SSD Recurrence
         q_norm = F.normalize(q_ssd, p=2, dim=-1)
         k_norm = F.normalize(k, p=2, dim=-1) / (d ** 0.5)
-        decay = torch.sigmoid(self.decay_param).unsqueeze(0)  # [1, H, 1, 1]
+        decay = torch.sigmoid(self.decay_param).view(1, H, 1, 1)
 
-        ssd_fwd = self._ssd_scan(q_norm, k_norm, v, decay, mask=mask_bool, reverse=False)
-        ssd_bwd = self._ssd_scan(q_norm, k_norm, v, decay, mask=mask_bool, reverse=True)
+        if self.training and q_norm.requires_grad:
+            ssd_fwd, ssd_bwd = torch.utils.checkpoint.checkpoint(
+                self._ssd_scan_parallel, q_norm, k_norm, v, decay, mask_bool, use_reentrant=False
+            )
+        else:
+            ssd_fwd, ssd_bwd = self._ssd_scan_parallel(q_norm, k_norm, v, decay, mask_bool)
+
+        ssd_out = 0.5 * (ssd_fwd + ssd_bwd)
         global_out = 0.5 * (ssd_fwd + ssd_bwd)
 
         # 4. Fused Output
