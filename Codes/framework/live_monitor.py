@@ -114,6 +114,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     log_candidates = [
+        PROJECT_DIR / "full_sweep_v2.log",
+        Path("full_sweep_v2.log"),
         PROJECT_DIR / "full_sweep.log",
         Path("full_sweep.log"),
         MASTER_LOG,
