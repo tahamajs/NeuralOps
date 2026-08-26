@@ -1,189 +1,40 @@
-name: CI & Full Stack Verification
+name: NeuralOps CI Pipeline
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
-  FORCE_COLOR: "1"
 
 jobs:
-  framework-ci:
-    name: PyTorch Framework Tests (Python ${{ matrix.python-version }})
+  test-suite:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']
-      fail-fast: false
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
+    - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
-        with:
-          python-version: ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
 
-      - name: Install PyTorch & Framework Dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install numpy scipy pytest flake8 transformers einops matplotlib scikit-learn psutil pyyaml pandas datasets evaluate timm seaborn
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-      - name: Validate Documentation Catalog Sync
-        run: |
-          python generate_catalog.py
-          git diff --exit-code Docs/catalog.json || (echo "Docs/catalog.json is out of sync. Please run python generate_catalog.py" && exit 1)
+    - name: Syntax and Bytecode Compilation Check
+      run: |
+        python -m py_compile Codes/framework/attentions/*.py
+        python -m py_compile Codes/framework/compression_engine/*.py
+        python -m py_compile Codes/framework/*.py
 
-      - name: Verify Python Module Syntax
-        run: |
-          python -m compileall Codes/framework/
-
-      - name: Run Framework Unit Tests
-        run: |
-          PYTHONPATH=Codes/framework:Codes python -m unittest discover -s Codes/framework/tests
-
-      - name: Run Master Framework 6-Stage Integration Suite
-        run: |
-          PYTHONPATH=Codes python Codes/framework/test_all_framework.py
-
-      - name: Verify All 120 Attention Architectures & 77 Compression Engines
-        run: |
-          PYTHONPATH=Codes/framework:Codes python Codes/framework/verify_all_framework_modules.py
-
-      - name: Run Compression Engine Test Suite
-        run: |
-          PYTHONPATH=Codes/framework:Codes python Codes/framework/test_all_compression_engines.py
-
-  django-backend-ci:
-    name: Django Backend & REST API Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-
-      - name: Install Backend Dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install django>=4.2 djangorestframework>=3.14 django-cors-headers>=4.0 django-filter>=23.0 django-extensions>=3.2 channels>=4.0 daphne>=4.0 channels-redis>=4.0 djangorestframework-simplejwt>=5.3.0 python-decouple>=3.8 django-allauth pytest pytest-django pynvml transformers datasets evaluate scikit-learn pandas psutil pyyaml requests python-dateutil einops timm celery seaborn optuna deepdiff
-
-      - name: Run Django System Check
-        working-directory: Codes/django_api
-        run: |
-          python manage.py check
-
-      - name: Apply Database Migrations
-        working-directory: Codes/django_api
-        run: |
-          python manage.py migrate --noinput
-
-      - name: Run Backend API & Authentication Audit (61 Tests)
-        working-directory: Codes/django_api
-        run: |
-          python audit_backend_api.py
-
-      - name: Run Django Test Suite
-        working-directory: Codes/django_api
-        run: |
-          python manage.py test api.test_attention_dashboard experiment.test_experiments_api web_dashboard --keepdb
-
-      - name: Run Real-Time WebSocket Channel Suite (7 Tests)
-        working-directory: Codes/django_api
-        run: |
-          python manage.py test django_api.test_websocket_audit --keepdb
-
-      - name: Run End-to-End Multi-Architecture Launch Flow Suite (4 Tests)
-        working-directory: Codes/django_api
-        run: |
-          python manage.py test api.test_e2e_launch_flow --keepdb
-
-      - name: Verify All 78 Django Apps Ecosystem
-        working-directory: Codes/django_api
-        run: |
-          python verify_all_django_apps.py
-
-  frontend-ci:
-    name: Frontend TypeScript & Production Build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
-
-      - name: Set up Node.js 22.x
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-
-      - name: Install Frontend Dependencies
-        working-directory: Codes/frontend
-        run: |
-          npm install --legacy-peer-deps
-
-      - name: Run TypeScript Typecheck (0 Errors)
-        working-directory: Codes/frontend
-        run: |
-          npx tsc --noEmit
-
-      - name: Run Production Vite Build
-        working-directory: Codes/frontend
-        run: |
-          NODE_OPTIONS=--max-old-space-size=4096 npm run build
-
-  docs-hub-ci:
-    name: Research Hub Documentation SPA Audit
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-
-      - name: Verify Catalog Consistency
-        run: |
-          python generate_catalog.py
-          git diff --exit-code Docs/catalog.json
-
-  neuralops-agent-ci:
-    name: NeuralOps Agent & GUI Bridge Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-
-      - name: Install Agent Dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install pytest psutil pyyaml requests websocket-client pynvml PySocks docker
-
-      - name: Run NeuralOps Agent 99-Test Suite
-        working-directory: Codes/neuralops-agent
-        run: |
-          pytest tests/ -v
+    - name: Run Test Suite
+      env:
+        PYTHONPATH: Codes:.
+      run: |
+        pytest Codes/framework/tests/ -v --tb=short

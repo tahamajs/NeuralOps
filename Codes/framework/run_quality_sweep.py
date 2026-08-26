@@ -731,8 +731,20 @@ def run_quality_benchmark_sweep(
                 )
 
     total_wall_clock = time.time() - start_time
+    gpu_hours = round(total_wall_clock / 3600.0, 4)
+    estimated_co2_kg = round(0.060 * (total_wall_clock / 3600.0) * 0.385, 6)
+
+    # Update config with final telemetry & compute accounting
+    config_dict["completed_at"] = datetime.now().isoformat()
+    config_dict["wall_clock_seconds"] = round(total_wall_clock, 2)
+    config_dict["total_gpu_hours"] = gpu_hours
+    config_dict["estimated_co2_kg"] = estimated_co2_kg
+    with open(target_dir / "config.json", "w", encoding="utf-8") as f:
+        json.dump(config_dict, f, indent=2)
+
     logger.info("================================================================================")
     logger.info("✅ PHASE 2 QUALITY SWEEP COMPLETED in %.2f seconds (%.2f minutes)", total_wall_clock, total_wall_clock / 60.0)
+    logger.info("Total Compute: %.4f GPU Hours | Estimated Emissions: %.6f kg CO2eq", gpu_hours, estimated_co2_kg)
     logger.info("Results saved to: %s", target_dir)
     logger.info("================================================================================")
 
