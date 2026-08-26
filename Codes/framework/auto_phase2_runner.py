@@ -60,24 +60,43 @@ def wait_for_efficiency_and_run_quality(
                 logger.warning("Error reading log: %s", e)
 
         if is_done or completed >= total:
-            logger.info("🎯 Efficiency sweep complete! (%d/%d combos). Launching Phase 2 Quality Sweep...", completed, total)
+            logger.info("🎯 Efficiency sweep complete! (%d/%d combos). Launching GPU Retest Suite...", completed, total)
             break
 
         logger.info("⏳ Efficiency sweep in progress: %d/%d combos. Waiting %ds...", completed, total, poll_interval)
         time.sleep(poll_interval)
 
+    # 1. Run GPU Retest Suite on Heavy Modules
+    logger.info("================================================================================")
+    logger.info("🔬 RUNNING TARGETED GPU RETEST SUITE ON HEAVY MODULES")
+    logger.info("================================================================================")
+    unsupported_modules = set()
+    try:
+        from framework.retest_heavy_modules_gpu import run_gpu_retest
+        retest_results = run_gpu_retest(output_dir="results/retest_heavy_modules")
+        for mod, rdata in retest_results.items():
+            if rdata.get("verdict") == "UNSUPPORTED":
+                unsupported_modules.add(mod)
+                logger.warning("Module '%s' marked UNSUPPORTED and excluded from Phase 2 selection", mod)
+            else:
+                logger.info("Module '%s' verified PASS (%s)", mod, rdata.get("verdict"))
+    except Exception as e:
+        logger.error("GPU retest suite failed: %s", e)
+
     ts_now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     target_dir = PROJECT_DIR / "results" / f"run_quality_{ts_now}"
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    from framework.run_quality_sweep import run_quality_benchmark_sweep
+    from framework.run_quality_sweep import DEFAULT_QUALITY_MODULES, run_quality_benchmark_sweep
+    active_quality_modules = [m for m in DEFAULT_QUALITY_MODULES if m not in unsupported_modules]
+
     sds = [int(s.strip()) for s in seeds.split(",")]
     mdls = [m.strip() for m in models.split(",")]
     dts = [d.strip() for d in datasets.split(",")]
 
-    logger.info("🚀 Launching Phase 2 Quality Sweep in: %s", target_dir)
+    logger.info("🚀 Launching Phase 2 Quality Sweep with %d modules in: %s", len(active_quality_modules), target_dir)
     res_dir = run_quality_benchmark_sweep(
-        modules=None,  # Uses verified DEFAULT_QUALITY_MODULES (20 modules)
+        modules=active_quality_modules,
         models=mdls,
         datasets=dts,
         seeds=sds,
