@@ -183,7 +183,6 @@ def inject_xattention(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-,
     **kwargs) -> XAttention:
     block_size = getattr(comp_config, "xattn_block_size", 32)
     sparsity = getattr(comp_config, "xattn_sparsity", 0.5)
