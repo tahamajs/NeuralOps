@@ -39,7 +39,12 @@ def retest_modules(output_dir: str = "results/retest_heavy_modules"):
     target_dir = PROJECT_DIR / output_dir
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    modules_to_test = ["factorised_matrix_state", "mamba_svd_flash"]
+    modules_to_test = [
+        "factorised_matrix_state",
+        "mamba_svd_flash",
+        "gated_delta_net",
+        "gated_deltanet_block",
+    ]
     models = ["bert", "roberta"]
     datasets = ["sst2", "mrpc"]
 
