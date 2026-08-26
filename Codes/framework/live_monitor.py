@@ -114,12 +114,16 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     # Check active Phase 2 summary.csv first
-    active_csv_candidates = [
-        PROJECT_DIR / "results" / "run_quality_pretrained" / "summary.csv",
-        Path("results/run_quality_pretrained/summary.csv"),
-        PROJECT_DIR / "results" / "run_quality_fixed_final" / "summary.csv",
-        Path("results/run_quality_fixed_final/summary.csv"),
-    ]
+    if (PROJECT_DIR / "results" / "run_quality_pretrained").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_quality_pretrained" / "summary.csv",
+            Path("results/run_quality_pretrained/summary.csv"),
+        ]
+    else:
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_quality_fixed_final" / "summary.csv",
+            Path("results/run_quality_fixed_final/summary.csv"),
+        ]
     for acsv in active_csv_candidates:
         if acsv.exists() and acsv.stat().st_size > 0:
             try:
