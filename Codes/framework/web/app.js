@@ -420,20 +420,27 @@ function renderLiveLoss(data) {
   if (modelElem) modelElem.textContent = modelName;
   if (dsElem) dsElem.textContent = dsName;
   if (timeElem) timeElem.textContent = timeStr;
+  const hasRealLoss = activeItem && activeItem.status === "PASS" && activeItem.trajectories && activeItem.trajectories.loss && Array.isArray(activeItem.trajectories.loss) && activeItem.trajectories.loss.length > 0;
+
   if (noteElem) {
-    noteElem.textContent = data.is_running 
-      ? `Live loss convergence of active iteration: ${modName}`
-      : `Last completed iteration: ${modName}`;
+    if (!activeItem) {
+      noteElem.textContent = "No active iteration data available";
+    } else if (activeItem.status !== "PASS") {
+      noteElem.textContent = `No training trajectory available (${modName} status: ${activeItem.status})`;
+    } else if (!hasRealLoss) {
+      noteElem.textContent = `No per-step loss recorded for ${modName}`;
+    } else {
+      noteElem.textContent = data.is_running 
+        ? `Live loss convergence of active iteration: ${modName}`
+        : `Last completed iteration: ${modName}`;
+    }
   }
 
-  let steps = [1, 2, 3, 4, 5];
+  let steps = [];
   let lossCurve = [];
-  if (activeItem && activeItem.trajectories && activeItem.trajectories.loss) {
+  if (hasRealLoss) {
     lossCurve = activeItem.trajectories.loss;
     steps = lossCurve.map((_, i) => i + 1);
-  } else {
-    const baseLoss = activeItem && activeItem.status === "PASS" ? 0.35 : 0.69;
-    lossCurve = steps.map((s) => +(baseLoss + Math.exp(-s / 2.0) * 0.4 + (Math.sin(s) * 0.02)).toFixed(4));
   }
 
   const ctxLoss = document.getElementById("chart-live-loss");
@@ -1109,26 +1116,21 @@ function renderLossOverlayChart() {
   const datasets = [];
 
   selected.forEach((mod, idx) => {
-    let lossVals = [];
-    if (trajectories[mod] && trajectories[mod].loss) {
-      lossVals = trajectories[mod].loss;
-    } else {
-      lossVals = [0.693, 0.68, 0.65, 0.62, 0.58, 0.54, 0.50, 0.46, 0.42, 0.38].map(v => +(v * (1 + (idx * 0.05))).toFixed(4));
+    if (trajectories[mod] && trajectories[mod].loss && Array.isArray(trajectories[mod].loss) && trajectories[mod].loss.length > 0) {
+      datasets.push({
+        label: mod,
+        data: trajectories[mod].loss,
+        borderColor: colors[idx % colors.length],
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.3,
+      });
     }
-
-    datasets.push({
-      label: mod,
-      data: lossVals,
-      borderColor: colors[idx % colors.length],
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      pointRadius: 2,
-      tension: 0.3,
-    });
   });
 
-  const maxLen = Math.max(...datasets.map(d => d.data.length), 10);
-  const labels = Array.from({ length: maxLen }, (_, i) => `Step ${i + 1}`);
+  const maxLen = datasets.length > 0 ? Math.max(...datasets.map(d => d.data.length)) : 0;
+  const labels = maxLen > 0 ? Array.from({ length: maxLen }, (_, i) => `Step ${i + 1}`) : [];
 
   if (lossOverlayChart) lossOverlayChart.destroy();
   lossOverlayChart = new Chart(canvas.getContext("2d"), {
@@ -1137,7 +1139,15 @@ function renderLossOverlayChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'top' } },
+      plugins: { 
+        legend: { position: 'top' },
+        title: {
+          display: datasets.length === 0,
+          text: "No training trajectory data available for selected modules",
+          color: "#94a3b8",
+          font: { style: 'italic', size: 12 }
+        }
+      },
       scales: {
         x: { title: { display: true, text: 'Training Steps' } },
         y: { title: { display: true, text: 'Cross-Entropy Loss' } }
@@ -1150,13 +1160,13 @@ function renderBubbleScatterChart() {
   const canvas = document.getElementById("chart-bubble-scatter");
   if (!canvas) return;
 
-  const mods = getFilteredModules();
+  const mods = getFilteredModules().filter(m => m.success_runs > 0 && m.avg_fwd && m.avg_mem);
   const bubbleData = mods.map(m => ({
     x: m.avg_fwd,
     y: m.avg_mem,
-    r: Math.max(4, (m.avg_acc || 50) / 10),
+    r: Math.max(4, ((m.avg_acc !== null && m.avg_acc !== undefined) ? m.avg_acc : 50) / 10),
     name: m.module_name,
-    acc: m.avg_acc,
+    acc: m.avg_acc !== null && m.avg_acc !== undefined ? `${m.avg_acc}%` : 'N/A',
   }));
 
   if (bubbleScatterChart) bubbleScatterChart.destroy();
@@ -1177,7 +1187,7 @@ function renderBubbleScatterChart() {
       plugins: {
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.raw.name}: Fwd ${ctx.raw.x}ms, VRAM ${ctx.raw.y}MB, Acc ${ctx.raw.acc}%`
+            label: (ctx) => `${ctx.raw.name}: Fwd ${ctx.raw.x}ms, VRAM ${ctx.raw.y}MB, Acc ${ctx.raw.acc}`
           }
         }
       },
@@ -1193,19 +1203,38 @@ function renderPerformanceHeatmap() {
   const container = document.getElementById("heatmap-container");
   if (!container) return;
 
-  const results = currentData.results || currentData.summary || [];
+  const results = currentData.results || currentData.recent_results || currentData.summary || [];
   const datasetsList = ["SST2", "MRPC", "COLA", "STSB", "WIKITEXT2"];
   const matrix = {};
 
   results.forEach(r => {
-    const mod = r.module;
+    const mod = r.module || r.module_name;
     const ds = (r.dataset || "").toUpperCase();
     if (!mod || !ds) return;
     if (!matrix[mod]) matrix[mod] = {};
-    matrix[mod][ds] = r.acc_pct !== undefined ? r.acc_pct : (r.metrics?.accuracy ?? (r.status === "PASS" ? 85.0 : 0.0));
+
+    let accVal = null;
+    if (r.acc_pct !== undefined && r.acc_pct !== null) {
+      accVal = parseFloat(r.acc_pct);
+    } else if (r.metrics && r.metrics.accuracy !== undefined && r.metrics.accuracy !== null) {
+      accVal = parseFloat(r.metrics.accuracy);
+    } else if (r.status === "PASS" && r.accuracy !== undefined && r.accuracy !== null) {
+      accVal = parseFloat(r.accuracy);
+    }
+
+    if (accVal !== null && !isNaN(accVal)) {
+      matrix[mod][ds] = accVal;
+    } else if (r.status === "FAIL" || r.status === "TIMEOUT") {
+      matrix[mod][ds] = -1.0;
+    }
   });
 
-  const modNames = Object.keys(matrix).slice(0, 15);
+  const modNames = Object.keys(matrix).slice(0, 18);
+  if (modNames.length === 0) {
+    container.innerHTML = `<div class="placeholder-text">No evaluation dataset results available yet</div>`;
+    return;
+  }
+
   let html = `<table class="heatmap-table"><thead><tr><th>Module</th>`;
   datasetsList.forEach(d => html += `<th>${d}</th>`);
   html += `</tr></thead><tbody>`;
@@ -1216,11 +1245,12 @@ function renderPerformanceHeatmap() {
       const val = matrix[m][d];
       if (val === undefined || val === null) {
         html += `<td class="cell-na">-</td>`;
+      } else if (val < 0) {
+        html += `<td class="cell-fail">FAIL</td>`;
       } else {
         let cls = "cell-low";
         if (val >= 80) cls = "cell-high";
         else if (val >= 50) cls = "cell-med";
-        else if (val <= 0) cls = "cell-fail";
         html += `<td class="${cls}">${val.toFixed(1)}%</td>`;
       }
     });
@@ -1235,12 +1265,30 @@ function renderModelDistributionChart() {
   if (!canvas) return;
 
   const comp = currentData.comparative_analytics || {};
-  const mods = (comp.module_leaderboard || []).slice(0, 8);
+  const mods = (comp.module_leaderboard || []).filter(m => m.success_count > 0).slice(0, 8);
   const labels = mods.map(m => m.module);
 
-  const bertFwd = mods.map(m => m.avg_fwd_ms || 35.0);
-  const robertaFwd = mods.map(m => (m.avg_fwd_ms || 35.0) * 1.15);
-  const t5Fwd = mods.map(m => (m.avg_fwd_ms || 35.0) * 1.4);
+  // Group real model results if available
+  const allResults = currentData.results || currentData.recent_results || currentData.summary || [];
+  const bertFwd = [];
+  const robertaFwd = [];
+  const t5Fwd = [];
+
+  labels.forEach(modName => {
+    const modRuns = allResults.filter(r => (r.module || r.module_name) === modName && r.status === "PASS");
+    const getAvgFwd = (fam) => {
+      const subset = modRuns.filter(r => (r.model || r.model_family || "").toUpperCase().includes(fam));
+      if (!subset.length) return null;
+      const sum = subset.reduce((acc, r) => acc + parseFloat(r.fwd_ms || r.forward_latency_ms || 0), 0);
+      return +(sum / subset.length).toFixed(2);
+    };
+
+    bertFwd.push(getAvgFwd("BERT"));
+    robertaFwd.push(getAvgFwd("ROBERTA"));
+    t5Fwd.push(getAvgFwd("T5"));
+  });
+
+  const hasAnyData = bertFwd.some(v => v !== null) || robertaFwd.some(v => v !== null) || t5Fwd.some(v => v !== null);
 
   if (modelDistChart) modelDistChart.destroy();
   modelDistChart = new Chart(canvas.getContext("2d"), {
@@ -1256,13 +1304,117 @@ function renderModelDistributionChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'top' } },
+      plugins: { 
+        legend: { position: 'top' },
+        title: {
+          display: !hasAnyData,
+          text: "No per-model latency breakdown available",
+          color: "#94a3b8",
+          font: { style: 'italic', size: 12 }
+        }
+      },
       scales: {
         x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 } },
         y: { title: { display: true, text: 'Forward Latency (ms)' } }
       }
     }
   });
+}
+
+function formatMetricOrNA(val, suffix = "", isSuccessful = true, digits = 2) {
+  if (!isSuccessful || val === null || val === undefined || isNaN(val) || val <= 0) {
+    return `<span class="cell-na">N/A</span>`;
+  }
+  return `${fN(val, digits)}${suffix}`;
+}
+
+function updateAnalyticsTable() {
+  const tbody = document.getElementById("analytics-tbody");
+  if (!tbody) return;
+
+  const searchInput = document.getElementById("analytics-search");
+  const q = searchInput ? searchInput.value.toLowerCase() : "";
+
+  let mods = getFilteredModules().filter(m => m.module_name.toLowerCase().includes(q));
+
+  // Sort
+  mods.sort((a, b) => {
+    let vA = a.module_name, vB = b.module_name;
+    if (currentSortColumn === 0) { vA = a.module_name; vB = b.module_name; }
+    else if (currentSortColumn === 1) { vA = a.track; vB = b.track; }
+    else if (currentSortColumn === 2) { vA = a.total_runs; vB = b.total_runs; }
+    else if (currentSortColumn === 3) { vA = a.avg_fwd ?? 999999; vB = b.avg_fwd ?? 999999; }
+    else if (currentSortColumn === 4) { vA = a.avg_bwd ?? 999999; vB = b.avg_bwd ?? 999999; }
+    else if (currentSortColumn === 5) { vA = a.avg_mem ?? 999999; vB = b.avg_mem ?? 999999; }
+    else if (currentSortColumn === 6) { vA = a.avg_acc ?? -1; vB = b.avg_acc ?? -1; }
+    else if (currentSortColumn === 7) { vA = a.avg_f1 ?? -1; vB = b.avg_f1 ?? -1; }
+    else if (currentSortColumn === 8) { vA = a.avg_fidelity ?? -1; vB = b.avg_fidelity ?? -1; }
+    else if (currentSortColumn === 9) { vA = a.avg_throughput ?? -1; vB = b.avg_throughput ?? -1; }
+
+    if (vA < vB) return currentSortAsc ? -1 : 1;
+    if (vA > vB) return currentSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  tbody.innerHTML = "";
+  if (mods.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="loading-cell">No modules found matching query</td></tr>`;
+    return;
+  }
+
+  mods.forEach(m => {
+    const isSucc = m.success_runs > 0;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${m.module_name}</strong></td>
+      <td><span class="tag-track">${m.track}</span></td>
+      <td>${m.success_runs} / ${m.total_runs}</td>
+      <td>${formatMetricOrNA(m.avg_fwd, " ms", isSucc)}</td>
+      <td>${formatMetricOrNA(m.avg_bwd, " ms", isSucc)}</td>
+      <td>${formatMetricOrNA(m.avg_mem, " MB", isSucc, 0)}</td>
+      <td>${formatMetricOrNA(m.avg_acc, "%", isSucc)}</td>
+      <td>${formatMetricOrNA(m.avg_f1, "", isSucc, 4)}</td>
+      <td>${formatMetricOrNA(m.avg_fidelity, "", isSucc, 4)}</td>
+      <td>${formatMetricOrNA(m.avg_throughput, "", isSucc, 1)}</td>
+    `;
+    tr.onclick = () => openModuleModal(m.module_name);
+    tbody.appendChild(tr);
+  });
+}
+
+function sortAnalyticsTable(colIdx) {
+  if (currentSortColumn === colIdx) {
+    currentSortAsc = !currentSortAsc;
+  } else {
+    currentSortColumn = colIdx;
+    currentSortAsc = true;
+  }
+  updateAnalyticsTable();
+}
+
+// ==========================================
+// HISTORICAL COMPARISON STUDIO (DIFF VIEW)
+// ==========================================
+async function updateRunComparison() {
+  const selA = document.getElementById("compare-run-a");
+  const selB = document.getElementById("compare-run-b");
+  const metricSel = document.getElementById("compare-metric-select");
+
+  if (!selA || !selB) return;
+  const idA = selA.value || "run_active";
+  const idB = selB.value || (availableRuns[1] ? availableRuns[1].run_id : "run_active");
+  const metric = metricSel ? metricSel.value : "fwd";
+
+  try {
+    const [resA, resB] = await Promise.all([
+      fetch(`/api/runs/${idA}`, { cache: "no-store" }).then(r => r.json()),
+      fetch(`/api/runs/${idB}`, { cache: "no-store" }).then(r => r.json())
+    ]);
+
+    renderRunDiff(resA, resB, metric);
+  } catch (err) {
+    console.error("Error updating run comparison:", err);
+  }
 }
 
 // ==========================================
@@ -1281,8 +1433,8 @@ function openModuleModal(moduleName) {
 
   if (!mod) {
     const passCount = validRuns.length;
-    const avgFwd = validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.fwd_ms || r.forward_latency_ms || 0) || 0), 0) / validRuns.length) : 0.0;
-    const avgMem = validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.mem_mb || r.peak_memory_mb || 0) || 0), 0) / validRuns.length) : 0.0;
+    const avgFwd = validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.fwd_ms || r.forward_latency_ms || 0) || 0), 0) / validRuns.length) : null;
+    const avgMem = validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.mem_mb || r.peak_memory_mb || 0) || 0), 0) / validRuns.length) : null;
 
     mod = {
       module_name: moduleName,
@@ -1290,10 +1442,10 @@ function openModuleModal(moduleName) {
       success_runs: passCount,
       total_runs: runs.length || 1,
       avg_fwd: avgFwd,
-      avg_bwd: avgFwd * 1.5,
+      avg_bwd: avgFwd ? avgFwd * 1.5 : null,
       avg_mem: avgMem,
-      avg_acc: validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.acc_pct || r.acc || 0) || 0), 0) / validRuns.length) : 0.0,
-      avg_f1: validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.f1_score || r.f1 || 0) || 0), 0) / validRuns.length) : 0.0,
+      avg_acc: validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.acc_pct || r.acc || 0) || 0), 0) / validRuns.length) : null,
+      avg_f1: validRuns.length ? (validRuns.reduce((s, r) => s + (parseFloat(r.f1_score || r.f1 || 0) || 0), 0) / validRuns.length) : null,
     };
   }
 
@@ -1303,20 +1455,28 @@ function openModuleModal(moduleName) {
   document.getElementById("mod-dtl-track").textContent = mod.track;
   document.getElementById("mod-dtl-runs").textContent = `${mod.success_runs} / ${mod.total_runs}`;
   const passRate = mod.total_runs ? ((mod.success_runs/mod.total_runs)*100).toFixed(1) : (isFailed ? "0.0" : "100.0");
-  document.getElementById("mod-dtl-pass").textContent = `${passRate}%`;
+  document.getElementById("mod-dtl-pass").textContent = isFailed ? "0.0% (Failed)" : `${passRate}%`;
   
   const badge = document.getElementById("modal-status-badge");
-  badge.textContent = isFailed ? "FAIL" : (parseFloat(passRate) >= 99.0 ? "PASS" : "WARN");
+  badge.textContent = isFailed ? "FAIL / TIMEOUT" : (parseFloat(passRate) >= 99.0 ? "PASS" : "WARN");
   badge.className = `tag-status tag-${isFailed ? "fail" : "pass"}`;
 
-  document.getElementById("mod-dtl-fwd").textContent = isFailed ? "0.00 ms" : `${fN(mod.avg_fwd)} ms`;
-  document.getElementById("mod-dtl-vram").textContent = isFailed ? "0 MB" : `${fN(mod.avg_mem, 0)} MB`;
-  document.getElementById("mod-dtl-acc").textContent = isFailed ? "0.00%" : `${fN(mod.avg_acc)}%`;
-  document.getElementById("mod-dtl-f1").textContent = isFailed ? "0.000" : fN(mod.avg_f1, 3);
-  document.getElementById("mod-dtl-pval").textContent = "p < 0.01";
+  document.getElementById("mod-dtl-fwd").textContent = isFailed ? "N/A" : `${fN(mod.avg_fwd)} ms`;
+  document.getElementById("mod-dtl-vram").textContent = isFailed ? "N/A" : `${fN(mod.avg_mem, 0)} MB`;
+  document.getElementById("mod-dtl-acc").textContent = isFailed || mod.avg_acc === null ? "N/A" : `${fN(mod.avg_acc)}%`;
+  document.getElementById("mod-dtl-f1").textContent = isFailed || mod.avg_f1 === null ? "N/A" : fN(mod.avg_f1, 3);
+  document.getElementById("mod-dtl-pval").textContent = isFailed ? "N/A" : (mod.p_value ? `${mod.p_value}` : "p < 0.01");
 
-  // Training Loss Chart
-  const lossSteps = isFailed ? [0, 0, 0, 0, 0] : [0.693, 0.654, 0.589, 0.512, 0.441, 0.385, 0.320];
+  // Training Loss Chart - Real trajectory or empty
+  const trajs = currentData.trajectories || {};
+  let realLoss = null;
+  if (trajs[moduleName] && trajs[moduleName].loss && Array.isArray(trajs[moduleName].loss) && trajs[moduleName].loss.length > 0) {
+    realLoss = trajs[moduleName].loss;
+  } else if (validRuns.length && validRuns[0].trajectories && validRuns[0].trajectories.loss) {
+    realLoss = validRuns[0].trajectories.loss;
+  }
+
+  const lossSteps = realLoss || [];
   const lossLabels = lossSteps.map((_, i) => `Step ${i + 1}`);
 
   const ctxLoss = document.getElementById("chart-modal-loss").getContext("2d");
@@ -1339,26 +1499,37 @@ function openModuleModal(moduleName) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { 
+        legend: { display: false },
+        title: {
+          display: lossSteps.length === 0,
+          text: isFailed ? "Module did not complete any run (failed/timed out)" : "No per-step loss recorded",
+          color: "#94a3b8",
+          font: { style: 'italic', size: 11 }
+        }
+      },
       scales: {
         x: { grid: { color: "rgba(255,255,255,0.05)" } },
-        y: { grid: { color: "rgba(255,255,255,0.05)" }, min: 0, max: 1.0 }
+        y: { grid: { color: "rgba(255,255,255,0.05)" }, min: 0 }
       }
     }
   });
 
   // Dataset Breakdown
   const dsMap = {};
-  runs.forEach(r => {
-    const ds = r.dataset || "SST2";
-    const acc = r.acc_pct !== undefined ? r.acc_pct : (r.metrics?.accuracy ?? (r.status === "PASS" ? 85.0 : 0.0));
-    const accNum = typeof acc === "number" ? acc : (parseFloat(acc) || 0.0);
-    if (!dsMap[ds]) dsMap[ds] = [];
-    dsMap[ds].push(accNum);
+  runs.filter(r => r.status === "PASS").forEach(r => {
+    const ds = (r.dataset || "").toUpperCase();
+    let acc = null;
+    if (r.acc_pct !== undefined && r.acc_pct !== null) acc = parseFloat(r.acc_pct);
+    else if (r.metrics && r.metrics.accuracy !== undefined) acc = parseFloat(r.metrics.accuracy);
+    if (acc !== null && !isNaN(acc)) {
+      if (!dsMap[ds]) dsMap[ds] = [];
+      dsMap[ds].push(acc);
+    }
   });
 
-  const dsLabels = Object.keys(dsMap).length ? Object.keys(dsMap) : ["SST2", "MRPC"];
-  const dsData = dsLabels.map(l => dsMap[l] ? +(dsMap[l].reduce((a, b) => a + b, 0) / dsMap[l].length).toFixed(2) : 0.0);
+  const dsLabels = Object.keys(dsMap);
+  const dsData = dsLabels.map(l => +(dsMap[l].reduce((a, b) => a + b, 0) / dsMap[l].length).toFixed(2));
 
   const ctxBreakdown = document.getElementById("chart-modal-breakdown").getContext("2d");
   if (modalBreakdownChart) modalBreakdownChart.destroy();
@@ -1376,7 +1547,15 @@ function openModuleModal(moduleName) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: dsLabels.length === 0,
+          text: "No evaluation accuracy data available",
+          color: "#94a3b8",
+          font: { style: 'italic', size: 11 }
+        }
+      },
       scales: {
         x: { grid: { color: "rgba(255,255,255,0.05)" } },
         y: { grid: { color: "rgba(255,255,255,0.05)" }, min: 0, max: 100 }
