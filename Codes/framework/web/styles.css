@@ -226,10 +226,17 @@ body {
 .cell-fail { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
 .cell-na { color: var(--text-muted); opacity: 0.5; }
 
-/* MODAL FORM ELEMENTS */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
-.form-group label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.form-group input, .form-group select { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.5rem 0.75rem; border-radius: 8px; font-family: var(--font-mono); font-size: 0.85rem; outline: none; transition: var(--transition); }
-.form-group input:focus, .form-group select:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+/* MODAL ACTIONS & EXTRA COMPONENTS */
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.05); background: rgba(0, 0, 0, 0.2); }
+.detail-modal-card { max-width: 960px; }
+.filters-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--card-radius); padding: 1.25rem; }
+.sortable-table th { cursor: pointer; user-select: none; }
+.sortable-table th:hover { color: var(--accent-blue); }
+.tag-track { font-family: var(--font-mono); font-size: 0.65rem; background: rgba(168, 85, 247, 0.15); color: #d8b4fe; padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.25); text-transform: uppercase; }
+
+/* TOAST NOTIFICATION */
+.toast { position: fixed; bottom: 2rem; right: 2rem; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-hover); color: var(--text-main); padding: 0.75rem 1.25rem; border-radius: 10px; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; gap: 0.5rem; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.toast.active { transform: translateY(0); opacity: 1; }
+.toast.toast-success { border-color: var(--success); }
+.toast.toast-error { border-color: var(--danger); }
 
