@@ -114,7 +114,12 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     # Check active Phase 2 summary.csv first
-    if (PROJECT_DIR / "results" / "run_quality_pretrained").exists():
+    if (PROJECT_DIR / "results" / "run_quality_fast").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_quality_fast" / "summary.csv",
+            Path("results/run_quality_fast/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_quality_pretrained").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_quality_pretrained" / "summary.csv",
             Path("results/run_quality_pretrained/summary.csv"),
@@ -176,6 +181,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
                 pass
     
     log_candidates = [
+        PROJECT_DIR / "run_quality_fast.log",
+        Path("run_quality_fast.log"),
         PROJECT_DIR / "run_quality_pretrained.log",
         Path("run_quality_pretrained.log"),
         PROJECT_DIR / "run_quality_sweep_final_run.log",
@@ -619,7 +626,8 @@ def _build_stats_response() -> str:
     gpu = get_gpu_stats()
     results = get_completed_results()
     is_pre = (PROJECT_DIR / "results" / "run_quality_pretrained" / "summary.csv").exists()
-    tot_comb = 60 if is_pre else 240
+    is_fast = (PROJECT_DIR / "results" / "run_quality_fast" / "summary.csv").exists()
+    tot_comb = 6 if is_fast else (60 if is_pre else 240)
     progress = compute_eta_and_progress(results, total_combos=tot_comb, window_size=50)
     is_running = is_sweep_running()
     comparative = compute_comparative_analytics(results)

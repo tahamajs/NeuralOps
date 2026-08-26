@@ -395,8 +395,17 @@ def evaluate_single_seed_run(
 
     train_ds = _PREPARED_DATASET_CACHE.get(train_cache_key)
     if train_ds is not None and len(train_ds) > 0 and not allow_synthetic_local:
+        import os
+        workers = min(4, os.cpu_count() or 1)
         train_loader = torch.utils.data.DataLoader(
-            train_ds, batch_size=current_batch_size, shuffle=True, drop_last=True
+            train_ds,
+            batch_size=current_batch_size,
+            shuffle=True,
+            drop_last=True,
+            num_workers=workers,
+            pin_memory=is_cuda,
+            prefetch_factor=4 if workers > 0 else None,
+            persistent_workers=(workers > 0),
         )
     else:
         single_batch = get_dataset_batch(
@@ -454,7 +463,7 @@ def evaluate_single_seed_run(
                 
                 optimizer.zero_grad()
                 fwd_start_events[global_step].record()
-                with torch.amp.autocast('cuda'):
+                with torch.amp.autocast('cuda', dtype=torch.float16):
                     out = model(**filtered_batch)
                 fwd_end_events[global_step].record()
 
@@ -575,7 +584,17 @@ def evaluate_single_seed_run(
 
     val_tokenized = _PREPARED_DATASET_CACHE.get(dataset_cache_key)
     if val_tokenized is not None and len(val_tokenized) > 0:
-        loader = torch.utils.data.DataLoader(val_tokenized, batch_size=current_batch_size, shuffle=False, pin_memory=is_cuda)
+        import os
+        val_workers = min(4, os.cpu_count() or 1)
+        loader = torch.utils.data.DataLoader(
+            val_tokenized,
+            batch_size=current_batch_size,
+            shuffle=False,
+            num_workers=val_workers,
+            pin_memory=is_cuda,
+            prefetch_factor=4 if val_workers > 0 else None,
+            persistent_workers=(val_workers > 0),
+        )
         with torch.no_grad():
             for val_batch in loader:
                 inputs = {("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v) for k, v in val_batch.items()}
@@ -721,6 +740,10 @@ def evaluate_single_seed_run(
         gc.collect()
         torch.cuda.empty_cache()
 
+    logger.info(
+        "    --> Seed %d completed: Acc=%.2f%%, F1=%.4f, Fid=%.4f, Peak VRAM=%.1fMB",
+        seed, acc_pct, f1, fidelity, peak_vram_mb
+    )
     return SeedResult(
         seed=seed,
         accuracy_pct=acc_pct,
