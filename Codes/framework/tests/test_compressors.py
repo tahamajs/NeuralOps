@@ -24,7 +24,7 @@ from framework.compression_engine.kronecker_tt_lora import (
     KroneckerTTLoRACompressor,
     KroneckerTTLoRALayer,
 )
-from framework.compression_engine.replaceme_compressor import ReplaceMeCompressor
+from framework.compression_engine.template_compressor import TemplateCompressor
 from framework.compression_engine.rotational_slicegpt_int4 import (
     RotationalSliceGPTCompressor,
     RotationalSliceGPTINT4Compressor,
