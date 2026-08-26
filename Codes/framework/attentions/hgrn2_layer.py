@@ -184,11 +184,11 @@ def inject_hgrn2_layer(
     **kwargs: Any,
 ) -> HGRN2Layer:
     r"""Injection hook for HGRN2Layer."""
-    d_model: int = 768
+    d_model = 128
     if model_config is not None:
         d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
     elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", 768)
+        d_model = getattr(layer.config, "hidden_size", 128)
 
     new_layer = HGRN2Layer(d_model=d_model, config=model_config, **kwargs)
     src_attn = old_attn if old_attn is not None else layer

@@ -45,7 +45,7 @@ class QCQAAttention(nn.Module):
         config: Any,
         num_kv_heads: int = 4,
         router_temp: float = 1.0,
-    ) -> None:
+    **kwargs) -> None:
         super().__init__()
         self.num_heads: int = config.num_attention_heads
         self.num_kv_heads: int = num_kv_heads

@@ -42,7 +42,8 @@ class SpectronSpectralEntropyRouter(nn.Module):
     Computes spectral entropy: $\mathcal{S}(X) = -\sum p_i \ln p_i$
     """
 
-    def __init__(self, config: AegisSpectronFP8Config):
+    def __init__(self, config: AegisSpectronFP8Config,
+    **kwargs):
         super().__init__()
         self.config = config
         self.tau = config.temperature

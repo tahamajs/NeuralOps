@@ -81,7 +81,7 @@ class FactorisedLinear_CUR(nn.Module):
         pretrained_weight: torch.Tensor,
         pretrained_bias: Optional[torch.Tensor],
         rank: int,
-    ) -> None:
+    **kwargs) -> None:
         super().__init__()
         out_dim, in_dim = pretrained_weight.shape
         self.rank: int = max(1, min(rank, out_dim, in_dim))
@@ -412,7 +412,7 @@ def inject_phantom(
     layer_idx: int,
     total_layers: int,
     old_attn: Any,
-) -> PHANTOMAttention:
+    **kwargs) -> PHANTOMAttention:
     r"""Inject PHANTOM attention into a target transformer layer.
 
     Args:

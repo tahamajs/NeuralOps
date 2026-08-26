@@ -40,7 +40,7 @@ class Mamba2(nn.Module):
         d_state: int = 16,
         d_conv: int = 4,
         expand: int = 2,
-    ) -> None:
+    **kwargs) -> None:
         super().__init__()
         self.d_model: int = d_model
         self.d_state: int = d_state
@@ -118,7 +118,7 @@ class MixtureOfExperts(nn.Module):
         ff_dim: int,
         num_experts: int,
         top_k: int = 2,
-    ) -> None:
+    **kwargs) -> None:
         super().__init__()
         self.dim: int = dim
         self.num_experts: int = num_experts
@@ -269,7 +269,7 @@ def inject_granite_hybrid(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-) -> GraniteHybridBlock:
+    **kwargs) -> GraniteHybridBlock:
     r"""
     Factory / injection hook to construct and inject GraniteHybridBlock into a transformer layer.
 
