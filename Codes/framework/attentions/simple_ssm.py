@@ -103,44 +103,42 @@ class SimpleSSM(BaseAttention):
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
-    def _ssm_scan(
+    def _ssm_scan_parallel(
         self,
         x_ssm: torch.Tensor,
         dt: torch.Tensor,
         A_log: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
-        reverse: bool = False,
-    ) -> torch.Tensor:
-        """Bidirectional diagonal state scan."""
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Parallel vectorized bidirectional diagonal state scan."""
         B, L, D = x_ssm.shape
-        d_state = self.d_state
-        A = torch.exp(A_log)  # [D, d_state]
+        A = torch.exp(A_log.clamp(max=10.0))  # [D, d_state]
 
-        h = torch.zeros(B, D, d_state, device=x_ssm.device, dtype=x_ssm.dtype)
-        outputs = []
+        # Continuous timescale discretization log_dA: [B, L, D, d_state]
+        log_dA = -dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0)
+        C = torch.cumsum(log_dA, dim=1).permute(0, 2, 3, 1)  # [B, D, d_state, L]
+        C_diff = C.unsqueeze(-1) - C.unsqueeze(-2)          # [B, D, d_state, L, L]
 
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            xt = x_ssm[:, t, :]                                  # [B, D]
-            dt_t = dt[:, t, :].unsqueeze(-1)                     # [B, D, 1]
-            dA = torch.exp(-dt_t * A.unsqueeze(0))                # [B, D, d_state]
-            dB_x = (dt_t * xt.unsqueeze(-1)).repeat(1, 1, d_state) # [B, D, d_state]
+        # 1. Forward causal decay matrix summed across diagonal states
+        tril_mask = torch.tril(torch.ones(L, L, device=x_ssm.device, dtype=torch.bool))
+        decay_fwd = (torch.exp(C_diff.clamp(min=-40.0, max=0.0)) * tril_mask.float()).sum(dim=2)  # [B, D, L, L]
 
-            h_next = dA * h + dB_x
+        # 2. Backward anticausal decay matrix summed across diagonal states
+        triu_mask = torch.triu(torch.ones(L, L, device=x_ssm.device, dtype=torch.bool))
+        decay_bwd = (torch.exp((-C_diff).clamp(min=-40.0, max=0.0)) * triu_mask.float()).sum(dim=2)  # [B, D, L, L]
 
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1)
-                h = torch.where(m_t, h_next, h)
-            else:
-                h = h_next
+        u = (dt * x_ssm).permute(0, 2, 1).unsqueeze(-1)  # [B, D, L, 1]
 
-            out_t = (h * self.D.unsqueeze(-1)).sum(dim=-1)
-            outputs.append(out_t)
+        if mask is not None:
+            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)  # [B, 1, L, L]
+            decay_fwd = decay_fwd * mask_2d
+            decay_bwd = decay_bwd * mask_2d
 
-        if reverse:
-            outputs.reverse()
+        out_fwd = (torch.matmul(decay_fwd, u).squeeze(-1) * self.D.view(1, D, 1)).permute(0, 2, 1)  # [B, L, D]
+        out_bwd = (torch.matmul(decay_bwd, u).squeeze(-1) * self.D.view(1, D, 1)).permute(0, 2, 1)  # [B, L, D]
 
-        return torch.stack(outputs, dim=1)
+        return out_fwd, out_bwd
 
     def forward(
         self,
@@ -178,10 +176,15 @@ class SimpleSSM(BaseAttention):
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
-        y_fwd = self._ssm_scan(x_ssm, dt, self.A_log, mask=mask_bool, reverse=False)
-        y_bwd = self._ssm_scan(x_ssm, dt, self.A_log, mask=mask_bool, reverse=True)
-        y = 0.5 * (y_fwd + y_bwd)
+        # Parallel bidirectional SSM computation
+        if self.training and x_ssm.requires_grad:
+            out_fwd, out_bwd = torch.utils.checkpoint.checkpoint(
+                self._ssm_scan_parallel, x_ssm, dt, self.A_log, mask_bool, use_reentrant=False
+            )
+        else:
+            out_fwd, out_bwd = self._ssm_scan_parallel(x_ssm, dt, self.A_log, mask_bool)
 
+        y = 0.5 * (out_fwd + out_bwd)
         out = self.out_proj(y * F.silu(z))
 
         if attention_mask is not None and mask_bool is not None:
