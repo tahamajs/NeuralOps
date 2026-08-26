@@ -1,13 +1,9 @@
 {
   "module_name": "oats_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/oats_compressor.py",
   "class_name": "OATSCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "OATS Compressor: Outlier-aware low-rank + structured sparse matrix decomposition.",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "tokenizer",
     "sparsity",
@@ -18,21 +14,18 @@
     "calibration_texts",
     "structured_24"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "OATS Compressor: Outlier-aware low-rank + structured sparse matrix decomposition.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 289839603473755849037288829149315405174
 }

@@ -1,35 +1,26 @@
 {
   "module_name": "kronecker_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/kronecker_compressor.py",
   "class_name": "KroneckerCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Compresses a model by replacing every eligible nn.Linear layer with a\nKronecker product decomposition (A \u2297 B), falling back to low-rank SVD\nwhen dimensions do not allow composite factorization.\n\nArgs:\n    model: PyTorch model to compress (optional if instantiated as standalone engine).\n    rank: Ran",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "rank",
     "cfg",
     "target_layers"
   ],
-  "forward_ops": [
-    "split"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "docstring": "Compresses a model by replacing every eligible nn.Linear layer with a\nKronecker product decomposition (A \u2297 B), falling back to low-rank SVD\nwhen dimensions do not allow composite factorization.\n\nArgs:\n    model: PyTorch model to compress (optional if instantiated as standalone engine).\n    rank: Rank parameter used for fallback or rank constraints.\n    cfg: Optional configuration object.\n    target_layers: Optional list of layer names or substrings to compress.\n    **kwargs: Additional parameters passed to BaseCompressor.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 31449554991466721592349915429805639819
 }

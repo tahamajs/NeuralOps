@@ -1,13 +1,9 @@
 {
   "module_name": "phantom",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/phantom.py",
   "class_name": "PHANTOMAttention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "PHANTOM Attention module with CUR factorized projections and multi-round LSH attention.\n\nArgs:\n    config (Optional[Any]): Transformer configuration object.\n    rank (Optional[int]): Compression rank.\n    phantom_cfg (Optional[PHANTOMConfig]): PHANTOMConfig instance.\n    pretrained_attn (Optional[An",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "pretrained_weight",
     "pretrained_bias",
     "rank",
@@ -16,26 +12,16 @@
     "pretrained_attn",
     "bert_mode"
   ],
-  "forward_ops": [
+  "ops": [
     "view",
     "transpose"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "PHANTOM Attention module with CUR factorized projections and multi-round LSH attention.\n\nArgs:\n    config (Optional[Any]): Transformer configuration object.\n    rank (Optional[int]): Compression rank.\n    phantom_cfg (Optional[PHANTOMConfig]): PHANTOMConfig instance.\n    pretrained_attn (Optional[Any]): Pretrained attention module for CUR parameter initialization.\n    bert_mode (bool): Flag indicating bidirectional sequence mode.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 228300382101054765452683597323620944316
 }

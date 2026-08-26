@@ -1,39 +1,25 @@
 {
   "module_name": "squeezing_heads_distill",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/squeezing_heads_distill.py",
   "class_name": "SqueezingHeadsDistiller",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "Attention layer wrapper for multi-head distillation and compression studies.\n\nArgs:\n    config: Transformer configuration specifying `hidden_size`, `num_attention_heads`, and `dropout`.\n    rank: Optional compression rank parameter.",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "rank"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "softmax",
     "dropout",
     "view",
     "matmul"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "Attention layer wrapper for multi-head distillation and compression studies.\n\nArgs:\n    config: Transformer configuration specifying `hidden_size`, `num_attention_heads`, and `dropout`.\n    rank: Optional compression rank parameter.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 299548062136514645008221753594891226195
 }

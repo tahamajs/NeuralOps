@@ -1,38 +1,25 @@
 {
   "module_name": "kvtc_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/kvtc_compressor.py",
   "class_name": "KVTCCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "KVTC: KV Cache Transform Coding compressor.\nCompresses linear projection weights using PCA decorrelation,\nadaptive quantization, and entropy coding estimation.\n\nArgs:\n    model: PyTorch model.\n    bits: Quantization bit-width (default 4).\n    pca_energy: Fraction of PCA energy retained (default 0.95",
-  "init_params": [
-    "model",
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "bits",
-    "pca_energy"
+    "pca_energy",
+    "model"
   ],
-  "forward_ops": [
-    "svd",
-    "cumsum"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "matmul (@)",
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N r d)",
-    "space_complexity": "O(r(N + d))",
-    "scaling_exponent": 1.0,
-    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Truncated SVD / Factorization",
-    "Orthogonal Basis U and V^T",
-    "Singular Spectrum Truncation",
-    "Rank Bottleneck Projection"
-  ]
+  "docstring": "KVTC: KV Cache Transform Coding compressor.\nCompresses linear projection weights using PCA decorrelation,\nadaptive quantization, and entropy coding estimation.\n\nArgs:\n    model: PyTorch model.\n    bits: Quantization bit-width (default 4).\n    pca_energy: Fraction of PCA energy retained (default 0.95).",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 177554515070382920117632011836076202168
 }

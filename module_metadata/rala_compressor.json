@@ -1,36 +1,22 @@
 {
   "module_name": "rala_compressor",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/rala_compressor.py",
   "class_name": "RALALinearAttention",
-  "base_classes": [
-    "nn.Module"
-  ],
-  "docstring": "Rank-Augmented Linear Attention layer with positive ELU kernel features.\n\nArgs:\n    config: Model configuration specifying `hidden_size`, `num_attention_heads`, and optional `rala_rank`.",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "einsum",
     "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "Rank-Augmented Linear Attention layer with positive ELU kernel features.\n\nArgs:\n    config: Model configuration specifying `hidden_size`, `num_attention_heads`, and optional `rala_rank`.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 119274822369465238191370707988875992280
 }

@@ -1,13 +1,9 @@
 {
   "module_name": "compot_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/compot_compressor.py",
   "class_name": "COMPOTCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "COMPOT (Compressed Orthogonal Dictionary Learning) Compressor.\nLearns a low-rank basis from activation QR decompositions and compresses\nlinear layers into factorized COMPOTLinear modules.\n\nArgs:\n    model: PyTorch model.\n    rank: Target rank for factorization.\n    calibration_texts: Optional calibr",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "rank",
@@ -20,26 +16,17 @@
     "cfg",
     "target_layers"
   ],
-  "forward_ops": [
+  "ops": [
     "reshape",
     "linear",
-    "view",
-    "split"
+    "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "COMPOT (Compressed Orthogonal Dictionary Learning) Compressor.\nLearns a low-rank basis from activation QR decompositions and compresses\nlinear layers into factorized COMPOTLinear modules.\n\nArgs:\n    model: PyTorch model.\n    rank: Target rank for factorization.\n    calibration_texts: Optional calibration texts.\n    tokenizer: Optional tokenizer.\n    cfg: Optional configuration object.\n    target_layers: Optional target layer filter.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 180748376431327030690668207549126466182
 }

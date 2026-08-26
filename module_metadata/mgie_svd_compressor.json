@@ -1,35 +1,26 @@
 {
   "module_name": "mgie_svd_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/mgie_svd_compressor.py",
   "class_name": "MGIESVDBudgetCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "MGIE-SVD Budget Compressor: Global Entropy-Proportional Rank Allocation.\n\nCalculates Shannon singular entropy for all linear layers across the network,\ndistributes a global total rank budget proportionally according to spectral information density,\nfactorizes weights using symmetric square-root sing",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "total_rank_budget",
     "rank",
     "target_modules"
   ],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "complexity": {
-    "time_complexity": "O(N m d)",
-    "space_complexity": "O(N m)",
-    "scaling_exponent": 1.0,
-    "description": "Kernelized Feature Map / Spectral Operator"
-  },
-  "family": "kernel",
-  "accent_color": "#a855f7",
-  "key_mechanisms": [
-    "Positive Orthogonal RFF",
-    "Kernel Feature Map phi(x)",
-    "Associative Re-ordering",
-    "Spectral Fourier Mode Decomp"
-  ]
+  "docstring": "MGIE-SVD Budget Compressor: Global Entropy-Proportional Rank Allocation.\n\nCalculates Shannon singular entropy for all linear layers across the network,\ndistributes a global total rank budget proportionally according to spectral information density,\nfactorizes weights using symmetric square-root singular value splitting, and replaces\ndense layers with structural SVDLinear modules.\n\nArgs:\n    model: PyTorch model.\n    total_rank_budget: Total sum of ranks across all compressed linear layers.\n    rank: Optional per-layer fallback/override rank.\n    target_modules: Optional list of layer name filters.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 267852316234250022406029296386164974247
 }

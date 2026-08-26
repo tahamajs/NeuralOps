@@ -1,13 +1,9 @@
 {
   "module_name": "come",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/come.py",
   "class_name": "CoMeCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "CoMe Compressor: Layer shedding with learnable linear interpolation adapters/bridges.\n\nConfig parameters:\n    target_layers : int, optional \u2013 target number of layers after shedding\n    sparsity      : float, default 0.3 \u2013 fraction of layers to remove\n    alpha_init    : float, default 0.1 \u2013 initial ",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "hidden_size",
     "alpha_init",
     "layer",
@@ -19,27 +15,15 @@
     "recalibrate_ln",
     "device"
   ],
-  "forward_ops": [
-    "linear",
-    "svd"
+  "ops": [
+    "linear"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)",
-    "matmul (@)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "CoMe Compressor: Layer shedding with learnable linear interpolation adapters/bridges.\n\nConfig parameters:\n    target_layers : int, optional \u2013 target number of layers after shedding\n    sparsity      : float, default 0.3 \u2013 fraction of layers to remove\n    alpha_init    : float, default 0.1 \u2013 initial bridge interpolation weight",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 108288223965450079439292786227337203104
 }

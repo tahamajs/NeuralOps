@@ -1,13 +1,9 @@
 {
   "module_name": "soka_compressor",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/soka_compressor.py",
   "class_name": "LowRankCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "SoKA Low-Rank Linear Compressor.\nReplaces dense nn.Linear layers with factorized LowRankLinear layers.",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "in_features",
     "out_features",
     "rank",
@@ -17,26 +13,15 @@
     "model",
     "energy_threshold"
   ],
-  "forward_ops": [
-    "matmul",
-    "svd"
+  "ops": [
+    "matmul"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "SoKA Low-Rank Linear Compressor.\nReplaces dense nn.Linear layers with factorized LowRankLinear layers.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 305196801461090301390867680365235181433
 }

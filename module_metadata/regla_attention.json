@@ -1,40 +1,25 @@
 {
   "module_name": "regla_attention",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/regla_attention.py",
   "class_name": "ReGLAAttention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "Refined Gated Linear Attention module (ReGLA).\n\nArgs:\n    config: Model configuration specifying `hidden_size` and `num_attention_heads`.\n    rank: Rank parameter (for compatibility with BaseAttention).\n    kernel_size: Kernel window width for local depthwise 1D convolution.",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "rank",
     "kernel_size"
   ],
-  "forward_ops": [
+  "ops": [
     "transpose",
     "matmul",
-    "view",
-    "permute",
-    "sigmoid"
+    "clamp",
+    "view"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Refined Gated Linear Attention module (ReGLA).\n\nArgs:\n    config: Model configuration specifying `hidden_size` and `num_attention_heads`.\n    rank: Rank parameter (for compatibility with BaseAttention).\n    kernel_size: Kernel window width for local depthwise 1D convolution.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 25605841650728652645671647074759582705
 }

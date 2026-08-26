@@ -1,13 +1,9 @@
 {
   "module_name": "entropy_budget_allocation",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/entropy_budget_allocation.py",
   "class_name": "EntropyBudgetCompressor",
-  "base_classes": [
-    "BaseCompressor"
-  ],
-  "docstring": "Entropy Budget Low-Rank SVD Compressor.\n\nComputes activation covariance and whiten weights, calculates per-component\nsingular entropy contributions, allocates low-rank budgets globally across layers,\nand replaces dense nn.Linear layers with factorized SVDLinear modules with symmetric\nsingular value ",
-  "init_params": [
+  "category": "compression",
+  "family": "compression",
+  "params": [
     "model",
     "calibration_loader",
     "total_budget_ratio",
@@ -15,26 +11,18 @@
     "eps",
     "target_modules"
   ],
-  "forward_ops": [
-    "svd"
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)",
-    "matmul (@)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N \\sqrt{N} d)",
-    "space_complexity": "O(N w)",
-    "scaling_exponent": 1.3,
-    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
-  },
-  "family": "sparse",
-  "accent_color": "#ef4444",
-  "key_mechanisms": [
-    "Sparsity Thresholding",
-    "Local Sliding Window",
-    "Global Token Indirection",
-    "Dynamic Block Pruning"
-  ]
+  "docstring": "Entropy Budget Low-Rank SVD Compressor.\n\nComputes activation covariance and whiten weights, calculates per-component\nsingular entropy contributions, allocates low-rank budgets globally across layers,\nand replaces dense nn.Linear layers with factorized SVDLinear modules with symmetric\nsingular value splitting (U * sqrt(Sigma), sqrt(Sigma) * V^T).\n\nArgs:\n    model: Model to compress.\n    calibration_loader: Optional DataLoader for activation collection.\n    total_budget_ratio: Parameter retention ratio (0.0 to 1.0].\n    rank: Optional fallback or target rank per layer.\n    eps: Regularization factor for covariance eigenvalues and entropy.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 230958156733313187052771571745288033876
 }
