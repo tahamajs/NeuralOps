@@ -1,0 +1,46 @@
+{
+  "module_name": "delta_kv",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/delta_kv.py",
+  "class_name": "DeltaKVCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "DeltaKV Compressor: Decomposes projection weights into a low-rank reference component\nplus sparse residuals, modeling weight matrices under residual delta formulation.\n\nArgs:\n    model: PyTorch model.\n    rank: Rank of reference low-rank matrix (default 16).\n    sparsity: Fraction of sparse residual",
+  "init_params": [
+    "max_refs",
+    "topk",
+    "compression_ratio",
+    "residual_threshold",
+    "model",
+    "rank",
+    "sparsity"
+  ],
+  "forward_ops": [
+    "topk",
+    "matmul",
+    "reshape",
+    "transpose",
+    "svd",
+    "view"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)",
+    "matmul (@)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

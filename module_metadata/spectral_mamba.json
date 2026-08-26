@@ -1,0 +1,44 @@
+{
+  "module_name": "spectral_mamba",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/spectral_mamba.py",
+  "class_name": "Mamba",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Hybrid Spectral Mamba Attention Layer.\nCombines pretrained Multihead Attention with Spectral Mamba State Space Model.",
+  "init_params": [
+    "d_model",
+    "d_state",
+    "config",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "sigmoid",
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "matmul",
+    "chunk",
+    "silu"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

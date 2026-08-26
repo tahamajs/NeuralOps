@@ -1,0 +1,40 @@
+{
+  "module_name": "flash_attention3_fp8",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/flash_attention3_fp8.py",
+  "class_name": "FlashAttention3FP8",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "FlashAttention-3 FP8 Hardware-Accelerated Multi-Head Attention.\n\nMathematical Formulation:\n    1. FP8 Quantization:\n       $$Q_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(Q), \\quad K_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(K), \\quad V_{\\text{fp8}} = \\operatorname{cast}_{\\text{fp8}}(V)$$\n",
+  "init_params": [
+    "config",
+    "rank",
+    "d_model",
+    "n_heads",
+    "use_fp8",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "view",
+    "transpose"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

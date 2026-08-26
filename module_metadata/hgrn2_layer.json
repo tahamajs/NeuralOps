@@ -1,0 +1,38 @@
+{
+  "module_name": "hgrn2_layer",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hgrn2_layer.py",
+  "class_name": "HGRN2Layer",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Hierarchically Gated Recurrent Network v2 (HGRN-2) Bidirectional Layer.\n\nMathematical Mechanism:\n    For input token activations $x_t \\in \\mathbb{R}^D$:\n    1. **Dynamic Gating & Value Transformation:**\n       $$f_t = \\exp(-\\text{softplus}(W_f x_t + b_f)) \\in (0, 1)^D \\quad \\text{(Log-space Bounded ",
+  "init_params": [
+    "config",
+    "rank",
+    "d_model",
+    "res_clip"
+  ],
+  "forward_ops": [
+    "sigmoid",
+    "silu"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

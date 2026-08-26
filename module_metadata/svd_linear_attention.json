@@ -1,0 +1,53 @@
+{
+  "module_name": "svd_linear_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/svd_linear_attention.py",
+  "class_name": "SVDLinearAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Multi-Head Attention with SVD-Factorized Projections, Kernel Linear Attention,\nand Data-Dependent Exponential Decay Gating Recurrence.\n\nSupports:\n- Mode \"exact\": Low-rank projections with exact $\\mathcal{O}(N^2)$ softmax attention.\n- Mode \"linear\" (with `use_decay_gating=False`): Low-rank projection",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "freeze_svd",
+    "lora_rank",
+    "lora_alpha",
+    "use_fused_kernel",
+    "use_rms_norm",
+    "eps",
+    "dtype",
+    "device",
+    "config",
+    "mode",
+    "pretrained_attn",
+    "use_decay_gating",
+    "decay_activation",
+    "decay_channel_wise"
+  ],
+  "forward_ops": [
+    "linear",
+    "view",
+    "permute"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

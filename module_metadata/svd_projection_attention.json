@@ -1,0 +1,45 @@
+{
+  "module_name": "svd_projection_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/svd_projection_attention.py",
+  "class_name": "SVDProjectionAttention",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Multi-Head Attention using Factorized SVD Linear Projections.\n\nConstructs low-rank projection operators from singular subspaces with zero-shot\ninitialization from pretrained checkpoints:\n$$\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{(X V_q^\\top U_q^\\top)(X V_k^\\top U_k^\\top)^\\top}{\\sqrt{d_",
+  "init_params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "model_config",
+    "dropout",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "linear",
+    "transpose",
+    "softmax",
+    "dropout",
+    "matmul",
+    "view"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

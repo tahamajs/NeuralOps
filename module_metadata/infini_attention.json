@@ -1,0 +1,43 @@
+{
+  "module_name": "infini_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/infini_attention.py",
+  "class_name": "InfiniAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Infini-Attention with Compressive Memory and Sliding Window.",
+  "init_params": [
+    "config",
+    "rank",
+    "compress_dim",
+    "local_window",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "transpose",
+    "softmax",
+    "matmul",
+    "dropout",
+    "sigmoid",
+    "view"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N \\sqrt{N} d)",
+    "space_complexity": "O(N w)",
+    "scaling_exponent": 1.3,
+    "description": "Structural / Dynamic Sparsity O(N sqrt(N))"
+  },
+  "family": "sparse",
+  "accent_color": "#ef4444",
+  "key_mechanisms": [
+    "Sparsity Thresholding",
+    "Local Sliding Window",
+    "Global Token Indirection",
+    "Dynamic Block Pruning"
+  ]
+}

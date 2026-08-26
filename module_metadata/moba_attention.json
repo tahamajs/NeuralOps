@@ -1,0 +1,43 @@
+{
+  "module_name": "moba_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/moba_attention.py",
+  "class_name": "MoBAAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "MoBA: Mixture of Block Attention for Long-Context Modeling.\n\nMathematical Mechanism:\n    Partitions the sequence into blocks of size $B_{\\text{sz}}$ and routes each query block\n    to top-$k$ key-value blocks based on centroid cosine affinity:\n    $$\\begin{aligned}\n    \\bar{Q}_i &= \\frac{1}{B_{\\text",
+  "init_params": [
+    "config",
+    "block_size",
+    "top_k",
+    "rank"
+  ],
+  "forward_ops": [
+    "permute",
+    "view",
+    "topk",
+    "matmul",
+    "softmax",
+    "dropout",
+    "transpose"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

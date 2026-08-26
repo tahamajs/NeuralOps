@@ -1,0 +1,34 @@
+{
+  "module_name": "direct_svd",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/direct_svd.py",
+  "class_name": "DirectSVDCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Direct SVD Compressor.\n\nPerforms direct truncated SVD on all linear layers:\n    W \u2248 U_r * Sigma_r * V_r^T\nAllocates singular energy symmetrically:\n    U_factor = U_r * sqrt(Sigma_r)\n    V_factor = sqrt(Sigma_r) * V_r^T\nand replaces dense nn.Linear layers with factorized SVDLinear modules\nto achieve ",
+  "init_params": [
+    "model",
+    "rank",
+    "min_rank",
+    "rank_ratio",
+    "target_modules"
+  ],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N r d)",
+    "space_complexity": "O(r(N + d))",
+    "scaling_exponent": 1.0,
+    "description": "Low-Rank SVD / Factorized Operator O(N r d)"
+  },
+  "family": "linear",
+  "accent_color": "#38bdf8",
+  "key_mechanisms": [
+    "Truncated SVD / Factorization",
+    "Orthogonal Basis U and V^T",
+    "Singular Spectrum Truncation",
+    "Rank Bottleneck Projection"
+  ]
+}

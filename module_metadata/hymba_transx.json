@@ -1,0 +1,34 @@
+{
+  "module_name": "hymba_transx",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hymba_transx.py",
+  "class_name": "HeadRoPE",
+  "base_classes": [
+    "nn.Module"
+  ],
+  "docstring": "Head-wise Rotary Position Embedding (RoPE) applied to Q and K.",
+  "init_params": [
+    "head_dim",
+    "max_seq_len",
+    "base"
+  ],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d)",
+    "space_complexity": "O(N d + d_s)",
+    "scaling_exponent": 1.0,
+    "description": "Recurrent / Selective State-Space O(N)"
+  },
+  "family": "ssm",
+  "accent_color": "#10b981",
+  "key_mechanisms": [
+    "Discretized State Matrix A",
+    "Input-Dependent Step Delta",
+    "Associative Prefix Scan",
+    "Hidden State Recurrence"
+  ]
+}

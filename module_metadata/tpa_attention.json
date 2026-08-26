@@ -1,0 +1,43 @@
+{
+  "module_name": "tpa_attention",
+  "category": "attention",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/tpa_attention.py",
+  "class_name": "TPAttention",
+  "base_classes": [
+    "BaseAttention"
+  ],
+  "docstring": "Tensor Product Attention with factorised low-rank query-key projection.\n\nQuery and key representations are formed as outer products of two\nfactorised feature vectors, enabling richer polynomial similarity kernels.\n\nArgs:\n    config: Model configuration specifying `hidden_size`, `num_attention_heads`",
+  "init_params": [
+    "config",
+    "rank",
+    "pretrained_attn"
+  ],
+  "forward_ops": [
+    "view",
+    "reshape",
+    "permute",
+    "softmax",
+    "dropout",
+    "matmul",
+    "einsum",
+    "transpose"
+  ],
+  "tensor_transforms": [],
+  "math_primitives": [
+    "elementwise (*)"
+  ],
+  "complexity": {
+    "time_complexity": "O(N d k / E)",
+    "space_complexity": "O(E d^2)",
+    "scaling_exponent": 1.15,
+    "description": "Sparse Mixture-of-Experts Dynamic Routing"
+  },
+  "family": "moe",
+  "accent_color": "#f59e0b",
+  "key_mechanisms": [
+    "Softmax Router Gating",
+    "Top-K Expert Dispatch",
+    "Specialized FFN / Projections",
+    "Weighted Expert Aggregation"
+  ]
+}

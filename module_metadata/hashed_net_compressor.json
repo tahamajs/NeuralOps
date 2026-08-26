@@ -1,0 +1,35 @@
+{
+  "module_name": "hashed_net_compressor",
+  "category": "compression",
+  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/hashed_net_compressor.py",
+  "class_name": "HashedNetCompressor",
+  "base_classes": [
+    "BaseCompressor"
+  ],
+  "docstring": "Compress a model by replacing every nn.Linear layer with HashedLinear,\nwhich shares weights globally through compact hash tables.\n\nArgs:\n    model: PyTorch model.\n    rank: Rank parameter (optionally maps to bucket budget).\n    n_buckets: Number of hash buckets (size of shared weight table).\n    use",
+  "init_params": [
+    "model",
+    "rank",
+    "n_buckets",
+    "use_sign",
+    "cfg",
+    "target_layers"
+  ],
+  "forward_ops": [],
+  "tensor_transforms": [],
+  "math_primitives": [],
+  "complexity": {
+    "time_complexity": "O(N d^2)",
+    "space_complexity": "O(N d)",
+    "scaling_exponent": 1.0,
+    "description": "Linear / Efficient Scaled Operator"
+  },
+  "family": "linear",
+  "accent_color": "#38bdf8",
+  "key_mechanisms": [
+    "Linear Projection",
+    "Key-Value State Caching",
+    "Associative Contraction",
+    "Residual Normalization"
+  ]
+}
