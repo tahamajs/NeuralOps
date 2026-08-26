@@ -1330,8 +1330,11 @@ function renderModelDistributionChart() {
   });
 }
 
-function formatMetricOrNA(val, suffix = "", isSuccessful = true, digits = 2) {
-  if (!isSuccessful || val === null || val === undefined || isNaN(val) || val <= 0) {
+function formatMetricOrNA(val, suffix = "", isSuccessful = true, digits = 2, allowNegative = false) {
+  if (!isSuccessful || val === null || val === undefined || isNaN(val)) {
+    return `<span class="cell-na">N/A</span>`;
+  }
+  if (!allowNegative && val <= 0) {
     return `<span class="cell-na">N/A</span>`;
   }
   return `${fN(val, digits)}${suffix}`;
@@ -1383,7 +1386,7 @@ function updateAnalyticsTable() {
       <td>${formatMetricOrNA(m.avg_mem, " MB", isSucc, 0)}</td>
       <td>${formatMetricOrNA(m.avg_acc, "%", isSucc)}</td>
       <td>${formatMetricOrNA(m.avg_f1, "", isSucc, 4)}</td>
-      <td>${formatMetricOrNA(m.avg_fidelity, "", isSucc, 4)}</td>
+      <td>${formatMetricOrNA(m.avg_fidelity, "", isSucc, 4, true)}</td>
       <td>${formatMetricOrNA(m.avg_throughput, "", isSucc, 1)}</td>
     `;
     tr.onclick = () => openModuleModal(m.module_name);
