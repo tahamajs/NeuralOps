@@ -118,7 +118,7 @@ def draw_module_figure(mod_name: str, category: str, src_path: Path):
     if category == "attention":
         # Stage 1: Projection
         if meta["has_svd"]:
-            draw_box(ax0, 19, 40, 18, 22, "SVD Projection", "#93C5FD", subtext=r"$W \approx U \Sigma V^\top$" + r"\nRank $r \ll D$")
+            draw_box(ax0, 19, 40, 18, 22, "SVD Projection", "#93C5FD", subtext=r"$W \approx U \Sigma V^\top$" + "\n" + r"Rank $r \ll D$")
         elif meta["has_quant"]:
             draw_box(ax0, 19, 40, 18, 22, "Quantized Linear", "#FCD34D", subtext=r"FP8 / INT8 Linear" + "\nDynamic Scale")
         else:
@@ -142,7 +142,7 @@ def draw_module_figure(mod_name: str, category: str, src_path: Path):
         elif meta["has_window"]:
             draw_box(ax0, 42, 36, 24, 30, "Local Window Core", "#60A5FA",
                      subtext=r"Banded Attention" + "\n" +
-                             r"$|i - j| \leq W$" + r"\n$\mathcal{O}(N \cdot W)$")
+                             r"$|i - j| \leq W$" + "\n" + r"$\mathcal{O}(N \cdot W)$")
         elif meta["has_moe"]:
             draw_box(ax0, 42, 36, 24, 30, "MoE Routing Core", "#FBBF24",
                      subtext=r"Top-2 Expert Router" + "\n" +
@@ -164,7 +164,7 @@ def draw_module_figure(mod_name: str, category: str, src_path: Path):
         # Compression Pipeline
         if meta["has_svd"]:
             draw_box(ax0, 20, 40, 22, 24, "SVD Decomposition", "#93C5FD",
-                     subtext=r"$W \approx U_r \Sigma_r V_r^\top$" + r"\nTruncated Energy $\geq 0.9$")
+                     subtext=r"$W \approx U_r \Sigma_r V_r^\top$" + "\n" + r"Truncated Energy $\geq 0.9$")
         elif meta["has_quant"]:
             draw_box(ax0, 20, 40, 22, 24, "Quantization Engine", "#FCD34D",
                      subtext=r"$W_q = \operatorname{round}(W / s) + z$" + "\nCodebook / Scaling")
