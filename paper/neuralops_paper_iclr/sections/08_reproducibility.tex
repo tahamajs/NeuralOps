@@ -1,0 +1,10 @@
+\section{Reproducibility Statement}
+\label{sec:reproducibility}
+
+To uphold the highest standards of scientific reproducibility:
+\begin{enumerate}
+    \item \textbf{Codebase and Open Source Artifacts}: Complete source code for all 53+ attention architectures, 63 compression algorithms, and evaluation scripts are released under an open-source MIT License.
+    \item \textbf{Deterministic Randomness}: All multi-seed experiments use explicit fixed random seeds ($S \in \{42, 123, 777\}$) with deterministic PyTorch operations and cuDNN benchmark flags enabled.
+    \item \textbf{Containerization & Environment}: A standardized Dockerfile (\texttt{pytorch/pytorch:2.5.0-cuda12.1-cudnn9-runtime}) and \texttt{environment.txt} pinning all exact Python packages, CUDA libraries, and OS kernel versions are provided in the supplementary material.
+    \item \textbf{Data Availability}: All raw loss and gradient trajectories are preserved in Apache Parquet format and open-access CSV summaries to enable independent verification of all reported metrics.
+\end{enumerate}
