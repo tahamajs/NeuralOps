@@ -49,7 +49,7 @@ class ViGAttention(BaseAttention):
         self.v_proj: nn.Linear = nn.Linear(self.dim, self.dim)
         self.out_proj: nn.Linear = nn.Linear(self.dim, self.dim)
         self.gate_net: nn.Linear = nn.Linear(self.dim, 2 * self.num_heads)
-        self.dropout: nn.Dropout = nn.Dropout(config.dropout)
+        self.dropout: nn.Dropout = nn.Dropout(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)))
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)

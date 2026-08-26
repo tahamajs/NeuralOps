@@ -142,7 +142,8 @@ def inject_adaptive_span(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> AdaptiveSpanAttention:
+,
+    **kwargs) -> AdaptiveSpanAttention:
     rank = getattr(comp_config, "adaptive_span_rank", 32)
     dropout = getattr(comp_config, "dropout", 0.1)
     max_span = getattr(comp_config, "max_span", 128)

@@ -104,17 +104,9 @@ def distilbert_attention(model_config):
     Load a real DistilBERT model or initialized DistilBertModel and return its first layer's attention module.
     This gives us the q_lin, k_lin, v_lin, out_lin weights for zero-shot testing.
     """
-    try:
-        model = AutoModel.from_pretrained(
-            "distilbert-base-uncased", local_files_only=True
-        )
-        if hasattr(model, "distilbert"):
-            return model.distilbert.transformer.layer[0].attention
-        return model.transformer.layer[0].attention
-    except Exception:
-        from transformers import DistilBertModel
-        model = DistilBertModel(model_config)
-        return model.transformer.layer[0].attention
+    from transformers import DistilBertModel
+    model = DistilBertModel(model_config)
+    return model.transformer.layer[0].attention
 
 
 # ----------------------------------------------------------------------

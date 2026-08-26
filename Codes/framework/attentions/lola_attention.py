@@ -331,7 +331,8 @@ def inject_lola_attn(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module] = None,
-) -> LoLAAttention:
+,
+    **kwargs) -> LoLAAttention:
     r"""
     Injection hook for LoLAAttention into transformer layer.
 

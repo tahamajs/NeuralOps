@@ -244,7 +244,8 @@ class DualStageStripeAttention(nn.Module):
         $\mathcal{O}(N \cdot (B_s + k \cdot B_s / S_w) \cdot D)$ where $k \ll M$.
     """
 
-    def __init__(self, cfg: NEXUSConfig, head_dim: int) -> None:
+    def __init__(self, cfg: NEXUSConfig, head_dim: int,
+        **kwargs) -> None:
         super().__init__()
         self.cfg = cfg
         self.head_dim = head_dim
@@ -374,7 +375,8 @@ class SpectraformerRectify(nn.Module):
         rff_features: Feature mapping dimensionality $F$.
     """
 
-    def __init__(self, head_dim: int, rff_features: int = 128) -> None:
+    def __init__(self, head_dim: int, rff_features: int = 128,
+        **kwargs) -> None:
         super().__init__()
         self.rff_features = rff_features
         self.proj = nn.Parameter(torch.randn(head_dim, rff_features) * 0.02)

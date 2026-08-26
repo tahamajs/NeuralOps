@@ -213,7 +213,8 @@ class LEKAV3Attention(BaseAttention):
 @ATTENTION_REGISTRY.register("leka_v3_inject")
 def inject_leka_v3(
     layer, model_config, comp_config, layer_idx, total_layers, old_attn
-) -> LEKAV3Attention:
+,
+    **kwargs) -> LEKAV3Attention:
     new_attn = LEKAV3Attention(
         config=model_config,
         comp_config=comp_config,

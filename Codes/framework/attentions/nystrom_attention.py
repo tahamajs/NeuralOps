@@ -165,7 +165,8 @@ def inject_nystrom(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-) -> NystromAttention:
+,
+    **kwargs) -> NystromAttention:
     landmarks = getattr(comp_config, "num_landmarks", 64)
     new_attn = NystromAttention(
         config=model_config,

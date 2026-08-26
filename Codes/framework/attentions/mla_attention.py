@@ -54,7 +54,7 @@ class MLAAttention(nn.Module):
         self.out_proj: nn.Linear = nn.Linear(
             config.hidden_size, config.hidden_size
         )
-        self.dropout: nn.Dropout = nn.Dropout(config.dropout)
+        self.dropout: nn.Dropout = nn.Dropout(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)))
 
     def forward(
         self,
@@ -136,7 +136,8 @@ def inject_mla(
     rank = getattr(comp_config, "mla_rank", 128) if comp_config is not None else 128
     
     class ConfigWrapper:
-        def __init__(self, cfg):
+        def __init__(self, cfg,
+        **kwargs):
             self.hidden_size = getattr(cfg, "hidden_size", 768)
             self.num_attention_heads = getattr(cfg, "num_attention_heads", 12)
             self.dropout = getattr(cfg, "attention_probs_dropout_prob", getattr(cfg, "dropout", 0.1))
