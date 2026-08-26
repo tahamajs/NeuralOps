@@ -114,67 +114,6 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     log_candidates = [
-        PROJECT_DIR / "run_quality_sweep_final_run.log",
-        Path("run_quality_sweep_final_run.log"),
-        PROJECT_DIR / "run_quality_sweep_final.log",
-        PROJECT_DIR / "adaptive_sweep_v3.log",
-        Path("adaptive_sweep_v3.log"),
-        PROJECT_DIR / "full_sweep_v2.log",
-        Path("full_sweep_v2.log"),
-        PROJECT_DIR / "full_sweep.log",
-        Path("full_sweep.log"),
-        PROJECT_DIR / "comprehensive_run_detached.log",
-        Path("comprehensive_run_detached.log")
-    ]
-    
-    for smi in nvsmi_candidates:
-        try:
-            cmd = [
-                smi,
-                "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw",
-                "--format=csv,noheader,nounits"
-            ]
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
-            if res.returncode == 0 and res.stdout.strip():
-                parts = [p.strip() for p in res.stdout.strip().split(",")]
-                gpu_util = float(parts[0]) if len(parts) > 0 else 0.0
-                mem_used = float(parts[1]) if len(parts) > 1 else 0.0
-                mem_total = float(parts[2]) if len(parts) > 2 else 8188.0
-                temp = float(parts[3]) if len(parts) > 3 else 0.0
-                power = float(parts[4]) if len(parts) > 4 else 0.0
-                break
-        except Exception:
-            continue
-
-    mem_pct = round((mem_used / max(1.0, mem_total)) * 100.0, 1)
-
-    ram_used, ram_total = 0.0, 16.0
-    if psutil:
-        try:
-            vm = psutil.virtual_memory()
-            ram_used = round(vm.used / (1024 ** 3), 1)
-            ram_total = round(vm.total / (1024 ** 3), 1)
-        except Exception:
-            pass
-
-    return {
-        "gpu_util": gpu_util,
-        "mem_used_mb": mem_used,
-        "mem_total_mb": mem_total,
-        "mem_pct": mem_pct,
-        "temp_c": temp,
-        "power_w": power,
-        "sys_ram_used_gb": ram_used,
-        "sys_ram_total_gb": ram_total,
-    }
-
-
-def get_completed_results() -> List[Dict[str, Any]]:
-    """Parses comprehensive_run_detached.log and returns structured results with error details."""
-    results = []
-    error_map = {}
-    
-    log_candidates = [
         PROJECT_DIR / "adaptive_sweep_v3.log",
         Path("adaptive_sweep_v3.log"),
         PROJECT_DIR / "full_sweep_v2.log",
