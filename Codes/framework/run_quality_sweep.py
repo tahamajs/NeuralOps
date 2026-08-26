@@ -338,6 +338,8 @@ def evaluate_single_seed_run(
 
     tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
     train_cache_key = (dataset.lower(), tok_name, seq_len, "train")
+    
+    allow_synthetic_local = False  # explicitly disable synthetic fallback for Phase 2 real runs
 
     if train_cache_key not in _PREPARED_DATASET_CACHE and dataset.lower() in GLUE_TASK_CONFIG:
         tokenizer = AutoTokenizer.from_pretrained(tok_name)
@@ -363,31 +365,20 @@ def evaluate_single_seed_run(
         _PREPARED_DATASET_CACHE[train_cache_key] = None
 
     train_ds = _PREPARED_DATASET_CACHE.get(train_cache_key)
-    if train_ds is not None and len(train_ds) > 0 and not allow_synthetic:
+    if train_ds is not None and len(train_ds) > 0 and not allow_synthetic_local:
         train_loader = torch.utils.data.DataLoader(
             train_ds, batch_size=current_batch_size, shuffle=True, drop_last=True
         )
     else:
         single_batch = get_dataset_batch(
             dataset, model_family, current_batch_size, seq_len,
-            num_labels=num_labels, device=device, allow_synthetic=allow_synthetic
+            num_labels=num_labels, device=device, allow_synthetic=allow_synthetic_local
         )
         train_loader = [single_batch]
 
     actual_steps_per_epoch = len(train_loader)
-    if epochs > 0:
-        total_steps = actual_steps_per_epoch * epochs
-        if total_steps > max_steps:
-            max_steps = min(total_steps, 200)  # cap at 200 to prevent infinite sweeps
-
-    def get_infinite_batches(loader):
-        while True:
-            for b in loader:
-                yield {
-                    ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
-                    for k, v in b.items() if k in ["input_ids", "attention_mask", "label", "labels"]
-                }
-    batch_iter = get_infinite_batches(train_loader)
+    epochs_to_run = max(1, epochs)
+    total_steps = actual_steps_per_epoch * epochs_to_run
 
     # 5. Optimizer & Linear Warmup Scheduler
     no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight"]
@@ -403,103 +394,123 @@ def evaluate_single_seed_run(
     ]
     optimizer = AdamW(optimizer_grouped_parameters, lr=learning_rate)
 
-    warmup_steps = max(1, int(max_steps * 0.1))
+    warmup_steps = max(1, int(total_steps * 0.1))
     def lr_lambda(step: int) -> float:
         if step < warmup_steps:
             return float(step) / float(max(1, warmup_steps))
-        return max(0.0, float(max_steps - step) / float(max(1, max_steps - warmup_steps)))
+        return max(0.0, float(total_steps - step) / float(max(1, total_steps - warmup_steps)))
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-    # 6. Timed Training Loop with Step Trajectory Tracking
+    # 6. Real Epoch-Based Training Loop with Trajectory Tracking
     traj_loss, traj_grad_norm, traj_fwd_ms, traj_bwd_ms = [], [], [], []
     
     if is_cuda:
         torch.cuda.reset_peak_memory_stats(device)
-        fwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(max_steps)]
-        fwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(max_steps)]
-        bwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(max_steps)]
-        bwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(max_steps)]
+        fwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(total_steps)]
+        fwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(total_steps)]
+        bwd_start_events = [torch.cuda.Event(enable_timing=True) for _ in range(total_steps)]
+        bwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(total_steps)]
 
-        for step in range(max_steps):
-            batch = next(batch_iter)
-            filtered_batch = _filter_batch(batch, model_family, model)
-            
-            optimizer.zero_grad()
-            fwd_start_events[step].record()
-            with torch.amp.autocast('cuda'):
-                out = model(**filtered_batch)
-            fwd_end_events[step].record()
+        global_step = 0
+        for epoch in range(epochs_to_run):
+            for batch in train_loader:
+                if global_step >= total_steps:
+                    break
+                
+                b_device = {
+                    ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
+                    for k, v in batch.items() if k in ["input_ids", "attention_mask", "label", "labels"]
+                }
+                filtered_batch = _filter_batch(b_device, model_family, model)
+                
+                optimizer.zero_grad()
+                fwd_start_events[global_step].record()
+                with torch.amp.autocast('cuda'):
+                    out = model(**filtered_batch)
+                fwd_end_events[global_step].record()
 
-            logits = getattr(out, "logits", out[0] if isinstance(out, (tuple, list)) else None)
-            labels = batch.get("labels")
-            loss = None
+                logits = getattr(out, "logits", out[0] if isinstance(out, (tuple, list)) else None)
+                labels = b_device.get("labels")
+                loss = None
 
-            if hasattr(out, "loss") and out.loss is not None:
-                loss = out.loss
-            elif logits is not None and labels is not None:
-                if num_labels == 1:
-                    loss = nn.MSELoss()(logits.squeeze(), labels.squeeze().float())
-                else:
-                    loss = nn.CrossEntropyLoss()(logits.view(-1, num_labels), labels.view(-1))
-            
-            if loss is None or not torch.is_tensor(loss):
-                loss = torch.tensor(0.0, requires_grad=True, device=device)
+                if hasattr(out, "loss") and out.loss is not None:
+                    loss = out.loss
+                elif logits is not None and labels is not None:
+                    if num_labels == 1:
+                        loss = nn.MSELoss()(logits.squeeze(), labels.squeeze().float())
+                    else:
+                        loss = nn.CrossEntropyLoss()(logits.view(-1, num_labels), labels.view(-1))
+                
+                if loss is None or not torch.is_tensor(loss):
+                    loss = torch.tensor(0.0, requires_grad=True, device=device)
 
-            traj_loss.append(round(float(loss.detach().item()), 4))
+                traj_loss.append(round(float(loss.detach().item()), 4))
 
-            bwd_start_events[step].record()
-            loss.backward()
-            bwd_end_events[step].record()
+                bwd_start_events[global_step].record()
+                loss.backward()
+                bwd_end_events[global_step].record()
 
-            total_norm_sq = 0.0
-            for p in model.parameters():
-                if p.grad is not None:
-                    total_norm_sq += float(p.grad.detach().data.norm(2).item() ** 2)
-            grad_norm = math.sqrt(total_norm_sq)
-            traj_grad_norm.append(round(grad_norm, 4))
-            
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            optimizer.step()
-            scheduler.step()
+                total_norm_sq = 0.0
+                for p in model.parameters():
+                    if p.grad is not None:
+                        total_norm_sq += float(p.grad.detach().data.norm(2).item() ** 2)
+                grad_norm = math.sqrt(total_norm_sq)
+                traj_grad_norm.append(round(grad_norm, 4))
+                
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                optimizer.step()
+                scheduler.step()
+                global_step += 1
 
-        bwd_end_events[-1].synchronize()
-        for s in range(max_steps):
+        bwd_end_events[global_step-1].synchronize()
+        for s in range(global_step):
             traj_fwd_ms.append(round(float(fwd_start_events[s].elapsed_time(fwd_end_events[s])), 2))
             traj_bwd_ms.append(round(float(bwd_start_events[s].elapsed_time(bwd_end_events[s])), 2))
         
         peak_vram_mb = round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 2)
+        # Update max_steps for throughput calculation
+        max_steps = global_step
     else:
-        for step in range(max_steps):
-            batch = next(batch_iter)
-            filtered_batch = _filter_batch(batch, model_family, model)
+        global_step = 0
+        for epoch in range(epochs_to_run):
+            for batch in train_loader:
+                if global_step >= total_steps:
+                    break
+                b_device = {
+                    ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
+                    for k, v in batch.items() if k in ["input_ids", "attention_mask", "label", "labels"]
+                }
+                filtered_batch = _filter_batch(b_device, model_family, model)
 
-            optimizer.zero_grad()
-            t0 = time.perf_counter()
-            out = model(**filtered_batch)
-            traj_fwd_ms.append(round((time.perf_counter() - t0) * 1000.0, 2))
+                optimizer.zero_grad()
+                t0 = time.perf_counter()
+                out = model(**filtered_batch)
+                traj_fwd_ms.append(round((time.perf_counter() - t0) * 1000.0, 2))
 
-            logits = getattr(out, "logits", out[0] if isinstance(out, (tuple, list)) else None)
-            labels = batch.get("labels")
-            loss = None
-            if hasattr(out, "loss") and out.loss is not None:
-                loss = out.loss
-            elif logits is not None and labels is not None:
-                loss = nn.CrossEntropyLoss()(logits.view(-1, num_labels), labels.view(-1))
-            if loss is None:
-                loss = torch.tensor(0.0, requires_grad=True, device=device)
+                logits = getattr(out, "logits", out[0] if isinstance(out, (tuple, list)) else None)
+                labels = b_device.get("labels")
+                loss = None
+                if hasattr(out, "loss") and out.loss is not None:
+                    loss = out.loss
+                elif logits is not None and labels is not None:
+                    loss = nn.CrossEntropyLoss()(logits.view(-1, num_labels), labels.view(-1))
+                if loss is None:
+                    loss = torch.tensor(0.0, requires_grad=True, device=device)
 
-            traj_loss.append(round(float(loss.detach().item()), 4))
-            t2 = time.perf_counter()
-            loss.backward()
-            traj_bwd_ms.append(round((time.perf_counter() - t2) * 1000.0, 2))
-            
-            total_norm_sq = 0.0
-            for p in model.parameters():
-                if p.grad is not None:
-                    total_norm_sq += float(p.grad.detach().data.norm(2).item() ** 2)
-            traj_grad_norm.append(round(math.sqrt(total_norm_sq), 4))
-            optimizer.step()
-            scheduler.step()
+                traj_loss.append(round(float(loss.detach().item()), 4))
+                t2 = time.perf_counter()
+                loss.backward()
+                traj_bwd_ms.append(round((time.perf_counter() - t2) * 1000.0, 2))
+                
+                total_norm_sq = 0.0
+                for p in model.parameters():
+                    if p.grad is not None:
+                        total_norm_sq += float(p.grad.detach().data.norm(2).item() ** 2)
+                traj_grad_norm.append(round(math.sqrt(total_norm_sq), 4))
+                optimizer.step()
+                scheduler.step()
+                global_step += 1
+        max_steps = global_step
         peak_vram_mb = 0.0
 
     avg_fwd_ms = round(float(np.mean(traj_fwd_ms)), 2)
@@ -515,6 +526,24 @@ def evaluate_single_seed_run(
     tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
     dataset_cache_key = (dataset.lower(), tok_name, seq_len)
     
+    if dataset_cache_key not in _PREPARED_DATASET_CACHE and dataset.lower() in GLUE_TASK_CONFIG:
+        tokenizer = AutoTokenizer.from_pretrained(tok_name)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        config = GLUE_TASK_CONFIG[dataset.lower()]
+        k1, k2 = config["keys"]
+        try:
+            val_data = load_dataset("glue", dataset.lower(), split="validation")
+            def tok_fn(ex):
+                args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
+                return tokenizer(*args, padding="max_length", truncation=True, max_length=seq_len)
+            
+            val_tokenized = val_data.map(tok_fn, batched=True, desc=f"Tokenizing {dataset} validation")
+            val_tokenized.set_format(type="torch", columns=[c for c in ["input_ids", "attention_mask", "label"] if c in val_tokenized.column_names])
+            _PREPARED_DATASET_CACHE[dataset_cache_key] = val_tokenized
+        except Exception:
+            _PREPARED_DATASET_CACHE[dataset_cache_key] = None
+
     val_tokenized = _PREPARED_DATASET_CACHE.get(dataset_cache_key)
     if val_tokenized is not None and len(val_tokenized) > 0:
         loader = torch.utils.data.DataLoader(val_tokenized, batch_size=current_batch_size, shuffle=False, pin_memory=is_cuda)
