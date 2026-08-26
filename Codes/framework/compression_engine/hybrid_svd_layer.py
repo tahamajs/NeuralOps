@@ -137,7 +137,7 @@ class DirectSVDEncoderLayer(nn.Module):
         ff_out = self.dropout(ff_out)
         hidden_states = residual + ff_out
 
-        return hidden_states
+        return (hidden_states,)
 
 
 @COMPRESSOR_REGISTRY.register("hybrid_svd")
