@@ -1,38 +1,26 @@
 {
   "module_name": "aegis_spectron_fp8",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/aegis_spectron_fp8.py",
   "class_name": "AegisSpectronFP8Attention",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "Aegis-Spectron-FP8 Hybrid Architecture.",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "hidden_size",
     "num_heads",
     "pretrained_attn"
   ],
-  "forward_ops": [
+  "ops": [
+    "softmax",
+    "norm",
     "view",
     "transpose"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d)",
-    "space_complexity": "O(N d + d_s)",
-    "scaling_exponent": 1.0,
-    "description": "Recurrent / Selective State-Space O(N)"
-  },
-  "family": "ssm",
-  "accent_color": "#10b981",
-  "key_mechanisms": [
-    "Discretized State Matrix A",
-    "Input-Dependent Step Delta",
-    "Associative Prefix Scan",
-    "Hidden State Recurrence"
-  ]
+  "docstring": "Aegis-Spectron-FP8 Hybrid Architecture.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 8,
+  "hash_val": 43130833043530122052075022866223644069
 }

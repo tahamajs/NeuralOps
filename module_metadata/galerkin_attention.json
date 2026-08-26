@@ -1,26 +1,29 @@
 {
   "module_name": "galerkin_attention",
-  "category": "compression",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/galerkin_attention.py",
   "class_name": "GalerkinAttention",
-  "base_classes": [],
-  "docstring": "",
-  "init_params": [],
-  "forward_ops": [],
-  "tensor_transforms": [],
-  "math_primitives": [],
-  "complexity": {
-    "time_complexity": "O(N d^2)",
-    "space_complexity": "O(N d)",
-    "scaling_exponent": 1.0,
-    "description": "Linear / Efficient Scaled Operator"
-  },
-  "family": "linear",
-  "accent_color": "#38bdf8",
-  "key_mechanisms": [
-    "Linear Projection",
-    "Key-Value State Caching",
-    "Associative Contraction",
-    "Residual Normalization"
-  ]
+  "category": "attention",
+  "family": "kernel",
+  "params": [
+    "config",
+    "rank",
+    "dropout",
+    "basis_type",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "transpose",
+    "einsum",
+    "softmax",
+    "dropout",
+    "matmul",
+    "view"
+  ],
+  "docstring": "Petrov-Galerkin Projection Attention.\n\nMathematical Formulation:\n    Let the continuous self-attention operator be $\\mathcal{K} V(x) = \\int \\operatorname{Softmax}\\left(\\frac{Q(x) K(y)^\\top}{\\sqrt{d}}\\right) V(y) dy$.\n    Projecting onto an $r$-dimensional orthonormal basis $\\Phi \\in \\mathbb{R}^{N \\times r}$ ($\\Phi^\\top \\Phi = I_r$):\n    \n    1. **Orthonormal Basis Construction:**\n       $\\Phi_{n, k} = \\sqrt{\\frac{2}{N}} \\cos\\left( \\frac{\\pi (k + 0.5) (n + 0.5)}{N} \\right), \\quad k \\in \\{0, \\dots, r-1\\}$\n       Or via QR decomposition of learnable/deterministic landmarks ensuring $\\Phi^\\top \\Phi = I_r$.\n    \n    2. **Petrov-Galerkin Key-Value Projection:**\n       $K_{\\Phi} = \\Phi^\\top K \\in \\mathbb{R}^{B \\times H \\times r \\times d}$\n       $V_{\\Phi} = \\Phi^\\top V \\in \\mathbb{R}^{B \\times H \\times r \\times d}$\n    \n    3. **Kernel Discretization & Attention:**\n       $S = \\frac{Q K_{\\Phi}^\\top}{\\sqrt{d}} \\in \\mathbb{R}^{B \\times H \\times N \\times r}$\n       $P = \\operatorname{Softmax}(S, \\text{dim}=-1)$\n       $O = P V_{\\Phi} \\in \\mathbb{R}^{B \\times H \\times N \\times d}$\n    \n    4. **Energy Preservation:**\n       $\\|K_{\\Phi}\\|_F^2 = \\operatorname{Tr}(K^\\top \\Phi \\Phi^\\top K) \\le \\|K\\|_F^2$, strictly bounding spectral truncation error without key rank collapse.\n\nComplexity:\n    - Time: $\\mathcal{O}(B \\cdot H \\cdot N \\cdot r \\cdot d)$\n    - Space: $\\mathcal{O}(B \\cdot H \\cdot N \\cdot r)$ vs $\\mathcal{O}(B \\cdot H \\cdot N^2)$",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 144979961524964741466346793368286315505
 }

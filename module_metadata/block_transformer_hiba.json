@@ -1,13 +1,9 @@
 {
   "module_name": "block_transformer_hiba",
-  "category": "attention",
-  "filepath": "/Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/block_transformer_hiba.py",
   "class_name": "BlockTransformerHIBA",
-  "base_classes": [
-    "BaseAttention"
-  ],
-  "docstring": "",
-  "init_params": [
+  "category": "attention",
+  "family": "linear",
+  "params": [
     "config",
     "rank",
     "block_size",
@@ -15,30 +11,20 @@
     "rectification_interval",
     "pretrained_attn"
   ],
-  "forward_ops": [
-    "permute",
+  "ops": [
     "view",
     "softmax",
     "dropout",
     "matmul",
+    "cat",
     "transpose"
   ],
-  "tensor_transforms": [],
-  "math_primitives": [
-    "elementwise (*)"
-  ],
-  "complexity": {
-    "time_complexity": "O(N d k / E)",
-    "space_complexity": "O(E d^2)",
-    "scaling_exponent": 1.15,
-    "description": "Sparse Mixture-of-Experts Dynamic Routing"
-  },
-  "family": "moe",
-  "accent_color": "#f59e0b",
-  "key_mechanisms": [
-    "Softmax Router Gating",
-    "Top-K Expert Dispatch",
-    "Specialized FFN / Projections",
-    "Weighted Expert Aggregation"
-  ]
+  "docstring": "",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.0,
+  "bits": 4,
+  "hash_val": 185584700270811555060497370519276880002
 }
