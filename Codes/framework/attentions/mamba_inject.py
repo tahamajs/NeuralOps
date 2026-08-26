@@ -10,7 +10,7 @@ import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("mamba_inject")
+@ATTENTION_REGISTRY.register("mamba_module_inject")
 def inject_mamba(
     layer: nn.Module,
     model_config: Any = None,
