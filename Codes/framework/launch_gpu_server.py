@@ -255,16 +255,20 @@ def run_gpu_benchmark_sweep_opt(
         for idx, task in enumerate(task_list, 1):
             res = _eval_worker_task(task)
             results.append(res)
-            logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB)",
-                        res.track, res.module_name, res.model_family, res.dataset, res.status, res.forward_latency_ms, res.backward_latency_ms, res.peak_memory_mb)
+            logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB, acc: %.2f%%, f1: %.4f, fid: %.4f, thru: %.1f)",
+                        res.track, res.module_name, res.model_family, res.dataset, res.status,
+                        res.forward_latency_ms, res.backward_latency_ms, res.peak_memory_mb,
+                        res.accuracy_pct, res.f1_score, res.fidelity_score, res.throughput_samples_per_sec)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {pool.submit(_eval_worker_task, t): t for t in task_list}
             for fut in concurrent.futures.as_completed(futures):
                 res = fut.result()
                 results.append(res)
-                logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB)",
-                            res.track, res.module_name, res.model_family, res.dataset, res.status, res.forward_latency_ms, res.backward_latency_ms, res.peak_memory_mb)
+                logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB, acc: %.2f%%, f1: %.4f, fid: %.4f, thru: %.1f)",
+                            res.track, res.module_name, res.model_family, res.dataset, res.status,
+                            res.forward_latency_ms, res.backward_latency_ms, res.peak_memory_mb,
+                            res.accuracy_pct, res.f1_score, res.fidelity_score, res.throughput_samples_per_sec)
 
     elapsed = time.time() - start_time
     total_evals = len(results)

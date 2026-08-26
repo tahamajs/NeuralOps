@@ -156,6 +156,7 @@ def get_completed_results() -> List[Dict[str, Any]]:
             if match:
                 ts_str, track, mod, model, ds, status, details = match.groups()
                 fwd_ms, bwd_ms, mem_mb = None, None, None
+                acc_pct, f1_score, fid_score, thru_val = None, None, None, None
                 
                 fwd_m = re.search(r'fwd:\s*([0-9.]+)ms', details)
                 if fwd_m:
@@ -178,6 +179,34 @@ def get_completed_results() -> List[Dict[str, Any]]:
                     except ValueError:
                         mem_mb = None
 
+                acc_m = re.search(r'acc:\s*([0-9.]+)%', details)
+                if acc_m:
+                    try:
+                        acc_pct = float(acc_m.group(1))
+                    except ValueError:
+                        acc_pct = None
+
+                f1_m = re.search(r'f1:\s*([0-9.]+)', details)
+                if f1_m:
+                    try:
+                        f1_score = float(f1_m.group(1))
+                    except ValueError:
+                        f1_score = None
+
+                fid_m = re.search(r'fid:\s*([0-9.]+)', details)
+                if fid_m:
+                    try:
+                        fid_score = float(fid_m.group(1))
+                    except ValueError:
+                        fid_score = None
+
+                thru_m = re.search(r'thru:\s*([0-9.]+)', details)
+                if thru_m:
+                    try:
+                        thru_val = float(thru_m.group(1))
+                    except ValueError:
+                        thru_val = None
+
                 try:
                     ts = datetime.strptime(ts_str.split(",")[0], "%Y-%m-%d %H:%M:%S")
                 except Exception:
@@ -197,6 +226,10 @@ def get_completed_results() -> List[Dict[str, Any]]:
                     "fwd_ms": fwd_ms,
                     "bwd_ms": bwd_ms,
                     "mem_mb": mem_mb,
+                    "acc_pct": acc_pct,
+                    "f1_score": f1_score,
+                    "fidelity_score": fid_score,
+                    "throughput": thru_val,
                     "error_detail": err_detail,
                 })
                 continue
@@ -303,6 +336,10 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
         fwd = float(r["fwd_ms"]) if r.get("fwd_ms") is not None else None
         bwd = float(r["bwd_ms"]) if r.get("bwd_ms") is not None else None
         mem = float(r["mem_mb"]) if r.get("mem_mb") is not None else None
+        acc = float(r["acc_pct"]) if r.get("acc_pct") is not None else None
+        f1 = float(r["f1_score"]) if r.get("f1_score") is not None else None
+        fid = float(r["fidelity_score"]) if r.get("fidelity_score") is not None else None
+        thru = float(r["throughput"]) if r.get("throughput") is not None else None
 
         # 1. Module Aggregation
         if mod not in module_stats:
@@ -312,6 +349,10 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
                 "fwd_list": [],
                 "bwd_list": [],
                 "mem_list": [],
+                "acc_list": [],
+                "f1_list": [],
+                "fid_list": [],
+                "thru_list": [],
                 "success_count": 0,
                 "timeout_count": 0,
                 "fail_count": 0,
@@ -328,19 +369,31 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
                 m_entry["bwd_list"].append(bwd)
             if mem is not None:
                 m_entry["mem_list"].append(mem)
+            if acc is not None:
+                m_entry["acc_list"].append(acc)
+            if f1 is not None:
+                m_entry["f1_list"].append(f1)
+            if fid is not None:
+                m_entry["fid_list"].append(fid)
+            if thru is not None:
+                m_entry["thru_list"].append(thru)
         elif status == "TIMEOUT":
             m_entry["timeout_count"] += 1
         else:
             m_entry["fail_count"] += 1
 
         if model not in m_entry["by_model"]:
-            m_entry["by_model"][model] = {"fwd": [], "bwd": [], "mem": []}
+            m_entry["by_model"][model] = {"fwd": [], "bwd": [], "mem": [], "acc": [], "f1": []}
         if fwd is not None:
             m_entry["by_model"][model]["fwd"].append(fwd)
         if bwd is not None:
             m_entry["by_model"][model]["bwd"].append(bwd)
         if mem is not None:
             m_entry["by_model"][model]["mem"].append(mem)
+        if acc is not None:
+            m_entry["by_model"][model]["acc"].append(acc)
+        if f1 is not None:
+            m_entry["by_model"][model]["f1"].append(f1)
 
         # 2. Model Family Aggregation
         if model not in model_stats:
@@ -349,6 +402,8 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
                 "fwd_list": [],
                 "bwd_list": [],
                 "mem_list": [],
+                "acc_list": [],
+                "f1_list": [],
                 "pass_count": 0,
                 "total_runs": 0,
             }
@@ -362,6 +417,10 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
                 mod_entry["bwd_list"].append(bwd)
             if mem is not None:
                 mod_entry["mem_list"].append(mem)
+            if acc is not None:
+                mod_entry["acc_list"].append(acc)
+            if f1 is not None:
+                mod_entry["f1_list"].append(f1)
 
         # 3. Track Aggregation
         if track != "unknown":
@@ -371,6 +430,8 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
                     "fwd_list": [],
                     "bwd_list": [],
                     "mem_list": [],
+                    "acc_list": [],
+                    "f1_list": [],
                     "pass_count": 0,
                     "total_runs": 0,
                 }
@@ -384,6 +445,10 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
                     tr_entry["bwd_list"].append(bwd)
                 if mem is not None:
                     tr_entry["mem_list"].append(mem)
+                if acc is not None:
+                    tr_entry["acc_list"].append(acc)
+                if f1 is not None:
+                    tr_entry["f1_list"].append(f1)
 
     # Format module leaderboard list
     leaderboard = []
@@ -391,6 +456,10 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
         avg_fwd = round(sum(data["fwd_list"]) / len(data["fwd_list"]), 2) if data["fwd_list"] else 0.0
         avg_bwd = round(sum(data["bwd_list"]) / len(data["bwd_list"]), 2) if data["bwd_list"] else 0.0
         avg_mem = round(sum(data["mem_list"]) / len(data["mem_list"]), 1) if data["mem_list"] else 0.0
+        avg_acc = round(sum(data["acc_list"]) / len(data["acc_list"]), 2) if data["acc_list"] else 0.0
+        avg_f1 = round(sum(data["f1_list"]) / len(data["f1_list"]), 4) if data["f1_list"] else 0.0
+        avg_fid = round(sum(data["fid_list"]) / len(data["fid_list"]), 4) if data["fid_list"] else 0.0
+        avg_thru = round(sum(data["thru_list"]) / len(data["thru_list"]), 1) if data["thru_list"] else 0.0
         total_lat = round(avg_fwd + avg_bwd, 2)
         succ_rate = round((data["success_count"] / max(1, data["total_runs"])) * 100.0, 1)
 
@@ -401,6 +470,10 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
             "avg_bwd_ms": avg_bwd,
             "avg_total_ms": total_lat,
             "avg_mem_mb": avg_mem,
+            "avg_acc": avg_acc,
+            "avg_f1": avg_f1,
+            "avg_fidelity": avg_fid,
+            "avg_throughput": avg_thru,
             "success_count": data["success_count"],
             "timeout_count": data["timeout_count"],
             "fail_count": data["fail_count"],
@@ -498,10 +571,10 @@ def _build_stats_response() -> str:
             "avg_fwd": m["avg_fwd_ms"],
             "avg_bwd": m["avg_bwd_ms"],
             "avg_mem": m["avg_mem_mb"],
-            "avg_acc": 0.865,
-            "avg_f1": 0.892,
-            "avg_fidelity": 0.941,
-            "avg_throughput": 1420,
+            "avg_acc": m["avg_acc"],
+            "avg_f1": m["avg_f1"],
+            "avg_fidelity": m["avg_fidelity"],
+            "avg_throughput": m["avg_throughput"],
             "p_value": 0.01,
         })
 
