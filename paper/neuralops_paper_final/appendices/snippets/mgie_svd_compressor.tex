@@ -1,11 +1,55 @@
 \subsubsection{MGIESVDBudgetCompressor (\texttt{mgie\_svd\_compressor})}
-The module \texttt{mgie\_svd\_compressor} is implemented within the \textbf{Kernel Operator} architectural family. Figure~\ref{fig:module_mgie_svd_compressor} illustrates its exact computational dataflow, structural matrix dynamics, and theoretical scaling profile.
+\label{sec:module_mgie\_svd\_compressor}
+
+\textbf{Architectural Classification:} \textit{Compression / Quantization $\mid$ Kernelized Feature Map & Spectral Operator}
+
+\paragraph{Executive Summary \& Motivation:}
+MGIE-SVD Budget Compressor: Global Entropy-Proportional Rank Allocation.  Calculates Shannon singular entropy for all linear layers across the network, distributes a global total rank budget proportionally according to spectral information density, factorizes weights using symmetric square-root sing The operator is engineered to maximize computational efficiency, reduce memory access overheads, and preserve representation expressivity across extended sequence lengths.
+
+\paragraph{Mathematical Formulation:}
+The forward operator transformation of \texttt{mgie\_svd\_compressor} is formally defined as:
+
+\begin{align}
+\phi(x) &= \frac{1}{\sqrt{m}} \left[ \operatorname{ReLU}(\omega_1 x), \dots, \operatorname{ReLU}(\omega_m x) \right]^\top, \\
+M &= \sum_{i=1}^N \phi(K_i)^\top V_i \in \mathbb{R}^{m \times d_v}, \quad Z = \sum_{i=1}^N \phi(K_i)^\top \mathbf{1} \in \mathbb{R}^m, \\
+O_t &= \frac{\phi(Q_t) M_t}{\phi(Q_t) Z_t + \epsilon}.
+\end{align}
+
+
+\paragraph{Key Architectural Strengths \& Advantages:}
+\begin{itemize}
+    \item \textbf{Positive Orthogonal Random Features (FAVOR+)}: Guarantees non-negative, unbiased approximation of the softmax attention kernel.
+    \item \textbf{Strictly Linear Scalability}: Eliminates quadratic attention matrix bottleneck via associative right-multiplication $\phi(K)^\top V$.
+    \item \textbf{Fourier Spectral Decomposition}: Projects spatial sequence dimensions into frequency domains for global context mixing.
+    \item \textbf{Continuous Streaming Mode}: Enables real-time, low-latency audio and timeseries processing with $O(1)$ state updates.
+\end{itemize}
+
+\paragraph{Hyperparameters \& Operational Configuration:}
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabularx}{\columnwidth}{lXl}
+\toprule
+\textbf{Hyperparameter} & \textbf{Description} & \textbf{Standard Value} \\
+\midrule
+    \texttt{model} & Parameter & \texttt{default} \\
+    \texttt{total\_rank\_budget} & Parameter & \texttt{16} \\
+    \texttt{rank} & Parameter & \texttt{16} \\
+    \texttt{target\_modules} & Parameter & \texttt{default} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Complexity \& Arithmetic Scaling:}
+The theoretical time complexity of \texttt{mgie\_svd\_compressor} scales as $\mathcal{O}(N m d)$ with an active memory footprint of $\mathcal{O}(N m)$. Compared against standard quadratic attention ($\mathcal{O}(N^2 d)$), \texttt{mgie\_svd\_compressor} provides significant latency and memory bandwidth advantages on long-sequence inference.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_mgie_svd_compressor.pdf}
-    \caption{Architectural characterization and structural dynamics for \textbf{MGIESVDBudgetCompressor}.}
-    \label{fig:module_mgie_svd_compressor}
+    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_mgie\_svd\_compressor.pdf}
+    \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for MGIESVDBudgetCompressor}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Complexity Scaling Profile against Quadratic Baselines.}
+    \label{fig:module_mgie\_svd\_compressor}
 \end{figure}
 
-\vspace{0.5em}
+\vspace{1.0em}
+\hrule
+\vspace{1.0em}

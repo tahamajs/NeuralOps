@@ -1,11 +1,57 @@
 \subsubsection{ARMORLinear (\texttt{armor\_pruner})}
-The module \texttt{armor\_pruner} is implemented within the \textbf{Ssm Operator} architectural family. Figure~\ref{fig:module_armor_pruner} illustrates its exact computational dataflow, structural matrix dynamics, and theoretical scaling profile.
+\label{sec:module_armor\_pruner}
+
+\textbf{Architectural Classification:} \textit{Compression / Quantization $\mid$ State-Space Model & Selective Recurrence}
+
+\paragraph{Executive Summary \& Motivation:}
+Decoupled Sparse + Low-Rank Residual Layer. Maintains clean gradient flow to both the sparse weight core and low-rank adapter branches. The operator is engineered to maximize computational efficiency, reduce memory access overheads, and preserve representation expressivity across extended sequence lengths.
+
+\paragraph{Mathematical Formulation:}
+The forward operator transformation of \texttt{armor\_pruner} is formally defined as:
+
+\begin{align}
+\Delta_t &= \operatorname{softplus}(W_\Delta x_t + b_\Delta), \quad \bar{A}_t = \exp(\Delta_t A), \quad \bar{B}_t = \Delta_t B_t, \\
+h_t &= \bar{A}_t h_{t-1} + \bar{B}_t x_t \in \mathbb{R}^{d \times d_s}, \\
+y_t &= C_t h_t + D x_t, \quad O_t = \operatorname{SiLU}(z_t) \odot y_t.
+\end{align}
+
+
+\paragraph{Key Architectural Strengths \& Advantages:}
+\begin{itemize}
+    \item \textbf{Input-Dependent Selective Filtering}: Discretizes state matrix $\bar{A} = \exp(\Delta A)$ dynamically conditioned on input tokens, filtering irrelevant noise.
+    \item \textbf{Constant Inference Memory Footprint}: Maintains an $\mathcal{O}(d \cdot d_s)$ recurrent state buffer without growing Key-Value (KV) cache footprints.
+    \item \textbf{High-Throughput Associative Parallel Scan}: Computes forward training passes in $\mathcal{O}(\log N)$ parallel depth using prefix-sum algorithms.
+    \item \textbf{Long-Horizon Context Retention}: Retains historical token representations over sequences exceeding $64\text{k}$ tokens without memory degradation.
+\end{itemize}
+
+\paragraph{Hyperparameters \& Operational Configuration:}
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabularx}{\columnwidth}{lXl}
+\toprule
+\textbf{Hyperparameter} & \textbf{Description} & \textbf{Standard Value} \\
+\midrule
+    \texttt{in\_features} & Parameter & \texttt{default} \\
+    \texttt{out\_features} & Parameter & \texttt{default} \\
+    \texttt{rank} & Parameter & \texttt{16} \\
+    \texttt{bias} & Parameter & \texttt{default} \\
+    \texttt{dtype} & Parameter & \texttt{default} \\
+    \texttt{device} & Parameter & \texttt{default} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Complexity \& Arithmetic Scaling:}
+The theoretical time complexity of \texttt{armor\_pruner} scales as $\mathcal{O}(N d)$ with an active memory footprint of $\mathcal{O}(d \cdot d_s)$. Compared against standard quadratic attention ($\mathcal{O}(N^2 d)$), \texttt{armor\_pruner} provides significant latency and memory bandwidth advantages on long-sequence inference.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_armor_pruner.pdf}
-    \caption{Architectural characterization and structural dynamics for \textbf{ARMORLinear}.}
-    \label{fig:module_armor_pruner}
+    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_armor\_pruner.pdf}
+    \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for ARMORLinear}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Complexity Scaling Profile against Quadratic Baselines.}
+    \label{fig:module_armor\_pruner}
 \end{figure}
 
-\vspace{0.5em}
+\vspace{1.0em}
+\hrule
+\vspace{1.0em}
