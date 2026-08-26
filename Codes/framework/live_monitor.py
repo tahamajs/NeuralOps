@@ -113,10 +113,18 @@ def get_completed_results() -> List[Dict[str, Any]]:
     results = []
     error_map = {}
     
-    log_candidates = [MASTER_LOG, Path("comprehensive_run_detached.log"), PROJECT_DIR / "comprehensive_run_detached.log"]
+    log_candidates = [
+        MASTER_LOG,
+        PROJECT_DIR / "gpu_sweep_out.log",
+        Path("gpu_sweep_out.log"),
+        Path("comprehensive_run_detached.log"),
+        PROJECT_DIR / "comprehensive_run_detached.log",
+        Path("benchmark_local.log"),
+        PROJECT_DIR / "benchmark_local.log",
+    ]
     target_log = None
     for p in log_candidates:
-        if p.exists():
+        if p.exists() and p.stat().st_size > 0:
             target_log = p
             break
             
