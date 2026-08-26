@@ -375,7 +375,10 @@ function renderTelemetry(data) {
   }
   if (data.progress && data.progress.avg_sec !== undefined) {
     const vp = document.getElementById("val-pace");
-    if (vp) vp.textContent = data.progress.avg_sec;
+    if (vp) {
+      const s = Math.round(data.progress.avg_sec);
+      vp.textContent = s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
+    }
   }
 
   // Table
@@ -1715,10 +1718,12 @@ function renderModuleProgressTable(moduleProgress) {
     let durStr = "-";
     let durStyle = "color:#94a3b8;";
     if (m.status === "completed") {
-      durStr = m.duration_formatted || (m.duration_seconds ? `${Math.floor(m.duration_seconds / 60)}m ${Math.floor(m.duration_seconds % 60)}s` : "Done");
+      const sec = m.training_duration_seconds ?? m.duration_seconds;
+      durStr = m.duration_formatted || (sec ? `${Math.floor(sec / 60)}m ${Math.floor(sec % 60)}s` : "Done");
       durStyle = "color:#10b981; font-weight:600;";
     } else if (m.status === "running") {
-      durStr = m.duration_formatted || (m.elapsed_seconds ? `${Math.floor(m.elapsed_seconds / 60)}m ${Math.floor(m.elapsed_seconds % 60)}s elapsed` : "running...");
+      const sec = m.training_elapsed_seconds ?? m.elapsed_seconds ?? m.duration_seconds;
+      durStr = m.duration_formatted || (sec ? `${Math.floor(sec / 60)}m ${Math.floor(sec % 60)}s elapsed` : "running...");
       durStyle = "color:#f59e0b; font-weight:600;";
     }
 
