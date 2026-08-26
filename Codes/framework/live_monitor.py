@@ -796,11 +796,17 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     seeds_order = [42] if total_seeds == 1 else [42, 123, 777]
     total_epochs = 1 if is_screening_ep1 else (2 if is_screening else 3)
     max_steps_per_epoch = 526 if is_screening else 1052
-    pace_per_seed = 55.0 if is_screening_ep1 else (75.0 if is_screening else 160.0)
 
-    total_units = len(active_module_list) * total_seeds
-    units_completed = 0
+    # Dynamic rolling average calculation based on completed modules
+    valid_durations = [d for d in mod_durations.values() if d is not None and d > 0]
+    if valid_durations:
+        # Use rolling average of up to last 5 completed modules
+        rolling_avg_sec = float(sum(valid_durations[-5:]) / len(valid_durations[-5:]))
+    else:
+        rolling_avg_sec = 360.0
+
     curr_idx = active_module_list.index(current_mod) if current_mod in active_module_list else 0
+    now = datetime.now()
 
     for idx, mod in enumerate(active_module_list):
         if mod in completed_modules:
@@ -820,11 +826,13 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "f1": info["f1"],
                 "fidelity": info["fidelity"],
                 "progress_percent": 100.0,
+                "training_duration_seconds": round(d_sec, 1) if d_sec is not None else None,
+                "training_elapsed_seconds": round(d_sec, 1) if d_sec is not None else None,
+                "queue_wait_seconds": 0.0,
                 "duration_seconds": round(d_sec, 1) if d_sec is not None else None,
                 "duration_formatted": d_fmt,
                 "eta_str": "Completed",
             })
-            units_completed += total_seeds
         elif idx < curr_idx:
             d_sec = mod_durations.get(mod)
             d_fmt = format_duration(d_sec) if d_sec is not None else "Completed"
@@ -841,38 +849,39 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "f1": 0.898,
                 "fidelity": 0.985,
                 "progress_percent": 100.0,
+                "training_duration_seconds": round(d_sec, 1) if d_sec is not None else None,
+                "training_elapsed_seconds": round(d_sec, 1) if d_sec is not None else None,
+                "queue_wait_seconds": 0.0,
                 "duration_seconds": round(d_sec, 1) if d_sec is not None else None,
                 "duration_formatted": d_fmt,
                 "eta_str": "Completed",
             })
-            units_completed += total_seeds
         elif idx == curr_idx:
             done_s = completed_seeds_map.get(mod, [])
             n_done = len(done_s)
             curr_s = seeds_order[min(n_done, len(seeds_order)-1)] if n_done < total_seeds else "Done"
-            units_completed += n_done
-            
-            now = datetime.now()
-            ref_t = last_seed_time or start_time or now
-            sec_in_seed = max(0, (now - ref_t).total_seconds()) if (now - ref_t).total_seconds() > 0 else 30
-            seed_pct = min(0.95, sec_in_seed / pace_per_seed) if n_done < total_seeds else 1.0
-            mod_pct = round(((n_done + seed_pct) / float(total_seeds)) * 100.0, 1)
 
-            cur_epoch = min(total_epochs, max(1, int((seed_pct * total_epochs) + 1)))
-            cur_step = min(max_steps_per_epoch, max(1, int(seed_pct * max_steps_per_epoch)))
-            sim_loss = round(max(0.12, 0.45 - (cur_step / float(max_steps_per_epoch)) * 0.25 + (0.02 * (total_epochs - cur_epoch))), 4)
+            m_start = mod_starts.get(mod, now)
+            training_elapsed_sec = max(0.0, (now - m_start).total_seconds())
+
+            # Dynamic module time estimation & remaining time
+            est_mod_total_sec = max(rolling_avg_sec, training_elapsed_sec * 1.08)
+            cur_mod_rem_sec = max(10.0, est_mod_total_sec - training_elapsed_sec)
+            
+            step_pct = min(0.98, max(0.02, training_elapsed_sec / est_mod_total_sec)) if n_done < total_seeds else 1.0
+            mod_pct = round(((n_done + step_pct) / float(total_seeds)) * 100.0, 1)
+
+            cur_epoch = min(total_epochs, max(1, int((step_pct * total_epochs) + 1)))
+            cur_step = min(max_steps_per_epoch, max(1, int(step_pct * max_steps_per_epoch)))
+            sim_loss = round(max(0.12, 0.45 - (cur_step / float(max_steps_per_epoch)) * 0.25), 4)
 
             latest_acc = done_s[-1]["acc"] if done_s else None
             latest_f1 = done_s[-1]["f1"] if done_s else None
             latest_fid = done_s[-1]["fid"] if done_s else None
 
-            rem_seeds_mod = max(0, total_seeds - n_done)
-            mod_rem_sec = int(rem_seeds_mod * pace_per_seed - (sec_in_seed % pace_per_seed))
-            mod_eta_str = f"{mod_rem_sec // 60}m {mod_rem_sec % 60}s" if mod_rem_sec > 0 else "Finalizing..."
+            mod_eta_str = f"{int(cur_mod_rem_sec // 60)}m {int(cur_mod_rem_sec % 60):02d}s" if cur_mod_rem_sec > 10 else "Finalizing..."
+            elapsed_fmt = f"{format_duration(training_elapsed_sec)} elapsed"
 
-            m_start = mod_starts.get(mod, ref_t)
-            elapsed_sec = max(0.0, (datetime.now() - m_start).total_seconds())
-            elapsed_fmt = f"{format_duration(elapsed_sec)} elapsed"
             modules_progress.append({
                 "module": mod,
                 "status": "running",
@@ -886,8 +895,11 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "f1": latest_f1,
                 "fidelity": latest_fid,
                 "progress_percent": mod_pct,
-                "duration_seconds": round(elapsed_sec, 1),
-                "elapsed_seconds": round(elapsed_sec, 1),
+                "training_duration_seconds": round(training_elapsed_sec, 1),
+                "training_elapsed_seconds": round(training_elapsed_sec, 1),
+                "queue_wait_seconds": 0.0,
+                "duration_seconds": round(training_elapsed_sec, 1),
+                "elapsed_seconds": round(training_elapsed_sec, 1),
                 "duration_formatted": elapsed_fmt,
                 "eta_str": mod_eta_str,
             })
@@ -905,25 +917,25 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "f1": None,
                 "fidelity": None,
                 "progress_percent": 0.0,
+                "training_duration_seconds": None,
+                "training_elapsed_seconds": None,
+                "queue_wait_seconds": None,
                 "duration_seconds": None,
                 "elapsed_seconds": None,
                 "duration_formatted": "-",
                 "eta_str": "Queued",
             })
 
-    overall_units_done = units_completed
     cur_mod_progress = next((m for m in modules_progress if m["status"] == "running"), None)
-    fractional = 0.0
-    if cur_mod_progress:
-        fractional = (cur_mod_progress["progress_percent"] % 33.33) / 33.33
+    cur_step_fraction = (cur_mod_progress["progress_percent"] / 100.0) if cur_mod_progress else 0.0
+    overall_pct = min(99.0, round(((len(completed_modules) + cur_step_fraction) / float(len(active_module_list))) * 100.0, 1))
 
-    overall_pct = min(99.0, round(((overall_units_done + fractional) / float(total_units)) * 100.0, 1))
-    
-    total_remaining_seeds = max(0, total_units - overall_units_done - fractional)
-    total_eta_sec = int(total_remaining_seeds * pace_per_seed)
+    rem_pending_mods = max(0, len(active_module_list) - len(completed_modules) - 1)
+    cur_mod_rem = cur_mod_rem_sec if 'cur_mod_rem_sec' in locals() else rolling_avg_sec
+    total_eta_sec = int((rem_pending_mods * rolling_avg_sec) + cur_mod_rem)
     eta_m = total_eta_sec // 60
     eta_s = total_eta_sec % 60
-    total_eta_str = f"{eta_m}m {eta_s}s" if total_eta_sec > 0 else "0s"
+    total_eta_str = f"{eta_m}m {eta_s:02d}s" if total_eta_sec > 0 else "0s"
 
     active_live_info = {
         "module_name": current_mod,
@@ -953,7 +965,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             "eta_seconds": total_eta_sec,
             "eta_formatted": total_eta_str,
             "eta_str": total_eta_str,
-            "avg_sec": pace_per_seed,
+            "avg_sec": round(rolling_avg_sec, 1),
+            "avg_duration_seconds": round(rolling_avg_sec, 1),
             "current": len(completed_modules),
         }
     }
