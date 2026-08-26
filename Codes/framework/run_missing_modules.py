@@ -12,6 +12,7 @@ import json
 import logging
 from pathlib import Path
 import pandas as pd
+import numpy as np
 import torch
 import torch.nn as nn
 from transformers import (
@@ -45,7 +46,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MissingModulesRunner")
 
-ORIGINAL_CSV = PROJECT_DIR / "results/gpu_server/snapshot_2026_08_26/benchmark_summary.csv"
+ORIGINAL_CSV = PROJECT_DIR / "results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv"
 NEW_ROWS_CSV = PROJECT_DIR / "results/gpu_server/snapshot_2026_08_26/benchmark_missing_results.csv"
 MERGED_CSV = PROJECT_DIR / "results/gpu_server/snapshot_2026_08_26/benchmark_summary_v2.csv"
 NOT_RUN_TXT = PROJECT_DIR / "not_run_modules.txt"
@@ -145,10 +146,13 @@ def run_sweep():
         else:
             track = "track1_svd"
 
-        logger.info("\n[%d/%d] Evaluating Module: %s (%s, %s)", idx, len(missing_modules), mod_name, mod_cat, track)
-        
+        mod_timed_out = False
         for model_name in models:
+            if mod_timed_out:
+                break
             for dataset_name in datasets:
+                if mod_timed_out:
+                    break
                 t0 = time.time()
                 combo_key = f"{mod_name}|{model_name.upper()}|{dataset_name.upper()}"
                 num_labels = 1 if dataset_name == "stsb" else 2
@@ -259,6 +263,8 @@ def run_sweep():
                 except Exception as e:
                     elapsed = time.time() - t0
                     status = "TIMEOUT" if elapsed >= 120.0 else "FAIL"
+                    if status == "TIMEOUT":
+                        mod_timed_out = True
                     logger.error("  ✗ %s -> %s: %s (in %.2fs)", combo_key, status, e, elapsed)
                     row = {
                         "track": track,

@@ -636,13 +636,14 @@ def get_dataset_batch(
             if val_tokenized is not None and len(val_tokenized) > 0:
                 is_cuda = (device.type == "cuda")
                 import os, sys
+                num_workers_val = min(8, os.cpu_count() or 1)
                 loader = torch.utils.data.DataLoader(
                     val_tokenized,
                     batch_size=batch_size,
                     shuffle=False,
-                    pin_memory=is_cuda,
-                    num_workers=min(4, os.cpu_count() or 1) if not sys.platform.startswith("win") else 0,
-                    prefetch_factor=2 if (is_cuda and not sys.platform.startswith("win")) else None,
+                    pin_memory=True,
+                    num_workers=num_workers_val,
+                    prefetch_factor=4 if num_workers_val > 0 else None,
                 )
                 raw_batch = next(iter(loader))
                 batch = {
@@ -709,7 +710,7 @@ def probe_optimal_batch_size(
     dataset: str,
     seq_len: int,
     device: torch.device,
-    target_vram_ratio: float = 0.88,
+    target_vram_ratio: float = 0.80,
     max_batch_cap: int = 1024,
     min_batch_floor: int = 4,
     allow_synthetic: bool = True,
@@ -831,7 +832,7 @@ def evaluate_single_combination_opt(
                     dataset=dataset,
                     seq_len=seq_len,
                     device=device,
-                    target_vram_ratio=0.88,
+                    target_vram_ratio=0.80,
                     max_batch_cap=min(batch_size, 1024) if batch_size > 0 else 1024,
                     min_batch_floor=4,
                     allow_synthetic=allow_synthetic,
