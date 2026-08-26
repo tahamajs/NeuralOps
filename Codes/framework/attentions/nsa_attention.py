@@ -158,7 +158,6 @@ def inject_nsa(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-,
     **kwargs) -> NativeSparseAttention:
     window_size = getattr(comp_config, "window_size", 32)
     top_k = getattr(comp_config, "top_k", 16)

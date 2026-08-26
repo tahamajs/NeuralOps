@@ -176,7 +176,6 @@ def inject_lsh(
     layer_idx: int,
     total_layers: int,
     old_attn: Optional[nn.Module],
-,
     **kwargs) -> LSHAttention:
     rounds = getattr(comp_config, "lsh_rounds", 4)
     buckets = getattr(comp_config, "lsh_buckets", 16)
