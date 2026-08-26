@@ -467,7 +467,15 @@ function renderLiveLoss(data) {
     } else if (hasRealLoss) {
       const firstL = lossCurve[0];
       const lastL = lossCurve[lossCurve.length - 1];
-      noteElem.textContent = `Convergence: ${firstL} -> ${lastL} (${lossCurve.length} sampled points across 3 epochs)`;
+            let epCount = 3;
+      if (data.module_progress && data.module_progress.length > 0) {
+        const fullMod = data.module_progress.find(m => m.module === modName) || data.module_progress[0];
+        if (fullMod && fullMod.epoch) {
+           const match = fullMod.epoch.match(/\/ (\d+)/) || fullMod.epoch.match(/\/(\d+)/);
+           if (match) epCount = match[1];
+        }
+      }
+      noteElem.textContent = `Convergence: ${firstL} -> ${lastL} (${lossCurve.length} sampled points across ${epCount} epoch${epCount > 1 ? 's' : ''})`;
     } else if (activeItem && activeItem.status !== "PASS") {
       noteElem.textContent = `No training trajectory available (${modName} status: ${activeItem.status})`;
     } else {
