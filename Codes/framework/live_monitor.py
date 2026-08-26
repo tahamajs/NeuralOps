@@ -709,10 +709,19 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
         except Exception:
             pass
 
+    def format_duration(sec: Optional[float]) -> str:
+        if sec is None or sec < 0:
+            return "-"
+        m = int(sec // 60)
+        s = int(sec % 60)
+        return f"{m}m {s:02d}s"
+
     current_mod = "full"
     current_model = "DISTILBERT"
     current_dataset = "SST2"
     completed_seeds_map = {}
+    mod_durations = {}
+    mod_starts = {}
     start_time = None
     last_seed_time = None
 
@@ -734,6 +743,18 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                         current_model = m_eval.group(4)
                         current_dataset = m_eval.group(5)
                         parsed_seeds = int(m_eval.group(6))
+                        m_ts_eval = re.search(r"^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})", line_s)
+                        if m_ts_eval:
+                            try:
+                                mod_starts[current_mod] = datetime.strptime(m_ts_eval.group(1), "%Y-%m-%d %H:%M:%S")
+                            except Exception:
+                                pass
+
+                    m_done = re.search(r"-->\s+(\w+)\s+on.*completed in\s+([\d\.]+)s", line_s)
+                    if m_done:
+                        d_mod = m_done.group(1)
+                        d_sec = float(m_done.group(2))
+                        mod_durations[d_mod] = d_sec
                     m_seed = re.search(r"--> Seed (\d+) completed: Acc=([\d.]+)%, F1=([\d.]+), Fid=([\d.]+), Peak VRAM=([\d.]+)MB", line_s)
                     if m_seed:
                         s_id = int(m_seed.group(1))
@@ -771,6 +792,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     for idx, mod in enumerate(active_module_list):
         if mod in completed_modules:
             info = completed_modules[mod]
+            d_sec = mod_durations.get(mod)
+            d_fmt = format_duration(d_sec) if d_sec is not None else "Completed"
             modules_progress.append({
                 "module": mod,
                 "status": "completed",
@@ -784,10 +807,14 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "f1": info["f1"],
                 "fidelity": info["fidelity"],
                 "progress_percent": 100.0,
+                "duration_seconds": round(d_sec, 1) if d_sec is not None else None,
+                "duration_formatted": d_fmt,
                 "eta_str": "Completed",
             })
             units_completed += total_seeds
         elif idx < curr_idx:
+            d_sec = mod_durations.get(mod)
+            d_fmt = format_duration(d_sec) if d_sec is not None else "Completed"
             modules_progress.append({
                 "module": mod,
                 "status": "completed",
@@ -801,6 +828,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "f1": 0.898,
                 "fidelity": 0.985,
                 "progress_percent": 100.0,
+                "duration_seconds": round(d_sec, 1) if d_sec is not None else None,
+                "duration_formatted": d_fmt,
                 "eta_str": "Completed",
             })
             units_completed += total_seeds
@@ -828,6 +857,9 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             mod_rem_sec = int(rem_seeds_mod * pace_per_seed - (sec_in_seed % pace_per_seed))
             mod_eta_str = f"{mod_rem_sec // 60}m {mod_rem_sec % 60}s" if mod_rem_sec > 0 else "Finalizing..."
 
+            m_start = mod_starts.get(mod, ref_t)
+            elapsed_sec = max(0.0, (datetime.now() - m_start).total_seconds())
+            elapsed_fmt = f"{format_duration(elapsed_sec)} elapsed"
             modules_progress.append({
                 "module": mod,
                 "status": "running",
@@ -841,6 +873,9 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "f1": latest_f1,
                 "fidelity": latest_fid,
                 "progress_percent": mod_pct,
+                "duration_seconds": round(elapsed_sec, 1),
+                "elapsed_seconds": round(elapsed_sec, 1),
+                "duration_formatted": elapsed_fmt,
                 "eta_str": mod_eta_str,
             })
         else:
@@ -857,6 +892,9 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "f1": None,
                 "fidelity": None,
                 "progress_percent": 0.0,
+                "duration_seconds": None,
+                "elapsed_seconds": None,
+                "duration_formatted": "-",
                 "eta_str": "Queued",
             })
 
