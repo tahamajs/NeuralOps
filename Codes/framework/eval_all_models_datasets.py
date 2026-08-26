@@ -713,7 +713,7 @@ def evaluate_single_combination_opt(
 
     result = BenchmarkResult(
         track=track, module_name=module_name, module_type=module_type,
-        model_family=model_family, dataset=dataset
+        model_family=model_family, dataset=dataset, status="RUNNING"
     )
     
     current_batch_size = batch_size
@@ -735,12 +735,14 @@ def evaluate_single_combination_opt(
             model.train()
             
             # --- Inject Module ---
-            if module_type == "attention":
-                from framework.core.attention_utils import inject_custom_attention
-                inject_custom_attention(model, module_name, rank=rank)
-            elif module_type == "compressor":
-                from framework.core.compression_utils import apply_compression
-                apply_compression(model, module_name, rank=rank)
+            model, comp_ratio = apply_module_to_model(
+                model=model,
+                module_name=module_name,
+                module_type=module_type,
+                rank=rank,
+                device=device,
+            )
+            result.compression_ratio = comp_ratio
             
             model = model.to(device)
             if hasattr(model, "train"):
