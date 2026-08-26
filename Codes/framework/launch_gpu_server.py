@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -183,7 +184,12 @@ def run_gpu_benchmark_sweep_opt(
     Executes benchmark sweep using multi-worker execution and cached tensors.
     """
     os.makedirs(output_dir, exist_ok=True)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     
     logger.info("Initializing Optimized Benchmark on %s (Batch: %d, Seq: %d, Workers: %d)...", device, batch_size, seq_len, workers)
 
