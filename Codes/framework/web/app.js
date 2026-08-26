@@ -79,7 +79,8 @@ async function fetchRunsList() {
     availableRuns = data.runs || [];
     const activeRun = availableRuns.find(r => r.is_active || r.run_id === "run_active");
     if (activeRun) {
-      selectedRunId = "run_active";
+      selectedRunId = activeRun.run_id;
+      isHistorical = false;
     }
     populateRunSelectors();
   } catch (e) {
@@ -317,6 +318,9 @@ function renderDashboard() {
 function renderTelemetry(data) {
   renderLiveLoss(data);
   renderGpuHistory(data);
+  if (data.module_progress) {
+    renderModuleProgressTable(data.module_progress);
+  }
 
   // Sweep status
   const sweepBadge = document.getElementById("sweep-status");
@@ -411,24 +415,41 @@ let gpuHistoryChart = null;
 let gpuHistoryData = { labels: [], util: [], vram: [], power: [] };
 
 function renderLiveLoss(data) {
+  const lp = data.live_progress || {};
   const resultsList = data.recent_results || data.results;
   const activeItem = (resultsList && resultsList.length > 0) ? resultsList[0] : null;
   
   const modElem = document.getElementById("live-loss-module");
   const modelElem = document.getElementById("live-loss-model");
   const dsElem = document.getElementById("live-loss-dataset");
+  const seedElem = document.getElementById("live-loss-seed");
+  const epochElem = document.getElementById("live-loss-epoch");
+  const lossElem = document.getElementById("live-loss-val");
   const timeElem = document.getElementById("live-loss-time");
   const noteElem = document.getElementById("live-loss-note");
+  const barElem = document.getElementById("live-loss-progress");
 
-  const modName = activeItem ? (activeItem.module || activeItem.module_name || "svd_linear_attention") : "svd_linear_attention";
-  const modelName = activeItem ? (activeItem.model || "BERT") : "BERT";
-  const dsName = activeItem ? (activeItem.dataset || "SST-2") : "SST-2";
-  const timeStr = activeItem ? (activeItem.time || activeItem.timestamp || "Live") : "Live";
+  const modName = lp.module_name || (activeItem ? (activeItem.module || activeItem.module_name) : "full");
+  const modelName = lp.model_family || (activeItem ? activeItem.model : "DistilBERT");
+  const dsName = lp.dataset || (activeItem ? activeItem.dataset : "SST-2");
+  const timeStr = lp.eta_formatted ? `ETA: ${lp.eta_formatted}` : "Live";
 
   if (modElem) modElem.textContent = modName;
   if (modelElem) modelElem.textContent = modelName;
   if (dsElem) dsElem.textContent = dsName;
+  if (seedElem) seedElem.textContent = `Seed: ${lp.seed || 42}`;
+  if (epochElem) epochElem.textContent = `Epoch ${lp.epoch || '1/3'}`;
+  if (lossElem) lossElem.textContent = `Loss: ${lp.loss !== undefined ? lp.loss : '-'}`;
   if (timeElem) timeElem.textContent = timeStr;
+  if (barElem && lp.progress_percent !== undefined) {
+    barElem.style.width = `${lp.progress_percent}%`;
+  }
+
+  if (noteElem) {
+    const accStr = lp.latest_acc ? ` • Latest Seed Acc: ${lp.latest_acc}%` : "";
+    noteElem.textContent = `Step ${lp.step || '1/1052'} • Current Loss: ${lp.loss || '-'}${accStr}`;
+  }
+
   const hasRealLoss = activeItem && activeItem.status === "PASS" && activeItem.trajectories && activeItem.trajectories.loss && Array.isArray(activeItem.trajectories.loss) && activeItem.trajectories.loss.length > 0;
 
   if (noteElem) {
@@ -1630,7 +1651,9 @@ function restoreState() {
     const raw = localStorage.getItem("neuralops_dashboard_state_v3");
     if (!raw) return;
     const st = JSON.parse(raw);
-    if (st.selectedRunId) selectedRunId = st.selectedRunId;
+    if (st.selectedRunId && st.selectedRunId !== "gpu_server" && st.selectedRunId !== "adaptive_v3") {
+      selectedRunId = st.selectedRunId;
+    }
     if (st.activeTab) activeTab = st.activeTab;
     if (st.selectedModules) selectedModules = new Set(st.selectedModules);
     if (st.analyticsFilters) analyticsFilters = st.analyticsFilters;
