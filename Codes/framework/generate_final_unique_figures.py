@@ -93,7 +93,9 @@ def generate_3panel_figure(module_name: str, group: pd.DataFrame, output_dir: Pa
     
     plt.tight_layout()
     out_file = output_dir / f"{module_name}_3panel.png"
+    pdf_file = output_dir / f"module_{module_name}.pdf"
     plt.savefig(out_file, dpi=100)
+    plt.savefig(pdf_file)
     plt.close(fig)
     return out_file
 
@@ -114,7 +116,7 @@ def main():
         return
         
     df = pd.read_csv(csv_path)
-    output_dir = PROJECT_DIR / "results/gpu_server/snapshot_2026_08_26/unique_figures"
+    output_dir = Path("paper/neuralops_paper_final/figures/catalog_visuals")
     output_dir.mkdir(parents=True, exist_ok=True)
     
     logger.info(f"Generating unique 3-panel figures for {df['module_name'].nunique()} modules...")

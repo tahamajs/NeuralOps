@@ -234,6 +234,9 @@ def get_completed_results() -> List[Dict[str, Any]]:
                     "f1_score": f1_score,
                     "fidelity_score": fid_score,
                     "throughput": thru_val,
+                    "p_value": pval_val,
+                    "ci_lower": cil_val,
+                    "ci_upper": ciu_val,
                     "error_detail": err_detail,
                 })
                 continue
@@ -344,6 +347,9 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
         f1 = float(r["f1_score"]) if r.get("f1_score") is not None else None
         fid = float(r["fidelity_score"]) if r.get("fidelity_score") is not None else None
         thru = float(r["throughput"]) if r.get("throughput") is not None else None
+        pval = float(r["p_value"]) if r.get("p_value") is not None else None
+        cil = float(r["ci_lower"]) if r.get("ci_lower") is not None else None
+        ciu = float(r["ci_upper"]) if r.get("ci_upper") is not None else None
 
         # 1. Module Aggregation
         if mod not in module_stats:
@@ -983,10 +989,14 @@ class RunManager:
                         fwd = float(row["forward_latency_ms"]) if row.get("forward_latency_ms") and row["forward_latency_ms"] != "-" else (float(row["fwd_ms"]) if row.get("fwd_ms") else None)
                         bwd = float(row["backward_latency_ms"]) if row.get("backward_latency_ms") and row["backward_latency_ms"] != "-" else (float(row["bwd_ms"]) if row.get("bwd_ms") else None)
                         mem = float(row["peak_memory_mb"]) if row.get("peak_memory_mb") and row["peak_memory_mb"] != "-" else (float(row["peak_vram_mb"]) if row.get("peak_vram_mb") else None)
-                        acc = float(row["accuracy_pct"]) if row.get("accuracy_pct") and row["accuracy_pct"] not in ("-", "") else None
+                        acc_val = row.get("mean_accuracy", row.get("accuracy_pct"))
+                        acc = float(acc_val) if acc_val and acc_val not in ("-", "") else None
                         f1 = float(row["f1_score"]) if row.get("f1_score") and row["f1_score"] not in ("-", "") else None
                         fid = float(row["fidelity_score"]) if row.get("fidelity_score") and row["fidelity_score"] not in ("-", "") else None
                         thru = float(row["throughput_samples_per_sec"]) if row.get("throughput_samples_per_sec") and row["throughput_samples_per_sec"] not in ("-", "") else (float(row["throughput_tokens_sec"]) if row.get("throughput_tokens_sec") else None)
+                        pval = float(row["p_value"]) if row.get("p_value") and row["p_value"] not in ("-", "") else None
+                        ci_lower = float(row["ci_lower"]) if row.get("ci_lower") and row["ci_lower"] not in ("-", "") else None
+                        ci_upper = float(row["ci_upper"]) if row.get("ci_upper") and row["ci_upper"] not in ("-", "") else None
 
                         r_entry = {
                             "timestamp": row.get("timestamp", datetime.now().isoformat()),
@@ -1002,6 +1012,9 @@ class RunManager:
                             "f1_score": f1,
                             "fidelity_score": fid,
                             "throughput": thru,
+                            "p_value": pval,
+                            "ci_lower": ci_lower,
+                            "ci_upper": ci_upper,
                             "error_detail": row.get("error_message", "None / Success"),
                         }
                         results.append(r_entry)
