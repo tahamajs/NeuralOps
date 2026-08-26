@@ -85,3 +85,15 @@
 1. All required fields for the paper's efficiency tables (Table 3, Table 4, Appendix Telemetry Tables) are **present, verified, and backed by actual CSV measurements**.
 2. The benchmark run is complete with 0 hanging processes.
 3. The dataset is ready for final paper publication.
+
+
+---
+
+## 7. Per-Module Execution Status
+
+See the complete detailed table in [`MODULE_EXECUTION_STATUS.md`](MODULE_EXECUTION_STATUS.md).
+
+- **Total Modules in Codebase:** `226`
+- **Total Modules RUN on GPU:** `113`
+- **Total Modules Skipped / Blacklisted:** `0`
+- **Total Modules Not Run (Deferred):** `113`
