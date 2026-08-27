@@ -56,6 +56,24 @@ FAIL_ERROR_REGEX = re.compile(
     r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})\s+\[ERROR\]\s+EvalEngine:\s+Evaluation FAILED for\s+([a-zA-Z0-9_\-]+)\s+on\s+([a-zA-Z0-9_\-]+)/([a-zA-Z0-9_\-]+):\s+(.*)'
 )
 
+HELPER_SUFFIXES = (
+    "_inject",
+    "_injection",
+    "_fn",
+    "_inject_fn",
+    "_attn_inject",
+    "_module_inject",
+    "_compressor_fn",
+)
+
+
+def is_helper_module(name: str) -> bool:
+    """Returns True if the module name is an injection helper or auxiliary alias."""
+    if not name:
+        return False
+    n = name.lower()
+    return any(n.endswith(suf) for suf in HELPER_SUFFIXES)
+
 
 def get_gpu_stats() -> Dict[str, Any]:
     """Queries nvidia-smi for real-time hardware telemetry."""
@@ -177,13 +195,17 @@ def get_completed_results() -> List[Dict[str, Any]]:
                         except Exception:
                             ts = datetime.now()
                             
+                        is_hlp = is_helper_module(mod)
+                        status_val = "HELPER" if is_hlp else row.get("status", "PASS").upper()
+                        err_detail_val = "Injection helper function, excluded from benchmark" if is_hlp else "None / Success"
+
                         results.append({
                             "timestamp": ts,
                             "track": "quality_phase2",
                             "module": mod,
                             "model": row.get("model_family", "BERT").upper(),
                             "dataset": row.get("dataset", "SST2").upper(),
-                            "status": row.get("status", "PASS").upper(),
+                            "status": status_val,
                             "fwd_ms": fwd,
                             "bwd_ms": bwd,
                             "mem_mb": mem,
@@ -194,7 +216,7 @@ def get_completed_results() -> List[Dict[str, Any]]:
                             "p_value": pval,
                             "ci_lower": ci_lower,
                             "ci_upper": ci_upper,
-                            "error_detail": "None / Success",
+                            "error_detail": err_detail_val,
                         })
                 if results:
                     return results
@@ -452,6 +474,9 @@ def compute_comparative_analytics(results: List[Dict[str, Any]]) -> Dict[str, An
         pval = float(r["p_value"]) if r.get("p_value") is not None else None
         cil = float(r["ci_lower"]) if r.get("ci_lower") is not None else None
         ciu = float(r["ci_upper"]) if r.get("ci_upper") is not None else None
+
+        if is_helper_module(mod) or r.get("status") in ("HELPER", "UNSUPPORTED"):
+            continue
 
         # 1. Module Aggregation
         if mod not in module_stats:
@@ -732,7 +757,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             if p.exists() and p.stat().st_size > 0:
                 try:
                     with open(p, "r", encoding="utf-8", errors="ignore") as f:
-                        all_mods = [line.strip() for line in f if line.strip()]
+                        all_mods = [line.strip() for line in f if line.strip() and not is_helper_module(line.strip())]
                     if all_mods:
                         break
                 except Exception:
@@ -745,7 +770,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                             m_list = re.search(r"Modules \(\d+\):\s*(\[.*?\])", line)
                             if m_list:
                                 import ast
-                                all_mods = ast.literal_eval(m_list.group(1))
+                                raw_m = ast.literal_eval(m_list.group(1))
+                                all_mods = [m for m in raw_m if not is_helper_module(m)]
                                 break
             except Exception:
                 pass
@@ -1152,10 +1178,11 @@ def _build_stats_response() -> str:
         "recent_results": serializable_results[-20:][::-1],
         "all_results_count": len(results),
         "counts": {
-            "pass": sum(1 for r in results if r["status"] == "PASS"),
-            "timeout": sum(1 for r in results if r["status"] == "TIMEOUT"),
-            "fail": sum(1 for r in results if r["status"] == "FAIL"),
-            "total": len(results),
+            "pass": sum(1 for r in results if r["status"] == "PASS" and not is_helper_module(r.get("module", ""))),
+            "timeout": sum(1 for r in results if r["status"] == "TIMEOUT" and not is_helper_module(r.get("module", ""))),
+            "fail": sum(1 for r in results if r["status"] == "FAIL" and not is_helper_module(r.get("module", ""))),
+            "helper": sum(1 for r in results if is_helper_module(r.get("module", "")) or r.get("status") in ("HELPER", "UNSUPPORTED")),
+            "total": sum(1 for r in results if not is_helper_module(r.get("module", "")) and r.get("status") not in ("HELPER", "UNSUPPORTED")),
         },
         "analytics": {"modules": analytics_modules},
         "comparative_analytics": comparative,
