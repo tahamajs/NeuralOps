@@ -22,7 +22,7 @@ if str(CODES_DIR) not in sys.path:
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from benchmark.core.model_factory import build_model_with_attention
+from benchmark.core.model_factory import build_model_with_attention, extract_attention_outputs
 from benchmark.core.seed import set_seed
 from benchmark.tasks.glue_tasks import load_and_tokenize_glue_task
 from benchmark.runners.sanity import run_sanity_check
@@ -31,6 +31,7 @@ from benchmark.runners.profile import profile_model
 from benchmark.runners.stability import evaluate_stability
 from benchmark.diagnostics.gradient_analysis import compute_gradient_norm_stats
 from benchmark.diagnostics.moe_analysis import compute_moe_load_balance
+from benchmark.diagnostics.attention_analysis import compute_attention_entropy, compute_attention_sparsity
 from benchmark.report_generator import generate_all_reports
 
 logger = logging.getLogger("benchmark")
@@ -38,18 +39,39 @@ logger = logging.getLogger("benchmark")
 
 def setup_logging(output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
-    log_file = output_dir / "logs" / "benchmark.log"
-    log_file.parent.mkdir(parents=True, exist_ok=True)
+    logs_dir = output_dir / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    log_file = logs_dir / "benchmark.log"
+    error_file = logs_dir / "errors.log"
+    log_file.touch(exist_ok=True)
+    error_file.touch(exist_ok=True)
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
+    formatter = logging.Formatter(
+        fmt="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(str(log_file), mode="a"),
-        ],
     )
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    root_logger.handlers.clear()
+
+    # Console / Stdout handler
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(formatter)
+    root_logger.addHandler(stream_handler)
+
+    # General execution log
+    file_handler = logging.FileHandler(str(log_file), mode="a")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    root_logger.addHandler(file_handler)
+
+    # Error & Warning dedicated log
+    error_handler = logging.FileHandler(str(error_file), mode="a")
+    error_handler.setLevel(logging.WARNING)
+    error_handler.setFormatter(formatter)
+    root_logger.addHandler(error_handler)
 
 
 def parse_args() -> argparse.Namespace:
@@ -296,11 +318,30 @@ def main() -> None:
             grad_stats = compute_gradient_norm_stats(diag_model, dummy_inputs)
             moe_stats = compute_moe_load_balance(diag_model, dummy_inputs)
 
+            # Attention Map Analysis (Shannon Entropy & Sparsity)
+            attn_matrices = extract_attention_outputs(diag_model, dummy_inputs, output_attentions=True)
+            attn_stats: Dict[str, Any] = {"entropy": 0.0, "sparsity_pct": 0.0, "has_attention_weights": False}
+            if attn_matrices is not None and len(attn_matrices) > 0:
+                entropies = [compute_attention_entropy(layer_attn) for layer_attn in attn_matrices if layer_attn is not None]
+                sparsities = [compute_attention_sparsity(layer_attn) for layer_attn in attn_matrices if layer_attn is not None]
+                if entropies and sparsities:
+                    attn_stats = {
+                        "entropy": float(sum(entropies) / len(entropies)),
+                        "sparsity_pct": float(sum(sparsities) / len(sparsities)),
+                        "has_attention_weights": True,
+                    }
+
             model_record["diagnostics"] = {
                 "gradient_norm": grad_stats,
                 "moe_balance": moe_stats,
+                "attention": attn_stats,
             }
-            logger.info(f"  ✓ Diagnostics: Mean Grad Norm = {grad_stats['mean_norm']:.4f}, NaN = {grad_stats['has_nan']}")
+            logger.info(
+                f"  ✓ Diagnostics: Mean Grad Norm = {grad_stats['mean_norm']:.4f} | "
+                f"NaN = {grad_stats['has_nan']} | "
+                f"Entropy = {attn_stats['entropy']:.2f} | "
+                f"Sparsity = {attn_stats['sparsity_pct']:.1f}%"
+            )
 
         model_record["status"] = "OK"
         results[model_name] = model_record

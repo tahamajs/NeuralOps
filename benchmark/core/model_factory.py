@@ -28,10 +28,20 @@ def get_transformer_layers(model: nn.Module) -> Optional[nn.ModuleList]:
         return model.distilbert.transformer.layer
     if hasattr(model, "bert") and hasattr(model.bert, "encoder"):
         return model.bert.encoder.layer
-    if hasattr(model, "transformer") and hasattr(model.transformer, "layer"):
-        return model.transformer.layer
     if hasattr(model, "roberta") and hasattr(model.roberta, "encoder"):
         return model.roberta.encoder.layer
+    if hasattr(model, "deberta") and hasattr(model.deberta, "encoder"):
+        return model.deberta.encoder.layer
+    if hasattr(model, "electra") and hasattr(model.electra, "encoder"):
+        return model.electra.encoder.layer
+    if hasattr(model, "albert") and hasattr(model.albert, "encoder"):
+        return model.albert.encoder.albert_layer_groups[0].albert_layers
+    if hasattr(model, "transformer") and hasattr(model.transformer, "layer"):
+        return model.transformer.layer
+    if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
+        return model.transformer.h
+    if hasattr(model, "model") and hasattr(model.model, "layers"):
+        return model.model.layers
     return None
 
 
@@ -127,13 +137,42 @@ def extract_attention_outputs(
     model: nn.Module,
     inputs: Dict[str, torch.Tensor],
     output_attentions: bool = True,
-) -> Any:
+) -> Optional[List[torch.Tensor]]:
     """
     Execute forward pass with attention inspection enabled, returning layer-wise attention matrices.
     """
     model.eval()
+    try:
+        device = next(model.parameters()).device
+        dev_inputs = {k: v.to(device) for k, v in inputs.items() if isinstance(v, torch.Tensor)}
+    except Exception:
+        dev_inputs = inputs
+
     with torch.no_grad():
-        outputs = model(**inputs, output_attentions=output_attentions)
-        if hasattr(outputs, "attentions") and outputs.attentions is not None:
-            return outputs.attentions
+        try:
+            outputs = model(**dev_inputs, output_attentions=output_attentions)
+            if hasattr(outputs, "attentions") and outputs.attentions is not None:
+                return list(outputs.attentions)
+        except Exception:
+            try:
+                outputs = model(**dev_inputs)
+            except Exception:
+                pass
+
+        # Check for custom attention weight hooks or layer attributes
+        custom_attns = []
+        layers = get_transformer_layers(model)
+        if layers is not None:
+            for layer in layers:
+                attn = getattr(layer, "attention", None)
+                if attn is not None:
+                    for attr_name in ("last_attn_weights", "attn_weights", "attention_matrix", "scores"):
+                        if hasattr(attn, attr_name) and getattr(attn, attr_name) is not None:
+                            val = getattr(attn, attr_name)
+                            if isinstance(val, torch.Tensor):
+                                custom_attns.append(val)
+                                break
+        if custom_attns:
+            return custom_attns
+
     return None
