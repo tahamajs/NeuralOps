@@ -22,6 +22,6 @@ python Codes\framework\run_quality_sweep.py ^
   --pretrained ^
   --gradient_checkpointing ^
   --output_dir results/run_quality_all_screening ^
-  > D:\SVD_Project\run_quality_all_screening.log 2>&1
+  >> D:\SVD_Project\run_quality_all_screening.log 2>&1
 
 endlocal
