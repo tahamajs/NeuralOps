@@ -155,7 +155,7 @@ def generate_summary_table(results: Dict[str, Any], scores: Dict[str, Dict[str, 
 def generate_leaderboard_markdown(df: pd.DataFrame, output_path: str) -> None:
     """Generate Markdown leaderboard file with formatted rankings and status highlights."""
     if df.empty:
-        with open(output_path, "w") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write("# 🏆 Attention Mechanism Benchmark Leaderboard\n\nNo models evaluated yet.\n")
         return
 
@@ -199,7 +199,7 @@ def generate_leaderboard_markdown(df: pd.DataFrame, output_path: str) -> None:
         "",
     ])
 
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
 
@@ -285,7 +285,7 @@ def generate_all_reports(results_path: str, output_dir: str) -> None:
     out_p = Path(output_dir)
     out_p.mkdir(parents=True, exist_ok=True)
 
-    with open(results_path, "r") as f:
+    with open(results_path, "r", encoding="utf-8") as f:
         results = json.load(f)
 
     scores = calculate_scores(results)

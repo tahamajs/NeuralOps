@@ -468,24 +468,23 @@ function renderLiveLoss(data) {
   const hasRealLoss = lossCurve && lossCurve.length > 0;
 
   if (noteElem) {
-    if (!activeItem && !hasRealLoss) {
-      noteElem.textContent = "No active iteration data available";
-    } else if (hasRealLoss) {
+    if (!hasRealLoss) {
+      noteElem.textContent = "Collecting step loss...";
+    } else {
       const firstL = lossCurve[0];
       const lastL = lossCurve[lossCurve.length - 1];
-            let epCount = 3;
+      let epCount = 3;
       if (data.module_progress && data.module_progress.length > 0) {
         const fullMod = data.module_progress.find(m => m.module === modName) || data.module_progress[0];
         if (fullMod && fullMod.epoch) {
            const match = fullMod.epoch.match(/\/ (\d+)/) || fullMod.epoch.match(/\/(\d+)/);
-           if (match) epCount = match[1];
+           if (match) epCount = parseInt(match[1], 10);
         }
       }
-      noteElem.textContent = `Convergence: ${firstL} -> ${lastL} (${lossCurve.length} sampled points across ${epCount} epoch${epCount > 1 ? 's' : ''})`;
-    } else if (activeItem && activeItem.status !== "PASS") {
-      noteElem.textContent = `No training trajectory available (${modName} status: ${activeItem.status})`;
-    } else {
-      noteElem.textContent = `Collecting step loss for ${modName}...`;
+      const epochParts = (lp.epoch || "").split("/");
+      const totalEpochs = epochParts.length > 1 ? parseInt(epochParts[1], 10) : epCount;
+      noteElem.textContent = `Convergence: ${firstL} -> ${lastL} (${lossCurve.length} sampled points across ${totalEpochs} epoch${totalEpochs > 1 ? 's' : ''})`;
+    }
     }
   }
 
@@ -766,31 +765,31 @@ function updateCharts() {
   let chartColor = "#38bdf8";
 
   if (metric === "fwd") {
-    chartData = mods.map(m => m.avg_fwd);
+    chartData = mods.map(m => (m.avg_fwd !== undefined && m.avg_fwd !== null) ? m.avg_fwd : null);
     chartLabel = "Fwd Latency (ms)";
     chartColor = "#38bdf8";
   } else if (metric === "bwd") {
-    chartData = mods.map(m => m.avg_bwd);
+    chartData = mods.map(m => (m.avg_bwd !== undefined && m.avg_bwd !== null) ? m.avg_bwd : null);
     chartLabel = "Bwd Latency (ms)";
     chartColor = "#a855f7";
   } else if (metric === "vram") {
-    chartData = mods.map(m => m.avg_mem);
+    chartData = mods.map(m => (m.avg_mem !== undefined && m.avg_mem !== null) ? m.avg_mem : null);
     chartLabel = "Peak VRAM (MB)";
     chartColor = "#ec4899";
   } else if (metric === "acc") {
-    chartData = mods.map(m => m.avg_acc);
+    chartData = mods.map(m => (m.avg_acc !== undefined && m.avg_acc !== null) ? m.avg_acc : 0.0);
     chartLabel = "Accuracy (%)";
     chartColor = "#10b981";
   } else if (metric === "f1") {
-    chartData = mods.map(m => m.avg_f1);
+    chartData = mods.map(m => (m.avg_f1 !== undefined && m.avg_f1 !== null) ? m.avg_f1 : 0.0);
     chartLabel = "F1 Score";
     chartColor = "#f59e0b";
   } else if (metric === "throughput") {
-    chartData = mods.map(m => m.avg_throughput);
+    chartData = mods.map(m => (m.avg_throughput !== undefined && m.avg_throughput !== null) ? m.avg_throughput : null);
     chartLabel = "Throughput (samples/s)";
     chartColor = "#06b6d4";
   } else if (metric === "fidelity") {
-    chartData = mods.map(m => m.avg_fidelity);
+    chartData = mods.map(m => (m.avg_fidelity !== undefined && m.avg_fidelity !== null) ? m.avg_fidelity : 0.0);
     chartLabel = "Fidelity Score";
     chartColor = "#8b5cf6";
   }
@@ -1748,11 +1747,27 @@ function renderModuleProgressTable(moduleProgress) {
   }
 
   // Calculate live counts
-  let cntDone = 0, cntRun = 0, cntPend = 0;
+  let cntTotal = moduleProgress.length;
+  let cntPass = 0;
+  let cntFail = 0;
+  let cntTimeout = 0;
+  let cntRunning = 0;
+  let cntQueued = 0;
+
   moduleProgress.forEach(m => {
-    if (m.status === "completed") cntDone++;
-    else if (m.status === "running") cntRun++;
-    else cntPend++;
+    if (m.status === "running") {
+      cntRunning++;
+    } else if (m.status === "completed") {
+      if (m.result_status === "TIMEOUT") {
+        cntTimeout++;
+      } else if (m.result_status === "FAIL" || (m.accuracy !== null && m.accuracy !== undefined && parseFloat(m.accuracy) <= 50.92)) {
+        cntFail++;
+      } else {
+        cntPass++;
+      }
+    } else {
+      cntQueued++;
+    }
   });
 
   const elAll = document.getElementById("matrix-cnt-all");
@@ -1761,11 +1776,26 @@ function renderModuleProgressTable(moduleProgress) {
   const elPend = document.getElementById("matrix-cnt-pending");
   const elTot = document.getElementById("matrix-total-count");
 
-  if (elAll) elAll.textContent = moduleProgress.length;
-  if (elDone) elDone.textContent = cntDone;
-  if (elRun) elRun.textContent = cntRun;
-  if (elPend) elPend.textContent = cntPend;
-  if (elTot) elTot.textContent = `${moduleProgress.length} Modules`;
+  if (elAll) elAll.textContent = cntTotal;
+  if (elDone) elDone.textContent = cntPass + cntFail + cntTimeout; // Completed modules (PASS + FAIL + TIMEOUT)
+  if (elRun) elRun.textContent = cntRunning;
+  if (elPend) elPend.textContent = cntQueued;
+  if (elTot) elTot.textContent = `${cntTotal} Modules`;
+
+  // Update summary cards
+  const elSumTotal = document.getElementById("summary-total-modules");
+  const elSumPass = document.getElementById("summary-completed-modules");
+  const elSumFail = document.getElementById("summary-failed-modules");
+  const elSumTimeout = document.getElementById("summary-timeout-modules");
+  const elSumRunning = document.getElementById("summary-running-modules");
+  const elSumQueued = document.getElementById("summary-queued-modules");
+
+  if (elSumTotal) elSumTotal.textContent = cntTotal;
+  if (elSumPass) elSumPass.textContent = cntPass;
+  if (elSumFail) elSumFail.textContent = cntFail;
+  if (elSumTimeout) elSumTimeout.textContent = cntTimeout;
+  if (elSumRunning) elSumRunning.textContent = cntRunning;
+  if (elSumQueued) elSumQueued.textContent = cntQueued;
 
   // Apply filters
   let filtered = moduleProgress.filter(m => {

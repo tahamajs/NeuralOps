@@ -643,7 +643,7 @@ def is_sweep_running() -> bool:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
         if res.returncode == 0:
             for line in res.stdout.strip().splitlines():
-                if "run_quality_sweep.py" in line or "eval_all_models_datasets.py" in line:
+                if "run_quality_sweep.py" in line or "eval_all_models_datasets.py" in line or "retest_broken_modules.py" in line:
                     return True
         return False
     except Exception:
@@ -673,12 +673,14 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     Parses run_quality_fast.log and results/run_quality_fast/summary.csv
     to provide per-module, per-seed, per-epoch live status, metrics, and ETA.
     """
-    is_screening_all = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists()
+    is_screening_all = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists() or (PROJECT_DIR / "retest_broken.log").exists()
     is_screening_ep1 = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
     is_screening_fast = is_screening_ep1 or (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
     is_screening = is_screening_all or is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
 
     log_candidates = [
+        PROJECT_DIR / "retest_broken.log",
+        Path("retest_broken.log"),
         PROJECT_DIR / "run_quality_all_screening.log",
         Path("run_quality_all_screening.log"),
         PROJECT_DIR / "run_quality_ep1.log",
@@ -697,6 +699,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "run_broken_fix" / "summary.csv",
+        Path("results/run_broken_fix/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_all_screening" / "summary.csv",
         Path("results/run_quality_all_screening/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_ep1" / "summary.csv",
@@ -1018,9 +1022,10 @@ def _build_stats_response() -> str:
     """Build the full stats JSON response with rich detail fields and comparative analytics."""
     gpu = get_gpu_stats()
     results = get_completed_results()
+    is_screening_all = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists() or (PROJECT_DIR / "retest_broken.log").exists()
     is_pre = (PROJECT_DIR / "results" / "run_quality_pretrained" / "summary.csv").exists()
     is_fast = (PROJECT_DIR / "results" / "run_quality_fast" / "summary.csv").exists()
-    tot_comb = 6 if is_fast else (60 if is_pre else 240)
+    tot_comb = 245 if is_screening_all else (6 if is_fast else (60 if is_pre else 240))
     progress = compute_eta_and_progress(results, total_combos=tot_comb, window_size=50)
     is_running = is_sweep_running()
     comparative = compute_comparative_analytics(results)
