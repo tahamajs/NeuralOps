@@ -345,8 +345,8 @@ def evaluate_single_seed_run_with_proc_timeout(timeout, *args, **kwargs):
     )
     p.start()
     
-    # Hard timeout constraint: do not extend training/evaluation more than 5 minutes (300s)
-    hard_timeout = min(timeout if timeout else 300, 300)
+    # Hard timeout constraint: enforce strict 5 minutes (300s)
+    hard_timeout = timeout if timeout else 300
     
     p.join(timeout=hard_timeout)
     
@@ -1261,7 +1261,7 @@ def main():
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size (probed adaptively)")
     parser.add_argument("--seq_len", type=int, default=128, help="Sequence length")
-    parser.add_argument("--timeout", type=int, default=120, help="Hard timeout in seconds")
+    parser.add_argument("--timeout", type=int, default=300, help="Hard timeout in seconds")
     parser.add_argument("--precision", type=str, default="fp16", help="Precision (fp16, bf16, fp32)")
     parser.add_argument("--output_dir", type=str, default=None, help="Target output directory")
     parser.add_argument("--pretrained", action="store_true", default=False, help="Use real pretrained HuggingFace weights")
