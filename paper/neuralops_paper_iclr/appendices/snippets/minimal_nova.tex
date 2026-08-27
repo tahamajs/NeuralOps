@@ -1,8 +1,8 @@
 \subsection{MinimalNOVAAttention (\texttt{minimal\_nova})}
-\label{sec:app_module_minimal\_nova}
+\label{sec:app_module_minimal_nova}
 
 \subsubsection*{3.1 Module Overview}
-MinimalNOVA: SVD-Factorized Low-Rank Projection Attention.  Mathematical Mechanism:     Zero-shot drop-in replacement with SVD-compressed projection layers:     \$\$\begin{aligned}     Q \&= \text{FactorisedLinear}\_Q(X), \quad K = \text{FactorisedLinear}\_K(X), \quad V = \text{FactorisedLinear}\_V(X) \\
+MinimalNOVA: SVD-Factorized Low-Rank Projection Attention.  Mathematical Mechanism:     Zero-shot drop-in replacement with SVD-compressed projection layers:     $$\begin{aligned}     Q \&= \text{FactorisedLinear}\_Q(X), \quad K = \text{FactorisedLinear}\_K(X), \quad V = \text{FactorisedLinear}\_V(X) \\
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/minimal\_nova.py}
@@ -36,13 +36,13 @@ A &= \operatorname{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} \odot M + (1 - M)(-
 \end{itemize}
 
 \subsubsection*{3.5 Empirical Performance Telemetry}
-Table~\ref{tab:telemetry_minimal\_nova} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
+Table~\ref{tab:telemetry_minimal_nova} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
 
 \begin{table}[h]
 \centering
 \small
 \caption{\textbf{Empirical Benchmark Telemetry for \texttt{minimal\_nova}}. Measured on NVIDIA RTX 4070 GPU across standard GLUE tasks.}
-\label{tab:telemetry_minimal\_nova}
+\label{tab:telemetry_minimal_nova}
 \begin{tabularx}{\columnwidth}{lX}
 \toprule
 \textbf{Performance Metric} & \textbf{Empirical Value} \\
@@ -77,13 +77,13 @@ Evaluation Execution Status & \textbf{\texttt{SUPPORTED}} \\
 The module \texttt{minimal\_nova} is natively integrated into the NeuralOps registry with automated AMP FP16 tensor casting, fused linear down/up-projection passes, and exact autograd backward graph registration. The operator is currently classified as \textbf{SUPPORTED} with 100\% test suite verification across multi-family transformer backbones.
 
 \subsubsection*{3.8 Architectural Characterization Diagram}
-Figure~\ref{fig:module_minimal\_nova} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
+Figure~\ref{fig:module_minimal_nova} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_minimal\_nova.pdf}
+    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_minimal_nova.pdf}
     \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for MinimalNOVAAttention (\texttt{minimal\_nova})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
-    \label{fig:module_minimal\_nova}
+    \label{fig:module_minimal_nova}
 \end{figure}
 
 \vspace{1.0em}

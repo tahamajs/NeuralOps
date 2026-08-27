@@ -2944,7 +2944,7 @@ Figure~\ref{fig:module_cur_compressor} provides the complete 3-panel architectur
 \label{sec:app_module_cur_linear}
 
 \subsubsection*{3.1 Module Overview}
-Linear layer whose weight matrix is factorized via CUR cross-approximation: W $\approx$ C @ U @ R - C in R^{out\_features x rank}: selected columns of W - U in R^{rank x rank}: Moore-Penrose pseudo-inverse core matrix - R in R^{rank x in\_features}: selected rows of W  Executes forward pass in factorized form.
+Linear layer whose weight matrix is factorized via CUR cross-approximation.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/cur\_linear.py}
