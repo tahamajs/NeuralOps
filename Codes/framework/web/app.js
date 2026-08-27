@@ -2,11 +2,12 @@
  * NeuralOps Multi-Run Live View & Publication Analytics Studio (v3.0)
  */
 
-const API_STATS = "/api/stats";
-const API_RUNS = "/api/runs";
-const API_ACTION = "/api/action";
-const API_RUN_START = "/api/run/start";
-const API_RUN_STOP = "/api/run/stop";
+const API_BASE = (typeof window !== "undefined" && window.location && window.location.origin) ? window.location.origin : "";
+const API_STATS = `${API_BASE}/api/stats`;
+const API_RUNS = `${API_BASE}/api/runs`;
+const API_ACTION = `${API_BASE}/api/action`;
+const API_RUN_START = `${API_BASE}/api/run/start`;
+const API_RUN_STOP = `${API_BASE}/api/run/stop`;
 const POLL_INTERVAL_MS = 3000;
 
 // State
@@ -129,7 +130,7 @@ function populateRunSelectors() {
 }
 
 async function onRunChanged(runId) {
-  selectedRunId = runId;
+  selectedRunId = runId || "run_active";
   saveState();
 
   const runObj = availableRuns.find(r => r.run_id === runId);
@@ -138,7 +139,7 @@ async function onRunChanged(runId) {
   const sweepBadge = document.getElementById("sweep-status");
   const btnStop = document.getElementById("btn-stop");
 
-  if (isAct) {
+  if (isAct || runId === "run_active") {
     isHistorical = false;
     if (sweepBadge) {
       sweepBadge.textContent = "ACTIVE SWEEP (LIVE)";
@@ -170,6 +171,13 @@ async function fetchStats() {
     currentData = data;
     renderDashboard();
     setConnectionStatus(true);
+
+    // Fallback: If GPU utilization is 0% while sweep is running, schedule a quick retry after 500ms
+    if (data.is_running && (!data.gpu || data.gpu.gpu_util === 0 || data.gpu.gpu_util === 0.0)) {
+      setTimeout(() => {
+        if (!isFetching) fetchStats();
+      }, 500);
+    }
   } catch (err) {
     console.warn("API poll error:", err);
     setConnectionStatus(false);
@@ -1701,13 +1709,15 @@ function restoreState() {
     const raw = localStorage.getItem("neuralops_dashboard_state_v3");
     if (!raw) return;
     const st = JSON.parse(raw);
-    if (st.selectedRunId && st.selectedRunId !== "gpu_server" && st.selectedRunId !== "adaptive_v3") {
-      selectedRunId = st.selectedRunId;
-    }
+    selectedRunId = "run_active";
+    isHistorical = false;
     if (st.activeTab) activeTab = st.activeTab;
     if (st.selectedModules) selectedModules = new Set(st.selectedModules);
     if (st.analyticsFilters) analyticsFilters = st.analyticsFilters;
-  } catch (e) {}
+  } catch (e) {
+    selectedRunId = "run_active";
+    isHistorical = false;
+  }
 }
 
 
@@ -1880,8 +1890,12 @@ function renderModuleProgressTable(moduleProgress) {
 // BOOTSTRAP
 // ==========================================
 restoreState();
+selectedRunId = "run_active";
+isHistorical = false;
+startPolling();
+fetchStats();
 fetchRunsList().then(() => {
-  onRunChanged(selectedRunId);
+  populateRunSelectors();
 });
 switchTab(activeTab);
 
