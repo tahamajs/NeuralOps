@@ -107,7 +107,7 @@ Figure~\ref{fig:module_adaptive_span_attention} provides the complete 3-panel ar
 \label{sec:app_module_token_compressed}
 
 \subsubsection*{3.1 Module Overview}
-Token-Compressed Attention Module. Compresses Key and Value sequence tokens using energy/norm selection while preserving [CLS] (index 0).
+Token-Compressed Attention Module.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/token\_compressed.py}
@@ -197,7 +197,7 @@ Figure~\ref{fig:module_token_compressed} provides the complete 3-panel architect
 \label{sec:app_module_token_compressed_attention}
 
 \subsubsection*{3.1 Module Overview}
-Token-Compressed Attention Module. Compresses Key and Value sequence tokens using energy/norm selection while preserving [CLS] (index 0).
+Token-Compressed Attention Module.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/token\_compressed\_attention.py}
@@ -287,7 +287,7 @@ Figure~\ref{fig:module_token_compressed_attention} provides the complete 3-panel
 \label{sec:app_module_tpa_attention}
 
 \subsubsection*{3.1 Module Overview}
-Tensor Product Attention with factorised low-rank query-key projection.  Query and key representations are formed as outer products of two factorised feature vectors, enabling richer polynomial similarity kernels.  Args:     config: Model configuration specifying `hidden\_size`, `num\_attention\_heads`.
+Tensor Product Attention with factorised low-rank query-key projection.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/tpa\_attention.py}
@@ -376,7 +376,7 @@ Figure~\ref{fig:module_tpa_attention} provides the complete 3-panel architectura
 \label{sec:app_module_tt}
 
 \subsubsection*{3.1 Module Overview}
-Minimal wrapper delegating to an existing attention sub-module.  Args:     config: Model configuration.     comp\_config: Compression configuration.     layer\_idx: Index of current transformer layer.     num\_layers: Total number of transformer layers.     old\_attn: Pre-existing attention module to wr.
+Minimal wrapper delegating to an existing attention sub-module.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/tt.py}
@@ -467,7 +467,7 @@ Figure~\ref{fig:module_tt} provides the complete 3-panel architectural visualiza
 \label{sec:app_module_unified_rope}
 
 \subsubsection*{3.1 Module Overview}
-Universal Rotary Position Embedding Attention module.  Subclasses :class:`BaseAttention` and applies rotary position embeddings to query and key representations prior to dot-product attention computation.
+Universal Rotary Position Embedding Attention module.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/unified\_rope.py}
@@ -559,7 +559,7 @@ Figure~\ref{fig:module_unified_rope} provides the complete 3-panel architectural
 \label{sec:app_module_upi_stuffed_mamba}
 
 \subsubsection*{3.1 Module Overview}
-Bidirectional Uncertainty-Penalized Interpolated Mamba Block.  Mathematical Mechanism:     Given input sequence $X \in \mathbb{R}^{B \times L \times D}$:     1. **Input Projections \& Symmetric Convolution:**.
+Bidirectional Uncertainty-Penalized Interpolated Mamba Block.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/upi\_stuffed\_mamba.py}
@@ -652,7 +652,7 @@ Figure~\ref{fig:module_upi_stuffed_mamba} provides the complete 3-panel architec
 \label{sec:app_module_vig_attention}
 
 \subsubsection*{3.1 Module Overview}
-Vision GNN-inspired 2D Grid Linear Attention with Learned Gated Fusion.  Arranges the 1D sequence of length $N$ into a 2D spatial grid of dimensions $H\_g \times W\_g \approx \sqrt{N} \times \sqrt{N}$. Applies decoupled ELU kernel linear attention along rows ($H\_g$) and columns ($W\_g$), fusing the spa.
+Vision GNN-inspired 2D Grid Linear Attention with Learned Gated Fusion.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/vig\_attention.py}
@@ -1190,7 +1190,7 @@ Figure~\ref{fig:module_xattention} provides the complete 3-panel architectural v
 \label{sec:app_module_zeros_attention}
 
 \subsubsection*{3.1 Module Overview}
-Zero-mean normalized linear attention module.  Applies sequence-mean centering on key projections before running efficient non-negative linear attention.  Args:     config: Model configuration specifying `hidden\_size` and `num\_attention\_heads`.     rank: Optional rank parameter (for BaseAttention co.
+Zero-mean normalized linear attention module.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/zeros\_attention.py}
@@ -1558,7 +1558,7 @@ Figure~\ref{fig:module_aasvd} provides the complete 3-panel architectural visual
 \label{sec:app_module_adaptive_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Adaptive Transformer Compressor.  Compresses nn.MultiheadAttention and nn.Linear layers using singular energy thresholding:     sum\_{i=1}^r sigma\_i^2 / sum\_j sigma\_j^2 >= energy\_threshold with symmetric square-root singular value allocation:     U\_factor = U\_r * sqrt(Sigma\_r), V\_factor = sqrt(Sigma\_.
+Adaptive Transformer Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/adaptive\_compressor.py}
@@ -1649,7 +1649,7 @@ Figure~\ref{fig:module_adaptive_compressor} provides the complete 3-panel archit
 \label{sec:app_module_adaptive_ranks}
 
 \subsubsection*{3.1 Module Overview}
-Adaptive Ranks SVD Compressor.  Dynamically determines ranks per layer according to cumulative singular value energy threshold:      with minimum rank floor $r\_{\min} = \max(16, \lfloor 0.15 \cdot \min(d\_{in}, d\_.
+Adaptive Ranks SVD Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/adaptive\_ranks.py}
@@ -1741,7 +1741,7 @@ Figure~\ref{fig:module_adaptive_ranks} provides the complete 3-panel architectur
 \label{sec:app_module_adasvd_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Adaptive SVD Compressor (AdaSVD).  Assigns SVD ranks dynamically across layers proportional to spectral importance (nuclear norm ||W||\_* = sum(sigma\_i)), initializes factorized matrices with symmetric square-root singular value distribution (A = U * sqrt(Sigma), B = sqrt(Sigma) * V^T), refines facto.
+Adaptive SVD Compressor (AdaSVD).
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 4: Kernelized \& Spectral Attention
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/adasvd\_compressor.py}
@@ -2017,7 +2017,7 @@ Figure~\ref{fig:module_admm_pruner} provides the complete 3-panel architectural 
 \label{sec:app_module_armor_pruner}
 
 \subsubsection*{3.1 Module Overview}
-Decoupled Sparse + Low-Rank Residual Layer. Maintains clean gradient flow to both the sparse weight core and low-rank adapter branches.
+Decoupled Sparse + Low-Rank Residual Layer.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/armor\_pruner.py}
@@ -2202,7 +2202,7 @@ Figure~\ref{fig:module_ast_pruner} provides the complete 3-panel architectural v
 \label{sec:app_module_astro_quantizer}
 
 \subsubsection*{3.1 Module Overview}
-AstroQuantizer: Uniform min-max / symmetric quantization engine for linear weights and biases.  Args:     model: PyTorch model.     bits: Bit-width for quantization (e.g. 4 or 8). Default 8.     symmetric: Whether to use symmetric quantization around 0. Default True.     per\_channel: Whether to use.
+AstroQuantizer: Uniform min-max / symmetric quantization engine for linear weights and biases.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/astro\_quantizer.py}
@@ -2387,7 +2387,7 @@ Figure~\ref{fig:module_bonsai_pruner} provides the complete 3-panel architectura
 \label{sec:app_module_cachenotes_compressor}
 
 \subsubsection*{3.1 Module Overview}
-CacheNotes Compressor: Decouples static weight compression from KV cache dynamic pruning. Compresses static model weights using CPT-guided low-rank SVD without zeroing out entire output channels.  Args:     model: PyTorch model.     task\_type: Target downstream task ('qa', 'summarize', 'code', 'reas.
+CacheNotes Compressor: Decouples static weight compression from KV cache dynamic pruning.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/cachenotes\_compressor.py}
@@ -2480,7 +2480,7 @@ Figure~\ref{fig:module_cachenotes_compressor} provides the complete 3-panel arch
 \label{sec:app_module_come}
 
 \subsubsection*{3.1 Module Overview}
-CoMe Compressor: Layer shedding with learnable linear interpolation adapters/bridges.  Config parameters:     target\_layers : int, optional – target number of layers after shedding     sparsity      : float, default 0.3 – fraction of layers to remove     alpha\_init    : float, default 0.1 – initial.
+CoMe Compressor: Layer shedding with learnable linear interpolation adapters/bridges.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/come.py}
@@ -2572,7 +2572,7 @@ Figure~\ref{fig:module_come} provides the complete 3-panel architectural visuali
 \label{sec:app_module_compot_compressor}
 
 \subsubsection*{3.1 Module Overview}
-COMPOT (Compressed Orthogonal Dictionary Learning) Compressor. Learns a low-rank basis from activation QR decompositions and compresses linear layers into factorized COMPOTLinear modules.  Args:     model: PyTorch model.     rank: Target rank for factorization.     calibration\_texts: Optional calibr.
+COMPOT (Compressed Orthogonal Dictionary Learning) Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/compot\_compressor.py}
@@ -2665,7 +2665,7 @@ Figure~\ref{fig:module_compot_compressor} provides the complete 3-panel architec
 \label{sec:app_module_coopq_quantizer}
 
 \subsubsection*{3.1 Module Overview}
-CoopQ: Cooperative Game-Theoretic Bit Allocation Quantization. Allocates discrete bit-widths (>= 4 bits) across transformer layers proportional to layer sensitivity (Frobenius energy / variance), guaranteeing a target mean bit-budget under strict distortion minimization.  Args:     model: PyTorch mo.
+CoopQ: Cooperative Game-Theoretic Bit Allocation Quantization.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/coopq\_quantizer.py}
@@ -2758,7 +2758,7 @@ Figure~\ref{fig:module_coopq_quantizer} provides the complete 3-panel architectu
 \label{sec:app_module_cr_compressor}
 
 \subsubsection*{3.1 Module Overview}
-CR (Column-Row / Interpolative Decomposition) Compressor. Decomposes linear layers into skeleton column bases and interpolative projections.  Args:     model: PyTorch model.     rank: Rank parameter (number of skeleton columns).     cfg: Optional configuration object.     target\_layers: Optional tar.
+CR (Column-Row / Interpolative Decomposition) Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/cr\_compressor.py}
@@ -3037,7 +3037,7 @@ Figure~\ref{fig:module_cur_linear} provides the complete 3-panel architectural v
 \label{sec:app_module_cur_moe_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Compresses Mixture of Experts (MoE) layers using CUR cross-approximation.  Args:     model: PyTorch model containing MoE modules.     rank: Target rank for CUR decomposition of expert weights.     method: 'leverage' (statistical leverage scores) or 'energy' (Frobenius energy).     cfg: Optional conf.
+Compresses Mixture of Experts (MoE) layers using CUR cross-approximation.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/cur\_moe\_compressor.py}
@@ -3128,7 +3128,7 @@ Figure~\ref{fig:module_cur_moe_compressor} provides the complete 3-panel archite
 \label{sec:app_module_cure}
 
 \subsubsection*{3.1 Module Overview}
-Compresses expert layers using CUR decomposition.  Args:     model: PyTorch model.     rank: rank for CUR decomposition (default 32).
+Compresses expert layers using CUR decomposition.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/cure.py}
@@ -3216,7 +3216,7 @@ Figure~\ref{fig:module_cure} provides the complete 3-panel architectural visuali
 \label{sec:app_module_delta_kv}
 
 \subsubsection*{3.1 Module Overview}
-DeltaKV Compressor: Decomposes projection weights into a low-rank reference component plus sparse residuals, modeling weight matrices under residual delta formulation.  Args:     model: PyTorch model.     rank: Rank of reference low-rank matrix (default 16).     sparsity: Fraction of sparse residual.
+DeltaKV Compressor: Decomposes projection weights into a low-rank reference component plus sparse residuals, modeling weight matrices under residual delta formulation.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/delta\_kv.py}
@@ -3308,7 +3308,7 @@ Figure~\ref{fig:module_delta_kv} provides the complete 3-panel architectural vis
 \label{sec:app_module_direct_svd}
 
 \subsubsection*{3.1 Module Overview}
-Direct SVD Compressor.  Performs direct truncated SVD on all linear layers:     W $\approx$ U\_r * Sigma\_r * V\_r^T Allocates singular energy symmetrically:     U\_factor = U\_r * sqrt(Sigma\_r)     V\_factor = sqrt(Sigma\_r) * V\_r^T and replaces dense nn.Linear layers with factorized SVDLinear modules to achieve.
+Direct SVD Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/direct\_svd.py}
@@ -3400,7 +3400,7 @@ Figure~\ref{fig:module_direct_svd} provides the complete 3-panel architectural v
 \label{sec:app_module_dobi_svd}
 
 \subsubsection*{3.1 Module Overview}
-Dobi-SVD Compressor: Differentiable SVD with learnable spectral gating.  Extracts truncated SVD factors from pretrained nn.Linear weights with symmetric square-root singular value distribution (U\_r * sqrt(Sigma\_r), sqrt(Sigma\_r) * V\_r^T), and replaces layers with DobiSVDLinearLayer containing learna.
+Dobi-SVD Compressor: Differentiable SVD with learnable spectral gating.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/dobi\_svd.py}
@@ -3492,7 +3492,7 @@ Figure~\ref{fig:module_dobi_svd} provides the complete 3-panel architectural vis
 \label{sec:app_module_dynamic_rank}
 
 \subsubsection*{3.1 Module Overview}
-Dynamic Entropy SVD Compressor.  1. Computes singular entropy H(Sigma\_l) on layer activation covariances or weights. 2. Allocates layer ranks within [min\_rank, max\_rank] subject to parameter/rank budget. 3. Replaces nn.Linear layers with DynamicSVDLinear factorized modules.
+Dynamic Entropy SVD Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/dynamic\_rank.py}
@@ -3585,7 +3585,7 @@ Figure~\ref{fig:module_dynamic_rank} provides the complete 3-panel architectural
 \label{sec:app_module_enlighten_compressor}
 
 \subsubsection*{3.1 Module Overview}
-ENLighten: Low-rank SVD + 2:4 structured sparsity (photonic-aligned). Decomposes linear layers into low-rank representations plus 2:4 structured sparse residuals.
+ENLighten: Low-rank SVD + 2:4 structured sparsity (photonic-aligned).
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/enlighten\_compressor.py}
@@ -3674,7 +3674,7 @@ Figure~\ref{fig:module_enlighten_compressor} provides the complete 3-panel archi
 \label{sec:app_module_entropy_budget_allocation}
 
 \subsubsection*{3.1 Module Overview}
-Entropy Budget Low-Rank SVD Compressor.  Computes activation covariance and whiten weights, calculates per-component singular entropy contributions, allocates low-rank budgets globally across layers, and replaces dense nn.Linear layers with factorized SVDLinear modules with symmetric singular value.
+Entropy Budget Low-Rank SVD Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/entropy\_budget\_allocation.py}
@@ -3766,7 +3766,7 @@ Figure~\ref{fig:module_entropy_budget_allocation} provides the complete 3-panel 
 \label{sec:app_module_erc_svd}
 
 \subsubsection*{3.1 Module Overview}
-Error-Controlled SVD (ERC-SVD) Compressor.  Finds the minimal rank r for each linear layer such that the relative Frobenius reconstruction error ||W - W\_r||\_F / ||W||\_F is guaranteed to be <= allowed\_error (i.e. singular energy retention sum\_{i=1}^r sigma\_i^2 / sum\_j sigma\_j^2 >= 1 - allowed\_error^2.
+Error-Controlled SVD (ERC-SVD) Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/erc\_svd.py}
@@ -3857,7 +3857,7 @@ Figure~\ref{fig:module_erc_svd} provides the complete 3-panel architectural visu
 \label{sec:app_module_faq_quantizer}
 
 \subsubsection*{3.1 Module Overview}
-FAQQuantizer: Feature-Activation-Aware Quantization. Collects activation statistics to scale channel-wise quantization step sizes, minimizing activation-weighted reconstruction distortion.  Args:     model: PyTorch model.     tokenizer: Optional tokenizer for text-based calibration.     bits: Quanti.
+FAQQuantizer: Feature-Activation-Aware Quantization.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/faq\_quantizer.py}
@@ -4224,7 +4224,7 @@ Figure~\ref{fig:module_frandi} provides the complete 3-panel architectural visua
 \label{sec:app_module_frandi_compressor}
 
 \subsubsection*{3.1 Module Overview}
-FRanDI (Feature-Regression aligned SVD) Compressor. Compresses linear layers using singular value decomposition with optional activation alignment and adaptive energy-preservation thresholding.  Args:     model: Model to compress.     rank: Target rank when energy\_threshold is None.     energy\_thres.
+FRanDI (Feature-Regression aligned SVD) Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/frandi\_compressor.py}
@@ -4317,7 +4317,7 @@ Figure~\ref{fig:module_frandi_compressor} provides the complete 3-panel architec
 \label{sec:app_module_gfws_d_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Generalized Fisher / Covariance-Weighted SVD Compressor. Whitens weights using empirical input activation covariance square-root Cov(X)^{1/2}, performs low-rank truncated SVD, and de-whitens to restore optimal compressed weights.
+Generalized Fisher / Covariance-Weighted SVD Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/gfws\_d\_compressor.py}
@@ -4499,7 +4499,7 @@ Figure~\ref{fig:module_grecodec} provides the complete 3-panel architectural vis
 \label{sec:app_module_grecodec_compressor}
 
 \subsubsection*{3.1 Module Overview}
-GreCoDeC (Greedy Coordinate Descent) Compressor. Decomposes linear layers into low-rank factors using fast greedy rank-1 updates.  Args:     model: PyTorch model.     rank: Target rank for decomposition.     max\_iter: Coordinate descent iterations per rank component (default 15).     cfg: Optional c.
+GreCoDeC (Greedy Coordinate Descent) Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/grecodec\_compressor.py}
@@ -4592,7 +4592,7 @@ Figure~\ref{fig:module_grecodec_compressor} provides the complete 3-panel archit
 \label{sec:app_module_hashed_linear}
 
 \subsubsection*{3.1 Module Overview}
-Linear layer with weight sharing via a compact parameter hash table. W\_{i, j} = xi(i, j) * w[h(i, j)].
+Linear layer with weight sharing via a compact parameter hash table.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/hashed\_linear.py}
@@ -4685,7 +4685,7 @@ Figure~\ref{fig:module_hashed_linear} provides the complete 3-panel architectura
 \label{sec:app_module_hashed_net_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Compress a model by replacing every nn.Linear layer with HashedLinear, which shares weights globally through compact hash tables.  Args:     model: PyTorch model.     rank: Rank parameter (optionally maps to bucket budget).     n\_buckets: Number of hash buckets (size of shared weight table).     use.
+Compress a model by replacing every nn.Linear layer with HashedLinear, which shares weights globally through compact hash tables.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/hashed\_net\_compressor.py}
@@ -4778,7 +4778,7 @@ Figure~\ref{fig:module_hashed_net_compressor} provides the complete 3-panel arch
 \label{sec:app_module_huffman_coder}
 
 \subsubsection*{3.1 Module Overview}
-HuffmanCompressor: Model-wide entropy compression profiler and simulator.  Args:     model: PyTorch model.     quantize\_bits: Pre-quantization bit-width before Huffman encoding (default 8).
+HuffmanCompressor: Model-wide entropy compression profiler and simulator.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/huffman\_coder.py}
@@ -4871,7 +4871,7 @@ Figure~\ref{fig:module_huffman_coder} provides the complete 3-panel architectura
 \label{sec:app_module_hybrid_svd_layer}
 
 \subsubsection*{3.1 Module Overview}
-Hybrid SVD Compressor.  Replaces transformer multi-head self-attention mechanisms with SVDSingleHead spectral projection modules and DirectSVDEncoderLayer blocks.  Args:     model: PyTorch model.     svd\_rank: SVD rank for single-head projection.     rank: Optional alias for svd\_rank.     target\_mod.
+Hybrid SVD Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/hybrid\_svd\_layer.py}
@@ -5053,7 +5053,7 @@ Figure~\ref{fig:module_hybridkv} provides the complete 3-panel architectural vis
 \label{sec:app_module_hybridkv_compressor}
 
 \subsubsection*{3.1 Module Overview}
-HybridKV Compressor: Classifies attention projection heads into static/dynamic types and configures hierarchical dynamic KV cache budgets without altering model stationary weights.  Args:     model: PyTorch model.     budget: Overall fraction of KV cache budget to retain (default 0.3).     static\_ra.
+HybridKV Compressor: Classifies attention projection heads into static/dynamic types and configures hierarchical dynamic KV cache budgets without altering model stationary weights.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/hybridkv\_compressor.py}
@@ -5145,7 +5145,7 @@ Figure~\ref{fig:module_hybridkv_compressor} provides the complete 3-panel archit
 \label{sec:app_module_kmeans_quantize}
 
 \subsubsection*{3.1 Module Overview}
-KMeansCompressor: Vector quantization via scalar k-means clustering of weight parameters.  Args:     model: PyTorch model.     n\_clusters: Number of centroid codebook entries (default 256 -> 8 bits, 16 -> 4 bits).     bits: Optional bitwidth constraint (e.g. 4 or 8) which sets n\_clusters = 2**bits.
+KMeansCompressor: Vector quantization via scalar k-means clustering of weight parameters.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Quantization \& Compression Engines
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/kmeans\_quantize.py}
@@ -5236,7 +5236,7 @@ Figure~\ref{fig:module_kmeans_quantize} provides the complete 3-panel architectu
 \label{sec:app_module_kronecker_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Compresses a model by replacing every eligible nn.Linear layer with a Kronecker product decomposition (A $\otimes$ B), falling back to low-rank SVD when dimensions do not allow composite factorization.  Args:     model: PyTorch model to compress (optional if instantiated as standalone engine).     rank: Ran.
+Compresses a model by replacing every eligible nn.Linear layer with a Kronecker product decomposition (A $\otimes$ B), falling back to low-rank SVD when dimensions do not allow composite factorization.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/kronecker\_compressor.py}
@@ -5327,7 +5327,7 @@ Figure~\ref{fig:module_kronecker_compressor} provides the complete 3-panel archi
 \label{sec:app_module_kronecker_linear}
 
 \subsubsection*{3.1 Module Overview}
-Linear layer whose weight matrix is parameterised as the Kronecker product of two smaller factor matrices: W = A $\otimes$ B.  For W in R^{out\_features x in\_features}, with out\_features = m1 * m2 and in\_features = n1 * n2: - A in R^{m1 x n1} - B in R^{m2 x n2}  Forward contraction uses the vectorization ide.
+Linear layer whose weight matrix is parameterised as the Kronecker product of two smaller factor matrices: W = A $\otimes$ B.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/kronecker\_linear.py}
@@ -5420,7 +5420,7 @@ Figure~\ref{fig:module_kronecker_linear} provides the complete 3-panel architect
 \label{sec:app_module_kronecker_tt_lora}
 
 \subsubsection*{3.1 Module Overview}
-Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear layers. Inherits from BaseCompressor.
+Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear layers.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/kronecker\_tt\_lora.py}
@@ -5603,7 +5603,7 @@ Figure~\ref{fig:module_kvtc} provides the complete 3-panel architectural visuali
 \label{sec:app_module_kvtc_compressor}
 
 \subsubsection*{3.1 Module Overview}
-KVTC: KV Cache Transform Coding compressor. Compresses linear projection weights using PCA decorrelation, adaptive quantization, and entropy coding estimation.  Args:     model: PyTorch model.     bits: Quantization bit-width (default 4).     pca\_energy: Fraction of PCA energy retained (default 0.95.
+KVTC: KV Cache Transform Coding compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/kvtc\_compressor.py}
@@ -6056,7 +6056,7 @@ Figure~\ref{fig:module_mamba_shedder} provides the complete 3-panel architectura
 \label{sec:app_module_mgie_svd}
 
 \subsubsection*{3.1 Module Overview}
-MGIE-SVD Compressor (Maximum Information Entropy SVD).  Analyzes each weight matrix's singular spectrum, computes normalized Shannon singular entropy:     p\_i = sigma\_i**2 / sum\_j(sigma\_j**2)     H = -sum\_i(p\_i * ln(p\_i)) dynamically determines optimal truncation rank r\_l proportional to H, factoriz.
+MGIE-SVD Compressor (Maximum Information Entropy SVD).
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/mgie\_svd.py}
@@ -6146,7 +6146,7 @@ Figure~\ref{fig:module_mgie_svd} provides the complete 3-panel architectural vis
 \label{sec:app_module_mgie_svd_compressor}
 
 \subsubsection*{3.1 Module Overview}
-MGIE-SVD Budget Compressor: Global Entropy-Proportional Rank Allocation.  Calculates Shannon singular entropy for all linear layers across the network, distributes a global total rank budget proportionally according to spectral information density, factorizes weights using symmetric square-root sing.
+MGIE-SVD Budget Compressor: Global Entropy-Proportional Rank Allocation.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 4: Kernelized \& Spectral Attention
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/mgie\_svd\_compressor.py}
@@ -6237,7 +6237,7 @@ Figure~\ref{fig:module_mgie_svd_compressor} provides the complete 3-panel archit
 \label{sec:app_module_mlorq_compressor}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{mlorq\\_compressor} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
+The \texttt{mlorqcompressor} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/mlorq\_compressor.py}
@@ -6417,7 +6417,7 @@ Figure~\ref{fig:module_modegpt} provides the complete 3-panel architectural visu
 \label{sec:app_module_modegpt_compressor}
 
 \subsubsection*{3.1 Module Overview}
-MoDeGPT: Modular Decomposition of Transformer Projection Blocks. Decomposes paired linear projections (e.g. Q \& K, Gate \& Up, or consecutive linear layers) jointly into shared low-rank subspaces:     [W\_1; W\_2] = U\_r S\_r V\_r^T + E  Args:     model: PyTorch model.     rank: Rank for low-rank joint de.
+MoDeGPT: Modular Decomposition of Transformer Projection Blocks.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/modegpt\_compressor.py}
@@ -6595,7 +6595,7 @@ Figure~\ref{fig:module_nli_softmax} provides the complete 3-panel architectural 
 \label{sec:app_module_nmf_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Non-negative Matrix Factorization (NMF) Compressor. Decomposes linear layer weights into low-rank non-negative factors.  Args:     model: Model to compress.     rank: Target rank for NMF factorization.     max\_iter: Maximum multiplicative update iterations.     cfg: Optional configuration object.
+Non-negative Matrix Factorization (NMF) Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/nmf\_compressor.py}
@@ -6961,7 +6961,7 @@ Figure~\ref{fig:module_optimal_subspace_projection} provides the complete 3-pane
 \label{sec:app_module_padre_attention}
 
 \subsubsection*{3.1 Module Overview}
-Polynomial Attention with Dropout Regularization (PADRe).  Args:     config: model configuration (HuggingFace style)     order: degree of the polynomial kernel (higher = closer to softmax)     temperature: scaling factor applied before polynomial.
+Polynomial Attention with Dropout Regularization (PADRe).
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/padre\_attention.py}
@@ -7142,7 +7142,7 @@ Figure~\ref{fig:module_proxsparse} provides the complete 3-panel architectural v
 \label{sec:app_module_proxsparse_pruner}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{proxsparse\\_pruner} operator implements an optimized track 3: mixture-of-experts \& dynamic routing within the NeuralOps framework.
+The \texttt{proxsparsepruner} operator implements an optimized track 3: mixture-of-experts \& dynamic routing within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/proxsparse\_pruner.py}
@@ -7231,7 +7231,7 @@ Figure~\ref{fig:module_proxsparse_pruner} provides the complete 3-panel architec
 \label{sec:app_module_pruning_utils}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{pruning\\_utils} operator implements an optimized track 3: mixture-of-experts \& dynamic routing within the NeuralOps framework.
+The \texttt{pruningutils} operator implements an optimized track 3: mixture-of-experts \& dynamic routing within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/pruning\_utils.py}
@@ -7320,7 +7320,7 @@ Figure~\ref{fig:module_pruning_utils} provides the complete 3-panel architectura
 \label{sec:app_module_res_svd}
 
 \subsubsection*{3.1 Module Overview}
-Spectral Residual LoRA (Res-SVD) Compressor.  Replaces standard Linear layers with ResSVDLinear modules, truncating base weights at rank r (frozen) and initializing adapter matrices A, B directly from the residual error tail.
+Spectral Residual LoRA (Res-SVD) Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/res\_svd.py}
@@ -7506,7 +7506,7 @@ Figure~\ref{fig:module_roast_hashed_linear} provides the complete 3-panel archit
 \label{sec:app_module_rotational_slicegpt_int4}
 
 \subsubsection*{3.1 Module Overview}
-Rotational-SliceGPT-INT4 Hybrid Compression Engine. Combines orthogonal rotation, variance-based coordinate slicing, and second-order Hessian INT4 non-uniform quantization.
+Rotational-SliceGPT-INT4 Hybrid Compression Engine.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/rotational\_slicegpt\_int4.py}
@@ -7598,7 +7598,7 @@ Figure~\ref{fig:module_rotational_slicegpt_int4} provides the complete 3-panel a
 \label{sec:app_module_rpc_attention}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{rpc\\_attention} operator implements an optimized track 5: structured sparsity \& pruning within the NeuralOps framework.
+The \texttt{rpcattention} operator implements an optimized track 5: structured sparsity \& pruning within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/rpc\_attention.py}
@@ -7776,7 +7776,7 @@ Figure~\ref{fig:module_rpca} provides the complete 3-panel architectural visuali
 \label{sec:app_module_rpca_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Robust Principal Component Analysis (RPCA) Low-Rank Compressor.  Decomposes weight matrices W into low-rank component L and sparse outlier matrix S via Principal Component Pursuit / alternating soft-thresholding:     min ||L||\_* + lambda ||S||\_1  s.t.  W = L + S Factorizes the low-rank component L i.
+Robust Principal Component Analysis (RPCA) Low-Rank Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/rpca\_compressor.py}
@@ -7867,7 +7867,7 @@ Figure~\ref{fig:module_rpca_compressor} provides the complete 3-panel architectu
 \label{sec:app_module_saes_svd}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{saes\\_svd} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
+The \texttt{saessvd} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/saes\_svd.py}
@@ -7957,7 +7957,7 @@ Figure~\ref{fig:module_saes_svd} provides the complete 3-panel architectural vis
 \label{sec:app_module_saes_svd_compressor}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{saes\\_svd\\_compressor} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
+The \texttt{saessvdcompressor} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/saes\_svd\_compressor.py}
@@ -8139,7 +8139,7 @@ Figure~\ref{fig:module_saes_svd_v2} provides the complete 3-panel architectural 
 \label{sec:app_module_salr}
 
 \subsubsection*{3.1 Module Overview}
-SALR Compressor: Structure-Aware Low-Rank and Sparse Pruning.  Factorizes dense nn.Linear layers into symmetric low-rank factors (U * sqrt(Sigma), sqrt(Sigma) * V^T) and applies structured sparse pruning to trailing singular components in the bottleneck.  Args:     model: PyTorch model.     rank: Ta.
+SALR Compressor: Structure-Aware Low-Rank and Sparse Pruning.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/salr.py}
@@ -8321,7 +8321,7 @@ Figure~\ref{fig:module_sdrm} provides the complete 3-panel architectural visuali
 \label{sec:app_module_sdrm_compressor}
 
 \subsubsection*{3.1 Module Overview}
-SDRM: Scaled Dimension Rank Modulation. Assigns layer rank proportional to parameter budget for edge inference.
+SDRM: Scaled Dimension Rank Modulation.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/sdrm\_compressor.py}
@@ -8410,7 +8410,7 @@ Figure~\ref{fig:module_sdrm_compressor} provides the complete 3-panel architectu
 \label{sec:app_module_slicegpt}
 
 \subsubsection*{3.1 Module Overview}
-Native PyTorch SliceGPT Compressor.  Applies orthogonal transformation Q to rotate model representations onto principal activation variance coordinates, followed by uniform or non-uniform projection head slicing.
+Native PyTorch SliceGPT Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/slicegpt.py}
@@ -8502,7 +8502,7 @@ Figure~\ref{fig:module_slicegpt} provides the complete 3-panel architectural vis
 \label{sec:app_module_slicegpt_compressor}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{slicegpt\\_compressor} operator implements an optimized track 3: mixture-of-experts \& dynamic routing within the NeuralOps framework.
+The \texttt{slicegptcompressor} operator implements an optimized track 3: mixture-of-experts \& dynamic routing within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/slicegpt\_compressor.py}
@@ -8863,7 +8863,7 @@ Figure~\ref{fig:module_soka} provides the complete 3-panel architectural visuali
 \label{sec:app_module_soka_compressor}
 
 \subsubsection*{3.1 Module Overview}
-SoKA Low-Rank Linear Compressor. Replaces dense nn.Linear layers with factorized LowRankLinear layers.
+SoKA Low-Rank Linear Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/soka\_compressor.py}
@@ -8955,7 +8955,7 @@ Figure~\ref{fig:module_soka_compressor} provides the complete 3-panel architectu
 \label{sec:app_module_sparsegpt}
 
 \subsubsection*{3.1 Module Overview}
-In-memory PyTorch SparseGPT Compressor.  Performs layer-by-layer second-order pruning with Optimal Brain Surgeon (OBS) weight compensation, supporting unstructured sparsity, block sparsity, and strict 2:4 structured sparsity.
+In-memory PyTorch SparseGPT Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/sparsegpt.py}
@@ -9047,7 +9047,7 @@ Figure~\ref{fig:module_sparsegpt} provides the complete 3-panel architectural vi
 \label{sec:app_module_spectraformer_attention}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{spectraformer\\_attention} operator implements an optimized track 5: structured sparsity \& pruning within the NeuralOps framework.
+The \texttt{spectraformerattention} operator implements an optimized track 5: structured sparsity \& pruning within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/spectraformer\_attention.py}
@@ -9135,7 +9135,7 @@ Figure~\ref{fig:module_spectraformer_attention} provides the complete 3-panel ar
 \label{sec:app_module_subspace_projection}
 
 \subsubsection*{3.1 Module Overview}
-Subspace Projection Compression Engine. Compresses neural networks by projecting weight matrices onto their principal subspaces, replacing dense linear layers with factorized SubspaceLinear modules.  Args:     model: PyTorch model to compress.     rank: Subspace rank.     method: Subspace decomposit.
+Subspace Projection Compression Engine.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/subspace\_projection.py}
@@ -9321,7 +9321,7 @@ Figure~\ref{fig:module_svd_linear} provides the complete 3-panel architectural v
 \label{sec:app_module_swift_svd}
 
 \subsubsection*{3.1 Module Overview}
-Swift-SVD Compressor: Fast Closed-Form Truncated SVD.  Decomposes dense weight matrices into rank-r factorized layers with symmetric square-root singular value splitting (U\_r * sqrt(Sigma\_r), sqrt(Sigma\_r) * V\_r^T) and replaces nn.Linear with factorized SVDLinear modules.  Args:     model: Model to.
+Swift-SVD Compressor: Fast Closed-Form Truncated SVD.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/swift\_svd.py}
@@ -9412,7 +9412,7 @@ Figure~\ref{fig:module_swift_svd} provides the complete 3-panel architectural vi
 \label{sec:app_module_swift_svd_act}
 
 \subsubsection*{3.1 Module Overview}
-Swift-SVD Activation-Aware Compressor.  Captures empirical input-output cross-covariances (C\_XY = Y^T X / N) across calibration data, computes activation-aligned singular subspaces, performs symmetric square-root singular value splitting (U\_r * sqrt(Sigma\_r), sqrt(Sigma\_r) * V\_r^T), and replaces den.
+Swift-SVD Activation-Aware Compressor.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/swift\_svd\_act.py}
@@ -9505,7 +9505,7 @@ Figure~\ref{fig:module_swift_svd_act} provides the complete 3-panel architectura
 \label{sec:app_module_swift_svd_compressor}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{swift\\_svd\\_compressor} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
+The \texttt{swiftsvdcompressor} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/swift\_svd\_compressor.py}
@@ -9595,7 +9595,7 @@ Figure~\ref{fig:module_swift_svd_compressor} provides the complete 3-panel archi
 \label{sec:app_module_tlinformer_attention}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{tlinformer\\_attention} operator implements an optimized track 5: structured sparsity \& pruning within the NeuralOps framework.
+The \texttt{tlinformerattention} operator implements an optimized track 5: structured sparsity \& pruning within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/tlinformer\_attention.py}
@@ -9683,7 +9683,7 @@ Figure~\ref{fig:module_tlinformer_attention} provides the complete 3-panel archi
 \label{sec:app_module_tomoe_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Converts FFN layers into Mixture of Experts via weight clustering.  Args:     model: PyTorch model.     num\_experts: number of experts per MoE layer (default 4).     top\_k: number of active experts per token (default 2).
+Converts FFN layers into Mixture of Experts via weight clustering.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/tomoe\_compressor.py}
@@ -9773,7 +9773,7 @@ Figure~\ref{fig:module_tomoe_compressor} provides the complete 3-panel architect
 \label{sec:app_module_tt_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Compressor that replaces nn.Linear layers with Tensor-Train (TTLinearLayer) modules.  Args:     model: PyTorch model to compress.     rank: Rank parameter (alias for tt\_rank).     tt\_rank: TT-rank bound for tensor-train cores.     cfg: Optional configuration object.     target\_layers: Optional list.
+Compressor that replaces nn.Linear layers with Tensor-Train (TTLinearLayer) modules.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/tt\_compressor.py}
@@ -9865,7 +9865,7 @@ Figure~\ref{fig:module_tt_compressor} provides the complete 3-panel architectura
 \label{sec:app_module_tt_linear}
 
 \subsubsection*{3.1 Module Overview}
-Tensor-Train (TT) Linear Layer. Represents weight matrix W in R^{out\_features x in\_features} as a sequence of d TT-cores: G\_1, G\_2, ..., G\_d where core G\_k has shape (r\_{k-1}, p\_k, q\_k, r\_k) with boundary ranks r\_0 = r\_d = 1.
+Tensor-Train (TT) Linear Layer.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/tt\_linear.py}
@@ -9958,7 +9958,7 @@ Figure~\ref{fig:module_tt_linear} provides the complete 3-panel architectural vi
 \label{sec:app_module_uniql_compressor}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{uniql\\_compressor} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
+The \texttt{uniqlcompressor} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/uniql\_compressor.py}
@@ -10048,7 +10048,7 @@ Figure~\ref{fig:module_uniql_compressor} provides the complete 3-panel architect
 \label{sec:app_module_zerokv_neo}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{zerokv\\_neo} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
+The \texttt{zerokvneo} operator implements an optimized track 1: low-rank factorization \& svd projections within the NeuralOps framework.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/zerokv\_neo.py}
@@ -10138,7 +10138,7 @@ Figure~\ref{fig:module_zerokv_neo} provides the complete 3-panel architectural v
 \label{sec:app_module_zerokv_neo_compressor}
 
 \subsubsection*{3.1 Module Overview}
-ZeroKV-Neo Compressor: L2-norm weight pruning preserving attention sinks and heavy hitters.  Args:     model: PyTorch model.     keep\_ratio: Fraction of output neurons to retain (default 0.3).     num\_attention\_sinks: Number of initial sink channels pinned (default 4).     heavy\_hitter\_ratio: Fracti.
+ZeroKV-Neo Compressor: L2-norm weight pruning preserving attention sinks and heavy hitters.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/zerokv\_neo\_compressor.py}
