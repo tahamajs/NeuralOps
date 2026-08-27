@@ -493,7 +493,6 @@ function renderLiveLoss(data) {
       const totalEpochs = epochParts.length > 1 ? parseInt(epochParts[1], 10) : epCount;
       noteElem.textContent = `Convergence: ${firstL} -> ${lastL} (${lossCurve.length} sampled points across ${totalEpochs} epoch${totalEpochs > 1 ? 's' : ''})`;
     }
-    }
   }
 
   let steps = [];
