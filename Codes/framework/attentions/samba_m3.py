@@ -49,6 +49,8 @@ class SAMBAM3Block(nn.Module):
         d_model: Optional[int] = None,
         n_heads: Optional[int] = None,
         window: int = 128,
+        rank: Optional[int] = None,
+        pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
@@ -79,6 +81,9 @@ class SAMBAM3Block(nn.Module):
         self.norm = nn.LayerNorm(d_model)
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         with torch.no_grad():
