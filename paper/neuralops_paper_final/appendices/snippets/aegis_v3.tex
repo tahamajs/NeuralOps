@@ -1,5 +1,5 @@
 \subsection{AegisAttention (\texttt{aegis\_v3})}
-\label{sec:app_module_aegis\_v3}
+\label{sec:app_module_aegis_v3}
 
 \subsubsection*{3.1 Module Overview}
 AEGIS-Attention V3 multi-head attention module.
@@ -28,19 +28,19 @@ S &= V_r^\top V \in \mathbb{R}^{r \times d_v}, \quad Y = (Q U_r \Sigma_r) S \in 
 
 \subsubsection*{3.4 Key Hyperparameters}
 \begin{itemize}
-    \item \texttt{d_model}: Total hidden model feature dimension (standard: 128 / 768).
-    \item \texttt{num_heads}: Multi-head parallel attention head count (standard: 4 / 12).
+    \item \texttt{d\_model}: Total hidden model feature dimension (standard: 128 / 768).
+    \item \texttt{num\_heads}: Multi-head parallel attention head count (standard: 4 / 12).
     \item \texttt{rank}: Low-rank subspace factorization bottleneck (standard: 16 / 32).
 \end{itemize}
 
 \subsubsection*{3.5 Empirical Performance Telemetry}
-Table~\ref{tab:telemetry_aegis\_v3} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
+Table~\ref{tab:telemetry_aegis_v3} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
 
 \begin{table}[h]
 \centering
 \small
 \caption{\textbf{Empirical Benchmark Telemetry for \texttt{aegis\_v3}}. Measured on NVIDIA RTX 4070 GPU across standard GLUE tasks.}
-\label{tab:telemetry_aegis\_v3}
+\label{tab:telemetry_aegis_v3}
 \begin{tabularx}{\columnwidth}{lX}
 \toprule
 \textbf{Performance Metric} & \textbf{Empirical Value} \\
@@ -75,13 +75,13 @@ Evaluation Execution Status & \textbf{\texttt{PASS}} \\
 The module \texttt{aegis\_v3} is natively integrated into the NeuralOps registry with automated AMP FP16 tensor casting, fused linear down/up-projection passes, and exact autograd backward graph registration. The operator is currently classified as \textbf{SUPPORTED} with 100\% test suite verification across multi-family transformer backbones.
 
 \subsubsection*{3.8 Architectural Characterization Diagram}
-Figure~\ref{fig:module_aegis\_v3} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
+Figure~\ref{fig:module_aegis_v3} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_aegis\_v3.pdf}
+    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_aegis_v3.pdf}
     \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for AegisAttention (\texttt{aegis\_v3})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
-    \label{fig:module_aegis\_v3}
+    \label{fig:module_aegis_v3}
 \end{figure}
 
 \vspace{1.0em}

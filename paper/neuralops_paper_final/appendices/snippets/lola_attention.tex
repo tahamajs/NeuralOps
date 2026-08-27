@@ -1,8 +1,8 @@
 \subsection{LoLAAttention (\texttt{lola\_attention})}
-\label{sec:app_module_lola\_attention}
+\label{sec:app_module_lola_attention}
 
 \subsubsection*{3.1 Module Overview}
-LoLA: Low-Rank Linear Attention with Sparse Caching.  Mathematical Mechanism:     Combines factorized low-rank projections with selective multi-system cached retrieval:     \$\$\begin{aligned}     Q \&= \text{LowRankLinear}\_Q(X), \quad K = \text{LowRankLinear}\_K(X), \quad V = \text{LowRankLinear}\_V(X)
+LoLA: Low-Rank Linear Attention with Sparse Caching.  Mathematical Mechanism:     Combines factorized low-rank projections with selective multi-system cached retrieval:     $$\begin{aligned}     Q \&= \text{LowRankLinear}\_Q(X), \quad K = \text{LowRankLinear}\_K(X), \quad V = \text{LowRankLinear}\_V(X)
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts & Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/lola\_attention.py}
@@ -36,13 +36,13 @@ Y &= \sum_{i \in \operatorname{TopK}} G(x)_i \cdot E_i(x), \quad E_i(x) = \opera
 \end{itemize}
 
 \subsubsection*{3.5 Empirical Performance Telemetry}
-Table~\ref{tab:telemetry_lola\_attention} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
+Table~\ref{tab:telemetry_lola_attention} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
 
 \begin{table}[h]
 \centering
 \small
 \caption{\textbf{Empirical Benchmark Telemetry for \texttt{lola\_attention}}. Measured on NVIDIA RTX 4070 GPU across standard GLUE tasks.}
-\label{tab:telemetry_lola\_attention}
+\label{tab:telemetry_lola_attention}
 \begin{tabularx}{\columnwidth}{lX}
 \toprule
 \textbf{Performance Metric} & \textbf{Empirical Value} \\
@@ -77,13 +77,13 @@ Evaluation Execution Status & \textbf{\texttt{SUPPORTED}} \\
 The module \texttt{lola\_attention} is natively integrated into the NeuralOps registry with automated AMP FP16 tensor casting, fused linear down/up-projection passes, and exact autograd backward graph registration. The operator is currently classified as \textbf{SUPPORTED} with 100\% test suite verification across multi-family transformer backbones.
 
 \subsubsection*{3.8 Architectural Characterization Diagram}
-Figure~\ref{fig:module_lola\_attention} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
+Figure~\ref{fig:module_lola_attention} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_lola\_attention.pdf}
+    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_lola_attention.pdf}
     \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for LoLAAttention (\texttt{lola\_attention})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
-    \label{fig:module_lola\_attention}
+    \label{fig:module_lola_attention}
 \end{figure}
 
 \vspace{1.0em}
