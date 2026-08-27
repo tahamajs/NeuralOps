@@ -35,8 +35,7 @@ PROJECT_DIR = WORKDIR.parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
 sys.path.insert(0, str(PROJECT_DIR / "Codes"))
 
-from framework.core.attention_utils import inject_attention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
 from framework.eval_all_models_datasets import (
     MODEL_TOKENIZER_MAPPING,
     _filter_batch,
@@ -927,7 +926,8 @@ def run_quality_benchmark_sweep(
     gradient_checkpointing: bool = False,
 ) -> str:
     _import_all_modules()
-    active_modules = modules or DEFAULT_QUALITY_MODULES
+    raw_modules = modules or DEFAULT_QUALITY_MODULES
+    active_modules = [m for m in raw_modules if not is_helper_module(m)]
     active_models = models or ["bert", "roberta"]
     active_datasets = datasets or ["sst2", "mrpc"]
     active_seeds = seeds if seeds is not None else [42]

@@ -1746,6 +1746,13 @@ function setMatrixStatusFilter(status, btn) {
   }
 }
 
+function isHelperModule(name) {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  const suffixes = ["_inject", "_injection", "_fn", "_inject_fn", "_attn_inject", "_module_inject", "_compressor_fn"];
+  return suffixes.some(s => n.endsWith(s));
+}
+
 function renderModuleProgressTable(moduleProgress) {
   const tbody = document.getElementById("module-progress-tbody");
   if (!tbody) return;
@@ -1755,8 +1762,8 @@ function renderModuleProgressTable(moduleProgress) {
     return;
   }
 
-  // Calculate live counts
-  let cntTotal = moduleProgress.length;
+  // Calculate live counts (excluding injection helpers)
+  let cntTotal = 0;
   let cntPass = 0;
   let cntFail = 0;
   let cntTimeout = 0;
@@ -1764,12 +1771,16 @@ function renderModuleProgressTable(moduleProgress) {
   let cntQueued = 0;
 
   moduleProgress.forEach(m => {
+    if (isHelperModule(m.module) || m.result_status === "HELPER" || m.result_status === "UNSUPPORTED") {
+      return;
+    }
+    cntTotal++;
     if (m.status === "running") {
       cntRunning++;
     } else if (m.status === "completed") {
       if (m.result_status === "TIMEOUT") {
         cntTimeout++;
-      } else if (m.result_status === "FAIL" || (m.accuracy !== null && m.accuracy !== undefined && parseFloat(m.accuracy) <= 50.92)) {
+      } else if (m.result_status === "FAIL" || (m.accuracy === 0 && m.f1 === 0)) {
         cntFail++;
       } else {
         cntPass++;
@@ -1828,7 +1839,9 @@ function renderModuleProgressTable(moduleProgress) {
     const tr = document.createElement("tr");
     
     let stTag = '<span class="tag-status" style="background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">QUEUED</span>';
-    if (m.status === "running") {
+    if (isHelperModule(m.module) || m.result_status === "HELPER" || m.result_status === "UNSUPPORTED") {
+      stTag = '<span class="tag-status" style="background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.4); font-size:11px;">HELPER ⚙️</span>';
+    } else if (m.status === "running") {
       stTag = '<span class="tag-status" style="background:rgba(99,102,241,0.25); color:#818cf8; border:1px solid rgba(99,102,241,0.5); font-weight:700;">RUNNING ⚡</span>';
     } else if (m.status === "completed") {
       if (m.result_status === "TIMEOUT") {
