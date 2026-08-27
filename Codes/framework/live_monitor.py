@@ -643,7 +643,7 @@ def is_sweep_running() -> bool:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
         if res.returncode == 0:
             for line in res.stdout.strip().splitlines():
-                if "run_quality_sweep.py" in line or "eval_all_models_datasets.py" in line or "retest_broken_modules.py" in line:
+                if "run_quality_sweep.py" in line or "eval_all_models_datasets.py" in line or "retest_broken_modules.py" in line or "retest_all_broken.py" in line:
                     return True
         return False
     except Exception:
@@ -679,6 +679,10 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     is_screening = is_screening_all or is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
 
     log_candidates = [
+        PROJECT_DIR / "run_quality_resume.log",
+        Path("run_quality_resume.log"),
+        PROJECT_DIR / "retest_all_broken.log",
+        Path("retest_all_broken.log"),
         PROJECT_DIR / "run_quality_all_screening.log",
         Path("run_quality_all_screening.log"),
         PROJECT_DIR / "retest_broken.log",
@@ -699,6 +703,10 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "run_quality_resume" / "summary.csv",
+        Path("results/run_quality_resume/summary.csv"),
+        PROJECT_DIR / "results" / "run_all_broken_fix" / "summary.csv",
+        Path("results/run_all_broken_fix/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_all_screening" / "summary.csv",
         Path("results/run_quality_all_screening/summary.csv"),
         PROJECT_DIR / "results" / "run_broken_fix" / "summary.csv",
