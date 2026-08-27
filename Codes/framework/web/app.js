@@ -23,6 +23,8 @@ let analyticsFilters = { track: "ALL", model: "ALL", dataset: "ALL" };
 let currentSortColumn = 3; // Fwd Latency default
 let currentSortAsc = true;
 let activeTab = "telemetry";
+let matrixSearchQuery = "";
+let matrixStatusFilter = "ALL";
 
 // Charts
 let barChart = null;
@@ -680,6 +682,26 @@ function selectAllModules() {
   updateModuleList(currentData);
   saveState();
   updateCharts();
+}
+
+function selectTop8Modules() {
+  const comp = (currentData && currentData.comparative_analytics) || {};
+  const mods = (currentData && currentData.analytics && currentData.analytics.modules) || comp.module_leaderboard || [];
+  selectedModules.clear();
+  mods.slice(0, 8).forEach(m => selectedModules.add(m.module_name || m.module));
+  updateModuleList(currentData);
+  saveState();
+  updateCharts();
+}
+
+function filterAnalyticsModules(query) {
+  const q = (query || "").trim().toLowerCase();
+  const container = document.getElementById("module-select-list");
+  if (!container) return;
+  Array.from(container.querySelectorAll(".multi-select-item")).forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(q) ? "flex" : "none";
+  });
 }
 
 function clearModuleSelection() {
@@ -1690,17 +1712,80 @@ function restoreState() {
 }
 
 
+function filterModuleMatrix(query) {
+  matrixSearchQuery = (query || "").trim().toLowerCase();
+  if (currentData && currentData.module_progress) {
+    renderModuleProgressTable(currentData.module_progress);
+  }
+}
+
+function clearMatrixSearch() {
+  const inp = document.getElementById("matrix-search-input");
+  if (inp) inp.value = "";
+  matrixSearchQuery = "";
+  if (currentData && currentData.module_progress) {
+    renderModuleProgressTable(currentData.module_progress);
+  }
+}
+
+function setMatrixStatusFilter(status, btn) {
+  matrixStatusFilter = status;
+  const pills = btn.parentElement.querySelectorAll(".filter-pill");
+  pills.forEach(p => p.classList.remove("active"));
+  btn.classList.add("active");
+  if (currentData && currentData.module_progress) {
+    renderModuleProgressTable(currentData.module_progress);
+  }
+}
+
 function renderModuleProgressTable(moduleProgress) {
   const tbody = document.getElementById("module-progress-tbody");
   if (!tbody) return;
 
   if (!moduleProgress || !Array.isArray(moduleProgress) || moduleProgress.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; color:#94a3b8; padding:16px;">Waiting for module telemetry...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; color:#94a3b8; padding:16px;">Waiting for module telemetry...</td></tr>';
     return;
   }
 
-  tbody.innerHTML = "";
+  // Calculate live counts
+  let cntDone = 0, cntRun = 0, cntPend = 0;
   moduleProgress.forEach(m => {
+    if (m.status === "completed") cntDone++;
+    else if (m.status === "running") cntRun++;
+    else cntPend++;
+  });
+
+  const elAll = document.getElementById("matrix-cnt-all");
+  const elDone = document.getElementById("matrix-cnt-completed");
+  const elRun = document.getElementById("matrix-cnt-running");
+  const elPend = document.getElementById("matrix-cnt-pending");
+  const elTot = document.getElementById("matrix-total-count");
+
+  if (elAll) elAll.textContent = moduleProgress.length;
+  if (elDone) elDone.textContent = cntDone;
+  if (elRun) elRun.textContent = cntRun;
+  if (elPend) elPend.textContent = cntPend;
+  if (elTot) elTot.textContent = `${moduleProgress.length} Modules`;
+
+  // Apply filters
+  let filtered = moduleProgress.filter(m => {
+    if (matrixStatusFilter !== "ALL" && m.status !== matrixStatusFilter) {
+      return false;
+    }
+    if (matrixSearchQuery) {
+      const modName = (m.module || "").toLowerCase();
+      return modName.includes(matrixSearchQuery);
+    }
+    return true;
+  });
+
+  tbody.innerHTML = "";
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center; color:#94a3b8; padding:16px;">No modules matching filter "${matrixSearchQuery || matrixStatusFilter}".</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(m => {
     const tr = document.createElement("tr");
     
     let stTag = '<span class="tag-status" style="background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">QUEUED</span>';
@@ -1732,7 +1817,7 @@ function renderModuleProgressTable(moduleProgress) {
       <td class="tag-module" style="font-weight:600; cursor:pointer;" onclick="openModuleModal('${m.module}')">${m.module}</td>
       <td>${stTag}</td>
       <td style="color:#38bdf8; font-weight:500;">${m.current_seed || '-'}</td>
-      <td>${m.completed_seeds || 0} / ${m.total_seeds || 3}</td>
+      <td>${m.completed_seeds || 0} / ${m.total_seeds || 1}</td>
       <td style="color:#c084fc;">${m.epoch || '-'}</td>
       <td>${m.step || '-'}</td>
       <td style="color:#34d399; font-family:monospace;">${lossStr}</td>
