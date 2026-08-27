@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
@@ -87,7 +89,16 @@ def calculate_scores(results: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
 def generate_summary_table(results: Dict[str, Any], scores: Dict[str, Dict[str, float]], output_path: str) -> pd.DataFrame:
     """Generate structured summary DataFrame and export to CSV."""
     rows = []
-    tasks = ["sst2", "qnli", "rte", "mrpc", "cola", "stsb"]
+    # Collect all tasks that appear in results
+    standard_order = ["sst2", "qnli", "rte", "mrpc", "cola", "stsb", "qqp", "mnli"]
+    observed_tasks = set()
+    for data in results.values():
+        for t in data.get("glue_tasks", {}).keys():
+            observed_tasks.add(t)
+
+    tasks = [t for t in standard_order if t in observed_tasks] + [t for t in sorted(observed_tasks) if t not in standard_order]
+    if not tasks:
+        tasks = ["sst2", "mrpc"]
 
     for model_name, data in results.items():
         m_scores = scores.get(model_name, {})
@@ -120,22 +131,21 @@ def generate_summary_table(results: Dict[str, Any], scores: Dict[str, Dict[str, 
             "Model": model_name,
             "Score": round(tot_score, 2),
             "Avg GLUE": avg_str,
-            "SST-2": task_vals.get("sst2", "N/A"),
-            "QNLI": task_vals.get("qnli", "N/A"),
-            "RTE": task_vals.get("rte", "N/A"),
-            "MRPC": task_vals.get("mrpc", "N/A"),
-            "CoLA": task_vals.get("cola", "N/A"),
-            "STS-B": task_vals.get("stsb", "N/A"),
+        }
+        for t in tasks:
+            row[t.upper()] = task_vals.get(t, "N/A")
+
+        row.update({
             "Params": param_str,
             "Tokens/sec (512)": tps_str,
             "Peak VRAM (512)": vram_str,
             "Stability": stab_str,
             "Status": data.get("status", "UNKNOWN"),
-        }
+        })
         rows.append(row)
 
     df = pd.DataFrame(rows)
-    if "Score" in df.columns:
+    if "Score" in df.columns and not df.empty:
         df = df.sort_values(by="Score", ascending=False)
 
     df.to_csv(output_path, index=False)
@@ -144,21 +154,40 @@ def generate_summary_table(results: Dict[str, Any], scores: Dict[str, Dict[str, 
 
 def generate_leaderboard_markdown(df: pd.DataFrame, output_path: str) -> None:
     """Generate Markdown leaderboard file with formatted rankings and status highlights."""
+    if df.empty:
+        with open(output_path, "w") as f:
+            f.write("# 🏆 Attention Mechanism Benchmark Leaderboard\n\nNo models evaluated yet.\n")
+        return
+
+    cols = list(df.columns)
+    header = ["Rank"] + cols
+    header_line = "| " + " | ".join(header) + " |"
+    align_line = "|:---:|" + "|".join([":---:" if c in ("Score", "Rank", "Stability", "Status") else ":---" for c in cols]) + "|"
+
     lines = [
         "# 🏆 Attention Mechanism Benchmark Leaderboard",
         "",
         "> Comprehensive evaluation of custom linear, low-rank, state-space, kernelized, and sparse attention architectures.",
         "",
-        "| Rank | Model | Score | Avg GLUE | SST-2 | QNLI | RTE | MRPC | CoLA | STS-B | Params | Throughput (seq=512) | VRAM (seq=512) | Stability | Status |",
-        "|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|",
+        header_line,
+        align_line,
     ]
 
     for rank, (_, row) in enumerate(df.iterrows(), start=1):
-        status_badge = f"`{row['Status']}`"
-        stab_badge = f"**{row['Stability']}**" if row["Stability"] == "PASS" else f"`{row['Stability']}`"
-        lines.append(
-            f"| {rank} | **{row['Model']}** | **{row['Score']}** | {row['Avg GLUE']} | {row['SST-2']} | {row['QNLI']} | {row['RTE']} | {row['MRPC']} | {row['CoLA']} | {row['STS-B']} | {row['Params']} | {row['Tokens/sec (512)']} | {row['Peak VRAM (512)']} | {stab_badge} | {status_badge} |"
-        )
+        row_vals = [str(rank)]
+        for c in cols:
+            val = str(row[c])
+            if c == "Model":
+                row_vals.append(f"**{val}**")
+            elif c == "Score":
+                row_vals.append(f"**{val}**")
+            elif c == "Stability":
+                row_vals.append(f"**{val}**" if val == "PASS" else f"`{val}`")
+            elif c == "Status":
+                row_vals.append(f"`{val}`")
+            else:
+                row_vals.append(val)
+        lines.append("| " + " | ".join(row_vals) + " |")
 
     lines.extend([
         "",
