@@ -856,6 +856,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             modules_progress.append({
                 "module": mod,
                 "status": "completed",
+                "result_status": info.get("status", "PASS"),
                 "current_seed": f"Done ({total_seeds}/{total_seeds})",
                 "completed_seeds": total_seeds,
                 "total_seeds": total_seeds,
