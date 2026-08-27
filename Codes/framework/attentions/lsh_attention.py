@@ -69,6 +69,11 @@ class LSHAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
+        self.register_buffer(
+            "proj_matrices",
+            F.normalize(torch.randn(self.rounds, self.head_dim, max(1, self.num_buckets // 2)), p=2, dim=1),
+        )
+
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
@@ -119,14 +124,9 @@ class LSHAttention(BaseAttention):
         scale = d ** -0.5
 
         out = torch.zeros_like(V)
-        half_buckets = max(1, self.num_buckets // 2)
 
         for r in range(self.rounds):
-            # Seeded deterministic random projection per round
-            generator = torch.Generator(device=device)
-            generator.manual_seed(r * 1000 + N)
-            proj = torch.randn(d, half_buckets, device=device, dtype=dtype, generator=generator)
-            proj = F.normalize(proj, p=2, dim=0)
+            proj = self.proj_matrices[r].to(device=device, dtype=dtype)
 
             q_hash = self._hash(Q, proj)  # (B, H, N)
             k_hash = self._hash(K, proj)  # (B, H, N)
