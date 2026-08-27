@@ -196,11 +196,27 @@
       <section class="table-section" id="section-module-progress" style="margin-bottom: 24px;">
         <div class="table-header-flex">
           <div>
-            <h2>🔬 Fast Quality Sweep Live Matrix (6 Modules)</h2>
-            <span class="table-sub">Live multi-seed progress, per-epoch loss convergence, and real-time accuracy</span>
+            <h2 id="matrix-title">🔬 Quality Sweep Live Matrix (<span id="matrix-total-count">245 Modules</span>)</h2>
+            <span class="table-sub">Live multi-seed progress, per-epoch loss convergence, and real-time accuracy across all modules</span>
           </div>
           <div class="live-run-tag" style="font-size: 0.75rem; background: rgba(99,102,241,0.15); color: #818cf8; padding: 5px 12px; border-radius: 9999px; border: 1px solid rgba(99,102,241,0.3); font-weight:600;">
             ⚡ DistilBERT Pretrained (768d, 12h, 6L) • SST-2
+          </div>
+        </div>
+        <!-- Search and Filter Bar for 245+ Modules -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 10px; margin-bottom: 12px; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px;">
+            <input type="text" id="matrix-search-input" placeholder="🔍 Search across 245+ modules (e.g. svd, mamba, cosformer, a3)..." 
+                   style="width: 100%; max-width: 420px; padding: 7px 14px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f8fafc; font-size: 0.85rem; outline: none;" 
+                   oninput="filterModuleMatrix(this.value)">
+            <button class="btn" style="background: rgba(255,255,255,0.08); color: #94a3b8; font-size: 0.75rem; padding: 6px 12px;" onclick="clearMatrixSearch()">Clear</button>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">Filter:</span>
+            <button class="filter-pill active" id="pill-filter-all" onclick="setMatrixStatusFilter('ALL', this)">All (<span id="matrix-cnt-all">245</span>)</button>
+            <button class="filter-pill" id="pill-filter-completed" onclick="setMatrixStatusFilter('completed', this)">Completed (<span id="matrix-cnt-completed">0</span>)</button>
+            <button class="filter-pill" id="pill-filter-running" onclick="setMatrixStatusFilter('running', this)">Running (<span id="matrix-cnt-running">0</span>)</button>
+            <button class="filter-pill" id="pill-filter-pending" onclick="setMatrixStatusFilter('pending', this)">Queued (<span id="matrix-cnt-pending">245</span>)</button>
           </div>
         </div>
         <div class="table-wrapper">
@@ -326,10 +342,14 @@
           <div class="card-header-flex">
             <h3>📌 Select Modules to Compare</h3>
             <div class="action-buttons-small">
+              <button onclick="selectTop8Modules()">Top 8</button>
               <button onclick="selectAllModules()">All</button>
               <button onclick="clearModuleSelection()">Clear</button>
             </div>
           </div>
+          <input type="text" id="analytics-module-search" placeholder="Filter modules to compare..." 
+                 style="margin: 6px 0; padding: 5px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f8fafc; font-size: 0.75rem; width: 100%; outline: none;" 
+                 oninput="filterAnalyticsModules(this.value)">
           <div class="multi-select-list" id="module-select-list">
             <!-- Checkboxes injected by JS -->
           </div>

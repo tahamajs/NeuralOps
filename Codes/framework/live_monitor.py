@@ -114,8 +114,13 @@ def get_completed_results() -> List[Dict[str, Any]]:
     results = []
     error_map = {}
     
-    # Check active Phase 2 summary.csv first
-    if (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists():
+    # Check active Phase 2 summary.csv first (prioritize comprehensive 245-module screening)
+    if (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_quality_all_screening" / "summary.csv",
+            Path("results/run_quality_all_screening/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_quality_ep1" / "summary.csv",
             Path("results/run_quality_ep1/summary.csv"),
@@ -197,6 +202,8 @@ def get_completed_results() -> List[Dict[str, Any]]:
                 pass
     
     log_candidates = [
+        PROJECT_DIR / "run_quality_all_screening.log",
+        Path("run_quality_all_screening.log"),
         PROJECT_DIR / "run_quality_ep1.log",
         Path("run_quality_ep1.log"),
         PROJECT_DIR / "run_quality_screening_fast.log",
@@ -666,12 +673,14 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     Parses run_quality_fast.log and results/run_quality_fast/summary.csv
     to provide per-module, per-seed, per-epoch live status, metrics, and ETA.
     """
+    is_screening_all = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists()
     is_screening_ep1 = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
     is_screening_fast = is_screening_ep1 or (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
-    is_screening = is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
-    active_module_list = SCREENING_MODULE_LIST if is_screening else FAST_MODULE_LIST
+    is_screening = is_screening_all or is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
 
     log_candidates = [
+        PROJECT_DIR / "run_quality_all_screening.log",
+        Path("run_quality_all_screening.log"),
         PROJECT_DIR / "run_quality_ep1.log",
         Path("run_quality_ep1.log"),
         PROJECT_DIR / "run_quality_screening_fast.log",
@@ -688,6 +697,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "run_quality_all_screening" / "summary.csv",
+        Path("results/run_quality_all_screening/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_ep1" / "summary.csv",
         Path("results/run_quality_ep1/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_screening_fast" / "summary.csv",
@@ -702,6 +713,35 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
         if sc.exists() and sc.stat().st_size > 0:
             summary_file = sc
             break
+
+    if is_screening_all:
+        all_mods = []
+        for p in [PROJECT_DIR / "all_canonical_modules.txt", PROJECT_DIR / "all_modules.txt", Path("all_canonical_modules.txt"), Path("all_modules.txt")]:
+            if p.exists() and p.stat().st_size > 0:
+                try:
+                    with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                        all_mods = [line.strip() for line in f if line.strip()]
+                    if all_mods:
+                        break
+                except Exception:
+                    pass
+        if not all_mods and log_file and log_file.exists():
+            try:
+                with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        if "Modules (" in line:
+                            m_list = re.search(r"Modules \(\d+\):\s*(\[.*?\])", line)
+                            if m_list:
+                                import ast
+                                all_mods = ast.literal_eval(m_list.group(1))
+                                break
+            except Exception:
+                pass
+        active_module_list = all_mods if all_mods else SCREENING_MODULE_LIST
+    elif is_screening:
+        active_module_list = SCREENING_MODULE_LIST
+    else:
+        active_module_list = FAST_MODULE_LIST
 
     completed_modules = {}
     if summary_file and summary_file.exists():
@@ -750,7 +790,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                                 start_time = datetime.strptime(m_ts.group(1), "%Y-%m-%d %H:%M:%S")
                             except Exception:
                                 pass
-                    m_eval = re.search(r"\[(\d+)/(\d+)\] Evaluating (\w+) on (\w+) / (\w+) across (\d+) seeds", line_s)
+                    m_eval = re.search(r"\[(\d+)/(\d+)\] Evaluating ([\w\-]+) on ([\w\-]+) / ([\w\-]+) across (\d+) seeds", line_s)
                     if m_eval:
                         current_mod = m_eval.group(3)
                         current_model = m_eval.group(4)
@@ -763,7 +803,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                             except Exception:
                                 pass
 
-                    m_done = re.search(r"-->\s+(\w+)\s+on.*completed in\s+([\d\.]+)s", line_s)
+                    m_done = re.search(r"-->\s+([\w\-]+)\s+on.*completed in\s+([\d\.]+)s", line_s)
                     if m_done:
                         d_mod = m_done.group(1)
                         d_sec = float(m_done.group(2))
@@ -795,7 +835,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
         total_seeds = parsed_seeds
     seeds_order = [42] if total_seeds == 1 else [42, 123, 777]
     total_epochs = 1 if is_screening_ep1 else (2 if is_screening else 3)
-    max_steps_per_epoch = 526 if is_screening else 1052
+    max_steps_per_epoch = 100 if is_screening_all else (526 if is_screening else 1052)
 
     # Dynamic rolling average calculation based on completed modules
     valid_durations = [d for d in mod_durations.values() if d is not None and d > 0]
@@ -1067,23 +1107,22 @@ def _build_stats_response() -> str:
     fast_info = parse_fast_sweep_live_progress()
     live_prog = fast_info.get("live_progress", {})
     mod_prog = fast_info.get("module_progress", [])
-    if is_running or (PROJECT_DIR / "results" / "run_quality_fast").exists() or (PROJECT_DIR / "run_quality_fast.log").exists():
-        if fast_info.get("progress"):
-            progress.update(fast_info["progress"])
+    if fast_info.get("progress"):
+        progress.update(fast_info["progress"])
 
     runs_list_all = RunManager.list_runs()
     active_run_info = runs_list_all[0] if runs_list_all else {
         "run_id": "run_active",
-        "name": "Phase 2 Quality Screening (1-Seed 1-Epoch)",
-        "is_active": True,
-        "module_count": 20,
+        "name": "Phase 2 Universal Screening (245 Modules, 1-Epoch Fast)",
+        "is_active": is_running,
+        "module_count": len(mod_prog) or 245,
         "completed": progress.get("completed", 0),
     }
     active_run_dict = {
         "run_id": active_run_info.get("run_id", "run_active"),
-        "name": active_run_info.get("name", "Phase 2 Quality Screening (1-Seed 1-Epoch)"),
-        "is_active": True,
-        "module_count": active_run_info.get("num_combinations", len(mod_prog) or 20),
+        "name": active_run_info.get("name", "Phase 2 Universal Screening (245 Modules, 1-Epoch Fast)"),
+        "is_active": active_run_info.get("is_active", is_running),
+        "module_count": active_run_info.get("num_combinations", len(mod_prog) or 245),
         "completed": active_run_info.get("completed", progress.get("completed", 0)),
     }
 
@@ -1258,12 +1297,13 @@ class RunManager:
         # 1. Check Active Run (Prioritize run_quality_fast)
         try:
             active_results = get_completed_results()
+            screen_all_exists = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists()
             screen_ep1_exists = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
-            screen_fast_exists = screen_ep1_exists or (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
-            screen_exists = screen_fast_exists or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
+            screen_fast_exists = (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
+            screen_exists = screen_all_exists or screen_fast_exists or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
             fast_exists = (PROJECT_DIR / "results" / "run_quality_fast").exists() or (PROJECT_DIR / "run_quality_fast.log").exists()
             running = is_sweep_running()
-            if running or screen_exists or fast_exists or active_results:
+            if running or screen_all_exists or screen_exists or fast_exists or active_results:
                 is_active = True
                 p_cnt = sum(1 for r in active_results if r.get("status") == "PASS")
                 f_cnt = sum(1 for r in active_results if r.get("status") == "FAIL")
@@ -1273,8 +1313,21 @@ class RunManager:
                     ts_val = active_results[0]["timestamp"]
                     ts_str = ts_val.isoformat() if isinstance(ts_val, datetime) else str(ts_val)
 
-                num_c = 20 if screen_exists else 6
-                r_name = "Phase 2 Quality Screening (1-Seed 1-Epoch)" if screen_ep1_exists else ("Phase 2 Quality Screening (1 Seed, 20 Modules)" if screen_fast_exists else ("Phase 2 Quality Screening (20 Modules)" if screen_exists else "Phase 2 Quality Sweep (Fast)"))
+                if screen_all_exists:
+                    num_c = 245
+                    r_name = "Phase 2 Universal Screening (245 Modules, 1-Epoch Fast)"
+                elif screen_ep1_exists:
+                    num_c = 20
+                    r_name = "Phase 2 Quality Screening (1-Seed 1-Epoch)"
+                elif screen_fast_exists:
+                    num_c = 20
+                    r_name = "Phase 2 Quality Screening (1 Seed, 20 Modules)"
+                elif screen_exists:
+                    num_c = 20
+                    r_name = "Phase 2 Quality Screening (20 Modules)"
+                else:
+                    num_c = 6
+                    r_name = "Phase 2 Quality Sweep (Fast)"
 
                 runs.append({
                     "run_id": "run_active",
@@ -1285,13 +1338,13 @@ class RunManager:
                     "pass": p_cnt,
                     "fail": f_cnt,
                     "timeout": t_cnt,
-                    "is_active": True,
+                    "is_active": running,
                     "config": {
-                        "batch_size": 64,
+                        "batch_size": 128 if screen_all_exists else 64,
                         "seq_len": 128,
                         "precision": "fp16",
-                        "epochs": 3,
-                        "seeds": [42, 123, 777],
+                        "epochs": 1 if (screen_all_exists or screen_ep1_exists) else 3,
+                        "seeds": [42] if (screen_all_exists or screen_ep1_exists) else [42, 123, 777],
                     }
                 })
         except Exception:
