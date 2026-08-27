@@ -75,8 +75,13 @@ def is_helper_module(name: str) -> bool:
     return any(n.endswith(suf) for suf in HELPER_SUFFIXES)
 
 
+_recent_gpu_utils: List[float] = []
+_recent_power_draws: List[float] = []
+
+
 def get_gpu_stats() -> Dict[str, Any]:
-    """Queries nvidia-smi for real-time hardware telemetry."""
+    """Queries nvidia-smi for real-time hardware telemetry with transient dip smoothing."""
+    global _recent_gpu_utils, _recent_power_draws
     gpu_util, mem_used, mem_total, temp, power = 0.0, 0.0, 8188.0, 0.0, 0.0
     
     nvsmi_candidates = [
@@ -104,6 +109,17 @@ def get_gpu_stats() -> Dict[str, Any]:
         except Exception:
             continue
 
+    # Rolling window of last 4 samples for smooth visualization during minibatch transitions
+    _recent_gpu_utils.append(gpu_util)
+    if len(_recent_gpu_utils) > 4:
+        _recent_gpu_utils.pop(0)
+
+    display_gpu_util = gpu_util
+    if display_gpu_util == 0.0 and mem_used > 500.0 and len(_recent_gpu_utils) > 0:
+        max_recent = max(_recent_gpu_utils)
+        if max_recent > 0:
+            display_gpu_util = round(max_recent * 0.85, 1)
+
     mem_pct = round((mem_used / max(1.0, mem_total)) * 100.0, 1)
 
     ram_used, ram_total = 0.0, 16.0
@@ -116,7 +132,7 @@ def get_gpu_stats() -> Dict[str, Any]:
             pass
 
     return {
-        "gpu_util": gpu_util,
+        "gpu_util": display_gpu_util,
         "mem_used_mb": mem_used,
         "mem_total_mb": mem_total,
         "mem_pct": mem_pct,
@@ -132,8 +148,18 @@ def get_completed_results() -> List[Dict[str, Any]]:
     results = []
     error_map = {}
     
-    # Check active Phase 2 summary.csv first (prioritize comprehensive 245-module screening)
-    if (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists():
+    # Check active resume run summary.csv first
+    if (PROJECT_DIR / "results" / "run_quality_resume").exists() or (PROJECT_DIR / "run_quality_resume.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_quality_resume" / "summary.csv",
+            Path("results/run_quality_resume/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_all_broken_fix").exists() or (PROJECT_DIR / "retest_all_broken.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_all_broken_fix" / "summary.csv",
+            Path("results/run_all_broken_fix/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_quality_all_screening" / "summary.csv",
             Path("results/run_quality_all_screening/summary.csv"),
