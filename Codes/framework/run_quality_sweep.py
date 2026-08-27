@@ -313,9 +313,10 @@ def evaluate_single_seed_run_wrapper(queue, device_str, *args, **kwargs):
         queue.put(("ERROR", (str(e), traceback.format_exc())))
 
 
-def evaluate_single_seed_run_with_proc_timeout(timeout, *args, **kwargs):
+def evaluate_single_seed_run_with_proc_timeout(*args, **kwargs):
     import multiprocessing
     
+    timeout = kwargs.get("timeout", 300)
     device = kwargs.get("device", torch.device("cpu"))
     device_str = str(device)
     
@@ -393,7 +394,7 @@ def evaluate_single_seed_run(
     baseline_logits_cache: Optional[Dict[Tuple[str, str, int], torch.Tensor]] = None,
     pretrained: bool = False,
     gradient_checkpointing: bool = False,
-    timeout: int = 120,
+    timeout: int = 300,
 ) -> SeedResult:
     """Executes a full training and validation pass for a single seed with AdamW + Linear Warmup."""
     from sklearn.metrics import accuracy_score, f1_score
