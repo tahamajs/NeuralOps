@@ -1792,7 +1792,13 @@ function renderModuleProgressTable(moduleProgress) {
     if (m.status === "running") {
       stTag = '<span class="tag-status" style="background:rgba(99,102,241,0.25); color:#818cf8; border:1px solid rgba(99,102,241,0.5); font-weight:700;">RUNNING ⚡</span>';
     } else if (m.status === "completed") {
-      stTag = '<span class="tag-status tag-pass">DONE ✔</span>';
+      if (m.result_status === "TIMEOUT") {
+        stTag = '<span class="tag-status tag-timeout">TIMEOUT ⏱️</span>';
+      } else if (m.result_status === "FAIL" || (m.accuracy === 0 && m.f1 === 0)) {
+        stTag = '<span class="tag-status tag-fail">FAIL ❌</span>';
+      } else {
+        stTag = '<span class="tag-status tag-pass">DONE ✔</span>';
+      }
     }
 
     const accStr = (m.accuracy !== null && m.accuracy !== undefined && !isNaN(m.accuracy)) ? `${Number(m.accuracy).toFixed(2)}%` : "-";

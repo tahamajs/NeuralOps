@@ -131,32 +131,19 @@ class LSHAttention(BaseAttention):
             q_hash = self._hash(Q, proj)  # (B, H, N)
             k_hash = self._hash(K, proj)  # (B, H, N)
 
-            # Bucket-wise attention computation
-            for b in range(B):
-                v_m = valid_mask[b]
-                for h in range(H):
-                    qh = q_hash[b, h]
-                    kh = k_hash[b, h]
-                    for bucket_id in torch.unique(qh):
-                        q_idx = (qh == bucket_id) & v_m
-                        k_idx = (kh == bucket_id) & v_m
+            # Vectorized bucket-wise mask: tokens in the same hash bucket attend to each other
+            bucket_mask = (q_hash.unsqueeze(-1) == k_hash.unsqueeze(-2))  # (B, H, N, N)
+            valid_2d = valid_mask.unsqueeze(1).unsqueeze(2) & valid_mask.unsqueeze(1).unsqueeze(3)  # (B, 1, N, N)
+            combined_mask = bucket_mask & valid_2d
 
-                        if not q_idx.any():
-                            continue
+            scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # (B, H, N, N)
+            scores = scores.masked_fill(~combined_mask, -10000.0)
 
-                        # If no key in bucket, fallback to query's own tokens
-                        if not k_idx.any():
-                            k_idx = q_idx
-
-                        q_b = Q[b, h, q_idx]  # (n_q, d)
-                        k_b = K[b, h, k_idx]  # (n_k, d)
-                        v_b = V[b, h, k_idx]  # (n_k, d)
-
-                        scores = torch.matmul(q_b, k_b.transpose(-2, -1)) * scale
-                        attn = F.softmax(scores, dim=-1)
-                        attn = self.dropout(attn)
-                        ctx = torch.matmul(attn, v_b)
-                        out[b, h, q_idx] += ctx
+            attn = F.softmax(scores, dim=-1)
+            attn = torch.nan_to_num(attn, 0.0)
+            attn = self.dropout(attn)
+            ctx = torch.matmul(attn, V)  # (B, H, N, d)
+            out = out + ctx
 
         out = out / max(1, self.rounds)
         if head_mask is not None:

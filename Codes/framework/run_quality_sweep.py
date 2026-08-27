@@ -310,10 +310,12 @@ def evaluate_single_seed_run(
     baseline_logits_cache: Optional[Dict[Tuple[str, str, int], torch.Tensor]] = None,
     pretrained: bool = False,
     gradient_checkpointing: bool = False,
+    timeout: int = 120,
 ) -> SeedResult:
     """Executes a full training and validation pass for a single seed with AdamW + Linear Warmup."""
     from sklearn.metrics import accuracy_score, f1_score
 
+    t_seed_start = time.time()
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -551,6 +553,8 @@ def evaluate_single_seed_run(
             for batch in train_loader:
                 if global_step >= total_steps:
                     break
+                if timeout and (time.time() - t_seed_start) > timeout:
+                    raise TimeoutError(f"Module '{module_name}' exceeded execution timeout ({timeout}s) during training step {global_step}/{total_steps}")
                 b_device = {
                     ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
                     for k, v in batch.items() if k in ["input_ids", "attention_mask", "label", "labels"]
@@ -634,6 +638,8 @@ def evaluate_single_seed_run(
         )
         with torch.no_grad():
             for val_batch in loader:
+                if timeout and (time.time() - t_seed_start) > timeout:
+                    raise TimeoutError(f"Module '{module_name}' exceeded execution timeout ({timeout}s) during validation")
                 inputs = {("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v) for k, v in val_batch.items()}
                 filtered_inputs = _filter_batch(inputs, model_family, model)
                 with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
@@ -983,8 +989,24 @@ def run_quality_benchmark_sweep(
                             baseline_logits_cache=baseline_logits_cache,
                             pretrained=pretrained,
                             gradient_checkpointing=gradient_checkpointing,
+                            timeout=timeout,
                         )
                         seed_results.append(res_seed)
+                    except TimeoutError as te:
+                        logger.warning("⏱️ Seed %d TIMED OUT for %s on %s/%s after %ds: %s", s, mod_name, model_name, dataset_name, timeout, te)
+                        seed_results.append(SeedResult(
+                            seed=s,
+                            accuracy_pct=0.0,
+                            f1_score=0.0,
+                            fidelity_score=0.0,
+                            fwd_latency_ms=0.0,
+                            bwd_latency_ms=0.0,
+                            peak_vram_mb=0.0,
+                            throughput_tokens_sec=0.0,
+                            flops_macs=0.0,
+                            status="TIMEOUT",
+                            error_message=str(te),
+                        ))
                     except Exception as e:
                         logger.error("Seed %d failed for %s on %s/%s: %s", s, mod_name, model_name, dataset_name, e)
                         seed_results.append(SeedResult(
@@ -1021,6 +1043,10 @@ def run_quality_benchmark_sweep(
                     avg_mem = round(float(np.mean(mems)), 1)
                     avg_thru = round(float(np.mean(thrus)), 1)
                     status_str = "PASS"
+                elif any(r.status == "TIMEOUT" for r in seed_results):
+                    mean_acc, std_acc, ci_l, ci_u = 0.0, 0.0, 0.0, 0.0
+                    avg_f1, avg_fid, avg_fwd, avg_bwd, avg_mem, avg_thru = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+                    status_str = "TIMEOUT"
                 else:
                     mean_acc, std_acc, ci_l, ci_u = 0.0, 0.0, 0.0, 0.0
                     avg_f1, avg_fid, avg_fwd, avg_bwd, avg_mem, avg_thru = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
