@@ -77,6 +77,39 @@ DEFAULT_QUALITY_MODULES = [
 ]
 
 
+def _import_all_modules() -> List[str]:
+    """Dynamically imports all modules from attentions/ and compression_engine/ and returns canonical names."""
+    import glob, importlib
+    for f in glob.glob(str(PROJECT_DIR / "Codes" / "framework" / "attentions" / "*.py")):
+        base = Path(f).stem
+        if not base.startswith("__"):
+            try:
+                importlib.import_module(f"framework.attentions.{base}")
+            except Exception:
+                pass
+    for f in glob.glob(str(PROJECT_DIR / "Codes" / "framework" / "compression_engine" / "*.py")):
+        base = Path(f).stem
+        if not base.startswith("__"):
+            try:
+                importlib.import_module(f"framework.compression_engine.{base}")
+            except Exception:
+                pass
+
+    class_to_names: Dict[Any, List[str]] = {}
+    for name, cls in list(ATTENTION_REGISTRY.items()) + list(COMPRESSOR_REGISTRY.items()):
+        if cls not in class_to_names:
+            class_to_names[cls] = []
+        class_to_names[cls].append(name)
+
+    canonical = ["full"]
+    for cls, names in class_to_names.items():
+        clean_names = sorted(names, key=lambda x: (x.endswith('_inject') or x.endswith('_compressor'), len(x), x))
+        if clean_names[0] != "full":
+            canonical.append(clean_names[0])
+
+    return sorted(list(set(canonical)))
+
+
 @dataclass
 class SeedResult:
     seed: int
@@ -354,9 +387,9 @@ def evaluate_single_seed_run(
             dataset=dataset,
             seq_len=seq_len,
             device=device,
-            target_vram_ratio=0.45,
-            max_batch_cap=min(batch_size, 32),
-            min_batch_floor=16,
+            target_vram_ratio=0.60,
+            max_batch_cap=min(batch_size, 128),
+            min_batch_floor=1,
             allow_synthetic=allow_synthetic,
         )
 
@@ -801,7 +834,7 @@ def run_quality_benchmark_sweep(
     pretrained: bool = False,
     gradient_checkpointing: bool = False,
 ) -> str:
-    """Orchestrates Phase 2 Quality Sweep across all selected modules and random seeds."""
+    _import_all_modules()
     active_modules = modules or DEFAULT_QUALITY_MODULES
     active_models = models or ["bert", "roberta"]
     active_datasets = datasets or ["sst2", "mrpc"]
@@ -1125,7 +1158,16 @@ def main():
 
     args = parser.parse_args()
 
-    mods = [m.strip() for m in args.modules.split(",")] if args.modules else None
+    if args.modules:
+        if args.modules.strip().lower() == "all":
+            mods = _import_all_modules()
+        elif args.modules.endswith(".txt") or Path(args.modules).is_file():
+            with open(args.modules, "r", encoding="utf-8") as f:
+                mods = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
+        else:
+            mods = [m.strip() for m in args.modules.split(",")]
+    else:
+        mods = None
     mdls = [m.strip() for m in args.models.split(",")] if args.models else None
     dts = [d.strip() for d in args.datasets.split(",")] if args.datasets else None
     sds = [int(s.strip()) for s in args.seeds.split(",")] if args.seeds else None
