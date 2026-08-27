@@ -417,6 +417,8 @@ def evaluate_single_seed_run(
     actual_steps_per_epoch = len(train_loader)
     epochs_to_run = max(1, epochs)
     total_steps = actual_steps_per_epoch * epochs_to_run
+    if max_steps is not None and max_steps > 0:
+        total_steps = min(total_steps, int(max_steps))
 
     # 5. Optimizer & Linear Warmup Scheduler
     no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight"]
@@ -451,6 +453,8 @@ def evaluate_single_seed_run(
 
         global_step = 0
         for epoch in range(epochs_to_run):
+            if global_step >= total_steps:
+                break
             for batch in train_loader:
                 if global_step >= total_steps:
                     break
