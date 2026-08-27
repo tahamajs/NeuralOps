@@ -123,6 +123,7 @@ class SeedResult:
     grad_norm_trajectory: List[float] = field(default_factory=list)
     status: str = "PASS"
     error_message: Optional[str] = None
+    startup_overhead_s: float = 0.0
 
 
 @dataclass
@@ -145,6 +146,7 @@ class QualityCombinationResult:
     throughput_tokens_sec: float
     flops_macs: float
     timestamp: str
+    startup_overhead_ms: float = 0.0
     seeds: List[SeedResult] = field(default_factory=list)
     config: Dict[str, Any] = field(default_factory=dict)
     trajectories: Dict[str, Any] = field(default_factory=dict)
@@ -394,8 +396,13 @@ def evaluate_single_seed_run(
     pretrained: bool = False,
     gradient_checkpointing: bool = False,
     timeout: int = 300,
+    base_model_template: Optional[Any] = None,
+    pristine_state_dict: Optional[Dict[str, torch.Tensor]] = None,
+    preloaded_cached_splits: Optional[Dict[str, Any]] = None,
+    t_req_start: Optional[float] = None,
 ) -> SeedResult:
     """Executes a full training and validation pass for a single seed with AdamW + Linear Warmup."""
+    import copy
     from sklearn.metrics import accuracy_score, f1_score
 
     t_seed_start = time.time()
@@ -411,8 +418,14 @@ def evaluate_single_seed_run(
 
     num_labels = 1 if dataset.lower() == "stsb" else 2
 
-    # 1. Instantiate Model
-    if pretrained:
+    # 1. Fast Instantiate / Reset Model
+    if pristine_state_dict is not None and base_model_template is not None:
+        model = copy.deepcopy(base_model_template)
+        model.load_state_dict(pristine_state_dict)
+        if gradient_checkpointing and hasattr(model, "gradient_checkpointing_enable"):
+            model.gradient_checkpointing_enable()
+        cfg = model.config
+    elif pretrained:
         from transformers import AutoModelForSequenceClassification
         model_name_map = {
             "distilbert": "distilbert-base-uncased",
@@ -464,8 +477,8 @@ def evaluate_single_seed_run(
     model.train()
 
     # 3. Adaptive Memory-Aware Batch Sizing
-    current_batch_size = batch_size
-    if is_cuda:
+    current_batch_size = min(batch_size, 128)
+    if is_cuda and preloaded_cached_splits is None:
         current_batch_size = probe_optimal_batch_size(
             model=model,
             model_family=model_family,
@@ -478,57 +491,43 @@ def evaluate_single_seed_run(
             allow_synthetic=allow_synthetic,
         )
 
-    # 4. Prepare Real Training DataLoader
-    from framework.data.prepare_datasets import GLUE_TASK_CONFIG
-    from datasets import load_dataset
-    from transformers import AutoTokenizer
-
-    tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
-    train_cache_key = (dataset.lower(), tok_name, seq_len, "train")
-    
-    allow_synthetic_local = False  # explicitly disable synthetic fallback for Phase 2 real runs
-
-    if train_cache_key not in _PREPARED_DATASET_CACHE and dataset.lower() in GLUE_TASK_CONFIG:
-        tokenizer = AutoTokenizer.from_pretrained(tok_name)
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-            tokenizer.pad_token_id = tokenizer.eos_token_id
-        
-        config = GLUE_TASK_CONFIG[dataset.lower()]
-        k1, k2 = config["keys"]
-        try:
-            train_data = load_dataset("glue", dataset.lower(), split="train")
-            def tok_fn(ex):
-                args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
-                return tokenizer(*args, padding="max_length", truncation=True, max_length=seq_len)
-            
-            train_tokenized = train_data.map(tok_fn, batched=True, desc=f"Tokenizing {dataset} train")
-            train_tokenized.set_format(type="torch", columns=[c for c in ["input_ids", "attention_mask", "label"] if c in train_tokenized.column_names])
-            _PREPARED_DATASET_CACHE[train_cache_key] = train_tokenized
-        except Exception as e:
-            logger.warning(f"Failed to load train dataset for {dataset}: {e}")
-            _PREPARED_DATASET_CACHE[train_cache_key] = None
-    elif dataset.lower() not in GLUE_TASK_CONFIG:
-        _PREPARED_DATASET_CACHE[train_cache_key] = None
-
-    train_ds = _PREPARED_DATASET_CACHE.get(train_cache_key)
-    if train_ds is not None and len(train_ds) > 0 and not allow_synthetic_local:
-        import os
-        workers = min(2, os.cpu_count() or 1)
+    # 4. Prepare Training DataLoader (Instant Pre-Tokenized TensorDataset)
+    train_loader = None
+    if preloaded_cached_splits is not None and "train" in preloaded_cached_splits:
+        train_ds = preloaded_cached_splits["train"]
         train_loader = torch.utils.data.DataLoader(
             train_ds,
             batch_size=current_batch_size,
             shuffle=True,
             drop_last=True,
-            num_workers=workers,
-            pin_memory=False,
-            prefetch_factor=2 if workers > 0 else None,
-            persistent_workers=(workers > 0),
+            num_workers=0,
+            pin_memory=is_cuda,
         )
     else:
+        from framework.data.cached_tensors import get_cached_tokenized_dataset
+        try:
+            cached_splits = get_cached_tokenized_dataset(
+                dataset_name=dataset,
+                model_family=model_family,
+                seq_len=seq_len,
+            )
+            train_ds = cached_splits["train"]
+            train_loader = torch.utils.data.DataLoader(
+                train_ds,
+                batch_size=current_batch_size,
+                shuffle=True,
+                drop_last=True,
+                num_workers=0,
+                pin_memory=is_cuda,
+            )
+        except Exception as e:
+            logger.warning("Could not use cached tokenized dataset (%s), fallback to standard preparation.", e)
+            train_loader = None
+
+    if train_loader is None:
         single_batch = get_dataset_batch(
             dataset, model_family, current_batch_size, seq_len,
-            num_labels=num_labels, device=device, allow_synthetic=allow_synthetic_local
+            num_labels=num_labels, device=device, allow_synthetic=allow_synthetic
         )
         train_loader = [single_batch]
 
@@ -579,11 +578,25 @@ def evaluate_single_seed_run(
                 if timeout and (time.time() - t_seed_start) > timeout:
                     raise TimeoutError(f"Module '{module_name}' exceeded execution timeout ({timeout}s) during training step {global_step}/{total_steps}")
                 
-                b_device = {
-                    ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
-                    for k, v in batch.items() if k in ["input_ids", "attention_mask", "label", "labels"]
-                }
+                if isinstance(batch, (list, tuple)):
+                    b_ids, b_mask, b_lbl = batch
+                    b_device = {
+                        "input_ids": b_ids.to(device, non_blocking=is_cuda),
+                        "attention_mask": b_mask.to(device, non_blocking=is_cuda),
+                        "labels": b_lbl.to(device, non_blocking=is_cuda),
+                    }
+                else:
+                    b_device = {
+                        ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
+                        for k, v in batch.items() if k in ["input_ids", "attention_mask", "label", "labels"]
+                    }
                 filtered_batch = _filter_batch(b_device, model_family, model)
+                
+                if global_step == 0:
+                    t_first_step = time.time()
+                    t_start_ref = t_req_start if t_req_start is not None else t_seed_start
+                    startup_overhead_s = round(max(0.0001, t_first_step - t_start_ref), 4)
+                    logger.info("⚡ Module '%s' seed %d startup overhead: %.1f ms (target < 2000 ms)", module_name, seed, startup_overhead_s * 1000.0)
                 
                 optimizer.zero_grad()
                 fwd_start_events[global_step].record()
@@ -687,45 +700,49 @@ def evaluate_single_seed_run(
     all_preds, all_labels = [], []
     all_module_logits = []
     
-    tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
-    dataset_cache_key = (dataset.lower(), tok_name, seq_len)
-    
-    if dataset_cache_key not in _PREPARED_DATASET_CACHE and dataset.lower() in GLUE_TASK_CONFIG:
-        tokenizer = AutoTokenizer.from_pretrained(tok_name)
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-        config = GLUE_TASK_CONFIG[dataset.lower()]
-        k1, k2 = config["keys"]
-        try:
-            val_data = load_dataset("glue", dataset.lower(), split="validation")
-            def tok_fn(ex):
-                args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
-                return tokenizer(*args, padding="max_length", truncation=True, max_length=seq_len)
-            
-            val_tokenized = val_data.map(tok_fn, batched=True, desc=f"Tokenizing {dataset} validation")
-            val_tokenized.set_format(type="torch", columns=[c for c in ["input_ids", "attention_mask", "label"] if c in val_tokenized.column_names])
-            _PREPARED_DATASET_CACHE[dataset_cache_key] = val_tokenized
-        except Exception:
-            _PREPARED_DATASET_CACHE[dataset_cache_key] = None
-
-    val_tokenized = _PREPARED_DATASET_CACHE.get(dataset_cache_key)
-    if val_tokenized is not None and len(val_tokenized) > 0:
-        import os
-        val_workers = min(2, os.cpu_count() or 1)
-        loader = torch.utils.data.DataLoader(
-            val_tokenized,
+    val_loader = None
+    if preloaded_cached_splits is not None and "val" in preloaded_cached_splits:
+        val_loader = torch.utils.data.DataLoader(
+            preloaded_cached_splits["val"],
             batch_size=current_batch_size,
             shuffle=False,
-            num_workers=val_workers,
-            pin_memory=False,
-            prefetch_factor=2 if val_workers > 0 else None,
-            persistent_workers=(val_workers > 0),
+            num_workers=0,
+            pin_memory=is_cuda,
         )
+    else:
+        from framework.data.cached_tensors import get_cached_tokenized_dataset
+        try:
+            cached_splits = get_cached_tokenized_dataset(
+                dataset_name=dataset,
+                model_family=model_family,
+                seq_len=seq_len,
+            )
+            val_loader = torch.utils.data.DataLoader(
+                cached_splits["val"],
+                batch_size=current_batch_size,
+                shuffle=False,
+                num_workers=0,
+                pin_memory=is_cuda,
+            )
+        except Exception:
+            val_loader = None
+
+    if val_loader is not None:
         with torch.no_grad():
-            for val_batch in loader:
+            for val_batch in val_loader:
                 if timeout and (time.time() - t_seed_start) > timeout:
                     raise TimeoutError(f"Module '{module_name}' exceeded execution timeout ({timeout}s) during validation")
-                inputs = {("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v) for k, v in val_batch.items()}
+                
+                if isinstance(val_batch, (list, tuple)):
+                    v_ids, v_mask, v_lbl = val_batch
+                    inputs = {
+                        "input_ids": v_ids.to(device, non_blocking=is_cuda),
+                        "attention_mask": v_mask.to(device, non_blocking=is_cuda),
+                        "labels": v_lbl.to(device, non_blocking=is_cuda),
+                    }
+                else:
+                    inputs = {("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v) for k, v in val_batch.items()}
+                
                 filtered_inputs = _filter_batch(inputs, model_family, model)
                 with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
                     val_out = model(**filtered_inputs)
@@ -833,12 +850,14 @@ def evaluate_single_seed_run(
                     base_model = base_model.to(device)
                     base_model.eval()
                     base_logits_list = []
-                    v_ds = _PREPARED_DATASET_CACHE.get(dataset_cache_key)
-                    if v_ds is not None and len(v_ds) > 0:
-                        b_loader = torch.utils.data.DataLoader(v_ds, batch_size=current_batch_size, shuffle=False)
+                    if val_loader is not None:
                         with torch.no_grad():
-                            for vb in b_loader:
-                                b_inp = {("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v) for k, v in vb.items()}
+                            for vb in val_loader:
+                                if isinstance(vb, (list, tuple)):
+                                    v_ids, v_mask, v_lbl = vb
+                                    b_inp = {"input_ids": v_ids.to(device, non_blocking=is_cuda), "attention_mask": v_mask.to(device, non_blocking=is_cuda), "labels": v_lbl.to(device, non_blocking=is_cuda)}
+                                else:
+                                    b_inp = {("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v) for k, v in vb.items()}
                                 b_f = _filter_batch(b_inp, model_family, base_model)
                                 with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
                                     b_out = base_model(**b_f)
@@ -901,6 +920,7 @@ def evaluate_single_seed_run(
         loss_trajectory=traj_loss,
         grad_norm_trajectory=traj_grad_norm,
         status="PASS",
+        startup_overhead_s=locals().get("startup_overhead_s", 0.0),
     )
 
 
@@ -1033,6 +1053,22 @@ def run_quality_benchmark_sweep(
     baseline_logits_cache: Dict[Tuple[str, str, int], torch.Tensor] = {}
     baseline_acc_cache: Dict[Tuple[str, str], List[float]] = {}
 
+    persistent_worker = None
+    if device.type == "cuda":
+        try:
+            from framework.persistent_worker import PersistentCUDAWorker
+            persistent_worker = PersistentCUDAWorker(
+                device_str=str(device),
+                pretrained=pretrained,
+                model_family=active_models[0] if active_models else "distilbert",
+                dataset=active_datasets[0] if active_datasets else "sst2",
+                seq_len=seq_len,
+            )
+            logger.info("⚡ Persistent CUDA Worker initialized successfully. Zero-overhead stream active.")
+        except Exception as e:
+            logger.warning("Could not initialize PersistentCUDAWorker: %s. Falling back to spawn runner.", e)
+            persistent_worker = None
+
     total_combos = len(active_models) * len(active_datasets) * len(active_modules)
     combo_idx = 0
     start_time = time.time()
@@ -1055,59 +1091,113 @@ def run_quality_benchmark_sweep(
                 seed_results: List[SeedResult] = []
                 
                 for s in active_seeds:
-                    try:
-                        res_seed = evaluate_single_seed_run_with_proc_timeout(
-                            module_name=mod_name,
-                            model_family=model_name,
-                            dataset=dataset_name,
-                            seed=s,
-                            epochs=epochs,
-                            max_steps=max_steps,
-                            learning_rate=learning_rate,
-                            weight_decay=weight_decay,
-                            batch_size=batch_size,
-                            seq_len=seq_len,
-                            hidden_size=hidden_size,
-                            num_heads=num_heads,
-                            num_layers=num_layers,
-                            device=device,
-                            allow_synthetic=allow_synthetic,
-                            baseline_logits_cache=baseline_logits_cache,
-                            pretrained=pretrained,
-                            gradient_checkpointing=gradient_checkpointing,
-                            timeout=timeout,
-                        )
-                        seed_results.append(res_seed)
-                    except TimeoutError as te:
-                        logger.warning("⏱️ Seed %d TIMED OUT for %s on %s/%s after %ds: %s", s, mod_name, model_name, dataset_name, timeout, te)
-                        seed_results.append(SeedResult(
-                            seed=s,
-                            accuracy_pct=0.0,
-                            f1_score=0.0,
-                            fidelity_score=0.0,
-                            fwd_latency_ms=0.0,
-                            bwd_latency_ms=0.0,
-                            peak_vram_mb=0.0,
-                            throughput_tokens_sec=0.0,
-                            flops_macs=0.0,
-                            status="TIMEOUT",
-                            error_message=str(te),
-                        ))
-                    except Exception as e:
-                        logger.error("Seed %d failed for %s on %s/%s: %s", s, mod_name, model_name, dataset_name, e)
-                        seed_results.append(SeedResult(
-                            seed=s,
-                            accuracy_pct=0.0,
-                            f1_score=0.0,
-                            fidelity_score=0.0,
-                            fwd_latency_ms=0.0,
-                            bwd_latency_ms=0.0,
-                            peak_vram_mb=0.0,
-                            throughput_tokens_sec=0.0,
-                            flops_macs=0.0,
-                            status="FAIL",
-                            error_message=str(e),
-                        ))
+                    if persistent_worker is not None:
+                        try:
+                            res_seed, startup_s = persistent_worker.execute_task(
+                                module_name=mod_name,
+                                model_family=model_name,
+                                dataset=dataset_name,
+                                seed=s,
+                                epochs=epochs,
+                                max_steps=max_steps,
+                                learning_rate=learning_rate,
+                                weight_decay=weight_decay,
+                                batch_size=batch_size,
+                                seq_len=seq_len,
+                                hidden_size=hidden_size,
+                                num_heads=num_heads,
+                                num_layers=num_layers,
+                                allow_synthetic=allow_synthetic,
+                                pretrained=pretrained,
+                                gradient_checkpointing=gradient_checkpointing,
+                                timeout=timeout,
+                            )
+                            logger.info("⚡ Module %s startup overhead: %.1f ms (target < 2000 ms)", mod_name, startup_s * 1000.0)
+                            seed_results.append(res_seed)
+                        except TimeoutError as te:
+                            logger.warning("⏱️ Seed %d TIMED OUT for %s on %s/%s after %ds: %s", s, mod_name, model_name, dataset_name, timeout, te)
+                            seed_results.append(SeedResult(
+                                seed=s,
+                                accuracy_pct=0.0,
+                                f1_score=0.0,
+                                fidelity_score=0.0,
+                                fwd_latency_ms=0.0,
+                                bwd_latency_ms=0.0,
+                                peak_vram_mb=0.0,
+                                throughput_tokens_sec=0.0,
+                                flops_macs=0.0,
+                                status="TIMEOUT",
+                                error_message=str(te),
+                            ))
+                        except Exception as e:
+                            logger.error("Seed %d failed for %s on %s/%s: %s", s, mod_name, model_name, dataset_name, e)
+                            seed_results.append(SeedResult(
+                                seed=s,
+                                accuracy_pct=0.0,
+                                f1_score=0.0,
+                                fidelity_score=0.0,
+                                fwd_latency_ms=0.0,
+                                bwd_latency_ms=0.0,
+                                peak_vram_mb=0.0,
+                                throughput_tokens_sec=0.0,
+                                flops_macs=0.0,
+                                status="FAIL",
+                                error_message=str(e),
+                            ))
+                    else:
+                        try:
+                            res_seed = evaluate_single_seed_run_with_proc_timeout(
+                                module_name=mod_name,
+                                model_family=model_name,
+                                dataset=dataset_name,
+                                seed=s,
+                                epochs=epochs,
+                                max_steps=max_steps,
+                                learning_rate=learning_rate,
+                                weight_decay=weight_decay,
+                                batch_size=batch_size,
+                                seq_len=seq_len,
+                                hidden_size=hidden_size,
+                                num_heads=num_heads,
+                                num_layers=num_layers,
+                                device=device,
+                                allow_synthetic=allow_synthetic,
+                                baseline_logits_cache=baseline_logits_cache,
+                                pretrained=pretrained,
+                                gradient_checkpointing=gradient_checkpointing,
+                                timeout=timeout,
+                            )
+                            seed_results.append(res_seed)
+                        except TimeoutError as te:
+                            logger.warning("⏱️ Seed %d TIMED OUT for %s on %s/%s after %ds: %s", s, mod_name, model_name, dataset_name, timeout, te)
+                            seed_results.append(SeedResult(
+                                seed=s,
+                                accuracy_pct=0.0,
+                                f1_score=0.0,
+                                fidelity_score=0.0,
+                                fwd_latency_ms=0.0,
+                                bwd_latency_ms=0.0,
+                                peak_vram_mb=0.0,
+                                throughput_tokens_sec=0.0,
+                                flops_macs=0.0,
+                                status="TIMEOUT",
+                                error_message=str(te),
+                            ))
+                        except Exception as e:
+                            logger.error("Seed %d failed for %s on %s/%s: %s", s, mod_name, model_name, dataset_name, e)
+                            seed_results.append(SeedResult(
+                                seed=s,
+                                accuracy_pct=0.0,
+                                f1_score=0.0,
+                                fidelity_score=0.0,
+                                fwd_latency_ms=0.0,
+                                bwd_latency_ms=0.0,
+                                peak_vram_mb=0.0,
+                                throughput_tokens_sec=0.0,
+                                flops_macs=0.0,
+                                status="FAIL",
+                                error_message=str(e),
+                            ))
 
                 valid_seeds = [r for r in seed_results if r.status == "PASS"]
                 if valid_seeds:
@@ -1222,6 +1312,12 @@ def run_quality_benchmark_sweep(
                         torch.cuda.reset_peak_memory_stats()
                     except Exception:
                         pass
+
+    if persistent_worker is not None:
+        try:
+            persistent_worker.close()
+        except Exception:
+            pass
 
     total_wall_clock = time.time() - start_time
     gpu_hours = round(total_wall_clock / 3600.0, 4)
