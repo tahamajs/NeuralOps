@@ -46,13 +46,23 @@ def evaluate_model(
 
     all_preds = []
     all_labels = []
+    total_loss = 0.0
+    total_count = 0
 
     with torch.no_grad():
         for batch in dataloader:
-            inputs = {k: v.to(device) for k, v in batch.items() if k != "labels"}
-            labels = batch["labels"].to(device)
+            inputs = {k: v.to(device) for k, v in batch.items() if k not in ("labels", "label")}
+            raw_labels = batch.get("labels", batch.get("label"))
+            if raw_labels is not None:
+                labels = raw_labels.to(device)
+                inputs_with_labels = {**inputs, "labels": labels}
+                outputs = model(**inputs_with_labels)
+                if hasattr(outputs, "loss") and outputs.loss is not None:
+                    total_loss += float(outputs.loss.item()) * len(labels)
+                    total_count += len(labels)
+            else:
+                outputs = model(**inputs)
 
-            outputs = model(**inputs)
             logits = outputs.logits
 
             if is_regression:
@@ -61,7 +71,10 @@ def evaluate_model(
                 preds = torch.argmax(logits, dim=-1).cpu().numpy()
 
             all_preds.extend(preds.tolist())
-            all_labels.extend(labels.cpu().numpy().tolist())
+            if raw_labels is not None:
+                all_labels.extend(labels.cpu().numpy().tolist())
 
     metrics = compute_metrics(task_name, all_preds, all_labels)
+    if total_count > 0:
+        metrics["eval_loss"] = float(total_loss / total_count)
     return metrics

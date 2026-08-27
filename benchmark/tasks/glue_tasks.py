@@ -60,6 +60,20 @@ GLUE_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "metric_key": "accuracy",
         "is_regression": False,
     },
+    "wnli": {
+        "hf_name": "wnli",
+        "keys": ("sentence1", "sentence2"),
+        "num_labels": 2,
+        "metric_key": "accuracy",
+        "is_regression": False,
+    },
+    "ax": {
+        "hf_name": "ax",
+        "keys": ("premise", "hypothesis"),
+        "num_labels": 3,
+        "metric_key": "accuracy",
+        "is_regression": False,
+    },
 }
 
 

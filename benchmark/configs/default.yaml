@@ -11,6 +11,10 @@ epochs:
   mrpc: 5
   cola: 5
   stsb: 5
+  qqp: 3
+  mnli: 3
+  wnli: 5
+  ax: 3
 warmup_ratio: 0.1
 weight_decay: 0.01
 gradient_clip: 1.0
