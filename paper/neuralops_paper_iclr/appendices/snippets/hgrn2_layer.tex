@@ -1,8 +1,8 @@
 \subsection{HGRN2Layer (\texttt{hgrn2\_layer})}
-\label{sec:app_module_hgrn2\_layer}
+\label{sec:app_module_hgrn2_layer}
 
 \subsubsection*{3.1 Module Overview}
-Hierarchically Gated Recurrent Network v2 (HGRN-2) Bidirectional Layer.  Mathematical Mechanism:     For input token activations \$x\_t \in \mathbb{R}^D\$:     1. **Dynamic Gating \& Value Transformation:**        \$\$f\_t = \exp(-\text{softplus}(W\_f x\_t + b\_f)) \in (0, 1)^D \quad \text{(Log-space Bounded
+Hierarchically Gated Recurrent Network v2 (HGRN-2) Bidirectional Layer.  Mathematical Mechanism:     For input token activations \$x\_t \in \mathbb{R}^D\$:     1. **Dynamic Gating \& Value Transformation:**        $$f\_t = \exp(-\text{softplus}(W\_f x\_t + b\_f)) \in (0, 1)^D \quad \text{(Log-space Bounded
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models & Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/hgrn2\_layer.py}
@@ -35,13 +35,13 @@ y_t &= C_t h_t + D x_t, \quad O_t = \operatorname{SiLU}(z_t) \odot y_t.
 \end{itemize}
 
 \subsubsection*{3.5 Empirical Performance Telemetry}
-Table~\ref{tab:telemetry_hgrn2\_layer} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
+Table~\ref{tab:telemetry_hgrn2_layer} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
 
 \begin{table}[h]
 \centering
 \small
 \caption{\textbf{Empirical Benchmark Telemetry for \texttt{hgrn2\_layer}}. Measured on NVIDIA RTX 4070 GPU across standard GLUE tasks.}
-\label{tab:telemetry_hgrn2\_layer}
+\label{tab:telemetry_hgrn2_layer}
 \begin{tabularx}{\columnwidth}{lX}
 \toprule
 \textbf{Performance Metric} & \textbf{Empirical Value} \\
@@ -76,13 +76,13 @@ Evaluation Execution Status & \textbf{\texttt{PASS}} \\
 The module \texttt{hgrn2\_layer} is natively integrated into the NeuralOps registry with automated AMP FP16 tensor casting, fused linear down/up-projection passes, and exact autograd backward graph registration. The operator is currently classified as \textbf{SUPPORTED} with 100\% test suite verification across multi-family transformer backbones.
 
 \subsubsection*{3.8 Architectural Characterization Diagram}
-Figure~\ref{fig:module_hgrn2\_layer} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
+Figure~\ref{fig:module_hgrn2_layer} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_hgrn2\_layer.pdf}
+    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_hgrn2_layer.pdf}
     \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for HGRN2Layer (\texttt{hgrn2\_layer})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
-    \label{fig:module_hgrn2\_layer}
+    \label{fig:module_hgrn2_layer}
 \end{figure}
 
 \vspace{1.0em}
