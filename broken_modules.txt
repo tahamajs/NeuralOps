@@ -1,0 +1,12 @@
+samba_m3
+jamba2
+svd_mamba
+mamba
+gated_deltanet_block
+spectron
+performer_attention
+linformer_attention
+galerkin_attention
+soa_attn
+cosformer
+block_transformer_hiba
