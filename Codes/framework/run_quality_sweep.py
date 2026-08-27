@@ -79,16 +79,15 @@ DEFAULT_QUALITY_MODULES = [
 
 def _import_all_modules() -> List[str]:
     """Dynamically imports all modules from attentions/ and compression_engine/ and returns canonical names."""
-    import glob, importlib
-    for f in glob.glob(str(PROJECT_DIR / "Codes" / "framework" / "attentions" / "*.py")):
-        base = Path(f).stem
+    for f in (WORKDIR / "attentions").glob("*.py"):
+        base = f.stem
         if not base.startswith("__"):
             try:
                 importlib.import_module(f"framework.attentions.{base}")
             except Exception:
                 pass
-    for f in glob.glob(str(PROJECT_DIR / "Codes" / "framework" / "compression_engine" / "*.py")):
-        base = Path(f).stem
+    for f in (WORKDIR / "compression_engine").glob("*.py"):
+        base = f.stem
         if not base.startswith("__"):
             try:
                 importlib.import_module(f"framework.compression_engine.{base}")
@@ -289,6 +288,90 @@ def _get_environment_info() -> str:
     except Exception as e:
         info_lines.append(f"Torch Error: {e}")
     return "\n".join(info_lines)
+
+
+def evaluate_single_seed_run_wrapper(queue, device_str, *args, **kwargs):
+    # Set up logging for spawned subprocess
+    import logging
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    
+    import torch
+    import time
+    
+    # Set device in kwargs
+    kwargs["device"] = torch.device(device_str)
+    
+    try:
+        # Clear CUDA cache
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            
+        res = evaluate_single_seed_run(*args, **kwargs)
+        queue.put(("SUCCESS", res))
+    except Exception as e:
+        import traceback
+        queue.put(("ERROR", (str(e), traceback.format_exc())))
+
+
+def evaluate_single_seed_run_with_proc_timeout(timeout, *args, **kwargs):
+    import multiprocessing
+    
+    device = kwargs.get("device", torch.device("cpu"))
+    device_str = str(device)
+    
+    # We must not pass baseline_logits_cache directly if it's not manager-managed.
+    parent_cache = kwargs.pop("baseline_logits_cache", None)
+    
+    model_family = kwargs.get("model_family", args[1] if len(args) > 1 else kwargs.get("model_family", ""))
+    dataset = kwargs.get("dataset", args[2] if len(args) > 2 else kwargs.get("dataset", ""))
+    seed = kwargs.get("seed", args[3] if len(args) > 3 else kwargs.get("seed", 42))
+    cache_key = (model_family.lower(), dataset.lower(), seed)
+    
+    child_cache = {}
+    if parent_cache is not None and cache_key in parent_cache:
+        child_cache[cache_key] = parent_cache[cache_key]
+        
+    kwargs["baseline_logits_cache"] = child_cache
+    
+    # Use spawn context to avoid issues with CUDA re-init
+    ctx = multiprocessing.get_context("spawn")
+    queue = ctx.Queue()
+    
+    # Call process
+    p = ctx.Process(
+        target=evaluate_single_seed_run_wrapper,
+        args=(queue, device_str) + args,
+        kwargs=kwargs
+    )
+    p.start()
+    
+    # Hard timeout constraint: do not extend training/evaluation more than 5 minutes (300s)
+    hard_timeout = min(timeout if timeout else 300, 300)
+    
+    p.join(timeout=hard_timeout)
+    
+    if p.is_alive():
+        p.terminate()
+        p.join()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        raise TimeoutError(f"Module evaluation process exceeded hard timeout of {hard_timeout}s")
+        
+    if queue.empty():
+        raise RuntimeError("Evaluation process exited unexpectedly without returning results")
+        
+    status, val = queue.get()
+    if status == "ERROR":
+        msg, tb = val
+        logger.error(f"Error in evaluation process:\n{tb}")
+        raise RuntimeError(msg)
+        
+    # Merge child cache back to parent cache
+    if parent_cache is not None and child_cache:
+        for k, v in child_cache.items():
+            parent_cache[k] = v
+            
+    return val
 
 
 def evaluate_single_seed_run(
@@ -493,6 +576,8 @@ def evaluate_single_seed_run(
             for batch in train_loader:
                 if global_step >= total_steps:
                     break
+                if timeout and (time.time() - t_seed_start) > timeout:
+                    raise TimeoutError(f"Module '{module_name}' exceeded execution timeout ({timeout}s) during training step {global_step}/{total_steps}")
                 
                 b_device = {
                     ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
@@ -970,7 +1055,7 @@ def run_quality_benchmark_sweep(
                 
                 for s in active_seeds:
                     try:
-                        res_seed = evaluate_single_seed_run(
+                        res_seed = evaluate_single_seed_run_with_proc_timeout(
                             module_name=mod_name,
                             model_family=model_name,
                             dataset=dataset_name,
