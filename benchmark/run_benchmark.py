@@ -96,6 +96,159 @@ def load_config(config_path: str) -> Dict[str, Any]:
     return {}
 
 
+def evaluate_candidate_model(model_name: str, config: Dict[str, Any], device_str: str, datasets_cache: Dict[str, Any]) -> Dict[str, Any]:
+    import torch
+    import time
+    from pathlib import Path
+    
+    device = torch.device(device_str)
+    
+    model_record: Dict[str, Any] = {
+        "model_name": model_name,
+        "status": "INITIALIZING",
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "glue_tasks": {},
+        "profiling": {},
+        "stability": {},
+        "diagnostics": {},
+        "num_params": 0,
+        "avg_glue": 0.0,
+    }
+
+    # STEP 1: MODEL BUILDING
+    base_model, build_status = build_model_with_attention(
+        model_name=model_name,
+        base_model_name=config.get("model_name", "distilbert-base-uncased"),
+        num_labels=2,
+        pretrained=True,
+    )
+
+    if base_model is None or build_status != "OK":
+        model_record["status"] = "FAIL_BUILD"
+        model_record["error"] = build_status
+        return model_record
+
+    base_model = base_model.to(device)
+    model_record["num_params"] = sum(p.numel() for p in base_model.parameters() if p.requires_grad)
+
+    # STEP 2: LAYER 0 - SANITY CHECK
+    sanity_res = run_sanity_check(base_model, model_name)
+    if not sanity_res["passed"]:
+        model_record["status"] = "FAIL_SANITY"
+        model_record["error"] = sanity_res["error"]
+        return model_record
+
+    # STEP 3: LAYER 1 - GLUE TRAINING & EVALUATION
+    task_scores = []
+    for task in config["selected_tasks"]:
+        if task not in datasets_cache:
+            continue
+
+        train_ds, eval_ds, num_labels = datasets_cache[task]
+
+        # Re-instantiate model for task-specific classification head
+        task_model, _ = build_model_with_attention(
+            model_name=model_name,
+            base_model_name=config.get("model_name", "distilbert-base-uncased"),
+            num_labels=num_labels,
+            pretrained=True,
+        )
+        if task_model is not None:
+            task_model = task_model.to(device)
+
+        train_res = train_model(
+            model=task_model,
+            train_dataset=train_ds,
+            eval_dataset=eval_ds,
+            task_name=task,
+            config=config,
+            seed=42,
+            epochs=1 if config.get("smoke_test") else None,
+        )
+
+        model_record["glue_tasks"][task] = train_res
+        t_score = train_res.get("eval_metrics", {}).get("score", train_res.get("eval_metrics", {}).get("accuracy", 0.0))
+        task_scores.append(t_score)
+
+    model_record["avg_glue"] = float(sum(task_scores) / max(len(task_scores), 1))
+
+    # STEP 4: LAYER 2 - EFFICIENCY PROFILING
+    if not config.get("skip_profiling"):
+        prof_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=False)
+        if prof_model is not None:
+            prof_model = prof_model.to(device)
+        prof_res = profile_model(
+            model=prof_model,
+            seq_lengths=config.get("profile_seq_lengths", [128, 256, 512]),
+            batch_sizes=config.get("profile_batch_sizes", [1, 32]),
+            num_warmup=2 if config.get("smoke_test") else 5,
+            num_iterations=10 if config.get("smoke_test") else 50,
+        )
+        model_record["profiling"] = prof_res
+
+    # STEP 5: LAYER 3 - STABILITY EVALUATION
+    if not config.get("skip_stability") and "sst2" in datasets_cache:
+        train_sst2, eval_sst2, _ = datasets_cache["sst2"]
+        stab_res = evaluate_stability(
+            model_builder_fn=lambda name: build_model_with_attention(name, num_labels=2, pretrained=True),
+            model_name=model_name,
+            config=config,
+            train_dataset=train_sst2,
+            eval_dataset=eval_sst2,
+            task_name="sst2",
+        )
+        model_record["stability"] = stab_res
+
+    # STEP 6: LAYER 4 - STRUCTURAL DIAGNOSTICS
+    if not config.get("skip_diagnostics"):
+        diag_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=True)
+        if diag_model is not None:
+            diag_model = diag_model.to(device)
+        dummy_inputs = {
+            "input_ids": torch.randint(0, 1000, (4, 64), device=device),
+            "attention_mask": torch.ones((4, 64), device=device),
+        }
+        grad_stats = compute_gradient_norm_stats(diag_model, dummy_inputs)
+        moe_stats = compute_moe_load_balance(diag_model, dummy_inputs)
+
+        # Attention Map Analysis (Shannon Entropy & Sparsity)
+        attn_matrices = extract_attention_outputs(diag_model, dummy_inputs, output_attentions=True)
+        attn_stats: Dict[str, Any] = {"entropy": 0.0, "sparsity_pct": 0.0, "has_attention_weights": False}
+        if attn_matrices is not None and len(attn_matrices) > 0:
+            entropies = [compute_attention_entropy(layer_attn) for layer_attn in attn_matrices if layer_attn is not None]
+            sparsities = [compute_attention_sparsity(layer_attn) for layer_attn in attn_matrices if layer_attn is not None]
+            if entropies and sparsities:
+                attn_stats = {
+                    "entropy": float(sum(entropies) / len(entropies)),
+                    "sparsity_pct": float(sum(sparsities) / len(sparsities)),
+                    "has_attention_weights": True,
+                }
+
+        model_record["diagnostics"] = {
+            "gradient_norm": grad_stats,
+            "moe_balance": moe_stats,
+            "attention": attn_stats,
+        }
+
+    model_record["status"] = "OK"
+    return model_record
+
+
+def run_evaluation_in_process(queue, model_name, config, device_str, datasets_cache):
+    try:
+        import torch
+        import gc
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
+        
+        record = evaluate_candidate_model(model_name, config, device_str, datasets_cache)
+        queue.put(("SUCCESS", record))
+    except Exception as e:
+        import traceback
+        queue.put(("ERROR", (str(e), traceback.format_exc())))
+
+
 def main() -> None:
     args = parse_args()
 
@@ -175,180 +328,80 @@ def main() -> None:
         except Exception:
             results = {}
 
+    import multiprocessing
+
     for model_name in tqdm(config["selected_models"], desc="Benchmarking Models", unit="model"):
         logger.info("-" * 60)
         logger.info(f"🔍 Evaluating Candidate Architecture: [{model_name}]")
         logger.info("-" * 60)
 
-        model_record: Dict[str, Any] = {
-            "model_name": model_name,
-            "status": "INITIALIZING",
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "glue_tasks": {},
-            "profiling": {},
-            "stability": {},
-            "diagnostics": {},
-            "num_params": 0,
-            "avg_glue": 0.0,
-        }
+        # Build config dict for child process to respect skip flags and smoke test settings
+        child_config = dict(config)
+        child_config["skip_profiling"] = args.skip_profiling
+        child_config["skip_stability"] = args.skip_stability
+        child_config["skip_diagnostics"] = args.skip_diagnostics
+        child_config["smoke_test"] = args.smoke_test or config.get("smoke_test", False)
 
-        # -------------------------------------------------------------
-        # STEP 1: MODEL BUILDING
-        # -------------------------------------------------------------
-        base_model, build_status = build_model_with_attention(
-            model_name=model_name,
-            base_model_name=config.get("model_name", "distilbert-base-uncased"),
-            num_labels=2,
-            pretrained=True,
+        ctx = multiprocessing.get_context("spawn")
+        queue = ctx.Queue()
+
+        p = ctx.Process(
+            target=run_evaluation_in_process,
+            args=(queue, model_name, child_config, str(device), datasets_cache)
         )
+        p.start()
 
-        if base_model is None or build_status != "OK":
-            logger.warning(f"  ✗ Model instantiation failed: {build_status}")
-            model_record["status"] = "FAIL_BUILD"
-            model_record["error"] = build_status
-            results[model_name] = model_record
-            with open(results_file, "w") as f:
-                json.dump(results, f, indent=2)
-            continue
+        # Hard 5-minute timeout (300 seconds)
+        p.join(timeout=300)
 
-        base_model = base_model.to(device)
-        model_record["num_params"] = sum(p.numel() for p in base_model.parameters() if p.requires_grad)
-        logger.info(f"  ✓ Model built successfully ({model_record['num_params'] / 1e6:.2f}M trainable parameters)")
+        if p.is_alive():
+            logger.warning(f"  ⏱️ Model [{model_name}] timed out after 300s! Skipping...")
+            p.terminate()
+            p.join()
 
-        # -------------------------------------------------------------
-        # STEP 2: LAYER 0 - SANITY CHECK
-        # -------------------------------------------------------------
-        sanity_res = run_sanity_check(base_model, model_name)
-        if not sanity_res["passed"]:
-            logger.warning(f"  ✗ Layer 0 Sanity Check failed: {sanity_res['error']}")
-            model_record["status"] = "FAIL_SANITY"
-            model_record["error"] = sanity_res["error"]
-            results[model_name] = model_record
-            with open(results_file, "w") as f:
-                json.dump(results, f, indent=2)
-            continue
-        logger.info("  ✓ Layer 0 Sanity Check: PASSED (Shapes, Dtypes, Non-NaN Gradients verified)")
-
-        # -------------------------------------------------------------
-        # STEP 3: LAYER 1 - GLUE TRAINING & EVALUATION
-        # -------------------------------------------------------------
-        task_scores = []
-        for task in config["selected_tasks"]:
-            if task not in datasets_cache:
-                continue
-
-            train_ds, eval_ds, num_labels = datasets_cache[task]
-
-            # Re-instantiate model for task-specific classification head
-            task_model, _ = build_model_with_attention(
-                model_name=model_name,
-                base_model_name=config.get("model_name", "distilbert-base-uncased"),
-                num_labels=num_labels,
-                pretrained=True,
-            )
-            if task_model is not None:
-                task_model = task_model.to(device)
-
-            train_res = train_model(
-                model=task_model,
-                train_dataset=train_ds,
-                eval_dataset=eval_ds,
-                task_name=task,
-                config=config,
-                seed=42,
-                epochs=1 if args.smoke_test else None,
-            )
-
-            model_record["glue_tasks"][task] = train_res
-            t_score = train_res.get("eval_metrics", {}).get("score", train_res.get("eval_metrics", {}).get("accuracy", 0.0))
-            task_scores.append(t_score)
-            logger.info(f"  ✓ Task {task.upper()} ({train_res['status']}): Score = {t_score:.4f} (Time: {train_res['training_time']:.1f}s)")
-
-        model_record["avg_glue"] = float(sum(task_scores) / max(len(task_scores), 1))
-        logger.info(f"  ★ Average GLUE Score: {model_record['avg_glue']:.4f}")
-
-        # -------------------------------------------------------------
-        # STEP 4: LAYER 2 - EFFICIENCY PROFILING
-        # -------------------------------------------------------------
-        if not args.skip_profiling:
-            logger.info("  ⚡ Running Layer 2 Efficiency & Scaling Profiling...")
-            prof_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=False)
-            if prof_model is not None:
-                prof_model = prof_model.to(device)
-            prof_res = profile_model(
-                model=prof_model,
-                seq_lengths=config.get("profile_seq_lengths", [128, 256, 512]),
-                batch_sizes=config.get("profile_batch_sizes", [1, 32]),
-                num_warmup=2 if args.smoke_test else 5,
-                num_iterations=10 if args.smoke_test else 50,
-            )
-            model_record["profiling"] = prof_res
-            cfg_512 = prof_res.get("configurations", {}).get("bs32_seq512", prof_res.get("configurations", {}).get("bs8_seq256", {}))
-            logger.info(f"  ✓ Throughput: {cfg_512.get('tokens_per_sec', 0):,.1f} tok/s | Peak VRAM: {cfg_512.get('peak_vram_mb', 'N/A')}")
-
-        # -------------------------------------------------------------
-        # STEP 5: LAYER 3 - STABILITY EVALUATION
-        # -------------------------------------------------------------
-        if not args.skip_stability and "sst2" in datasets_cache:
-            logger.info("  🛡️ Running Layer 3 Multi-Seed & LR Stability Audit...")
-            train_sst2, eval_sst2, _ = datasets_cache["sst2"]
-            stab_res = evaluate_stability(
-                model_builder_fn=lambda name: build_model_with_attention(name, num_labels=2, pretrained=True),
-                model_name=model_name,
-                config=config,
-                train_dataset=train_sst2,
-                eval_dataset=eval_sst2,
-                task_name="sst2",
-            )
-            model_record["stability"] = stab_res
-            logger.info(f"  ✓ Stability Verdict: {'STABLE' if stab_res['stable'] else 'UNSTABLE'} (Mean Acc: {stab_res['mean_seed_acc']:.4f}, CV_LR: {stab_res['cv_lr']:.3f})")
-
-        # -------------------------------------------------------------
-        # STEP 6: LAYER 4 - STRUCTURAL DIAGNOSTICS
-        # -------------------------------------------------------------
-        if not args.skip_diagnostics:
-            logger.info("  🔬 Running Layer 4 Structural & Gradient Diagnostics...")
-            diag_model, _ = build_model_with_attention(model_name=model_name, num_labels=2, pretrained=True)
-            if diag_model is not None:
-                diag_model = diag_model.to(device)
-            dummy_inputs = {
-                "input_ids": torch.randint(0, 1000, (4, 64), device=device),
-                "attention_mask": torch.ones((4, 64), device=device),
+            model_record = {
+                "model_name": model_name,
+                "status": "TIMEOUT",
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "error": "Execution exceeded 300s timeout",
+                "glue_tasks": {},
+                "profiling": {},
+                "stability": {},
+                "diagnostics": {},
+                "num_params": 0,
+                "avg_glue": 0.0,
             }
-            grad_stats = compute_gradient_norm_stats(diag_model, dummy_inputs)
-            moe_stats = compute_moe_load_balance(diag_model, dummy_inputs)
-
-            # Attention Map Analysis (Shannon Entropy & Sparsity)
-            attn_matrices = extract_attention_outputs(diag_model, dummy_inputs, output_attentions=True)
-            attn_stats: Dict[str, Any] = {"entropy": 0.0, "sparsity_pct": 0.0, "has_attention_weights": False}
-            if attn_matrices is not None and len(attn_matrices) > 0:
-                entropies = [compute_attention_entropy(layer_attn) for layer_attn in attn_matrices if layer_attn is not None]
-                sparsities = [compute_attention_sparsity(layer_attn) for layer_attn in attn_matrices if layer_attn is not None]
-                if entropies and sparsities:
-                    attn_stats = {
-                        "entropy": float(sum(entropies) / len(entropies)),
-                        "sparsity_pct": float(sum(sparsities) / len(sparsities)),
-                        "has_attention_weights": True,
+            results[model_name] = model_record
+        else:
+            if queue.empty():
+                logger.error(f"  ✗ Model [{model_name}] process exited unexpectedly.")
+                results[model_name] = {
+                    "model_name": model_name,
+                    "status": "FAIL",
+                    "error": "Subprocess exited unexpectedly",
+                }
+            else:
+                status, val = queue.get()
+                if status == "SUCCESS":
+                    results[model_name] = val
+                    logger.info(f"  ✓ Model [{model_name}] completed successfully.")
+                else:
+                    err_msg, tb = val
+                    logger.error(f"  ✗ Model [{model_name}] failed: {err_msg}\n{tb}")
+                    results[model_name] = {
+                        "model_name": model_name,
+                        "status": "FAIL",
+                        "error": err_msg,
                     }
 
-            model_record["diagnostics"] = {
-                "gradient_norm": grad_stats,
-                "moe_balance": moe_stats,
-                "attention": attn_stats,
-            }
-            logger.info(
-                f"  ✓ Diagnostics: Mean Grad Norm = {grad_stats['mean_norm']:.4f} | "
-                f"NaN = {grad_stats['has_nan']} | "
-                f"Entropy = {attn_stats['entropy']:.2f} | "
-                f"Sparsity = {attn_stats['sparsity_pct']:.1f}%"
-            )
-
-        model_record["status"] = "OK"
-        results[model_name] = model_record
-
-        # Incrementally persist results
+        # Persist results incrementally
         with open(results_file, "w") as f:
             json.dump(results, f, indent=2)
+
+        import gc
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     # -----------------------------------------------------------------
     # FINAL REPORT & LEADERBOARD GENERATION

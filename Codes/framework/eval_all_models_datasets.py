@@ -430,6 +430,20 @@ def apply_module_to_model(
     """
     orig_params = sum(p.numel() for p in model.parameters())
 
+    # Auto-detect module category if misclassified
+    if module_name in COMPRESSOR_REGISTRY:
+        module_type = "compressor"
+    elif module_name in ATTENTION_REGISTRY:
+        module_type = "attention"
+    else:
+        # Check files on disk
+        cur_file = Path(__file__).resolve()
+        codes_dir = cur_file.parent.parent
+        if (codes_dir / "framework" / "compression_engine" / f"{module_name}.py").exists():
+            module_type = "compressor"
+        elif (codes_dir / "framework" / "attentions" / f"{module_name}.py").exists():
+            module_type = "attention"
+
     if module_type == "attention":
         # Resolve attention class from registry
         if module_name not in ATTENTION_REGISTRY:
@@ -440,7 +454,7 @@ def apply_module_to_model(
                 logger.warning("Could not import attention module '%s': %s", module_name, e)
 
         if module_name in ATTENTION_REGISTRY:
-            inject_attention(model, module_name, rank=rank, copy_weights=False)
+            inject_attention(model, module_name, rank=rank, copy_weights=True)
         else:
             try:
                 import importlib

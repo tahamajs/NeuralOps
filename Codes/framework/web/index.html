@@ -126,6 +126,58 @@
         </div>
       </section>
 
+      <!-- Module Summary Row -->
+      <section class="metrics-grid" style="grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px;">
+        <div class="telemetry-card" style="padding: 10px 14px;">
+          <div class="card-header" style="margin-bottom: 4px;">
+            <span class="card-label" style="font-size: 0.75rem;">Total Modules</span>
+            <span class="card-icon" style="font-size: 0.9rem;">📦</span>
+          </div>
+          <div class="card-value" id="summary-total-modules" style="font-size: 1.3rem;">245</div>
+          <div class="card-sub" style="font-size: 0.7rem;">Registered architectures</div>
+        </div>
+        <div class="telemetry-card" style="padding: 10px 14px; border-bottom: 2px solid #10b981;">
+          <div class="card-header" style="margin-bottom: 4px;">
+            <span class="card-label" style="font-size: 0.75rem;">Completed</span>
+            <span class="card-icon" style="font-size: 0.9rem; color: #10b981;">🟢</span>
+          </div>
+          <div class="card-value" id="summary-completed-modules" style="font-size: 1.3rem; color: #10b981;">0</div>
+          <div class="card-sub" style="font-size: 0.7rem;">PASS status count</div>
+        </div>
+        <div class="telemetry-card" style="padding: 10px 14px; border-bottom: 2px solid #ef4444;">
+          <div class="card-header" style="margin-bottom: 4px;">
+            <span class="card-label" style="font-size: 0.75rem;">Failed</span>
+            <span class="card-icon" style="font-size: 0.9rem; color: #ef4444;">🔴</span>
+          </div>
+          <div class="card-value" id="summary-failed-modules" style="font-size: 1.3rem; color: #ef4444;">0</div>
+          <div class="card-sub" style="font-size: 0.7rem;">FAIL status count</div>
+        </div>
+        <div class="telemetry-card" style="padding: 10px 14px; border-bottom: 2px solid #f59e0b;">
+          <div class="card-header" style="margin-bottom: 4px;">
+            <span class="card-label" style="font-size: 0.75rem;">Timed Out</span>
+            <span class="card-icon" style="font-size: 0.9rem; color: #f59e0b;">⏱️</span>
+          </div>
+          <div class="card-value" id="summary-timeout-modules" style="font-size: 1.3rem; color: #f59e0b;">0</div>
+          <div class="card-sub" style="font-size: 0.7rem;">TIMEOUT status count</div>
+        </div>
+        <div class="telemetry-card" style="padding: 10px 14px; border-bottom: 2px solid #3b82f6;">
+          <div class="card-header" style="margin-bottom: 4px;">
+            <span class="card-label" style="font-size: 0.75rem;">Running</span>
+            <span class="card-icon" style="font-size: 0.9rem; color: #3b82f6;">⚡</span>
+          </div>
+          <div class="card-value" id="summary-running-modules" style="font-size: 1.3rem; color: #3b82f6;">0</div>
+          <div class="card-sub" style="font-size: 0.7rem;">Active sweep job</div>
+        </div>
+        <div class="telemetry-card" style="padding: 10px 14px; border-bottom: 2px solid #9ca3af;">
+          <div class="card-header" style="margin-bottom: 4px;">
+            <span class="card-label" style="font-size: 0.75rem;">Queued</span>
+            <span class="card-icon" style="font-size: 0.9rem; color: #9ca3af;">📁</span>
+          </div>
+          <div class="card-value" id="summary-queued-modules" style="font-size: 1.3rem; color: #9ca3af;">245</div>
+          <div class="card-sub" style="font-size: 0.7rem;">Pending evaluation</div>
+        </div>
+      </section>
+
       <!-- Progress & ETA Section -->
       <section class="progress-section">
         <div class="progress-header">
