@@ -132,6 +132,25 @@ TRAINER_REGISTRY = Registry("trainers")  # trainer classes
 VISUALIZER_REGISTRY = Registry("visualizers")  # visualization utilities
 
 
+HELPER_SUFFIXES = (
+    "_inject",
+    "_injection",
+    "_fn",
+    "_inject_fn",
+    "_attn_inject",
+    "_module_inject",
+    "_compressor_fn",
+)
+
+
+def is_helper_module(name: str) -> bool:
+    """Returns True if the given module name corresponds to an injection helper or factory alias."""
+    if not name:
+        return False
+    n = name.lower()
+    return any(n.endswith(suf) for suf in HELPER_SUFFIXES)
+
+
 def list_all_components() -> dict:
     """Convenience function that returns all global registry keys."""
     return {
@@ -145,3 +164,10 @@ def list_all_components() -> dict:
         "trainers": TRAINER_REGISTRY.keys(),
         "visualizers": VISUALIZER_REGISTRY.keys(),
     }
+
+
+def get_evaluatable_modules(include_compressors: bool = True) -> List[str]:
+    """Returns all genuine registered attention and compressor architectures, excluding helper aliases."""
+    attns = [k for k in ATTENTION_REGISTRY.keys() if not is_helper_module(k)]
+    comps = [k for k in COMPRESSOR_REGISTRY.keys() if not is_helper_module(k)] if include_compressors else []
+    return sorted(list(set(attns + comps)))

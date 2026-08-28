@@ -44,7 +44,7 @@ class Jamba2Block(BaseAttention):
         config: Optional[Any] = None,
         d_model: Optional[int] = None,
         n_heads: Optional[int] = None,
-        n_experts: int = 8,
+        n_experts: int = 4,
         top_k: int = 2,
         rank: Optional[int] = 64,
         pretrained_attn: Optional[nn.Module] = None,

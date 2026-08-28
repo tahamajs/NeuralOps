@@ -221,6 +221,8 @@ class ContextFusionGate(nn.Module):
         return torch.sigmoid(logits)
 
 
+@ATTENTION_REGISTRY.register("aegis_v6")
+@ATTENTION_REGISTRY.register("aegis_v6_attn")
 class AegisAttentionV3(BaseAttention):
     def __init__(
         self,
@@ -297,6 +299,35 @@ class AegisAttentionV3(BaseAttention):
             model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
             model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
         return cls(config=model_config, pretrained_qkv=pretrained_dict, **kwargs)
+
+    def copy_weights(self, old_attn: Any) -> None:
+        """Transfer and SVD-decompose pretrained weights into Low-Rank factorized projections."""
+        pretrained_dict = self.init_from_pretrained(old_attn)
+        if pretrained_dict:
+            proj_map = {
+                "q_proj": ("q", "q_b"),
+                "k_proj": ("k", "k_b"),
+                "v_proj": ("v", "v_b"),
+                "out_proj": ("o", "o_b"),
+            }
+            for layer_name, (w_key, b_key) in proj_map.items():
+                layer = getattr(self, layer_name, None)
+                w = pretrained_dict.get(w_key)
+                b = pretrained_dict.get(b_key)
+                if layer is not None and w is not None:
+                    with torch.no_grad():
+                        W = w.detach().float()
+                        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                        S = torch.clamp(S, min=1e-6)
+                        r = min(layer.svd_rank, U.size(1), Vt.size(0))
+                        layer.U.data.zero_()
+                        layer.V.data.zero_()
+                        layer.S.data.zero_()
+                        layer.U.data[:, :r] = U[:, :r].to(device=layer.U.device, dtype=layer.U.dtype)
+                        layer.S.data[:r] = S[:r].to(device=layer.S.device, dtype=layer.S.dtype)
+                        layer.V.data[:, :r] = Vt[:r, :].t().to(device=layer.V.device, dtype=layer.V.dtype)
+                        if b is not None and layer.bias is not None:
+                            layer.bias.data.copy_(b.to(device=layer.bias.device, dtype=layer.bias.dtype))
 
     def _reshape(self, x: torch.Tensor) -> torch.Tensor:
         B, N, _ = x.shape
@@ -419,7 +450,6 @@ class AegisAttentionV3(BaseAttention):
         }
 
 
-@ATTENTION_REGISTRY.register("aegis_v6")
 @ATTENTION_REGISTRY.register("aegis_v6_inject")
 def inject_aegis_v6(
     layer: Any = None,

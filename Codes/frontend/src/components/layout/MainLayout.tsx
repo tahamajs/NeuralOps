@@ -182,7 +182,6 @@ export const MainLayout = () => {
     },
     { label: "Launcher", path: "/launcher", icon: <Rocket size={18} /> },
     { label: "Notes", path: "/notes", icon: <BookOpen size={18} /> },
-    { label: "Paper Studio", path: "/paper/editor", icon: <FileText size={18} /> },
     { label: "AI Co-pilot", path: "/agent", icon: <Terminal size={18} /> },
   ];
 

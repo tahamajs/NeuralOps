@@ -103,44 +103,49 @@ class SimpleSSM(BaseAttention):
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
-    def _ssm_scan(
+    def _ssm_scan_parallel(
         self,
         x_ssm: torch.Tensor,
         dt: torch.Tensor,
         A_log: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
-        reverse: bool = False,
-    ) -> torch.Tensor:
-        """Bidirectional diagonal state scan."""
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Memory-efficient linear O(L * d_state) bidirectional diagonal state scan."""
         B, L, D = x_ssm.shape
         d_state = self.d_state
-        A = torch.exp(A_log)  # [D, d_state]
+        A = torch.exp(A_log.clamp(max=10.0))  # [D, d_state]
 
-        h = torch.zeros(B, D, d_state, device=x_ssm.device, dtype=x_ssm.dtype)
-        outputs = []
+        # Discretized transition dA = exp(-dt * A): [B, L, D, d_state]
+        # and input injection u = (dt * x_ssm).unsqueeze(-1): [B, L, D, 1]
+        log_dA = -dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0)  # [B, L, D, d_state]
+        dA = torch.exp(log_dA.clamp(min=-20.0, max=0.0))
+        u = (dt * x_ssm).unsqueeze(-1)  # [B, L, D, 1]
 
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            xt = x_ssm[:, t, :]                                  # [B, D]
-            dt_t = dt[:, t, :].unsqueeze(-1)                     # [B, D, 1]
-            dA = torch.exp(-dt_t * A.unsqueeze(0))                # [B, D, d_state]
-            dB_x = (dt_t * xt.unsqueeze(-1)).repeat(1, 1, d_state) # [B, D, d_state]
+        if mask is not None:
+            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            u = u * mask_float.unsqueeze(-1).unsqueeze(-1)
 
-            h_next = dA * h + dB_x
+        # 1. Forward recurrent scan: h_t = dA_t * h_{t-1} + u_t
+        h_fwd_list = []
+        h_t = torch.zeros(B, D, d_state, device=x_ssm.device, dtype=x_ssm.dtype)
+        for t in range(L):
+            h_t = dA[:, t] * h_t + u[:, t]
+            h_fwd_list.append(h_t)
+        h_fwd = torch.stack(h_fwd_list, dim=1)  # [B, L, D, d_state]
 
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1)
-                h = torch.where(m_t, h_next, h)
-            else:
-                h = h_next
+        # 2. Backward anticausal recurrent scan: h_t = dA_t * h_{t+1} + u_t
+        h_bwd_list = []
+        h_t_bwd = torch.zeros(B, D, d_state, device=x_ssm.device, dtype=x_ssm.dtype)
+        for t in range(L - 1, -1, -1):
+            h_t_bwd = dA[:, t] * h_t_bwd + u[:, t]
+            h_bwd_list.append(h_t_bwd)
+        h_bwd = torch.stack(h_bwd_list[::-1], dim=1)  # [B, L, D, d_state]
 
-            out_t = (h * self.D.unsqueeze(-1)).sum(dim=-1)
-            outputs.append(out_t)
+        # Sum across state dimension and multiply by feedthrough parameter D
+        out_fwd = (h_fwd.sum(dim=-1) * self.D.view(1, 1, D))  # [B, L, D]
+        out_bwd = (h_bwd.sum(dim=-1) * self.D.view(1, 1, D))  # [B, L, D]
 
-        if reverse:
-            outputs.reverse()
-
-        return torch.stack(outputs, dim=1)
+        return out_fwd, out_bwd
 
     def forward(
         self,
@@ -178,10 +183,15 @@ class SimpleSSM(BaseAttention):
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
-        y_fwd = self._ssm_scan(x_ssm, dt, self.A_log, mask=mask_bool, reverse=False)
-        y_bwd = self._ssm_scan(x_ssm, dt, self.A_log, mask=mask_bool, reverse=True)
-        y = 0.5 * (y_fwd + y_bwd)
+        # Parallel bidirectional SSM computation
+        if self.training and x_ssm.requires_grad:
+            out_fwd, out_bwd = torch.utils.checkpoint.checkpoint(
+                self._ssm_scan_parallel, x_ssm, dt, self.A_log, mask_bool, use_reentrant=False
+            )
+        else:
+            out_fwd, out_bwd = self._ssm_scan_parallel(x_ssm, dt, self.A_log, mask_bool)
 
+        y = 0.5 * (out_fwd + out_bwd)
         out = self.out_proj(y * F.silu(z))
 
         if attention_mask is not None and mask_bool is not None:

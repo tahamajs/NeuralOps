@@ -77,6 +77,7 @@ class FactorisedMatrixState(BaseAttention):
         self.W_res = nn.Linear(self.d_model, self.d_model, bias=True)
 
         self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
+        self.use_checkpointing: bool = kwargs.get("use_checkpointing", True)
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights."""
@@ -106,38 +107,33 @@ class FactorisedMatrixState(BaseAttention):
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
     ) -> torch.Tensor:
-        """Sequential factorized matrix scan."""
+        """Vectorized parallel associative matrix scan."""
         B, H, L, d = q.shape
-        S = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
-        z = torch.zeros(B, H, d, 1, device=q.device, dtype=q.dtype)
-        outputs = []
-
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            q_t = q[:, :, t, :]  # [B, H, d]
-            k_t = k[:, :, t, :]  # [B, H, d]
-            v_t = v[:, :, t, :]  # [B, H, d]
-
-            S_next = decay * S + (k_t.unsqueeze(-1) @ v_t.unsqueeze(-2))
-            z_next = decay * z + k_t.unsqueeze(-1)
-
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1, 1)
-                S = torch.where(m_t, S_next, S)
-                z = torch.where(m_t, z_next, z)
-            else:
-                S = S_next
-                z = z_next
-
-            num = (S @ q_t.unsqueeze(-1)).squeeze(-1)
-            denom = (z.transpose(-1, -2) @ q_t.unsqueeze(-1)).squeeze(-1) + 1e-5
-            y_t = num / denom.clamp(min=1e-5)
-            outputs.append(y_t)
+        pos = torch.arange(L, device=q.device, dtype=torch.float32)
+        diff = pos.unsqueeze(1) - pos.unsqueeze(0)  # [L, L], diff[i, j] = i - j
 
         if reverse:
-            outputs.reverse()
+            causal_mask = (diff <= 0).to(q.dtype)
+            abs_diff = (-diff).clamp(min=0.0)
+        else:
+            causal_mask = (diff >= 0).to(q.dtype)
+            abs_diff = diff.clamp(min=0.0)
 
-        return torch.stack(outputs, dim=2)
+        # decay is [1, H, 1, 1] or [H, 1, 1] -> [H, 1, 1]
+        decay_h = decay.squeeze(0) if decay.dim() == 4 else decay
+        decay_matrix = torch.pow(decay_h, abs_diff.unsqueeze(0)) * causal_mask.unsqueeze(0)  # [H, L, L]
+
+        # Dot product scores: [B, H, L, L]
+        scores = (q @ k.transpose(-1, -2)) * decay_matrix.unsqueeze(0)
+
+        if mask is not None:
+            # mask: [B, L] -> [B, 1, 1, L]
+            m = mask.view(B, 1, 1, L).to(q.dtype)
+            scores = scores * m
+
+        denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-5)
+        y = (scores @ v) / denom  # [B, H, L, d]
+        return y
 
     def forward(
         self,
@@ -175,9 +171,17 @@ class FactorisedMatrixState(BaseAttention):
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
-        y_fwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=False)
-        y_bwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=True)
-        y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
+        if self.training and self.use_checkpointing and hidden_states.requires_grad:
+            import torch.utils.checkpoint as cp
+            def _scan_fn(q_, k_, v_, decay_, mask_):
+                yf = self._matrix_scan(q_, k_, v_, decay_, mask=mask_, reverse=False)
+                yb = self._matrix_scan(q_, k_, v_, decay_, mask=mask_, reverse=True)
+                return 0.5 * (yf + yb)
+            y = cp.checkpoint(_scan_fn, q, k, v, decay, mask_bool, use_reentrant=False)
+        else:
+            y_fwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=False)
+            y_bwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=True)
+            y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
 
         y = y.transpose(1, 2).contiguous().view(B, L, D)
 
@@ -204,14 +208,10 @@ def inject_factorised_matrix_state(
     r"""Injection hook for FactorisedMatrixState."""
     d_model = 128
     num_heads = 4
-    rank = getattr(comp_config, "rank", 32) if comp_config else 32
-    if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
-        num_heads = getattr(model_config, "num_attention_heads", 4)
-    elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", 128)
-        num_heads = getattr(layer.config, "num_attention_heads", 4)
-
+    rank = kwargs.pop("rank", getattr(comp_config, "rank", 32) if comp_config else 32)
+    kwargs.pop("d_model", None)
+    kwargs.pop("num_heads", None)
+    kwargs.pop("config", None)
     new_block = FactorisedMatrixState(config=model_config, rank=rank, d_model=d_model, num_heads=num_heads, **kwargs)
     src_attn = old_attn if old_attn is not None else layer
     if src_attn is not None and hasattr(new_block, "copy_weights"):
