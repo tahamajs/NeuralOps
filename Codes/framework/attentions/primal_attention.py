@@ -157,13 +157,9 @@ class PrimalAttention(BaseAttention):
         F2 = torch.matmul(Q_land, K_land.transpose(-2, -1)) * scale
         F3 = torch.matmul(Q_land, K.transpose(-2, -1)) * scale
 
-        # FIX: [Cast to float32 for torch.linalg.pinv to ensure CPU float16/bfloat16 compatibility]
+        # Cast to float32 for torch.linalg.pinv for numerical stability and precision
         F2_f = F2.float() if F2.dtype in (torch.float16, torch.bfloat16) else F2
-        X0 = torch.linalg.pinv(F2_f).to(dtype=F2.dtype)
-        I = torch.eye(F2.size(-1), device=F2.device, dtype=F2.dtype).unsqueeze(0).unsqueeze(0)
-        F2_pinv = X0
-        for _ in range(self.pinv_iters):
-            F2_pinv = torch.matmul(F2_pinv, 2 * I - torch.matmul(F2, F2_pinv))
+        F2_pinv = torch.linalg.pinv(F2_f, rcond=1e-4).to(dtype=F2.dtype)
 
         attn = torch.matmul(F1, torch.matmul(F2_pinv, F3))
 
