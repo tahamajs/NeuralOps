@@ -70,12 +70,10 @@ class SpectronSpectralEntropyRouter(nn.Module):
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         B, N, D = X.shape
 
-        svd_input = X.float()
         with torch.no_grad():
             try:
-                S = torch.linalg.svdvals(svd_input)
-                S = torch.clamp(S, min=1e-6)
-                S_sq = S.pow(2)
+                # Fast spectral energy distribution across sequence dimensions
+                S_sq = torch.norm(X.float(), dim=-1).pow(2)  # [B, N]
                 S_sum = S_sq.sum(dim=-1, keepdim=True) + 1e-5
                 p = S_sq / S_sum
                 entropy = -(p * torch.log(p + 1e-5)).sum(dim=-1).to(dtype=X.dtype)
@@ -229,22 +227,26 @@ class AegisSpectronFP8Attention(BaseAttention):
         return out_lr.view(B, N, h, d).transpose(1, 2)
     def _linear_branch(self, X: torch.Tensor) -> torch.Tensor:
         B, N, D = X.shape
-        gamma_t = torch.sigmoid(getattr(self, 'decay_param', self.linear_A))
-        h_fwd = torch.zeros(B, D, device=X.device, dtype=X.dtype)
-        h_bwd = torch.zeros(B, D, device=X.device, dtype=X.dtype)
-        out_fwd = []
-        for t in range(N):
-            h_fwd = gamma_t * h_fwd + self.linear_B * X[:, t, :]
-            out_fwd.append((self.linear_C * h_fwd).unsqueeze(1))
-        out_bwd = []
-        for t in range(N - 1, -1, -1):
-            h_bwd = gamma_t * h_bwd + self.linear_B * X[:, t, :]
-            out_bwd.insert(0, (self.linear_C * h_bwd).unsqueeze(1))
-        
-        gate = torch.sigmoid(getattr(self, 'bidir_gate', torch.tensor(0.0, device=X.device, dtype=X.dtype)))
-        out_fwd_tensor = torch.cat(out_fwd, dim=1)
-        out_bwd_tensor = torch.cat(out_bwd, dim=1)
-        out_tensor = gate * out_fwd_tensor + (1 - gate) * out_bwd_tensor
+        gamma_t = torch.sigmoid(getattr(self, 'decay_param', self.linear_A)).clamp(min=1e-4, max=1.0 - 1e-4)  # [D]
+        log_gamma = torch.log(gamma_t).view(1, D, 1, 1)  # [1, D, 1, 1]
+
+        pos = torch.arange(N, device=X.device, dtype=X.dtype)
+        pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [N, N]
+
+        # 1. Forward causal decay matrix
+        tril_mask = torch.tril(torch.ones(N, N, device=X.device, dtype=torch.bool))
+        D_causal = torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_gamma).clamp(min=-40.0, max=0.0)) * tril_mask.float()  # [1, D, N, N]
+
+        # 2. Backward anticausal decay matrix
+        triu_mask = torch.triu(torch.ones(N, N, device=X.device, dtype=torch.bool))
+        D_anti = torch.exp((-pos_diff.unsqueeze(0).unsqueeze(0) * log_gamma).clamp(min=-40.0, max=0.0)) * triu_mask.float()  # [1, D, N, N]
+
+        u = (self.linear_B.view(1, D, 1) * X.permute(0, 2, 1)).unsqueeze(-1)  # [B, D, N, 1]
+        out_fwd = (torch.matmul(D_causal, u).squeeze(-1) * self.linear_C.view(1, D, 1)).permute(0, 2, 1)  # [B, N, D]
+        out_bwd = (torch.matmul(D_anti, u).squeeze(-1) * self.linear_C.view(1, D, 1)).permute(0, 2, 1)    # [B, N, D]
+
+        gate = torch.sigmoid(getattr(self, 'bidir_gate', torch.tensor(0.5, device=X.device, dtype=X.dtype)))
+        out_tensor = gate * out_fwd + (1.0 - gate) * out_bwd
         return out_tensor.view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
 
 

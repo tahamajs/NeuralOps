@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -183,7 +184,25 @@ def run_gpu_benchmark_sweep_opt(
     Executes benchmark sweep using multi-worker execution and cached tensors.
     """
     os.makedirs(output_dir, exist_ok=True)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+        torch.backends.cudnn.benchmark = True
+        try:
+            torch.set_float32_matmul_precision('high')
+        except Exception:
+            pass
+        try:
+            torch.cuda.set_per_process_memory_fraction(0.95)
+        except Exception:
+            pass
+        if hasattr(torch.backends.cuda.matmul, "allow_tf32"):
+            torch.backends.cuda.matmul.allow_tf32 = True
+        if hasattr(torch.backends.cudnn, "allow_tf32"):
+            torch.backends.cudnn.allow_tf32 = True
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     
     logger.info("Initializing Optimized Benchmark on %s (Batch: %d, Seq: %d, Workers: %d)...", device, batch_size, seq_len, workers)
 
@@ -236,16 +255,20 @@ def run_gpu_benchmark_sweep_opt(
         for idx, task in enumerate(task_list, 1):
             res = _eval_worker_task(task)
             results.append(res)
-            logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB)",
-                        res.track, res.module_name, res.model_family, res.dataset, res.status, res.forward_latency_ms, res.backward_latency_ms, res.peak_memory_mb)
+            logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB, acc: %.2f%%, f1: %.4f, fid: %.4f, thru: %.1f)",
+                        res.track, res.module_name, res.model_family, res.dataset, res.status,
+                        res.forward_latency_ms, res.backward_latency_ms, res.peak_memory_mb,
+                        res.accuracy_pct, res.f1_score, res.fidelity_score, res.throughput_samples_per_sec)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {pool.submit(_eval_worker_task, t): t for t in task_list}
             for fut in concurrent.futures.as_completed(futures):
                 res = fut.result()
                 results.append(res)
-                logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB)",
-                            res.track, res.module_name, res.model_family, res.dataset, res.status, res.forward_latency_ms, res.backward_latency_ms, res.peak_memory_mb)
+                logger.info("[%s] %s | %s | %s -> %s (fwd: %.2fms, bwd: %.2fms, mem: %.1fMB, acc: %.2f%%, f1: %.4f, fid: %.4f, thru: %.1f)",
+                            res.track, res.module_name, res.model_family, res.dataset, res.status,
+                            res.forward_latency_ms, res.backward_latency_ms, res.peak_memory_mb,
+                            res.accuracy_pct, res.f1_score, res.fidelity_score, res.throughput_samples_per_sec)
 
     elapsed = time.time() - start_time
     total_evals = len(results)
@@ -261,14 +284,14 @@ def main() -> None:
     parser.add_argument("--mode", type=str, default="comprehensive", help="Execution mode (comprehensive, fast, diagnostics)")
     parser.add_argument("--models", type=str, default="bert,roberta,t5")
     parser.add_argument("--datasets", type=str, default="sst2,mrpc")
-    parser.add_argument("--precision", type=str, default="bf16")
-    parser.add_argument("--batch_size", type=int, default=128)
-    parser.add_argument("--seq_len", type=int, default=256)
-    parser.add_argument("--max_steps", type=int, default=5)
+    parser.add_argument("--precision", type=str, default="fp16")
+    parser.add_argument("--batch_size", type=int, default=2048)
+    parser.add_argument("--seq_len", type=int, default=192)
+    parser.add_argument("--max_steps", type=int, default=15)
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--workers", type=int, default=1, help="Number of worker threads")
     parser.add_argument("--tracks", type=str, default=None)
-    parser.add_argument("--output_dir", type=str, default="./results/gpu_server")
+    parser.add_argument("--output_dir", type=str, default="./results/full_validation_v2")
     args = parser.parse_args()
 
     models = [m.strip().lower() for m in args.models.split(",") if m.strip()]

@@ -88,47 +88,47 @@ class KDAAttention(BaseAttention):
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
-    def _kda_scan(
+    def _kda_scan_parallel(
         self,
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
         decay: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
-        reverse: bool = False,
-    ) -> torch.Tensor:
-        """Sequential KDA scan."""
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Parallel KDA scan (zero Python loops)."""
         B, H, L, d = q.shape
-        S = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
-        z = torch.zeros(B, H, d, 1, device=q.device, dtype=q.dtype)
-        outputs = []
 
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            q_t = q[:, :, t, :]  # [B, H, d]
-            k_t = k[:, :, t, :]  # [B, H, d]
-            v_t = v[:, :, t, :]  # [B, H, d]
+        log_decay = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))  # [1, H, 1, 1]
+        pos = torch.arange(L, device=q.device, dtype=q.dtype)
+        pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [L, L]
 
-            S_next = decay * S + (k_t.unsqueeze(-1) @ v_t.unsqueeze(-2))
-            z_next = decay * z + k_t.unsqueeze(-1)
+        # 1. Forward causal decay matrix
+        tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        D_causal = torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)) * tril_mask.float()
 
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1, 1)
-                S = torch.where(m_t, S_next, S)
-                z = torch.where(m_t, z_next, z)
-            else:
-                S = S_next
-                z = z_next
+        # 2. Backward anticausal decay matrix
+        triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        D_anti = torch.exp((-pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)) * triu_mask.float()
 
-            num = (S @ q_t.unsqueeze(-1)).squeeze(-1)
-            denom = (z.transpose(-1, -2) @ q_t.unsqueeze(-1)).squeeze(-1) + 1e-5
-            y_t = num / denom.clamp(min=1e-5)
-            outputs.append(y_t)
+        attn_scores = (q @ k.transpose(-1, -2))  # [B, H, L, L]
 
-        if reverse:
-            outputs.reverse()
+        if mask is not None:
+            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
+            D_causal = D_causal * mask_2d
+            D_anti = D_anti * mask_2d
 
-        return torch.stack(outputs, dim=2)
+        num_fwd = (attn_scores * D_causal) @ v  # [B, H, L, d]
+        num_bwd = (attn_scores * D_anti) @ v    # [B, H, L, d]
+
+        denom_fwd = (attn_scores * D_causal).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+        denom_bwd = (attn_scores * D_anti).sum(dim=-1, keepdim=True)    # [B, H, L, 1]
+
+        y_fwd = num_fwd / (denom_fwd + 1e-4).clamp(min=1e-4)
+        y_bwd = num_bwd / (denom_bwd + 1e-4).clamp(min=1e-4)
+
+        return y_fwd, y_bwd
 
     def forward(
         self,
@@ -157,7 +157,7 @@ class KDAAttention(BaseAttention):
         k = (F.elu(k_raw) + 1.0) / (d ** 0.5)
         v = self.v_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
 
-        decay = torch.sigmoid(self.beta).unsqueeze(0)  # [1, H, 1, 1]
+        decay = torch.sigmoid(self.beta).view(1, H, 1, 1)
 
         mask_bool = None
         if attention_mask is not None:
@@ -166,8 +166,13 @@ class KDAAttention(BaseAttention):
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
-        y_fwd = self._kda_scan(q, k, v, decay, mask=mask_bool, reverse=False)
-        y_bwd = self._kda_scan(q, k, v, decay, mask=mask_bool, reverse=True)
+        if self.training and q.requires_grad:
+            y_fwd, y_bwd = torch.utils.checkpoint.checkpoint(
+                self._kda_scan_parallel, q, k, v, decay, mask_bool, use_reentrant=False
+            )
+        else:
+            y_fwd, y_bwd = self._kda_scan_parallel(q, k, v, decay, mask_bool)
+
         y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
 
         out = y.transpose(1, 2).contiguous().view(B, L, D)

@@ -144,22 +144,27 @@ def sqlite_file_lock(lock_file_path: Union[str, Path], timeout: float = 30.0):
     try:
         lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR)
         # Attempt non-blocking lock with retry loop until timeout expires
-        acquired = False
-        while time.time() - start_time < timeout:
-            try:
-                import fcntl
-                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                acquired = True
-                break
-            except (BlockingIOError, OSError, ImportError):
-                time.sleep(0.05)
+        has_fcntl = True
+        try:
+            import fcntl
+        except ImportError:
+            has_fcntl = False
 
-        if not acquired:
-            try:
-                import fcntl
-                fcntl.flock(lock_fd, fcntl.LOCK_EX)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-                pass
+        if has_fcntl:
+            acquired = False
+            while time.time() - start_time < timeout:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    acquired = True
+                    break
+                except (BlockingIOError, OSError):
+                    time.sleep(0.05)
+
+            if not acquired:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_EX)
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError):
+                    pass
 
         yield
     finally:
@@ -784,3 +789,46 @@ def save_result_json(
         json.dump(_sanitize_json_value(data), f, indent=2, allow_nan=False)
 
     return str(json_path)
+
+
+def save_trajectories_parquet(
+    detailed_results: List[Dict[str, Any]],
+    output_dir: Union[str, Path] = "results/phase2/trajectories",
+) -> Optional[str]:
+    """Writes step-level trajectories (loss, grad_norm, latency) as Apache Parquet."""
+    target_dir = Path(output_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    parquet_path = target_dir / "trajectories.parquet"
+
+    rows = []
+    for entry in detailed_results:
+        mod = entry.get("module_name", "unknown")
+        fam = entry.get("model_family", "unknown")
+        ds = entry.get("dataset", "unknown")
+        run_id = entry.get("run_id", "unknown")
+        trajs = entry.get("trajectories", {})
+        loss_list = trajs.get("loss", [])
+        grad_list = trajs.get("grad_norm", [])
+
+        for step, loss_val in enumerate(loss_list):
+            grad_val = grad_list[step] if step < len(grad_list) else None
+            rows.append({
+                "run_id": run_id,
+                "module_name": mod,
+                "model_family": fam,
+                "dataset": ds,
+                "step": step,
+                "loss": loss_val,
+                "grad_norm": grad_val,
+            })
+
+    try:
+        import pandas as pd
+        df = pd.DataFrame(rows)
+        df.to_parquet(str(parquet_path), engine="pyarrow", index=False)
+        return str(parquet_path)
+    except Exception:
+        json_fallback = target_dir / "trajectories.json"
+        with open(json_fallback, "w", encoding="utf-8") as f:
+            json.dump(rows, f, indent=2)
+        return str(json_fallback)
