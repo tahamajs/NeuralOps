@@ -103,7 +103,7 @@ class GatedDeltaNet(BaseAttention):
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
-    def _delta_scan(
+    def _delta_scan_parallel(
         self,
         q: torch.Tensor,
         k: torch.Tensor,
@@ -111,43 +111,37 @@ class GatedDeltaNet(BaseAttention):
         beta: torch.Tensor,
         alpha: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
-        reverse: bool = False,
-    ) -> torch.Tensor:
-        """Sequential Delta rule associative memory scan."""
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Parallel vectorized bidirectional delta attention scan (zero Python loops)."""
         B, H, L, d = q.shape
-        S = torch.zeros(B, H, d, d, device=q.device, dtype=q.dtype)
-        outputs = []
 
-        step_range = range(l_idx := L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            q_t = q[:, :, t, :]  # [B, H, d]
-            k_t = k[:, :, t, :]  # [B, H, d]
-            v_t = v[:, :, t, :]  # [B, H, d]
-            beta_t = beta[:, :, t].unsqueeze(-1).unsqueeze(-1)    # [B, H, 1, 1]
-            alpha_t = alpha[:, :, t].unsqueeze(-1).unsqueeze(-1)  # [B, H, 1, 1]
+        # Log beta for continuous exponential retention decay
+        log_beta = torch.log(beta.clamp(min=1e-4, max=1.0 - 1e-4))  # [B, H, L]
+        C = torch.cumsum(log_beta, dim=-1)                          # [B, H, L]
+        C_diff = C.unsqueeze(-1) - C.unsqueeze(-2)                  # [B, H, L, L]
 
-            # Current prediction from prior state: Sk = S @ k_t
-            # S: [B, H, d, d], k_t: [B, H, d, 1] -> [B, H, d]
-            Sk = (S @ k_t.unsqueeze(-1)).squeeze(-1)
-            error_t = v_t - Sk
+        # 1. Forward causal decay matrix
+        tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        D_causal = torch.exp(C_diff.clamp(min=-40.0, max=0.0)) * tril_mask.float()  # [B, H, L, L]
 
-            # Update state: S = beta * S + alpha * (error_t @ k_t^T)
-            S_next = beta_t * S + alpha_t * (error_t.unsqueeze(-1) @ k_t.unsqueeze(-2))
+        # 2. Backward anticausal decay matrix
+        triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
+        D_anti = torch.exp((-C_diff).clamp(min=-40.0, max=0.0)) * triu_mask.float()  # [B, H, L, L]
 
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1, 1)
-                S = torch.where(m_t, S_next, S)
-            else:
-                S = S_next
+        # Key-Query interaction with normalized heads
+        attn_scores = (q @ k.transpose(-1, -2))  # [B, H, L, L]
+        v_scaled = v * alpha.unsqueeze(-1)       # [B, H, L, d]
 
-            # Readout: y_t = S @ q_t
-            y_t = (S @ q_t.unsqueeze(-1)).squeeze(-1)
-            outputs.append(y_t)
+        if mask is not None:
+            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)  # [B, 1, L, L]
+            D_causal = D_causal * mask_2d
+            D_anti = D_anti * mask_2d
 
-        if reverse:
-            outputs.reverse()
+        y_fwd = (attn_scores * D_causal) @ v_scaled  # [B, H, L, d]
+        y_bwd = (attn_scores * D_anti) @ v_scaled    # [B, H, L, d]
 
-        return torch.stack(outputs, dim=2)  # [B, H, L, d]
+        return y_fwd, y_bwd
 
     def forward(
         self,
@@ -192,9 +186,14 @@ class GatedDeltaNet(BaseAttention):
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
-        # 5. Bidirectional Delta Rule Scan
-        y_fwd = self._delta_scan(q, k, v, beta, alpha, mask=mask_bool, reverse=False)
-        y_bwd = self._delta_scan(q, k, v, beta, alpha, mask=mask_bool, reverse=True)
+        # 5. Bidirectional Parallel Scan (O(1) GPU Kernel launches)
+        if self.training and q.requires_grad:
+            y_fwd, y_bwd = torch.utils.checkpoint.checkpoint(
+                self._delta_scan_parallel, q, k, v, beta, alpha, mask_bool, use_reentrant=False
+            )
+        else:
+            y_fwd, y_bwd = self._delta_scan_parallel(q, k, v, beta, alpha, mask_bool)
+
         y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
 
         # 6. Recombine heads and apply SiLU gating

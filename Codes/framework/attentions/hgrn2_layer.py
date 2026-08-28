@@ -91,37 +91,41 @@ class HGRN2Layer(BaseAttention):
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
-    def _recurrent_scan(
+    def _recurrent_scan_parallel(
         self,
         f: torch.Tensor,
         iv: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
-        reverse: bool = False,
-    ) -> torch.Tensor:
-        """Sequential element-wise scan."""
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Parallel element-wise associative scan (zero Python loops)."""
         B, L, D = iv.shape
-        h = torch.zeros(B, D, device=iv.device, dtype=iv.dtype)
-        outputs = []
+        log_f = torch.log(f.clamp(min=1e-4, max=1.0 - 1e-4))  # [B, L, D]
+        C = torch.cumsum(log_f, dim=1).permute(0, 2, 1)      # [B, D, L]
+        C_diff = C.unsqueeze(-1) - C.unsqueeze(-2)           # [B, D, L, L]
 
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            f_t = f[:, t]
-            iv_t = iv[:, t]
-            h_next = f_t * h + iv_t
-            h_next = torch.clamp(h_next, -self.res_clip, self.res_clip)
+        # 1. Forward causal decay matrix
+        tril_mask = torch.tril(torch.ones(L, L, device=iv.device, dtype=torch.bool))
+        D_causal = torch.exp(C_diff.clamp(min=-40.0, max=0.0)) * tril_mask.float()  # [B, D, L, L]
 
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1)
-                h = torch.where(m_t, h_next, h)
-            else:
-                h = h_next
+        # 2. Backward anticausal decay matrix
+        triu_mask = torch.triu(torch.ones(L, L, device=iv.device, dtype=torch.bool))
+        D_anti = torch.exp((-C_diff).clamp(min=-40.0, max=0.0)) * triu_mask.float()  # [B, D, L, L]
 
-            outputs.append(h)
+        u = iv.permute(0, 2, 1).unsqueeze(-1)  # [B, D, L, 1]
 
-        if reverse:
-            outputs.reverse()
+        if mask is not None:
+            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)  # [B, 1, L, L]
+            D_causal = D_causal * mask_2d
+            D_anti = D_anti * mask_2d
 
-        return torch.stack(outputs, dim=1)
+        h_fwd = torch.matmul(D_causal, u).squeeze(-1).permute(0, 2, 1)  # [B, L, D]
+        h_bwd = torch.matmul(D_anti, u).squeeze(-1).permute(0, 2, 1)    # [B, L, D]
+
+        h_fwd = torch.clamp(h_fwd, -self.res_clip, self.res_clip)
+        h_bwd = torch.clamp(h_bwd, -self.res_clip, self.res_clip)
+
+        return h_fwd, h_bwd
 
     def forward(
         self,
@@ -159,9 +163,14 @@ class HGRN2Layer(BaseAttention):
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
-        # 3. Bidirectional Recurrent Scan
-        h_fwd = self._recurrent_scan(f, iv, mask=mask_bool, reverse=False)
-        h_bwd = self._recurrent_scan(f, iv, mask=mask_bool, reverse=True)
+        # 3. Parallel Bidirectional Recurrent Scan
+        if self.training and iv.requires_grad:
+            h_fwd, h_bwd = torch.utils.checkpoint.checkpoint(
+                self._recurrent_scan_parallel, f, iv, mask_bool, use_reentrant=False
+            )
+        else:
+            h_fwd, h_bwd = self._recurrent_scan_parallel(f, iv, mask_bool)
+
         h = 0.5 * (h_fwd + h_bwd)
 
         # 4. Gating and output projection

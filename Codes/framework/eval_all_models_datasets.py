@@ -43,6 +43,8 @@ from transformers import (
 )
 
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+import framework.attentions
+import framework.compression_engine
 from framework.core.attention_utils import inject_attention
 from framework.utils.replace_attention import UniversalAttentionWrapper
 
@@ -430,6 +432,20 @@ def apply_module_to_model(
     """
     orig_params = sum(p.numel() for p in model.parameters())
 
+    # Auto-detect module category if misclassified
+    if module_name in ATTENTION_REGISTRY:
+        module_type = "attention"
+    elif module_name in COMPRESSOR_REGISTRY:
+        module_type = "compressor"
+    else:
+        # Check files on disk
+        cur_file = Path(__file__).resolve()
+        codes_dir = cur_file.parent.parent
+        if (codes_dir / "framework" / "compression_engine" / f"{module_name}.py").exists():
+            module_type = "compressor"
+        elif (codes_dir / "framework" / "attentions" / f"{module_name}.py").exists():
+            module_type = "attention"
+
     if module_type == "attention":
         # Resolve attention class from registry
         if module_name not in ATTENTION_REGISTRY:
@@ -440,7 +456,7 @@ def apply_module_to_model(
                 logger.warning("Could not import attention module '%s': %s", module_name, e)
 
         if module_name in ATTENTION_REGISTRY:
-            inject_attention(model, module_name, rank=rank, copy_weights=False)
+            inject_attention(model, module_name, rank=rank, copy_weights=True)
         else:
             try:
                 import importlib
@@ -635,11 +651,15 @@ def get_dataset_batch(
 
             if val_tokenized is not None and len(val_tokenized) > 0:
                 is_cuda = (device.type == "cuda")
+                import os, sys
+                num_workers_val = min(2, os.cpu_count() or 1)
                 loader = torch.utils.data.DataLoader(
                     val_tokenized,
                     batch_size=batch_size,
                     shuffle=False,
-                    pin_memory=is_cuda,
+                    pin_memory=False,
+                    num_workers=num_workers_val,
+                    prefetch_factor=2 if num_workers_val > 0 else None,
                 )
                 raw_batch = next(iter(loader))
                 batch = {
@@ -697,6 +717,77 @@ def get_base_model_cached(
     return cloned_model, cfg
 
 # -----------------------------------------------------------------------------
+# Adaptive Memory-Aware Batch Sizer (Proactive Memory Probe)
+# -----------------------------------------------------------------------------
+
+def probe_optimal_batch_size(
+    model: nn.Module,
+    model_family: str,
+    dataset: str,
+    seq_len: int,
+    device: torch.device,
+    target_vram_ratio: float = 0.50,
+    max_batch_cap: int = 64,
+    min_batch_floor: int = 8,
+    allow_synthetic: bool = True,
+) -> int:
+    """
+    Performs a fast memory probe on CUDA with a tiny batch (B=4).
+    Measures peak VRAM during forward pass, calculates marginal VRAM per sample,
+    and returns the optimal batch size that safely utilizes target_vram_ratio of total VRAM.
+    """
+    if device.type != "cuda":
+        return 64
+
+    torch.cuda.synchronize(device)
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats(device)
+
+    idle_vram = torch.cuda.memory_allocated(device)
+    total_vram = torch.cuda.get_device_properties(device).total_memory
+    target_usable_vram = total_vram * target_vram_ratio
+
+    probe_b = 4
+    num_labels = 1 if dataset.lower() == "stsb" else 2
+    try:
+        probe_batch = get_dataset_batch(
+            dataset, model_family, probe_b, seq_len,
+            num_labels=num_labels, device=device, allow_synthetic=allow_synthetic
+        )
+        filtered_batch = _filter_batch(probe_batch, model_family, model)
+
+        with torch.amp.autocast('cuda'):
+            out = model(**filtered_batch)
+
+        torch.cuda.synchronize(device)
+        peak_vram = torch.cuda.max_memory_allocated(device)
+
+        activation_vram = max(1024 * 1024.0, peak_vram - idle_vram)
+        mem_per_sample = activation_vram / float(probe_b)
+
+        remaining_vram = max(1024 * 1024.0, target_usable_vram - idle_vram)
+        estimated_max_b = int(remaining_vram / mem_per_sample)
+
+        # Snap to powers of 2 for tensor core efficiency
+        powers_of_2 = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        selected_b = min_batch_floor
+        for p in powers_of_2:
+            if p <= estimated_max_b and p <= max_batch_cap:
+                selected_b = p
+
+        logger.info("Adaptive Batch Sizer: probe peak=%.1fMB, per_sample=%.2fMB -> auto-selected batch_size=%d",
+                    peak_vram / (1024*1024), mem_per_sample / (1024*1024), selected_b)
+        return max(min_batch_floor, min(selected_b, max_batch_cap))
+    except Exception as e:
+        logger.warning("Memory probe failed (%s), defaulting to batch size 128", e)
+        return 128
+    finally:
+        gc.collect()
+        torch.cuda.empty_cache()
+
+
+# -----------------------------------------------------------------------------
 # Non-Blocking CUDA Event Timed Single Combination Evaluator
 # -----------------------------------------------------------------------------
 
@@ -706,6 +797,7 @@ def evaluate_single_combination_opt(
     device: torch.device = torch.device("cpu"), results_dir: str = "./results/gpu_server", allow_synthetic: bool = False,
 ) -> BenchmarkResult:
     import numpy as np
+    import gc
     from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
     from scipy.stats import pearsonr, spearmanr
     from torch.profiler import profile, record_function, ProfilerActivity
@@ -717,7 +809,7 @@ def evaluate_single_combination_opt(
     )
     
     current_batch_size = batch_size
-    max_retries = 5
+    max_retries = 8
     retry_count = 0
     success = False
 
@@ -747,9 +839,23 @@ def evaluate_single_combination_opt(
             model = model.to(device)
             if hasattr(model, "train"):
                 model.train()
+
+            # --- Adaptive Memory Probe on Initial Attempt ---
+            if retry_count == 0 and is_cuda:
+                current_batch_size = probe_optimal_batch_size(
+                    model=model,
+                    model_family=model_family,
+                    dataset=dataset,
+                    seq_len=seq_len,
+                    device=device,
+                    target_vram_ratio=0.80,
+                    max_batch_cap=min(batch_size, 1024) if batch_size > 0 else 1024,
+                    min_batch_floor=4,
+                    allow_synthetic=allow_synthetic,
+                )
             
             batch = get_dataset_batch(dataset, model_family, current_batch_size, seq_len, num_labels=num_labels, device=device, allow_synthetic=allow_synthetic)
-            filtered_batch = {k: v for k, v in batch.items() if k in ["input_ids", "attention_mask", "labels", "decoder_input_ids"]}
+            filtered_batch = _filter_batch(batch, model_family, model)
 
             # --- FLOPs Profiling (Warmup) ---
             flops_macs = 0.0
@@ -862,11 +968,12 @@ def evaluate_single_combination_opt(
                     with torch.no_grad():
                         for val_batch in loader:
                             inputs = {("labels" if k == "label" else k): (v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v) for k, v in val_batch.items()}
-                            filtered_inputs = {k: v for k, v in inputs.items() if k in ["input_ids", "attention_mask", "labels", "decoder_input_ids"]}
+                            filtered_inputs = _filter_batch(inputs, model_family, model)
+                            filtered_base_inputs = _filter_batch(inputs, model_family, baseline_model)
                             
                             with torch.amp.autocast('cuda') if is_cuda else contextlib.nullcontext():
                                 out = model(**filtered_inputs)
-                                base_out = baseline_model(**filtered_inputs)
+                                base_out = baseline_model(**filtered_base_inputs)
                             
                             logits, _ = _extract_logits_and_loss(out, num_labels=num_labels, labels=inputs.get("labels"))
                             base_logits, _ = _extract_logits_and_loss(base_out, num_labels=num_labels, labels=inputs.get("labels"))
@@ -923,6 +1030,8 @@ def evaluate_single_combination_opt(
                 current_batch_size = max(1, current_batch_size // 2)
                 retry_count += 1
                 if device.type == "cuda":
+                    import gc
+                    gc.collect()
                     torch.cuda.empty_cache()
             else:
                 logger.error("Evaluation FAILED for %s on %s/%s: %s", module_name, model_family, dataset, e)

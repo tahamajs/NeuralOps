@@ -202,16 +202,38 @@ class SVDMamba(BaseAttention):
 
         A = -torch.exp(self.A_log)                # [d_state]
 
-        h = x_conv.new_zeros(batch, self.inner_dim, self.d_state)
-        outputs = []
-        for t in range(seqlen):
-            dt = delta[:, t]                      # [B, inner]
-            decay = torch.exp(dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0))
-            input_term = dt.unsqueeze(-1) * B[:, t, None, :] * x_conv[:, t, :, None]
-            h = decay * h + input_term
-            y_t = (C[:, t, None, :] * h).sum(dim=-1)
-            outputs.append(y_t)
-        y = torch.stack(outputs, dim=1)           # [B, L, inner]
+        # Vectorized / Ultra-Light Memory-Efficient Chunked Associative Scan (O(L*D*S) memory)
+        log_alpha = delta.unsqueeze(-1) * A.view(1, 1, 1, -1) # [B, L, inner, d_state]
+        u = delta.unsqueeze(-1) * B.unsqueeze(2) * x_conv.unsqueeze(-1) # [B, L, inner, d_state]
+
+        chunk_size = 16
+        num_chunks = (seqlen + chunk_size - 1) // chunk_size
+        h_running = x_conv.new_zeros(batch, self.inner_dim, self.d_state)
+        y_chunks = []
+
+        for c in range(num_chunks):
+            s_idx = c * chunk_size
+            e_idx = min(seqlen, s_idx + chunk_size)
+
+            u_c = u[:, s_idx:e_idx] # [B, K, inner, d_state]
+            log_a_c = log_alpha[:, s_idx:e_idx]
+            lambda_c = torch.cumsum(log_a_c, dim=1) # [B, K, inner, d_state]
+
+            decay_c = torch.exp(lambda_c)
+            decay_inv_c = torch.exp(-lambda_c)
+
+            # Intra-chunk state: decay_c * cumsum(decay_inv_c * u_c)
+            h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
+
+            # Inter-chunk state: decay_c * h_running
+            h_inter = decay_c * h_running.unsqueeze(1)
+
+            h_chunk = h_intra + h_inter # [B, K, inner, d_state]
+            y_c = (C[:, s_idx:e_idx].unsqueeze(2) * h_chunk).sum(dim=-1)
+            y_chunks.append(y_c)
+            h_running = h_chunk[:, -1]
+
+        y = torch.cat(y_chunks, dim=1)           # [B, L, inner]
 
         y = y + self.D * x_conv                    # skip connection
         y = y * F.silu(z)                          # gate
