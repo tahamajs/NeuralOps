@@ -168,7 +168,7 @@ class ViGAttention(BaseAttention):
         q_row_lin: torch.Tensor = F.elu(q_row) + 1.0
         k_row_lin: torch.Tensor = F.elu(k_row) + 1.0
 
-        valid_grid: torch.Tensor = valid.view(B, H, W).permute(0, 2, 1)
+        valid_grid: torch.Tensor = valid.reshape(B, H, W).permute(0, 2, 1)
         valid_row: torch.Tensor = (
             valid_grid.unsqueeze(1)
             .expand(B, Hh, W, H)
