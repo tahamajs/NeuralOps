@@ -110,33 +110,40 @@ class SimpleSSM(BaseAttention):
         A_log: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Parallel vectorized bidirectional diagonal state scan."""
+        """Memory-efficient linear O(L * d_state) bidirectional diagonal state scan."""
         B, L, D = x_ssm.shape
+        d_state = self.d_state
         A = torch.exp(A_log.clamp(max=10.0))  # [D, d_state]
 
-        # Continuous timescale discretization log_dA: [B, L, D, d_state]
-        log_dA = -dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0)
-        C = torch.cumsum(log_dA, dim=1).permute(0, 2, 3, 1)  # [B, D, d_state, L]
-        C_diff = C.unsqueeze(-1) - C.unsqueeze(-2)          # [B, D, d_state, L, L]
-
-        # 1. Forward causal decay matrix summed across diagonal states
-        tril_mask = torch.tril(torch.ones(L, L, device=x_ssm.device, dtype=torch.bool))
-        decay_fwd = (torch.exp(C_diff.clamp(min=-40.0, max=0.0)) * tril_mask.float()).sum(dim=2)  # [B, D, L, L]
-
-        # 2. Backward anticausal decay matrix summed across diagonal states
-        triu_mask = torch.triu(torch.ones(L, L, device=x_ssm.device, dtype=torch.bool))
-        decay_bwd = (torch.exp((-C_diff).clamp(min=-40.0, max=0.0)) * triu_mask.float()).sum(dim=2)  # [B, D, L, L]
-
-        u = (dt * x_ssm).permute(0, 2, 1).unsqueeze(-1)  # [B, D, L, 1]
+        # Discretized transition dA = exp(-dt * A): [B, L, D, d_state]
+        # and input injection u = (dt * x_ssm).unsqueeze(-1): [B, L, D, 1]
+        log_dA = -dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0)  # [B, L, D, d_state]
+        dA = torch.exp(log_dA.clamp(min=-20.0, max=0.0))
+        u = (dt * x_ssm).unsqueeze(-1)  # [B, L, D, 1]
 
         if mask is not None:
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
-            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)  # [B, 1, L, L]
-            decay_fwd = decay_fwd * mask_2d
-            decay_bwd = decay_bwd * mask_2d
+            u = u * mask_float.unsqueeze(-1).unsqueeze(-1)
 
-        out_fwd = (torch.matmul(decay_fwd, u).squeeze(-1) * self.D.view(1, D, 1)).permute(0, 2, 1)  # [B, L, D]
-        out_bwd = (torch.matmul(decay_bwd, u).squeeze(-1) * self.D.view(1, D, 1)).permute(0, 2, 1)  # [B, L, D]
+        # 1. Forward recurrent scan: h_t = dA_t * h_{t-1} + u_t
+        h_fwd_list = []
+        h_t = torch.zeros(B, D, d_state, device=x_ssm.device, dtype=x_ssm.dtype)
+        for t in range(L):
+            h_t = dA[:, t] * h_t + u[:, t]
+            h_fwd_list.append(h_t)
+        h_fwd = torch.stack(h_fwd_list, dim=1)  # [B, L, D, d_state]
+
+        # 2. Backward anticausal recurrent scan: h_t = dA_t * h_{t+1} + u_t
+        h_bwd_list = []
+        h_t_bwd = torch.zeros(B, D, d_state, device=x_ssm.device, dtype=x_ssm.dtype)
+        for t in range(L - 1, -1, -1):
+            h_t_bwd = dA[:, t] * h_t_bwd + u[:, t]
+            h_bwd_list.append(h_t_bwd)
+        h_bwd = torch.stack(h_bwd_list[::-1], dim=1)  # [B, L, D, d_state]
+
+        # Sum across state dimension and multiply by feedthrough parameter D
+        out_fwd = (h_fwd.sum(dim=-1) * self.D.view(1, 1, D))  # [B, L, D]
+        out_bwd = (h_bwd.sum(dim=-1) * self.D.view(1, 1, D))  # [B, L, D]
 
         return out_fwd, out_bwd
 
