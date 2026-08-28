@@ -149,7 +149,12 @@ def get_completed_results() -> List[Dict[str, Any]]:
     error_map = {}
     
     # Check active verified run summary.csv first
-    if (PROJECT_DIR / "results" / "run_final_verified").exists() or (PROJECT_DIR / "run_final_verified.log").exists():
+    if (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "final_paper_run" / "summary.csv",
+            Path("results/final_paper_run/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_final_verified").exists() or (PROJECT_DIR / "run_final_verified.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_final_verified" / "summary.csv",
             Path("results/run_final_verified/summary.csv"),
