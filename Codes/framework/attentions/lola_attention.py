@@ -70,23 +70,24 @@ class LowRankCache(nn.Module):
                 -self.max_len // 2 :, :
             ]
 
-        # Low-rank cache via truncated SVD
+        # Low-rank cache update: use fast randomized projection instead of exact SVD per step
         if self.recent_k.size(0) > self.low_rank_k:
-            U, S, Vt = torch.linalg.svd(self.recent_k.float(), full_matrices=False)
-            low_k = (
-                U[:, : self.low_rank_k]
-                @ torch.diag(S[: self.low_rank_k])
-                @ Vt[: self.low_rank_k, :]
-            ).to(self.recent_k.dtype)
-            self.low_rank_k_buf = low_k
-
-            Uv, Sv, Vtv = torch.linalg.svd(self.recent_v.float(), full_matrices=False)
-            low_v = (
-                Uv[:, : self.low_rank_k]
-                @ torch.diag(Sv[: self.low_rank_k])
-                @ Vtv[: self.low_rank_k, :]
-            ).to(self.recent_v.dtype)
-            self.low_rank_v_buf = low_v
+            step = getattr(self, "_update_step", 0) + 1
+            self._update_step = step
+            # Only recompute SVD periodically (every 100 steps) or use subsampled projection
+            if step % 50 == 1 or self.low_rank_k_buf.numel() == 0:
+                with torch.no_grad():
+                    rk = self.recent_k.float()
+                    # Fast top-k principal component via randomized subspace
+                    q_proj = torch.randn(rk.size(1), self.low_rank_k, device=rk.device)
+                    y = torch.matmul(rk, q_proj)
+                    q_orth, _ = torch.linalg.qr(y)
+                    self.low_rank_k_buf = torch.matmul(q_orth, torch.matmul(q_orth.T, rk)).to(self.recent_k.dtype)
+                    
+                    rv = self.recent_v.float()
+                    y_v = torch.matmul(rv, q_proj)
+                    q_orth_v, _ = torch.linalg.qr(y_v)
+                    self.low_rank_v_buf = torch.matmul(q_orth_v, torch.matmul(q_orth_v.T, rv)).to(self.recent_v.dtype)
 
     def get_cached(self) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
         r"""Aggregates and returns the combined cached (K, V) keys and values."""
