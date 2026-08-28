@@ -29,12 +29,24 @@ try:
 except ImportError:
     psutil = None
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 8080
+import argparse
+
+def _parse_cli_args():
+    parser = argparse.ArgumentParser(description="Real-Time Live Dashboard & Monitoring Server")
+    parser.add_argument("--port", type=int, default=8080, help="Port to bind server")
+    parser.add_argument("--results_dir", type=str, default=None, help="Explicit results directory to monitor")
+    parser.add_argument("--log_file", type=str, default=None, help="Explicit log file to parse")
+    parser.add_argument("pos_port", nargs="?", type=int, default=None, help="Positional port fallback")
+    args, _ = parser.parse_known_args()
+    port = args.port if args.pos_port is None else args.pos_port
+    return port, args.results_dir, args.log_file
+
+PORT, CLI_RESULTS_DIR, CLI_LOG_FILE = _parse_cli_args()
 WORKDIR = Path(__file__).resolve().parent
 PROJECT_DIR = WORKDIR.parent.parent
 WEB_DIR = WORKDIR / "web"
-MASTER_LOG = PROJECT_DIR / "comprehensive_run_detached.log"
-RESULTS_DIR = WORKDIR / "results" / "gpu_server"
+MASTER_LOG = Path(CLI_LOG_FILE) if CLI_LOG_FILE else PROJECT_DIR / "comprehensive_run_detached.log"
+RESULTS_DIR = Path(CLI_RESULTS_DIR) if CLI_RESULTS_DIR else WORKDIR / "results" / "gpu_server"
 
 # Cache synchronization
 _cache_lock = threading.Lock()
@@ -734,12 +746,17 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     Parses run_quality_fast.log and results/run_quality_fast/summary.csv
     to provide per-module, per-seed, per-epoch live status, metrics, and ETA.
     """
-    is_screening_all = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists() or (PROJECT_DIR / "retest_broken.log").exists()
+    is_final_paper = (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists() or (PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log").exists()
+    is_screening_all = is_final_paper or (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists() or (PROJECT_DIR / "retest_broken.log").exists()
     is_screening_ep1 = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
     is_screening_fast = is_screening_ep1 or (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
     is_screening = is_screening_all or is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
 
     log_candidates = [
+        PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log",
+        Path("results/final_paper_run/sweep_stdout.log"),
+        PROJECT_DIR / "final_paper_run.log",
+        Path("final_paper_run.log"),
         PROJECT_DIR / "run_final_verified.log",
         Path("run_final_verified.log"),
         PROJECT_DIR / "run_quality_recovery.log",
@@ -761,6 +778,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
         PROJECT_DIR / "run_quality_fast.log",
         Path("run_quality_fast.log"),
     ]
+    if CLI_LOG_FILE:
+        log_candidates.insert(0, Path(CLI_LOG_FILE))
     log_file = None
     for lc in log_candidates:
         if lc.exists() and lc.stat().st_size > 0:
@@ -768,6 +787,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "final_paper_run" / "summary.csv",
+        Path("results/final_paper_run/summary.csv"),
         PROJECT_DIR / "results" / "run_final_verified" / "summary.csv",
         Path("results/run_final_verified/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_recovery" / "summary.csv",
@@ -1379,10 +1400,11 @@ class RunManager:
         runs = []
         is_active = False
 
-        # 1. Check Active Run (Prioritize run_quality_fast)
+        # 1. Check Active Run (Prioritize final_paper_run)
         try:
             active_results = get_completed_results()
-            screen_all_exists = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists()
+            final_paper_exists = (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists() or (PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log").exists()
+            screen_all_exists = final_paper_exists or (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists()
             screen_ep1_exists = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
             screen_fast_exists = (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
             screen_exists = screen_all_exists or screen_fast_exists or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
@@ -1929,8 +1951,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         # 5. Existing LaTeX & Plot Data Endpoints
         if req_path == "/api/export/latex-table":
-            results = get_completed_results()
-            latex_code = generate_latex_table(results)
+            try:
+                results = get_completed_results()
+                latex_code = generate_latex_table(results)
+            except Exception as e:
+                latex_code = f"% Error generating LaTeX table: {e}\n\\begin{{table}}\n\\caption{{Results}}\n\\end{{table}}"
             payload = json.dumps(sanitize_json({"latex": latex_code})).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
@@ -1941,8 +1966,12 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if req_path == "/api/export/plot-data":
-            results = get_completed_results()
-            plot_payload = json.dumps(sanitize_json(generate_plot_data(results)), indent=2).encode("utf-8")
+            try:
+                results = get_completed_results()
+                plot_data = generate_plot_data(results)
+            except Exception as e:
+                plot_data = {"error": str(e), "raw_series": []}
+            plot_payload = json.dumps(sanitize_json(plot_data), indent=2).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1971,6 +2000,37 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
             return
+
+        # 7. Static Web Files Delivery
+        if req_path in ("/", ""):
+            req_path = "/index.html"
+
+        file_path = WEB_DIR / req_path.lstrip("/")
+        if file_path.exists() and file_path.is_file():
+            mime_map = {
+                ".html": "text/html; charset=utf-8",
+                ".js": "application/javascript; charset=utf-8",
+                ".css": "text/css; charset=utf-8",
+                ".json": "application/json; charset=utf-8",
+                ".png": "image/png",
+                ".svg": "image/svg+xml",
+                ".jpg": "image/jpeg",
+                ".ico": "image/x-icon",
+            }
+            content_type = mime_map.get(file_path.suffix.lower(), "application/octet-stream")
+            try:
+                with open(file_path, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+            except Exception as e:
+                self.send_error(500, f"Error reading file: {e}")
+                return
 
         super().do_GET()
 
