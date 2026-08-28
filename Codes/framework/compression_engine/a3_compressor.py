@@ -216,6 +216,7 @@ class A3Compressor(BaseCompressor):
         device = module.weight.device
         dtype = module.weight.dtype
         W = module.weight.data.float()
+        r = min(self.rank, in_f, out_f)
 
         # Perform direct SVD on W
         try:
