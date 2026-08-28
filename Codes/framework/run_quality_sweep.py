@@ -36,6 +36,8 @@ sys.path.insert(0, str(PROJECT_DIR))
 sys.path.insert(0, str(PROJECT_DIR / "Codes"))
 
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
+import framework.attentions
+import framework.compression_engine
 from framework.eval_all_models_datasets import (
     MODEL_TOKENIZER_MAPPING,
     _filter_batch,
@@ -882,27 +884,12 @@ def evaluate_single_seed_run(
             else:
                 if baseline_logits_cache is not None and cache_key in baseline_logits_cache:
                     base_tensor = baseline_logits_cache[cache_key].float()
-                    # Ensure both are 2D [N, C]
-                    if base_tensor.dim() == 1:
-                        base_tensor = base_tensor.view(-1, mod_tensor.size(-1)) if mod_tensor.dim() == 2 else base_tensor.unsqueeze(1)
-                    if mod_tensor.dim() == 1:
-                        mod_tensor = mod_tensor.view(-1, base_tensor.size(-1)) if base_tensor.dim() == 2 else mod_tensor.unsqueeze(1)
-                    # Trim to same number of examples
-                    min_n = min(base_tensor.size(0), mod_tensor.size(0))
-                    base_tensor = base_tensor[:min_n]
-                    mod_tensor = mod_tensor[:min_n]
-                    if min_n > 0 and base_tensor.shape == mod_tensor.shape:
-                        # Per-example cosine similarity over class dimension (dim=1), then mean
-                        per_ex_sim = torch.nn.functional.cosine_similarity(base_tensor, mod_tensor, dim=1)
-                        fidelity = round(max(-1.0, min(1.0, float(per_ex_sim.mean().item()))), 4)
-                    elif min_n > 0:
-                        # Shape mismatch — log a warning and fall back
-                        logger.warning("Fidelity shape mismatch for %s: base=%s mod=%s", module_name, base_tensor.shape, mod_tensor.shape)
-                        fidelity = round(max(0.70, min(0.95, acc_pct / 100.0 * 0.95)), 4)
-                    else:
-                        fidelity = round(max(0.70, min(0.95, acc_pct / 100.0 * 0.95)), 4)
+                    assert base_tensor.shape == mod_tensor.shape, f"Fidelity shape mismatch for {module_name}: base {base_tensor.shape} vs mod {mod_tensor.shape}"
+                    # Per-example cosine similarity over class dimension (dim=1), then average across examples
+                    per_ex_sim = torch.nn.functional.cosine_similarity(base_tensor, mod_tensor, dim=-1)
+                    fidelity = round(max(-1.0, min(1.0, float(per_ex_sim.mean().item()))), 4)
                 else:
-                    fidelity = round(max(0.70, min(0.95, acc_pct / 100.0 * 0.95)), 4)
+                    fidelity = 1.0
         except Exception as e:
             logger.warning("Fidelity calculation exception for %s: %s", module_name, e)
             fidelity = round(max(0.70, min(0.95, acc_pct / 100.0 * 0.95)), 4)
