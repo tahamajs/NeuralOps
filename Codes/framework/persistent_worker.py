@@ -70,7 +70,8 @@ def _persistent_worker_loop(
         except Exception:
             pass
 
-    w_logger.info(f"Persistent worker initializing on {device_str} for {model_family}/{dataset}...")
+    import framework.attentions
+    import framework.compression_engine
 
     # 1. Load and cache pre-tokenized dataset tensors once
     from framework.data.cached_tensors import get_cached_tokenized_dataset

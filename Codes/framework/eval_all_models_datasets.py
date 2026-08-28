@@ -43,6 +43,8 @@ from transformers import (
 )
 
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+import framework.attentions
+import framework.compression_engine
 from framework.core.attention_utils import inject_attention
 from framework.utils.replace_attention import UniversalAttentionWrapper
 
@@ -431,10 +433,10 @@ def apply_module_to_model(
     orig_params = sum(p.numel() for p in model.parameters())
 
     # Auto-detect module category if misclassified
-    if module_name in COMPRESSOR_REGISTRY:
-        module_type = "compressor"
-    elif module_name in ATTENTION_REGISTRY:
+    if module_name in ATTENTION_REGISTRY:
         module_type = "attention"
+    elif module_name in COMPRESSOR_REGISTRY:
+        module_type = "compressor"
     else:
         # Check files on disk
         cur_file = Path(__file__).resolve()
