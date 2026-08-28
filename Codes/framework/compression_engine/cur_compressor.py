@@ -49,6 +49,9 @@ class CURCompressor(BaseCompressor):
         for name, module in list(self.model.named_modules()):
             if not isinstance(module, nn.Linear) or isinstance(module, CURLinear):
                 continue
+            # Never compress classifier / lm_head / score
+            if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
+                continue
             if self.target_names and not any(t in name for t in self.target_names):
                 continue
 

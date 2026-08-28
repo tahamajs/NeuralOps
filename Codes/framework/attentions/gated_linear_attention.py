@@ -121,7 +121,8 @@ class GatedLinearAttention(BaseAttention):
         triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
         D_anti = torch.exp((-C_diff).clamp(min=-40.0, max=0.0)) * triu_mask.float()  # [B, H, L, L]
 
-        attn_scores = (q @ k.transpose(-1, -2))  # [B, H, L, L]
+        scale = 1.0 / math.sqrt(d)
+        attn_scores = (q @ k.transpose(-1, -2)) * scale  # [B, H, L, L]
 
         if mask is not None:
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
@@ -132,8 +133,8 @@ class GatedLinearAttention(BaseAttention):
         num_fwd = (attn_scores * D_causal) @ v  # [B, H, L, d]
         num_bwd = (attn_scores * D_anti) @ v    # [B, H, L, d]
 
-        denom_fwd = (attn_scores * D_causal).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
-        denom_bwd = (attn_scores * D_anti).sum(dim=-1, keepdim=True)    # [B, H, L, 1]
+        denom_fwd = (attn_scores.abs() * D_causal).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
+        denom_bwd = (attn_scores.abs() * D_anti).sum(dim=-1, keepdim=True)    # [B, H, L, 1]
 
         y_fwd = num_fwd / (denom_fwd + 1e-4).clamp(min=1e-4)
         y_bwd = num_bwd / (denom_bwd + 1e-4).clamp(min=1e-4)
