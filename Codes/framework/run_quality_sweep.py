@@ -484,7 +484,11 @@ def evaluate_single_seed_run(
         elif module_name in COMPRESSOR_REGISTRY:
             module_type = "compressor"
         else:
-            module_type = "attention"  # default fallback
+            raise RuntimeError(
+                f"Module '{module_name}' is not registered in ATTENTION_REGISTRY or "
+                f"COMPRESSOR_REGISTRY. Cannot evaluate — this would silently run the "
+                f"unmodified base model and produce fake results."
+            )
         logger.info(f"Module '{module_name}' resolved via {module_type.upper()}_REGISTRY path")
         model, _ = apply_module_to_model(
             model=model,
@@ -512,7 +516,14 @@ def evaluate_single_seed_run(
             allow_synthetic=allow_synthetic,
         )
 
-    # 4. Prepare Training DataLoader (Instant Pre-Tokenized TensorDataset)
+    # 4. Prepare Training DataLoader
+    # CRITICAL: Use a dedicated Generator seeded per-module to ensure that consecutive
+    # modules never share identical shuffle orders (which causes duplicated loss trajectories
+    # when modules consume different amounts of global RNG state during injection).
+    _dl_seed = abs(hash(f"{module_name}_{seed}")) % (2**31)
+    _dl_generator = torch.Generator()
+    _dl_generator.manual_seed(_dl_seed)
+
     train_loader = None
     if preloaded_cached_splits is not None and "train" in preloaded_cached_splits:
         train_ds = preloaded_cached_splits["train"]
@@ -523,6 +534,7 @@ def evaluate_single_seed_run(
             drop_last=True,
             num_workers=0,
             pin_memory=is_cuda,
+            generator=_dl_generator,
         )
     else:
         from framework.data.cached_tensors import get_cached_tokenized_dataset
@@ -540,6 +552,7 @@ def evaluate_single_seed_run(
                 drop_last=True,
                 num_workers=0,
                 pin_memory=is_cuda,
+                generator=_dl_generator,
             )
         except Exception as e:
             logger.warning("Could not use cached tokenized dataset (%s), fallback to standard preparation.", e)
@@ -623,6 +636,7 @@ def evaluate_single_seed_run(
         bwd_end_events = [torch.cuda.Event(enable_timing=True) for _ in range(total_steps)]
 
         global_step = 0
+        label_dtype = torch.float32 if num_labels == 1 else torch.long
         for epoch in range(epochs_to_run):
             if global_step >= total_steps:
                 break
@@ -631,22 +645,21 @@ def evaluate_single_seed_run(
                     break
                 if timeout and (time.time() - t_seed_start) > timeout:
                     raise TimeoutError(f"Module '{module_name}' exceeded execution timeout ({timeout}s) during training step {global_step}/{total_steps}")
-                
-                label_dtype = torch.float32 if num_labels == 1 else torch.long
+
                 if isinstance(batch, (list, tuple)):
                     b_ids, b_mask, b_lbl = batch
                     b_device = {
-                        "input_ids": b_ids.to(device, non_blocking=is_cuda),
-                        "attention_mask": b_mask.to(device, non_blocking=is_cuda),
-                        "labels": b_lbl.to(device=device, dtype=label_dtype, non_blocking=is_cuda),
+                        "input_ids": b_ids.to(device, non_blocking=True),
+                        "attention_mask": b_mask.to(device, non_blocking=True),
+                        "labels": b_lbl.to(device=device, dtype=label_dtype, non_blocking=True),
                     }
                 else:
                     b_device = {}
                     for k, v in batch.items():
                         if k in ["input_ids", "attention_mask"]:
-                            b_device[k] = v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v
+                            b_device[k] = v.to(device, non_blocking=True) if isinstance(v, torch.Tensor) else v
                         elif k in ["label", "labels"]:
-                            b_device["labels"] = v.to(device=device, dtype=label_dtype, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v
+                            b_device["labels"] = v.to(device=device, dtype=label_dtype, non_blocking=True) if isinstance(v, torch.Tensor) else v
                 filtered_batch = _filter_batch(b_device, model_family, model)
                 
                 if global_step == 0:
@@ -682,14 +695,9 @@ def evaluate_single_seed_run(
                 loss.backward()
                 bwd_end_events[global_step].record()
 
-                total_norm_sq = 0.0
-                for p in model.parameters():
-                    if p.grad is not None:
-                        total_norm_sq += float(p.grad.detach().data.norm(2).item() ** 2)
-                grad_norm = math.sqrt(total_norm_sq)
-                traj_grad_norm.append(round(grad_norm, 4))
+                grad_norm_t = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                traj_grad_norm.append(round(float(grad_norm_t.item() if torch.is_tensor(grad_norm_t) else grad_norm_t), 4))
                 
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 optimizer.step()
                 scheduler.step()
                 global_step += 1
@@ -710,10 +718,18 @@ def evaluate_single_seed_run(
                     break
                 if timeout and (time.time() - t_seed_start) > timeout:
                     raise TimeoutError(f"Module '{module_name}' exceeded execution timeout ({timeout}s) during training step {global_step}/{total_steps}")
-                b_device = {
-                    ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
-                    for k, v in batch.items() if k in ["input_ids", "attention_mask", "label", "labels"]
-                }
+                if isinstance(batch, (list, tuple)):
+                    b_ids, b_mask, b_lbl = batch
+                    b_device = {
+                        "input_ids": b_ids.to(device, non_blocking=is_cuda),
+                        "attention_mask": b_mask.to(device, non_blocking=is_cuda),
+                        "labels": b_lbl.to(device=device, dtype=(torch.float32 if num_labels == 1 else torch.long), non_blocking=is_cuda),
+                    }
+                else:
+                    b_device = {
+                        ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
+                        for k, v in batch.items() if k in ["input_ids", "attention_mask", "label", "labels"]
+                    }
                 filtered_batch = _filter_batch(b_device, model_family, model)
 
                 optimizer.zero_grad()
@@ -961,15 +977,10 @@ def _audit_and_clean_gpu_processes(allowed_pids: Optional[Set[int]] = None) -> N
                         p_name = parts[1].lower()
                         mem_mb = float(parts[2]) if len(parts) > 2 else 0.0
                         if "python" in p_name and pid not in allowed_pids:
-                            logger.warning(
-                                "🚨 Stray Python process detected on GPU: PID %d (%s, %.1f MB VRAM). Terminating...",
+                            logger.info(
+                                "ℹ️ Active Python process detected on GPU: PID %d (%s, %.1f MB VRAM).",
                                 pid, p_name, mem_mb
                             )
-                            if os.name == "nt":
-                                subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, timeout=5)
-                            else:
-                                import signal
-                                os.kill(pid, signal.SIGKILL)
                     except Exception:
                         pass
     except Exception as e:
@@ -981,8 +992,8 @@ def run_quality_benchmark_sweep(
     models: Optional[List[str]] = None,
     datasets: Optional[List[str]] = None,
     seeds: Optional[List[int]] = None,
-    epochs: int = 3,
-    max_steps: int = 20,
+    epochs: int = 1,
+    max_steps: Optional[int] = None,
     learning_rate: float = 3e-5,
     weight_decay: float = 0.01,
     batch_size: int = 128,
@@ -990,7 +1001,7 @@ def run_quality_benchmark_sweep(
     hidden_size: int = 128,
     num_heads: int = 4,
     num_layers: int = 2,
-    timeout: int = 120,
+    timeout: int = 600,
     precision: str = "fp16",
     output_dir: Optional[str] = None,
     allow_synthetic: bool = False,
@@ -1412,8 +1423,8 @@ def main():
     parser.add_argument("--models", type=str, default="bert,roberta,distilbert,t5", help="Comma-separated model families")
     parser.add_argument("--datasets", type=str, default="sst2,mrpc,cola,stsb", help="Comma-separated GLUE datasets")
     parser.add_argument("--seeds", type=str, default="42", help="Comma-separated random seeds")
-    parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs")
-    parser.add_argument("--max_steps", type=int, default=20, help="Training steps per seed")
+    parser.add_argument("--epochs", type=int, default=1, help="Number of training epochs")
+    parser.add_argument("--max_steps", type=int, default=None, help="Training steps per seed (None for full epoch)")
     parser.add_argument("--lr", type=float, default=3e-5, help="Learning rate for AdamW")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size (probed adaptively)")
@@ -1421,19 +1432,28 @@ def main():
     parser.add_argument("--timeout", type=int, default=300, help="Hard timeout in seconds")
     parser.add_argument("--precision", type=str, default="fp16", help="Precision (fp16, bf16, fp32)")
     parser.add_argument("--output_dir", type=str, default=None, help="Target output directory")
+    parser.add_argument("--results_dir", type=str, default=None, help="Target output directory (alias for --output_dir)")
     parser.add_argument("--pretrained", action="store_true", default=False, help="Use real pretrained HuggingFace weights")
     parser.add_argument("--gradient_checkpointing", action="store_true", default=False, help="Enable gradient checkpointing")
 
     args = parser.parse_args()
+    chosen_output_dir = args.output_dir if args.output_dir is not None else args.results_dir
 
     if args.modules:
         if args.modules.strip().lower() == "all":
             mods = _import_all_modules()
         elif args.modules.endswith(".txt") or Path(args.modules).is_file():
             with open(args.modules, "r", encoding="utf-8") as f:
-                mods = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
+                mods = []
+                for line in f:
+                    clean_line = line.split("#")[0].strip()
+                    if clean_line:
+                        # Extract first whitespace-separated token to prevent any trailing comment leakage
+                        token = clean_line.split()[0].strip()
+                        if token:
+                            mods.append(token)
         else:
-            mods = [m.strip() for m in args.modules.split(",")]
+            mods = [m.split("#")[0].strip() for m in args.modules.split(",") if m.split("#")[0].strip()]
     else:
         mods = None
     mdls = [m.strip() for m in args.models.split(",")] if args.models else None
@@ -1453,7 +1473,7 @@ def main():
         seq_len=args.seq_len,
         timeout=args.timeout,
         precision=args.precision,
-        output_dir=args.output_dir,
+        output_dir=chosen_output_dir,
         pretrained=args.pretrained,
         gradient_checkpointing=args.gradient_checkpointing,
     )
