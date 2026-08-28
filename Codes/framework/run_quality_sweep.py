@@ -632,18 +632,21 @@ def evaluate_single_seed_run(
                 if timeout and (time.time() - t_seed_start) > timeout:
                     raise TimeoutError(f"Module '{module_name}' exceeded execution timeout ({timeout}s) during training step {global_step}/{total_steps}")
                 
+                label_dtype = torch.float32 if num_labels == 1 else torch.long
                 if isinstance(batch, (list, tuple)):
                     b_ids, b_mask, b_lbl = batch
                     b_device = {
                         "input_ids": b_ids.to(device, non_blocking=is_cuda),
                         "attention_mask": b_mask.to(device, non_blocking=is_cuda),
-                        "labels": b_lbl.to(device, non_blocking=is_cuda),
+                        "labels": b_lbl.to(device=device, dtype=label_dtype, non_blocking=is_cuda),
                     }
                 else:
-                    b_device = {
-                        ("labels" if k == "label" else k): (v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v)
-                        for k, v in batch.items() if k in ["input_ids", "attention_mask", "label", "labels"]
-                    }
+                    b_device = {}
+                    for k, v in batch.items():
+                        if k in ["input_ids", "attention_mask"]:
+                            b_device[k] = v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v
+                        elif k in ["label", "labels"]:
+                            b_device["labels"] = v.to(device=device, dtype=label_dtype, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v
                 filtered_batch = _filter_batch(b_device, model_family, model)
                 
                 if global_step == 0:
