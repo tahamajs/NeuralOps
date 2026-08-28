@@ -148,8 +148,13 @@ def get_completed_results() -> List[Dict[str, Any]]:
     results = []
     error_map = {}
     
-    # Check active resume run summary.csv first
-    if (PROJECT_DIR / "results" / "run_quality_resume").exists() or (PROJECT_DIR / "run_quality_resume.log").exists():
+    # Check active verified run summary.csv first
+    if (PROJECT_DIR / "results" / "run_final_verified").exists() or (PROJECT_DIR / "run_final_verified.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "run_final_verified" / "summary.csv",
+            Path("results/run_final_verified/summary.csv"),
+        ]
+    elif (PROJECT_DIR / "results" / "run_quality_resume").exists() or (PROJECT_DIR / "run_quality_resume.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_quality_resume" / "summary.csv",
             Path("results/run_quality_resume/summary.csv"),
@@ -730,6 +735,10 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     is_screening = is_screening_all or is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
 
     log_candidates = [
+        PROJECT_DIR / "run_final_verified.log",
+        Path("run_final_verified.log"),
+        PROJECT_DIR / "run_quality_recovery.log",
+        Path("run_quality_recovery.log"),
         PROJECT_DIR / "run_quality_resume.log",
         Path("run_quality_resume.log"),
         PROJECT_DIR / "retest_all_broken.log",
@@ -754,6 +763,10 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "run_final_verified" / "summary.csv",
+        Path("results/run_final_verified/summary.csv"),
+        PROJECT_DIR / "results" / "run_quality_recovery" / "summary.csv",
+        Path("results/run_quality_recovery/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_resume" / "summary.csv",
         Path("results/run_quality_resume/summary.csv"),
         PROJECT_DIR / "results" / "run_all_broken_fix" / "summary.csv",
@@ -1033,9 +1046,10 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
 
     cur_mod_progress = next((m for m in modules_progress if m["status"] == "running"), None)
     cur_step_fraction = (cur_mod_progress["progress_percent"] / 100.0) if cur_mod_progress else 0.0
-    overall_pct = min(99.0, round(((len(completed_modules) + cur_step_fraction) / float(len(active_module_list))) * 100.0, 1))
+    tot_count = max(len(active_module_list), len(completed_modules))
+    overall_pct = min(100.0, round(((len(completed_modules) + cur_step_fraction) / float(tot_count)) * 100.0, 1))
 
-    rem_pending_mods = max(0, len(active_module_list) - len(completed_modules) - 1)
+    rem_pending_mods = max(0, tot_count - len(completed_modules) - 1)
     cur_mod_rem = cur_mod_rem_sec if 'cur_mod_rem_sec' in locals() else rolling_avg_sec
     total_eta_sec = int((rem_pending_mods * rolling_avg_sec) + cur_mod_rem)
     eta_m = total_eta_sec // 60
@@ -1064,21 +1078,19 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
         "live_progress": active_live_info,
         "module_progress": modules_progress,
         "progress": {
-            "completed": len(completed_modules),
-            "total": len(active_module_list),
+            "completed": min(len(completed_modules), tot_count),
+            "total": tot_count,
             "percent": overall_pct,
             "eta_seconds": total_eta_sec,
             "eta_formatted": total_eta_str,
             "eta_str": total_eta_str,
             "avg_sec": round(rolling_avg_sec, 1),
             "avg_duration_seconds": round(rolling_avg_sec, 1),
-            "current": len(completed_modules),
+            "current": min(len(completed_modules), tot_count),
         }
     }
 
 def _build_stats_response() -> str:
-    print('DEBUG ep1 log:', (PROJECT_DIR / 'run_quality_ep1.log').exists(), flush=True)
-    print('DEBUG PROJECT_DIR:', PROJECT_DIR, flush=True)
     """Build the full stats JSON response with rich detail fields and comparative analytics."""
     gpu = get_gpu_stats()
     results = get_completed_results()
@@ -1225,8 +1237,9 @@ def _cache_refresh_loop() -> None:
             with _cache_lock:
                 _cached_response = data
             _cache_ready.set()
-        except Exception:
-            pass
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
         time.sleep(2)
 
 
@@ -1936,9 +1949,15 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         # 6. Existing /api/stats Telemetry Endpoint
         if req_path == "/api/stats":
-            _cache_ready.wait(timeout=5)
+            _cache_ready.wait(timeout=2)
             with _cache_lock:
-                payload = _cached_response.encode("utf-8")
+                resp_str = _cached_response
+            if resp_str == "{}" or not resp_str:
+                try:
+                    resp_str = _build_stats_response()
+                except Exception:
+                    resp_str = "{}"
+            payload = resp_str.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1984,8 +2003,8 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         # 3. Existing /api/action endpoint
-        if req_path == "/api/action":
-            action = data.get("action", "")
+        if req_path in ("/api/action", "/api/run/action"):
+            action = data.get("action")
             if action == "stop":
                 res = RunManager.stop_active_run()
                 msg = res.get("message", "Sweep stopped")
@@ -2012,6 +2031,14 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
 def main():
     os.makedirs(WEB_DIR, exist_ok=True)
+    global _cached_response
+    try:
+        _cached_response = _build_stats_response()
+        _cache_ready.set()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
     t = threading.Thread(target=_cache_refresh_loop, daemon=True)
     t.start()
 
