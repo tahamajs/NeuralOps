@@ -217,27 +217,11 @@ class A3Compressor(BaseCompressor):
         dtype = module.weight.dtype
         W = module.weight.data.float()
 
-        r = min(self.rank, in_f, out_f)
-
-        if cov is not None and cov.numel() > 0 and cov.shape[0] == in_f:
-            try:
-                # Activation-aware subspace projection
-                _, _, Vh_act = torch.linalg.svd(cov.to(device).float(), full_matrices=False)
-                anchor = Vh_act[:r, :]  # [r, in_f]
-                W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))
-            except Exception:
-                W_proj = W
-        elif self.use_fisher and fisher is not None and fisher.numel() == in_f:
-            f_scale = torch.sqrt(torch.clamp(fisher.to(device).float(), min=1e-8))
-            W_proj = W * f_scale.unsqueeze(0)
-        else:
-            W_proj = W
-
-        # Truncated SVD on projected weight
+        # Perform direct SVD on W
         try:
-            U, S, Vt = torch.linalg.svd(W_proj, full_matrices=False)
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception:
-            U, S, Vt = torch.linalg.svd(W_proj.cpu(), full_matrices=False)
+            U, S, Vt = torch.linalg.svd(W.cpu(), full_matrices=False)
             U, S, Vt = U.to(device), S.to(device), Vt.to(device)
 
         # Symmetrical square-root singular value allocation
@@ -255,9 +239,12 @@ class A3Compressor(BaseCompressor):
 
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear):
+                # Never compress the classification head / pre_classifier directly to preserve logits
+                if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
+                    continue
                 is_target = True
                 if self.target_attention_only:
-                    is_target = any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj"])
+                    is_target = any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"])
                 if is_target:
                     cov = cov_map.get(name, None)
                     fisher = fisher_map.get(name, None)

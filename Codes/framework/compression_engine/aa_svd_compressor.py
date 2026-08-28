@@ -329,6 +329,9 @@ class AASVDCompressor(BaseCompressor):
         replaced_count = 0
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear):
+                # Never compress classifier / score / lm_head directly
+                if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
+                    continue
                 svd_layer = self.compress_linear(module, rank=self.rank, cov=None)
                 replace_module(self.model, name, svd_layer)
                 replaced_count += 1
