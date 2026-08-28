@@ -43,10 +43,10 @@ def _parse_cli_args():
 
 PORT, CLI_RESULTS_DIR, CLI_LOG_FILE = _parse_cli_args()
 WORKDIR = Path(__file__).resolve().parent
-PROJECT_DIR = WORKDIR.parent.parent
+PROJECT_DIR = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else WORKDIR.parent.parent
 WEB_DIR = WORKDIR / "web"
 MASTER_LOG = Path(CLI_LOG_FILE) if CLI_LOG_FILE else PROJECT_DIR / "comprehensive_run_detached.log"
-RESULTS_DIR = Path(CLI_RESULTS_DIR) if CLI_RESULTS_DIR else WORKDIR / "results" / "gpu_server"
+RESULTS_DIR = Path(CLI_RESULTS_DIR) if CLI_RESULTS_DIR else PROJECT_DIR / "results" / "gpu_server"
 
 # Cache synchronization
 _cache_lock = threading.Lock()
@@ -160,12 +160,127 @@ def get_completed_results() -> List[Dict[str, Any]]:
     results = []
     error_map = {}
     
-    # Check active verified run summary.csv first
-    if (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists():
+    # Check active full universe run summary.csv first
+    if (PROJECT_DIR / "results" / "all_modules_paper_run").exists() or (PROJECT_DIR / "results" / "all_modules_paper_run" / "sweep_stdout.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "all_modules_paper_run" / "summary.csv",
+            Path("results/all_modules_paper_run/summary.csv"),
+        ]
+        for acsv in active_csv_candidates:
+            if acsv.exists() and acsv.stat().st_size > 0:
+                try:
+                    import csv
+                    with open(acsv, "r", encoding="utf-8", errors="ignore") as f:
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            mod = row.get("module_name", row.get("module", ""))
+                            if not mod:
+                                continue
+                            fwd = float(row["fwd_ms"]) if row.get("fwd_ms") and row["fwd_ms"] not in ("-", "") else None
+                            bwd = float(row["bwd_ms"]) if row.get("bwd_ms") and row["bwd_ms"] not in ("-", "") else None
+                            mem = float(row["peak_vram_mb"]) if row.get("peak_vram_mb") and row["peak_vram_mb"] not in ("-", "") else None
+                            acc = float(row["mean_accuracy"]) if row.get("mean_accuracy") and row["mean_accuracy"] not in ("-", "") else None
+                            f1 = float(row["f1_score"]) if row.get("f1_score") and row["f1_score"] not in ("-", "") else None
+                            fid = float(row["fidelity_score"]) if row.get("fidelity_score") and row["fidelity_score"] not in ("-", "") else None
+                            thru = float(row["throughput_tokens_sec"]) if row.get("throughput_tokens_sec") and row["throughput_tokens_sec"] not in ("-", "") else None
+                            pval = float(row["p_value"]) if row.get("p_value") and row["p_value"] not in ("-", "") else None
+                            ci_lower = float(row["ci_lower"]) if row.get("ci_lower") and row["ci_lower"] not in ("-", "") else None
+                            ci_upper = float(row["ci_upper"]) if row.get("ci_upper") and row["ci_upper"] not in ("-", "") else None
+                            
+                            ts_val = row.get("timestamp", datetime.now().isoformat())
+                            try:
+                                ts = datetime.fromisoformat(ts_val)
+                            except Exception:
+                                ts = datetime.now()
+                                
+                            is_hlp = is_helper_module(mod)
+                            status_val = "HELPER" if is_hlp else row.get("status", "PASS").upper()
+                            err_detail_val = "Injection helper function, excluded from benchmark" if is_hlp else "None / Success"
+
+                            results.append({
+                                "timestamp": ts,
+                                "track": "quality_phase2",
+                                "module": mod,
+                                "model": row.get("model_family", "BERT").upper(),
+                                "dataset": row.get("dataset", "SST2").upper(),
+                                "status": status_val,
+                                "fwd_ms": fwd,
+                                "bwd_ms": bwd,
+                                "mem_mb": mem,
+                                "acc_pct": acc,
+                                "f1_score": f1,
+                                "fidelity_score": fid,
+                                "throughput": thru,
+                                "p_value": pval,
+                                "ci_lower": ci_lower,
+                                "ci_upper": ci_upper,
+                                "error_detail": err_detail_val,
+                            })
+                    if results:
+                        return results
+                except Exception:
+                    pass
+        return results
+    elif (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "final_paper_run" / "summary.csv",
             Path("results/final_paper_run/summary.csv"),
         ]
+        for acsv in active_csv_candidates:
+            if acsv.exists() and acsv.stat().st_size > 0:
+                try:
+                    import csv
+                    with open(acsv, "r", encoding="utf-8", errors="ignore") as f:
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            mod = row.get("module_name", row.get("module", ""))
+                            if not mod:
+                                continue
+                            fwd = float(row["fwd_ms"]) if row.get("fwd_ms") and row["fwd_ms"] not in ("-", "") else None
+                            bwd = float(row["bwd_ms"]) if row.get("bwd_ms") and row["bwd_ms"] not in ("-", "") else None
+                            mem = float(row["peak_vram_mb"]) if row.get("peak_vram_mb") and row["peak_vram_mb"] not in ("-", "") else None
+                            acc = float(row["mean_accuracy"]) if row.get("mean_accuracy") and row["mean_accuracy"] not in ("-", "") else None
+                            f1 = float(row["f1_score"]) if row.get("f1_score") and row["f1_score"] not in ("-", "") else None
+                            fid = float(row["fidelity_score"]) if row.get("fidelity_score") and row["fidelity_score"] not in ("-", "") else None
+                            thru = float(row["throughput_tokens_sec"]) if row.get("throughput_tokens_sec") and row["throughput_tokens_sec"] not in ("-", "") else None
+                            pval = float(row["p_value"]) if row.get("p_value") and row["p_value"] not in ("-", "") else None
+                            ci_lower = float(row["ci_lower"]) if row.get("ci_lower") and row["ci_lower"] not in ("-", "") else None
+                            ci_upper = float(row["ci_upper"]) if row.get("ci_upper") and row["ci_upper"] not in ("-", "") else None
+                            
+                            ts_val = row.get("timestamp", datetime.now().isoformat())
+                            try:
+                                ts = datetime.fromisoformat(ts_val)
+                            except Exception:
+                                ts = datetime.now()
+                                
+                            is_hlp = is_helper_module(mod)
+                            status_val = "HELPER" if is_hlp else row.get("status", "PASS").upper()
+                            err_detail_val = "Injection helper function, excluded from benchmark" if is_hlp else "None / Success"
+
+                            results.append({
+                                "timestamp": ts,
+                                "track": "quality_phase2",
+                                "module": mod,
+                                "model": row.get("model_family", "BERT").upper(),
+                                "dataset": row.get("dataset", "SST2").upper(),
+                                "status": status_val,
+                                "fwd_ms": fwd,
+                                "bwd_ms": bwd,
+                                "mem_mb": mem,
+                                "acc_pct": acc,
+                                "f1_score": f1,
+                                "fidelity_score": fid,
+                                "throughput": thru,
+                                "p_value": pval,
+                                "ci_lower": ci_lower,
+                                "ci_upper": ci_upper,
+                                "error_detail": err_detail_val,
+                            })
+                    if results:
+                        return results
+                except Exception:
+                    pass
+        return results
     elif (PROJECT_DIR / "results" / "run_final_verified").exists() or (PROJECT_DIR / "run_final_verified.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_final_verified" / "summary.csv",
@@ -270,6 +385,7 @@ def get_completed_results() -> List[Dict[str, Any]]:
                     return results
             except Exception:
                 pass
+        return results
     
     log_candidates = [
         PROJECT_DIR / "run_quality_all_screening.log",
@@ -753,6 +869,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     is_screening = is_screening_all or is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
 
     log_candidates = [
+        PROJECT_DIR / "results" / "all_modules_paper_run" / "sweep_stdout.log",
+        Path("results/all_modules_paper_run/sweep_stdout.log"),
         PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log",
         Path("results/final_paper_run/sweep_stdout.log"),
         PROJECT_DIR / "final_paper_run.log",
@@ -787,6 +905,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "all_modules_paper_run" / "summary.csv",
+        Path("results/all_modules_paper_run/summary.csv"),
         PROJECT_DIR / "results" / "final_paper_run" / "summary.csv",
         Path("results/final_paper_run/summary.csv"),
         PROJECT_DIR / "results" / "run_final_verified" / "summary.csv",
@@ -816,7 +936,25 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             summary_file = sc
             break
 
-    if is_screening_all:
+    if (PROJECT_DIR / "results" / "all_modules_paper_run").exists() or (PROJECT_DIR / "results" / "all_modules_paper_run" / "sweep_stdout.log").exists():
+        all_mods = []
+        if log_file and log_file.exists():
+            try:
+                with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        if "Modules (" in line:
+                            m_list = re.search(r"Modules \(\d+\):\s*(\[.*?\])", line)
+                            if m_list:
+                                import ast
+                                raw_m = ast.literal_eval(m_list.group(1))
+                                all_mods = [m for m in raw_m if not is_helper_module(m)]
+                                break
+            except Exception:
+                pass
+        active_module_list = all_mods if all_mods else SCREENING_MODULE_LIST
+    elif (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists() or (PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log").exists():
+        active_module_list = SCREENING_MODULE_LIST
+    elif is_screening_all:
         all_mods = []
         for p in [PROJECT_DIR / "all_canonical_modules.txt", PROJECT_DIR / "all_modules.txt", Path("all_canonical_modules.txt"), Path("all_modules.txt")]:
             if p.exists() and p.stat().st_size > 0:
@@ -977,30 +1115,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "duration_formatted": d_fmt,
                 "eta_str": "Completed",
             })
-        elif idx < curr_idx:
-            d_sec = mod_durations.get(mod)
-            d_fmt = format_duration(d_sec) if d_sec is not None else "Completed"
-            modules_progress.append({
-                "module": mod,
-                "status": "completed",
-                "current_seed": f"Done ({total_seeds}/{total_seeds})",
-                "completed_seeds": total_seeds,
-                "total_seeds": total_seeds,
-                "epoch": f"{total_epochs}/{total_epochs}",
-                "step": f"{max_steps_per_epoch}/{max_steps_per_epoch}",
-                "loss": 0.1920,
-                "accuracy": 89.5,
-                "f1": 0.898,
-                "fidelity": 0.985,
-                "progress_percent": 100.0,
-                "training_duration_seconds": round(d_sec, 1) if d_sec is not None else None,
-                "training_elapsed_seconds": round(d_sec, 1) if d_sec is not None else None,
-                "queue_wait_seconds": 0.0,
-                "duration_seconds": round(d_sec, 1) if d_sec is not None else None,
-                "duration_formatted": d_fmt,
-                "eta_str": "Completed",
-            })
-        elif idx == curr_idx:
+        elif mod == current_mod and is_sweep_running():
             done_s = completed_seeds_map.get(mod, [])
             n_done = len(done_s)
             curr_s = seeds_order[min(n_done, len(seeds_order)-1)] if n_done < total_seeds else "Done"
