@@ -80,7 +80,7 @@ def _persistent_worker_loop(
             model_family=model_family,
             seq_len=seq_len,
         )
-        w_logger.info(f"Pre-tokenized dataset ready: {len(cached_splits["train"])} train, {len(cached_splits["val"])} val")
+        w_logger.info(f"Pre-tokenized dataset ready: {len(cached_splits['train'])} train, {len(cached_splits['val'])} val")
     except Exception as e:
         w_logger.error(f"Failed to load cached tokenized dataset: {e}")
         cached_splits = None
@@ -90,12 +90,23 @@ def _persistent_worker_loop(
     pristine_state_dict = None
     if pretrained:
         from transformers import AutoModelForSequenceClassification
-        model_name_map = {
-            "distilbert": "distilbert-base-uncased",
-            "bert": "bert-base-uncased",
-            "roberta": "roberta-base",
-        }
-        hf_model_id = model_name_map.get(model_family.lower(), "distilbert-base-uncased")
+        local_ckpt_candidates = [
+            Path("models") / f"{model_family.lower()}_{dataset.lower()}",
+            Path("D:/SVD_Project/models") / f"{model_family.lower()}_{dataset.lower()}",
+            Path(_PROJ_DIR) / "models" / f"{model_family.lower()}_{dataset.lower()}",
+        ]
+        hf_model_id = None
+        for ckpt in local_ckpt_candidates:
+            if ckpt.exists() and ((ckpt / "model.safetensors").exists() or (ckpt / "pytorch_model.bin").exists()):
+                hf_model_id = str(ckpt)
+                break
+        if hf_model_id is None:
+            model_name_map = {
+                "distilbert": "distilbert-base-uncased-finetuned-sst-2-english" if dataset.lower() == "sst2" else "distilbert-base-uncased",
+                "bert": "bert-base-uncased",
+                "roberta": "roberta-base",
+            }
+            hf_model_id = model_name_map.get(model_family.lower(), "distilbert-base-uncased")
         try:
             base_model_template = AutoModelForSequenceClassification.from_pretrained(
                 hf_model_id,
@@ -132,7 +143,8 @@ def _persistent_worker_loop(
                     if logits is not None:
                         all_b_logits.append(logits.cpu())
             if all_b_logits:
-                baseline_logits_cache[(model_family.lower(), dataset.lower(), 42)] = torch.cat(all_b_logits, dim=0)
+                # Keep 2D shape [N_examples, num_classes] for proper per-example cosine similarity
+                baseline_logits_cache[(model_family.lower(), dataset.lower(), 42)] = torch.cat(all_b_logits, dim=0).float()
                 w_logger.info(f"Pre-computed baseline validation logits: shape {baseline_logits_cache[(model_family.lower(), dataset.lower(), 42)].shape}")
             del base_model
             torch.cuda.empty_cache()
@@ -155,6 +167,12 @@ def _persistent_worker_loop(
 
             task_id, args, kwargs, t_req_start = msg
             
+            # Log memory stats before each module (leak detection)
+            if device.type == "cuda":
+                mem_alloc_before = torch.cuda.memory_allocated(device) / 1024**2
+                mem_res_before = torch.cuda.memory_reserved(device) / 1024**2
+                w_logger.info(f"[MEM] Before module '{args[0] if args else kwargs.get('module_name','?')}': allocated={mem_alloc_before:.1f}MB reserved={mem_res_before:.1f}MB")
+
             # Inject pre-cached components
             kwargs["base_model_template"] = base_model_template
             kwargs["pristine_state_dict"] = pristine_state_dict
@@ -170,10 +188,23 @@ def _persistent_worker_loop(
             startup_overhead_s = getattr(res, "startup_overhead_s", 0.0)
             result_queue.put(("SUCCESS", task_id, res, startup_overhead_s))
 
+            # Explicit post-task cleanup to prevent cross-module memory leak
+            import gc
+            del res
+            gc.collect()
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+                mem_alloc_after = torch.cuda.memory_allocated(device) / 1024**2
+                w_logger.info(f"[MEM] After cleanup: allocated={mem_alloc_after:.1f}MB")
+
         except Exception as e:
             import traceback
             tb = traceback.format_exc()
             w_logger.error(f"Error in task: {e}\n{tb}")
+            if device.type == "cuda":
+                import gc
+                gc.collect()
+                torch.cuda.empty_cache()
             result_queue.put(("ERROR", task_id, (str(e), tb), 0.0))
 
 
@@ -231,21 +262,67 @@ class PersistentCUDAWorker:
             logger.warning(f"Did not receive READY signal from worker: {e}")
 
     def _kill_worker(self):
-        if self.proc is not None and self.proc.is_alive():
-            logger.info(f"Terminating persistent worker PID {self.proc.pid}...")
-            self.proc.terminate()
-            self.proc.join(timeout=5)
-            if self.proc.is_alive():
-                self.proc.kill()
-                self.proc.join(timeout=2)
-        self.proc = None
+        if self.proc is not None:
+            pid = getattr(self.proc, "pid", None)
+            if pid is not None and self.proc.is_alive():
+                logger.info(f"Terminating persistent worker PID {pid}...")
+                try:
+                    self.proc.terminate()
+                    self.proc.join(timeout=3)
+                except Exception:
+                    pass
+                if self.proc.is_alive():
+                    try:
+                        self.proc.kill()
+                        self.proc.join(timeout=2)
+                    except Exception:
+                        pass
+                # OS-level tree termination fallback
+                try:
+                    import subprocess
+                    if os.name == "nt":
+                        subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True, timeout=5)
+                    else:
+                        import signal
+                        os.kill(pid, signal.SIGKILL)
+                except Exception:
+                    pass
+            self.proc = None
+
+    def check_vram_headroom(self, min_free_mb: float = 1500.0) -> bool:
+        """Verifies safe VRAM headroom before dispatching a new module evaluation."""
+        if not torch.cuda.is_available() or "cuda" not in self.device_str:
+            return True
+        try:
+            dev_idx = int(self.device_str.split(":")[-1]) if ":" in self.device_str else 0
+            free_b, total_b = torch.cuda.mem_get_info(dev_idx)
+            free_mb = free_b / (1024 * 1024)
+            if free_mb < min_free_mb:
+                logger.warning(f"⚠️ VRAM ceiling guard: Only {free_mb:.1f} MB free (safe threshold: {min_free_mb:.1f} MB). Flushing cache...")
+                import gc
+                gc.collect()
+                torch.cuda.empty_cache()
+                free_b, _ = torch.cuda.mem_get_info(dev_idx)
+                free_mb = free_b / (1024 * 1024)
+                if free_mb < min_free_mb:
+                    logger.warning(f"⚠️ Free VRAM still low ({free_mb:.1f} MB). Recycling worker process...")
+                    self._kill_worker()
+                    torch.cuda.empty_cache()
+                    self._start_worker()
+            return True
+        except Exception as e:
+            logger.debug(f"VRAM headroom check error: {e}")
+            return True
 
     def execute_task(self, *args, timeout: int = 300, **kwargs) -> Tuple[Any, float]:
-        """Executes a single seed evaluation task on the persistent worker with watchdog timeout."""
+        """Executes a single seed evaluation task on the persistent worker with watchdog timeout & VRAM guard."""
+        # 1. Check VRAM headroom guard
+        self.check_vram_headroom(min_free_mb=1500.0)
+
         if self.proc is None or not self.proc.is_alive():
             self._start_worker()
 
-        task_id = f"{kwargs.get("module_name", "mod")}_{kwargs.get("seed", 42)}_{time.time()}"
+        task_id = f"{kwargs.get('module_name', 'mod')}_{kwargs.get('seed', 42)}_{time.time()}"
         t_req_start = time.time()
         self.task_queue.put((task_id, args, kwargs, t_req_start))
 
@@ -257,7 +334,7 @@ class PersistentCUDAWorker:
                 raise RuntimeError(msg)
             return val, startup_overhead_s
         except queue.Empty:
-            logger.warning(f"⏱️ Persistent worker PID {self.proc.pid} HUNG past {timeout}s! Killing and respawning...")
+            logger.warning(f"⏱️ Persistent worker PID {getattr(self.proc, 'pid', 'unknown')} HUNG past {timeout}s! Killing and respawning...")
             self._kill_worker()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()

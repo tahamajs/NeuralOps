@@ -238,19 +238,17 @@ class AegisAttentionV2(nn.Module):
             phi_K = phi_K * m4
             Vg = Vg * m4
 
-        phi_K_t = phi_K.permute(0, 2, 3, 1)
-        Vg_t = Vg.permute(0, 2, 1, 3)
+        phi_K_h = phi_K.transpose(1, 2)  # (B, H, N, D)
+        Vg_h = Vg.transpose(1, 2)        # (B, H, N, D)
+        phi_Q_h = phi_Q.transpose(1, 2)  # (B, H, N, D)
 
-        KV = torch.matmul(phi_K_t, Vg_t)
-        ones = torch.ones(B, self.num_heads, N, 1, device=Kg.device, dtype=Kg.dtype)
-        Z = torch.matmul(phi_K_t, ones)
-
-        phi_Q_t = phi_Q.permute(0, 2, 1, 3).unsqueeze(-2)
+        KV = torch.matmul(phi_K_h.transpose(-2, -1), Vg_h)  # (B, H, D, D)
+        global_out_h = torch.matmul(phi_Q_h, KV)             # (B, H, N, D)
+        Z = phi_K_h.sum(dim=-2, keepdim=True)                # (B, H, 1, D)
+        norm = torch.matmul(phi_Q_h, Z.transpose(-2, -1))    # (B, H, N, 1)
         norm_eps = 1e-4 if Kg.dtype in (torch.float16, torch.bfloat16) else 1e-5
-        global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2)
-        norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)
-        global_out = global_out / (norm.clamp(min=norm_eps))
-        global_out = global_out.permute(0, 2, 1, 3)
+        global_out_h = global_out_h / (norm.clamp(min=norm_eps))
+        global_out = global_out_h.transpose(1, 2)            # (B, N, H, D)
 
         if mask_2d is not None:
             global_out = global_out * mask_2d.unsqueeze(-1).unsqueeze(-1)

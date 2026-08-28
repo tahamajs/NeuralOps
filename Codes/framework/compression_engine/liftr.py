@@ -43,34 +43,45 @@ class _LinearizedAttentionWrapper(nn.Module):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Optional[torch.Tensor] = None,
+        query: Optional[torch.Tensor] = None,
+        key: Optional[torch.Tensor] = None,
+        value: Optional[torch.Tensor] = None,
+        mask: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
+        x = hidden_states if hidden_states is not None else (query if query is not None else value)
+        if x is None:
+            if len(kwargs) > 0:
+                x = next(iter(kwargs.values()))
+            else:
+                x = torch.zeros(1, 1, 768)
+
         # Check if original module is DistilBERT-style or custom
         if hasattr(self.original_attn, "q_lin") and hasattr(self.original_attn, "v_lin") and hasattr(self.original_attn, "out_lin"):
             # DistilBERT MultiHeadSelfAttention
-            v = self.original_attn.v_lin(hidden_states)
+            v = self.original_attn.v_lin(x)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             output = self.original_attn.out_lin(context)
             return (output, None)
         elif hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "o_proj"):
             # LLaMA / Mistral / Gemma style
-            v = self.original_attn.v_proj(hidden_states)
+            v = self.original_attn.v_proj(x)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             output = self.original_attn.o_proj(context)
             return (output, None)
         elif hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "out_proj"):
             # OPT / Falcon style
-            v = self.original_attn.v_proj(hidden_states)
+            v = self.original_attn.v_proj(x)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             output = self.original_attn.out_proj(context)
             return (output, None)
         elif hasattr(self.original_attn, "query") and hasattr(self.original_attn, "value"):
             # BERT BertSelfAttention
-            v = self.original_attn.value(hidden_states)
+            v = self.original_attn.value(x)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             out_layer = getattr(self.original_attn, "dense", None)
             output = out_layer(context) if out_layer is not None else context
@@ -78,10 +89,11 @@ class _LinearizedAttentionWrapper(nn.Module):
         else:
             # Fallback to calling original attention or identity
             try:
-                res = self.original_attn(hidden_states, attention_mask=attention_mask, **kwargs)
+                m = mask if mask is not None else attention_mask
+                res = self.original_attn(x, attention_mask=m, **kwargs)
                 return res if isinstance(res, tuple) else (res, None)
             except Exception:
-                return (hidden_states, None)
+                return (x, None)
 
 
 class LIFTRCompressor(BaseCompressor):
