@@ -35,13 +35,22 @@ class ViGAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Any,
+        config: Any = None,
         rank: Optional[int] = None,
         pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.dim: int = config.hidden_size
-        self.num_heads: int = config.num_attention_heads
+        if config is not None and not isinstance(config, int):
+            self.dim = getattr(config, "hidden_size", getattr(config, "dim", 768))
+            self.num_heads = getattr(config, "num_attention_heads", 12)
+        elif isinstance(config, int):
+            self.dim = config
+            self.num_heads = kwargs.get("num_attention_heads", 12)
+        else:
+            self.dim = kwargs.get("hidden_size", kwargs.get("d_model", 768))
+            self.num_heads = kwargs.get("num_attention_heads", 12)
+
         self.head_dim: int = self.dim // self.num_heads
 
         self.q_proj: nn.Linear = nn.Linear(self.dim, self.dim)
