@@ -183,6 +183,8 @@ Codes/MasterHttpRelayVPN
 # ============================================================
 experiments/
 **/experiments/
+!Codes/framework/experiments/
+!Codes/framework/experiments/**
 benchmark_results/
 **/benchmark_results/
 !results/
