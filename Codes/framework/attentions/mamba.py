@@ -76,6 +76,42 @@ class Mamba(BaseAttention):
         # Projects input to 2× width then splits into two gating branches.
         self.in_proj: nn.Linear = nn.Linear(self.d_model, self.d_model * 2)
         self.out_proj: nn.Linear = nn.Linear(self.d_model, self.d_model)
+        # PATCH: Preservation gate — at init, sigmoid(-2.0) ≈ 0.12 means the output
+        # is 88% the original hidden_states (residual bypass) and only 12% Mamba output.
+        # Fine-tuning gradually shifts the balance as pres_gate becomes more positive.
+        self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(-2.0))
+
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        """Copy pretrained Q+K weights into in_proj and out weights into out_proj.
+
+        Mamba's in_proj maps D→2D. We initialise the first D rows from the Q-projection
+        (content-selection branch) and the second D rows from the K-projection (gate branch),
+        which gives a warm-started gating mechanism closely related to the original attention.
+        """
+        with torch.no_grad():
+            q_src = getattr(pretrained_attn, "q_lin",
+                    getattr(pretrained_attn, "query",
+                    getattr(pretrained_attn, "q_proj", None)))
+            k_src = getattr(pretrained_attn, "k_lin",
+                    getattr(pretrained_attn, "key",
+                    getattr(pretrained_attn, "k_proj", None)))
+            o_src = getattr(pretrained_attn, "out_lin",
+                    getattr(pretrained_attn, "dense",
+                    getattr(pretrained_attn, "out_proj",
+                    getattr(pretrained_attn, "o_proj", None))))
+            D = self.d_model
+            if q_src is not None and hasattr(q_src, "weight"):
+                self.in_proj.weight.data[:D, :].copy_(q_src.weight.data)
+                if q_src.bias is not None and self.in_proj.bias is not None:
+                    self.in_proj.bias.data[:D].copy_(q_src.bias.data)
+            if k_src is not None and hasattr(k_src, "weight"):
+                self.in_proj.weight.data[D:, :].copy_(k_src.weight.data)
+                if k_src.bias is not None and self.in_proj.bias is not None:
+                    self.in_proj.bias.data[D:].copy_(k_src.bias.data)
+            if o_src is not None and hasattr(o_src, "weight"):
+                self.out_proj.weight.data.copy_(o_src.weight.data)
+                if o_src.bias is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.data.copy_(o_src.bias.data)
 
     def forward(
         self,
@@ -132,6 +168,10 @@ class Mamba(BaseAttention):
                 mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(-1).to(out.dtype)
                 out = out * mask
 
+        # PATCH: Preservation gate — blends Mamba output with the pretrained residual.
+        # sigmoid(-2.0) ≈ 0.12 at init → model starts 88% close to pretrained bypass.
+        alpha = torch.sigmoid(self.pres_gate)
+        out = alpha * out + (1.0 - alpha) * hidden_states
         return out, None
 
 
@@ -162,5 +202,10 @@ def inject_mamba(
     """
     d_model: int = model_config.hidden_size
     new_module = Mamba(d_model=d_model, config=model_config)
+    # PATCH: Copy pretrained weights — original code ignored old_attn entirely,
+    # leaving all weights at random Kaiming-uniform initialisation and causing
+    # complete representation collapse (50.92% majority-class accuracy on MRPC).
+    if old_attn is not None:
+        new_module.copy_weights(old_attn)
     layer.attention = new_module
     return new_module
