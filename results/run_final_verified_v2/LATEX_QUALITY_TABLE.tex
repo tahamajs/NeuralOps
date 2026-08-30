@@ -1,0 +1,14 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Empirical Quality and Statistical Significance of Attention Architectures.} Evaluated across GLUE benchmark splits on NVIDIA RTX 4070 GPU over 3 independent random seeds ($n=3$). Confidence intervals are 95\% two-sided intervals based on Student's $t$-distribution ($t_{\text{crit}}=4.303$). $p$-values are computed via paired two-tailed $t$-tests against standard \texttt{full} attention baseline, with Bonferroni multiple-comparison correction ($p_{\text{bonf}}$).}
+\label{tab:quality_benchmark_results}
+\begin{tabular}{l l l c c c c c c c}
+\toprule
+\textbf{Architecture} & \textbf{Model} & \textbf{Dataset} & \textbf{Accuracy (\%)} & \textbf{95\% CI} & \textbf{$p_{\text{raw}}$} & \textbf{$p_{\text{bonf}}$} & \textbf{F1 Score} & \textbf{Fidelity ($\rho$)} & \textbf{Fwd (ms)} \\
+\midrule
+\textbf{\texttt{full}} & DISTILBERT & SST2 & 89.68 & [89.7, 89.7] & -- & -- & 0.9015 & 1.0000 & 65.90 \\
+\texttt{a3 aasvd aegis\_hybrid aegis\_v2 aegis\_v6 asvd bam\_umoe compot compressed\_attention compressed\_attention\_layer\_energy compressed\_mha cur cur\_moe\_compressor gated\_linear\_attn granite\_hybrid hashed\_net hgrn2\_gated\_deltanet hgrn2\_layer hgrn2\_outer hla hymba\_transx jamba jamba\_info kronecker kronecker\_tt\_lora lillama lola mamba nmf optimal\_subspace\_projection performer res\_svd salr spectral\_residual\_lora spectron svd\_linear tt} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & 1.000 & 1.000 & 0.0000 & 1.0000 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table*}

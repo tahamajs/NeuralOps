@@ -1,0 +1,33 @@
+{
+  "run_id": "run_quality_20260828_050717",
+  "pretrained": false,
+  "gradient_checkpointing": false,
+  "phase": 2,
+  "type": "quality_sweep",
+  "created_at": "2026-08-28T05:07:17.218543",
+  "modules": [
+    "samba_m3",
+    "simple_ssm"
+  ],
+  "models": [
+    "distilbert"
+  ],
+  "datasets": [
+    "stsb"
+  ],
+  "seeds": [
+    42
+  ],
+  "epochs": 1,
+  "max_steps": 20,
+  "learning_rate": 3e-05,
+  "weight_decay": 0.01,
+  "batch_size": 64,
+  "seq_len": 128,
+  "timeout": 300,
+  "precision": "fp16",
+  "completed_at": "2026-08-28T05:10:23.987489",
+  "wall_clock_seconds": 158.27,
+  "total_gpu_hours": 0.044,
+  "estimated_co2_kg": 0.001016
+}

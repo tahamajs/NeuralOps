@@ -1,0 +1,17 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Full Computational Efficiency and VRAM Footprint Matrix.} Evaluated on NVIDIA GeForce RTX 4070 (Ada Lovelace, 8GB VRAM) with PyTorch 2.6.0+cu124 with TF32 and AMP acceleration.}
+\label{tab:efficiency_benchmark_results}
+\begin{tabular}{l l r r r r}
+\toprule
+\textbf{Module Architecture} & \textbf{Track} & \textbf{Fwd Latency (ms)} & \textbf{Bwd Latency (ms)} & \textbf{Peak VRAM (MB)} & \textbf{Throughput (tok/s)} \\
+\midrule
+\texttt{full} & \textsc{track1\_svd} & 33.74 & 70.46 & 2523.2 & 78614 \\
+\texttt{kmeans} & \textsc{track1\_svd} & 36.02 & 81.67 & 2229.4 & 69604 \\
+\texttt{spectron} & \textsc{track1\_svd} & 47.25 & 79.07 & 2858.0 & 64849 \\
+\texttt{svd\_linear\_attention} & \textsc{track1\_svd} & 63.42 & 83.33 & 2817.5 & 55821 \\
+\texttt{fused\_svd\_kernel} & \textsc{track1\_svd} & 344.64 & 82.97 & 2719.8 & 19158 \\
+\bottomrule
+\end{tabular}
+\end{table*}

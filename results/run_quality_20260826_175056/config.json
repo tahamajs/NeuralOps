@@ -1,0 +1,53 @@
+{
+  "run_id": "run_quality_20260826_175056",
+  "phase": 2,
+  "type": "quality_sweep",
+  "created_at": "2026-08-26T17:50:56.699018",
+  "modules": [
+    "full",
+    "svd_linear_attention",
+    "svd_mamba",
+    "mamba",
+    "samba_m3",
+    "gated_deltanet_block",
+    "performer_attention",
+    "linformer_attention",
+    "galerkin_attention",
+    "adaptive_span",
+    "soa_attn",
+    "aegis_v6",
+    "block_transformer_hiba",
+    "leka_v3",
+    "nasc_attention",
+    "griffin_ssd",
+    "cosformer",
+    "minimal_svd",
+    "jamba2",
+    "spectron"
+  ],
+  "models": [
+    "bert",
+    "roberta",
+    "distilbert",
+    "t5"
+  ],
+  "datasets": [
+    "sst2",
+    "mrpc",
+    "cola",
+    "stsb"
+  ],
+  "seeds": [
+    42,
+    123,
+    777
+  ],
+  "epochs": 3,
+  "max_steps": 20,
+  "learning_rate": 3e-05,
+  "weight_decay": 0.01,
+  "batch_size": 128,
+  "seq_len": 128,
+  "timeout": 120,
+  "precision": "fp16"
+}

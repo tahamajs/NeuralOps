@@ -1,0 +1,188 @@
+[
+  {
+    "run_id": "run_quality_20260828_050717",
+    "module_name": "full",
+    "model_family": "DISTILBERT",
+    "dataset": "STSB",
+    "status": "FAIL",
+    "metrics": {
+      "accuracy": 0.0,
+      "accuracy_std": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "p_value_vs_baseline": 1.0,
+      "p_value_bonferroni": 1.0,
+      "f1": 0.0,
+      "mcc": null,
+      "pearson": null,
+      "spearman": null,
+      "perplexity": null
+    },
+    "efficiency": {
+      "fwd_ms": 0.0,
+      "bwd_ms": 0.0,
+      "peak_vram_mb": 0.0,
+      "flops": 1450000000.0,
+      "throughput_tokens_sec": 0.0
+    },
+    "fidelity": 0.0,
+    "statistics": {
+      "ci_95": [
+        0.0,
+        0.0
+      ],
+      "paired_t_pvalue": 1.0,
+      "p_value_bonferroni": 1.0,
+      "sample_size": 0
+    },
+    "trajectories": {
+      "loss": [],
+      "grad_norm": [],
+      "fwd_latency_ms": []
+    },
+    "seeds": [
+      {
+        "seed": 42,
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "fidelity_score": 0.0,
+        "fwd_latency_ms": 0.0,
+        "bwd_latency_ms": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tokens_sec": 0.0,
+        "flops_macs": 0.0,
+        "loss_trajectory": [],
+        "grad_norm_trajectory": [],
+        "status": "FAIL",
+        "error_message": "Genuine dataset 'stsb' failed to load for model family 'distilbert' ((ReadTimeoutError(\"HTTPSConnectionPool(host='us.aws.cdn.hf.co', port=443): Read timed out. (read timeout=10)\"), '(Request ID: af67afc6-3e9a-4299-a165-aec0be7deccb)'))",
+        "startup_overhead_s": 0.0
+      }
+    ],
+    "timestamp": "2026-08-28T05:08:38.114505",
+    "git_commit": "54944bd83808a6e639d5743313c009886a3e41ff"
+  },
+  {
+    "run_id": "run_quality_20260828_050717",
+    "module_name": "samba_m3",
+    "model_family": "DISTILBERT",
+    "dataset": "STSB",
+    "status": "FAIL",
+    "metrics": {
+      "accuracy": 0.0,
+      "accuracy_std": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "p_value_vs_baseline": 1.0,
+      "p_value_bonferroni": 1.0,
+      "f1": 0.0,
+      "mcc": null,
+      "pearson": null,
+      "spearman": null,
+      "perplexity": null
+    },
+    "efficiency": {
+      "fwd_ms": 0.0,
+      "bwd_ms": 0.0,
+      "peak_vram_mb": 0.0,
+      "flops": 1450000000.0,
+      "throughput_tokens_sec": 0.0
+    },
+    "fidelity": 0.0,
+    "statistics": {
+      "ci_95": [
+        0.0,
+        0.0
+      ],
+      "paired_t_pvalue": 1.0,
+      "p_value_bonferroni": 1.0,
+      "sample_size": 0
+    },
+    "trajectories": {
+      "loss": [],
+      "grad_norm": [],
+      "fwd_latency_ms": []
+    },
+    "seeds": [
+      {
+        "seed": 42,
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "fidelity_score": 0.0,
+        "fwd_latency_ms": 0.0,
+        "bwd_latency_ms": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tokens_sec": 0.0,
+        "flops_macs": 0.0,
+        "loss_trajectory": [],
+        "grad_norm_trajectory": [],
+        "status": "FAIL",
+        "error_message": "Genuine dataset 'stsb' failed to load for model family 'distilbert' ((ReadTimeoutError(\"HTTPSConnectionPool(host='us.aws.cdn.hf.co', port=443): Read timed out. (read timeout=10)\"), '(Request ID: 8509ffc1-1e67-447e-be5c-dfc06509cf57)'))",
+        "startup_overhead_s": 0.0
+      }
+    ],
+    "timestamp": "2026-08-28T05:09:30.802307",
+    "git_commit": "54944bd83808a6e639d5743313c009886a3e41ff"
+  },
+  {
+    "run_id": "run_quality_20260828_050717",
+    "module_name": "simple_ssm",
+    "model_family": "DISTILBERT",
+    "dataset": "STSB",
+    "status": "FAIL",
+    "metrics": {
+      "accuracy": 0.0,
+      "accuracy_std": 0.0,
+      "ci_lower": 0.0,
+      "ci_upper": 0.0,
+      "p_value_vs_baseline": 1.0,
+      "p_value_bonferroni": 1.0,
+      "f1": 0.0,
+      "mcc": null,
+      "pearson": null,
+      "spearman": null,
+      "perplexity": null
+    },
+    "efficiency": {
+      "fwd_ms": 0.0,
+      "bwd_ms": 0.0,
+      "peak_vram_mb": 0.0,
+      "flops": 1450000000.0,
+      "throughput_tokens_sec": 0.0
+    },
+    "fidelity": 0.0,
+    "statistics": {
+      "ci_95": [
+        0.0,
+        0.0
+      ],
+      "paired_t_pvalue": 1.0,
+      "p_value_bonferroni": 1.0,
+      "sample_size": 0
+    },
+    "trajectories": {
+      "loss": [],
+      "grad_norm": [],
+      "fwd_latency_ms": []
+    },
+    "seeds": [
+      {
+        "seed": 42,
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "fidelity_score": 0.0,
+        "fwd_latency_ms": 0.0,
+        "bwd_latency_ms": 0.0,
+        "peak_vram_mb": 0.0,
+        "throughput_tokens_sec": 0.0,
+        "flops_macs": 0.0,
+        "loss_trajectory": [],
+        "grad_norm_trajectory": [],
+        "status": "FAIL",
+        "error_message": "Genuine dataset 'stsb' failed to load for model family 'distilbert' ((ReadTimeoutError(\"HTTPSConnectionPool(host='us.aws.cdn.hf.co', port=443): Read timed out. (read timeout=10)\"), '(Request ID: f1b9a583-f63d-4c93-9e8b-326e107e5c18)'))",
+        "startup_overhead_s": 0.0
+      }
+    ],
+    "timestamp": "2026-08-28T05:10:23.613578",
+    "git_commit": "00722f61183959e6d09396b586d646c2240a09bc"
+  }
+]

@@ -1,0 +1,32 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Full Computational Efficiency and VRAM Footprint Matrix.} Evaluated on NVIDIA GeForce RTX 4070 (Ada Lovelace, 8GB VRAM) with PyTorch 2.6.0+cu124 with TF32 and AMP acceleration.}
+\label{tab:efficiency_benchmark_results}
+\begin{tabular}{l l r r r r}
+\toprule
+\textbf{Module Architecture} & \textbf{Track} & \textbf{Fwd Latency (ms)} & \textbf{Bwd Latency (ms)} & \textbf{Peak VRAM (MB)} & \textbf{Throughput (tok/s)} \\
+\midrule
+\texttt{subspace\_projection} & \textsc{track1\_svd} & 45.34 & 90.17 & 3593.0 & 120906 \\
+\texttt{cr} & \textsc{track1\_svd} & 45.90 & 92.08 & 3599.8 & 118743 \\
+\texttt{grecodec\_compressor} & \textsc{track1\_svd} & 46.21 & 90.28 & 3593.0 & 120035 \\
+\texttt{salr} & \textsc{track1\_svd} & 47.15 & 90.33 & 3593.0 & 119173 \\
+\texttt{cur\_moe\_compressor} & \textsc{track1\_svd} & 48.38 & 91.46 & 3611.1 & 117167 \\
+\texttt{grecodec} & \textsc{track1\_svd} & 48.38 & 90.36 & 3593.0 & 118089 \\
+\texttt{cur} & \textsc{track1\_svd} & 49.24 & 91.66 & 3611.1 & 116282 \\
+\texttt{mamba} & \textsc{track1\_svd} & 60.93 & 116.76 & 3774.9 & 92207 \\
+\texttt{full} & \textsc{track1\_svd} & 66.28 & 133.95 & 4148.5 & 81825 \\
+\texttt{optimal\_subspace\_projection} & \textsc{track1\_svd} & 66.33 & 132.96 & 4147.4 & 82214 \\
+\texttt{cur\_moe} & \textsc{track1\_svd} & 66.34 & 133.48 & 4147.4 & 81995 \\
+\texttt{lsc} & \textsc{track1\_svd} & 66.69 & 134.87 & 4148.5 & 81284 \\
+\texttt{lillama} & \textsc{track1\_svd} & 67.48 & 133.21 & 4147.4 & 81638 \\
+\texttt{kvtc} & \textsc{track1\_svd} & 67.86 & 133.27 & 4147.4 & 81459 \\
+\texttt{kmeans} & \textsc{track1\_svd} & 68.01 & 154.09 & 3802.4 & 73769 \\
+\texttt{hashed\_net} & \textsc{track1\_svd} & 72.12 & 175.19 & 4355.8 & 66249 \\
+\texttt{tt} & \textsc{track1\_svd} & 72.70 & 135.73 & 3658.9 & 78609 \\
+\texttt{swift\_svd} & \textsc{track1\_svd} & 84.14 & 135.81 & 4300.8 & 74489 \\
+\texttt{swift\_svd\_act} & \textsc{track1\_svd} & 85.58 & 135.83 & 4300.8 & 73996 \\
+\texttt{mgie\_budget} & \textsc{track1\_svd} & 85.70 & 135.54 & 4300.8 & 74055 \\
+\bottomrule
+\end{tabular}
+\end{table*}
