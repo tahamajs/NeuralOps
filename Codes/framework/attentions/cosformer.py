@@ -59,6 +59,7 @@ class CosformerAttention(BaseAttention):
         self.max_seq_len: int = getattr(config, "max_position_embeddings", max_seq_len)
         self.act_fun: str = act_fun
         self.eps: float = eps
+        self.tau = nn.Parameter(torch.tensor(float(self.head_dim) ** 0.5))
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
         self.k_proj = nn.Linear(hidden_size, self.all_head_size)
@@ -124,13 +125,17 @@ class CosformerAttention(BaseAttention):
         K = self.k_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
         V = self.v_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
 
-        # 1. Non-negative activation
+        # 1. Non-negative activation with temperature scaling
+        tau = torch.clamp(self.tau, min=0.1)
         if self.act_fun == "relu":
-            Q = F.relu(Q)
-            K = F.relu(K)
+            Q = F.elu(Q / tau) + 1.0
+            K = F.elu(K / tau) + 1.0
+        elif self.act_fun == "softplus":
+            Q = F.softplus(Q / tau)
+            K = F.softplus(K / tau)
         elif self.act_fun == "elu":
-            Q = F.elu(Q) + 1.0
-            K = F.elu(K) + 1.0
+            Q = F.elu(Q / tau) + 1.0
+            K = F.elu(K / tau) + 1.0
 
         # 2. Token valid mask
         valid_mask = get_token_valid_mask(attention_mask, B, N, device)  # [B, N]

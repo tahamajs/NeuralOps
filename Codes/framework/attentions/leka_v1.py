@@ -59,12 +59,30 @@ class LEKAV1Attention(BaseAttention):
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, hidden_size)
         self.norm: nn.LayerNorm = nn.LayerNorm(self.head_dim)
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+        # PATCH: Preservation gate — interpolates between new linear-attn output and the
+        # pretrained residual bypass. Initialised at sigmoid(2.0) ≈ 0.88, meaning the
+        # model starts close to the pretrained distribution and learns to deviate gradually.
+        self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(2.0))
 
-        # Random projection matrix (one per head, shared)
+        # PATCH: QR-orthogonalised random projection for stable linear attention features.
+        # The original torch.randn() with persistent=False caused two bugs:
+        #   1. Buffer re-randomised on every model load (not saved in checkpoint).
+        #   2. Correlated feature columns across heads due to unstructured random init.
+        # Fix: QR-orthogonalise each head's projection slice; set persistent=True.
+        proj_data = torch.randn(self.num_attention_heads, self.head_dim, self.feature_dim)
+        for h in range(self.num_attention_heads):
+            # QR gives orthogonal columns; take first feature_dim columns
+            q_h, _ = torch.linalg.qr(
+                proj_data[h].T if self.head_dim < self.feature_dim else proj_data[h]
+            )
+            if self.head_dim < self.feature_dim:
+                proj_data[h] = q_h.T[:self.feature_dim, :].T  # (head_dim, feature_dim)
+            else:
+                proj_data[h] = q_h[:, :self.feature_dim]  # (head_dim, feature_dim)
         self.register_buffer(
             "proj",
-            torch.randn(self.num_attention_heads, self.head_dim, self.feature_dim),
-            persistent=False,
+            proj_data,
+            persistent=True,  # saved to checkpoint; never re-randomised
         )
 
     def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
@@ -188,6 +206,11 @@ class LEKAV1Attention(BaseAttention):
             context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         )
         out = self.out_proj(context)
+        # PATCH: Preservation gate — blends learned linear-attn output with the
+        # original hidden_states. alpha starts at ~0.88 so the model behaves near
+        # the pretrained baseline at step 0 and gradually learns to use the new output.
+        alpha = torch.sigmoid(self.pres_gate)
+        out = alpha * out + (1.0 - alpha) * hidden_states
         return out, None
 
     def get_ortho_loss(self) -> float:

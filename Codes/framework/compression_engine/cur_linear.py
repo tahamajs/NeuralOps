@@ -173,17 +173,15 @@ class CURLinear(nn.Module):
         C = W_float[:, col_idx]
         R = W_float[row_idx, :]
 
-        # Optimal core matrix: Tikhonov regularized pseudo-inverse (W_int^T W_int + eps * I)^{-1} W_int^T
+        # Optimal core matrix: SVD-regularized Moore-Penrose pseudo-inverse for numerical stability
         W_int = W_float[row_idx][:, col_idx]  # (r, r)
-        r_dim = W_int.shape[1]
-        WtW = torch.matmul(W_int.T, W_int)
-        diag_mean = torch.trace(WtW) / max(1, r_dim)
-        eps = max(1e-4 * diag_mean.item(), 1e-4)
-        reg_eye = eps * torch.eye(r_dim, device=W_int.device, dtype=W_int.dtype)
         try:
-            U = torch.linalg.solve(WtW + reg_eye, W_int.T)
+            u_int, s_int, vt_int = torch.linalg.svd(W_int, full_matrices=False)
+            eps = 1e-3 * s_int.max().clamp_min(1e-6)
+            s_inv = s_int / (s_int**2 + eps**2)
+            U = torch.matmul(vt_int.T, torch.matmul(torch.diag(s_inv), u_int.T))
         except Exception:
-            U = torch.linalg.pinv(W_int, rcond=1e-4)
+            U = torch.linalg.pinv(W_int, rcond=1e-3)
 
         cur_layer.C.data.copy_(C.to(dtype=W.dtype))
         cur_layer.U.data.copy_(U.to(dtype=W.dtype))
