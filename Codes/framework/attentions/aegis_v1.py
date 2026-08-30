@@ -218,13 +218,16 @@ class AegisAttentionV1(nn.Module):
             self.cfg.max_rank,
         )
 
-        self.rff_proj: nn.Parameter = nn.Parameter(
-            torch.randn(self.num_global_heads, self.head_dim, self.cfg.rff_features) * 0.02
-        )
+        # Initialize orthogonal random features (ORF) for global kernel stability
+        rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features)
+        for h in range(self.num_global_heads):
+            q_mat, _ = torch.linalg.qr(torch.randn(max(self.head_dim, self.cfg.rff_features), max(self.head_dim, self.cfg.rff_features)))
+            rff_init[h] = q_mat[:self.head_dim, :self.cfg.rff_features] / math.sqrt(self.cfg.rff_features)
+        self.rff_proj: nn.Parameter = nn.Parameter(rff_init)
 
         if self.cfg.use_adaptive_gate:
             self.blend_logits: Optional[nn.Parameter] = nn.Parameter(torch.zeros(self.num_heads))
-            self.gate_bias: float = self.cfg.gate_init_bias
+            self.gate_bias: float = max(2.0, self.cfg.gate_init_bias)
         else:
             self.blend_logits = None
             self.gate_bias = 0.0

@@ -103,12 +103,25 @@ class CURMoECompressor(BaseCompressor):
                     setattr(parent, child_name, cur_layer)
                     self.compressed_layers.append(name)
 
-        # If no explicit MoE structure was found, apply to linear layers as fallback
+        # If no explicit MoE structure was found, apply to linear layers as fallback.
+        # PATCH: Skip attention projection layers — compressing Q/K/V/out simultaneously
+        # across all 6 layers causes multiplicative reconstruction error and collapses
+        # pretrained representations. Apply CUR only to FFN (feed-forward) layers.
+        _ATTN_NAMES = frozenset({
+            "query", "key", "value",
+            "q_lin", "k_lin", "v_lin",
+            "q_proj", "k_proj", "v_proj",
+            "out_lin", "out_proj", "dense", "o_proj",
+        })
         if len(self.compressed_layers) == 0:
             for name, module in list(self.model.named_modules()):
+                last_part = name.split(".")[-1]
+                if last_part in _ATTN_NAMES:
+                    continue  # preserve pretrained attention weights intact
                 if isinstance(module, nn.Linear) and not isinstance(module, CURLinear):
                     max_rank = min(module.in_features, module.out_features)
-                    r = min(self.rank, max_rank)
+                    # Use at least rank=128 to retain ≥95% singular energy in FFN layers
+                    r = min(max(self.rank, 128), max_rank)
                     cur_layer = CURLinear.from_linear(
                         module,
                         rank=r,

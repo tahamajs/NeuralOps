@@ -169,25 +169,46 @@ class MinimalAURORAAttention(BaseAttention):
             ),
         )
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
+        # PATCH: Preservation gate parameter — sigmoid(2.0) ≈ 0.88 at init.
+        self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(2.0))
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
     def copy_weights(self, src: Any) -> None:
-        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module.
+
+        PATCH: Added direct DistilBERT attribute fallback. UniversalAdapter.get_weight_bias
+        may silently fail for DistilBERT naming (q_lin vs query vs q_proj), leaving all
+        4 projections at random orthogonal init and causing 50.92% accuracy collapse.
+        """
         from framework.core.adapters import UniversalAdapter
 
+        _attr_map = {
+            "q": ("q_lin", "query", "q_proj"),
+            "k": ("k_lin", "key",   "k_proj"),
+            "v": ("v_lin", "value", "v_proj"),
+            "o": ("out_lin", "dense", "out_proj", "o_proj"),
+        }
         for proj, target in [
             ("q", self.q_proj),
             ("k", self.k_proj),
             ("v", self.v_proj),
             ("o", self.out_proj),
         ]:
+            w, b = None, None
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
+            except Exception:
+                # DistilBERT direct fallback — try each known attribute name
+                for attr in _attr_map[proj]:
+                    mod = getattr(src, attr, None)
+                    if mod is not None and hasattr(mod, "weight"):
+                        w = mod.weight.data
+                        b = mod.bias.data if (mod.bias is not None) else None
+                        break
+            if w is not None:
                 target.decompose_from_weight(w, b, self.energy)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
-                pass
 
     def forward(
         self,
@@ -258,6 +279,11 @@ class MinimalAURORAAttention(BaseAttention):
         context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         output = self.out_proj(context)
+        # PATCH: Preservation gate — blends SVD-factored attention output with the
+        # original hidden_states. Gate starts at sigmoid(2.0) ≈ 0.88 so the model
+        # largely preserves pretrained behaviour at step 0.
+        alpha = torch.sigmoid(self.pres_gate)
+        output = alpha * output + (1.0 - alpha) * hidden_states
         return output, (attn_weights if output_attentions else None)
 
     def get_ortho_loss(self) -> torch.Tensor:

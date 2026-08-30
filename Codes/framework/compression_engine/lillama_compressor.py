@@ -111,8 +111,20 @@ class LiLLaMACompressor(BaseCompressor):
         activations_map = self._collect_io_activations()
         distilled_layers_count = 0
 
+        # PATCH: Names of attention projection layers to skip.
+        # Replacing Q/K/V/out with rank-32 SVD truncation destroys pretrained
+        # representations across all heads — skip them entirely.
+        _ATTN_NAMES = frozenset({
+            "query", "key", "value",
+            "q_lin", "k_lin", "v_lin",
+            "q_proj", "k_proj", "v_proj",
+            "out_lin", "out_proj", "dense", "o_proj",
+        })
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
+                last_name = name.split(".")[-1]
+                if last_name in _ATTN_NAMES:
+                    continue   # preserve attention weights intact
                 W = module.weight.data.clone().float()
                 d_out, d_in = W.shape
                 device = W.device
@@ -129,15 +141,30 @@ class LiLLaMACompressor(BaseCompressor):
                         try:
                             U, S, Vh = torch.linalg.svd(C, full_matrices=False)
                             r = min(self.rank, min(d_out, d_in), len(S))
+                            # PATCH: 95% energy guard — never truncate below 95% retention
+                            cum_e = (S[:r] ** 2).sum() / ((S ** 2).sum() + 1e-12)
+                            if cum_e < 0.95:
+                                r_needed = int(torch.searchsorted(
+                                    torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12),
+                                    torch.tensor(0.95)
+                                ).item()) + 1
+                                r = min(r_needed, len(S))
                             W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
                         except Exception:
                             W_new = W
                     else:
                         W_new = W
                 else:
-                    # SVD on weight itself as fallback
+                    # SVD on weight itself as fallback — PATCH: apply 95% energy guard
                     U, S, Vh = torch.linalg.svd(W, full_matrices=False)
                     r = min(self.rank, len(S))
+                    cum_e = (S[:r] ** 2).sum() / ((S ** 2).sum() + 1e-12)
+                    if cum_e < 0.95:
+                        r_needed = int(torch.searchsorted(
+                            torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12),
+                            torch.tensor(0.95)
+                        ).item()) + 1
+                        r = min(r_needed, len(S))
                     W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
 
                 module.weight.data = W_new.to(dtype=dtype, device=device)

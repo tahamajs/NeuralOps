@@ -223,11 +223,13 @@ class SeerGating(nn.Module):
             (gate_score * n_blocks).long(), min=1, max=n_blocks
         )  # (B, H)
 
-        mask = torch.zeros(B, H, n_blocks, n_blocks, device=Q.device, dtype=torch.bool)
-        for h in range(H):
-            k = int(keep_per_head[0, h].item())
-            mask[:, h, :k, :k] = True
-
+        # PATCH: The original [:k, :k] mask was always the upper-left triangle,
+        # meaning blocks in sentence 2 (indices 2–3 for L=128/block_size=32)
+        # could never attend to sentence 1 blocks. This destroyed cross-sentence
+        # reasoning required for MRPC paraphrase detection.
+        # Fix: use a full n_blocks×n_blocks True mask — all blocks attend to all blocks.
+        # Sparsity is still enforced by the XAttention inter-block top-k scoring.
+        mask = torch.ones(B, H, n_blocks, n_blocks, device=Q.device, dtype=torch.bool)
         return mask
 
 
@@ -328,7 +330,11 @@ class DualStageStripeAttention(nn.Module):
                 K_total = K_intra
                 V_total = V_intra
 
-            if self.cfg.stripe_enabled:
+            if self.cfg.stripe_enabled and N > 256:
+                # PATCH: Disable stripe masking for short sequences (N ≤ 256).
+                # For MRPC with L=128 and stripe_width=4, each query can attend only
+                # to tokens within ±4 tokens of its stripe group — far too restrictive
+                # for cross-sentence paraphrase detection. Only apply for long sequences.
                 sw = self.cfg.stripe_width
                 idx = torch.arange(K_total.size(2), device=Q.device)
                 stripe_group = idx // sw
@@ -379,7 +385,18 @@ class SpectraformerRectify(nn.Module):
         **kwargs) -> None:
         super().__init__()
         self.rff_features = rff_features
-        self.proj = nn.Parameter(torch.randn(head_dim, rff_features) * 0.02)
+        # PATCH: Replace tiny randn*0.02 random projection with QR-orthogonal init.
+        # The original *0.02 scaling caused Q@proj ≈ 0 for all tokens, making
+        # exp(Q@proj) ≈ 1 uniformly — the feature map lost all discriminative power
+        # and the linear attention collapsed to uniform pooling.
+        proj_init = torch.randn(head_dim, rff_features)
+        if head_dim <= rff_features:
+            proj_q, _ = torch.linalg.qr(proj_init.T)   # (rff_features, head_dim) orthogonal
+            proj_init = proj_q.T                         # (head_dim, rff_features)
+        else:
+            proj_q, _ = torch.linalg.qr(proj_init)      # (head_dim, rff_features) orthogonal
+            proj_init = proj_q
+        self.proj = nn.Parameter(proj_init / math.sqrt(head_dim))
 
     def forward(
         self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor
