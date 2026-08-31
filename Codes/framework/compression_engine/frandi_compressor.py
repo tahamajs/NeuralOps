@@ -13,6 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 
 class FRanDILinear(nn.Module):
@@ -220,7 +221,7 @@ class FRanDICompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and not isinstance(module, FRanDILinear):
+            if isinstance(module, nn.Linear) and not isinstance(module, FRanDILinear) and should_compress_linear(self.model, name):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         device = next(self.model.parameters()).device if list(self.model.parameters()) else torch.device("cpu")

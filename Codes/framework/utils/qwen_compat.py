@@ -139,6 +139,13 @@ def qwen_module_policy(module_name: str) -> str:
         "aegis_v1", "aegis_v3", "aegis_v4", "aegis_v5", "aegis_v6",
         "bam_umoe", "cosformer", "cur", "cur_moe", "cur_moe_compressor",
         "decay_linear_attn", "dobi", "dynamic_rank",
+        # These legacy replacements currently implement full-MHA, padding
+        # masks, or absolute-position assumptions.  Until their forward pass
+        # explicitly handles Qwen GQA + RoPE + causal masks, skipping is safer
+        # than reporting a numerically valid but semantically invalid result.
+        "a3", "aasvd", "adaptive_svd", "asvd", "cluster",
+        "cluster_attention", "goldfinch_ahn", "griffin_ssd", "hgrn2_layer",
+        "hgrn2_outer", "fusion_attn", "aegis_v2", "adaptive_svd_attention",
     }
     if name in explicit_incompatible:
         return "incompatible"
