@@ -385,3 +385,7 @@ def inject_aegis_v3(
     if hasattr(layer, "attention"):
         layer.attention = new_attn
     return new_attn
+
+
+# Stable public name used by the audit/test harness.
+AegisAttentionV3 = AegisAttention

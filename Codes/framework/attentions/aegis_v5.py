@@ -235,23 +235,23 @@ class AegisAttention(nn.Module):
         self.out_proj = FactorisedLinear(
             out_lin.weight.data,
             out_lin.bias.data if out_lin.bias is not None else None,
-            aegis_cfg.svd_energy,
-            aegis_cfg.min_rank,
-            aegis_cfg.max_rank,
+            self.cfg.svd_energy,
+            self.cfg.min_rank,
+            self.cfg.max_rank,
         )
 
         self.rff_proj: nn.Parameter = nn.Parameter(
-            torch.randn(self.num_global_heads, self.head_dim, aegis_cfg.rff_features) * 0.02
+            torch.randn(self.num_global_heads, self.head_dim, self.cfg.rff_features) * 0.02
         )
 
-        if aegis_cfg.use_adaptive_gate:
+        if self.cfg.use_adaptive_gate:
             self.blend_logits: Optional[nn.Parameter] = nn.Parameter(torch.zeros(self.num_heads))
-            self.gate_bias: float = aegis_cfg.gate_init_bias
+            self.gate_bias: float = self.cfg.gate_init_bias
         else:
             self.blend_logits = None
             self.gate_bias = 0.0
 
-        self.dropout: nn.Dropout = nn.Dropout(aegis_cfg.dropout)
+        self.dropout: nn.Dropout = nn.Dropout(self.cfg.dropout)
 
     @staticmethod
     def _prepare_mask(
@@ -413,3 +413,7 @@ def inject_aegis_v5(
         dropout=getattr(comp_config, "dropout", 0.1),
     )
     return inject_aegis_into_distilbert(layer, model_config, cfg, old_attn)
+
+
+# Stable public name used by the audit/test harness.
+AegisAttentionV5 = AegisAttention
