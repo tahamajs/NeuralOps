@@ -1,0 +1,148 @@
+2026-08-28 06:05:27,131 [INFO] QualitySweep: ================================================================================
+2026-08-28 06:05:27,131 [INFO] QualitySweep: \U0001f680 STARTING NEURALOPS PHASE 2 QUALITY SWEEP
+2026-08-28 06:05:27,132 [INFO] QualitySweep: Run ID: run_quality_20260828_060527 | Output Directory: results\all_modules_paper_run
+2026-08-28 06:05:27,132 [INFO] QualitySweep: Modules (188): ['a3', 'aasvd', 'adaptive_span', 'adaptive_sparse', 'adaptive_svd', 'adasplash', 'adasvd', 'admm', 'admm_pruner', 'aegis_hybrid', 'aegis_spectron_fp8', 'aegis_v1', 'aegis_v2', 'aegis_v3', 'aegis_v4', 'aegis_v5', 'aegis_v6', 'armor', 'ast', 'astro', 'asvd', 'bam_umoe', 'block_transformer_hiba', 'bonsai', 'cachenotes', 'chela_slay', 'cluster', 'come', 'compot', 'compressed_attention', 'compressed_attention_layer_energy', 'compressed_mha', 'coopq', 'cosformer', 'cr', 'cur', 'cur_moe', 'cur_moe_compressor', 'decay_linear_attn', 'delta_kv', 'direct_svd', 'dobi', 'dynamic_rank', 'eat', 'enlighten', 'entropy_budget', 'entropy_rank_allocator', 'erc', 'expert_choice_moe', 'factorised_matrix_state', 'faq', 'fasa', 'flap', 'flash3', 'flash3_fp8', 'flat_llm', 'frandi', 'frandi_compressor', 'full', 'fused_svd_kernel', 'fusion_attn', 'galerkin', 'gated_delta_net', 'gated_deltanet_block', 'gated_linear_attn', 'gfws', 'goldfinch_ahn', 'gqa', 'granite_hybrid', 'grecodec', 'grecodec_compressor', 'griffin_ssd', 'halo_regla', 'hamming', 'hashed_net', 'hgrn2_gated_deltanet', 'hgrn2_layer', 'hgrn2_outer', 'hla', 'huffman', 'hybrid_svd', 'hybridkv', 'hymba_transx', 'infini', 'jamba', 'jamba_info', 'kda', 'kmeans', 'kronecker', 'kronecker_tt_lora', 'kvtc', 'leka_v1', 'leka_v2', 'leka_v3', 'liftr', 'lillama', 'linformer', 'lola', 'lora_attn', 'lsc', 'lsh', 'mamba', 'mamba_shedder', 'mamba_svd_flash', 'mgie', 'mgie_budget', 'minimal_aurora', 'minimal_nova', 'minimal_prism', 'minimal_svd', 'minimal_svd_v2', 'mixattention_moska', 'mla', 'mlorq', 'moba', 'modegpt', 'moe_deltakv_paged', 'nasc', 'nexus', 'nha', 'nli_softmax', 'nmf', 'nsa', 'nystrom', 'oats', 'oha', 'optimal_subspace_projection', 'orion', 'performer', 'phantom', 'primal', 'progressive_token_pruning', 'projection_factorized_attn', 'proxsparse', 'qcqa', 'rala', 'rala_compressor', 'reap_moe', 'regla', 'res_svd', 'rotational_slicegpt', 'routing', 'rpc', 'rpca', 'saes', 'salr', 'salt', 'samba_m3', 'samba_moe', 'sdrm', 'simple_ssm', 'slicegpt', 'slicegpt_pca', 'slim', 'soa_attn', 'soa_fused_attn', 'soka', 'span_expanded', 'sparsegpt', 'spectra_v2', 'spectral_mamba', 'spectral_residual_lora', 'spectron', 'squeezing_heads_distiller', 'subspace_projection', 'svd', 'svd-mamba', 'svd_compressed', 'svd_linear', 'svd_linear_decay', 'svd_llm_v2', 'svd_proj_attn', 'swift_svd', 'swift_svd_act', 'token_compressed', 'tpa', 'tt', 'unified_rope', 'uniql', 'upi_stuffed_mamba', 'vig', 'vspec', 'wgqa', 'xattention', 'your_attention_name', 'your_compressor_name', 'zerokv_neo', 'zeros']
+2026-08-28 06:05:27,134 [INFO] QualitySweep: Models (3): ['distilbert', 'bert', 'roberta'] | Datasets (4): ['sst2', 'mrpc', 'cola', 'stsb'] | Seeds (1): [42]
+2026-08-28 06:05:27,134 [INFO] QualitySweep: ================================================================================
+2026-08-28 06:05:27,265 [INFO] PersistentWorker: Spawned Persistent CUDA Worker [PID 6048] on cuda:0. Waiting for initialization...
+2026-08-28 06:05:41,995 [INFO] CachedTensors: Loading pre-tokenized dataset cache from D:\SVD_Project\Codes\data_cache\sst2_distilbert_len128.pt...
+2026-08-28 06:05:42,107 [INFO] CachedTensors: Loaded 67349 train and 872 val samples in 0.112s
+2026-08-28 06:05:42,108 [INFO] PersistentWorkerLoop: Pre-tokenized dataset ready: 67349 train, 872 val
+2026-08-28 06:05:42,108 [INFO] PersistentWorkerLoop: Persistent worker initialization COMPLETE. Ready for sweep stream.
+2026-08-28 06:05:42,110 [INFO] PersistentWorker: \u26a1 Persistent CUDA Worker [PID 6048] is 100% warmed up and READY.
+2026-08-28 06:05:42,110 [INFO] QualitySweep: \u26a1 Persistent CUDA Worker initialized successfully. Zero-overhead stream active.
+2026-08-28 06:05:42,110 [INFO] QualitySweep: [1/2256] Evaluating full on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:05:42,216 [INFO] PersistentWorkerLoop: [MEM] Before module 'full': allocated=0.0MB reserved=0.0MB
+2026-08-28 06:05:42,341 [INFO] QualitySweep: \u26a1 Module 'full' seed 42 startup overhead: 126.6 ms (target < 2000 ms)
+2026-08-28 06:06:21,627 [INFO] QualitySweep:     --> Seed 42 completed: Acc=75.00%, F1=0.7630, Fid=1.0000, Peak VRAM=196.9MB
+2026-08-28 06:06:21,822 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:06:21,824 [INFO] QualitySweep: \u26a1 Module full startup overhead: 126.6 ms (target < 2000 ms)
+2026-08-28 06:06:21,851 [INFO] QualitySweep: --> full on DISTILBERT/SST2 completed in 39.74s: Acc=75.00% ± 0.00% (95% CI: [75.00, 75.00], p=1.0000), F1=0.7630, Fid=1.0000
+2026-08-28 06:06:21,987 [INFO] QualitySweep: [2/2256] Evaluating a3 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:06:22,028 [INFO] PersistentWorkerLoop: [MEM] Before module 'a3': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:06:22,032 [INFO] QualitySweep: Module 'a3' resolved via COMPRESSOR_REGISTRY path
+2026-08-28 06:06:22,369 [INFO] QualitySweep: \u26a1 Module 'a3' seed 42 startup overhead: 341.4 ms (target < 2000 ms)
+2026-08-28 06:07:10,823 [INFO] QualitySweep:     --> Seed 42 completed: Acc=75.34%, F1=0.7598, Fid=0.7733, Peak VRAM=220.3MB
+2026-08-28 06:07:11,013 [INFO] QualitySweep: \u26a1 Module a3 startup overhead: 341.4 ms (target < 2000 ms)
+2026-08-28 06:07:11,014 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:07:11,042 [INFO] QualitySweep: --> a3 on DISTILBERT/SST2 completed in 49.06s: Acc=75.34% ± 0.00% (95% CI: [75.34, 75.34], p=1.0000), F1=0.7598, Fid=0.7733
+2026-08-28 06:07:11,208 [INFO] QualitySweep: [3/2256] Evaluating aasvd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:07:11,248 [INFO] PersistentWorkerLoop: [MEM] Before module 'aasvd': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:07:11,252 [INFO] QualitySweep: Module 'aasvd' resolved via COMPRESSOR_REGISTRY path
+2026-08-28 06:07:11,253 [WARNING] framework.compression_engine.aa_svd_compressor: AASVD: No tokenizer provided. Falling back to unweighted truncated SVD.
+2026-08-28 06:07:11,539 [INFO] framework.compression_engine.aa_svd_compressor: AASVD (unweighted): Structurally factorized 12 linear layers into SVDLinear.
+2026-08-28 06:07:11,554 [INFO] QualitySweep: \u26a1 Module 'aasvd' seed 42 startup overhead: 305.5 ms (target < 2000 ms)
+2026-08-28 06:07:59,724 [INFO] QualitySweep:     --> Seed 42 completed: Acc=76.15%, F1=0.7658, Fid=0.7873, Peak VRAM=220.3MB
+2026-08-28 06:07:59,916 [INFO] QualitySweep: \u26a1 Module aasvd startup overhead: 305.5 ms (target < 2000 ms)
+2026-08-28 06:07:59,918 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:07:59,982 [INFO] QualitySweep: --> aasvd on DISTILBERT/SST2 completed in 48.77s: Acc=76.15% ± 0.00% (95% CI: [76.15, 76.15], p=1.0000), F1=0.7658, Fid=0.7873
+2026-08-28 06:08:00,163 [INFO] QualitySweep: [4/2256] Evaluating adaptive_span on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:08:00,207 [INFO] PersistentWorkerLoop: [MEM] Before module 'adaptive_span': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:08:00,212 [INFO] QualitySweep: Module 'adaptive_span' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:08:00,218 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_span' into 2 transformer blocks.
+2026-08-28 06:08:00,225 [INFO] QualitySweep: \u26a1 Module 'adaptive_span' seed 42 startup overhead: 18.5 ms (target < 2000 ms)
+2026-08-28 06:08:44,537 [INFO] QualitySweep:     --> Seed 42 completed: Acc=77.64%, F1=0.7850, Fid=0.8880, Peak VRAM=258.2MB
+2026-08-28 06:08:44,726 [INFO] QualitySweep: \u26a1 Module adaptive_span startup overhead: 18.5 ms (target < 2000 ms)
+2026-08-28 06:08:44,728 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:08:44,820 [INFO] QualitySweep: --> adaptive_span on DISTILBERT/SST2 completed in 44.66s: Acc=77.64% ± 0.00% (95% CI: [77.64, 77.64], p=1.0000), F1=0.7850, Fid=0.8880
+2026-08-28 06:08:45,009 [INFO] QualitySweep: [5/2256] Evaluating adaptive_sparse on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:08:45,046 [INFO] PersistentWorkerLoop: [MEM] Before module 'adaptive_sparse': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:08:45,050 [INFO] QualitySweep: Module 'adaptive_sparse' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:08:45,057 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_sparse' into 2 transformer blocks.
+2026-08-28 06:08:45,063 [INFO] QualitySweep: \u26a1 Module 'adaptive_sparse' seed 42 startup overhead: 17.4 ms (target < 2000 ms)
+2026-08-28 06:09:40,840 [INFO] QualitySweep:     --> Seed 42 completed: Acc=77.64%, F1=0.7850, Fid=0.8879, Peak VRAM=267.1MB
+2026-08-28 06:09:41,033 [INFO] QualitySweep: \u26a1 Module adaptive_sparse startup overhead: 17.4 ms (target < 2000 ms)
+2026-08-28 06:09:41,034 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:09:41,083 [INFO] QualitySweep: --> adaptive_sparse on DISTILBERT/SST2 completed in 56.07s: Acc=77.64% ± 0.00% (95% CI: [77.64, 77.64], p=1.0000), F1=0.7850, Fid=0.8879
+2026-08-28 06:09:41,262 [INFO] QualitySweep: [6/2256] Evaluating adaptive_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:09:41,300 [INFO] PersistentWorkerLoop: [MEM] Before module 'adaptive_svd': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:09:41,305 [INFO] QualitySweep: Module 'adaptive_svd' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:09:41,444 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_svd' into 2 transformer blocks.
+2026-08-28 06:09:41,461 [INFO] QualitySweep: \u26a1 Module 'adaptive_svd' seed 42 startup overhead: 161.5 ms (target < 2000 ms)
+2026-08-28 06:10:46,329 [INFO] QualitySweep:     --> Seed 42 completed: Acc=75.34%, F1=0.7630, Fid=0.8259, Peak VRAM=267.3MB
+2026-08-28 06:10:46,531 [INFO] QualitySweep: \u26a1 Module adaptive_svd startup overhead: 161.5 ms (target < 2000 ms)
+2026-08-28 06:10:46,533 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:10:46,572 [INFO] QualitySweep: --> adaptive_svd on DISTILBERT/SST2 completed in 65.31s: Acc=75.34% ± 0.00% (95% CI: [75.34, 75.34], p=1.0000), F1=0.7630, Fid=0.8259
+2026-08-28 06:10:46,775 [INFO] QualitySweep: [7/2256] Evaluating adasplash on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:10:46,812 [INFO] PersistentWorkerLoop: [MEM] Before module 'adasplash': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:10:46,816 [INFO] QualitySweep: Module 'adasplash' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:10:46,820 [INFO] framework.core.attention_utils: Successfully injected 'adasplash' into 2 transformer blocks.
+2026-08-28 06:10:46,826 [INFO] QualitySweep: \u26a1 Module 'adasplash' seed 42 startup overhead: 13.8 ms (target < 2000 ms)
+2026-08-28 06:12:58,759 [INFO] QualitySweep:     --> Seed 42 completed: Acc=76.38%, F1=0.7716, Fid=0.8382, Peak VRAM=450.5MB
+2026-08-28 06:12:58,958 [INFO] QualitySweep: \u26a1 Module adasplash startup overhead: 13.8 ms (target < 2000 ms)
+2026-08-28 06:12:58,961 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:12:59,005 [INFO] QualitySweep: --> adasplash on DISTILBERT/SST2 completed in 132.23s: Acc=76.38% ± 0.00% (95% CI: [76.38, 76.38], p=1.0000), F1=0.7716, Fid=0.8382
+2026-08-28 06:12:59,183 [INFO] QualitySweep: [8/2256] Evaluating adasvd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:12:59,220 [INFO] PersistentWorkerLoop: [MEM] Before module 'adasvd': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:12:59,224 [INFO] QualitySweep: Module 'adasvd' resolved via COMPRESSOR_REGISTRY path
+2026-08-28 06:12:59,698 [INFO] QualitySweep: \u26a1 Module 'adasvd' seed 42 startup overhead: 478.5 ms (target < 2000 ms)
+2026-08-28 06:13:52,042 [INFO] QualitySweep:     --> Seed 42 completed: Acc=76.72%, F1=0.7742, Fid=0.3012, Peak VRAM=220.7MB
+2026-08-28 06:13:52,256 [INFO] QualitySweep: \u26a1 Module adasvd startup overhead: 478.5 ms (target < 2000 ms)
+2026-08-28 06:13:52,257 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:13:52,306 [INFO] QualitySweep: --> adasvd on DISTILBERT/SST2 completed in 53.12s: Acc=76.72% ± 0.00% (95% CI: [76.72, 76.72], p=1.0000), F1=0.7742, Fid=0.3012
+2026-08-28 06:13:52,513 [INFO] QualitySweep: [9/2256] Evaluating admm on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:13:52,554 [INFO] PersistentWorkerLoop: [MEM] Before module 'admm': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:13:52,558 [INFO] QualitySweep: Module 'admm' resolved via COMPRESSOR_REGISTRY path
+2026-08-28 06:13:52,671 [INFO] QualitySweep: \u26a1 Module 'admm' seed 42 startup overhead: 117.4 ms (target < 2000 ms)
+2026-08-28 06:14:33,314 [INFO] QualitySweep:     --> Seed 42 completed: Acc=76.61%, F1=0.7708, Fid=0.8109, Peak VRAM=196.9MB
+2026-08-28 06:14:33,516 [INFO] QualitySweep: \u26a1 Module admm startup overhead: 117.4 ms (target < 2000 ms)
+2026-08-28 06:14:33,517 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:14:33,596 [INFO] QualitySweep: --> admm on DISTILBERT/SST2 completed in 41.08s: Acc=76.61% ± 0.00% (95% CI: [76.61, 76.61], p=1.0000), F1=0.7708, Fid=0.8109
+2026-08-28 06:14:33,776 [INFO] QualitySweep: [10/2256] Evaluating admm_pruner on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:14:33,821 [INFO] PersistentWorkerLoop: [MEM] Before module 'admm_pruner': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:14:33,826 [INFO] QualitySweep: Module 'admm_pruner' resolved via COMPRESSOR_REGISTRY path
+2026-08-28 06:14:33,923 [INFO] QualitySweep: \u26a1 Module 'admm_pruner' seed 42 startup overhead: 102.4 ms (target < 2000 ms)
+2026-08-28 06:15:21,387 [INFO] QualitySweep:     --> Seed 42 completed: Acc=76.15%, F1=0.7714, Fid=0.7931, Peak VRAM=198.4MB
+2026-08-28 06:15:21,590 [INFO] QualitySweep: \u26a1 Module admm_pruner startup overhead: 102.4 ms (target < 2000 ms)
+2026-08-28 06:15:21,591 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:15:21,650 [INFO] QualitySweep: --> admm_pruner on DISTILBERT/SST2 completed in 47.87s: Acc=76.15% ± 0.00% (95% CI: [76.15, 76.15], p=1.0000), F1=0.7714, Fid=0.7931
+2026-08-28 06:15:21,830 [INFO] QualitySweep: [11/2256] Evaluating aegis_hybrid on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:15:21,887 [INFO] PersistentWorkerLoop: [MEM] Before module 'aegis_hybrid': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:15:21,891 [INFO] QualitySweep: Module 'aegis_hybrid' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:15:21,898 [INFO] framework.core.attention_utils: Successfully injected 'aegis_hybrid' into 2 transformer blocks.
+2026-08-28 06:15:21,904 [INFO] QualitySweep: \u26a1 Module 'aegis_hybrid' seed 42 startup overhead: 17.3 ms (target < 2000 ms)
+2026-08-28 06:16:50,698 [INFO] QualitySweep:     --> Seed 42 completed: Acc=71.33%, F1=0.7191, Fid=0.5931, Peak VRAM=313.4MB
+2026-08-28 06:16:50,909 [INFO] QualitySweep: \u26a1 Module aegis_hybrid startup overhead: 17.3 ms (target < 2000 ms)
+2026-08-28 06:16:50,911 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:16:50,972 [INFO] QualitySweep: --> aegis_hybrid on DISTILBERT/SST2 completed in 89.14s: Acc=71.33% ± 0.00% (95% CI: [71.33, 71.33], p=1.0000), F1=0.7191, Fid=0.5931
+2026-08-28 06:16:51,172 [INFO] QualitySweep: [12/2256] Evaluating aegis_spectron_fp8 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:16:51,208 [INFO] PersistentWorkerLoop: [MEM] Before module 'aegis_spectron_fp8': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:16:51,211 [INFO] QualitySweep: Module 'aegis_spectron_fp8' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:16:51,232 [INFO] framework.core.attention_utils: Successfully injected 'aegis_spectron_fp8' into 2 transformer blocks.
+2026-08-28 06:16:51,238 [INFO] QualitySweep: \u26a1 Module 'aegis_spectron_fp8' seed 42 startup overhead: 31.1 ms (target < 2000 ms)
+2026-08-28 06:19:06,199 [INFO] QualitySweep:     --> Seed 42 completed: Acc=75.57%, F1=0.7756, Fid=0.7180, Peak VRAM=1631.6MB
+2026-08-28 06:19:06,406 [INFO] QualitySweep: \u26a1 Module aegis_spectron_fp8 startup overhead: 31.1 ms (target < 2000 ms)
+2026-08-28 06:19:06,408 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:19:06,587 [INFO] QualitySweep: --> aegis_spectron_fp8 on DISTILBERT/SST2 completed in 135.42s: Acc=75.57% ± 0.00% (95% CI: [75.57, 75.57], p=1.0000), F1=0.7756, Fid=0.7180
+2026-08-28 06:19:06,782 [INFO] QualitySweep: [13/2256] Evaluating aegis_v1 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:19:06,836 [INFO] PersistentWorkerLoop: [MEM] Before module 'aegis_v1': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:19:06,843 [INFO] QualitySweep: Module 'aegis_v1' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:19:06,885 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v1' into 2 transformer blocks.
+2026-08-28 06:19:06,896 [INFO] QualitySweep: \u26a1 Module 'aegis_v1' seed 42 startup overhead: 60.6 ms (target < 2000 ms)
+2026-08-28 06:20:33,562 [INFO] QualitySweep:     --> Seed 42 completed: Acc=75.69%, F1=0.7686, Fid=0.7536, Peak VRAM=314.6MB
+2026-08-28 06:20:33,767 [INFO] QualitySweep: \u26a1 Module aegis_v1 startup overhead: 60.6 ms (target < 2000 ms)
+2026-08-28 06:20:33,770 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:20:33,859 [INFO] QualitySweep: --> aegis_v1 on DISTILBERT/SST2 completed in 87.08s: Acc=75.69% ± 0.00% (95% CI: [75.69, 75.69], p=1.0000), F1=0.7686, Fid=0.7536
+2026-08-28 06:20:34,053 [INFO] QualitySweep: [14/2256] Evaluating aegis_v2 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:20:34,100 [INFO] PersistentWorkerLoop: [MEM] Before module 'aegis_v2': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:20:34,105 [INFO] QualitySweep: Module 'aegis_v2' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:20:34,109 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v2' into 2 transformer blocks.
+2026-08-28 06:20:34,115 [INFO] QualitySweep: \u26a1 Module 'aegis_v2' seed 42 startup overhead: 14.8 ms (target < 2000 ms)
+2026-08-28 06:21:56,375 [INFO] QualitySweep:     --> Seed 42 completed: Acc=71.33%, F1=0.7191, Fid=0.5931, Peak VRAM=313.5MB
+2026-08-28 06:21:56,578 [INFO] QualitySweep: \u26a1 Module aegis_v2 startup overhead: 14.8 ms (target < 2000 ms)
+2026-08-28 06:21:56,580 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:21:56,749 [INFO] QualitySweep: --> aegis_v2 on DISTILBERT/SST2 completed in 82.70s: Acc=71.33% ± 0.00% (95% CI: [71.33, 71.33], p=1.0000), F1=0.7191, Fid=0.5931
+2026-08-28 06:21:56,937 [INFO] QualitySweep: [15/2256] Evaluating aegis_v3 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:21:56,979 [INFO] PersistentWorkerLoop: [MEM] Before module 'aegis_v3': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:21:56,983 [INFO] QualitySweep: Module 'aegis_v3' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:21:57,021 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v3' into 2 transformer blocks.
+2026-08-28 06:21:57,028 [INFO] QualitySweep: \u26a1 Module 'aegis_v3' seed 42 startup overhead: 49.4 ms (target < 2000 ms)
+2026-08-28 06:23:27,443 [INFO] QualitySweep:     --> Seed 42 completed: Acc=66.17%, F1=0.6682, Fid=0.4367, Peak VRAM=429.4MB
+2026-08-28 06:23:27,645 [INFO] QualitySweep: \u26a1 Module aegis_v3 startup overhead: 49.4 ms (target < 2000 ms)
+2026-08-28 06:23:27,647 [INFO] PersistentWorkerLoop: [MEM] After cleanup: allocated=33.0MB
+2026-08-28 06:23:27,858 [INFO] QualitySweep: --> aegis_v3 on DISTILBERT/SST2 completed in 90.92s: Acc=66.17% ± 0.00% (95% CI: [66.17, 66.17], p=1.0000), F1=0.6682, Fid=0.4367
+2026-08-28 06:23:28,048 [INFO] QualitySweep: [16/2256] Evaluating aegis_v4 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 06:23:28,088 [INFO] PersistentWorkerLoop: [MEM] Before module 'aegis_v4': allocated=33.0MB reserved=58.0MB
+2026-08-28 06:23:28,092 [INFO] QualitySweep: Module 'aegis_v4' resolved via ATTENTION_REGISTRY path
+2026-08-28 06:23:28,126 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v4' into 2 transformer blocks.
+2026-08-28 06:23:28,132 [INFO] QualitySweep: \u26a1 Module 'aegis_v4' seed 42 startup overhead: 45.0 ms (target < 2000 ms)
