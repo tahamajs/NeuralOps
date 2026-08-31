@@ -44,6 +44,13 @@ class UniversalAttentionWrapper(nn.Module):
         elif "attn_mask" in kwargs:
             attention_mask = kwargs.pop("attn_mask")
 
+        # Qwen supplies a prepared 4-D causal mask and rotary position
+        # embeddings. Legacy replacements generally implement their own
+        # masking and cannot consume that representation. The base Qwen model
+        # is untouched; this applies only to an injected replacement.
+        if "position_embeddings" in kwargs and isinstance(attention_mask, torch.Tensor) and attention_mask.dim() == 4:
+            attention_mask = None
+
         # Clean redundant or mismatched args
         kwargs.pop("key", None)
         kwargs.pop("value", None)
@@ -278,4 +285,3 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
         print(f"Successfully replaced {replaced_count} attention layers with '{attention_key}'.")
 
     return model
-

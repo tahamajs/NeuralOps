@@ -29,12 +29,24 @@ try:
 except ImportError:
     psutil = None
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 8080
+import argparse
+
+def _parse_cli_args():
+    parser = argparse.ArgumentParser(description="Real-Time Live Dashboard & Monitoring Server")
+    parser.add_argument("--port", type=int, default=8080, help="Port to bind server")
+    parser.add_argument("--results_dir", type=str, default=None, help="Explicit results directory to monitor")
+    parser.add_argument("--log_file", type=str, default=None, help="Explicit log file to parse")
+    parser.add_argument("pos_port", nargs="?", type=int, default=None, help="Positional port fallback")
+    args, _ = parser.parse_known_args()
+    port = args.port if args.pos_port is None else args.pos_port
+    return port, args.results_dir, args.log_file
+
+PORT, CLI_RESULTS_DIR, CLI_LOG_FILE = _parse_cli_args()
 WORKDIR = Path(__file__).resolve().parent
-PROJECT_DIR = WORKDIR.parent.parent
+PROJECT_DIR = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else WORKDIR.parent.parent
 WEB_DIR = WORKDIR / "web"
-MASTER_LOG = PROJECT_DIR / "comprehensive_run_detached.log"
-RESULTS_DIR = WORKDIR / "results" / "gpu_server"
+MASTER_LOG = Path(CLI_LOG_FILE) if CLI_LOG_FILE else PROJECT_DIR / "comprehensive_run_detached.log"
+RESULTS_DIR = Path(CLI_RESULTS_DIR) if CLI_RESULTS_DIR else PROJECT_DIR / "results" / "gpu_server"
 
 # Cache synchronization
 _cache_lock = threading.Lock()
@@ -148,12 +160,127 @@ def get_completed_results() -> List[Dict[str, Any]]:
     results = []
     error_map = {}
     
-    # Check active verified run summary.csv first
-    if (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists():
+    # Check active full universe run summary.csv first
+    if (PROJECT_DIR / "results" / "all_modules_paper_run").exists() or (PROJECT_DIR / "results" / "all_modules_paper_run" / "sweep_stdout.log").exists():
+        active_csv_candidates = [
+            PROJECT_DIR / "results" / "all_modules_paper_run" / "summary.csv",
+            Path("results/all_modules_paper_run/summary.csv"),
+        ]
+        for acsv in active_csv_candidates:
+            if acsv.exists() and acsv.stat().st_size > 0:
+                try:
+                    import csv
+                    with open(acsv, "r", encoding="utf-8", errors="ignore") as f:
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            mod = row.get("module_name", row.get("module", ""))
+                            if not mod:
+                                continue
+                            fwd = float(row["fwd_ms"]) if row.get("fwd_ms") and row["fwd_ms"] not in ("-", "") else None
+                            bwd = float(row["bwd_ms"]) if row.get("bwd_ms") and row["bwd_ms"] not in ("-", "") else None
+                            mem = float(row["peak_vram_mb"]) if row.get("peak_vram_mb") and row["peak_vram_mb"] not in ("-", "") else None
+                            acc = float(row["mean_accuracy"]) if row.get("mean_accuracy") and row["mean_accuracy"] not in ("-", "") else None
+                            f1 = float(row["f1_score"]) if row.get("f1_score") and row["f1_score"] not in ("-", "") else None
+                            fid = float(row["fidelity_score"]) if row.get("fidelity_score") and row["fidelity_score"] not in ("-", "") else None
+                            thru = float(row["throughput_tokens_sec"]) if row.get("throughput_tokens_sec") and row["throughput_tokens_sec"] not in ("-", "") else None
+                            pval = float(row["p_value"]) if row.get("p_value") and row["p_value"] not in ("-", "") else None
+                            ci_lower = float(row["ci_lower"]) if row.get("ci_lower") and row["ci_lower"] not in ("-", "") else None
+                            ci_upper = float(row["ci_upper"]) if row.get("ci_upper") and row["ci_upper"] not in ("-", "") else None
+                            
+                            ts_val = row.get("timestamp", datetime.now().isoformat())
+                            try:
+                                ts = datetime.fromisoformat(ts_val)
+                            except Exception:
+                                ts = datetime.now()
+                                
+                            is_hlp = is_helper_module(mod)
+                            status_val = "HELPER" if is_hlp else row.get("status", "PASS").upper()
+                            err_detail_val = "Injection helper function, excluded from benchmark" if is_hlp else "None / Success"
+
+                            results.append({
+                                "timestamp": ts,
+                                "track": "quality_phase2",
+                                "module": mod,
+                                "model": row.get("model_family", "BERT").upper(),
+                                "dataset": row.get("dataset", "SST2").upper(),
+                                "status": status_val,
+                                "fwd_ms": fwd,
+                                "bwd_ms": bwd,
+                                "mem_mb": mem,
+                                "acc_pct": acc,
+                                "f1_score": f1,
+                                "fidelity_score": fid,
+                                "throughput": thru,
+                                "p_value": pval,
+                                "ci_lower": ci_lower,
+                                "ci_upper": ci_upper,
+                                "error_detail": err_detail_val,
+                            })
+                    if results:
+                        return results
+                except Exception:
+                    pass
+        return results
+    elif (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "final_paper_run" / "summary.csv",
             Path("results/final_paper_run/summary.csv"),
         ]
+        for acsv in active_csv_candidates:
+            if acsv.exists() and acsv.stat().st_size > 0:
+                try:
+                    import csv
+                    with open(acsv, "r", encoding="utf-8", errors="ignore") as f:
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            mod = row.get("module_name", row.get("module", ""))
+                            if not mod:
+                                continue
+                            fwd = float(row["fwd_ms"]) if row.get("fwd_ms") and row["fwd_ms"] not in ("-", "") else None
+                            bwd = float(row["bwd_ms"]) if row.get("bwd_ms") and row["bwd_ms"] not in ("-", "") else None
+                            mem = float(row["peak_vram_mb"]) if row.get("peak_vram_mb") and row["peak_vram_mb"] not in ("-", "") else None
+                            acc = float(row["mean_accuracy"]) if row.get("mean_accuracy") and row["mean_accuracy"] not in ("-", "") else None
+                            f1 = float(row["f1_score"]) if row.get("f1_score") and row["f1_score"] not in ("-", "") else None
+                            fid = float(row["fidelity_score"]) if row.get("fidelity_score") and row["fidelity_score"] not in ("-", "") else None
+                            thru = float(row["throughput_tokens_sec"]) if row.get("throughput_tokens_sec") and row["throughput_tokens_sec"] not in ("-", "") else None
+                            pval = float(row["p_value"]) if row.get("p_value") and row["p_value"] not in ("-", "") else None
+                            ci_lower = float(row["ci_lower"]) if row.get("ci_lower") and row["ci_lower"] not in ("-", "") else None
+                            ci_upper = float(row["ci_upper"]) if row.get("ci_upper") and row["ci_upper"] not in ("-", "") else None
+                            
+                            ts_val = row.get("timestamp", datetime.now().isoformat())
+                            try:
+                                ts = datetime.fromisoformat(ts_val)
+                            except Exception:
+                                ts = datetime.now()
+                                
+                            is_hlp = is_helper_module(mod)
+                            status_val = "HELPER" if is_hlp else row.get("status", "PASS").upper()
+                            err_detail_val = "Injection helper function, excluded from benchmark" if is_hlp else "None / Success"
+
+                            results.append({
+                                "timestamp": ts,
+                                "track": "quality_phase2",
+                                "module": mod,
+                                "model": row.get("model_family", "BERT").upper(),
+                                "dataset": row.get("dataset", "SST2").upper(),
+                                "status": status_val,
+                                "fwd_ms": fwd,
+                                "bwd_ms": bwd,
+                                "mem_mb": mem,
+                                "acc_pct": acc,
+                                "f1_score": f1,
+                                "fidelity_score": fid,
+                                "throughput": thru,
+                                "p_value": pval,
+                                "ci_lower": ci_lower,
+                                "ci_upper": ci_upper,
+                                "error_detail": err_detail_val,
+                            })
+                    if results:
+                        return results
+                except Exception:
+                    pass
+        return results
     elif (PROJECT_DIR / "results" / "run_final_verified").exists() or (PROJECT_DIR / "run_final_verified.log").exists():
         active_csv_candidates = [
             PROJECT_DIR / "results" / "run_final_verified" / "summary.csv",
@@ -258,6 +385,7 @@ def get_completed_results() -> List[Dict[str, Any]]:
                     return results
             except Exception:
                 pass
+        return results
     
     log_candidates = [
         PROJECT_DIR / "run_quality_all_screening.log",
@@ -734,12 +862,19 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
     Parses run_quality_fast.log and results/run_quality_fast/summary.csv
     to provide per-module, per-seed, per-epoch live status, metrics, and ETA.
     """
-    is_screening_all = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists() or (PROJECT_DIR / "retest_broken.log").exists()
+    is_final_paper = (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists() or (PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log").exists()
+    is_screening_all = is_final_paper or (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists() or (PROJECT_DIR / "retest_broken.log").exists()
     is_screening_ep1 = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
     is_screening_fast = is_screening_ep1 or (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
     is_screening = is_screening_all or is_screening_fast or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
 
     log_candidates = [
+        PROJECT_DIR / "results" / "all_modules_paper_run" / "sweep_stdout.log",
+        Path("results/all_modules_paper_run/sweep_stdout.log"),
+        PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log",
+        Path("results/final_paper_run/sweep_stdout.log"),
+        PROJECT_DIR / "final_paper_run.log",
+        Path("final_paper_run.log"),
         PROJECT_DIR / "run_final_verified.log",
         Path("run_final_verified.log"),
         PROJECT_DIR / "run_quality_recovery.log",
@@ -761,6 +896,8 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
         PROJECT_DIR / "run_quality_fast.log",
         Path("run_quality_fast.log"),
     ]
+    if CLI_LOG_FILE:
+        log_candidates.insert(0, Path(CLI_LOG_FILE))
     log_file = None
     for lc in log_candidates:
         if lc.exists() and lc.stat().st_size > 0:
@@ -768,6 +905,10 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             break
 
     summary_candidates = [
+        PROJECT_DIR / "results" / "all_modules_paper_run" / "summary.csv",
+        Path("results/all_modules_paper_run/summary.csv"),
+        PROJECT_DIR / "results" / "final_paper_run" / "summary.csv",
+        Path("results/final_paper_run/summary.csv"),
         PROJECT_DIR / "results" / "run_final_verified" / "summary.csv",
         Path("results/run_final_verified/summary.csv"),
         PROJECT_DIR / "results" / "run_quality_recovery" / "summary.csv",
@@ -795,7 +936,25 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
             summary_file = sc
             break
 
-    if is_screening_all:
+    if (PROJECT_DIR / "results" / "all_modules_paper_run").exists() or (PROJECT_DIR / "results" / "all_modules_paper_run" / "sweep_stdout.log").exists():
+        all_mods = []
+        if log_file and log_file.exists():
+            try:
+                with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        if "Modules (" in line:
+                            m_list = re.search(r"Modules \(\d+\):\s*(\[.*?\])", line)
+                            if m_list:
+                                import ast
+                                raw_m = ast.literal_eval(m_list.group(1))
+                                all_mods = [m for m in raw_m if not is_helper_module(m)]
+                                break
+            except Exception:
+                pass
+        active_module_list = all_mods if all_mods else SCREENING_MODULE_LIST
+    elif (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists() or (PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log").exists():
+        active_module_list = SCREENING_MODULE_LIST
+    elif is_screening_all:
         all_mods = []
         for p in [PROJECT_DIR / "all_canonical_modules.txt", PROJECT_DIR / "all_modules.txt", Path("all_canonical_modules.txt"), Path("all_modules.txt")]:
             if p.exists() and p.stat().st_size > 0:
@@ -956,30 +1115,7 @@ def parse_fast_sweep_live_progress() -> Dict[str, Any]:
                 "duration_formatted": d_fmt,
                 "eta_str": "Completed",
             })
-        elif idx < curr_idx:
-            d_sec = mod_durations.get(mod)
-            d_fmt = format_duration(d_sec) if d_sec is not None else "Completed"
-            modules_progress.append({
-                "module": mod,
-                "status": "completed",
-                "current_seed": f"Done ({total_seeds}/{total_seeds})",
-                "completed_seeds": total_seeds,
-                "total_seeds": total_seeds,
-                "epoch": f"{total_epochs}/{total_epochs}",
-                "step": f"{max_steps_per_epoch}/{max_steps_per_epoch}",
-                "loss": 0.1920,
-                "accuracy": 89.5,
-                "f1": 0.898,
-                "fidelity": 0.985,
-                "progress_percent": 100.0,
-                "training_duration_seconds": round(d_sec, 1) if d_sec is not None else None,
-                "training_elapsed_seconds": round(d_sec, 1) if d_sec is not None else None,
-                "queue_wait_seconds": 0.0,
-                "duration_seconds": round(d_sec, 1) if d_sec is not None else None,
-                "duration_formatted": d_fmt,
-                "eta_str": "Completed",
-            })
-        elif idx == curr_idx:
+        elif mod == current_mod and is_sweep_running():
             done_s = completed_seeds_map.get(mod, [])
             n_done = len(done_s)
             curr_s = seeds_order[min(n_done, len(seeds_order)-1)] if n_done < total_seeds else "Done"
@@ -1379,10 +1515,11 @@ class RunManager:
         runs = []
         is_active = False
 
-        # 1. Check Active Run (Prioritize run_quality_fast)
+        # 1. Check Active Run (Prioritize final_paper_run)
         try:
             active_results = get_completed_results()
-            screen_all_exists = (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists()
+            final_paper_exists = (PROJECT_DIR / "results" / "final_paper_run").exists() or (PROJECT_DIR / "final_paper_run.log").exists() or (PROJECT_DIR / "results" / "final_paper_run" / "sweep_stdout.log").exists()
+            screen_all_exists = final_paper_exists or (PROJECT_DIR / "results" / "run_quality_all_screening").exists() or (PROJECT_DIR / "run_quality_all_screening.log").exists()
             screen_ep1_exists = (PROJECT_DIR / "results" / "run_quality_ep1").exists() or (PROJECT_DIR / "run_quality_ep1.log").exists()
             screen_fast_exists = (PROJECT_DIR / "results" / "run_quality_screening_fast").exists() or (PROJECT_DIR / "run_quality_screening_fast.log").exists()
             screen_exists = screen_all_exists or screen_fast_exists or (PROJECT_DIR / "results" / "run_quality_screening").exists() or (PROJECT_DIR / "run_quality_screening.log").exists()
@@ -1929,8 +2066,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         # 5. Existing LaTeX & Plot Data Endpoints
         if req_path == "/api/export/latex-table":
-            results = get_completed_results()
-            latex_code = generate_latex_table(results)
+            try:
+                results = get_completed_results()
+                latex_code = generate_latex_table(results)
+            except Exception as e:
+                latex_code = f"% Error generating LaTeX table: {e}\n\\begin{{table}}\n\\caption{{Results}}\n\\end{{table}}"
             payload = json.dumps(sanitize_json({"latex": latex_code})).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
@@ -1941,8 +2081,12 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if req_path == "/api/export/plot-data":
-            results = get_completed_results()
-            plot_payload = json.dumps(sanitize_json(generate_plot_data(results)), indent=2).encode("utf-8")
+            try:
+                results = get_completed_results()
+                plot_data = generate_plot_data(results)
+            except Exception as e:
+                plot_data = {"error": str(e), "raw_series": []}
+            plot_payload = json.dumps(sanitize_json(plot_data), indent=2).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1971,6 +2115,37 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
             return
+
+        # 7. Static Web Files Delivery
+        if req_path in ("/", ""):
+            req_path = "/index.html"
+
+        file_path = WEB_DIR / req_path.lstrip("/")
+        if file_path.exists() and file_path.is_file():
+            mime_map = {
+                ".html": "text/html; charset=utf-8",
+                ".js": "application/javascript; charset=utf-8",
+                ".css": "text/css; charset=utf-8",
+                ".json": "application/json; charset=utf-8",
+                ".png": "image/png",
+                ".svg": "image/svg+xml",
+                ".jpg": "image/jpeg",
+                ".ico": "image/x-icon",
+            }
+            content_type = mime_map.get(file_path.suffix.lower(), "application/octet-stream")
+            try:
+                with open(file_path, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+            except Exception as e:
+                self.send_error(500, f"Error reading file: {e}")
+                return
 
         super().do_GET()
 
