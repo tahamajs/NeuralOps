@@ -4,6 +4,8 @@ Auto-import all attention modules and export their registered classes.
 
 import logging
 import os
+import sys
+import importlib
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -25,3 +27,11 @@ for file in os.listdir(_curr_dir):
                         __all__.append(attr)
         except Exception as e:
             logger.warning(f"Skipping attention module '{module_name}' due to: {e}")
+
+# Compatibility for legacy callers that used a capitalized module path on
+# case-sensitive systems.  The implementation lives in ``mamba.py``.
+try:
+    _mamba_mod = importlib.import_module(".mamba", __name__)
+    sys.modules.setdefault(f"{__name__}.Mamba", _mamba_mod)
+except Exception as e:
+    logger.warning("Could not install Mamba compatibility alias: %s", e)
