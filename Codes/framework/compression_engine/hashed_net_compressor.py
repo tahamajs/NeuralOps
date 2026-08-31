@@ -35,7 +35,7 @@ class HashedNetCompressor(BaseCompressor):
         self,
         model: Optional[nn.Module] = None,
         rank: Optional[int] = None,
-        n_buckets: int = 1024,
+        n_buckets: int = 65536,
         use_sign: bool = True,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
@@ -100,7 +100,7 @@ def hashed_net_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for HashedNet compressor."""
-    n_buckets = getattr(comp_config, "hashed_net_buckets", None) or getattr(comp_config, "n_buckets", 1024)
+    n_buckets = getattr(comp_config, "hashed_net_buckets", None) or getattr(comp_config, "n_buckets", 65536)
     use_sign = getattr(comp_config, "use_sign", True)
     compressor = HashedNetCompressor(
         model, rank=rank, n_buckets=n_buckets, use_sign=use_sign, cfg=comp_config, **kwargs

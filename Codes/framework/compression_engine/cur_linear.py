@@ -13,6 +13,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def tikhonov_pinv(U_mat: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+    """Stable Tikhonov pseudo-inverse used for CUR intersection matrices."""
+    if U_mat.ndim != 2:
+        raise ValueError("U_mat must be a matrix")
+    # Compute in float32 even when factors are fp16/bfloat16 to avoid overflow.
+    work = U_mat.float()
+    k = work.shape[1]
+    UtU = work.transpose(0, 1) @ work
+    diag_mean = torch.trace(UtU) / max(1, k)
+    effective_eps = max(float(eps) * float(diag_mean.detach().item()), 1e-6)
+    reg_eye = effective_eps * torch.eye(k, device=work.device, dtype=work.dtype)
+    try:
+        result = torch.linalg.solve(UtU + reg_eye, work.transpose(0, 1))
+    except RuntimeError:
+        result = torch.linalg.pinv(work, rcond=float(eps))
+    return result.to(dtype=U_mat.dtype)
+
+
 def compute_leverage_scores(W: torch.Tensor, rank: int) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Compute exact statistical leverage scores from the top-k singular vectors of W.
@@ -173,15 +191,9 @@ class CURLinear(nn.Module):
         C = W_float[:, col_idx]
         R = W_float[row_idx, :]
 
-        # Optimal core matrix: SVD-regularized Moore-Penrose pseudo-inverse for numerical stability
+        # Tikhonov-regularized pseudo-inverse for numerical stability.
         W_int = W_float[row_idx][:, col_idx]  # (r, r)
-        try:
-            u_int, s_int, vt_int = torch.linalg.svd(W_int, full_matrices=False)
-            eps = 1e-3 * s_int.max().clamp_min(1e-6)
-            s_inv = s_int / (s_int**2 + eps**2)
-            U = torch.matmul(vt_int.T, torch.matmul(torch.diag(s_inv), u_int.T))
-        except Exception:
-            U = torch.linalg.pinv(W_int, rcond=1e-3)
+        U = tikhonov_pinv(W_int, eps=1e-4).float()
 
         cur_layer.C.data.copy_(C.to(dtype=W.dtype))
         cur_layer.U.data.copy_(U.to(dtype=W.dtype))
