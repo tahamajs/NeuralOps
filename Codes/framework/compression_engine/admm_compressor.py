@@ -91,6 +91,9 @@ class ADMMCompressor(BaseCompressor):
 
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
+                is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
+                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"]):
+                    continue
                 W0 = module.weight.data.clone().float()
                 device = W0.device
                 dtype = module.weight.dtype

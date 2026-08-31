@@ -159,6 +159,7 @@ def main():
         ram_percent = lambda: 0.0
     worker_count = 4 if ram_percent() < 80.0 else 2
     executor = ThreadPoolExecutor(max_workers=worker_count)
+    module_rank = max(16, adapter.head_dim) if family == "qwen" else 16
     pending = {}
     def queue_copy(module_name):
         if module_name not in pending:
@@ -205,7 +206,7 @@ def main():
             try:
                 if name != "full":
                     typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
-                    model, _ = apply_module_to_model(model, name, typ, rank=16, device=device)
+                    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = "adapted_qwen" if qwen else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
@@ -224,7 +225,7 @@ def main():
                 if name != "full" and is_dtype_error(exc):
                     try:
                         model.float(); typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
-                        model, _ = apply_module_to_model(model, name, typ, rank=16, device=device)
+                        model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                         acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device), 2)
                         err = f"fp32 retry: {exc}"
                     except Exception as retry: exc = retry

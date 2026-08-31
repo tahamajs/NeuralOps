@@ -317,6 +317,9 @@ class AASVDCompressor(BaseCompressor):
         replaced_count = 0
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and name in covariances:
+                is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
+                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"]):
+                    continue
                 svd_layer = self.compress_linear(module, rank=self.rank, cov=covariances[name])
                 replace_module(self.model, name, svd_layer)
                 replaced_count += 1
@@ -331,6 +334,9 @@ class AASVDCompressor(BaseCompressor):
             if isinstance(module, nn.Linear):
                 # Never compress classifier / score / lm_head directly
                 if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
+                    continue
+                is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
+                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"]):
                     continue
                 svd_layer = self.compress_linear(module, rank=self.rank, cov=None)
                 replace_module(self.model, name, svd_layer)

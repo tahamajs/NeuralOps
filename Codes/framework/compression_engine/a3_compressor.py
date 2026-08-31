@@ -70,8 +70,13 @@ class A3FactorizedLinear(nn.Module):
 
     def reset_parameters(self) -> None:
         with torch.no_grad():
-            nn.init.orthogonal_(self.V)
-            nn.init.orthogonal_(self.U)
+            for param in (self.V, self.U):
+                if param.dtype in (torch.float16, torch.bfloat16):
+                    tmp = torch.empty_like(param, dtype=torch.float32, device="cpu")
+                    nn.init.orthogonal_(tmp)
+                    param.copy_(tmp.to(device=param.device, dtype=param.dtype))
+                else:
+                    nn.init.orthogonal_(param)
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
 
@@ -243,7 +248,9 @@ class A3Compressor(BaseCompressor):
                 # Never compress the classification head / pre_classifier directly to preserve logits
                 if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
                     continue
-                is_target = True
+                is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
+                is_qwen_attention = any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"])
+                is_target = is_qwen_attention if is_qwen else True
                 if self.target_attention_only:
                     is_target = any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"])
                 if is_target:
