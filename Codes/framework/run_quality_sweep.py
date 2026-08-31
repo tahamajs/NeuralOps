@@ -20,11 +20,15 @@ ROOT = HERE.parent.parent
 sys.path[:0] = [str(ROOT), str(ROOT / "Codes")]
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
 from framework.eval_all_models_datasets import apply_module_to_model
-from framework.utils.qwen_compat import install_qwen_aliases, is_architecture_error, is_dtype_error
+from framework.utils.qwen_compat import (QwenIncompatibleError, install_qwen_aliases,
+                                          is_architecture_error, is_dtype_error,
+                                          is_qwen_model, qwen_module_policy)
+from framework.utils.model_family import ModelAdapter, detect_family
+from framework.utils.compat import module_family_support, wrap_for_family
 import framework.attentions, framework.compression_engine
 
 LOG = logging.getLogger("QwenQualitySweep")
-FIELDS = ["module_name", "status", "accuracy_pct", "elapsed_s", "error", "timestamp"]
+FIELDS = ["module_name", "status", "accuracy_pct", "elapsed_s", "error", "path", "timestamp"]
 
 
 def modules() -> list[str]:
@@ -99,6 +103,9 @@ def main():
     ap.add_argument("--precision", choices=("fp16", "fp32"), default="fp16"); ap.add_argument("--batch_size", type=int, default=8)
     ap.add_argument("--gradient_checkpointing_use_reentrant", default="False")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--strict_compat", action="store_true",
+                    help="Skip modules without a truthful native/adapted Qwen path")
+    ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "qwen", "t5", "ssm", "unknown"), default="auto")
     args = ap.parse_args(); logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     torch.manual_seed(args.seed)
     if torch.cuda.is_available(): torch.cuda.manual_seed_all(args.seed)
@@ -114,6 +121,14 @@ def main():
     dtype = torch.float32
     base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, local_files_only=True, torch_dtype=dtype).to(device)
     base.config.pad_token_id = tokenizer.pad_token_id; install_qwen_aliases(base)
+    qwen = is_qwen_model(base)
+    family = detect_family(base) if args.model_family == "auto" else args.model_family
+    adapter = ModelAdapter(base, family)
+    LOG.info("model=%s qwen_compat=%s hidden=%s heads=%s head_dim=%s layers=%s",
+             args.model, qwen, getattr(base.config, "hidden_size", "?"),
+             getattr(base.config, "num_attention_heads", "?"),
+             getattr(base.config, "head_dim", "?"), getattr(base.config, "num_hidden_layers", "?"))
+    LOG.info("detected model family=%s adapter=%s", family, adapter.as_dict())
     if hasattr(base, "gradient_checkpointing_enable"):
         base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     checkpoint = out / "finetuned_model.pt"
@@ -163,8 +178,27 @@ def main():
                 executor.shutdown(wait=False, cancel_futures=True)
                 pending.clear(); worker_count = 2
                 executor = ThreadPoolExecutor(max_workers=worker_count)
-            t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; queue_copy(name)
+            t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
+            support = module_family_support(name).get(family, "unknown")
+            if name != "full" and support == "incompatible":
+                status, err, path_name = "SKIP_NO_SUPPORT", "unsupported_family", "unsupported"
+                row = {"module_name": name, "status": status, "accuracy_pct": acc,
+                       "elapsed_s": round(time.monotonic()-t, 2), "error": err,
+                       "path": path_name, "timestamp": datetime.now().isoformat()}
+                w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
+                continue
+            if family == "qwen" and args.strict_compat and name != "full" and qwen_module_policy(name) == "incompatible":
+                status, err, path_name = "SKIP_NO_SUPPORT", "qwen_incompatible", "strict_skip"
+                row = {"module_name": name, "status": status, "accuracy_pct": acc,
+                       "elapsed_s": round(time.monotonic()-t, 2), "error": err,
+                       "path": path_name, "timestamp": datetime.now().isoformat()}
+                w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
+                continue
+            queue_copy(name)
             model = pending.pop(name).result().to(device)
+            # Side effect is projection alias installation; the model itself
+            # is not replaced, preserving native HF forward semantics.
+            wrap_for_family(model, family)
             if n < len(names) and names[n] not in existing:
                 queue_copy(names[n])
             injected = False
@@ -173,6 +207,8 @@ def main():
                     typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
                     model, _ = apply_module_to_model(model, name, typ, rank=16, device=device)
                     injected = True
+                    path_name = "adapted_qwen" if qwen else "legacy_bert"
+                    LOG.info("module=%s path=%s", name, path_name)
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device), 2)
             except Exception as exc:
                 if "out of memory" in str(exc).lower() and not injected:
@@ -194,7 +230,9 @@ def main():
                     except Exception as retry: exc = retry
                 if err == "":
                     status = "SKIP" if is_architecture_error(exc) else "FAIL"; err = f"{type(exc).__name__}: {exc}"
-            row = {"module_name": name, "status": status, "accuracy_pct": acc, "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000], "timestamp": datetime.now().isoformat()}
+            row = {"module_name": name, "status": status, "accuracy_pct": acc,
+                   "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
+                   "path": path_name, "timestamp": datetime.now().isoformat()}
             w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s %.2f%%", n, len(names), name, status, acc)
             del model; gc.collect(); torch.cuda.empty_cache()
     executor.shutdown(wait=True)
