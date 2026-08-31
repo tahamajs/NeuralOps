@@ -3,6 +3,7 @@ import inspect
 import torch
 import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.utils.qwen_compat import bypass_qwen_rope, qwen_attention_mask
 
 
 class UniversalAttentionWrapper(nn.Module):
@@ -48,8 +49,19 @@ class UniversalAttentionWrapper(nn.Module):
         # embeddings. Legacy replacements generally implement their own
         # masking and cannot consume that representation. The base Qwen model
         # is untouched; this applies only to an injected replacement.
-        if "position_embeddings" in kwargs and isinstance(attention_mask, torch.Tensor) and attention_mask.dim() == 4:
-            attention_mask = None
+        if "position_embeddings" in kwargs:
+            # Native Qwen attention owns RoPE. A legacy replacement may opt
+            # out explicitly; positional tensors are then removed only from
+            # this injected call, never from the base model.
+            if not getattr(self.inner, "supports_rope", False):
+                kwargs = bypass_qwen_rope(kwargs, self.inner)
+                kwargs.pop("qwen_rope_bypassed", None)
+            if isinstance(attention_mask, torch.Tensor) and attention_mask.dim() == 4:
+                attention_mask = qwen_attention_mask(
+                    attention_mask,
+                    causal=True,
+                    expects_bidirectional=bool(getattr(self.inner, "expects_bidirectional", False)),
+                )
 
         # Clean redundant or mismatched args
         kwargs.pop("key", None)
