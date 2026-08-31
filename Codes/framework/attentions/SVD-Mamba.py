@@ -217,7 +217,9 @@ class SVDMamba(BaseAttention):
 
             u_c = u[:, s_idx:e_idx] # [B, K, inner, d_state]
             log_a_c = log_alpha[:, s_idx:e_idx]
-            lambda_c = torch.cumsum(log_a_c, dim=1) # [B, K, inner, d_state]
+            # Bound cumulative log-decay before exponentiation.  Without this
+            # guard a rare large delta produces exp(-lambda) overflow and NaNs.
+            lambda_c = torch.cumsum(log_a_c, dim=1).clamp(min=-30.0, max=0.0) # [B, K, inner, d_state]
 
             decay_c = torch.exp(lambda_c)
             decay_inv_c = torch.exp(-lambda_c)
