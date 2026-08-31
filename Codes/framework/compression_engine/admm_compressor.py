@@ -29,6 +29,7 @@ from framework.compression_engine.pruning_utils import (
     apply_24_structured_mask,
     apply_block_mask,
 )
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +91,7 @@ class ADMMCompressor(BaseCompressor):
         compressed_layers_count = 0
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
-                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"]):
-                    continue
+            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
                 W0 = module.weight.data.clone().float()
                 device = W0.device
                 dtype = module.weight.dtype

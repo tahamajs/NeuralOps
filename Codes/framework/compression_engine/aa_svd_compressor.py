@@ -21,6 +21,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -285,7 +286,7 @@ class AASVDCompressor(BaseCompressor):
 
         # 1. Register forward hooks on all linear layers
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         # 2. Stream calibration batches through the model
@@ -316,7 +317,7 @@ class AASVDCompressor(BaseCompressor):
         # 4. Replace each Linear layer with an SVDLinear module
         replaced_count = 0
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and name in covariances:
+            if isinstance(module, nn.Linear) and name in covariances and should_compress_linear(self.model, name):
                 is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
                 if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"]):
                     continue
@@ -331,7 +332,7 @@ class AASVDCompressor(BaseCompressor):
         """Fallback when no tokenizer is present."""
         replaced_count = 0
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear):
+            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
                 # Never compress classifier / score / lm_head directly
                 if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
                     continue

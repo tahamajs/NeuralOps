@@ -15,6 +15,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,8 @@ class DirectSVDCompressor(BaseCompressor):
         if not isinstance(module, nn.Linear):
             return False
         if isinstance(module, SVDLinear):
+            return False
+        if not should_compress_linear(self.model, name):
             return False
         # Exclude classifier and language model prediction heads
         name_lower = name.lower()
