@@ -66,7 +66,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
             min_rank = kwargs["rank"]
 
         self.energy_threshold = float(energy_threshold)
-        self.min_rank = int(min_rank)
+        self.min_rank = max(16, int(min_rank))
         self.target_modules = target_modules
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -93,6 +93,9 @@ class AdaptiveRanksCompressor(BaseCompressor):
         constrained by minimum rank floor.
         """
         r_floor = min_rank_floor if min_rank_floor is not None else self.min_rank
+        # Hard safety floor applies even to direct callers that do not pass the
+        # compressor's precomputed floor.
+        r_floor = max(self.min_rank, 16, int(r_floor))
         r_floor = max(1, min(r_floor, max_rank))
         s_squared = S ** 2
         total_energy = s_squared.sum()
@@ -311,5 +314,4 @@ __all__ = [
     "adaptive_ranks_factory",
     "adaptive_svd_factory",
 ]
-
 

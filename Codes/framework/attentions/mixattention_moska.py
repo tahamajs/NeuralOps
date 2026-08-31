@@ -85,7 +85,7 @@ class MixAttentionMoSKA(BaseAttention):
                 importance = importance.masked_fill(~mask_2d, -10000.0)
 
         # Always protect [CLS] token at index 0 unconditionally
-        importance[:, 0] = 1e4
+        importance[:, 0] = 1e9
 
         keep = max(2, min(L, int(L * self.fasa_keep_ratio)))
         _, idx = torch.topk(importance, keep, dim=-1)

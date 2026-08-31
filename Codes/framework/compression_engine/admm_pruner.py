@@ -198,14 +198,14 @@ class ADMMPruner(BaseCompressor):
                             rho = max(rho / tau_decr, rho_min)
 
                 # Final assignment to projection Z and STE Module conversion
-                if self.use_ste:
-                    admm_layer = ADMMMaskedLinear.from_linear(module, mask=mask)
-                    if name == "":
-                        self.model = admm_layer
-                    else:
-                        replace_module(self.model, name, admm_layer)
+                # Always install the trainable masked wrapper.  The legacy
+                # branch that assigned ``module.weight.data = Z`` permanently
+                # destroyed recoverability and bypassed gradients.
+                admm_layer = ADMMMaskedLinear.from_linear(module, mask=mask)
+                if name == "":
+                    self.model = admm_layer
                 else:
-                    module.weight.data = Z.to(dtype=dtype, device=device)
+                    replace_module(self.model, name, admm_layer)
 
                 pruned_layers_count += 1
 

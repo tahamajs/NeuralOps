@@ -131,7 +131,9 @@ class HammingAttention(BaseAttention):
 
         dot = torch.matmul(q_b, k_b.transpose(-2, -1))  # [B, H, L, L]
         scale = 1.0 / math.sqrt(Dh)
-        beta = torch.clamp(self.temp, min=0.05, max=20.0)
+        # Keep the learnable temperature in a numerically stable range.  Large
+        # beta values saturate the binary attention logits and kill gradients.
+        beta = torch.clamp(self.temp, min=0.1, max=1.0)
         scores = dot * scale * beta
 
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
