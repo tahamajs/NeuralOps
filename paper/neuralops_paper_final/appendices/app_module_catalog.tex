@@ -68,7 +68,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{adasplash}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/adasplash\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{adasplash}, \texttt{adasplash\_attention}, \texttt{adasplash\_inject} \\
-\textbf{Architectural Overview:} AdaSplash Attention: Adaptive Splash Attention with $\alpha$-Entmax Sparse Activations. Combines localized sliding-window splash radius with sparse $\alpha$-entmax adaptive thresholding and global token routing, ensuring robust numerical convergence and exact pret...
+\textbf{Architectural Overview:} AdaSplash Attention: Adaptive Splash Attention with α-Entmax Sparse Activations. Combines localized sliding-window splash radius with sparse α-entmax adaptive thresholding and global token routing, ensuring robust numerical convergence and exact pret...
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -1747,7 +1747,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{cr}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/cr\_compressor.py} \\
 \textbf{Registered Aliases:} \texttt{cr} \\
-\textbf{Technique Overview:} CR (Column-Row / Interpolative Decomposition) Compressor. Decomposes W $\approx$ C @ P, where C are actual columns of W. Registered in COMPRESSOR REGISTRY as 'cr'.
+\textbf{Technique Overview:} CR (Column-Row / Interpolative Decomposition) Compressor. Decomposes W ≈ C @ P, where C are actual columns of W. Registered in COMPRESSOR REGISTRY as 'cr'.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -1769,7 +1769,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{cur\_linear}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/cur\_linear.py} \\
 \textbf{Registered Aliases:} \texttt{cur\_linear} \\
-\textbf{Technique Overview:} CUR Linear Layer: low-rank cross-approximation using column and row skeleton selection. W $\approx$ C @ U @ R
+\textbf{Technique Overview:} CUR Linear Layer: low-rank cross-approximation using column and row skeleton selection. W ≈ C @ U @ R
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2077,7 +2077,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{kronecker\_linear}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/kronecker\_linear.py} \\
 \textbf{Registered Aliases:} \texttt{kronecker\_linear} \\
-\textbf{Technique Overview:} Kronecker Linear Layer: weight matrix represented as Kronecker product A $\otimes$ B. Provides true sub-quadratic FLOP execution and factorized memory efficiency.
+\textbf{Technique Overview:} Kronecker Linear Layer: weight matrix represented as Kronecker product A ⊗ B. Provides true sub-quadratic FLOP execution and factorized memory efficiency.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).

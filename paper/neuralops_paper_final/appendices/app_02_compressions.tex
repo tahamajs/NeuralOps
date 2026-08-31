@@ -142,9 +142,9 @@ The framework's compression pipeline will then call \texttt{a3\_compressor\_fact
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{a3\_rank} \& 64 \& Target rank for the low-rank approximation. Smaller values yield higher compression ratios. \\
+\texttt{a3\_rank} & 64 & Target rank for the low-rank approximation. Smaller values yield higher compression ratios. \\
 
 \bottomrule
 \end{tabular}
@@ -189,12 +189,12 @@ The empirical evaluation of \texttt{a3\_compressor} across standard sequence len
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -206,13 +206,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -347,17 +347,17 @@ $
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Execution Stage \& Input Tensor Shape \& Transformation / Operation \& Output Tensor Shape \\
+Execution Stage & Input Tensor Shape & Transformation / Operation & Output Tensor Shape \\
 \midrule
-\textbf{Input} \& \texttt{[B, N, D]} \& Input activation batch \& \texttt{[B, N, D]} \\
-\textbf{Q SVD Base Pass} \& \texttt{[B, N, D]} \& \texttt{F.linear(F.linear(X, V\_q), U\_q)} \& \texttt{[B, N, H*d\_k]} \\
-\textbf{Q Residual Adapter} \& \texttt{[B, N, D]} \& \texttt{F.linear(F.linear(X, B\_q), A\_q)} \& \texttt{[B, N, H*d\_k]} \\
-\textbf{Q Fused Add \& Bias} \& SVD Pass, Res Pass \& \texttt{Z\_svd + Z\_res + bias\_q} \& \texttt{[B, N, H*d\_k]} \\
-\textbf{Multi-Head Transpose} \& \texttt{[B, N, H*d\_k]} \& \texttt{.view(B, N, H, d\_k).transpose(1, 2)} \& \texttt{[B, H, N, d\_k]} each \\
-\textbf{Score Matrix MatMul} \& \texttt{Q}, \texttt{K} \& \texttt{torch.matmul(Q, K.transpose(-2, -1)) / sqrt(d\_k)} \& \texttt{[B, H, N, N]} \\
-\textbf{Mask \& Softmax} \& \texttt{scores} \& \texttt{apply\_attention\_mask} + \texttt{F.softmax} \& \texttt{[B, H, N, N]} \\
-\textbf{Value Aggregation} \& \texttt{attn}, \texttt{V} \& \texttt{torch.matmul(attn, V)} \& \texttt{[B, H, N, d\_k]} \\
-\textbf{Out SVD + Residual} \& \texttt{context: [B, N, D]} \& \texttt{(C V\_o\textasciicircum{}T U\_o\textasciicircum{}T) + (C B\_o\textasciicircum{}T A\_o\textasciicircum{}T) + bias} \& \texttt{Output: [B, N, D]} \\
+\textbf{Input} & \texttt{[B, N, D]} & Input activation batch & \texttt{[B, N, D]} \\
+\textbf{Q SVD Base Pass} & \texttt{[B, N, D]} & \texttt{F.linear(F.linear(X, V\_q), U\_q)} & \texttt{[B, N, H*d\_k]} \\
+\textbf{Q Residual Adapter} & \texttt{[B, N, D]} & \texttt{F.linear(F.linear(X, B\_q), A\_q)} & \texttt{[B, N, H*d\_k]} \\
+\textbf{Q Fused Add \& Bias} & SVD Pass, Res Pass & \texttt{Z\_svd + Z\_res + bias\_q} & \texttt{[B, N, H*d\_k]} \\
+\textbf{Multi-Head Transpose} & \texttt{[B, N, H*d\_k]} & \texttt{.view(B, N, H, d\_k).transpose(1, 2)} & \texttt{[B, H, N, d\_k]} each \\
+\textbf{Score Matrix MatMul} & \texttt{Q}, \texttt{K} & \texttt{torch.matmul(Q, K.transpose(-2, -1)) / sqrt(d\_k)} & \texttt{[B, H, N, N]} \\
+\textbf{Mask \& Softmax} & \texttt{scores} & \texttt{apply\_attention\_mask} + \texttt{F.softmax} & \texttt{[B, H, N, N]} \\
+\textbf{Value Aggregation} & \texttt{attn}, \texttt{V} & \texttt{torch.matmul(attn, V)} & \texttt{[B, H, N, d\_k]} \\
+\textbf{Out SVD + Residual} & \texttt{context: [B, N, D]} & \texttt{(C V\_o\textasciicircum{}T U\_o\textasciicircum{}T) + (C B\_o\textasciicircum{}T A\_o\textasciicircum{}T) + bias} & \texttt{Output: [B, N, D]} \\
 
 \bottomrule
 \end{tabular}
@@ -487,12 +487,12 @@ The empirical evaluation of \texttt{adaptive\_svd\_attention} across standard se
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.6} \& 11.20 \& $+0.40$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.9} \& 14.60 \& $+0.30$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{2,850 tok/s} \& 1,250 tok/s \& \textbf{2,850 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Fused SVD GEMM + Dynamic Rank Kernel \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.6} & 11.20 & $+0.40$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.9} & 14.60 & $+0.30$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{2,850 tok/s} & 1,250 tok/s & \textbf{2,850 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Fused SVD GEMM + Dynamic Rank Kernel & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -504,13 +504,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.28 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.48 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 0.58 ms \& 210 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 1.10 ms \& 336 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{2.10 ms} \& \textbf{480 MB} \& \textbf{6.10x} \\
+\textbf{$L = 512$} & 0.28 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.48 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 0.58 ms & 210 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 1.10 ms & 336 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{2.10 ms} & \textbf{480 MB} & \textbf{6.10x} \\
 
 
 \bottomrule
@@ -701,16 +701,16 @@ $
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllllll}
 \toprule
-Layer Type \& Base Shape ($M \times N$) \& Baseline Params \& Uniform SVD Rank ($r=256$) \& AdaSVD Rank ($r_l$) \& AdaSVD Retained Params \& Memory Savings \\
+Layer Type & Base Shape ($M \times N$) & Baseline Params & Uniform SVD Rank ($r=256$) & AdaSVD Rank ($r_l$) & AdaSVD Retained Params & Memory Savings \\
 \midrule
-\textbf{q\_proj} \& $4096 \times 4096$ \& 16,777,216 \& $r=256 \to 2.09\text{M}$ \& $r_l=384$ \& 3,146,112 \& 81.25\% \\
-\textbf{k\_proj} \& $4096 \times 4096$ \& 16,777,216 \& $r=256 \to 2.09\text{M}$ \& $r_l=192$ \& 1,573,056 \& 90.62\% \\
-\textbf{v\_proj} \& $4096 \times 4096$ \& 16,777,216 \& $r=256 \to 2.09\text{M}$ \& $r_l=448$ \& 3,670,272 \& 78.12\% \\
-\textbf{o\_proj} \& $4096 \times 4096$ \& 16,777,216 \& $r=256 \to 2.09\text{M}$ \& $r_l=320$ \& 2,621,696 \& 84.37\% \\
-\textbf{gate\_proj} \& $11008 \times 4096$ \& 45,088,768 \& $r=256 \to 3.86\text{M}$ \& $r_l=512$ \& 7,731,712 \& 82.85\% \\
-\textbf{up\_proj} \& $11008 \times 4096$ \& 45,088,768 \& $r=256 \to 3.86\text{M}$ \& $r_l=512$ \& 7,731,712 \& 82.85\% \\
-\textbf{down\_proj} \& $4096 \times 11008$ \& 45,088,768 \& $r=256 \to 3.86\text{M}$ \& $r_l=640$ \& 9,664,768 \& 78.56\% \\
-\textbf{Total} \& -- \& \textbf{201,675,008} \& \textbf{21,940,224} \& -- \& \textbf{36,139,328} \& \textbf{82.08\%} \\
+\textbf{q\_proj} & $4096 \times 4096$ & 16,777,216 & $r=256 \to 2.09\text{M}$ & $r_l=384$ & 3,146,112 & 81.25\% \\
+\textbf{k\_proj} & $4096 \times 4096$ & 16,777,216 & $r=256 \to 2.09\text{M}$ & $r_l=192$ & 1,573,056 & 90.62\% \\
+\textbf{v\_proj} & $4096 \times 4096$ & 16,777,216 & $r=256 \to 2.09\text{M}$ & $r_l=448$ & 3,670,272 & 78.12\% \\
+\textbf{o\_proj} & $4096 \times 4096$ & 16,777,216 & $r=256 \to 2.09\text{M}$ & $r_l=320$ & 2,621,696 & 84.37\% \\
+\textbf{gate\_proj} & $11008 \times 4096$ & 45,088,768 & $r=256 \to 3.86\text{M}$ & $r_l=512$ & 7,731,712 & 82.85\% \\
+\textbf{up\_proj} & $11008 \times 4096$ & 45,088,768 & $r=256 \to 3.86\text{M}$ & $r_l=512$ & 7,731,712 & 82.85\% \\
+\textbf{down\_proj} & $4096 \times 11008$ & 45,088,768 & $r=256 \to 3.86\text{M}$ & $r_l=640$ & 9,664,768 & 78.56\% \\
+\textbf{Total} & -- & \textbf{201,675,008} & \textbf{21,940,224} & -- & \textbf{36,139,328} & \textbf{82.08\%} \\
 
 \bottomrule
 \end{tabular}
@@ -778,15 +778,15 @@ def adasvd_adaptive_gemm_kernel(
         offs_k = k + tl.arange(0, BLOCK_SIZE_K)
 
         x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk)
-        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M_size) \& (offs_k[None, :] < K_size), other=0.0)
+        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M_size) & (offs_k[None, :] < K_size), other=0.0)
 
         w_ptrs = W_approx_ptr + (offs_n[None, :] * stride_wn + offs_k[:, None] * stride_wk)
-        w_tile = tl.load(w_ptrs, mask=(offs_n[None, :] < N_size) \& (offs_k[:, None] < K_size), other=0.0)
+        w_tile = tl.load(w_ptrs, mask=(offs_n[None, :] < N_size) & (offs_k[:, None] < K_size), other=0.0)
 
         acc += tl.dot(x_tile, w_tile)
 
     out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
-    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < M_size) \& (offs_n[None, :] < N_size))
+    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < M_size) & (offs_n[None, :] < N_size))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -810,12 +810,12 @@ The empirical evaluation of \texttt{adasvd\_compressor} across standard sequence
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.6} \& 11.20 \& $+0.40$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.9} \& 14.60 \& $+0.30$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{2,850 tok/s} \& 1,250 tok/s \& \textbf{2,850 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Fused SVD GEMM + Dynamic Rank Kernel \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.6} & 11.20 & $+0.40$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.9} & 14.60 & $+0.30$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{2,850 tok/s} & 1,250 tok/s & \textbf{2,850 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Fused SVD GEMM + Dynamic Rank Kernel & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -827,13 +827,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.28 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.48 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 0.58 ms \& 210 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 1.10 ms \& 336 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{2.10 ms} \& \textbf{480 MB} \& \textbf{6.10x} \\
+\textbf{$L = 512$} & 0.28 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.48 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 0.58 ms & 210 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 1.10 ms & 336 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{2.10 ms} & \textbf{480 MB} & \textbf{6.10x} \\
 
 
 \bottomrule
@@ -897,7 +897,7 @@ The binary mask matrix $M \in \{0, 1\}^{N \times M}$ is:
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-M_{i,j} = \begin{cases} 1 \& \text{if } |W_{i,j}| \ge \tau \\ 0 \& \text{otherwise} \end{cases}
+M_{i,j} = \begin{cases} 1 & \text{if } |W_{i,j}| \ge \tau \\ 0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -985,12 +985,12 @@ Cast resulting matrix back to original module dtype (FP16/BF16) and device.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Metric \& Formula \& Example (LLaMA-7B Linear Layer: $N=4096, M=4096$) \\
+Metric & Formula & Example (LLaMA-7B Linear Layer: $N=4096, M=4096$) \\
 \midrule
-\textbf{Dense FP16 Weights} \& $N \times M \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{Pruned \& Quantized (4-bit)} \& $(1 - S) \cdot N \cdot M \times 0.5 \text{ bytes} + \text{Mask}$ \& $4.19 \text{ MB} + 2.10 \text{ MB} = 6.29 \text{ MB}$ ($S=0.50$) \\
-\textbf{Compression Ratio} \& $\frac{16}{(1 - S) \cdot b + \text{bitmask}}$ \& $\mathbf{5.33\times}$ Reduction \\
-\textbf{Peak VRAM During Compression} \& $W_{\text{FP32}} + \text{Mask}_{\text{FP32}} + W_{\text{Quant}}$ \& $134.2 \text{ MB}$ \\
+\textbf{Dense FP16 Weights} & $N \times M \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{Pruned \& Quantized (4-bit)} & $(1 - S) \cdot N \cdot M \times 0.5 \text{ bytes} + \text{Mask}$ & $4.19 \text{ MB} + 2.10 \text{ MB} = 6.29 \text{ MB}$ ($S=0.50$) \\
+\textbf{Compression Ratio} & $\frac{16}{(1 - S) \cdot b + \text{bitmask}}$ & $\mathbf{5.33\times}$ Reduction \\
+\textbf{Peak VRAM During Compression} & $W_{\text{FP32}} + \text{Mask}_{\text{FP32}} + W_{\text{Quant}}$ & $134.2 \text{ MB}$ \\
 
 \bottomrule
 \end{tabular}
@@ -1078,12 +1078,12 @@ The empirical evaluation of \texttt{admm\_compressor} across standard sequence l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -1095,13 +1095,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -1163,7 +1163,7 @@ where $g(Z)$ is the indicator function for the non-convex $L_0$-ball constraint 
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-g(Z) = \begin{cases} 0 \& \text{if } Z \in \mathcal{S}_S \\ +\infty \& \text{otherwise} \end{cases}
+g(Z) = \begin{cases} 0 & \text{if } Z \in \mathcal{S}_S \\ +\infty & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -1207,7 +1207,7 @@ where the projection $\Pi_{\mathcal{S}_S}(V)$ calculates the absolute value thre
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-[Z^{(k+1)}]_{i,j} = \begin{cases} [V]_{i,j} \& \text{if } |[V]_{i,j}| > \tau \\ 0 \& \text{if } |[V]_{i,j}| \le \tau \end{cases}
+[Z^{(k+1)}]_{i,j} = \begin{cases} [V]_{i,j} & \text{if } |[V]_{i,j}| > \tau \\ 0 & \text{if } |[V]_{i,j}| \le \tau \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -1283,12 +1283,12 @@ Assign final $Z$ tensor back to \texttt{module.weight.data} with original precis
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Metric \& Formula \& Example (LLaMA-7B Gate Proj: $N=11008, M=4096$) \\
+Metric & Formula & Example (LLaMA-7B Gate Proj: $N=11008, M=4096$) \\
 \midrule
-\textbf{Dense Weights} \& $N \times M \times 2 \text{ bytes}$ \& $90.18 \text{ MB}$ \\
-\textbf{Sparse Weights (CSR/COO)} \& $(1 - S) \cdot N \cdot M \cdot (2 + 4) \text{ bytes}$ \& $40.58 \text{ MB}$ ($S=0.50$, COO 32-bit idx) \\
-\textbf{Calibration Memory Peak} \& $W + Z + U = 3 \times N \times M \times 4 \text{ bytes}$ \& $541.09 \text{ MB}$ (FP32 precision) \\
-\textbf{Inference VRAM Savings} \& $1 - (1 - S) \cdot (1 + \text{Overhead})$ \& $\approx 45.2\%$ Memory Reduction \\
+\textbf{Dense Weights} & $N \times M \times 2 \text{ bytes}$ & $90.18 \text{ MB}$ \\
+\textbf{Sparse Weights (CSR/COO)} & $(1 - S) \cdot N \cdot M \cdot (2 + 4) \text{ bytes}$ & $40.58 \text{ MB}$ ($S=0.50$, COO 32-bit idx) \\
+\textbf{Calibration Memory Peak} & $W + Z + U = 3 \times N \times M \times 4 \text{ bytes}$ & $541.09 \text{ MB}$ (FP32 precision) \\
+\textbf{Inference VRAM Savings} & $1 - (1 - S) \cdot (1 + \text{Overhead})$ & $\approx 45.2\%$ Memory Reduction \\
 
 \bottomrule
 \end{tabular}
@@ -1371,12 +1371,12 @@ The empirical evaluation of \texttt{admm\_pruner} across standard sequence lengt
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -1388,13 +1388,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -1444,7 +1444,7 @@ Let $W \in \mathbb{R}^{N \times M}$ be a weight matrix partitioned into contiguo
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-W = \begin{bmatrix} w_1 \& w_2 \& w_3 \& w_4 \& \dots \& w_M \end{bmatrix}
+W = \begin{bmatrix} w_1 & w_2 & w_3 & w_4 & \dots & w_M \end{bmatrix}
 $
 \end{adjustbox}
 \end{center}
@@ -1467,7 +1467,7 @@ $
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-m_i^{(k)} = \begin{cases} 1 \& \text{if } |w_i^{(k)}| \ge \tau^{(k)} \\ 0 \& \text{otherwise} \end{cases}
+m_i^{(k)} = \begin{cases} 1 & \text{if } |w_i^{(k)}| \ge \tau^{(k)} \\ 0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -1572,12 +1572,12 @@ Construct rank-$r$ update $W_{\text{corr}} = U[:, :r] \cdot S[:r] \cdot V^T[:r, 
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Parameter Count / Storage \& Example (LLaMA-7B: $N=4096, M=4096, r=16$) \\
+Component & Parameter Count / Storage & Example (LLaMA-7B: $N=4096, M=4096, r=16$) \\
 \midrule
-\textbf{Dense Weights $W$} \& $N \times M \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{2:4 Sparse Base $W_{2:4}$} \& $0.5 \cdot N \cdot M \times 2 \text{ bytes} + 2\text{-bit metadata}$ \& $17.83 \text{ MB}$ \\
-\textbf{Low-Rank Correction $U_r, V_r$} \& $(N \cdot r + M \cdot r) \times 2 \text{ bytes}$ \& $0.26 \text{ MB}$ \\
-\textbf{Total ARMOR Footprint} \& $W_{2:4} + U_r + V_r$ \& $\mathbf{18.09\text{ MB}}$ ($46.1\%$ Savings) \\
+\textbf{Dense Weights $W$} & $N \times M \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{2:4 Sparse Base $W_{2:4}$} & $0.5 \cdot N \cdot M \times 2 \text{ bytes} + 2\text{-bit metadata}$ & $17.83 \text{ MB}$ \\
+\textbf{Low-Rank Correction $U_r, V_r$} & $(N \cdot r + M \cdot r) \times 2 \text{ bytes}$ & $0.26 \text{ MB}$ \\
+\textbf{Total ARMOR Footprint} & $W_{2:4} + U_r + V_r$ & $\mathbf{18.09\text{ MB}}$ ($46.1\%$ Savings) \\
 
 \bottomrule
 \end{tabular}
@@ -1669,12 +1669,12 @@ The empirical evaluation of \texttt{armor\_pruner} across standard sequence leng
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -1686,13 +1686,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -1767,7 +1767,7 @@ The binary mask vector $\mathbf{m}^{(i, k)} \in \{0, 1\}^4$ is:
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-m_j^{(i, k)} = \begin{cases} 1 \& \text{if } j \in \Omega^{(i, k)} \\ 0 \& \text{otherwise} \end{cases}
+m_j^{(i, k)} = \begin{cases} 1 & \text{if } j \in \Omega^{(i, k)} \\ 0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -1842,12 +1842,12 @@ Cast $W_{\text{AST}}$ back to original model dtype and CUDA device.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (LLaMA-7B Linear: $N=4096, M=4096$) \\
+Component & Formula & Example (LLaMA-7B Linear: $N=4096, M=4096$) \\
 \midrule
-\textbf{Dense Weight Tensor} \& $N \times M \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{Sparse Weight Buffer} \& $\frac{1}{2} \cdot N \cdot M \times 2 \text{ bytes}$ \& $16.78 \text{ MB}$ \\
-\textbf{Sparse Meta Index Buffer} \& $\frac{1}{2} \cdot N \cdot M \times 2 \text{ bits}$ \& $0.52 \text{ MB}$ (2-bit index per non-zero pair) \\
-\textbf{Total Accelerated Storage} \& $\text{Sparse} + \text{Meta}$ \& $\mathbf{17.30\text{ MB}}$ ($48.4\%$ Footprint Savings) \\
+\textbf{Dense Weight Tensor} & $N \times M \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{Sparse Weight Buffer} & $\frac{1}{2} \cdot N \cdot M \times 2 \text{ bytes}$ & $16.78 \text{ MB}$ \\
+\textbf{Sparse Meta Index Buffer} & $\frac{1}{2} \cdot N \cdot M \times 2 \text{ bits}$ & $0.52 \text{ MB}$ (2-bit index per non-zero pair) \\
+\textbf{Total Accelerated Storage} & $\text{Sparse} + \text{Meta}$ & $\mathbf{17.30\text{ MB}}$ ($48.4\%$ Footprint Savings) \\
 
 \bottomrule
 \end{tabular}
@@ -1927,12 +1927,12 @@ The empirical evaluation of \texttt{ast\_pruner} across standard sequence length
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -1944,13 +1944,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -2022,7 +2022,7 @@ Define task importance vector $\mathbf{i}_{\text{task}} \in \mathbb{R}^{D_{\text
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-\mathbf{i}_{\text{task}}[j] = \begin{cases} 0.6 \& \text{if } j \le \lfloor D_{\text{out}} / 4 \rfloor \text{ (Position Bias Boost)} \\ 0.5 \& \text{otherwise} \end{cases}
+\mathbf{i}_{\text{task}}[j] = \begin{cases} 0.6 & \text{if } j \le \lfloor D_{\text{out}} / 4 \rfloor \text{ (Position Bias Boost)} \\ 0.5 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -2058,7 +2058,7 @@ Construct row mask vector $\mathbf{m} \in \{0, 1\}^{D_{\text{out}}}$:
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-m_i = \begin{cases} 1.0 \& \text{if } i \in \mathcal{I}_{\text{task}} \\ 0.0 \& \text{otherwise} \end{cases}
+m_i = \begin{cases} 1.0 & \text{if } i \in \mathcal{I}_{\text{task}} \\ 0.0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -2125,11 +2125,11 @@ Extract top indices \texttt{\_, top\_idx = torch.topk(combined, keep\_n)}. Furth
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (LLaMA-7B Linear: $D_{\text{in}}=4096, D_{\text{out}}=4096$) \\
+Component & Formula & Example (LLaMA-7B Linear: $D_{\text{in}}=4096, D_{\text{out}}=4096$) \\
 \midrule
-\textbf{Dense Weights} \& $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{CacheNotes Retained ($R_{\text{keep}}=0.30$)} \& $R_{\text{keep}} \cdot D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ \& $10.06 \text{ MB}$ \\
-\textbf{Memory Footprint Reduction} \& $1 - R_{\text{keep}}$ \& $\mathbf{70.0\%}$ Reduction \\
+\textbf{Dense Weights} & $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{CacheNotes Retained ($R_{\text{keep}}=0.30$)} & $R_{\text{keep}} \cdot D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ & $10.06 \text{ MB}$ \\
+\textbf{Memory Footprint Reduction} & $1 - R_{\text{keep}}$ & $\mathbf{70.0\%}$ Reduction \\
 
 \bottomrule
 \end{tabular}
@@ -2177,10 +2177,10 @@ def cachenotes_row_mask_kernel(
     rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
 
     mask_val = tl.load(Mask_ptr + rm, mask=rm < d_out, other=0.0)
-    w_val = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in), other=0.0)
+    w_val = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in), other=0.0)
 
     # Prune unselected task feature rows
-    tl.store(Out_ptr + rm[:, None] * d_in + rn[None, :], w_val * mask_val[:, None], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in))
+    tl.store(Out_ptr + rm[:, None] * d_in + rn[None, :], w_val * mask_val[:, None], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -2204,12 +2204,12 @@ The empirical evaluation of \texttt{cachenotes\_compressor} across standard sequ
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -2221,13 +2221,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -2375,14 +2375,14 @@ After compression, \texttt{compressed\_model} and \texttt{compressed\_tokenizer}
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{target\_layers} \& \texttt{None} \& Number of layers to keep. If \texttt{None}, computed as \texttt{(1 - sparsity) x original\_layers}. \\
-\texttt{sparsity} \& \texttt{0.3} \& Fraction of layers to prune. Used only if \texttt{target\_layers} is \texttt{None}. \\
-\texttt{device} \& \texttt{"cuda"} \& (Placeholder) Device for potential future in-memory operations. Currently passed to external script via GPU availability. \\
-\texttt{save\_dir} \& \texttt{"come\_pruned"} \& Directory to save the compressed model. \\
-\texttt{calibration\_dataset} \& \texttt{"wiki2"} \& Calibration dataset for the CoMe algorithm. Common options: \texttt{"wiki2"}, \texttt{"c4"}, \texttt{"ptb"}. \\
-\texttt{nsamples} \& \texttt{256} \& Number of calibration samples. \\
+\texttt{target\_layers} & \texttt{None} & Number of layers to keep. If \texttt{None}, computed as \texttt{(1 - sparsity) x original\_layers}. \\
+\texttt{sparsity} & \texttt{0.3} & Fraction of layers to prune. Used only if \texttt{target\_layers} is \texttt{None}. \\
+\texttt{device} & \texttt{"cuda"} & (Placeholder) Device for potential future in-memory operations. Currently passed to external script via GPU availability. \\
+\texttt{save\_dir} & \texttt{"come\_pruned"} & Directory to save the compressed model. \\
+\texttt{calibration\_dataset} & \texttt{"wiki2"} & Calibration dataset for the CoMe algorithm. Common options: \texttt{"wiki2"}, \texttt{"c4"}, \texttt{"ptb"}. \\
+\texttt{nsamples} & \texttt{256} & Number of calibration samples. \\
 
 \bottomrule
 \end{tabular}
@@ -2410,11 +2410,11 @@ Specifically, regarding \textbf{External dependency}, the actual compression log
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Method \& Approach \& Retraining \& Output format \& Speed-up source \\
+Method & Approach & Retraining & Output format & Speed-up source \\
 \midrule
-CoMe (this) \& Layer concatenation merging \& Not required \& HF model \& Fewer layers (depth) \\
-Layer dropping \& Simply remove layers \& Not required \& HF model \& Fewer layers \\
-Distillation \& Train student to mimic teacher \& Required \& HF model \& Fewer layers / width \\
+CoMe (this) & Layer concatenation merging & Not required & HF model & Fewer layers (depth) \\
+Layer dropping & Simply remove layers & Not required & HF model & Fewer layers \\
+Distillation & Train student to mimic teacher & Required & HF model & Fewer layers / width \\
 
 \bottomrule
 \end{tabular}
@@ -2437,12 +2437,12 @@ The empirical evaluation of \texttt{come} across standard sequence lengths and l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -2454,13 +2454,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -2681,11 +2681,11 @@ compressed_model = compression_pipeline(model, comp_config)
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{compot\_rank} \& \texttt{64} \& Target rank for SVD truncation of the projected mapping D. Smaller ranks give higher compression. \\
-\texttt{compot\_calibration\_texts} \& (3 generic sentences) \& List of strings used to capture activations. Should be representative of the target domain. \\
-(attached) \texttt{model.tokenizer} \& required \& Tokenizer object. Must be attached before compression. \\
+\texttt{compot\_rank} & \texttt{64} & Target rank for SVD truncation of the projected mapping D. Smaller ranks give higher compression. \\
+\texttt{compot\_calibration\_texts} & (3 generic sentences) & List of strings used to capture activations. Should be representative of the target domain. \\
+(attached) \texttt{model.tokenizer} & required & Tokenizer object. Must be attached before compression. \\
 
 \bottomrule
 \end{tabular}
@@ -2713,12 +2713,12 @@ Specifically, regarding \textbf{Dense weight output}, the reconstructed weight i
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Method \& Data-Aware \& Basis Learning \& Granularity \& Inference Speed-up Without Extra Factorization \\
+Method & Data-Aware & Basis Learning & Granularity & Inference Speed-up Without Extra Factorization \\
 \midrule
-A3 (simple SVD) \& No \& No \& Per-layer \& No \\
-AASVD (anchored) \& Yes \& Activation SVD \& Per-layer \& No \\
-COMPOT (this) \& Yes \& QR + SVD \& Per-layer \& No (dense weight) \\
-Adaptive SVD \& No \& Energy-threshold \& Per-layer \& Yes (replace with low-rank layers) \\
+A3 (simple SVD) & No & No & Per-layer & No \\
+AASVD (anchored) & Yes & Activation SVD & Per-layer & No \\
+COMPOT (this) & Yes & QR + SVD & Per-layer & No (dense weight) \\
+Adaptive SVD & No & Energy-threshold & Per-layer & Yes (replace with low-rank layers) \\
 
 \bottomrule
 \end{tabular}
@@ -2741,12 +2741,12 @@ The empirical evaluation of \texttt{compot\_compressor} across standard sequence
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -2758,13 +2758,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -2925,9 +2925,9 @@ Then run the compression pipeline. All linear layers will be compressed via inte
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{cr\_rank} \& \texttt{64} \& Rank for the interpolative decomposition. Lower values mean more compression. \\
+\texttt{cr\_rank} & \texttt{64} & Rank for the interpolative decomposition. Lower values mean more compression. \\
 
 \bottomrule
 \end{tabular}
@@ -2955,13 +2955,13 @@ Specifically, regarding \textbf{Scipy dependency}, the ID implementation require
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Feature \& CR (Interpolative Decomposition) \& A3 (Simple SVD) \\
+Feature & CR (Interpolative Decomposition) & A3 (Simple SVD) \\
 \midrule
-Basis vectors \& Actual columns of W \& Abstract singular vectors \\
-Interpretability \& High \& Low \\
-Approximation quality \& Near-optimal (slightly worse than SVD) \& Optimal (Frobenius norm) \\
-Storage as factored \& Possible (indices + proj) \& Possible (U, $\Sigma$, V) \\
-Fallback if missing lib \& SVD \& N/A \\
+Basis vectors & Actual columns of W & Abstract singular vectors \\
+Interpretability & High & Low \\
+Approximation quality & Near-optimal (slightly worse than SVD) & Optimal (Frobenius norm) \\
+Storage as factored & Possible (indices + proj) & Possible (U, $\Sigma$, V) \\
+Fallback if missing lib & SVD & N/A \\
 
 \bottomrule
 \end{tabular}
@@ -2984,12 +2984,12 @@ The empirical evaluation of \texttt{cr\_compressor} across standard sequence len
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -3001,13 +3001,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -3198,13 +3198,13 @@ $
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Layer Component \& Buffer Shape \& Parameter Count \& VRAM Footprint (FP32) \& Memory Savings \\
+Layer Component & Buffer Shape & Parameter Count & VRAM Footprint (FP32) & Memory Savings \\
 \midrule
-\textbf{Original Weight $W$} \& $4096 \times 4096$ \& 16,777,216 \& 67.11 MB \& 0.0\% \\
-\textbf{Column Matrix $C$} \& $4096 \times 128$ \& 524,288 \& 2.10 MB \& 96.8\% \\
-\textbf{Core Matrix $U$} \& $128 \times 128$ \& 16,384 \& 0.07 MB \& 99.9\% \\
-\textbf{Row Matrix $R$} \& $128 \times 4096$ \& 524,288 \& 2.10 MB \& 96.8\% \\
-\textbf{Total CUR Module} \& $C, U, R$ \& \textbf{1,064,960} \& \textbf{4.26 MB} \& \textbf{93.6\%} \\
+\textbf{Original Weight $W$} & $4096 \times 4096$ & 16,777,216 & 67.11 MB & 0.0\% \\
+\textbf{Column Matrix $C$} & $4096 \times 128$ & 524,288 & 2.10 MB & 96.8\% \\
+\textbf{Core Matrix $U$} & $128 \times 128$ & 16,384 & 0.07 MB & 99.9\% \\
+\textbf{Row Matrix $R$} & $128 \times 4096$ & 524,288 & 2.10 MB & 96.8\% \\
+\textbf{Total CUR Module} & $C, U, R$ & \textbf{1,064,960} & \textbf{4.26 MB} & \textbf{93.6\%} \\
 
 \bottomrule
 \end{tabular}
@@ -3275,23 +3275,23 @@ def cur_fused_forward_kernel(
     acc_r1 = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     for k in range(0, d_in, BLOCK_N):
         offs_k = k + tl.arange(0, BLOCK_N)
-        x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) \& (offs_k[None, :] < d_in), other=0.0)
-        r_tile = tl.load(R_ptr + offs_r[:, None] * stride_rr + offs_k[None, :] * stride_rn, mask=(offs_r[:, None] < rank) \& (offs_k[None, :] < d_in), other=0.0)
+        x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) & (offs_k[None, :] < d_in), other=0.0)
+        r_tile = tl.load(R_ptr + offs_r[:, None] * stride_rr + offs_k[None, :] * stride_rn, mask=(offs_r[:, None] < rank) & (offs_k[None, :] < d_in), other=0.0)
         acc_r1 += tl.dot(x_tile, tl.trans(r_tile))
 
     # Step 2: Multiply with core U^T -> [BLOCK_M x BLOCK_R]
-    u_tile = tl.load(U_ptr + offs_r[:, None] * stride_ur1 + offs_r[None, :] * stride_ur2, mask=(offs_r[:, None] < rank) \& (offs_r[None, :] < rank), other=0.0)
+    u_tile = tl.load(U_ptr + offs_r[:, None] * stride_ur1 + offs_r[None, :] * stride_ur2, mask=(offs_r[:, None] < rank) & (offs_r[None, :] < rank), other=0.0)
     acc_r2 = tl.dot(acc_r1.to(tl.float16), tl.trans(u_tile))
 
     # Step 3: Multiply with column matrix C^T -> [BLOCK_M x BLOCK_N]
-    c_tile = tl.load(C_ptr + offs_n[:, None] * stride_cd + offs_r[None, :] * stride_cr, mask=(offs_n[:, None] < d_out) \& (offs_r[None, :] < rank), other=0.0)
+    c_tile = tl.load(C_ptr + offs_n[:, None] * stride_cd + offs_r[None, :] * stride_cr, mask=(offs_n[:, None] < d_out) & (offs_r[None, :] < rank), other=0.0)
     out_tile = tl.dot(acc_r2.to(tl.float16), tl.trans(c_tile))
 
     if Bias_ptr is not None:
         bias_val = tl.load(Bias_ptr + offs_n, mask=offs_n < d_out, other=0.0)
         out_tile += bias_val[None, :]
 
-    tl.store(Out_ptr + offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb, out_tile.to(tl.float16), mask=(offs_m[:, None] < B_N) \& (offs_n[None, :] < d_out))
+    tl.store(Out_ptr + offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb, out_tile.to(tl.float16), mask=(offs_m[:, None] < B_N) & (offs_n[None, :] < d_out))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -3315,12 +3315,12 @@ The empirical evaluation of \texttt{cur\_compressor} across standard sequence le
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -3332,13 +3332,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -3502,13 +3502,13 @@ $
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llllll}
 \toprule
-Expert Sub-Module \& Base Shape \& Uncompressed VRAM (FP16) \& CUR Rank ($r$) \& Compressed VRAM (FP16) \& VRAM Reduction \\
+Expert Sub-Module & Base Shape & Uncompressed VRAM (FP16) & CUR Rank ($r$) & Compressed VRAM (FP16) & VRAM Reduction \\
 \midrule
-\textbf{Expert 0} \& $11008 \times 4096$ \& 90.18 MB \& 64 \& 1.94 MB \& 97.8\% \\
-\textbf{Expert 1} \& $11008 \times 4096$ \& 90.18 MB \& 64 \& 1.94 MB \& 97.8\% \\
-\textbf{Expert 2} \& $11008 \times 4096$ \& 90.18 MB \& 64 \& 1.94 MB \& 97.8\% \\
-\textbf{Expert 3..7} \& $11008 \times 4096$ \& 450.90 MB \& 64 \& 9.70 MB \& 97.8\% \\
-\textbf{Total MoE Layer (8 Experts)} \& -- \& \textbf{721.44 MB} \& -- \& \textbf{15.52 MB} \& \textbf{97.8\% VRAM Savings} \\
+\textbf{Expert 0} & $11008 \times 4096$ & 90.18 MB & 64 & 1.94 MB & 97.8\% \\
+\textbf{Expert 1} & $11008 \times 4096$ & 90.18 MB & 64 & 1.94 MB & 97.8\% \\
+\textbf{Expert 2} & $11008 \times 4096$ & 90.18 MB & 64 & 1.94 MB & 97.8\% \\
+\textbf{Expert 3..7} & $11008 \times 4096$ & 450.90 MB & 64 & 9.70 MB & 97.8\% \\
+\textbf{Total MoE Layer (8 Experts)} & -- & \textbf{721.44 MB} & -- & \textbf{15.52 MB} & \textbf{97.8\% VRAM Savings} \\
 
 \bottomrule
 \end{tabular}
@@ -3579,23 +3579,23 @@ def cur_moe_expert_kernel(
     acc_r1 = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     for k in range(0, d_in, BLOCK_N):
         offs_k = k + tl.arange(0, BLOCK_N)
-        x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) \& (offs_k[None, :] < d_in), other=0.0)
+        x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) & (offs_k[None, :] < d_in), other=0.0)
         
         r_ptr = R_ptr + (expert_idx * stride_re + offs_r[:, None] * stride_rr + offs_k[None, :] * stride_rn)
-        r_tile = tl.load(r_ptr, mask=(offs_r[:, None] < rank) \& (offs_k[None, :] < d_in), other=0.0)
+        r_tile = tl.load(r_ptr, mask=(offs_r[:, None] < rank) & (offs_k[None, :] < d_in), other=0.0)
         acc_r1 += tl.dot(x_tile, tl.trans(r_tile))
 
     # 2. Transform through expert core matrix U_e^T
     u_ptr = U_ptr + (expert_idx * stride_ue + offs_r[:, None] * stride_ur1 + offs_r[None, :] * stride_ur2)
-    u_tile = tl.load(u_ptr, mask=(offs_r[:, None] < rank) \& (offs_r[None, :] < rank), other=0.0)
+    u_tile = tl.load(u_ptr, mask=(offs_r[:, None] < rank) & (offs_r[None, :] < rank), other=0.0)
     acc_r2 = tl.dot(acc_r1.to(tl.float16), tl.trans(u_tile))
 
     # 3. Project to output space through expert column matrix C_e^T
     c_ptr = C_ptr + (expert_idx * stride_ce + offs_n[:, None] * stride_cd + offs_r[None, :] * stride_cr)
-    c_tile = tl.load(c_ptr, mask=(offs_n[:, None] < d_out) \& (offs_r[None, :] < rank), other=0.0)
+    c_tile = tl.load(c_ptr, mask=(offs_n[:, None] < d_out) & (offs_r[None, :] < rank), other=0.0)
     out_tile = tl.dot(acc_r2.to(tl.float16), tl.trans(c_tile))
 
-    tl.store(Out_ptr + offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb, out_tile.to(tl.float16), mask=(offs_m[:, None] < B_N) \& (offs_n[None, :] < d_out))
+    tl.store(Out_ptr + offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb, out_tile.to(tl.float16), mask=(offs_m[:, None] < B_N) & (offs_n[None, :] < d_out))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -3619,12 +3619,12 @@ The empirical evaluation of \texttt{cur\_moe\_compressor} across standard sequen
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.5} \& 11.20 \& $+0.30$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.7} \& 14.60 \& $+0.10$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{2,400 tok/s} \& 1,250 tok/s \& \textbf{2,400 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Block-Sparse Top-K Router Kernel \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.5} & 11.20 & $+0.30$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.7} & 14.60 & $+0.10$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{2,400 tok/s} & 1,250 tok/s & \textbf{2,400 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Block-Sparse Top-K Router Kernel & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -3636,13 +3636,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.29 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.49 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 0.62 ms \& 240 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 1.18 ms \& 384 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{2.25 ms} \& \textbf{550 MB} \& \textbf{5.68x} \\
+\textbf{$L = 512$} & 0.29 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.49 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 0.62 ms & 240 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 1.18 ms & 384 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{2.25 ms} & \textbf{550 MB} & \textbf{5.68x} \\
 
 
 \bottomrule
@@ -3818,11 +3818,11 @@ Compute residuals \texttt{k\_residual = k - rk}. Furthermore, Filter low-magnitu
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (LLaMA-7B KV Cache: $B=1, H=32, N=4096, D=128$) \\
+Component & Formula & Example (LLaMA-7B KV Cache: $B=1, H=32, N=4096, D=128$) \\
 \midrule
-\textbf{Dense KV Cache Memory} \& $2 \times B \times H \times N \times D \times 2 \text{ bytes}$ \& $67.11 \text{ MB}$ \\
-\textbf{DeltaKV Store ($S=0.29$)} \& Reference Store $+$ Sparse Residuals \& $19.46 \text{ MB}$ \\
-\textbf{Memory Compression Ratio} \& $\frac{1}{\text{compression\_ratio}}$ \& $\mathbf{3.45\times}$ Reduction ($29.0\%$ Footprint) \\
+\textbf{Dense KV Cache Memory} & $2 \times B \times H \times N \times D \times 2 \text{ bytes}$ & $67.11 \text{ MB}$ \\
+\textbf{DeltaKV Store ($S=0.29$)} & Reference Store $+$ Sparse Residuals & $19.46 \text{ MB}$ \\
+\textbf{Memory Compression Ratio} & $\frac{1}{\text{compression\_ratio}}$ & $\mathbf{3.45\times}$ Reduction ($29.0\%$ Footprint) \\
 
 \bottomrule
 \end{tabular}
@@ -3903,12 +3903,12 @@ The empirical evaluation of \texttt{delta\_kv} across standard sequence lengths 
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -3920,13 +3920,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -4150,10 +4150,10 @@ Then run the compression pipeline. All linear layers will be compressed with a r
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{enlighten\_rank} \& \texttt{64} \& Rank of the low-rank component. Smaller values give higher compression but may lose more information. \\
-\texttt{enlighten\_sparsity} \& \texttt{0.5} \& \textbf{Currently ignored}. The 2:4 pattern enforces exactly 50\% sparsity on the residual. \\
+\texttt{enlighten\_rank} & \texttt{64} & Rank of the low-rank component. Smaller values give higher compression but may lose more information. \\
+\texttt{enlighten\_sparsity} & \texttt{0.5} & \textbf{Currently ignored}. The 2:4 pattern enforces exactly 50\% sparsity on the residual. \\
 
 \bottomrule
 \end{tabular}
@@ -4181,11 +4181,11 @@ Specifically, regarding \textbf{Dense output}, the current code stores a dense \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Method \& Low-Rank Component \& Sparse Component Pattern \& Target Hardware \\
+Method & Low-Rank Component & Sparse Component Pattern & Target Hardware \\
 \midrule
-ARMOR \& Low-rank correction \& Top-2 per row block (row-wise) \& General sparse accelerators \\
-DeltaKV \& Low-rank reference \& Unstructured sparse residual \& Not specified \\
-ENLighten \& Low-rank core \& 2:4 structured (column blocks) \& Photonic accelerators, NVIDIA sparse tensor cores \\
+ARMOR & Low-rank correction & Top-2 per row block (row-wise) & General sparse accelerators \\
+DeltaKV & Low-rank reference & Unstructured sparse residual & Not specified \\
+ENLighten & Low-rank core & 2:4 structured (column blocks) & Photonic accelerators, NVIDIA sparse tensor cores \\
 
 \bottomrule
 \end{tabular}
@@ -4208,12 +4208,12 @@ The empirical evaluation of \texttt{enlighten\_compressor} across standard seque
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -4225,13 +4225,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -4335,7 +4335,7 @@ Let $k = \lfloor (1 - S) \cdot D_{\text{in}} \rfloor$ be the number of channels 
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-m_j = \begin{cases} 1.0 \& \text{if } j \in \mathcal{K} \\ 0.0 \& \text{otherwise} \end{cases}
+m_j = \begin{cases} 1.0 & \text{if } j \in \mathcal{K} \\ 0.0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -4403,12 +4403,12 @@ Slice flat inputs \texttt{flat\_inputs = flat\_inputs[:, keep\_idx]} for downstr
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Metric \& Formula \& Example (LLaMA-7B Linear: $D_{\text{in}}=4096, D_{\text{out}}=4096$) \\
+Metric & Formula & Example (LLaMA-7B Linear: $D_{\text{in}}=4096, D_{\text{out}}=4096$) \\
 \midrule
-\textbf{Dense Weights} \& $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{Active Parameters ($S=0.20$)} \& $D_{\text{out}} \times (0.80 \cdot D_{\text{in}}) \times 2 \text{ bytes}$ \& $26.84 \text{ MB}$ \\
-\textbf{FLOP Elimination} \& $1 - (1 - S)$ \& $\mathbf{20.0\%}$ Reduction \\
-\textbf{Calibration Activation Memory} \& $N \times D_{\text{in}} \times 4 \text{ bytes}$ \& $16.78 \text{ MB}$ ($N=1024$ tokens) \\
+\textbf{Dense Weights} & $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{Active Parameters ($S=0.20$)} & $D_{\text{out}} \times (0.80 \cdot D_{\text{in}}) \times 2 \text{ bytes}$ & $26.84 \text{ MB}$ \\
+\textbf{FLOP Elimination} & $1 - (1 - S)$ & $\mathbf{20.0\%}$ Reduction \\
+\textbf{Calibration Activation Memory} & $N \times D_{\text{in}} \times 4 \text{ bytes}$ & $16.78 \text{ MB}$ ($N=1024$ tokens) \\
 
 \bottomrule
 \end{tabular}
@@ -4460,11 +4460,11 @@ def flap_column_mask_kernel(
     rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
 
     mask_cols = tl.load(Mask_ptr + rn, mask=rn < d_in, other=0.0)
-    w_vals = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in), other=0.0)
+    w_vals = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in), other=0.0)
 
     # Zero out unkept columns
     w_pruned = w_vals * mask_cols[None, :]
-    tl.store(Out_ptr + rm[:, None] * d_in + rn[None, :], w_pruned, mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in))
+    tl.store(Out_ptr + rm[:, None] * d_in + rn[None, :], w_pruned, mask=(rm[:, None] < d_out) & (rn[None, :] < d_in))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -4488,12 +4488,12 @@ The empirical evaluation of \texttt{flap} across standard sequence lengths and l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -4505,13 +4505,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -4611,7 +4611,7 @@ Construct row mask vector $\mathbf{m} \in \{0, 1\}^{D_{\text{out}}}$:
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-m_i = \begin{cases} 1.0 \& \text{if } i \in \mathcal{I}_{\text{keep}} \\ 0.0 \& \text{otherwise} \end{cases}
+m_i = \begin{cases} 1.0 & \text{if } i \in \mathcal{I}_{\text{keep}} \\ 0.0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -4678,12 +4678,12 @@ Create row mask vector \texttt{mask[idx] = 1.0}. Furthermore, Update weights \te
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (LLaMA-7B MLP Up-Proj: $D_{\text{in}}=4096, D_{\text{out}}=11008$) \\
+Component & Formula & Example (LLaMA-7B MLP Up-Proj: $D_{\text{in}}=4096, D_{\text{out}}=11008$) \\
 \midrule
-\textbf{Dense Weights \& Bias} \& $(D_{\text{out}} \times D_{\text{in}} + D_{\text{out}}) \times 2 \text{ bytes}$ \& $90.20 \text{ MB}$ \\
-\textbf{Active Retained Parameters} \& $k \times D_{\text{in}} \times 2 \text{ bytes}$ \& $63.14 \text{ MB}$ ($R_{\text{keep}}=0.70, k=7705$) \\
-\textbf{Memory Footprint Reduction} \& $1 - R_{\text{keep}}$ \& $\mathbf{30.0\%}$ Reduction \\
-\textbf{Calibration Peak Overhead} \& $N \times D_{\text{out}} \times 4 \text{ bytes} + D_{\text{out}}^2 \times 4 \text{ bytes}$ \& $488.7 \text{ MB}$ ($N=1024$ tokens) \\
+\textbf{Dense Weights \& Bias} & $(D_{\text{out}} \times D_{\text{in}} + D_{\text{out}}) \times 2 \text{ bytes}$ & $90.20 \text{ MB}$ \\
+\textbf{Active Retained Parameters} & $k \times D_{\text{in}} \times 2 \text{ bytes}$ & $63.14 \text{ MB}$ ($R_{\text{keep}}=0.70, k=7705$) \\
+\textbf{Memory Footprint Reduction} & $1 - R_{\text{keep}}$ & $\mathbf{30.0\%}$ Reduction \\
+\textbf{Calibration Peak Overhead} & $N \times D_{\text{out}} \times 4 \text{ bytes} + D_{\text{out}}^2 \times 4 \text{ bytes}$ & $488.7 \text{ MB}$ ($N=1024$ tokens) \\
 
 \bottomrule
 \end{tabular}
@@ -4735,11 +4735,11 @@ def flat_llm_row_prune_kernel(
     rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
 
     row_kept = tl.load(Row_Mask_ptr + rm, mask=rm < d_out, other=0.0)
-    w_vals = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in), other=0.0)
+    w_vals = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in), other=0.0)
 
     # Zero out unkept output rows
     w_pruned = w_vals * row_kept[:, None]
-    tl.store(Out_W_ptr + rm[:, None] * d_in + rn[None, :], w_pruned, mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in))
+    tl.store(Out_W_ptr + rm[:, None] * d_in + rn[None, :], w_pruned, mask=(rm[:, None] < d_out) & (rn[None, :] < d_in))
 
     if pid_n == 0:
         b_vals = tl.load(Bias_ptr + rm, mask=rm < d_out, other=0.0)
@@ -4767,12 +4767,12 @@ The empirical evaluation of \texttt{flat\_llm} across standard sequence lengths 
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -4784,13 +4784,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -4931,9 +4931,9 @@ comp_config.frandi_rank = 16
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{frandi\_rank} \& \texttt{8} \& Rank for truncated SVD. Lower values give higher compression. \\
+\texttt{frandi\_rank} & \texttt{8} & Rank for truncated SVD. Lower values give higher compression. \\
 
 \bottomrule
 \end{tabular}
@@ -4959,12 +4959,12 @@ Specifically, regarding \textbf{Not feature-regression aligned}, despite the nam
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Method \& Data-Aware \& Rank Selection \& Remarks \\
+Method & Data-Aware & Rank Selection & Remarks \\
 \midrule
-FRanDI \& No (intended yes) \& Fixed \& Placeholder for regression-aligned SVD \\
-A3 (simple SVD) \& No \& Fixed \& Pure SVD, no dummy forward pass \\
-AASVD \& Yes (activation anchor) \& Fixed \& Anchored SVD with calibration \\
-ERC-SVD \& No \& Error-controlled \& Adaptive per-layer \\
+FRanDI & No (intended yes) & Fixed & Placeholder for regression-aligned SVD \\
+A3 (simple SVD) & No & Fixed & Pure SVD, no dummy forward pass \\
+AASVD & Yes (activation anchor) & Fixed & Anchored SVD with calibration \\
+ERC-SVD & No & Error-controlled & Adaptive per-layer \\
 
 \bottomrule
 \end{tabular}
@@ -4987,12 +4987,12 @@ The empirical evaluation of \texttt{frandi\_compressor} across standard sequence
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -5004,13 +5004,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -5176,9 +5176,9 @@ Then run the compression pipeline. The model will be structurally altered; all l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{hashed\_net\_buckets} \& \texttt{1024} \& Number of hash buckets per layer. Small values $\rightarrow$ high compression, large values $\rightarrow$ better initial approximation. \\
+\texttt{hashed\_net\_buckets} & \texttt{1024} & Number of hash buckets per layer. Small values $\rightarrow$ high compression, large values $\rightarrow$ better initial approximation. \\
 
 \bottomrule
 \end{tabular}
@@ -5204,12 +5204,12 @@ Specifically, regarding \textbf{Requires fine-tuning}, the initial compressed mo
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Method \& Approach \& Parameter Reduction \& Requires Fine-tuning \\
+Method & Approach & Parameter Reduction & Requires Fine-tuning \\
 \midrule
-HashedNet (this) \& Hash table weight sharing \& Very high (100--1000$\times$) \& Yes \\
-Low-rank SVD (A3) \& Truncated SVD \& Moderate (depends on rank) \& No (but can benefit) \\
-AST Pruner (2:4) \& Structured sparsity \& 2$\times$ (storage) \& Recommended \\
-Quantization (Astro) \& Uniform min-max quantization \& Depends on bit-width \& Optional \\
+HashedNet (this) & Hash table weight sharing & Very high (100--1000$\times$) & Yes \\
+Low-rank SVD (A3) & Truncated SVD & Moderate (depends on rank) & No (but can benefit) \\
+AST Pruner (2:4) & Structured sparsity & 2$\times$ (storage) & Recommended \\
+Quantization (Astro) & Uniform min-max quantization & Depends on bit-width & Optional \\
 
 \bottomrule
 \end{tabular}
@@ -5232,12 +5232,12 @@ The empirical evaluation of \texttt{hashed\_net\_compressor} across standard seq
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -5249,13 +5249,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -5333,7 +5333,7 @@ Compute the dynamic ratio $r_{\text{dyn}} = \frac{1}{D_{\text{out}}} \sum_{i=1}^
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-\text{Head Type} = \begin{cases} \text{Dynamic} \& \text{if } r_{\text{dyn}} > 0.3 \\ \text{Static} \& \text{otherwise} \end{cases}
+\text{Head Type} = \begin{cases} \text{Dynamic} & \text{if } r_{\text{dyn}} > 0.3 \\ \text{Static} & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -5349,7 +5349,7 @@ Keep top $k_{\text{static}} = \lfloor D_{\text{out}} \cdot B \cdot R_{\text{stat
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-M_i^{\text{static}} = \begin{cases} 1.0 \& \text{if } i \in \text{TopK}_{k_{\text{static}}}\left( \{ \|W_{j, :}\|_2 \}_{j=1}^{D_{\text{out}}} \right) \\ 0.0 \& \text{otherwise} \end{cases}
+M_i^{\text{static}} = \begin{cases} 1.0 & \text{if } i \in \text{TopK}_{k_{\text{static}}}\left( \{ \|W_{j, :}\|_2 \}_{j=1}^{D_{\text{out}}} \right) \\ 0.0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -5422,12 +5422,12 @@ Assign $W_{\text{pruned}} = W \odot M$.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (LLaMA-7B Projection: $D_{\text{in}}=4096, D_{\text{out}}=4096$) \\
+Component & Formula & Example (LLaMA-7B Projection: $D_{\text{in}}=4096, D_{\text{out}}=4096$) \\
 \midrule
-\textbf{Dense Weights} \& $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{HybridKV Retained ($B=0.3$)} \& $B \cdot D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ \& $10.06 \text{ MB}$ \\
-\textbf{Memory Savings} \& $1 - B$ \& $\mathbf{70.0\%}$ Reduction \\
-\textbf{Head Classification Overhead} \& Row Variance $+$ L2 Norm \& $< 0.1 \text{ MB}$ (CPU execution) \\
+\textbf{Dense Weights} & $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{HybridKV Retained ($B=0.3$)} & $B \cdot D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ & $10.06 \text{ MB}$ \\
+\textbf{Memory Savings} & $1 - B$ & $\mathbf{70.0\%}$ Reduction \\
+\textbf{Head Classification Overhead} & Row Variance $+$ L2 Norm & $< 0.1 \text{ MB}$ (CPU execution) \\
 
 \bottomrule
 \end{tabular}
@@ -5480,10 +5480,10 @@ def hybridkv_mask_kernel(
     rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
 
     mask_val = tl.load(Mask_ptr + rm, mask=rm < d_out, other=0.0)
-    w_val = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in), other=0.0)
+    w_val = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in), other=0.0)
 
     # Apply row mask
-    tl.store(Out_ptr + rm[:, None] * d_in + rn[None, :], w_val * mask_val[:, None], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in))
+    tl.store(Out_ptr + rm[:, None] * d_in + rn[None, :], w_val * mask_val[:, None], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -5507,12 +5507,12 @@ The empirical evaluation of \texttt{hybridkv\_compressor} across standard sequen
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.3} \& 11.20 \& $+0.10$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.7} \& 14.60 \& $+0.10$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{3,050 tok/s} \& 1,250 tok/s \& \textbf{3,050 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Dual-Branch Fused Memory Engine \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.3} & 11.20 & $+0.10$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.7} & 14.60 & $+0.10$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{3,050 tok/s} & 1,250 tok/s & \textbf{3,050 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Dual-Branch Fused Memory Engine & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -5524,13 +5524,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.24 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.41 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 0.55 ms \& 210 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 1.04 ms \& 336 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{2.05 ms} \& \textbf{440 MB} \& \textbf{6.24x} \\
+\textbf{$L = 512$} & 0.24 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.41 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 0.55 ms & 210 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 1.04 ms & 336 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{2.05 ms} & \textbf{440 MB} & \textbf{6.24x} \\
 
 
 \bottomrule
@@ -5678,15 +5678,15 @@ $
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llllllll}
 \toprule
-Layer Category \& Base Shape ($M \times N$) \& Baseline Params \& Factor Shapes ($A, B$) \& Kronecker Params \& Baseline VRAM \& Compressed VRAM \& Param Savings \\
+Layer Category & Base Shape ($M \times N$) & Baseline Params & Factor Shapes ($A, B$) & Kronecker Params & Baseline VRAM & Compressed VRAM & Param Savings \\
 \midrule
-\textbf{\texttt{q\_proj} (32 Layers)} \& $4096 \times 4096$ \& 536,870,912 \& $64 \times 64, 64 \times 64$ \& 262,144 \& 1.07 GB \& 0.52 MB \& \textbf{99.95\%} \\
-\textbf{\texttt{k\_proj} (32 Layers)} \& $4096 \times 4096$ \& 536,870,912 \& $64 \times 64, 64 \times 64$ \& 262,144 \& 1.07 GB \& 0.52 MB \& \textbf{99.95\%} \\
-\textbf{\texttt{v\_proj} (32 Layers)} \& $4096 \times 4096$ \& 536,870,912 \& $64 \times 64, 64 \times 64$ \& 262,144 \& 1.07 GB \& 0.52 MB \& \textbf{99.95\%} \\
-\textbf{\texttt{o\_proj} (32 Layers)} \& $4096 \times 4096$ \& 536,870,912 \& $64 \times 64, 64 \times 64$ \& 262,144 \& 1.07 GB \& 0.52 MB \& \textbf{99.95\%} \\
-\textbf{\texttt{gate\_proj} (32 Layers)} \& $11008 \times 4096$ \& 1,442,840,576 \& $172 \times 64, 64 \times 64$ \& 483,328 \& 2.88 GB \& 0.96 MB \& \textbf{99.96\%} \\
-\textbf{\texttt{down\_proj} (32 Layers)} \& $4096 \times 11008$ \& 1,442,840,576 \& $64 \times 172, 64 \times 64$ \& 483,328 \& 2.88 GB \& 0.96 MB \& \textbf{99.96\%} \\
-\textbf{Total Model Linear Footprint} \& -- \& \textbf{5,033,164,800} \& -- \& \textbf{2,015,232} \& \textbf{10.06 GB} \& \textbf{4.03 MB} \& \textbf{99.96\% Global VRAM Reduction} \\
+\textbf{\texttt{q\_proj} (32 Layers)} & $4096 \times 4096$ & 536,870,912 & $64 \times 64, 64 \times 64$ & 262,144 & 1.07 GB & 0.52 MB & \textbf{99.95\%} \\
+\textbf{\texttt{k\_proj} (32 Layers)} & $4096 \times 4096$ & 536,870,912 & $64 \times 64, 64 \times 64$ & 262,144 & 1.07 GB & 0.52 MB & \textbf{99.95\%} \\
+\textbf{\texttt{v\_proj} (32 Layers)} & $4096 \times 4096$ & 536,870,912 & $64 \times 64, 64 \times 64$ & 262,144 & 1.07 GB & 0.52 MB & \textbf{99.95\%} \\
+\textbf{\texttt{o\_proj} (32 Layers)} & $4096 \times 4096$ & 536,870,912 & $64 \times 64, 64 \times 64$ & 262,144 & 1.07 GB & 0.52 MB & \textbf{99.95\%} \\
+\textbf{\texttt{gate\_proj} (32 Layers)} & $11008 \times 4096$ & 1,442,840,576 & $172 \times 64, 64 \times 64$ & 483,328 & 2.88 GB & 0.96 MB & \textbf{99.96\%} \\
+\textbf{\texttt{down\_proj} (32 Layers)} & $4096 \times 11008$ & 1,442,840,576 & $64 \times 172, 64 \times 64$ & 483,328 & 2.88 GB & 0.96 MB & \textbf{99.96\%} \\
+\textbf{Total Model Linear Footprint} & -- & \textbf{5,033,164,800} & -- & \textbf{2,015,232} & \textbf{10.06 GB} & \textbf{4.03 MB} & \textbf{99.96\% Global VRAM Reduction} \\
 
 \bottomrule
 \end{tabular}
@@ -5753,15 +5753,15 @@ def kronecker_compressor_global_kernel(
         offs_k = k + tl.arange(0, BLOCK_K)
 
         x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk)
-        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M_val) \& (offs_k[None, :] < K_val), other=0.0)
+        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M_val) & (offs_k[None, :] < K_val), other=0.0)
 
         w_ptrs = W_kron_reconstructed_ptr + (offs_n[None, :] * stride_wn + offs_k[:, None] * stride_wk)
-        w_tile = tl.load(w_ptrs, mask=(offs_n[None, :] < N_val) \& (offs_k[:, None] < K_val), other=0.0)
+        w_tile = tl.load(w_ptrs, mask=(offs_n[None, :] < N_val) & (offs_k[:, None] < K_val), other=0.0)
 
         acc += tl.dot(x_tile, w_tile)
 
     out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
-    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < M_val) \& (offs_n[None, :] < N_val))
+    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < M_val) & (offs_n[None, :] < N_val))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -5785,12 +5785,12 @@ The empirical evaluation of \texttt{kronecker\_compressor} across standard seque
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -5802,13 +5802,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -5997,11 +5997,11 @@ Compute entropy compression ratio estimate via \texttt{SimpleEntropyCoder}. Furt
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (LLaMA-7B Linear: $M=4096, N=4096, b=4$) \\
+Component & Formula & Example (LLaMA-7B Linear: $M=4096, N=4096, b=4$) \\
 \midrule
-\textbf{FP16 Dense Weights} \& $M \times N \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{KVTC Factors ($r=512, b=4$)} \& $(M \cdot r + r \cdot N) \times 0.5 \text{ bytes}$ \& $2.10 \text{ MB}$ \\
-\textbf{Effective Memory Reduction} \& $1 - \frac{(M+N) r \cdot b}{M N \cdot 16}$ \& $\mathbf{93.75\%}$ VRAM Footprint Reduction \\
+\textbf{FP16 Dense Weights} & $M \times N \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{KVTC Factors ($r=512, b=4$)} & $(M \cdot r + r \cdot N) \times 0.5 \text{ bytes}$ & $2.10 \text{ MB}$ \\
+\textbf{Effective Memory Reduction} & $1 - \frac{(M+N) r \cdot b}{M N \cdot 16}$ & $\mathbf{93.75\%}$ VRAM Footprint Reduction \\
 
 \bottomrule
 \end{tabular}
@@ -6053,15 +6053,15 @@ def kvtc_dequant_gemm_kernel(
 
     for r in range(0, R, BLOCK_SIZE_R):
         rr = r + tl.arange(0, BLOCK_SIZE_R)
-        u_val = tl.load(U_ptr + rm[:, None] * R + rr[None, :], mask=(rm[:, None] < M) \& (rr[None, :] < R), other=0.0)
+        u_val = tl.load(U_ptr + rm[:, None] * R + rr[None, :], mask=(rm[:, None] < M) & (rr[None, :] < R), other=0.0)
         s_val = tl.load(S_ptr + rr, mask=rr < R, other=0.0)
-        vt_val = tl.load(Vt_ptr + rr[:, None] * N + rn[None, :], mask=(rr[:, None] < R) \& (rn[None, :] < N), other=0.0)
+        vt_val = tl.load(Vt_ptr + rr[:, None] * N + rn[None, :], mask=(rr[:, None] < R) & (rn[None, :] < N), other=0.0)
 
         acc += tl.dot(u_val * s_val[None, :], vt_val)
 
     # De-quantize low-rank output
     quant = tl.extra.cuda.libdevice.rint((acc - Min_val) / Scale) * Scale + Min_val
-    tl.store(Out_ptr + rm[:, None] * N + rn[None, :], quant, mask=(rm[:, None] < M) \& (rn[None, :] < N))
+    tl.store(Out_ptr + rm[:, None] * N + rn[None, :], quant, mask=(rm[:, None] < M) & (rn[None, :] < N))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -6085,12 +6085,12 @@ The empirical evaluation of \texttt{kvtc\_compressor} across standard sequence l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -6102,13 +6102,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -6296,9 +6296,9 @@ Then run the compression pipeline. The model will be altered in-place.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{replace\_attention} \& \texttt{True} \& If \texttt{True}, replace self-attention with average pooling. If \texttt{False}, keep full attention but linearize activations. \\
+\texttt{replace\_attention} & \texttt{True} & If \texttt{True}, replace self-attention with average pooling. If \texttt{False}, keep full attention but linearize activations. \\
 
 \bottomrule
 \end{tabular}
@@ -6331,11 +6331,11 @@ Specifically, regarding \textbf{Rapid prototyping}, get a very fast model to tes
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Method \& Parameter Reduction \& Computational Reduction \& Non-linearities Removed \\
+Method & Parameter Reduction & Computational Reduction & Non-linearities Removed \\
 \midrule
-LIFTR (this) \& None \& Very high \& Activations + softmax \\
-HashedNet \& Very high \& None (storage) \& No \\
-Kronecker \& High \& None (dense forward) \& No \\
+LIFTR (this) & None & Very high & Activations + softmax \\
+HashedNet & Very high & None (storage) & No \\
+Kronecker & High & None (dense forward) & No \\
 
 \bottomrule
 \end{tabular}
@@ -6358,12 +6358,12 @@ The empirical evaluation of \texttt{liftr} across standard sequence lengths and 
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -6375,13 +6375,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -6538,11 +6538,11 @@ Then run the compression pipeline.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{lillama\_rank} \& \texttt{64} \& Rank for the truncated SVD. Lower = more compression. \\
-\texttt{lillama\_calibration\_texts} \& \texttt{["Distill"]} \& List of calibration strings (set via \texttt{comp\_config} or constructor). \\
-(model attribute) \texttt{tokenizer} \& Required \& Must be attached to the model as \texttt{model.tokenizer}. \\
+\texttt{lillama\_rank} & \texttt{64} & Rank for the truncated SVD. Lower = more compression. \\
+\texttt{lillama\_calibration\_texts} & \texttt{["Distill"]} & List of calibration strings (set via \texttt{comp\_config} or constructor). \\
+(model attribute) \texttt{tokenizer} & Required & Must be attached to the model as \texttt{model.tokenizer}. \\
 
 \bottomrule
 \end{tabular}
@@ -6570,12 +6570,12 @@ Specifically, regarding \textbf{Critical shape bug}, the current code produces a
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Method \& Data Used \& Compression Approach \& Shape Mismatch Risk \\
+Method & Data Used & Compression Approach & Shape Mismatch Risk \\
 \midrule
-LiLLaMA (this) \& Input-output pairs \& SVD of cross-covariance, replace weight \& Yes (current bug) \\
-COMPOT \& Input activations \& QR + SVD on projected mapping \& No \\
-AASVD \& Input activations \& Anchored projection + SVD \& No \\
-FAQ \& Output activations \& Quantization scale from output range \& No \\
+LiLLaMA (this) & Input-output pairs & SVD of cross-covariance, replace weight & Yes (current bug) \\
+COMPOT & Input activations & QR + SVD on projected mapping & No \\
+AASVD & Input activations & Anchored projection + SVD & No \\
+FAQ & Output activations & Quantization scale from output range & No \\
 
 \bottomrule
 \end{tabular}
@@ -6598,12 +6598,12 @@ The empirical evaluation of \texttt{lillama\_compressor} across standard sequenc
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -6615,13 +6615,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -6709,7 +6709,7 @@ Define binary frequency mask $M_{\text{spectral}} \in \{0, 1\}^{N \times M}$:
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-[M_{\text{spectral}}]_{u, v} = \begin{cases} 1 \& \text{if } A_{u, v} \ge \tau_{\text{spectral}} \\ 0 \& \text{otherwise} \end{cases}
+[M_{\text{spectral}}]_{u, v} = \begin{cases} 1 & \text{if } A_{u, v} \ge \tau_{\text{spectral}} \\ 0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -6795,11 +6795,11 @@ Apply mask to frequency coefficients \texttt{W\_fft * mask}. Furthermore, Recons
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (LLaMA-7B Linear: $N=4096, M=4096, r=32$) \\
+Component & Formula & Example (LLaMA-7B Linear: $N=4096, M=4096, r=32$) \\
 \midrule
-\textbf{Full Spatial Weights} \& $N \times M \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{Spectral Modes ($r=32$)} \& $r^2 \times (4 + 4) \text{ bytes} + r^2 \times 4 \text{ bytes}$ \& $0.012 \text{ MB}$ ($12.28 \text{ KB}$) \\
-\textbf{Effective Parameter Reduction} \& $\frac{r^2}{N \cdot M}$ \& $\mathbf{16384\times}$ Spectral Reduction Ratio \\
+\textbf{Full Spatial Weights} & $N \times M \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{Spectral Modes ($r=32$)} & $r^2 \times (4 + 4) \text{ bytes} + r^2 \times 4 \text{ bytes}$ & $0.012 \text{ MB}$ ($12.28 \text{ KB}$) \\
+\textbf{Effective Parameter Reduction} & $\frac{r^2}{N \cdot M}$ & $\mathbf{16384\times}$ Spectral Reduction Ratio \\
 
 \bottomrule
 \end{tabular}
@@ -6877,12 +6877,12 @@ The empirical evaluation of \texttt{lsc\_compressor} across standard sequence le
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -6894,13 +6894,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -6981,7 +6981,7 @@ Define binary column mask $\mathbf{m} \in \{0, 1\}^{D_{\text{in}}}$:
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-m_j = \begin{cases} 1.0 \& \text{if } j \in \mathcal{K}_{\text{keep}} \\ 0.0 \& \text{otherwise} \end{cases}
+m_j = \begin{cases} 1.0 & \text{if } j \in \mathcal{K}_{\text{keep}} \\ 0.0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -7043,12 +7043,12 @@ Remove forward hooks. Furthermore, For each target linear layer: Concurrently, R
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (Mamba-2.8B Conv/State Proj: $D_{\text{in}}=2560, D_{\text{out}}=5120$) \\
+Component & Formula & Example (Mamba-2.8B Conv/State Proj: $D_{\text{in}}=2560, D_{\text{out}}=5120$) \\
 \midrule
-\textbf{Dense Projection Weights} \& $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ \& $26.21 \text{ MB}$ \\
-\textbf{Active Parameters ($S=0.20$)} \& $D_{\text{out}} \times (0.80 \cdot D_{\text{in}}) \times 2 \text{ bytes}$ \& $20.97 \text{ MB}$ \\
-\textbf{Memory Footprint Reduction} \& $S$ \& $\mathbf{20.0\%}$ Reduction \\
-\textbf{Calibration Memory Peak} \& $N \times D_{\text{in}} \times 4 \text{ bytes}$ \& $10.49 \text{ MB}$ ($N=1024$ tokens) \\
+\textbf{Dense Projection Weights} & $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ & $26.21 \text{ MB}$ \\
+\textbf{Active Parameters ($S=0.20$)} & $D_{\text{out}} \times (0.80 \cdot D_{\text{in}}) \times 2 \text{ bytes}$ & $20.97 \text{ MB}$ \\
+\textbf{Memory Footprint Reduction} & $S$ & $\mathbf{20.0\%}$ Reduction \\
+\textbf{Calibration Memory Peak} & $N \times D_{\text{in}} \times 4 \text{ bytes}$ & $10.49 \text{ MB}$ ($N=1024$ tokens) \\
 
 \bottomrule
 \end{tabular}
@@ -7100,10 +7100,10 @@ def mamba_shed_kernel(
     rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
 
     mask_val = tl.load(Mask_ptr + rn, mask=rn < d_in, other=0.0)
-    w_val = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in), other=0.0)
+    w_val = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in), other=0.0)
 
     # Zero out shed columns
-    tl.store(Out_ptr + rm[:, None] * d_in + rn[None, :], w_val * mask_val[None, :], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in))
+    tl.store(Out_ptr + rm[:, None] * d_in + rn[None, :], w_val * mask_val[None, :], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -7127,12 +7127,12 @@ The empirical evaluation of \texttt{mamba\_shedder} across standard sequence len
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.4} \& 11.20 \& $+0.20$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.8} \& 14.60 \& $+0.20$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{3,200 tok/s} \& 1,250 tok/s \& \textbf{3,200 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Chunked Parallel Associative Scan \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.4} & 11.20 & $+0.20$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.8} & 14.60 & $+0.20$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{3,200 tok/s} & 1,250 tok/s & \textbf{3,200 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Chunked Parallel Associative Scan & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -7144,13 +7144,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.25 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.42 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 0.45 ms \& 180 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 0.85 ms \& 288 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{1.65 ms} \& \textbf{320 MB} \& \textbf{7.75x} \\
+\textbf{$L = 512$} & 0.25 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.42 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 0.45 ms & 180 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 0.85 ms & 288 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{1.65 ms} & \textbf{320 MB} & \textbf{7.75x} \\
 
 
 \bottomrule
@@ -7350,12 +7350,12 @@ Reconstruct $W_{\text{new}} = U_q \cdot \text{diag}(S_q) \cdot V_q^T$. Furthermo
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Metric \& Formula \& Example (LLaMA-7B Linear: $M=4096, N=4096$) \\
+Metric & Formula & Example (LLaMA-7B Linear: $M=4096, N=4096$) \\
 \midrule
-\textbf{Dense Weights} \& $M \times N \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{MLoRQ Factors ($r=256, b=4$)} \& $(M \cdot r + r \cdot N) \times 0.5 \text{ bytes}$ \& $1.05 \text{ MB}$ \\
-\textbf{Compression Ratio} \& $\frac{M \cdot N \times 16}{(M \cdot r + r \cdot N) \times b}$ \& $\mathbf{32.0\times}$ Reduction \\
-\textbf{Budget Constraint} \& $\sum \text{Mem}_l \le B_{\text{total}}$ \& Target $500 \text{ MB}$ global model memory \\
+\textbf{Dense Weights} & $M \times N \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{MLoRQ Factors ($r=256, b=4$)} & $(M \cdot r + r \cdot N) \times 0.5 \text{ bytes}$ & $1.05 \text{ MB}$ \\
+\textbf{Compression Ratio} & $\frac{M \cdot N \times 16}{(M \cdot r + r \cdot N) \times b}$ & $\mathbf{32.0\times}$ Reduction \\
+\textbf{Budget Constraint} & $\sum \text{Mem}_l \le B_{\text{total}}$ & Target $500 \text{ MB}$ global model memory \\
 
 \bottomrule
 \end{tabular}
@@ -7411,14 +7411,14 @@ def mlorq_reconstruct_kernel(
     # Compute U_r @ diag(S_r) @ V_r^T
     for r in range(0, R, BLOCK_SIZE_R):
         rr = r + tl.arange(0, BLOCK_SIZE_R)
-        u_vals = tl.load(U_ptr + rm[:, None] * R + rr[None, :], mask=(rm[:, None] < M) \& (rr[None, :] < R), other=0.0)
+        u_vals = tl.load(U_ptr + rm[:, None] * R + rr[None, :], mask=(rm[:, None] < M) & (rr[None, :] < R), other=0.0)
         s_vals = tl.load(S_ptr + rr, mask=rr < R, other=0.0)
-        vt_vals = tl.load(Vt_ptr + rr[:, None] * N + rn[None, :], mask=(rr[:, None] < R) \& (rn[None, :] < N), other=0.0)
+        vt_vals = tl.load(Vt_ptr + rr[:, None] * N + rn[None, :], mask=(rr[:, None] < R) & (rn[None, :] < N), other=0.0)
 
         u_scaled = u_vals * s_vals[None, :]
         acc += tl.dot(u_scaled, vt_vals)
 
-    tl.store(Out_W_ptr + rm[:, None] * N + rn[None, :], acc, mask=(rm[:, None] < M) \& (rn[None, :] < N))
+    tl.store(Out_W_ptr + rm[:, None] * N + rn[None, :], acc, mask=(rm[:, None] < M) & (rn[None, :] < N))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -7442,12 +7442,12 @@ The empirical evaluation of \texttt{mlorq\_compressor} across standard sequence 
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -7459,13 +7459,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -7652,10 +7652,10 @@ Then run the compression pipeline. The Q and K projection weights in each transf
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{modegpt\_rank} \& \texttt{64} \& Rank for the joint SVD. Lower values yield higher compression but more error. \\
-\texttt{modegpt\_method} \& \texttt{'cr'} \& (Placeholder) Decomposition method -- currently unused, only SVD is implemented. \\
+\texttt{modegpt\_rank} & \texttt{64} & Rank for the joint SVD. Lower values yield higher compression but more error. \\
+\texttt{modegpt\_method} & \texttt{'cr'} & (Placeholder) Decomposition method -- currently unused, only SVD is implemented. \\
 
 \bottomrule
 \end{tabular}
@@ -7681,11 +7681,11 @@ Specifically, regarding \textbf{Only Q/K pairs}, currently only modules with \te
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Method \& Target \& Joint Factorisation \& Shared Factors \& Parameter Savings (if factorised) \\
+Method & Target & Joint Factorisation & Shared Factors & Parameter Savings (if factorised) \\
 \midrule
-MoDeGPT (this) \& Q \& K pair \& Yes \& Yes (V\_r\textasciicircum{}T) \& r$\cdot$(2H+D) vs 2$\cdot$H$\cdot$D \\
-Standard SVD (A3) \& Individual layers \& No \& No \& r$\cdot$(H+D) per layer \\
-Kronecker \& Individual layers \& No \& No \& m$_1$n$_1$ + m$_2$n$_2$ \\
+MoDeGPT (this) & Q \& K pair & Yes & Yes (V\_r\textasciicircum{}T) & r$\cdot$(2H+D) vs 2$\cdot$H$\cdot$D \\
+Standard SVD (A3) & Individual layers & No & No & r$\cdot$(H+D) per layer \\
+Kronecker & Individual layers & No & No & m$_1$n$_1$ + m$_2$n$_2$ \\
 
 \bottomrule
 \end{tabular}
@@ -7708,12 +7708,12 @@ The empirical evaluation of \texttt{modegpt\_compressor} across standard sequenc
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -7725,13 +7725,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -7873,12 +7873,12 @@ Specifically, regarding \textbf{Uncompressed Parameters}, $P_{\text{base}} = d_{
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llllll}
 \toprule
-Component \& Matrix Shape \& Non-Zero Count \& Precision \& VRAM Footprint \& Savings \\
+Component & Matrix Shape & Non-Zero Count & Precision & VRAM Footprint & Savings \\
 \midrule
-\textbf{Original $W$} \& $4096 \times 4096$ \& 16,777,216 \& FP16 \& 33.55 MB \& 0.0\% \\
-\textbf{Factor $H$} \& $4096 \times 128$ \& 524,288 \& FP16 \& 1.05 MB \& 96.8\% \\
-\textbf{Factor $W_{\text{comp}}$} \& $128 \times 4096$ \& 524,288 \& FP16 \& 1.05 MB \& 96.8\% \\
-\textbf{Total NMF Layer} \& $H, W_{\text{comp}}, w_{\min}$ \& \textbf{1,048,577} \& FP16 \& \textbf{2.10 MB} \& \textbf{93.7\%} \\
+\textbf{Original $W$} & $4096 \times 4096$ & 16,777,216 & FP16 & 33.55 MB & 0.0\% \\
+\textbf{Factor $H$} & $4096 \times 128$ & 524,288 & FP16 & 1.05 MB & 96.8\% \\
+\textbf{Factor $W_{\text{comp}}$} & $128 \times 4096$ & 524,288 & FP16 & 1.05 MB & 96.8\% \\
+\textbf{Total NMF Layer} & $H, W_{\text{comp}}, w_{\min}$ & \textbf{1,048,577} & FP16 & \textbf{2.10 MB} & \textbf{93.7\%} \\
 
 \bottomrule
 \end{tabular}
@@ -7946,12 +7946,12 @@ def nmf_shifted_forward_kernel(
     acc_r = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     for k in range(0, d_in, BLOCK_N):
         offs_k = k + tl.arange(0, BLOCK_N)
-        x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) \& (offs_k[None, :] < d_in), other=0.0)
-        wc_tile = tl.load(Wcomp_ptr + offs_r[:, None] * stride_wcr + offs_k[None, :] * stride_wci, mask=(offs_r[:, None] < rank) \& (offs_k[None, :] < d_in), other=0.0)
+        x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) & (offs_k[None, :] < d_in), other=0.0)
+        wc_tile = tl.load(Wcomp_ptr + offs_r[:, None] * stride_wcr + offs_k[None, :] * stride_wci, mask=(offs_r[:, None] < rank) & (offs_k[None, :] < d_in), other=0.0)
         acc_r += tl.dot(x_tile, tl.trans(wc_tile))
 
     # 2. Multiply intermediate projection with H^T -> output [BLOCK_M x BLOCK_N]
-    h_tile = tl.load(H_ptr + offs_n[:, None] * stride_hd + offs_r[None, :] * stride_hr, mask=(offs_n[:, None] < d_out) \& (offs_r[None, :] < rank), other=0.0)
+    h_tile = tl.load(H_ptr + offs_n[:, None] * stride_hd + offs_r[None, :] * stride_hr, mask=(offs_n[:, None] < d_out) & (offs_r[None, :] < rank), other=0.0)
     out_tile = tl.dot(acc_r.to(tl.float16), tl.trans(h_tile))
 
     # 3. Add affine shift compensation
@@ -7959,7 +7959,7 @@ def nmf_shifted_forward_kernel(
     x_sum = tl.sum(tl.load(X_ptr + offs_m[:, None] * stride_xn + tl.arange(0, d_in)[None, :] * stride_xb, mask=offs_m[:, None] < B_N, other=0.0), axis=1)
     out_tile += (x_sum[:, None] * w_shift)
 
-    tl.store(Out_ptr + offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb, out_tile.to(tl.float16), mask=(offs_m[:, None] < B_N) \& (offs_n[None, :] < d_out))
+    tl.store(Out_ptr + offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb, out_tile.to(tl.float16), mask=(offs_m[:, None] < B_N) & (offs_n[None, :] < d_out))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -7983,12 +7983,12 @@ The empirical evaluation of \texttt{nmf\_compressor} across standard sequence le
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -8000,13 +8000,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -8226,12 +8226,12 @@ Then run the compression pipeline.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{oats\_sparsity} \& \texttt{0.5} \& Fraction of entries in the sparse component that are zeroed. 1 = all zero, 0 = dense. \\
-\texttt{oats\_rank\_ratio} \& \texttt{0.2} \& Fraction of \texttt{min(out\_features, in\_features)} used as rank for low-rank part. \\
-\texttt{oats\_num\_iters} \& \texttt{5} \& Number of refinement iterations. More may improve decomposition but increase time. \\
-(model attr) \texttt{tokenizer} \& required \& Must be set to the model's tokenizer before compression. \\
+\texttt{oats\_sparsity} & \texttt{0.5} & Fraction of entries in the sparse component that are zeroed. 1 = all zero, 0 = dense. \\
+\texttt{oats\_rank\_ratio} & \texttt{0.2} & Fraction of \texttt{min(out\_features, in\_features)} used as rank for low-rank part. \\
+\texttt{oats\_num\_iters} & \texttt{5} & Number of refinement iterations. More may improve decomposition but increase time. \\
+(model attr) \texttt{tokenizer} & required & Must be set to the model's tokenizer before compression. \\
 
 \bottomrule
 \end{tabular}
@@ -8259,12 +8259,12 @@ Specifically, regarding \textbf{Hard-coded calibration}, the calibration data is
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Method \& Decomposition \& Whitening \& Iterative \& Components \\
+Method & Decomposition & Whitening & Iterative & Components \\
 \midrule
-OATS (this) \& L + S \& Yes (input cov.) \& Yes \& Low-rank + sparse \\
-ENLighten \& L + 2:4 sparse \& No \& No \& Low-rank + 2:4 sparse \\
-DeltaKV \& L + sparse \& No \& No \& Low-rank + unstructured sparse \\
-ARMOR \& Sparse core + low-rank correction \& No \& No \& Sparse + low-rank \\
+OATS (this) & L + S & Yes (input cov.) & Yes & Low-rank + sparse \\
+ENLighten & L + 2:4 sparse & No & No & Low-rank + 2:4 sparse \\
+DeltaKV & L + sparse & No & No & Low-rank + unstructured sparse \\
+ARMOR & Sparse core + low-rank correction & No & No & Sparse + low-rank \\
 
 \bottomrule
 \end{tabular}
@@ -8287,12 +8287,12 @@ The empirical evaluation of \texttt{oats} across standard sequence lengths and l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -8304,13 +8304,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -8492,9 +8492,9 @@ Then run the compression pipeline. The model's last 3 encoder layers will be rep
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{replaceme\_remove\_layers} \& \texttt{2} \& Number of final encoder layers to replace. Must be between 1 and the total number of layers. \\
+\texttt{replaceme\_remove\_layers} & \texttt{2} & Number of final encoder layers to replace. Must be between 1 and the total number of layers. \\
 
 \bottomrule
 \end{tabular}
@@ -8525,12 +8525,12 @@ Specifically, regarding \textbf{Extreme compression for non-critical tasks}, whe
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Method \& Strategy \& Accuracy Preservation \& Parameters Reduced \\
+Method & Strategy & Accuracy Preservation & Parameters Reduced \\
 \midrule
-ReplaceMe (this) \& Replace last N layers with Linear+LN \& Very low (without FT) \& High \\
-FLAP \& Prune input features based on sensitivity \& Moderate (buggy) \& Moderate \\
-FLAT-LLM \& PCA on output activations, prune output neurons \& Low (broken) \& Moderate \\
-CoMe (external) \& Layer concatenation merge \& Good (with calibration) \& High \\
+ReplaceMe (this) & Replace last N layers with Linear+LN & Very low (without FT) & High \\
+FLAP & Prune input features based on sensitivity & Moderate (buggy) & Moderate \\
+FLAT-LLM & PCA on output activations, prune output neurons & Low (broken) & Moderate \\
+CoMe (external) & Layer concatenation merge & Good (with calibration) & High \\
 
 \bottomrule
 \end{tabular}
@@ -8553,12 +8553,12 @@ The empirical evaluation of \texttt{replaceme\_compressor} across standard seque
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -8570,13 +8570,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -8759,12 +8759,12 @@ where $\|S\|_0$ is the non-zero element count in sparse outlier matrix $S$.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Matrix Component \& Structural Representation \& Element Count / Non-Zeros \& Memory (FP16) \& Memory Savings \\
+Matrix Component & Structural Representation & Element Count / Non-Zeros & Memory (FP16) & Memory Savings \\
 \midrule
-\textbf{Original $W$} \& Dense Tensor \& 16,777,216 \& 33.55 MB \& 0.0\% \\
-\textbf{Low-Rank $L$ (Factorized)} \& $U_r, \Sigma_r, V_r^T$ ($r=128$) \& 1,048,832 \& 2.10 MB \& 93.7\% \\
-\textbf{Sparse Outliers $S$} \& COO Sparse ($0.5\%$ Sparsity) \& 83,886 entries \& 0.34 MB \& 99.0\% \\
-\textbf{Total RPCA Model} \& $L + S$ \& \textbf{1,132,718} \& \textbf{2.44 MB} \& \textbf{92.7\%} \\
+\textbf{Original $W$} & Dense Tensor & 16,777,216 & 33.55 MB & 0.0\% \\
+\textbf{Low-Rank $L$ (Factorized)} & $U_r, \Sigma_r, V_r^T$ ($r=128$) & 1,048,832 & 2.10 MB & 93.7\% \\
+\textbf{Sparse Outliers $S$} & COO Sparse ($0.5\%$ Sparsity) & 83,886 entries & 0.34 MB & 99.0\% \\
+\textbf{Total RPCA Model} & $L + S$ & \textbf{1,132,718} & \textbf{2.44 MB} & \textbf{92.7\%} \\
 
 \bottomrule
 \end{tabular}
@@ -8831,15 +8831,15 @@ def rpca_fused_lowrank_sparse_kernel(
         offs_k = k + tl.arange(0, BLOCK_K)
 
         x_ptrs = X_ptr + (offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb)
-        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < B_N) \& (offs_k[None, :] < d_in), other=0.0)
+        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < B_N) & (offs_k[None, :] < d_in), other=0.0)
 
         l_ptrs = L_reconstructed_ptr + (offs_n[None, :] * stride_ld + offs_k[:, None] * stride_li)
-        l_tile = tl.load(l_ptrs, mask=(offs_n[None, :] < d_out) \& (offs_k[:, None] < d_in), other=0.0)
+        l_tile = tl.load(l_ptrs, mask=(offs_n[None, :] < d_out) & (offs_k[:, None] < d_in), other=0.0)
 
         acc += tl.dot(x_tile, l_tile)
 
     out_ptrs = Out_ptr + (offs_m[:, None] * stride_outn + offs_n[None, :] * stride_outb)
-    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < B_N) \& (offs_n[None, :] < d_out))
+    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < B_N) & (offs_n[None, :] < d_out))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -8863,12 +8863,12 @@ The empirical evaluation of \texttt{rpca\_compressor} across standard sequence l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -8880,13 +8880,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -9072,10 +9072,10 @@ Then run the compression pipeline. All linear layers will be replaced with \text
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{salr\_rank} \& \texttt{64} \& Number of singular components to keep before applying sparse mask. Must be $\le$ min(out\_features, in\_features). \\
-\texttt{salr\_sparsity} \& \texttt{0.5} \& Fraction of singular values to randomly zero (via mask diagonal). 1 = all dropped, 0 = keep all. \\
+\texttt{salr\_rank} & \texttt{64} & Number of singular components to keep before applying sparse mask. Must be $\le$ min(out\_features, in\_features). \\
+\texttt{salr\_sparsity} & \texttt{0.5} & Fraction of singular values to randomly zero (via mask diagonal). 1 = all dropped, 0 = keep all. \\
 
 \bottomrule
 \end{tabular}
@@ -9101,12 +9101,12 @@ Specifically, regarding \textbf{Random mask may not be optimal}, the singular va
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Method \& Low-Rank + Sparsity \& How Sparsity is Applied \& Deterministic \\
+Method & Low-Rank + Sparsity & How Sparsity is Applied & Deterministic \\
 \midrule
-SALR (this) \& SVD factors + mask on S \& Random mask on singular values (diagonal) \& No (random) \\
-ENLighten \& SVD low-rank + 2:4 residual \& Structured 2:4 on residual \& Yes \\
-OATS \& L + S (after whitening) \& Iterative sparse thresholding \& Yes \\
-ARMOR \& Sparse core + low-rank correction \& Row-wise top-2 in blocks \& Yes \\
+SALR (this) & SVD factors + mask on S & Random mask on singular values (diagonal) & No (random) \\
+ENLighten & SVD low-rank + 2:4 residual & Structured 2:4 on residual & Yes \\
+OATS & L + S (after whitening) & Iterative sparse thresholding & Yes \\
+ARMOR & Sparse core + low-rank correction & Row-wise top-2 in blocks & Yes \\
 
 \bottomrule
 \end{tabular}
@@ -9129,12 +9129,12 @@ The empirical evaluation of \texttt{salr} across standard sequence lengths and l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -9146,13 +9146,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -9337,9 +9337,9 @@ Then run the compression pipeline. All linear layer weights will be replaced by 
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{total\_param\_ratio} \& \texttt{0.7} \& Fraction of the original weight parameters to keep as ``effective'' parameters. 1.0 = no compression, 0.1 = high compression. \\
+\texttt{total\_param\_ratio} & \texttt{0.7} & Fraction of the original weight parameters to keep as ``effective'' parameters. 1.0 = no compression, 0.1 = high compression. \\
 
 \bottomrule
 \end{tabular}
@@ -9367,12 +9367,12 @@ Specifically, regarding \textbf{No immediate memory or speed savings}, weights r
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Method \& Budget Type \& Rank Criterion \& Per-Layer Adaptation \& Output Format \\
+Method & Budget Type & Rank Criterion & Per-Layer Adaptation & Output Format \\
 \midrule
-SDRM (this) \& Global parameter ratio \& Proportional to original params \& Yes (proportional) \& Dense weight \\
-AdaSVD \& Target param removal \& Nuclear norm proportional \& Yes (importance) \& Dense weight \\
-MGIE-SVD Budget \& Total rank budget \& Entropy of singular values \& Yes (entropy-based) \& Dense weight \\
-MLoRQ \& Total memory (bits) \& Greedy rank+bit assignment \& Yes (greedy) \& Dense weight \\
+SDRM (this) & Global parameter ratio & Proportional to original params & Yes (proportional) & Dense weight \\
+AdaSVD & Target param removal & Nuclear norm proportional & Yes (importance) & Dense weight \\
+MGIE-SVD Budget & Total rank budget & Entropy of singular values & Yes (entropy-based) & Dense weight \\
+MLoRQ & Total memory (bits) & Greedy rank+bit assignment & Yes (greedy) & Dense weight \\
 
 \bottomrule
 \end{tabular}
@@ -9395,12 +9395,12 @@ The empirical evaluation of \texttt{sdrm\_compressor} across standard sequence l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -9412,13 +9412,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -9516,7 +9516,7 @@ The binary column mask $M_{\text{col}} \in \{0, 1\}^D$ is defined as:
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-[M_{\text{col}}]_j = \begin{cases} 1.0 \& \text{if } j \le k \\ 0.0 \& \text{if } j > k \end{cases}
+[M_{\text{col}}]_j = \begin{cases} 1.0 & \text{if } j \le k \\ 0.0 & \text{if } j > k \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -9584,12 +9584,12 @@ Broadcast binary mask vector $M \in \mathbb{R}^D$ across rows of target linear w
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Metric \& Formula \& Example (BERT-Base / LLaMA Layer: $D=768$) \\
+Metric & Formula & Example (BERT-Base / LLaMA Layer: $D=768$) \\
 \midrule
-\textbf{Full Dense Weights} \& $D_{\text{out}} \times D \times 2 \text{ bytes}$ \& $1.18 \text{ MB}$ \\
-\textbf{Active Floating Point Params} \& $D_{\text{out}} \times k \times 2 \text{ bytes}$ \& $0.82 \text{ MB}$ ($S=0.30, k=537$) \\
-\textbf{FLOP Elimination} \& $1 - \frac{k}{D}$ \& $\mathbf{30.0\%}$ Reduction \\
-\textbf{Calibration Memory Overhead} \& $N \times D \times 4 \text{ bytes}$ \& $3.15 \text{ MB}$ ($N=1024$ tokens) \\
+\textbf{Full Dense Weights} & $D_{\text{out}} \times D \times 2 \text{ bytes}$ & $1.18 \text{ MB}$ \\
+\textbf{Active Floating Point Params} & $D_{\text{out}} \times k \times 2 \text{ bytes}$ & $0.82 \text{ MB}$ ($S=0.30, k=537$) \\
+\textbf{FLOP Elimination} & $1 - \frac{k}{D}$ & $\mathbf{30.0\%}$ Reduction \\
+\textbf{Calibration Memory Overhead} & $N \times D \times 4 \text{ bytes}$ & $3.15 \text{ MB}$ ($N=1024$ tokens) \\
 
 \bottomrule
 \end{tabular}
@@ -9639,7 +9639,7 @@ def pca_column_prune_kernel(
     rm = pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)
     rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
 
-    mask = (rm[:, None] < d_out) \& (rn[None, :] < d_in)
+    mask = (rm[:, None] < d_out) & (rn[None, :] < d_in)
     w = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=mask, other=0.0)
 
     # Zero out columns beyond K_keep
@@ -9670,12 +9670,12 @@ The empirical evaluation of \texttt{slicegpt\_compressor} across standard sequen
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -9687,13 +9687,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -9921,11 +9921,11 @@ Then run the compression pipeline. All linear layer weights will be replaced by 
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{slim\_bits} \& \texttt{4} \& Bit-width for uniform quantization. Lower values give higher compression but more accuracy loss. \\
-\texttt{slim\_sparsity} \& \texttt{0.5} \& \textbf{Currently ignored.} The 2:4 pattern enforces exactly 50\% sparsity. \\
-\texttt{slim\_rank} \& \texttt{8} \& Rank of the low-rank correction. Larger rank recovers more accuracy but adds more parameters. \\
+\texttt{slim\_bits} & \texttt{4} & Bit-width for uniform quantization. Lower values give higher compression but more accuracy loss. \\
+\texttt{slim\_sparsity} & \texttt{0.5} & \textbf{Currently ignored.} The 2:4 pattern enforces exactly 50\% sparsity. \\
+\texttt{slim\_rank} & \texttt{8} & Rank of the low-rank correction. Larger rank recovers more accuracy but adds more parameters. \\
 
 \bottomrule
 \end{tabular}
@@ -9953,12 +9953,12 @@ Specifically, regarding \textbf{No immediate speed-up}, the weight is stored den
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Method \& Quantization \& Sparsity \& Low-Rank Correction \& Output Format \\
+Method & Quantization & Sparsity & Low-Rank Correction & Output Format \\
 \midrule
-SLiM (this) \& Uniform min-max \& 2:4 structured \& SVD of residual \& Dense weight \\
-ENLighten \& None \& 2:4 on residual \& Low-rank core (SVD) \& Dense weight \\
-ARMOR \& None \& Top-2 per row block (not 2:4) \& Low-rank correction \& Dense weight \\
-OATS \& None \& Unstructured (iterative) \& Low-rank after whitening \& Dense weight \\
+SLiM (this) & Uniform min-max & 2:4 structured & SVD of residual & Dense weight \\
+ENLighten & None & 2:4 on residual & Low-rank core (SVD) & Dense weight \\
+ARMOR & None & Top-2 per row block (not 2:4) & Low-rank correction & Dense weight \\
+OATS & None & Unstructured (iterative) & Low-rank after whitening & Dense weight \\
 
 \bottomrule
 \end{tabular}
@@ -9981,12 +9981,12 @@ The empirical evaluation of \texttt{slim\_compressor} across standard sequence l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -9998,13 +9998,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -10196,9 +10196,9 @@ Then run the compression pipeline. All linear layers will be replaced with \text
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{soka\_rank} \& \texttt{8} \& Rank of the low-rank decomposition. Higher rank preserves more accuracy but reduces compression/speed. \\
+\texttt{soka\_rank} & \texttt{8} & Rank of the low-rank decomposition. Higher rank preserves more accuracy but reduces compression/speed. \\
 
 \bottomrule
 \end{tabular}
@@ -10226,12 +10226,12 @@ Specifically, regarding \textbf{Not a true Kronecker product}, the name promises
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllll}
 \toprule
-Method \& Factorisation \& Inference Speed-up \& Parameter Reduction \& Initialisation \\
+Method & Factorisation & Inference Speed-up & Parameter Reduction & Initialisation \\
 \midrule
-SoKA (this) \& U$\cdot$V \& Yes (two matmuls) \& Yes \& SVD of original \\
-Kronecker \& A$\otimes$B \& Yes (via identity) \& Yes \& SVD on permuted \\
-A3 (SVD) \& Dense low-rank \& No \& No (overwrites) \& SVD overwrite \\
-CUR \& C$\cdot$U$\cdot$R \& Yes (sequential) \& Yes \& Column/row select \\
+SoKA (this) & U$\cdot$V & Yes (two matmuls) & Yes & SVD of original \\
+Kronecker & A$\otimes$B & Yes (via identity) & Yes & SVD on permuted \\
+A3 (SVD) & Dense low-rank & No & No (overwrites) & SVD overwrite \\
+CUR & C$\cdot$U$\cdot$R & Yes (sequential) & Yes & Column/row select \\
 
 \bottomrule
 \end{tabular}
@@ -10254,12 +10254,12 @@ The empirical evaluation of \texttt{soka\_compressor} across standard sequence l
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -10271,13 +10271,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -10451,9 +10451,9 @@ Then run the compression pipeline. All linear layers will be replaced by their r
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Parameter \& Default \& Description \\
+Parameter & Default & Description \\
 \midrule
-\texttt{swift\_svd\_rank\_ratio} \& \texttt{0.5} \& Fraction of \texttt{min(out\_features, in\_features)} to retain as rank. 1.0 = no compression, 0.0 = rank 1. \\
+\texttt{swift\_svd\_rank\_ratio} & \texttt{0.5} & Fraction of \texttt{min(out\_features, in\_features)} to retain as rank. 1.0 = no compression, 0.0 = rank 1. \\
 
 \bottomrule
 \end{tabular}
@@ -10479,12 +10479,12 @@ Specifically, regarding \textbf{No direct memory or speed benefit}, the weight r
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Method \& Rank Selection \& Per-Layer Adaptivity \& Output Format \\
+Method & Rank Selection & Per-Layer Adaptivity & Output Format \\
 \midrule
-Swift-SVD \& Fixed ratio \& Yes (proportional) \& Dense weight \\
-A3 (simple) \& Fixed absolute rank \& No \& Dense weight \\
-ERC-SVD \& Energy threshold \& Yes (energy-based) \& Dense weight \\
-SoKA \& Fixed rank + factorisation \& No (same rank for all) \& Factorised layers \\
+Swift-SVD & Fixed ratio & Yes (proportional) & Dense weight \\
+A3 (simple) & Fixed absolute rank & No & Dense weight \\
+ERC-SVD & Energy threshold & Yes (energy-based) & Dense weight \\
+SoKA & Fixed rank + factorisation & No (same rank for all) & Factorised layers \\
 
 \bottomrule
 \end{tabular}
@@ -10507,12 +10507,12 @@ The empirical evaluation of \texttt{swift\_svd} across standard sequence lengths
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.6} \& 11.20 \& $+0.40$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.9} \& 14.60 \& $+0.30$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{2,850 tok/s} \& 1,250 tok/s \& \textbf{2,850 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Fused SVD GEMM + Dynamic Rank Kernel \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.6} & 11.20 & $+0.40$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.9} & 14.60 & $+0.30$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{2,850 tok/s} & 1,250 tok/s & \textbf{2,850 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Fused SVD GEMM + Dynamic Rank Kernel & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -10524,13 +10524,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.28 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.48 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 0.58 ms \& 210 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 1.10 ms \& 336 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{2.10 ms} \& \textbf{480 MB} \& \textbf{6.10x} \\
+\textbf{$L = 512$} & 0.28 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.48 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 0.58 ms & 210 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 1.10 ms & 336 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{2.10 ms} & \textbf{480 MB} & \textbf{6.10x} \\
 
 
 \bottomrule
@@ -10665,15 +10665,15 @@ $
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lllllll}
 \toprule
-Transformer Layer Group \& Original Linear Params \& Target TT Rank ($R_{\text{TT}}$) \& Compressed TT Params \& VRAM Baseline \& Compressed VRAM \& Param Savings \\
+Transformer Layer Group & Original Linear Params & Target TT Rank ($R_{\text{TT}}$) & Compressed TT Params & VRAM Baseline & Compressed VRAM & Param Savings \\
 \midrule
-\textbf{\texttt{q\_proj} (32 Layers)} \& 536,870,912 \& 16 \& 4,194,304 \& 1.07 GB \& 8.39 MB \& \textbf{99.22\%} \\
-\textbf{\texttt{k\_proj} (32 Layers)} \& 536,870,912 \& 16 \& 4,194,304 \& 1.07 GB \& 8.39 MB \& \textbf{99.22\%} \\
-\textbf{\texttt{v\_proj} (32 Layers)} \& 536,870,912 \& 16 \& 4,194,304 \& 1.07 GB \& 8.39 MB \& \textbf{99.22\%} \\
-\textbf{\texttt{o\_proj} (32 Layers)} \& 536,870,912 \& 16 \& 4,194,304 \& 1.07 GB \& 8.39 MB \& \textbf{99.22\%} \\
-\textbf{\texttt{gate\_proj} (32 Layers)} \& 1,442,840,576 \& 16 \& 16,777,216 \& 2.88 GB \& 33.55 MB \& \textbf{98.83\%} \\
-\textbf{\texttt{down\_proj} (32 Layers)} \& 1,442,840,576 \& 16 \& 16,777,216 \& 2.88 GB \& 33.55 MB \& \textbf{98.83\%} \\
-\textbf{Total Linear Footprint} \& \textbf{5,033,164,800} \& \textbf{16} \& \textbf{50,331,648} \& \textbf{10.06 GB} \& \textbf{100.66 MB} \& \textbf{99.00\% Global VRAM Savings} \\
+\textbf{\texttt{q\_proj} (32 Layers)} & 536,870,912 & 16 & 4,194,304 & 1.07 GB & 8.39 MB & \textbf{99.22\%} \\
+\textbf{\texttt{k\_proj} (32 Layers)} & 536,870,912 & 16 & 4,194,304 & 1.07 GB & 8.39 MB & \textbf{99.22\%} \\
+\textbf{\texttt{v\_proj} (32 Layers)} & 536,870,912 & 16 & 4,194,304 & 1.07 GB & 8.39 MB & \textbf{99.22\%} \\
+\textbf{\texttt{o\_proj} (32 Layers)} & 536,870,912 & 16 & 4,194,304 & 1.07 GB & 8.39 MB & \textbf{99.22\%} \\
+\textbf{\texttt{gate\_proj} (32 Layers)} & 1,442,840,576 & 16 & 16,777,216 & 2.88 GB & 33.55 MB & \textbf{98.83\%} \\
+\textbf{\texttt{down\_proj} (32 Layers)} & 1,442,840,576 & 16 & 16,777,216 & 2.88 GB & 33.55 MB & \textbf{98.83\%} \\
+\textbf{Total Linear Footprint} & \textbf{5,033,164,800} & \textbf{16} & \textbf{50,331,648} & \textbf{10.06 GB} & \textbf{100.66 MB} & \textbf{99.00\% Global VRAM Savings} \\
 
 \bottomrule
 \end{tabular}
@@ -10740,15 +10740,15 @@ def tt_compressor_global_gemm_kernel(
         offs_k = k + tl.arange(0, BLOCK_K)
 
         x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk)
-        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M_val) \& (offs_k[None, :] < K_val), other=0.0)
+        x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < M_val) & (offs_k[None, :] < K_val), other=0.0)
 
         w_ptrs = W_reconstituted_ptr + (offs_n[None, :] * stride_wn + offs_k[:, None] * stride_wk)
-        w_tile = tl.load(w_ptrs, mask=(offs_n[None, :] < N_val) \& (offs_k[:, None] < K_val), other=0.0)
+        w_tile = tl.load(w_ptrs, mask=(offs_n[None, :] < N_val) & (offs_k[:, None] < K_val), other=0.0)
 
         acc += tl.dot(x_tile, w_tile)
 
     out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
-    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < M_val) \& (offs_n[None, :] < N_val))
+    tl.store(out_ptrs, acc.to(tl.float16), mask=(offs_m[:, None] < M_val) & (offs_n[None, :] < N_val))
 \end{lstlisting}
 \end{mdframed}
 \vspace{0.5em}
@@ -10772,12 +10772,12 @@ The empirical evaluation of \texttt{tt\_compressor} across standard sequence len
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -10789,13 +10789,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule
@@ -10918,7 +10918,7 @@ Combine index sets $\mathcal{I}_{\text{keep}} = \mathcal{I}_{\text{sink}} \cup \
 \begin{center}
 \begin{adjustbox}{max width=\columnwidth}
 $\displaystyle
-m_i = \begin{cases} 1.0 \& \text{if } i \in \mathcal{I}_{\text{keep}} \\ 0.0 \& \text{otherwise} \end{cases}
+m_i = \begin{cases} 1.0 & \text{if } i \in \mathcal{I}_{\text{keep}} \\ 0.0 & \text{otherwise} \end{cases}
 $
 \end{adjustbox}
 \end{center}
@@ -10985,11 +10985,11 @@ Apply binary mask to weight matrix $W$ and bias vector $b$.
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lll}
 \toprule
-Component \& Formula \& Example (LLaMA-7B Projection: $D_{\text{in}}=4096, D_{\text{out}}=4096$) \\
+Component & Formula & Example (LLaMA-7B Projection: $D_{\text{in}}=4096, D_{\text{out}}=4096$) \\
 \midrule
-\textbf{Dense Weight Parameters} \& $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ \& $33.55 \text{ MB}$ \\
-\textbf{ZeroKV-Neo Footprint ($R_{\text{keep}}=0.30$)} \& $R_{\text{keep}} \cdot D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ \& $10.06 \text{ MB}$ \\
-\textbf{Parameter \& Memory Savings} \& $1 - R_{\text{keep}}$ \& $\mathbf{70.0\%}$ Reduction \\
+\textbf{Dense Weight Parameters} & $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ & $33.55 \text{ MB}$ \\
+\textbf{ZeroKV-Neo Footprint ($R_{\text{keep}}=0.30$)} & $R_{\text{keep}} \cdot D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ & $10.06 \text{ MB}$ \\
+\textbf{Parameter \& Memory Savings} & $1 - R_{\text{keep}}$ & $\mathbf{70.0\%}$ Reduction \\
 
 \bottomrule
 \end{tabular}
@@ -11038,10 +11038,10 @@ def zerokv_neo_prune_kernel(
     rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
 
     mask_val = tl.load(Mask_ptr + rm, mask=rm < d_out, other=0.0)
-    w_val = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in), other=0.0)
+    w_val = tl.load(W_ptr + rm[:, None] * d_in + rn[None, :], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in), other=0.0)
 
     # Prune rows outside preserved partitions
-    tl.store(Out_W_ptr + rm[:, None] * d_in + rn[None, :], w_val * mask_val[:, None], mask=(rm[:, None] < d_out) \& (rn[None, :] < d_in))
+    tl.store(Out_W_ptr + rm[:, None] * d_in + rn[None, :], w_val * mask_val[:, None], mask=(rm[:, None] < d_out) & (rn[None, :] < d_in))
 
     if pid_n == 0:
         b_val = tl.load(Bias_ptr + rm, mask=rm < d_out, other=0.0)
@@ -11069,12 +11069,12 @@ The empirical evaluation of \texttt{zerokv\_neo\_compressor} across standard seq
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \\
+Benchmark / Metric & Empirical Value & Baseline (Full MHA) & Relative Delta \\
 \midrule
-\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} \& \textbf{11.2} \& 11.20 \& $+0.00$ \\
-\textbf{C4 Perplexity ($PPL \downarrow$)} \& \textbf{14.6} \& 14.60 \& $+0.00$ \\
-\textbf{Inference Throughput ($tok/sec \uparrow$)} \& \textbf{1,250 tok/s} \& 1,250 tok/s \& \textbf{1,250 tok/s} \\
-\textbf{Triton Hardware Acceleration} \& [X] Native PyTorch SDPA / Flash-2 \& PyTorch SDPA \& High Tensor Core Occupancy \\
+\textbf{WikiText-2 Perplexity ($PPL \downarrow$)} & \textbf{11.2} & 11.20 & $+0.00$ \\
+\textbf{C4 Perplexity ($PPL \downarrow$)} & \textbf{14.6} & 14.60 & $+0.00$ \\
+\textbf{Inference Throughput ($tok/sec \uparrow$)} & \textbf{1,250 tok/s} & 1,250 tok/s & \textbf{1,250 tok/s} \\
+\textbf{Triton Hardware Acceleration} & [X] Native PyTorch SDPA / Flash-2 & PyTorch SDPA & High Tensor Core Occupancy \\
 
 \bottomrule
 \end{tabular}
@@ -11086,13 +11086,13 @@ Benchmark / Metric \& Empirical Value \& Baseline (Full MHA) \& Relative Delta \
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{llll}
 \toprule
-Context Length ($L$) \& Inference Latency ($ms$) \& Peak VRAM ($MB$) \& Speedup vs Dense MHA \\
+Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs Dense MHA \\
 \midrule
-\textbf{$L = 512$} \& 0.32 ms \& 95 MB \& $1.14\times$ \\
-\textbf{$L = 1024$} \& 0.54 ms \& 150 MB \& $1.85\times$ \\
-\textbf{$L = 2048$} \& 1.45 ms \& 512 MB \& $2.50\times$ \\
-\textbf{$L = 4096$} \& 2.75 ms \& 819 MB \& $4.20\times$ \\
-\textbf{$L = 8192$} \& \textbf{12.80 ms} \& \textbf{3,450 MB} \& \textbf{1.00x (Baseline)} \\
+\textbf{$L = 512$} & 0.32 ms & 95 MB & $1.14\times$ \\
+\textbf{$L = 1024$} & 0.54 ms & 150 MB & $1.85\times$ \\
+\textbf{$L = 2048$} & 1.45 ms & 512 MB & $2.50\times$ \\
+\textbf{$L = 4096$} & 2.75 ms & 819 MB & $4.20\times$ \\
+\textbf{$L = 8192$} & \textbf{12.80 ms} & \textbf{3,450 MB} & \textbf{1.00x (Baseline)} \\
 
 
 \bottomrule

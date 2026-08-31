@@ -1,5 +1,5 @@
 \subsection{HGRN2GatedDeltaNet (\texttt{hgrn2\_gated\_deltanet})}
-\label{sec:app_module_hgrn2_gated_deltanet}
+\label{sec:app_module_hgrn2\_gated\_deltanet}
 
 \subsubsection*{3.1 Module Overview}
 HGRN-2 Gated DeltaNet Hybrid Architecture.  Mathematical Mechanism:     Combines two complementary linear recurrent mechanisms:     1. **HGRN-2 Branch:** Fast element-wise linear recurrence with bounded forget gating.     2. **Gated DeltaNet Branch:** Multi-head associative matrix state with Delta-r
@@ -35,13 +35,13 @@ y_t &= C_t h_t + D x_t, \quad O_t = \operatorname{SiLU}(z_t) \odot y_t.
 \end{itemize}
 
 \subsubsection*{3.5 Empirical Performance Telemetry}
-Table~\ref{tab:telemetry_hgrn2_gated_deltanet} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
+Table~\ref{tab:telemetry_hgrn2\_gated\_deltanet} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
 
 \begin{table}[h]
 \centering
 \small
 \caption{\textbf{Empirical Benchmark Telemetry for \texttt{hgrn2\_gated\_deltanet}}. Measured on NVIDIA RTX 4070 GPU across standard GLUE tasks.}
-\label{tab:telemetry_hgrn2_gated_deltanet}
+\label{tab:telemetry_hgrn2\_gated\_deltanet}
 \begin{tabularx}{\columnwidth}{lX}
 \toprule
 \textbf{Performance Metric} & \textbf{Empirical Value} \\
@@ -76,13 +76,13 @@ Evaluation Execution Status & \textbf{\texttt{PASS}} \\
 The module \texttt{hgrn2\_gated\_deltanet} is natively integrated into the NeuralOps registry with automated AMP FP16 tensor casting, fused linear down/up-projection passes, and exact autograd backward graph registration. The operator is currently classified as \textbf{SUPPORTED} with 100\% test suite verification across multi-family transformer backbones.
 
 \subsubsection*{3.8 Architectural Characterization Diagram}
-Figure~\ref{fig:module_hgrn2_gated_deltanet} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
+Figure~\ref{fig:module_hgrn2\_gated\_deltanet} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_hgrn2_gated_deltanet.pdf}
+    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_hgrn2\_gated\_deltanet.pdf}
     \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for HGRN2GatedDeltaNet (\texttt{hgrn2\_gated\_deltanet})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
-    \label{fig:module_hgrn2_gated_deltanet}
+    \label{fig:module_hgrn2\_gated\_deltanet}
 \end{figure}
 
 \vspace{1.0em}

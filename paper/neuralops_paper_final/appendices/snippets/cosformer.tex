@@ -2,7 +2,7 @@
 \label{sec:app_module_cosformer}
 
 \subsubsection*{3.1 Module Overview}
-Cosformer Attention Layer.  Mathematical Formulation:     1. Non-negative kernel mapping:        $$\phi(x) = \operatorname{ReLU}(x) \quad \text{or} \quad \operatorname{ELU}(x) + 1$$          2. Cosine-based positional reweighting:        $$R(i, j) = \cos\left(\frac{\pi(i - j)}{2 M}\right) = \cos\lef
+Cosformer Attention Layer.  Mathematical Formulation:     1. Non-negative kernel mapping:        \$\$\phi(x) = \operatorname{ReLU}(x) \quad \text{or} \quad \operatorname{ELU}(x) + 1\$\$          2. Cosine-based positional reweighting:        \$\$R(i, j) = \cos\left(\frac{\pi(i - j)}{2 M}\right) = \cos\lef
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 4: Kernelized & Spectral Attention
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/cosformer.py}
@@ -28,8 +28,8 @@ O_t &= \frac{\phi(Q_t) M_t}{\phi(Q_t) Z_t + \epsilon}.
 
 \subsubsection*{3.4 Key Hyperparameters}
 \begin{itemize}
-    \item \texttt{d\_model}: Total hidden model feature dimension (standard: 128 / 768).
-    \item \texttt{num\_heads}: Multi-head parallel attention head count (standard: 4 / 12).
+    \item \texttt{d_model}: Total hidden model feature dimension (standard: 128 / 768).
+    \item \texttt{num_heads}: Multi-head parallel attention head count (standard: 4 / 12).
     \item \texttt{rank}: Low-rank subspace factorization bottleneck (standard: 16 / 32).
 \end{itemize}
 

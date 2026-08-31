@@ -1,5 +1,5 @@
 \subsection{EntropyBudgetCompressor (\texttt{entropy\_budget\_allocation})}
-\label{sec:app_module_entropy_budget_allocation}
+\label{sec:app_module_entropy\_budget\_allocation}
 
 \subsubsection*{3.1 Module Overview}
 Entropy Budget Low-Rank SVD Compressor.  Computes activation covariance and whiten weights, calculates per-component singular entropy contributions, allocates low-rank budgets globally across layers, and replaces dense nn.Linear layers with factorized SVDLinear modules with symmetric singular value
@@ -36,13 +36,13 @@ A &= \operatorname{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} \odot M + (1 - M)(-
 \end{itemize}
 
 \subsubsection*{3.5 Empirical Performance Telemetry}
-Table~\ref{tab:telemetry_entropy_budget_allocation} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
+Table~\ref{tab:telemetry_entropy\_budget\_allocation} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
 
 \begin{table}[h]
 \centering
 \small
 \caption{\textbf{Empirical Benchmark Telemetry for \texttt{entropy\_budget\_allocation}}. Measured on NVIDIA RTX 4070 GPU across standard GLUE tasks.}
-\label{tab:telemetry_entropy_budget_allocation}
+\label{tab:telemetry_entropy\_budget\_allocation}
 \begin{tabularx}{\columnwidth}{lX}
 \toprule
 \textbf{Performance Metric} & \textbf{Empirical Value} \\
@@ -77,13 +77,13 @@ Evaluation Execution Status & \textbf{\texttt{PASS}} \\
 The module \texttt{entropy\_budget\_allocation} is natively integrated into the NeuralOps registry with automated AMP FP16 tensor casting, fused linear down/up-projection passes, and exact autograd backward graph registration. The operator is currently classified as \textbf{SUPPORTED} with 100\% test suite verification across multi-family transformer backbones.
 
 \subsubsection*{3.8 Architectural Characterization Diagram}
-Figure~\ref{fig:module_entropy_budget_allocation} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
+Figure~\ref{fig:module_entropy\_budget\_allocation} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_entropy_budget_allocation.pdf}
+    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_entropy\_budget\_allocation.pdf}
     \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for EntropyBudgetCompressor (\texttt{entropy\_budget\_allocation})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
-    \label{fig:module_entropy_budget_allocation}
+    \label{fig:module_entropy\_budget\_allocation}
 \end{figure}
 
 \vspace{1.0em}
