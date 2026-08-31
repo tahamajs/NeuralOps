@@ -76,7 +76,15 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
     # Head-only fine-tuning is deliberate: it is stable for a randomly added
     # Qwen classifier head and guarantees the head is trained before injection.
     for p in model.parameters(): p.requires_grad = False
-    head = getattr(model, "score", None) or getattr(model, "classifier", None)
+    head = next((getattr(model, attr, None) for attr in
+                 ("score", "classifier", "classification_head", "classification_head.dense")
+                 if getattr(model, attr, None) is not None), None)
+    if head is None:
+        # Some encoder-decoder implementations nest the task head under a
+        # model-specific wrapper; select only the named classification head,
+        # never the entire backbone.
+        head = next((sub for name, sub in model.named_modules()
+                     if name.endswith("classification_head")), None)
     if head is None: raise RuntimeError("Qwen sequence-classification head not found")
     for p in head.parameters(): p.requires_grad = True
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=5e-4)
