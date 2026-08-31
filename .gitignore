@@ -198,6 +198,9 @@ benchmark_results/
 test_experiments/
 **/test_experiments/
 test_results/
+
+# Local cleanup archives (kept outside version control)
+archive_cleanup_*/
 **/test_results/
 runs/
 **/runs/
