@@ -12,9 +12,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-_PRIME1 = 2654435761
-_PRIME2 = 2246822519
-_PRIME3 = 3266489917
+_HASH_PRIME = 2147483647  # large prime for a 2-universal affine family
+_HASH_A = 1103515245
+_HASH_B = 12345
+_SIGN_A = 1664525
+_SIGN_B = 1013904223
 
 
 def fast_hash_and_sign(
@@ -37,11 +39,14 @@ def fast_hash_and_sign(
     else:
         raise ValueError("indices_i and indices_j must be both integers or both torch.Tensors")
 
-    mixed = (i_vec * _PRIME1 + j_vec * _PRIME2) ^ _PRIME3
-    hash_idx = (mixed % n_buckets).to(torch.int32)
+    # Pairwise-independent affine hash over flattened coordinates.  The
+    # explicit modulo keeps behavior deterministic across Python platforms.
+    flat = (i_vec * (indices_j if isinstance(indices_j, int) else (j_vec.max() + 1)) + j_vec).long()
+    mixed = (_HASH_A * flat + _HASH_B) % _HASH_PRIME
+    hash_idx = (mixed % max(1, int(n_buckets))).to(torch.int32)
 
-    sign_mix = i_vec * _PRIME2 + j_vec * _PRIME1
-    sign_bit = (sign_mix >> 15) & 1
+    sign_mix = (_SIGN_A * flat + _SIGN_B) % _HASH_PRIME
+    sign_bit = (sign_mix & 1)
     sign_val = (sign_bit.to(torch.int8) * 2 - 1)
     return hash_idx, sign_val
 
@@ -56,7 +61,7 @@ class HashedLinear(nn.Module):
         self,
         in_features: int,
         out_features: int,
-        n_buckets: int = 1024,
+        n_buckets: int = 65536,
         bias: bool = True,
         use_sign: bool = True,
         dtype: Optional[torch.dtype] = None,
@@ -118,7 +123,7 @@ class HashedLinear(nn.Module):
     def from_linear(
         cls,
         linear: nn.Linear,
-        n_buckets: int = 1024,
+        n_buckets: int = 65536,
         use_sign: bool = True,
     ) -> "HashedLinear":
         """

@@ -17,23 +17,8 @@ from .cur_linear import (
     compute_energy_scores,
     compute_leverage_scores,
     select_indices,
+    tikhonov_pinv,
 )
-
-
-def tikhonov_pinv(U_mat: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
-    """
-    Compute Tikhonov regularized pseudo-inverse: (U^T U + eps * I)^{-1} U^T.
-    Prevents numerical instability and FP16 overflow in CUR core reconstruction.
-    """
-    k = U_mat.shape[1]
-    UtU = torch.matmul(U_mat.T, U_mat)
-    diag_mean = torch.trace(UtU) / max(1, k)
-    effective_eps = max(eps * (diag_mean.item() if isinstance(diag_mean, torch.Tensor) else diag_mean), 1e-6)
-    reg_eye = effective_eps * torch.eye(k, device=U_mat.device, dtype=U_mat.dtype)
-    try:
-        return torch.linalg.solve(UtU + reg_eye, U_mat.T)
-    except Exception:
-        return torch.linalg.pinv(U_mat, rcond=eps)
 
 
 @COMPRESSOR_REGISTRY.register("cur_moe")
