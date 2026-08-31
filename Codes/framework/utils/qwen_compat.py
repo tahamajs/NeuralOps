@@ -63,7 +63,7 @@ def install_qwen_aliases(model: nn.Module) -> nn.Module:
 
 def is_dtype_error(exc: BaseException) -> bool:
     text = str(exc).lower()
-    return isinstance(exc, RuntimeError) and any(token in text for token in (
+    return isinstance(exc, (RuntimeError, NotImplementedError)) and any(token in text for token in (
         "half", "float16", "geqrf", "dtype", "linalg", "qr decomposition", "not implemented",
     ))
 
