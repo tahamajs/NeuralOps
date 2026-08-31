@@ -1096,7 +1096,11 @@ def run_quality_benchmark_sweep(
                     m_n = row.get("module_name")
                     mod_f = row.get("model_family", "").lower()
                     ds_n = row.get("dataset", "").lower()
-                    if m_n and mod_f and ds_n:
+                    # Only successful evaluations are terminal.  Historical
+                    # FAIL/TIMEOUT rows must be retried on the next sweep;
+                    # treating them as completed permanently froze the stale
+                    # zero-metric results in all_modules_paper_run.
+                    if m_n and mod_f and ds_n and row.get("status", "").upper() == "PASS":
                         completed_combos.add((mod_f, ds_n, m_n))
         except Exception:
             pass
@@ -1184,6 +1188,8 @@ def run_quality_benchmark_sweep(
                                 timeout=timeout,
                             )
                             logger.info("⚡ Module %s startup overhead: %.1f ms (target < 2000 ms)", mod_name, startup_s * 1000.0)
+                            if res_seed is None:
+                                raise RuntimeError("persistent worker returned no SeedResult")
                             seed_results.append(res_seed)
                         except TimeoutError as te:
                             logger.warning("⏱️ Seed %d TIMED OUT for %s on %s/%s after %ds: %s", s, mod_name, model_name, dataset_name, timeout, te)
@@ -1435,6 +1441,8 @@ def main():
     parser.add_argument("--results_dir", type=str, default=None, help="Target output directory (alias for --output_dir)")
     parser.add_argument("--pretrained", action="store_true", default=False, help="Use real pretrained HuggingFace weights")
     parser.add_argument("--gradient_checkpointing", action="store_true", default=False, help="Enable gradient checkpointing")
+    parser.add_argument("--allow_synthetic", action="store_true", default=False,
+                        help="Use deterministic synthetic batches when a dataset/cache is unavailable")
 
     args = parser.parse_args()
     chosen_output_dir = args.output_dir if args.output_dir is not None else args.results_dir
@@ -1476,6 +1484,7 @@ def main():
         output_dir=chosen_output_dir,
         pretrained=args.pretrained,
         gradient_checkpointing=args.gradient_checkpointing,
+        allow_synthetic=args.allow_synthetic,
     )
 
 
