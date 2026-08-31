@@ -76,7 +76,10 @@ class LEKAV1Attention(BaseAttention):
                 proj_data[h].T if self.head_dim < self.feature_dim else proj_data[h]
             )
             if self.head_dim < self.feature_dim:
-                proj_data[h] = q_h.T[:self.feature_dim, :].T  # (head_dim, feature_dim)
+                # QR on the transposed matrix yields Q=[feature_dim, head_dim].
+                # Transpose it back to the required [head_dim, feature_dim]
+                # layout; slicing q_h.T before transposing swaps dimensions.
+                proj_data[h] = q_h.T  # (head_dim, feature_dim)
             else:
                 proj_data[h] = q_h[:, :self.feature_dim]  # (head_dim, feature_dim)
         self.register_buffer(
