@@ -50,7 +50,7 @@ def modules() -> list[str]:
 
 
 def fields(name: str) -> tuple[str, str]:
-    if name == "sst2": return ("sentence", None)
+    if name in {"sst2", "cola"}: return ("sentence", None)
     if name == "mrpc": return ("sentence1", "sentence2")
     return ("sentence1", "sentence2")
 
