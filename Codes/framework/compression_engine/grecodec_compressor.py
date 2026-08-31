@@ -14,6 +14,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 
 class GreCoDeCLinear(nn.Module):
@@ -206,7 +207,7 @@ class GreCoDeCCompressor(BaseCompressor):
 
         self.compressed_layers = []
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and not isinstance(module, GreCoDeCLinear):
+            if isinstance(module, nn.Linear) and not isinstance(module, GreCoDeCLinear) and should_compress_linear(self.model, name):
                 if self.target_layers and not any(t in name for t in self.target_layers):
                     continue
 
@@ -250,4 +251,3 @@ def grecodec_compressor_factory(
     compressor = GreCoDeCCompressor(model, rank=effective_rank, max_iter=max_iter, cfg=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
-

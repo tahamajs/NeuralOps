@@ -37,9 +37,22 @@ class ModelAdapter:
         self.source = _config(model_or_config)
         self.family = family or detect_family(model_or_config)
         self.hidden_size = int(getattr(self.source, "hidden_size", getattr(self.source, "d_model", 0)))
-        self.num_heads = int(getattr(self.source, "num_attention_heads", getattr(self.source, "num_heads", 0)))
+        self.num_heads = int(getattr(self.source, "num_attention_heads",
+                                     getattr(self.source, "num_heads",
+                                             getattr(self.source, "num_decoder_attention_heads", 0))))
         self.head_dim = int(getattr(self.source, "head_dim", self.hidden_size // self.num_heads if self.num_heads else 0))
+        kv_heads = getattr(
+            self.source, "num_key_value_heads",
+            getattr(self.source, "num_key_value_heads_decoder",
+                    getattr(self.source, "num_decoder_attention_heads", self.num_heads or 0)),
+        )
+        self.num_key_value_heads = int(kv_heads or self.num_heads or 0)
+        if self.num_key_value_heads <= 0:
+            self.num_key_value_heads = self.num_heads
         self.num_hidden_layers = int(getattr(self.source, "num_hidden_layers", getattr(self.source, "num_layers", 0)))
+        self.q_proj_out = self.num_heads * self.head_dim
+        self.kv_proj_out = self.num_key_value_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_key_value_heads))
         self.projection_aliases = {
             "q": ("q_lin", "q_proj"), "k": ("k_lin", "k_proj"),
             "v": ("v_lin", "v_proj"), "o": ("out_lin", "o_proj"),
@@ -55,6 +68,8 @@ class ModelAdapter:
 
     def as_dict(self) -> dict[str, Any]:
         return {"family": self.family, "hidden_size": self.hidden_size, "num_heads": self.num_heads,
+                "num_key_value_heads": self.num_key_value_heads, "q_proj_out": self.q_proj_out,
+                "kv_proj_out": self.kv_proj_out, "kv_repeat": self.kv_repeat,
                 "head_dim": self.head_dim, "num_hidden_layers": self.num_hidden_layers,
                 "causal": self.causal, "mask_rank": self.mask_rank,
                 "position_embedding": self.position_embedding}

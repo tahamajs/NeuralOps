@@ -14,11 +14,15 @@ import torch.nn.functional as F
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.utils.model_family import ModelAdapter
+from framework.utils.compat import repeat_kv, maybe_apply_rotary, causal_mask_from_attention_mask
 
 
 @ATTENTION_REGISTRY.register("adaptive_sparse_attention")
 @ATTENTION_REGISTRY.register("adaptive_sparse")
 class AdaptiveSparseAttention(BaseAttention):
+    supports_gqa = True
+    supports_rope = True
     r"""
     Adaptive Sparse Multi-Head Attention.
     
@@ -47,15 +51,18 @@ class AdaptiveSparseAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", 4)
-        hidden_size: int = getattr(config, "hidden_size", 768)
-        self.head_dim: int = hidden_size // self.num_heads
-        self.all_head_size: int = self.num_heads * self.head_dim
+        self.adapter = ModelAdapter(config)
+        self.num_heads = self.adapter.num_heads
+        self.num_key_value_heads = self.adapter.num_key_value_heads
+        hidden_size = self.adapter.hidden_size
+        self.head_dim = self.adapter.head_dim
+        self.all_head_size = self.adapter.q_proj_out
+        self.kv_head_size = self.adapter.kv_proj_out
         self.default_sparsity: float = float(sparsity_ratio)
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, self.kv_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.kv_head_size)
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
         # Learnable per-head sparsity logit initialized to target sparsity
@@ -72,6 +79,7 @@ class AdaptiveSparseAttention(BaseAttention):
             ),
         )
         self.dropout = nn.Dropout(dropout_p)
+        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -109,8 +117,10 @@ class AdaptiveSparseAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-        K = self.k_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-        V = self.v_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
+        K = self.k_proj(hidden_states).view(B, N, self.num_key_value_heads, d).transpose(1, 2)
+        V = self.v_proj(hidden_states).view(B, N, self.num_key_value_heads, d).transpose(1, 2)
+        Q, K = maybe_apply_rotary(Q, K, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
+        K, V = repeat_kv(K, self.adapter.kv_repeat), repeat_kv(V, self.adapter.kv_repeat)
 
         scale = d ** -0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N, N]
@@ -120,6 +130,12 @@ class AdaptiveSparseAttention(BaseAttention):
         if valid_mask is not None:
             pad_mask = (~valid_mask).unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
             scores = scores.masked_fill(pad_mask, -10000.0)
+        full_mask = causal_mask_from_attention_mask(attention_mask, self.adapter)
+        if full_mask is not None and full_mask.dim() == 4:
+            if full_mask.dtype == torch.bool:
+                scores = scores.masked_fill(~full_mask, -10000.0)
+            else:
+                scores = scores + full_mask.to(scores.dtype)
 
         # Dynamic Top-K Adaptive Sparsification per head
         sparsity_per_head = torch.sigmoid(self.sparsity_logits).clamp(0.0, 0.95)  # [H]

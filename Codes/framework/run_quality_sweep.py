@@ -211,6 +211,9 @@ def main():
                     path_name = "adapted_qwen" if qwen else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device), 2)
+            except QwenIncompatibleError as exc:
+                status, err = "SKIP_QWEN_INCOMPATIBLE", str(exc)
+                path_name = "unsupported" if qwen else path_name
             except Exception as exc:
                 if "out of memory" in str(exc).lower() and not injected:
                     status, err = "SKIP", "cuda_oom_injection"

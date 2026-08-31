@@ -21,6 +21,8 @@ from .adapters import get_adapter
 from .architecture import detect_architecture, get_attention_modules
 from .model_utils import replace_module
 from .registry import ATTENTION_REGISTRY
+from framework.utils.model_family import ModelAdapter, detect_family
+from framework.utils.qwen_compat import QwenIncompatibleError
 
 logger = logging.getLogger(__name__)
 
@@ -290,6 +292,8 @@ def inject_attention(
 
     arch = detect_architecture(model)
     adapter = get_adapter(arch)
+    family = detect_family(model)
+    family_adapter = ModelAdapter(model, family)
 
     replaced = 0
     modules_list = list(get_attention_modules(model))
@@ -333,6 +337,26 @@ def inject_attention(
                     new_attn = attn_class(rank=effective_rank, **kwargs)
                 except TypeError:
                     new_attn = attn_class(**kwargs)
+
+        # Do not let a legacy full-MHA replacement silently retain randomly
+        # initialized K/V projections on GQA decoders.  Such a module must
+        # explicitly advertise the geometry it implements.
+        if family in {"qwen", "gpt"} and not getattr(new_attn, "supports_gqa", False):
+            expected = {
+                "q": family_adapter.q_proj_out,
+                "k": family_adapter.kv_proj_out,
+                "v": family_adapter.kv_proj_out,
+            }
+            for key, patterns in (("q", PROJ_REGEX_PATTERNS["q"]),
+                                  ("k", PROJ_REGEX_PATTERNS["k"]),
+                                  ("v", PROJ_REGEX_PATTERNS["v"])):
+                target = _find_submodule_by_regex(new_attn, patterns)
+                out_features = getattr(target, "out_features", None)
+                if target is not None and out_features not in {expected[key], None}:
+                    raise QwenIncompatibleError(
+                        f"{attention_type}: {key}_projection_out={out_features}, "
+                        f"requires={expected[key]} (GQA)"
+                    )
 
         # Match device and dtype of old attention layer
         old_param = next(old_attn.parameters(), None)

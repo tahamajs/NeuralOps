@@ -12,6 +12,8 @@ import torch.nn.functional as F
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.utils.model_family import ModelAdapter
+from framework.utils.compat import repeat_kv, maybe_apply_rotary, causal_mask_from_attention_mask
 
 try:
     from flash_attn import flash_attn_func
@@ -24,6 +26,8 @@ except ImportError:
 @ATTENTION_REGISTRY.register("flash3")
 @ATTENTION_REGISTRY.register("flash_attention3")
 class FlashAttention3(BaseAttention):
+    supports_gqa = True
+    supports_rope = True
     r"""
     FlashAttention-3 Multi-Head Exact Attention.
 
@@ -48,15 +52,18 @@ class FlashAttention3(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", 4)
-        hidden_size: int = getattr(config, "hidden_size", 768)
-        self.head_dim: int = hidden_size // self.num_heads
-        self.all_head_size: int = self.num_heads * self.head_dim
+        self.adapter = ModelAdapter(config)
+        self.num_heads = self.adapter.num_heads
+        self.num_key_value_heads = self.adapter.num_key_value_heads
+        hidden_size = self.adapter.hidden_size
+        self.head_dim = self.adapter.head_dim
+        self.all_head_size = self.adapter.q_proj_out
+        self.kv_head_size = self.adapter.kv_proj_out
         self.use_fp8: bool = use_fp8
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, self.kv_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.kv_head_size)
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
         dropout_p = getattr(
@@ -69,6 +76,7 @@ class FlashAttention3(BaseAttention):
             ),
         )
         self.dropout = nn.Dropout(dropout_p)
+        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -105,36 +113,36 @@ class FlashAttention3(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        q = self.q_proj(hidden_states).view(B, L, H, Dh)  # (B, L, H, Dh)
-        k = self.k_proj(hidden_states).view(B, L, H, Dh)
-        v = self.v_proj(hidden_states).view(B, L, H, Dh)
+        q = self.q_proj(hidden_states).view(B, H, L, Dh)
+        k = self.k_proj(hidden_states).view(B, self.num_key_value_heads, L, Dh)
+        v = self.v_proj(hidden_states).view(B, self.num_key_value_heads, L, Dh)
+        q, k = maybe_apply_rotary(q, k, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
+        k, v = repeat_kv(k, self.adapter.kv_repeat), repeat_kv(v, self.adapter.kv_repeat)
 
         if FLASH_ATTN_AVAILABLE and hidden_states.is_cuda:
-            q_fa = q.contiguous()
-            k_fa = k.contiguous()
-            v_fa = v.contiguous()
+            q_fa = q.transpose(1, 2).contiguous()
+            k_fa = k.transpose(1, 2).contiguous()
+            v_fa = v.transpose(1, 2).contiguous()
 
             if self.use_fp8 and hasattr(torch, "float8_e4m3fn"):
                 q_fa = q_fa.to(torch.float8_e4m3fn)
                 k_fa = k_fa.to(torch.float8_e4m3fn)
                 v_fa = v_fa.to(torch.float8_e4m3fn)
 
-            out = flash_attn_func(q_fa, k_fa, v_fa, causal=False)
+            out = flash_attn_func(q_fa, k_fa, v_fa, causal=self.adapter.causal)
             out = out.contiguous().view(B, L, D)
         else:
-            q_sdpa = q.transpose(1, 2)  # (B, H, L, Dh)
-            k_sdpa = k.transpose(1, 2)
-            v_sdpa = v.transpose(1, 2)
-
-            valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
-            attn_mask = (1.0 - valid_mask_2d.unsqueeze(1).unsqueeze(2).to(q_sdpa.dtype)) * -10000.0
+            q_sdpa, k_sdpa, v_sdpa = q, k, v
+            attn_mask = causal_mask_from_attention_mask(attention_mask, self.adapter)
+            if attn_mask is not None and attn_mask.dtype == torch.bool:
+                attn_mask = torch.zeros_like(attn_mask, dtype=q_sdpa.dtype).masked_fill(~attn_mask, -10000.0)
 
             out_sdpa = F.scaled_dot_product_attention(
                 q_sdpa,
                 k_sdpa,
                 v_sdpa,
                 attn_mask=attn_mask,
-                is_causal=False,
+                is_causal=self.adapter.causal and attn_mask is None,
             )
             out = out_sdpa.transpose(1, 2).contiguous().view(B, L, D)
 

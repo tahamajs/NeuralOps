@@ -6,6 +6,90 @@ import torch
 import torch.nn as nn
 
 from .model_family import ModelAdapter, detect_family
+from .qwen_compat import QwenIncompatibleError
+
+
+def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """Expand grouped-query K/V heads: [B, Hkv, L, D] -> [B, H, L, D]."""
+    if n_rep <= 1:
+        return x
+    if x.dim() != 4:
+        raise ValueError(f"repeat_kv expects [B,H,L,D], got {tuple(x.shape)}")
+    return x[:, :, None, :, :].expand(x.size(0), x.size(1), n_rep, x.size(2), x.size(3)).reshape(
+        x.size(0), x.size(1) * n_rep, x.size(2), x.size(3)
+    )
+
+
+def is_decoder_family(family: str) -> bool:
+    return family in {"gpt", "qwen"}
+
+
+def is_decoder_projection_name(name: str) -> bool:
+    """Whether a parameter name denotes a decoder attention projection."""
+    leaf = name.rsplit(".", 1)[-1].lower()
+    if leaf in {"weight", "bias"}:
+        parts = name.rsplit(".", 2)
+        leaf = parts[-2].lower() if len(parts) >= 2 else leaf
+    return leaf in {"q_proj", "k_proj", "v_proj", "o_proj", "out_proj"}
+
+
+def should_compress_linear(model: Any, name: str) -> bool:
+    """Keep decoder compression restricted to attention projections.
+
+    Encoder behavior intentionally remains the historical, unrestricted path.
+    """
+    family = detect_family(model)
+    return not is_decoder_family(family) or is_decoder_projection_name(name)
+
+
+def maybe_apply_rotary(q: torch.Tensor, k: torch.Tensor, adapter: ModelAdapter,
+                       rotary_emb: Any, position_ids: Optional[torch.Tensor]):
+    """Apply a native rotary module when required; never silently drop RoPE."""
+    if adapter.position_embedding != "rotary":
+        return q, k
+    if rotary_emb is None:
+        raise QwenIncompatibleError("rotary_position_embedding_required")
+    try:
+        rotary = rotary_emb(q, position_ids)
+    except TypeError:
+        try:
+            rotary = rotary_emb(q, position_ids=position_ids)
+        except TypeError as exc:
+            raise QwenIncompatibleError(f"rotary_forward_signature: {exc}") from exc
+    if hasattr(rotary, "cos") and hasattr(rotary, "sin"):
+        cos, sin = rotary.cos, rotary.sin
+    elif isinstance(rotary, (tuple, list)) and len(rotary) >= 2:
+        cos, sin = rotary[0], rotary[1]
+    else:
+        raise QwenIncompatibleError("rotary_forward_invalid_output")
+    def rotate_half(x):
+        return torch.cat((-x[..., x.shape[-1] // 2:], x[..., :x.shape[-1] // 2]), dim=-1)
+    # HF rotary outputs are commonly [B,L,D] or [B,1,L,D], while custom
+    # modules conventionally use [B,H,L,D].
+    if cos.dim() == 3:
+        cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
+    while cos.dim() < q.dim():
+        cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
+    if cos.shape[-2] != q.shape[-2]:
+        cos, sin = cos[..., :q.shape[-2], :], sin[..., :q.shape[-2], :]
+    return (q * cos) + (rotate_half(q) * sin), (k * cos) + (rotate_half(k) * sin)
+
+
+def causal_mask_from_attention_mask(attention_mask: Optional[torch.Tensor], adapter: ModelAdapter):
+    """Return the mask without discarding decoder causal visibility semantics."""
+    if attention_mask is None:
+        return None
+    if adapter.causal and attention_mask.dim() == 4:
+        return attention_mask
+    if adapter.causal and attention_mask.dim() == 2:
+        bsz, seqlen = attention_mask.shape
+        causal = torch.ones((seqlen, seqlen), dtype=torch.bool, device=attention_mask.device).tril()
+        return causal[None, None, :, :] & attention_mask.bool()[:, None, None, :]
+    if not adapter.causal and attention_mask.dim() == 2:
+        return attention_mask.bool()[:, None, None, :]
+    if not adapter.causal:
+        return attention_mask
+    raise QwenIncompatibleError(f"causal_mask_format_{attention_mask.dim()}d_unsupported")
 
 
 def install_projection_aliases(module: nn.Module) -> nn.Module:
@@ -50,7 +134,15 @@ class FamilyModuleWrapper(nn.Module):
 
     def forward(self, *args: Any, **kwargs: Any):
         mask = kwargs.get("attention_mask", kwargs.get("mask", kwargs.get("attn_mask")))
-        kwargs.pop("position_embeddings", None) if self.adapter.position_embedding == "rotary" and not getattr(self.module, "supports_rope", False) else None
+        # A replacement that receives rotary tensors must explicitly support
+        # them.  A bare legacy call with no positional inputs remains usable
+        # for backwards-compatible unit/injection paths; the runner's strict
+        # family policy is responsible for classifying such modules.
+        if (self.adapter.position_embedding == "rotary"
+                and not getattr(self.module, "supports_rope", False)
+                and ("position_embeddings" in kwargs or "position_ids" in kwargs
+                     or getattr(self.module, "requires_rope", False))):
+            raise QwenIncompatibleError("module_does_not_support_rope")
         if mask is not None:
             adapted = convert_mask(mask, self.adapter, bool(getattr(self.module, "expects_bidirectional", False)))
             if "attention_mask" in kwargs: kwargs["attention_mask"] = adapted
