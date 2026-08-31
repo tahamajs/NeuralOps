@@ -77,17 +77,19 @@ class Mamba2(nn.Module):
         dt = F.softplus(self.dt_proj(x_ssm))  # (B, L, inner_dim)
         A = -torch.exp(self.A_log)  # (inner_dim, d_state)
 
-        # Recurrent scan
-        h = torch.zeros(B, inner_dim, self.d_state, device=x.device, dtype=x.dtype)
-        outputs = []
-        for t in range(L):
-            xt = x_ssm[:, t, :]  # take all channels as input
-            h = h * torch.exp(dt[:, t].unsqueeze(-1) * A) + (
-                xt.unsqueeze(-1) * dt[:, t].unsqueeze(-1)
-            )
-            out_t = (h * self.D.unsqueeze(-1)).sum(dim=-1)
-            outputs.append(out_t)
-        out = torch.stack(outputs, dim=1) * F.silu(z)
+        # Vectorized cumsum / linear recurrence approximation for fast training
+        # dt: (B, L, inner_dim), A: (inner_dim, d_state)
+        # Prevents Python loop step timeout under gradient checkpointing (use_reentrant=False compatible)
+        dA = torch.exp(torch.einsum("bli,in->blin", dt, A))  # (B, L, inner_dim, d_state)
+        dBX = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))  # (B, L, inner_dim, d_state)
+        
+        # Fast parallel prefix product scan along L
+        log_dA = torch.log(dA.clamp_min(1e-12))
+        log_dA_cumsum = torch.cumsum(log_dA, dim=1)
+        decay_factor = torch.exp(log_dA_cumsum)
+        h = torch.cumsum(dBX / (decay_factor + 1e-12), dim=1) * decay_factor
+        
+        out = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1) * F.silu(z)
         return self.out_proj(out)
 
 

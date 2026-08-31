@@ -2,11 +2,12 @@
  * NeuralOps Multi-Run Live View & Publication Analytics Studio (v3.0)
  */
 
-const API_STATS = "/api/stats";
-const API_RUNS = "/api/runs";
-const API_ACTION = "/api/action";
-const API_RUN_START = "/api/run/start";
-const API_RUN_STOP = "/api/run/stop";
+const API_BASE = (typeof window !== "undefined" && window.location && window.location.origin) ? window.location.origin : "";
+const API_STATS = `${API_BASE}/api/stats`;
+const API_RUNS = `${API_BASE}/api/runs`;
+const API_ACTION = `${API_BASE}/api/action`;
+const API_RUN_START = `${API_BASE}/api/run/start`;
+const API_RUN_STOP = `${API_BASE}/api/run/stop`;
 const POLL_INTERVAL_MS = 3000;
 
 // State
@@ -129,7 +130,7 @@ function populateRunSelectors() {
 }
 
 async function onRunChanged(runId) {
-  selectedRunId = runId;
+  selectedRunId = runId || "run_active";
   saveState();
 
   const runObj = availableRuns.find(r => r.run_id === runId);
@@ -138,7 +139,7 @@ async function onRunChanged(runId) {
   const sweepBadge = document.getElementById("sweep-status");
   const btnStop = document.getElementById("btn-stop");
 
-  if (isAct) {
+  if (isAct || runId === "run_active") {
     isHistorical = false;
     if (sweepBadge) {
       sweepBadge.textContent = "ACTIVE SWEEP (LIVE)";
@@ -170,6 +171,13 @@ async function fetchStats() {
     currentData = data;
     renderDashboard();
     setConnectionStatus(true);
+
+    // Fallback: If GPU utilization is 0% while sweep is running, schedule a quick retry after 500ms
+    if (data.is_running && (!data.gpu || data.gpu.gpu_util === 0 || data.gpu.gpu_util === 0.0)) {
+      setTimeout(() => {
+        if (!isFetching) fetchStats();
+      }, 500);
+    }
   } catch (err) {
     console.warn("API poll error:", err);
     setConnectionStatus(false);
@@ -462,30 +470,26 @@ function renderLiveLoss(data) {
     lossCurve = activeItem.trajectories.loss;
   } else if (trajs[modName] && trajs[modName].loss && trajs[modName].loss.length > 0) {
     lossCurve = trajs[modName].loss;
-  } else if (trajs["full"] && trajs["full"].loss) {
-    lossCurve = trajs["full"].loss;
   }
   const hasRealLoss = lossCurve && lossCurve.length > 0;
 
   if (noteElem) {
-    if (!activeItem && !hasRealLoss) {
-      noteElem.textContent = "No active iteration data available";
-    } else if (hasRealLoss) {
+    if (!hasRealLoss) {
+      noteElem.textContent = "Collecting step loss...";
+    } else {
       const firstL = lossCurve[0];
       const lastL = lossCurve[lossCurve.length - 1];
-            let epCount = 3;
+      let epCount = 3;
       if (data.module_progress && data.module_progress.length > 0) {
         const fullMod = data.module_progress.find(m => m.module === modName) || data.module_progress[0];
         if (fullMod && fullMod.epoch) {
            const match = fullMod.epoch.match(/\/ (\d+)/) || fullMod.epoch.match(/\/(\d+)/);
-           if (match) epCount = match[1];
+           if (match) epCount = parseInt(match[1], 10);
         }
       }
-      noteElem.textContent = `Convergence: ${firstL} -> ${lastL} (${lossCurve.length} sampled points across ${epCount} epoch${epCount > 1 ? 's' : ''})`;
-    } else if (activeItem && activeItem.status !== "PASS") {
-      noteElem.textContent = `No training trajectory available (${modName} status: ${activeItem.status})`;
-    } else {
-      noteElem.textContent = `Collecting step loss for ${modName}...`;
+      const epochParts = (lp.epoch || "").split("/");
+      const totalEpochs = epochParts.length > 1 ? parseInt(epochParts[1], 10) : epCount;
+      noteElem.textContent = `Convergence: ${firstL} -> ${lastL} (${lossCurve.length} sampled points across ${totalEpochs} epoch${totalEpochs > 1 ? 's' : ''})`;
     }
   }
 
@@ -766,31 +770,31 @@ function updateCharts() {
   let chartColor = "#38bdf8";
 
   if (metric === "fwd") {
-    chartData = mods.map(m => m.avg_fwd);
+    chartData = mods.map(m => (m.avg_fwd !== undefined && m.avg_fwd !== null) ? m.avg_fwd : null);
     chartLabel = "Fwd Latency (ms)";
     chartColor = "#38bdf8";
   } else if (metric === "bwd") {
-    chartData = mods.map(m => m.avg_bwd);
+    chartData = mods.map(m => (m.avg_bwd !== undefined && m.avg_bwd !== null) ? m.avg_bwd : null);
     chartLabel = "Bwd Latency (ms)";
     chartColor = "#a855f7";
   } else if (metric === "vram") {
-    chartData = mods.map(m => m.avg_mem);
+    chartData = mods.map(m => (m.avg_mem !== undefined && m.avg_mem !== null) ? m.avg_mem : null);
     chartLabel = "Peak VRAM (MB)";
     chartColor = "#ec4899";
   } else if (metric === "acc") {
-    chartData = mods.map(m => m.avg_acc);
+    chartData = mods.map(m => (m.avg_acc !== undefined && m.avg_acc !== null) ? m.avg_acc : 0.0);
     chartLabel = "Accuracy (%)";
     chartColor = "#10b981";
   } else if (metric === "f1") {
-    chartData = mods.map(m => m.avg_f1);
+    chartData = mods.map(m => (m.avg_f1 !== undefined && m.avg_f1 !== null) ? m.avg_f1 : 0.0);
     chartLabel = "F1 Score";
     chartColor = "#f59e0b";
   } else if (metric === "throughput") {
-    chartData = mods.map(m => m.avg_throughput);
+    chartData = mods.map(m => (m.avg_throughput !== undefined && m.avg_throughput !== null) ? m.avg_throughput : null);
     chartLabel = "Throughput (samples/s)";
     chartColor = "#06b6d4";
   } else if (metric === "fidelity") {
-    chartData = mods.map(m => m.avg_fidelity);
+    chartData = mods.map(m => (m.avg_fidelity !== undefined && m.avg_fidelity !== null) ? m.avg_fidelity : 0.0);
     chartLabel = "Fidelity Score";
     chartColor = "#8b5cf6";
   }
@@ -1702,13 +1706,15 @@ function restoreState() {
     const raw = localStorage.getItem("neuralops_dashboard_state_v3");
     if (!raw) return;
     const st = JSON.parse(raw);
-    if (st.selectedRunId && st.selectedRunId !== "gpu_server" && st.selectedRunId !== "adaptive_v3") {
-      selectedRunId = st.selectedRunId;
-    }
+    selectedRunId = "run_active";
+    isHistorical = false;
     if (st.activeTab) activeTab = st.activeTab;
     if (st.selectedModules) selectedModules = new Set(st.selectedModules);
     if (st.analyticsFilters) analyticsFilters = st.analyticsFilters;
-  } catch (e) {}
+  } catch (e) {
+    selectedRunId = "run_active";
+    isHistorical = false;
+  }
 }
 
 
@@ -1738,6 +1744,13 @@ function setMatrixStatusFilter(status, btn) {
   }
 }
 
+function isHelperModule(name) {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  const suffixes = ["_inject", "_injection", "_fn", "_inject_fn", "_attn_inject", "_module_inject", "_compressor_fn"];
+  return suffixes.some(s => n.endsWith(s));
+}
+
 function renderModuleProgressTable(moduleProgress) {
   const tbody = document.getElementById("module-progress-tbody");
   if (!tbody) return;
@@ -1747,12 +1760,32 @@ function renderModuleProgressTable(moduleProgress) {
     return;
   }
 
-  // Calculate live counts
-  let cntDone = 0, cntRun = 0, cntPend = 0;
+  // Calculate live counts (excluding injection helpers)
+  let cntTotal = 0;
+  let cntPass = 0;
+  let cntFail = 0;
+  let cntTimeout = 0;
+  let cntRunning = 0;
+  let cntQueued = 0;
+
   moduleProgress.forEach(m => {
-    if (m.status === "completed") cntDone++;
-    else if (m.status === "running") cntRun++;
-    else cntPend++;
+    if (isHelperModule(m.module) || m.result_status === "HELPER" || m.result_status === "UNSUPPORTED") {
+      return;
+    }
+    cntTotal++;
+    if (m.status === "running") {
+      cntRunning++;
+    } else if (m.status === "completed") {
+      if (m.result_status === "TIMEOUT") {
+        cntTimeout++;
+      } else if (m.result_status === "FAIL" || (m.accuracy === 0 && m.f1 === 0)) {
+        cntFail++;
+      } else {
+        cntPass++;
+      }
+    } else {
+      cntQueued++;
+    }
   });
 
   const elAll = document.getElementById("matrix-cnt-all");
@@ -1761,11 +1794,26 @@ function renderModuleProgressTable(moduleProgress) {
   const elPend = document.getElementById("matrix-cnt-pending");
   const elTot = document.getElementById("matrix-total-count");
 
-  if (elAll) elAll.textContent = moduleProgress.length;
-  if (elDone) elDone.textContent = cntDone;
-  if (elRun) elRun.textContent = cntRun;
-  if (elPend) elPend.textContent = cntPend;
-  if (elTot) elTot.textContent = `${moduleProgress.length} Modules`;
+  if (elAll) elAll.textContent = cntTotal;
+  if (elDone) elDone.textContent = cntPass + cntFail + cntTimeout; // Completed modules (PASS + FAIL + TIMEOUT)
+  if (elRun) elRun.textContent = cntRunning;
+  if (elPend) elPend.textContent = cntQueued;
+  if (elTot) elTot.textContent = `${cntTotal} Modules`;
+
+  // Update summary cards
+  const elSumTotal = document.getElementById("summary-total-modules");
+  const elSumPass = document.getElementById("summary-completed-modules");
+  const elSumFail = document.getElementById("summary-failed-modules");
+  const elSumTimeout = document.getElementById("summary-timeout-modules");
+  const elSumRunning = document.getElementById("summary-running-modules");
+  const elSumQueued = document.getElementById("summary-queued-modules");
+
+  if (elSumTotal) elSumTotal.textContent = cntTotal;
+  if (elSumPass) elSumPass.textContent = cntPass;
+  if (elSumFail) elSumFail.textContent = cntFail;
+  if (elSumTimeout) elSumTimeout.textContent = cntTimeout;
+  if (elSumRunning) elSumRunning.textContent = cntRunning;
+  if (elSumQueued) elSumQueued.textContent = cntQueued;
 
   // Apply filters
   let filtered = moduleProgress.filter(m => {
@@ -1789,10 +1837,18 @@ function renderModuleProgressTable(moduleProgress) {
     const tr = document.createElement("tr");
     
     let stTag = '<span class="tag-status" style="background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">QUEUED</span>';
-    if (m.status === "running") {
+    if (isHelperModule(m.module) || m.result_status === "HELPER" || m.result_status === "UNSUPPORTED") {
+      stTag = '<span class="tag-status" style="background:rgba(148,163,184,0.2); color:#cbd5e1; border:1px solid rgba(148,163,184,0.4); font-size:11px;">HELPER ⚙️</span>';
+    } else if (m.status === "running") {
       stTag = '<span class="tag-status" style="background:rgba(99,102,241,0.25); color:#818cf8; border:1px solid rgba(99,102,241,0.5); font-weight:700;">RUNNING ⚡</span>';
     } else if (m.status === "completed") {
-      stTag = '<span class="tag-status tag-pass">DONE ✔</span>';
+      if (m.result_status === "TIMEOUT") {
+        stTag = '<span class="tag-status tag-timeout">TIMEOUT ⏱️</span>';
+      } else if (m.result_status === "FAIL" || (m.accuracy === 0 && m.f1 === 0)) {
+        stTag = '<span class="tag-status tag-fail">FAIL ❌</span>';
+      } else {
+        stTag = '<span class="tag-status tag-pass">DONE ✔</span>';
+      }
     }
 
     const accStr = (m.accuracy !== null && m.accuracy !== undefined && !isNaN(m.accuracy)) ? `${Number(m.accuracy).toFixed(2)}%` : "-";
@@ -1844,8 +1900,12 @@ function renderModuleProgressTable(moduleProgress) {
 // BOOTSTRAP
 // ==========================================
 restoreState();
+selectedRunId = "run_active";
+isHistorical = false;
+startPolling();
+fetchStats();
 fetchRunsList().then(() => {
-  onRunChanged(selectedRunId);
+  populateRunSelectors();
 });
 switchTab(activeTab);
 

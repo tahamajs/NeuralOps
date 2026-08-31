@@ -470,8 +470,6 @@ function renderLiveLoss(data) {
     lossCurve = activeItem.trajectories.loss;
   } else if (trajs[modName] && trajs[modName].loss && trajs[modName].loss.length > 0) {
     lossCurve = trajs[modName].loss;
-  } else if (trajs["full"] && trajs["full"].loss) {
-    lossCurve = trajs["full"].loss;
   }
   const hasRealLoss = lossCurve && lossCurve.length > 0;
 

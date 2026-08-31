@@ -70,90 +70,96 @@ def _persistent_worker_loop(
         except Exception:
             pass
 
-    import framework.attentions
-    import framework.compression_engine
-
-    # 1. Load and cache pre-tokenized dataset tensors once
-    from framework.data.cached_tensors import get_cached_tokenized_dataset
     try:
-        cached_splits = get_cached_tokenized_dataset(
-            dataset_name=dataset,
-            model_family=model_family,
-            seq_len=seq_len,
-        )
-        w_logger.info(f"Pre-tokenized dataset ready: {len(cached_splits['train'])} train, {len(cached_splits['val'])} val")
+        import framework.attentions
+        import framework.compression_engine
+
+        # 1. Load and cache pre-tokenized dataset tensors once
+        from framework.data.cached_tensors import get_cached_tokenized_dataset
+        try:
+            cached_splits = get_cached_tokenized_dataset(
+                dataset_name=dataset,
+                model_family=model_family,
+                seq_len=seq_len,
+            )
+            w_logger.info(f"Pre-tokenized dataset ready: {len(cached_splits['train'])} train, {len(cached_splits['val'])} val")
+        except Exception as e:
+            w_logger.error(f"Failed to load cached tokenized dataset: {e}")
+            cached_splits = None
+
+        # 2. Load and cache pristine base model template in CPU RAM once
+        base_model_template = None
+        pristine_state_dict = None
+        if pretrained:
+            from transformers import AutoModelForSequenceClassification
+            local_ckpt_candidates = [
+                Path("models") / f"{model_family.lower()}_{dataset.lower()}",
+                Path("D:/SVD_Project/models") / f"{model_family.lower()}_{dataset.lower()}",
+                Path(_PROJ_DIR) / "models" / f"{model_family.lower()}_{dataset.lower()}",
+            ]
+            hf_model_id = None
+            for ckpt in local_ckpt_candidates:
+                if ckpt.exists() and ((ckpt / "model.safetensors").exists() or (ckpt / "pytorch_model.bin").exists()):
+                    hf_model_id = str(ckpt)
+                    break
+            if hf_model_id is None:
+                model_name_map = {
+                    "distilbert": "distilbert-base-uncased-finetuned-sst-2-english" if dataset.lower() == "sst2" else "distilbert-base-uncased",
+                    "bert": "bert-base-uncased",
+                    "roberta": "roberta-base",
+                }
+                hf_model_id = model_name_map.get(model_family.lower(), "distilbert-base-uncased")
+            try:
+                base_model_template = AutoModelForSequenceClassification.from_pretrained(
+                    hf_model_id,
+                    num_labels=num_labels,
+                )
+                # Pristine state dict in CPU memory
+                pristine_state_dict = {k: v.cpu().clone() for k, v in base_model_template.state_dict().items()}
+                w_logger.info(f"Base model {hf_model_id} loaded and cached in RAM.")
+            except Exception as e:
+                w_logger.warning(f"Could not preload {hf_model_id}: {e}")
+
+        # 3. Pre-compute and cache baseline logits on validation set for pristine model (for fidelity)
+        baseline_logits_cache = {}
+        if base_model_template is not None and cached_splits is not None and device.type == "cuda":
+            try:
+                w_logger.info("Pre-computing baseline validation logits for pristine model...")
+                base_model = copy.deepcopy(base_model_template).to(device)
+                base_model.eval()
+                val_loader = torch.utils.data.DataLoader(
+                    cached_splits["val"],
+                    batch_size=128,
+                    shuffle=False,
+                    num_workers=0,
+                    pin_memory=True,
+                )
+                all_b_logits = []
+                with torch.no_grad():
+                    for v_batch in val_loader:
+                        v_ids, v_mask, v_lbl = v_batch
+                        inp = {"input_ids": v_ids.to(device, non_blocking=True), "attention_mask": v_mask.to(device, non_blocking=True)}
+                        with torch.amp.autocast("cuda"):
+                            out = base_model(**inp)
+                        logits = getattr(out, "logits", out[0] if isinstance(out, (tuple, list)) else None)
+                        if logits is not None:
+                            all_b_logits.append(logits.cpu())
+                if all_b_logits:
+                    # Keep 2D shape [N_examples, num_classes] for proper per-example cosine similarity
+                    baseline_logits_cache[(model_family.lower(), dataset.lower(), 42)] = torch.cat(all_b_logits, dim=0).float()
+                    w_logger.info(f"Pre-computed baseline validation logits: shape {baseline_logits_cache[(model_family.lower(), dataset.lower(), 42)].shape}")
+                del base_model
+                torch.cuda.empty_cache()
+            except Exception as e:
+                w_logger.warning(f"Could not pre-compute baseline logits: {e}")
+        w_logger.info("Persistent worker initialization COMPLETE. Ready for sweep stream.")
+        result_queue.put(("READY", "init_done", None, 0.0))
     except Exception as e:
-        w_logger.error(f"Failed to load cached tokenized dataset: {e}")
-        cached_splits = None
-
-    # 2. Load and cache pristine base model template in CPU RAM once
-    base_model_template = None
-    pristine_state_dict = None
-    if pretrained:
-        from transformers import AutoModelForSequenceClassification
-        local_ckpt_candidates = [
-            Path("models") / f"{model_family.lower()}_{dataset.lower()}",
-            Path("D:/SVD_Project/models") / f"{model_family.lower()}_{dataset.lower()}",
-            Path(_PROJ_DIR) / "models" / f"{model_family.lower()}_{dataset.lower()}",
-        ]
-        hf_model_id = None
-        for ckpt in local_ckpt_candidates:
-            if ckpt.exists() and ((ckpt / "model.safetensors").exists() or (ckpt / "pytorch_model.bin").exists()):
-                hf_model_id = str(ckpt)
-                break
-        if hf_model_id is None:
-            model_name_map = {
-                "distilbert": "distilbert-base-uncased-finetuned-sst-2-english" if dataset.lower() == "sst2" else "distilbert-base-uncased",
-                "bert": "bert-base-uncased",
-                "roberta": "roberta-base",
-            }
-            hf_model_id = model_name_map.get(model_family.lower(), "distilbert-base-uncased")
-        try:
-            base_model_template = AutoModelForSequenceClassification.from_pretrained(
-                hf_model_id,
-                num_labels=num_labels,
-            )
-            # Pristine state dict in CPU memory
-            pristine_state_dict = {k: v.cpu().clone() for k, v in base_model_template.state_dict().items()}
-            w_logger.info(f"Base model {hf_model_id} loaded and cached in RAM.")
-        except Exception as e:
-            w_logger.warning(f"Could not preload {hf_model_id}: {e}")
-
-    # 3. Pre-compute and cache baseline logits on validation set for pristine model (for fidelity)
-    baseline_logits_cache = {}
-    if base_model_template is not None and cached_splits is not None and device.type == "cuda":
-        try:
-            w_logger.info("Pre-computing baseline validation logits for pristine model...")
-            base_model = copy.deepcopy(base_model_template).to(device)
-            base_model.eval()
-            val_loader = torch.utils.data.DataLoader(
-                cached_splits["val"],
-                batch_size=128,
-                shuffle=False,
-                num_workers=0,
-                pin_memory=True,
-            )
-            all_b_logits = []
-            with torch.no_grad():
-                for v_batch in val_loader:
-                    v_ids, v_mask, v_lbl = v_batch
-                    inp = {"input_ids": v_ids.to(device, non_blocking=True), "attention_mask": v_mask.to(device, non_blocking=True)}
-                    with torch.amp.autocast("cuda"):
-                        out = base_model(**inp)
-                    logits = getattr(out, "logits", out[0] if isinstance(out, (tuple, list)) else None)
-                    if logits is not None:
-                        all_b_logits.append(logits.cpu())
-            if all_b_logits:
-                # Keep 2D shape [N_examples, num_classes] for proper per-example cosine similarity
-                baseline_logits_cache[(model_family.lower(), dataset.lower(), 42)] = torch.cat(all_b_logits, dim=0).float()
-                w_logger.info(f"Pre-computed baseline validation logits: shape {baseline_logits_cache[(model_family.lower(), dataset.lower(), 42)].shape}")
-            del base_model
-            torch.cuda.empty_cache()
-        except Exception as e:
-            w_logger.warning(f"Baseline logits precomputation error: {e}")
-
-    w_logger.info("Persistent worker initialization COMPLETE. Ready for sweep stream.")
-    result_queue.put(("READY", "init_done", None, 0.0))
+        import traceback
+        tb = traceback.format_exc()
+        w_logger.error(f"FATAL ERROR in persistent worker initialization: {e}\n{tb}")
+        result_queue.put(("INIT_ERROR", "init_failed", (str(e), tb), 0.0))
+        return
 
     # Import evaluation function
     from framework.run_quality_sweep import evaluate_single_seed_run
@@ -256,11 +262,18 @@ class PersistentCUDAWorker:
         self.proc.start()
         logger.info(f"Spawned Persistent CUDA Worker [PID {self.proc.pid}] on {self.device_str}. Waiting for initialization...")
         try:
-            status, _, _, _ = self.result_queue.get(timeout=120)
+            status, _, val, _ = self.result_queue.get(timeout=120)
             if status == "READY":
                 logger.info(f"⚡ Persistent CUDA Worker [PID {self.proc.pid}] is 100% warmed up and READY.")
+            elif status == "INIT_ERROR":
+                err_msg, err_tb = val
+                logger.error(f"❌ Persistent worker failed initialization with error: {err_msg}\n{err_tb}")
+                self._kill_worker()
+                raise RuntimeError(f"Persistent worker initialization failed: {err_msg}")
         except Exception as e:
             logger.warning(f"Did not receive READY signal from worker: {e}")
+            if self.proc is not None and not self.proc.is_alive():
+                logger.error(f"Worker process died during startup with exitcode {self.proc.exitcode}")
 
     def _kill_worker(self):
         if self.proc is not None:
@@ -316,6 +329,9 @@ class PersistentCUDAWorker:
             return True
 
     def execute_task(self, *args, timeout: int = 300, **kwargs) -> Tuple[Any, float]:
+        # Ensure watchdog timeout is always longer than inner training timeout
+        watchdog_timeout = timeout + 60  # 60s buffer beyond the training timeout
+        kwargs["timeout"] = timeout
         """Executes a single seed evaluation task on the persistent worker with watchdog timeout & VRAM guard."""
         # 1. Check VRAM headroom guard
         self.check_vram_headroom(min_free_mb=1500.0)
@@ -329,13 +345,13 @@ class PersistentCUDAWorker:
 
         # Wait on result queue with watchdog timeout
         try:
-            status, res_task_id, val, startup_overhead_s = self.result_queue.get(timeout=timeout)
+            status, res_task_id, val, startup_overhead_s = self.result_queue.get(timeout=watchdog_timeout)
             if status == "ERROR":
                 msg, tb = val
                 raise RuntimeError(msg)
             return val, startup_overhead_s
         except queue.Empty:
-            logger.warning(f"⏱️ Persistent worker PID {getattr(self.proc, 'pid', 'unknown')} HUNG past {timeout}s! Killing and respawning...")
+            logger.warning(f"⏱️ Persistent worker PID {getattr(self.proc, 'pid', 'unknown')} HUNG past {watchdog_timeout}s! Killing and respawning...")
             self._kill_worker()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
