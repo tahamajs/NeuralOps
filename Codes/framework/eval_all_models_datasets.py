@@ -28,7 +28,7 @@ def apply_module_to_model(model: nn.Module, module_name: str, module_type: str,
             try:
                 instance = compressor(*args, **kwargs)
                 break
-            except (TypeError, ValueError, RuntimeError):
+            except (TypeError, ValueError):
                 continue
         if instance is None:
             raise RuntimeError(f"Could not instantiate compressor {module_name}")
