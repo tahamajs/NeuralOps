@@ -22,6 +22,8 @@ def detect_architecture(model: nn.Module) -> str:
         return "bert"
     if "gpt2" in model_type or "gpt2" in name:
         return "gpt2"
+    if "qwen" in model_type or "qwen" in name:
+        return "qwen"
     if "llama" in model_type:
         return "llama"
     if "mistral" in model_type:

@@ -1,29 +1,35 @@
-import torch
-import inspect
 import sys
-import traceback
-from framework.core.registry import ATTENTION_REGISTRY
+import os
 
-fails = [
-  "fused_svd_kernel",
-  "svd_attention",
-  "span_expanded_attention",
-  "vig_attention",
-  "mla_attention",
-  "samba_moe"
+# Add Codes directory to python path
+sys.path.insert(0, r"D:\SVD_Project\Codes")
+
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.eval_all_models_datasets import apply_module_to_model
+
+failed_modules = [
+    "adasplash", "aegis_spectron_fp8", "bam_umoe", "decay_linear_attn", 
+    "granite_hybrid", "hamming", "hashed_net", "hgrn2_layer", "hgrn2_gated_deltanet"
 ]
-for f in fails:
-    __import__(f"framework.attentions.{f}")
 
-config = type("Config", (), {"hidden_size": 128, "num_attention_heads": 4})()
+print("Loading base model...")
+tokenizer = AutoTokenizer.from_pretrained(r"D:\SVD_Project\models\distilbert_sst2")
+model_path = r"D:\SVD_Project\models\distilbert_sst2"
 
-for name, attn_cls in ATTENTION_REGISTRY.items():
-    if not inspect.isclass(attn_cls): continue
-    print(f"--- {name} ---")
+dummy_input = tokenizer("This is a test sentence.", return_tensors="pt")
+
+for mod in failed_modules:
+    print(f"\n==================== Testing: {mod} ====================")
     try:
-        attn = attn_cls(config)
-        hidden_states = torch.randn(2, 10, 128, requires_grad=True)
-        attn(hidden_states)
-        print("Success")
+        model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        model = model.to("cuda:0")
+        model = apply_module_to_model(model, mod, {"dataset": "sst2"})
+        inp = {k: v.to("cuda:0") for k, v in dummy_input.items()}
+        out = model(**inp)
+        loss = out.logits.sum()
+        loss.backward()
+        print(f"--> SUCCESS on forward + backward! (Slow execution / exceeded 900s training timeout)")
     except Exception as e:
-        traceback.print_exc()
+        print(f"--> FAILED with exception: {type(e).__name__}: {e}")

@@ -2,7 +2,7 @@
   "full": {
     "model_name": "full",
     "status": "OK",
-    "timestamp": "2026-08-23 11:25:18",
+    "timestamp": "2026-08-27 19:37:18",
     "glue_tasks": {
       "sst2": {
         "task": "sst2",
@@ -10,17 +10,17 @@
         "lr": 2e-05,
         "batch_size": 32,
         "epochs": 1,
-        "final_loss": 0.6870553493499756,
+        "final_loss": 0.7088623046875,
         "eval_metrics": {
-          "accuracy": 0.5,
-          "score": 0.5
+          "accuracy": 0.4375,
+          "score": 0.4375
         },
         "status": "OK",
-        "training_time": 5.7096099853515625,
+        "training_time": 0.500385046005249,
         "num_params": 66955010,
         "loss_history": [
-          0.6825481057167053,
-          0.6870553493499756
+          0.689208984375,
+          0.7088623046875
         ]
       },
       "mrpc": {
@@ -29,76 +29,295 @@
         "lr": 2e-05,
         "batch_size": 32,
         "epochs": 1,
-        "final_loss": 0.7066007852554321,
+        "final_loss": 0.695068359375,
         "eval_metrics": {
           "accuracy": 0.46875,
           "f1": 0.2608695652173913,
           "score": 0.3648097826086957
         },
         "status": "OK",
-        "training_time": 7.163708209991455,
+        "training_time": 0.17640471458435059,
         "num_params": 66955010,
         "loss_history": [
-          0.7379152178764343,
-          0.7066007852554321
+          0.74786376953125,
+          0.695068359375
         ]
       }
     },
-    "profiling": {},
-    "stability": {},
-    "diagnostics": {},
+    "profiling": {
+      "configurations": {
+        "bs1_seq128": {
+          "batch_size": 1,
+          "seq_len": 128,
+          "tokens_per_sec": 9153.216194006185,
+          "latency_ms": 13.984155654907227,
+          "peak_vram_mb": 1051.58154296875,
+          "gflops": 17.14048256,
+          "status": "OK"
+        },
+        "bs1_seq256": {
+          "batch_size": 1,
+          "seq_len": 256,
+          "tokens_per_sec": 18421.192278395014,
+          "latency_ms": 13.897037506103516,
+          "peak_vram_mb": 1051.5830078125,
+          "gflops": 34.28096512,
+          "status": "OK"
+        },
+        "bs1_seq512": {
+          "batch_size": 1,
+          "seq_len": 512,
+          "tokens_per_sec": 25994.27998019699,
+          "latency_ms": 19.696640968322754,
+          "peak_vram_mb": 1051.5859375,
+          "gflops": 68.56193024,
+          "status": "OK"
+        },
+        "bs32_seq128": {
+          "batch_size": 32,
+          "seq_len": 128,
+          "tokens_per_sec": 96360.91297892664,
+          "latency_ms": 42.50686168670654,
+          "peak_vram_mb": 1051.626953125,
+          "gflops": 548.49544192,
+          "status": "OK"
+        },
+        "bs32_seq256": {
+          "batch_size": 32,
+          "seq_len": 256,
+          "tokens_per_sec": 105965.0786525309,
+          "latency_ms": 77.30848789215088,
+          "peak_vram_mb": 1051.673828125,
+          "gflops": 1096.99088384,
+          "status": "OK"
+        },
+        "bs32_seq512": {
+          "batch_size": 32,
+          "seq_len": 512,
+          "tokens_per_sec": 97741.67885981586,
+          "latency_ms": 167.6255226135254,
+          "peak_vram_mb": 1051.767578125,
+          "gflops": 2193.98176768,
+          "status": "OK"
+        }
+      },
+      "scaling_curve": {
+        "by_seq_len": [
+          {
+            "batch_size": 1,
+            "seq_len": 128,
+            "tokens_per_sec": 9153.216194006185,
+            "latency_ms": 13.984155654907227,
+            "peak_vram_mb": 1051.58154296875,
+            "gflops": 17.14048256,
+            "status": "OK"
+          },
+          {
+            "batch_size": 1,
+            "seq_len": 256,
+            "tokens_per_sec": 18421.192278395014,
+            "latency_ms": 13.897037506103516,
+            "peak_vram_mb": 1051.5830078125,
+            "gflops": 34.28096512,
+            "status": "OK"
+          },
+          {
+            "batch_size": 1,
+            "seq_len": 512,
+            "tokens_per_sec": 25994.27998019699,
+            "latency_ms": 19.696640968322754,
+            "peak_vram_mb": 1051.5859375,
+            "gflops": 68.56193024,
+            "status": "OK"
+          },
+          {
+            "batch_size": 32,
+            "seq_len": 128,
+            "tokens_per_sec": 96360.91297892664,
+            "latency_ms": 42.50686168670654,
+            "peak_vram_mb": 1051.626953125,
+            "gflops": 548.49544192,
+            "status": "OK"
+          },
+          {
+            "batch_size": 32,
+            "seq_len": 256,
+            "tokens_per_sec": 105965.0786525309,
+            "latency_ms": 77.30848789215088,
+            "peak_vram_mb": 1051.673828125,
+            "gflops": 1096.99088384,
+            "status": "OK"
+          },
+          {
+            "batch_size": 32,
+            "seq_len": 512,
+            "tokens_per_sec": 97741.67885981586,
+            "latency_ms": 167.6255226135254,
+            "peak_vram_mb": 1051.767578125,
+            "gflops": 2193.98176768,
+            "status": "OK"
+          }
+        ]
+      }
+    },
+    "stability": {
+      "seed_accuracies": [
+        0.5625
+      ],
+      "mean_seed_acc": 0.5625,
+      "std_seed_acc": 0.0,
+      "lr_accuracies": {
+        "2e-05": 0.5625
+      },
+      "batch_accuracies": {
+        "16": 0.5625,
+        "32": 0.59375
+      },
+      "cv_lr": 0.0,
+      "cv_batch": 0.02702702655953251,
+      "failed_seeds": 0,
+      "total_seeds": 1,
+      "stable": false
+    },
+    "diagnostics": {
+      "gradient_norm": {
+        "mean_norm": 2.2364767578978344,
+        "max_norm": 21.55272102355957,
+        "has_nan": false,
+        "vanishing": false,
+        "exploding": false,
+        "layer_norms": {
+          "distilbert.embeddings.word_embeddings.weight": 1.1366066932678223,
+          "distilbert.embeddings.position_embeddings.weight": 1.5241848230361938,
+          "distilbert.embeddings.LayerNorm.weight": 0.572686493396759,
+          "distilbert.embeddings.LayerNorm.bias": 0.6524519920349121,
+          "distilbert.transformer.layer.0.attention.q_lin.weight": 0.1945473700761795,
+          "distilbert.transformer.layer.0.attention.q_lin.bias": 0.02095022425055504,
+          "distilbert.transformer.layer.0.attention.k_lin.weight": 0.20202746987342834,
+          "distilbert.transformer.layer.0.attention.k_lin.bias": 5.5803049292535434e-08,
+          "distilbert.transformer.layer.0.attention.v_lin.weight": 3.898800849914551,
+          "distilbert.transformer.layer.0.attention.v_lin.bias": 0.4224693477153778,
+          "distilbert.transformer.layer.0.attention.out_lin.weight": 5.175418853759766,
+          "distilbert.transformer.layer.0.attention.out_lin.bias": 0.45019933581352234,
+          "distilbert.transformer.layer.0.sa_layer_norm.weight": 0.37428465485572815,
+          "distilbert.transformer.layer.0.sa_layer_norm.bias": 0.4076422452926636,
+          "distilbert.transformer.layer.0.ffn.lin1.weight": 6.954403400421143,
+          "distilbert.transformer.layer.0.ffn.lin1.bias": 0.24130171537399292,
+          "distilbert.transformer.layer.0.ffn.lin2.weight": 4.02874231338501,
+          "distilbert.transformer.layer.0.ffn.lin2.bias": 0.3322550058364868,
+          "distilbert.transformer.layer.0.output_layer_norm.weight": 0.6813492178916931,
+          "distilbert.transformer.layer.0.output_layer_norm.bias": 0.8335400223731995,
+          "distilbert.transformer.layer.1.attention.q_lin.weight": 0.19509413838386536,
+          "distilbert.transformer.layer.1.attention.q_lin.bias": 0.016987092792987823,
+          "distilbert.transformer.layer.1.attention.k_lin.weight": 0.13054722547531128,
+          "distilbert.transformer.layer.1.attention.k_lin.bias": 6.601953828067053e-08,
+          "distilbert.transformer.layer.1.attention.v_lin.weight": 6.326718330383301,
+          "distilbert.transformer.layer.1.attention.v_lin.bias": 0.5701007843017578,
+          "distilbert.transformer.layer.1.attention.out_lin.weight": 7.57210111618042,
+          "distilbert.transformer.layer.1.attention.out_lin.bias": 0.640881359577179,
+          "distilbert.transformer.layer.1.sa_layer_norm.weight": 0.43352121114730835,
+          "distilbert.transformer.layer.1.sa_layer_norm.bias": 0.5409752130508423,
+          "distilbert.transformer.layer.1.ffn.lin1.weight": 8.667533874511719,
+          "distilbert.transformer.layer.1.ffn.lin1.bias": 0.2819734513759613,
+          "distilbert.transformer.layer.1.ffn.lin2.weight": 3.767434597015381,
+          "distilbert.transformer.layer.1.ffn.lin2.bias": 0.5027369856834412,
+          "distilbert.transformer.layer.1.output_layer_norm.weight": 0.41765111684799194,
+          "distilbert.transformer.layer.1.output_layer_norm.bias": 0.7023314237594604,
+          "distilbert.transformer.layer.2.attention.q_lin.weight": 0.2890593409538269,
+          "distilbert.transformer.layer.2.attention.q_lin.bias": 0.01893184334039688,
+          "distilbert.transformer.layer.2.attention.k_lin.weight": 0.20461733639240265,
+          "distilbert.transformer.layer.2.attention.k_lin.bias": 1.3794763731311832e-07,
+          "distilbert.transformer.layer.2.attention.v_lin.weight": 6.576904773712158,
+          "distilbert.transformer.layer.2.attention.v_lin.bias": 0.4314410090446472,
+          "distilbert.transformer.layer.2.attention.out_lin.weight": 7.154222011566162,
+          "distilbert.transformer.layer.2.attention.out_lin.bias": 0.4495837986469269,
+          "distilbert.transformer.layer.2.sa_layer_norm.weight": 0.42530548572540283,
+          "distilbert.transformer.layer.2.sa_layer_norm.bias": 0.5778072476387024,
+          "distilbert.transformer.layer.2.ffn.lin1.weight": 6.8513336181640625,
+          "distilbert.transformer.layer.2.ffn.lin1.bias": 0.2627468407154083,
+          "distilbert.transformer.layer.2.ffn.lin2.weight": 4.001566410064697,
+          "distilbert.transformer.layer.2.ffn.lin2.bias": 0.5508758425712585,
+          "distilbert.transformer.layer.2.output_layer_norm.weight": 0.4045362174510956,
+          "distilbert.transformer.layer.2.output_layer_norm.bias": 0.6604982018470764,
+          "distilbert.transformer.layer.3.attention.q_lin.weight": 0.13006354868412018,
+          "distilbert.transformer.layer.3.attention.q_lin.bias": 0.007173789665102959,
+          "distilbert.transformer.layer.3.attention.k_lin.weight": 0.09844478219747543,
+          "distilbert.transformer.layer.3.attention.k_lin.bias": 1.245522014414746e-07,
+          "distilbert.transformer.layer.3.attention.v_lin.weight": 5.600523471832275,
+          "distilbert.transformer.layer.3.attention.v_lin.bias": 0.31809866428375244,
+          "distilbert.transformer.layer.3.attention.out_lin.weight": 6.645407199859619,
+          "distilbert.transformer.layer.3.attention.out_lin.bias": 0.3986012637615204,
+          "distilbert.transformer.layer.3.sa_layer_norm.weight": 0.507466197013855,
+          "distilbert.transformer.layer.3.sa_layer_norm.bias": 0.707900881767273,
+          "distilbert.transformer.layer.3.ffn.lin1.weight": 7.211460590362549,
+          "distilbert.transformer.layer.3.ffn.lin1.bias": 0.31611168384552,
+          "distilbert.transformer.layer.3.ffn.lin2.weight": 6.000901699066162,
+          "distilbert.transformer.layer.3.ffn.lin2.bias": 0.6487600803375244,
+          "distilbert.transformer.layer.3.output_layer_norm.weight": 0.5759853720664978,
+          "distilbert.transformer.layer.3.output_layer_norm.bias": 0.7646849155426025,
+          "distilbert.transformer.layer.4.attention.q_lin.weight": 0.12520788609981537,
+          "distilbert.transformer.layer.4.attention.q_lin.bias": 0.005854971706867218,
+          "distilbert.transformer.layer.4.attention.k_lin.weight": 0.08385138213634491,
+          "distilbert.transformer.layer.4.attention.k_lin.bias": 1.1059417914793812e-07,
+          "distilbert.transformer.layer.4.attention.v_lin.weight": 8.112188339233398,
+          "distilbert.transformer.layer.4.attention.v_lin.bias": 0.38487720489501953,
+          "distilbert.transformer.layer.4.attention.out_lin.weight": 6.830969333648682,
+          "distilbert.transformer.layer.4.attention.out_lin.bias": 0.35874465107917786,
+          "distilbert.transformer.layer.4.sa_layer_norm.weight": 0.5339600443840027,
+          "distilbert.transformer.layer.4.sa_layer_norm.bias": 0.7245307564735413,
+          "distilbert.transformer.layer.4.ffn.lin1.weight": 4.775705814361572,
+          "distilbert.transformer.layer.4.ffn.lin1.bias": 0.2410513013601303,
+          "distilbert.transformer.layer.4.ffn.lin2.weight": 4.750496864318848,
+          "distilbert.transformer.layer.4.ffn.lin2.bias": 0.7632187008857727,
+          "distilbert.transformer.layer.4.output_layer_norm.weight": 0.5350300669670105,
+          "distilbert.transformer.layer.4.output_layer_norm.bias": 0.6891666054725647,
+          "distilbert.transformer.layer.5.attention.q_lin.weight": 0.13407935202121735,
+          "distilbert.transformer.layer.5.attention.q_lin.bias": 0.004926305264234543,
+          "distilbert.transformer.layer.5.attention.k_lin.weight": 0.055993661284446716,
+          "distilbert.transformer.layer.5.attention.k_lin.bias": 1.0794529003987918e-07,
+          "distilbert.transformer.layer.5.attention.v_lin.weight": 10.403585433959961,
+          "distilbert.transformer.layer.5.attention.v_lin.bias": 0.38572925329208374,
+          "distilbert.transformer.layer.5.attention.out_lin.weight": 5.634634494781494,
+          "distilbert.transformer.layer.5.attention.out_lin.bias": 0.3131336569786072,
+          "distilbert.transformer.layer.5.sa_layer_norm.weight": 0.5305102467536926,
+          "distilbert.transformer.layer.5.sa_layer_norm.bias": 0.665814220905304,
+          "distilbert.transformer.layer.5.ffn.lin1.weight": 9.479084014892578,
+          "distilbert.transformer.layer.5.ffn.lin1.bias": 0.270199716091156,
+          "distilbert.transformer.layer.5.ffn.lin2.weight": 5.383334636688232,
+          "distilbert.transformer.layer.5.ffn.lin2.bias": 0.6288954615592957,
+          "distilbert.transformer.layer.5.output_layer_norm.weight": 1.297378420829773,
+          "distilbert.transformer.layer.5.output_layer_norm.bias": 1.2610695362091064,
+          "pre_classifier.weight": 21.55272102355957,
+          "pre_classifier.bias": 2.329352378845215,
+          "classifier.weight": 20.02996826171875,
+          "classifier.bias": 5.656854152679443
+        }
+      },
+      "moe_balance": {
+        "has_moe": false,
+        "cv": 0.0,
+        "imbalanced": false,
+        "expert_counts": []
+      },
+      "attention": {
+        "entropy": 3.1725828647613525,
+        "sparsity_pct": 13.70993765691916,
+        "has_attention_weights": true
+      }
+    },
     "num_params": 66955010,
-    "avg_glue": 0.43240489130434784
+    "avg_glue": 0.40115489130434784
   },
   "svd_linear": {
     "model_name": "svd_linear",
-    "status": "OK",
-    "timestamp": "2026-08-23 11:26:00",
-    "glue_tasks": {
-      "sst2": {
-        "task": "sst2",
-        "seed": 42,
-        "lr": 2e-05,
-        "batch_size": 32,
-        "epochs": 1,
-        "final_loss": 0.6740108132362366,
-        "eval_metrics": {
-          "accuracy": 0.5625,
-          "score": 0.5625
-        },
-        "status": "OK",
-        "training_time": 3.3950138092041016,
-        "num_params": 59932490,
-        "loss_history": [
-          0.7027636766433716,
-          0.6740108132362366
-        ]
-      },
-      "mrpc": {
-        "task": "mrpc",
-        "seed": 42,
-        "lr": 2e-05,
-        "batch_size": 32,
-        "epochs": 1,
-        "final_loss": 0.7070022821426392,
-        "eval_metrics": {
-          "accuracy": 0.375,
-          "f1": 0.0,
-          "score": 0.1875
-        },
-        "status": "OK",
-        "training_time": 3.98103404045105,
-        "num_params": 59932490,
-        "loss_history": [
-          0.7332379817962646,
-          0.7070022821426392
-        ]
-      }
-    },
+    "status": "FAIL_SANITY",
+    "timestamp": "2026-08-27 19:37:57",
+    "glue_tasks": {},
     "profiling": {},
     "stability": {},
     "diagnostics": {},
     "num_params": 59932490,
-    "avg_glue": 0.375
+    "avg_glue": 0.0,
+    "error": "FAIL_SANITY: SVDLinearAttention.forward() missing 1 required positional argument: 'hidden_states'\nTraceback (most recent call last):\n  File \"D:\\SVD_Project\\benchmark\\runners\\sanity.py\", line 98, in run_sanity_check\n    full_out = model(input_ids=dummy_ids, attention_mask=dummy_mask, labels=dummy_labels)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\distilbert\\modeling_distilbert.py\", line 917, in forward\n    distilbert_output = self.distilbert(\n        input_ids=input_ids,\n    ...<5 lines>...\n        return_dict=return_dict,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\distilbert\\modeling_distilbert.py\", line 736, in forward\n    return self.transformer(\n           ~~~~~~~~~~~~~~~~^\n        x=embeddings,\n        ^^^^^^^^^^^^^\n    ...<4 lines>...\n        return_dict=return_dict,\n        ^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\distilbert\\modeling_distilbert.py\", line 541, in forward\n    layer_outputs = layer_module(\n        hidden_state,\n    ...<2 lines>...\n        output_attentions,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\modeling_layers.py\", line 94, in __call__\n    return super().__call__(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\transformers\\models\\distilbert\\modeling_distilbert.py\", line 476, in forward\n    sa_output = self.attention(\n        query=x,\n    ...<4 lines>...\n        output_attentions=output_attentions,\n    )\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1739, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Hadi Schumacher\\anaconda3\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1750, in _call_impl\n    return forward_call(*args, **kwargs)\nTypeError: SVDLinearAttention.forward() missing 1 required positional argument: 'hidden_states'\n"
   }
 }

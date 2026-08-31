@@ -1,4 +1,3 @@
-set PYTHONPATH=C:\Users\Hadi Schumacher\SVD_Project\Codes
-set PYTHONIOENCODING=utf-8
-cd /d "C:\Users\Hadi Schumacher\SVD_Project\Codes\framework"
-start /B "" "C:\Users\Hadi Schumacher\anaconda3\python.exe" -u live_monitor.py > monitor.log 2>&1
+@echo off
+cd /d D:\SVD_Project
+python Codes\framework\live_monitor.py 8080 > D:\SVD_Project\live_monitor.log 2>&1
