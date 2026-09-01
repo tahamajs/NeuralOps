@@ -149,3 +149,7 @@ saes,PASS,48.85,200.0,"fp32 retry: expected mat1 and mat2 to have the same dtype
 salr,SKIP,0.0,11.44,AttributeError: 'SALRLayer' object has no attribute 'weight',adapted_qwen,2026-09-01T23:53:11.512489
 salt,SKIP_QWEN_INCOMPATIBLE,0.0,2.94,"salt: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:53:15.077197
 samba_m3,SKIP_QWEN_INCOMPATIBLE,0.0,0.71,"samba_m3: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:53:16.157414
+samba_moe,PASS,49.08,152.85,fp32 retry: expected scalar type Half but found Float,adapted_qwen,2026-09-01T23:55:49.316346
+sdrm,PASS,48.51,57.41,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:56:48.363241
+simple_ssm,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T23:56:48.878940
+slicegpt,SKIP_SLOW,0.0,780.0,stalled_more_than_10_minutes,adapted_qwen,2026-09-02T00:09:54.012199
