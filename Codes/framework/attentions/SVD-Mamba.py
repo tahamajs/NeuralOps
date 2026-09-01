@@ -132,7 +132,7 @@ class SVDMamba(BaseAttention):
         )
 
         # State-space parameters
-        self.A_log = nn.Parameter(torch.randn(self.d_state))
+        self.A_log = nn.Parameter(torch.log(torch.arange(1, self.d_state + 1, dtype=torch.float32)))
         self.D = nn.Parameter(torch.ones(self.inner_dim))
         self.dt_bias = nn.Parameter(torch.zeros(self.inner_dim))
 
@@ -217,7 +217,7 @@ class SVDMamba(BaseAttention):
 
             u_c = u[:, s_idx:e_idx] # [B, K, inner, d_state]
             log_a_c = log_alpha[:, s_idx:e_idx]
-            lambda_c = torch.cumsum(log_a_c, dim=1) # [B, K, inner, d_state]
+            lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0) # [B, K, inner, d_state]
 
             decay_c = torch.exp(lambda_c)
             decay_inv_c = torch.exp(-lambda_c)
@@ -231,7 +231,7 @@ class SVDMamba(BaseAttention):
             h_chunk = h_intra + h_inter # [B, K, inner, d_state]
             y_c = (C[:, s_idx:e_idx].unsqueeze(2) * h_chunk).sum(dim=-1)
             y_chunks.append(y_c)
-            h_running = h_chunk[:, -1]
+            h_running = torch.clamp(h_chunk[:, -1], min=-1e4, max=1e4)
 
         y = torch.cat(y_chunks, dim=1)           # [B, L, inner]
 
