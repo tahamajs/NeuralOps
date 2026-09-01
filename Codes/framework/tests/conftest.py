@@ -121,20 +121,34 @@ def build_attention(key: str, config, pretrained_attn=None):
     if cls is None:
         raise ValueError(f"Unknown attention type: {key}")
 
-    # Try with pretrained_attn first, then without
-    try:
-        return cls(config=config, rank=32, pretrained_attn=pretrained_attn)
-    except TypeError:
-        pass
-    try:
-        return cls(config=config, rank=32)
-    except TypeError:
-        pass
-    try:
-        return cls(config)
-    except TypeError:
-        pass
-    # Last resort: just the config
+    # If it's a factory / injection function hook
+    if callable(cls) and not (isinstance(cls, type) and issubclass(cls, nn.Module)):
+        dummy_layer = nn.Module()
+        dummy_layer.attention = pretrained_attn
+        class CompConfig:
+            rank = 32
+        try:
+            res = cls(layer=dummy_layer, model_config=config, comp_config=CompConfig(), layer_idx=0, total_layers=6, old_attn=pretrained_attn)
+            if isinstance(res, nn.Module):
+                return res
+        except Exception:
+            pass
+
+    for args, kwargs in [
+        ((), {"config": config, "rank": 32, "pretrained_attn": pretrained_attn}),
+        ((), {"config": config, "rank": 32}),
+        ((), {"hidden_size": getattr(config, "hidden_size", 768), "rank": 32}),
+        ((), {"d_model": getattr(config, "hidden_size", 768), "rank": 32}),
+        ((config,), {}),
+        ((), {"config": config}),
+    ]:
+        try:
+            inst = cls(*args, **kwargs)
+            if isinstance(inst, nn.Module):
+                return inst
+        except Exception:
+            continue
+
     return cls(config)
 
 
@@ -145,9 +159,12 @@ def get_testable_attention_keys(config, pretrained_attn=None):
     """Return the subset of registry keys whose modules can be instantiated."""
     testable = []
     for key in ATTENTION_REGISTRY.keys():
+        if key.endswith("_inject") or key.startswith("inject_"):
+            continue
         try:
-            build_attention(key, config, pretrained_attn)
-            testable.append(key)
+            inst = build_attention(key, config, pretrained_attn)
+            if isinstance(inst, nn.Module):
+                testable.append(key)
         except Exception:
             continue
     return testable
