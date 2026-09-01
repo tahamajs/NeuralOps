@@ -224,13 +224,14 @@ class LEKAV1Attention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("leka_v1_inject")
 def inject_leka_v1(
-    layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
+    layer: Optional[nn.Module] = None,
+    model_config: Optional[Any] = None,
+    comp_config: Optional[Any] = None,
+    layer_idx: int = 0,
+    total_layers: int = 6,
     old_attn: Optional[nn.Module] = None,
-    **kwargs) -> LEKAV1Attention:
+    **kwargs: Any,
+) -> LEKAV1Attention:
     r"""
     Injection hook for LEKAV1Attention into transformer layer.
 
