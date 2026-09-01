@@ -190,12 +190,14 @@ def save_lora_weights(model: nn.Module, save_path: str, metadata: Optional[dict]
         "state_dict": trainable_state,
         "metadata": metadata or {},
     }
-    torch.save(payload, save_path)
+    with open(save_path, "wb") as f:
+        torch.save(payload, f)
 
 
 def load_lora_weights(model: nn.Module, load_path: str, strict: bool = False) -> dict:
     """Load trainable parameters from saved checkpoint into model."""
-    payload = torch.load(load_path, map_location="cpu", weights_only=False)
+    with open(load_path, "rb") as f:
+        payload = torch.load(f, map_location="cpu", weights_only=False)
     state_dict = payload.get("state_dict", payload) if isinstance(payload, dict) else payload
     missing, unexpected = model.load_state_dict(state_dict, strict=strict)
     return {
