@@ -117,6 +117,14 @@ DEFAULT_TARGET_MODULES = (
     "key",
     "value",
     "dense",
+    "q",
+    "k",
+    "v",
+    "o",
+    "wi",
+    "wo",
+    "wi_0",
+    "wi_1",
 )
 
 
