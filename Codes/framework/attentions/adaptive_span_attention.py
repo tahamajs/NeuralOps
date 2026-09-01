@@ -121,7 +121,7 @@ class AdaptiveSpanAttention(BaseAttention):
         total_mask = span_bool.unsqueeze(0) & key_valid_4d              # [B, H, N, N]
 
         scores = scores.masked_fill(~total_mask, -10000.0)
-        attn = F.softmax(scores, dim=-1)
+        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
 
         if head_mask is not None:
