@@ -149,3 +149,24 @@ armor        SKIP_SLOW  N/A       never_ran
 3. slicegpt: CUDA deadlock during evaluation with Qwen GQA reshape ops.  
 4. armor: never ran; process killed after slicegpt stall.  
 5. DistilBERT smoke test: SKIP_NO_WEIGHTS (cache present, no fine-tuned checkpoint). 
+
+## T5-Small LoRA Recovery Experiment 2026-09-02
+
+### Baseline
+- Head-only baseline: 69.13%
+- LoRA full-backbone baseline: 89.33% (+20.20pp)
+- 98 LoRALinear layers, 500 steps, lr=2e-4, bs=64
+
+### Recovery Results (100 recovery steps each, path: adapted_t5)
+Module       Status     Accuracy  vs_LoRA_Baseline
+aasvd        PASS       50.92%    -38.41pp
+admm         PASS       51.61%    -37.72pp
+direct_svd   PASS       51.03%    -38.30pp
+slicegpt     PASS       83.83%    -5.50pp
+armor        PASS       83.72%    -5.61pp
+
+### Key Findings
+1. Slicing and pruning methods (slicegpt, armor) drastically outperform structural SVD (aasvd, direct_svd, admm) at rank=16 for T5 on SST-2.
+2. Unweighted structural factorization destroys T5's representation capacity, failing to recover past baseline random chance (~51%).
+3. Orthogonal feature slicing (slicegpt) and pruning (armor) retain substantial performance (~83.7-83.8%) after 100 recovery steps.
+4. Framework bugs affecting T5 sequence classification masking, `apply()` module traversal, and hardcoded `legacy_bert` routing were identified and fixed to run this accurate sweep.

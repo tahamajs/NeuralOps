@@ -1,0 +1,6 @@
+module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
+aasvd,PASS,50.92,151.24,,adapted_t5,2026-09-02T02:27:04.942527
+admm,PASS,51.61,78.12,,adapted_t5,2026-09-02T02:28:23.395055
+direct_svd,PASS,51.03,130.22,,adapted_t5,2026-09-02T02:30:33.861555
+slicegpt,PASS,83.83,151.67,,adapted_t5,2026-09-02T02:33:05.838200
+armor,PASS,83.72,205.72,,adapted_t5,2026-09-02T02:36:31.823474
