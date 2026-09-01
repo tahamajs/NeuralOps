@@ -17,9 +17,9 @@ $ts = Get-Date -Format "yyyyMMdd_HHmmss"
 $outDir = "D:\SVD_Project\results\gpu_run_$ts"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-Write-Host "[2/4] Running Qwen Master Test Suite on GPU..." -ForegroundColor Cyan
-& $PythonExe -m pytest Codes/framework/tests/test_qwen_comprehensive.py -v *> "$outDir\qwen_tests.log"
-Get-Content "$outDir\qwen_tests.log" -Tail 15
+Write-Host "[2/4] Running Qwen & AASVD Master Test Suites on GPU..." -ForegroundColor Cyan
+& $PythonExe -m pytest Codes/framework/tests/test_qwen_comprehensive.py Codes/framework/tests/test_aasvd_exhaustive.py Codes/framework/tests/test_model_family_compat.py -v *> "$outDir\qwen_and_svd_tests.log"
+Get-Content "$outDir\qwen_and_svd_tests.log" -Tail 15
 
 Write-Host "[3/4] Running Full Master 203 Models Comprehensive Test Suite..." -ForegroundColor Cyan
 & $PythonExe Codes/framework/tests/test_all_203_models_comprehensive.py *> "$outDir\master_203_models.log"
