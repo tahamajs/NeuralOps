@@ -34,16 +34,17 @@ class LEKAV1Attention(BaseAttention):
 
     def __init__(
         self,
-        config: Any,
+        config: Optional[Any] = None,
         comp_config: Optional[Any] = None,
         layer_idx: int = 0,
         total_layers: int = 6,
         bert_mode: bool = False,
         rank: Optional[int] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_attention_heads: int = getattr(config, "num_attention_heads", 4)
-        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.num_attention_heads: int = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
+        hidden_size: int = getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
         self.attention_head_size: int = hidden_size // self.num_attention_heads if self.num_attention_heads > 0 else 64
         self.all_head_size: int = self.num_attention_heads * self.attention_head_size
         self.head_dim: int = self.attention_head_size
@@ -76,7 +77,10 @@ class LEKAV1Attention(BaseAttention):
                 proj_data[h].T if self.head_dim < self.feature_dim else proj_data[h]
             )
             if self.head_dim < self.feature_dim:
-                proj_data[h] = q_h.T[:self.feature_dim, :].T  # (head_dim, feature_dim)
+                # QR on the transposed matrix yields Q=[feature_dim, head_dim].
+                # Transpose it back to the required [head_dim, feature_dim]
+                # layout; slicing q_h.T before transposing swaps dimensions.
+                proj_data[h] = q_h.T  # (head_dim, feature_dim)
             else:
                 proj_data[h] = q_h[:, :self.feature_dim]  # (head_dim, feature_dim)
         self.register_buffer(
@@ -220,13 +224,14 @@ class LEKAV1Attention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("leka_v1_inject")
 def inject_leka_v1(
-    layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
+    layer: Optional[nn.Module] = None,
+    model_config: Optional[Any] = None,
+    comp_config: Optional[Any] = None,
+    layer_idx: int = 0,
+    total_layers: int = 6,
     old_attn: Optional[nn.Module] = None,
-    **kwargs) -> LEKAV1Attention:
+    **kwargs: Any,
+) -> LEKAV1Attention:
     r"""
     Injection hook for LEKAV1Attention into transformer layer.
 
