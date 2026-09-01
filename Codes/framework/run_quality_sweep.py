@@ -174,12 +174,61 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
     model.eval()
 
 
+def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4):
+    """Fine-tune LoRA adapters and sequence classification head with adaptive batch size."""
+    trainable = [p for p in model.parameters() if p.requires_grad]
+    if not trainable:
+        raise RuntimeError("No trainable LoRA or head parameters found")
+    LOG.info("LoRA fine-tuning: %d trainable parameters across %d tensors (lr=%.1e)",
+             sum(p.numel() for p in trainable), len(trainable), lr)
+    opt = torch.optim.AdamW(trainable, lr=lr, weight_decay=0.01)
+    scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
+    model.train()
+    curr_batch_size = batch_size
+
+    step = 0
+    while step < steps:
+        try:
+            i = (step * curr_batch_size) % max(1, len(train) - curr_batch_size)
+            x, y = encode(tokenizer, {k: train[k][i:i+curr_batch_size] for k in train.column_names}, name, seq_len, device)
+            opt.zero_grad(set_to_none=True)
+            with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+                loss = model(**x, labels=y).loss
+            scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(trainable, max_norm=1.0)
+            scaler.step(opt)
+            scaler.update()
+            if (step + 1) % 25 == 0 or step == steps - 1:
+                LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d)", step + 1, steps, float(loss), curr_batch_size)
+            step += 1
+        except torch.cuda.OutOfMemoryError:
+            if curr_batch_size > 1:
+                curr_batch_size //= 2
+                LOG.warning("CUDA OOM during LoRA training; reducing batch size to %d", curr_batch_size)
+                torch.cuda.empty_cache()
+            else:
+                raise
+    model.eval()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     ap.add_argument("--dataset_dir", required=True); ap.add_argument("--dataset", default="sst2")
     ap.add_argument("--output_dir", required=True); ap.add_argument("--modules", default="all")
     ap.add_argument("--max_steps", type=int, default=1); ap.add_argument("--finetune_steps", type=int, default=200)
+    ap.add_argument("--finetune_mode", choices=("head", "lora"), default="head",
+                    help="Fine-tune mode: head-only or full-backbone LoRA adapters")
+    ap.add_argument("--lora_r", type=int, default=16, help="LoRA rank dimension")
+    ap.add_argument("--lora_alpha", type=float, default=32.0, help="LoRA scaling alpha")
+    ap.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout probability")
+    ap.add_argument("--lora_target_modules", default="q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj",
+                    help="Comma-separated target submodule names for LoRA")
+    ap.add_argument("--recovery_steps", type=int, default=0,
+                    help="Post-injection LoRA recovery fine-tuning steps")
+    ap.add_argument("--recovery_modules", default="",
+                    help="Comma-separated module names to apply post-injection recovery fine-tuning")
     ap.add_argument("--seq_len", type=int, default=64); ap.add_argument("--timeout", type=int, default=1800)
     ap.add_argument("--precision", choices=("fp16", "fp32"), default="fp16"); ap.add_argument("--batch_size", type=int, default=8)
     ap.add_argument("--gradient_checkpointing_use_reentrant", default="False")
@@ -212,22 +261,66 @@ def main():
     LOG.info("detected model family=%s adapter=%s", family, adapter.as_dict())
     if hasattr(base, "gradient_checkpointing_enable"):
         base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+
+    # If LoRA mode is requested, apply LoRA wrappers to the backbone
+    if args.finetune_mode == "lora":
+        from framework.utils.lora import apply_lora, save_lora_weights, load_lora_weights
+        base, num_lora = apply_lora(
+            base,
+            r=args.lora_r,
+            alpha=args.lora_alpha,
+            dropout=args.lora_dropout,
+            target_modules=args.lora_target_modules,
+        )
+        # Ensure classification head is trainable
+        head = next((getattr(base, attr, None) for attr in
+                     ("score", "classifier", "classification_head", "classification_head.dense")
+                     if getattr(base, attr, None) is not None), None)
+        if head is not None:
+            for p in head.parameters(): p.requires_grad = True
+        LOG.info("Injected %d LoRALinear layers into %s backbone", num_lora, family)
+
     checkpoint = out / "finetuned_model.pt"
+    # Also support loading from shared parent LoRA baseline if specified in env/parent dir
+    parent_checkpoint = out.parent / "qwen_sst2_lora_baseline" / "finetuned_model.pt"
     if checkpoint.exists():
         LOG.info("Loading cached fine-tuned checkpoint: %s", checkpoint)
-        state = torch.load(checkpoint, map_location="cpu", weights_only=True)
-        base.load_state_dict(state)
+        state = torch.load(checkpoint, map_location="cpu", weights_only=False)
+        if isinstance(state, dict) and "state_dict" in state:
+            base.load_state_dict(state["state_dict"], strict=False)
+        else:
+            base.load_state_dict(state, strict=False)
+    elif parent_checkpoint.exists() and args.finetune_steps == 0:
+        LOG.info("Loading shared baseline checkpoint from parent directory: %s", parent_checkpoint)
+        state = torch.load(parent_checkpoint, map_location="cpu", weights_only=False)
+        if isinstance(state, dict) and "state_dict" in state:
+            base.load_state_dict(state["state_dict"], strict=False)
+        else:
+            base.load_state_dict(state, strict=False)
     else:
-        LOG.info("Fine-tuning classification head for %d steps before module injection", args.finetune_steps)
-        finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
-        torch.save(base.state_dict(), checkpoint)
-        LOG.info("Saved fine-tuned checkpoint: %s", checkpoint)
+        if args.finetune_steps > 0:
+            if args.finetune_mode == "lora":
+                LOG.info("Fine-tuning LoRA adapters for %d steps before module injection", args.finetune_steps)
+                finetune_lora(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
+                from framework.utils.lora import save_lora_weights
+                save_lora_weights(base, str(checkpoint), metadata={"finetune_mode": "lora", "steps": args.finetune_steps, "dataset": args.dataset, "seed": args.seed})
+            else:
+                LOG.info("Fine-tuning classification head for %d steps before module injection", args.finetune_steps)
+                finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
+                torch.save(base.state_dict(), checkpoint)
+            LOG.info("Saved fine-tuned checkpoint: %s", checkpoint)
     if args.precision == "fp16": base.half()
     # Keep exactly one fine-tuned checkpoint in host memory. Module workers
     # receive independent CPU copies, then only the active copy is transferred
-    # to CUDA. This avoids reloading 988 MB of weights for every module.
+    # to CUDA. This avoids reloading weights for every module.
     base.cpu()
-    (out / "finetune_metadata.json").write_text(json.dumps({"classification_head_trained": True, "steps": args.finetune_steps, "dataset": args.dataset, "seed": args.seed}), encoding="utf-8")
+    (out / "finetune_metadata.json").write_text(json.dumps({
+        "classification_head_trained": True,
+        "finetune_mode": args.finetune_mode,
+        "steps": args.finetune_steps,
+        "dataset": args.dataset,
+        "seed": args.seed
+    }), encoding="utf-8")
     names = modules() if args.modules == "all" else [x.strip() for x in args.modules.split(",") if x.strip()]
     path = out / "summary.csv"; existing = {r["module_name"] for r in csv.DictReader(path.open())} if path.exists() else set()
     # Deep-copying CPU tensors is safe to overlap with the active CUDA
@@ -291,6 +384,13 @@ def main():
                     injected = True
                     path_name = "adapted_qwen" if qwen else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
+                    if args.recovery_steps > 0:
+                        recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
+                        if not recovery_targets or name in recovery_targets:
+                            LOG.info("Running %d LoRA recovery fine-tuning steps for %s", args.recovery_steps, name)
+                            trainable = [p for p in model.parameters() if p.requires_grad]
+                            if trainable:
+                                finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device), 2)
             except QwenIncompatibleError as exc:
                 status, err = "SKIP_QWEN_INCOMPATIBLE", str(exc)
