@@ -79,3 +79,45 @@ hgrn2_gated_deltanet,PASS,51.72,89.02,fp32 retry: expected scalar type Half but 
 hgrn2_layer,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T22:03:34.696121
 hgrn2_outer,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T22:03:34.696600
 hla,SKIP_QWEN_INCOMPATIBLE,0.0,0.93,"hla: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:03:35.630470
+huffman,SKIP_SLOW,0.0,700.0,stalled_more_than_10_minutes,adapted_qwen,2026-09-01T22:15:22.599094
+hybrid_svd,PASS,48.85,286.93,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:21:03.585536
+hybridkv,PASS,88.76,39.4,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:21:43.860194
+hymba_transx,PASS,46.79,69.21,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: float != struct c10::Half",adapted_qwen,2026-09-01T22:22:53.559469
+infini,SKIP_QWEN_INCOMPATIBLE,0.0,0.47,"infini: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:22:54.457103
+jamba,SKIP_QWEN_INCOMPATIBLE,0.0,1.0,"jamba: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:22:55.812504
+jamba_info,PASS,51.49,56.64,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: float != struct c10::Half",adapted_qwen,2026-09-01T22:23:52.820549
+kda,SKIP_QWEN_INCOMPATIBLE,0.0,0.48,"kda: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:23:53.893818
+kmeans,PASS,88.3,75.9,,adapted_qwen,2026-09-01T22:25:10.127750
+kronecker,PASS,50.92,113.59,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:27:04.282148
+kronecker_tt_lora,PASS,88.76,304.19,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:32:08.960543
+kvtc,PASS,49.08,58.19,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:33:07.775663
+leka_v1,SKIP_QWEN_INCOMPATIBLE,0.0,0.57,"leka_v1: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:33:08.728012
+leka_v2,SKIP_QWEN_INCOMPATIBLE,0.0,0.75,"leka_v2: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:33:09.779804
+leka_v3,SKIP_QWEN_INCOMPATIBLE,0.0,0.74,"leka_v3: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:33:10.845619
+liftr,FAIL,0.0,0.9,"RuntimeError: Expected size for first two dimensions of batch2 tensor to be: [4, 128] but got: [4, 896].",adapted_qwen,2026-09-01T22:33:12.038200
+lillama,PASS,49.08,606.41,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:43:18.752438
+linformer,SKIP_QWEN_INCOMPATIBLE,0.0,0.5,"linformer: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:43:19.633567
+lola,SKIP_QWEN_INCOMPATIBLE,0.0,3.81,"lola: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:43:23.759651
+lora_attn,SKIP_QWEN_INCOMPATIBLE,0.0,0.67,"lora_attn: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:43:24.806236
+lsc,PASS,49.08,45.36,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:44:10.508379
+lsh,SKIP_QWEN_INCOMPATIBLE,0.0,0.46,"lsh: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:44:11.537976
+mamba,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T22:44:11.850122
+mamba_shedder,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T22:44:11.850483
+mamba_svd_flash,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T22:44:11.850757
+mgie,PASS,48.85,202.75,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:47:34.604081
+mgie_budget,PASS,48.85,195.5,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:50:50.664136
+minimal_aurora,SKIP_QWEN_INCOMPATIBLE,0.0,3.53,"minimal_aurora: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:50:54.964359
+minimal_nova,SKIP_QWEN_INCOMPATIBLE,0.0,3.35,"minimal_nova: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:50:58.780432
+minimal_prism,SKIP_QWEN_INCOMPATIBLE,0.0,3.43,"minimal_prism: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:51:02.515469
+minimal_svd,SKIP_QWEN_INCOMPATIBLE,0.0,3.45,"minimal_svd: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:51:06.326836
+minimal_svd_v2,SKIP_QWEN_INCOMPATIBLE,0.0,3.63,"minimal_svd_v2: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:51:10.235630
+mixattention_moska,PASS,49.43,35.98,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:51:46.485128
+mla,SKIP,0.0,1.14,RuntimeError: mat1 and mat2 shapes cannot be multiplied (96x3584 and 896x896),adapted_qwen,2026-09-01T22:51:48.232151
+mlorq,PASS,87.61,587.93,"fp32 retry: self and mat2 must have the same dtype, but got Float and Half",adapted_qwen,2026-09-01T23:01:36.561308
+moba,SKIP_QWEN_INCOMPATIBLE,0.0,0.55,"moba: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:01:37.877757
+modegpt,PASS,49.08,60.88,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:02:39.059628
+moe_deltakv_paged,SKIP_QWEN_INCOMPATIBLE,0.0,0.57,"moe_deltakv_paged: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:02:40.144570
+nasc,SKIP_QWEN_INCOMPATIBLE,0.0,2.72,"nasc: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:02:43.168027
+nexus,SKIP_QWEN_INCOMPATIBLE,0.0,0.78,"nexus: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:02:44.373978
+nha,SKIP_QWEN_INCOMPATIBLE,0.0,0.86,"nha: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:02:45.580312
+nli_softmax,PASS,88.76,38.12,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:03:23.995198
