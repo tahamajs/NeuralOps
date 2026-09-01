@@ -252,7 +252,7 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
         if not parts or not parts[-1]:
             continue
         leaf = parts[-1].lower()
-        if leaf in ["attention", "self_attn", "self", "attn"] or isinstance(module, nn.MultiheadAttention):
+        if leaf in ["attention", "self_attn", "self", "attn", "selfattention", "encdecattention"] or isinstance(module, nn.MultiheadAttention):
             if not any(name.startswith(t[0] + ".") for t in targets):
                 layer_idx = 0
                 for part in parts:
