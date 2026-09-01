@@ -40,7 +40,9 @@ class LoRALinear(nn.Module):
             self.base_layer.bias.requires_grad = False
 
         device = linear.weight.device
-        dtype = linear.weight.dtype
+        # Trainable LoRA parameters are kept in FP32 for numerical stability
+        # and compatibility with torch.amp.GradScaler in mixed precision.
+        dtype = torch.float32
 
         # LoRA trainable low-rank matrices
         if self.r > 0:
@@ -85,17 +87,11 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass combining base projection with low-rank adapter delta."""
-        # Ensure base layer matches input dtype
-        if self.base_layer.weight.dtype != x.dtype and x.dtype in (torch.float16, torch.bfloat16, torch.float32):
-            self.base_layer.to(dtype=x.dtype)
-        if self.r > 0 and self.lora_A is not None and self.lora_A.weight.dtype != x.dtype:
-            self.lora_A.to(dtype=x.dtype)
-            self.lora_B.to(dtype=x.dtype)
-
         base_out = self.base_layer(x)
         if self.r > 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
-            lora_out = self.lora_B(self.lora_A(self.lora_dropout(x))) * self.scaling
-            return base_out + lora_out
+            lora_in = self.lora_dropout(x).to(dtype=self.lora_A.weight.dtype)
+            lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
+            return base_out + lora_out.to(dtype=base_out.dtype)
         return base_out
 
     def __repr__(self) -> str:
