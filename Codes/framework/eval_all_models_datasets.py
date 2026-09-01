@@ -121,6 +121,20 @@ def build_model_instance(
             vocab_size=32128,
         )
         model = T5EncoderModel(cfg)
+    elif family in {"qwen", "qwen2"}:
+        from transformers import Qwen2Config, Qwen2ForSequenceClassification
+        cfg = Qwen2Config(
+            hidden_size=hidden_size,
+            intermediate_size=hidden_size * 4,
+            num_hidden_layers=num_layers,
+            num_attention_heads=num_heads,
+            num_key_value_heads=max(1, num_heads // 2),
+            num_labels=num_labels,
+            vocab_size=1000,
+            max_position_embeddings=512,
+            pad_token_id=0,
+        )
+        model = Qwen2ForSequenceClassification(cfg)
     else:
         raise ValueError(f"Unknown model family: {family}")
 
