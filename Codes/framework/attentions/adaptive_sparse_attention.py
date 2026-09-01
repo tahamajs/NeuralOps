@@ -157,7 +157,7 @@ class AdaptiveSparseAttention(BaseAttention):
 
         scores = torch.cat(sparse_scores, dim=1)  # [B, H, N, N]
 
-        attn = F.softmax(scores, dim=-1)
+        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
 
         if head_mask is not None:
