@@ -205,12 +205,13 @@ def inject_factorised_matrix_state(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> FactorisedMatrixState:
-    r"""Injection hook for FactorisedMatrixState."""
-    d_model = 128
-    num_heads = 4
+    if model_config is not None:
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+        num_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "n_heads", 12))
+    else:
+        d_model = kwargs.pop("d_model", kwargs.pop("hidden_size", 768))
+        num_heads = kwargs.pop("num_heads", kwargs.pop("num_attention_heads", 12))
     rank = kwargs.pop("rank", getattr(comp_config, "rank", 32) if comp_config else 32)
-    kwargs.pop("d_model", None)
-    kwargs.pop("num_heads", None)
     kwargs.pop("config", None)
     new_block = FactorisedMatrixState(config=model_config, rank=rank, d_model=d_model, num_heads=num_heads, **kwargs)
     src_attn = old_attn if old_attn is not None else layer
