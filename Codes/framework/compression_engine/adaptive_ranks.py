@@ -82,6 +82,11 @@ class AdaptiveRanksCompressor(BaseCompressor):
             return False
         if not isinstance(module, (nn.Linear, nn.MultiheadAttention)):
             return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
+            return False
+        if isinstance(module, nn.Linear) and min(module.in_features, module.out_features) < 16:
+            return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)

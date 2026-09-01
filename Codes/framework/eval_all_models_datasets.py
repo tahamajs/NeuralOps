@@ -128,6 +128,28 @@ def build_model_instance(
     return model, cfg
 
 
+def _generate_synthetic_batch(
+    dataset_name: str = "sst2",
+    batch_size: int = 4,
+    seq_len: int = 32,
+    vocab_size: int = 30522,
+    num_labels: int = 2,
+    device: Any = "cpu",
+) -> dict:
+    """Generate synthetic batch dict for GLUE and other text classification tasks."""
+    dev = torch.device(device)
+    b = {
+        "input_ids": torch.randint(100, max(101, vocab_size - 100), (batch_size, seq_len), device=dev),
+        "attention_mask": torch.ones(batch_size, seq_len, dtype=torch.long, device=dev),
+        "token_type_ids": torch.zeros(batch_size, seq_len, dtype=torch.long, device=dev),
+    }
+    if num_labels == 1:
+        b["labels"] = torch.randn(batch_size, dtype=torch.float32, device=dev)
+    else:
+        b["labels"] = torch.randint(0, num_labels, (batch_size,), dtype=torch.long, device=dev)
+    return b
+
+
 def get_dataset_batch(
     family: str,
     batch_size: int = 4,
