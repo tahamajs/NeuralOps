@@ -80,56 +80,39 @@ class MockDistilBertLayer(nn.Module):
 
 
 def instantiate_attention(cls_or_func, config, mock_layer):
-    patterns = [
-        lambda: cls_or_func(config),
-        lambda: cls_or_func(embed_dim=768, num_heads=12),
-        lambda: cls_or_func(dim=768),
-        lambda: cls_or_func(hidden_size=768),
-        lambda: cls_or_func(
-            layer=mock_layer,
-            model_config=config,
-            comp_config=None,
-            layer_idx=0,
-            total_layers=6,
-            old_attn=mock_layer.attention
-        ),
-        lambda: cls_or_func(
-            mock_layer,
-            config,
-            None,
-            0,
-            6,
-            mock_layer.attention
-        ),
-        lambda: cls_or_func(
-            layer=mock_layer,
-            model_config=config,
-            comp_config=None,
-            layer_idx=0,
-            total_layers=6
-        ),
-        lambda: cls_or_func(
-            mock_layer,
-            config,
-            None,
-            0,
-            6
-        ),
-        lambda: cls_or_func(
-            model_config=config,
-            comp_config=None,
-            layer_idx=0,
-            total_layers=6,
-            old_attn=mock_layer.attention
-        ),
-        lambda: cls_or_func(
-            model_config=config,
-            comp_config=None,
-            layer_idx=0,
-            total_layers=6
-        ),
-        lambda: cls_or_func(),
-    ]
+    if isinstance(cls_or_func, type) and issubclass(cls_or_func, nn.Module):
+        patterns = [
+            lambda: cls_or_func(config),
+            lambda: cls_or_func(config=config, rank=32),
+            lambda: cls_or_func(embed_dim=768, num_heads=12),
+            lambda: cls_or_func(dim=768),
+            lambda: cls_or_func(hidden_size=768),
+            lambda: cls_or_func(),
+        ]
+    else:
+        # Factory / injection function
+        patterns = [
+            lambda: cls_or_func(
+                layer=mock_layer,
+                model_config=config,
+                comp_config=None,
+                layer_idx=0,
+                total_layers=6,
+                old_attn=mock_layer.attention,
+            ),
+            lambda: cls_or_func(mock_layer, config, None, 0, 6, mock_layer.attention),
+            lambda: cls_or_func(
+                layer=mock_layer,
+                model_config=config,
+                comp_config=None,
+                layer_idx=0,
+                total_layers=6,
+            ),
+            lambda: cls_or_func(mock_layer, config, None, 0, 6),
+            lambda: cls_or_func(config),
+            lambda: cls_or_func(dim=768),
+            lambda: cls_or_func(),
+        ]
     last_err = None
     for p in patterns:
         try:
