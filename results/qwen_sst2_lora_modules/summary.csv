@@ -153,3 +153,9 @@ samba_moe,PASS,49.08,152.85,fp32 retry: expected scalar type Half but found Floa
 sdrm,PASS,48.51,57.41,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:56:48.363241
 simple_ssm,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T23:56:48.878940
 slicegpt,SKIP_SLOW,0.0,780.0,stalled_more_than_10_minutes,adapted_qwen,2026-09-02T00:09:54.012199
+slicegpt_pca,PASS,49.08,1652.83,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-02T00:38:01.093138
+slim,PASS,50.0,85.98,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-02T00:39:28.328942
+soa_attn,PASS,50.34,42.92,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-02T00:40:11.642451
+soa_fused_attn,PASS,48.39,27.89,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-02T00:40:39.895174
+soka,PASS,51.15,72.99,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-02T00:41:53.210540
+span_expanded,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-02T00:41:53.643112
