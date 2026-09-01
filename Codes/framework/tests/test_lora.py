@@ -148,9 +148,14 @@ class TestApplyLoRAOnModels:
             nn.Linear(64, 2),
         )
         model, count = apply_lora(base, r=4, alpha=8.0)
-        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as tmp:
-            save_lora_weights(model, tmp.name, metadata={"steps": 50})
-            assert os.path.exists(tmp.name)
-            res = load_lora_weights(model, tmp.name)
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".pt", delete=False)
+        tmp_path = tmp_file.name
+        tmp_file.close()
+        try:
+            save_lora_weights(model, tmp_path, metadata={"steps": 50})
+            assert os.path.exists(tmp_path)
+            res = load_lora_weights(model, tmp_path)
             assert res["metadata"]["steps"] == 50
-            os.unlink(tmp.name)
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
