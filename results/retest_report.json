@@ -1,0 +1,47 @@
+{
+  "factorised_matrix_state": {
+    "module_name": "factorised_matrix_state",
+    "status": "PASS",
+    "fwd_ms": 7.8,
+    "bwd_ms": 10.99,
+    "peak_vram_mb": 0.0,
+    "final_loss": 0.6925,
+    "grad_norm": 3.3109
+  },
+  "mamba_svd_flash": {
+    "module_name": "mamba_svd_flash",
+    "status": "PASS",
+    "fwd_ms": 228.46,
+    "bwd_ms": 134.37,
+    "peak_vram_mb": 0.0,
+    "final_loss": 0.757,
+    "grad_norm": 7.644
+  },
+  "gated_delta_net": {
+    "module_name": "gated_delta_net",
+    "status": "PASS",
+    "fwd_ms": 6.1,
+    "bwd_ms": 17.4,
+    "peak_vram_mb": 0.0,
+    "final_loss": 0.6545,
+    "grad_norm": 771.9596
+  },
+  "gated_deltanet_block": {
+    "module_name": "gated_deltanet_block",
+    "status": "PASS",
+    "fwd_ms": 16.28,
+    "bwd_ms": 14.83,
+    "peak_vram_mb": 0.0,
+    "final_loss": 0.6824,
+    "grad_norm": 2.9419
+  },
+  "simple_ssm": {
+    "module_name": "simple_ssm",
+    "status": "PASS",
+    "fwd_ms": 491.01,
+    "bwd_ms": 1254.12,
+    "peak_vram_mb": 0.0,
+    "final_loss": 0.6857,
+    "grad_norm": 2.1179
+  }
+}

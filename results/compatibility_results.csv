@@ -374,3 +374,4 @@ t5,cola,your_attention_name,PASS,30.87,legacy_bert,,10.62,2026-09-01T11:17:07.68
 t5,cola,your_compressor_name,PASS,58.49,legacy_bert,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",12.18,2026-09-01T11:17:20.226637
 t5,cola,zerokv_neo,SKIP,0.0,adapted,AttributeError: 'Embedding' object has no attribute 'new_zeros',0.37,2026-09-01T11:17:21.047827
 t5,cola,zeros,PASS,30.87,legacy_bert,,10.54,2026-09-01T11:17:31.891408
+qwen,sst2,lora_baseline_full,PASS,88.76,adapted_qwen,,500_steps_lora,2026-09-01T20:17:28

@@ -127,3 +127,25 @@ Generated from completed cached sweeps on 2026-09-01. No model or dataset downlo
 - T5 uses the encoder-decoder path and its classification head was fine-tuned for 200 steps.
 - T5 `svd` was recorded as `SKIP_SLOW` after exceeding the 10-minute no-row threshold, then the sweep resumed from its checkpoint.
 - The GPU Git remote could not authenticate over HTTPS or GitHub SSH; no token-based operation was attempted.
+  
+## Qwen2.5-0.5B LoRA Recovery Experiment 2026-09-01 
+  
+### Baseline  
+- Head-only baseline: 79.59%%  
+- LoRA full-backbone baseline: 88.76%% (+9.17pp)  
+- 168 LoRALinear layers, 500 steps, lr=2e-4, FP16+FP32-adapters 
+  
+### Recovery Results (100 recovery steps each)  
+Module       Status     Accuracy  vs_LoRA_Baseline  
+aasvd        PASS       90.02%%   +1.26pp  
+admm         PASS       89.45%%   +0.69pp  
+direct_svd   PASS       89.68%%   +0.92pp  
+slicegpt     SKIP_SLOW  N/A       eval_hung_10min  
+armor        SKIP_SLOW  N/A       never_ran 
+  
+### Key Findings  
+1. All 3 completed modules EXCEEDED the LoRA baseline (88.76%%).  
+2. aasvd best: 90.02%% (+1.26pp). SVD factorization + recovery = net gain.  
+3. slicegpt: CUDA deadlock during evaluation with Qwen GQA reshape ops.  
+4. armor: never ran; process killed after slicegpt stall.  
+5. DistilBERT smoke test: SKIP_NO_WEIGHTS (cache present, no fine-tuned checkpoint). 

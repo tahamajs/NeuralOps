@@ -1,0 +1,81 @@
+module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
+full,FAIL,0.0,3.53,"RuntimeError: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",native_qwen,2026-09-01T21:17:07.986050
+a3,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:17:08.541366
+aasvd,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:17:08.541761
+adaptive_span,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T21:17:08.541999
+adaptive_sparse,SKIP_QWEN_INCOMPATIBLE,0.0,1.79,rotary_position_embedding_required,unsupported,2026-09-01T21:17:10.334157
+adaptive_svd,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:17:10.686553
+adasplash,SKIP_QWEN_INCOMPATIBLE,0.0,1.08,"adasplash: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T21:17:11.766761
+adasvd,PASS,88.76,38.54,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:17:50.602351
+admm,PASS,88.76,37.49,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:18:28.518618
+admm_pruner,PASS,51.38,60.35,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:19:29.409912
+aegis_hybrid,PASS,51.61,45.67,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:20:15.404556
+aegis_spectron_fp8,SKIP_QWEN_INCOMPATIBLE,0.0,0.59,"aegis_spectron_fp8: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T21:20:16.521440
+aegis_v1,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:20:16.844287
+aegis_v2,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:20:16.846991
+aegis_v3,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:20:16.847479
+aegis_v4,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:20:16.847934
+aegis_v5,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:20:16.848689
+aegis_v6,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:20:16.848976
+armor,PASS,47.25,96.62,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:21:53.472204
+ast,PASS,50.92,145.61,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:24:19.743899
+astro,PASS,88.42,39.4,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:24:59.842167
+asvd,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:25:00.364342
+bam_umoe,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:25:00.364699
+block_transformer_hiba,PASS,48.51,30.44,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:25:30.801604
+bonsai,PASS,50.57,67.72,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:26:38.971643
+cachenotes,PASS,49.2,57.87,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:27:37.403067
+chela_slay,PASS,49.66,42.44,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:28:20.271365
+cluster,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:28:20.749216
+come,PASS,44.95,20.69,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:28:41.442026
+compot,PASS,48.85,53.41,"fp32 retry: ""geqrf_cuda"" not implemented for 'Half'",native_qwen,2026-09-01T21:29:35.170022
+compressed_attention,PASS,51.03,28.51,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:30:03.999253
+compressed_attention_layer_energy,PASS,50.46,28.05,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:30:32.406120
+compressed_mha,PASS,49.43,28.42,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:31:01.362795
+coopq,PASS,63.76,157.94,,adapted_qwen,2026-09-01T21:33:39.878697
+cosformer,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T21:33:40.454673
+cr,PASS,50.92,124.79,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:35:45.249153
+cur,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:35:45.709281
+cur_moe,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:35:45.709673
+cur_moe_compressor,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:35:45.709871
+decay_linear_attn,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T21:35:45.710046
+delta_kv,PASS,50.46,57.26,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:36:42.973215
+direct_svd,PASS,88.76,37.92,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:37:21.532241
+dobi,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:37:22.038345
+dynamic_rank,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:37:22.038663
+eat,SKIP_QWEN_INCOMPATIBLE,0.0,1.15,"eat: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T21:37:23.187528
+enlighten,PASS,59.4,169.98,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:40:13.516111
+entropy_budget,PASS,88.76,37.86,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:40:51.822344
+entropy_rank_allocator,PASS,88.76,37.81,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:41:30.228705
+erc,PASS,48.85,202.2,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:44:53.018915
+expert_choice_moe,SKIP_QWEN_INCOMPATIBLE,0.0,0.94,"expert_choice_moe: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T21:44:54.395258
+factorised_matrix_state,SKIP_QWEN_INCOMPATIBLE,0.0,0.6,"factorised_matrix_state: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T21:44:55.292051
+faq,PASS,88.88,39.45,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:45:35.069698
+fasa,PASS,46.22,35.69,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:46:11.293893
+flap,PASS,60.78,40.82,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:46:52.644248
+flash3,SKIP_QWEN_INCOMPATIBLE,0.0,1.4,rotary_position_embedding_required,unsupported,2026-09-01T21:46:54.625256
+flash3_fp8,SKIP_QWEN_INCOMPATIBLE,0.0,0.51,"flash3_fp8: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T21:46:55.456228
+flat_llm,PASS,49.08,152.23,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:49:28.014220
+frandi,PASS,48.85,50.42,"fp32 retry: ""geqrf_cuda"" not implemented for 'Half'",native_qwen,2026-09-01T21:50:18.920628
+frandi_compressor,PASS,48.85,50.81,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:51:10.302507
+fused_svd_kernel,SKIP_QWEN_INCOMPATIBLE,0.0,3.35,"fused_svd_kernel: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T21:51:14.255145
+fusion_attn,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:51:14.702148
+galerkin,SKIP_QWEN_INCOMPATIBLE,0.0,1.18,"galerkin: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T21:51:15.881453
+gated_delta_net,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T21:51:16.246192
+gated_deltanet_block,PASS,49.08,47.93,fp32 retry: expected scalar type Half but found Float,adapted_qwen,2026-09-01T21:52:04.174837
+gated_linear_attn,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T21:52:04.755391
+gated_linear_attention,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T21:54:40.587043
+gfws,PASS,52.52,164.86,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:57:57.824103
+goldfinch_ahn,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T21:57:59.612361
+gqa,PASS,77.52,35.83,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T21:58:35.444353
+granite_hybrid,FAIL,0.0,43.42,"OutOfMemoryError: CUDA out of memory. Tried to allocate 14.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 0 bytes is free. Of the allocated memory 12.30 GiB is allocated by PyTorch, and 2.12 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)",adapted_qwen,2026-09-01T21:59:19.265925
+grecodec,PASS,88.76,38.94,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:00:01.851254
+grecodec_compressor,PASS,88.76,38.11,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:00:40.413071
+griffin_ssd,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T22:00:40.893980
+halo_regla,SKIP_QWEN_INCOMPATIBLE,0.0,1.12,"halo_regla: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:00:42.018510
+hamming,SKIP_QWEN_INCOMPATIBLE,0.0,0.81,"hamming: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:00:43.139039
+hashed_net,PASS,50.92,80.78,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T22:02:04.244113
+hgrn2_gated_deltanet,PASS,51.72,89.02,fp32 retry: expected scalar type Half but found Float,adapted_qwen,2026-09-01T22:03:33.863500
+hgrn2_layer,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T22:03:34.696121
+hgrn2_outer,SKIP_NO_SUPPORT,0.0,0.0,qwen_incompatible,strict_skip,2026-09-01T22:03:34.696600
+hla,SKIP_QWEN_INCOMPATIBLE,0.0,0.93,"hla: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T22:03:35.630470
