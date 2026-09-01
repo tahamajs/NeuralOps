@@ -30,7 +30,12 @@ class WeightedGroupedQueryAttention(BaseAttention):
         super().__init__(config, rank)
         self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_kv_heads: int = min(num_kv_heads, self.num_heads)
+        cfg_kv = getattr(config, "num_key_value_heads", None)
+        if cfg_kv is not None:
+            self.num_kv_heads = int(cfg_kv)
+        else:
+            self.num_kv_heads = min(num_kv_heads, self.num_heads)
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.head_dim: int = self.hidden_size // self.num_heads
 
         # Learnable per-KV-head importance weights
@@ -105,9 +110,17 @@ class WeightedGroupedQueryAttention(BaseAttention):
         k = k * self.k_weights.view(1, 1, self.num_kv_heads, 1)
         v = v * self.v_weights.view(1, 1, self.num_kv_heads, 1)
 
-        repeat_factor = self.num_heads // self.num_kv_heads
-        k = k.repeat_interleave(repeat_factor, dim=2)
-        v = v.repeat_interleave(repeat_factor, dim=2)
+        repeat_factor = max(1, self.num_heads // max(1, self.num_kv_heads))
+        if repeat_factor > 1:
+            k = k.repeat_interleave(repeat_factor, dim=2)
+            v = v.repeat_interleave(repeat_factor, dim=2)
+        if k.shape[2] < self.num_heads:
+            diff = self.num_heads - k.shape[2]
+            k = torch.cat([k, k[:, :, :diff]], dim=2)
+            v = torch.cat([v, v[:, :, :diff]], dim=2)
+        elif k.shape[2] > self.num_heads:
+            k = k[:, :, :self.num_heads]
+            v = v[:, :, :self.num_heads]
 
         q = q.transpose(1, 2)  # (B, H_q, L, d)
         k = k.transpose(1, 2)

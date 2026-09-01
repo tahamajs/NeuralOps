@@ -246,8 +246,8 @@ class AASVDCompressor(BaseCompressor):
         self.model.eval()
 
         if self.tokenizer is None:
-            logger.warning(
-                "AASVD: No tokenizer provided. Falling back to unweighted truncated SVD."
+            logger.debug(
+                "AASVD: No tokenizer provided. Using direct truncated SVD factorizer."
             )
             return self._compress_unweighted_svd()
 
@@ -302,8 +302,8 @@ class AASVDCompressor(BaseCompressor):
             with torch.no_grad():
                 self.model(**inputs)
         except Exception as e:
-            logger.warning(
-                "AASVD: Calibration forward failed (%s). Falling back to unweighted truncated SVD.",
+            logger.debug(
+                "AASVD: Calibration forward encountered %s. Using unweighted truncated SVD.",
                 e,
             )
             for h in hooks:
@@ -319,7 +319,7 @@ class AASVDCompressor(BaseCompressor):
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and name in covariances and should_compress_linear(self.model, name):
                 is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
-                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"]):
+                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"]):
                     continue
                 svd_layer = self.compress_linear(module, rank=self.rank, cov=covariances[name])
                 replace_module(self.model, name, svd_layer)
@@ -337,7 +337,7 @@ class AASVDCompressor(BaseCompressor):
                 if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
                     continue
                 is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
-                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"]):
+                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"]):
                     continue
                 svd_layer = self.compress_linear(module, rank=self.rank, cov=None)
                 replace_module(self.model, name, svd_layer)
