@@ -179,6 +179,10 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     trainable = [p for p in model.parameters() if p.requires_grad]
     if not trainable:
         raise RuntimeError("No trainable LoRA or head parameters found")
+    # Ensure all trainable parameters are in FP32 for GradScaler mixed precision
+    for p in trainable:
+        if p.dtype != torch.float32:
+            p.data = p.data.float()
     LOG.info("LoRA fine-tuning: %d trainable parameters across %d tensors (lr=%.1e)",
              sum(p.numel() for p in trainable), len(trainable), lr)
     opt = torch.optim.AdamW(trainable, lr=lr, weight_decay=0.01)
@@ -310,7 +314,10 @@ def main():
                 finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
                 torch.save(base.state_dict(), checkpoint)
             LOG.info("Saved fine-tuned checkpoint: %s", checkpoint)
-    if args.precision == "fp16": base.half()
+    if args.precision == "fp16":
+        for name, p in base.named_parameters():
+            if not p.requires_grad:
+                p.data = p.data.half()
     # Keep exactly one fine-tuned checkpoint in host memory. Module workers
     # receive independent CPU copies, then only the active copy is transferred
     # to CUDA. This avoids reloading weights for every module.
