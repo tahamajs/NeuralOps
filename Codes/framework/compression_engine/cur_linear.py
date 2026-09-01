@@ -59,6 +59,20 @@ def select_indices(scores: torch.Tensor, k: int, deterministic: bool = True) -> 
         return idx
 
 
+def tikhonov_pinv(A: torch.Tensor, reg: float = 1e-3) -> torch.Tensor:
+    """
+    Computes Tikhonov regularized pseudo-inverse of matrix A: (A^T A + reg * I)^(-1) A^T
+    or via SVD regularized inversion for numerical stability.
+    """
+    try:
+        u, s, vt = torch.linalg.svd(A.float(), full_matrices=False)
+        eps = reg * s.max().clamp_min(1e-6)
+        s_inv = s / (s**2 + eps**2)
+        return torch.matmul(vt.T, torch.matmul(torch.diag(s_inv), u.T)).to(dtype=A.dtype)
+    except Exception:
+        return torch.linalg.pinv(A.float(), rcond=reg).to(dtype=A.dtype)
+
+
 class CURLinear(nn.Module):
     """
     Linear layer whose weight matrix is factorized via CUR cross-approximation:

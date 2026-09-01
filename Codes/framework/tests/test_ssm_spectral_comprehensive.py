@@ -1,3 +1,4 @@
+import pytest
 import torch
 import torch.nn as nn
 from typing import Optional, Tuple
@@ -8,6 +9,15 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from framework.core.registry import ATTENTION_REGISTRY
 
+MODULES_TO_TEST = [
+    "mamba", "mamba_svd_flash", "spectral_mamba", "upi_stuffed_mamba",
+    "simple_ssm", "decay_linear_attention", "gated_linear_attention",
+    "factorised_matrix_state", "soa_fused_attention", "soa_attn",
+    "leka_v1", "leka_v2", "leka_v3"
+]
+
+
+@pytest.mark.parametrize("module_name", MODULES_TO_TEST)
 def test_module(module_name: str, B=2, L=128, D=768):
     if module_name not in ATTENTION_REGISTRY:
         print(f"Skipping {module_name} (not in registry)")

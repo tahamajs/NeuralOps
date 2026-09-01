@@ -55,3 +55,130 @@ def apply_module_to_model(model: nn.Module, module_name: str, module_type: str,
     model.to(device)
     current = sum(p.numel() for p in model.parameters())
     return model, original / max(1, current)
+
+
+def build_model_instance(
+    family: str,
+    num_labels: int = 2,
+    hidden_size: int = 64,
+    num_heads: int = 4,
+    num_layers: int = 1,
+    device: torch.device = torch.device("cpu"),
+) -> Tuple[nn.Module, Any]:
+    """Build a tiny model instance of the given family for testing/eval."""
+    family = family.lower()
+    if family == "bert":
+        from transformers import BertConfig, BertForSequenceClassification
+        cfg = BertConfig(
+            hidden_size=hidden_size,
+            num_attention_heads=num_heads,
+            num_hidden_layers=num_layers,
+            intermediate_size=hidden_size * 4,
+            num_labels=num_labels,
+            vocab_size=30522,
+        )
+        model = BertForSequenceClassification(cfg)
+    elif family == "roberta":
+        from transformers import RobertaConfig, RobertaForSequenceClassification
+        cfg = RobertaConfig(
+            hidden_size=hidden_size,
+            num_attention_heads=num_heads,
+            num_hidden_layers=num_layers,
+            intermediate_size=hidden_size * 4,
+            num_labels=num_labels,
+            vocab_size=50265,
+        )
+        model = RobertaForSequenceClassification(cfg)
+    elif family == "distilbert":
+        from transformers import DistilBertConfig, DistilBertForSequenceClassification
+        cfg = DistilBertConfig(
+            dim=hidden_size,
+            n_heads=num_heads,
+            n_layers=num_layers,
+            hidden_dim=hidden_size * 4,
+            num_labels=num_labels,
+            vocab_size=30522,
+        )
+        model = DistilBertForSequenceClassification(cfg)
+    elif family == "gpt2":
+        from transformers import GPT2Config, GPT2LMHeadModel
+        cfg = GPT2Config(
+            n_embd=hidden_size,
+            n_head=num_heads,
+            n_layer=num_layers,
+            n_inner=hidden_size * 4,
+            vocab_size=50257,
+        )
+        model = GPT2LMHeadModel(cfg)
+    elif family == "t5":
+        from transformers import T5Config, T5EncoderModel
+        cfg = T5Config(
+            d_model=hidden_size,
+            num_heads=num_heads,
+            num_layers=num_layers,
+            d_kv=hidden_size // num_heads,
+            d_ff=hidden_size * 4,
+            vocab_size=32128,
+        )
+        model = T5EncoderModel(cfg)
+    else:
+        raise ValueError(f"Unknown model family: {family}")
+
+    model.to(device)
+    return model, cfg
+
+
+def get_dataset_batch(
+    family: str,
+    batch_size: int = 4,
+    seq_len: int = 32,
+    device: Any = "cpu",
+) -> dict:
+    """Generate a synthetic test batch suitable for the given model family."""
+    dev = torch.device(device)
+    family = family.lower()
+    vocab_size = 50265 if family == "roberta" else (50257 if family == "gpt2" else 30522)
+    b = {
+        "input_ids": torch.randint(100, vocab_size - 100, (batch_size, seq_len), device=dev),
+        "attention_mask": torch.ones(batch_size, seq_len, dtype=torch.long, device=dev),
+    }
+    if family not in {"t5", "gpt2"}:
+        b["token_type_ids"] = torch.zeros(batch_size, seq_len, dtype=torch.long, device=dev)
+    if family == "gpt2":
+        b["labels"] = torch.randint(100, vocab_size - 100, (batch_size, seq_len), device=dev)
+    elif family != "t5":
+        b["labels"] = torch.zeros(batch_size, dtype=torch.long, device=dev)
+    return b
+
+
+def _filter_batch(batch: dict, model: nn.Module) -> dict:
+    """Filter batch dictionary keys to only those accepted by model forward pass."""
+    import inspect
+    forward_params = inspect.signature(model.forward).parameters
+    return {k: v for k, v in batch.items() if k in forward_params}
+
+
+def _extract_logits_and_loss(output: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    """Extract logits and loss tensor from model output."""
+    loss = getattr(output, "loss", None)
+    logits = getattr(output, "logits", None)
+    if logits is None:
+        if isinstance(output, tuple):
+            logits = output[0]
+            loss = output[1] if len(output) > 1 and isinstance(output[1], torch.Tensor) and output[1].numel() == 1 else None
+        elif isinstance(output, torch.Tensor):
+            logits = output
+        elif hasattr(output, "last_hidden_state"):
+            logits = output.last_hidden_state
+    return logits, loss
+
+
+def probe_optimal_batch_size(
+    model: nn.Module,
+    family: str,
+    device: torch.device = torch.device("cpu"),
+    max_batch: int = 64,
+) -> int:
+    """Probe for memory-safe batch size."""
+    return min(16, max_batch)
+
