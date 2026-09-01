@@ -397,7 +397,7 @@ def main():
                     typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
-                    path_name = "adapted_qwen" if qwen else "legacy_bert"
+                    path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     if args.recovery_steps > 0:
                         recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}

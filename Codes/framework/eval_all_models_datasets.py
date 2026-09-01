@@ -32,13 +32,17 @@ def apply_module_to_model(model: nn.Module, module_name: str, module_type: str,
                 continue
         if instance is None:
             raise RuntimeError(f"Could not instantiate compressor {module_name}")
-        if isinstance(instance, nn.Module) and not any(callable(getattr(instance, n, None)) for n in ("compress", "apply", "prune")):
+        if isinstance(instance, nn.Module) and not any(callable(getattr(instance, n, None)) for n in ("compress", "prune")):
             model = instance
         else:
             result = None
-            for method_name in ("compress", "apply", "prune"):
+            # Prioritize dedicated compression methods before generic 'apply' to avoid invoking nn.Module.apply(fn)
+            for method_name in ("compress", "prune", "apply"):
                 method = getattr(instance, method_name, None)
                 if callable(method):
+                    # Check if 'apply' is just torch.nn.Module.apply (which expects a fn, not the model)
+                    if method_name == "apply" and isinstance(instance, nn.Module) and method.__func__ is nn.Module.apply:
+                        continue
                     for call in (lambda: method(model), lambda: method(), lambda: method(calibration_data=None)):
                         try:
                             result = call()

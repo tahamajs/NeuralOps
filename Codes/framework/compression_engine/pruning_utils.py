@@ -84,8 +84,11 @@ def get_calibration_tensors(
         v_size = getattr(getattr(model, "config", None), "vocab_size", 1000)
     low_idx = min(1, max(0, v_size // 4))
     high_idx = max(low_idx + 1, v_size - 1)
+    input_ids = torch.randint(low_idx, high_idx, (sample_size, seq_len), device=device, dtype=torch.long)
+    eos_token_id = getattr(getattr(model, "config", None), "eos_token_id", 1) or 1
+    input_ids[:, -1] = eos_token_id
     return {
-        "input_ids": torch.randint(low_idx, high_idx, (sample_size, seq_len), device=device, dtype=torch.long),
+        "input_ids": input_ids,
         "attention_mask": torch.ones((sample_size, seq_len), device=device, dtype=torch.long),
     }
 
