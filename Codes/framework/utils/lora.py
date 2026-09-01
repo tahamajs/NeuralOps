@@ -39,10 +39,13 @@ class LoRALinear(nn.Module):
         if self.base_layer.bias is not None:
             self.base_layer.bias.requires_grad = False
 
+        device = linear.weight.device
+        dtype = linear.weight.dtype
+
         # LoRA trainable low-rank matrices
         if self.r > 0:
-            self.lora_A = nn.Linear(self.in_features, self.r, bias=False)
-            self.lora_B = nn.Linear(self.r, self.out_features, bias=False)
+            self.lora_A = nn.Linear(self.in_features, self.r, bias=False, device=device, dtype=dtype)
+            self.lora_B = nn.Linear(self.r, self.out_features, bias=False, device=device, dtype=dtype)
             self.lora_dropout = nn.Dropout(dropout) if dropout > 0.0 else nn.Identity()
             self.reset_parameters()
         else:
