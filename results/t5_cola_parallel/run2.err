@@ -1,0 +1,31 @@
+C:\Users\HADISC~1\ANACON~1\Lib\site-packages\torch\cuda\__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Skipping compression_engine module 'cur_moe' due to: cannot import name 'tikhonov_pinv' from 'framework.compression_engine.cur_linear' (D:\SVD_Project\Codes\framework\compression_engine\cur_linear.py)
+Skipping compression_engine module 'cur_moe_compressor' due to: cannot import name 'tikhonov_pinv' from 'framework.compression_engine.cur_linear' (D:\SVD_Project\Codes\framework\compression_engine\cur_linear.py)
+Skipping attention module 'cur_moe' due to: cannot import name 'tikhonov_pinv' from 'framework.compression_engine.cur_linear' (D:\SVD_Project\Codes\framework\compression_engine\cur_linear.py)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/131 [00:00<?, ?it/s]Loading weights: 100%|##########| 131/131 [00:00<00:00, 6304.69it/s]
+[1mT5ForSequenceClassification LOAD REPORT[0m from: t5-small
+Key                                 | Status  | 
+------------------------------------+---------+-
+classification_head.out_proj.bias   | MISSING | 
+classification_head.dense.bias      | MISSING | 
+classification_head.dense.weight    | MISSING | 
+classification_head.out_proj.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-01 01:30:35,106 [INFO] model=t5-small qwen_compat=False hidden=512 heads=8 head_dim=64 layers=6
+2026-09-01 01:30:35,107 [INFO] detected model family=t5 adapter={'family': 't5', 'hidden_size': 512, 'num_heads': 8, 'num_key_value_heads': 8, 'q_proj_out': 512, 'kv_proj_out': 512, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 3, 'position_embedding': 'absolute'}
+2026-09-01 01:30:35,108 [INFO] Fine-tuning classification head for 1 steps before module injection
+Traceback (most recent call last):
+  File "D:\SVD_PROJECT\Codes\framework\run_quality_sweep.py", line 244, in <module>
+    if __name__ == "__main__": main()
+                               ~~~~^^
+  File "D:\SVD_PROJECT\Codes\framework\run_quality_sweep.py", line 141, in main
+    finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_PROJECT\Codes\framework\run_quality_sweep.py", line 80, in finetune
+    if head is None: raise RuntimeError("Qwen sequence-classification head not found")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Qwen sequence-classification head not found

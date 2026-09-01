@@ -1,0 +1,43 @@
+run_id,module_name,model_family,dataset,status,accuracy_pct,examples,elapsed_s,peak_vram_mb,error,timestamp
+qwen_rte_zero_shot_20260901_174145,full,QWEN,RTE,PASS,54.51,277,8.45,1255.92,,2026-09-01T17:41:54.131730
+qwen_rte_zero_shot_20260901_174145,a3,QWEN,RTE,PASS,51.62,277,17.32,1260.31,,2026-09-01T17:42:11.455425
+qwen_rte_zero_shot_20260901_174145,aasvd,QWEN,RTE,PASS,46.57,277,35.2,1260.31,,2026-09-01T17:42:46.660136
+qwen_rte_zero_shot_20260901_174145,adaptive_span,QWEN,RTE,FAIL,0.0,277,3.18,0.0,"QwenIncompatibleError: adaptive_span: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:42:49.837188
+qwen_rte_zero_shot_20260901_174145,adaptive_sparse,QWEN,RTE,FAIL,0.0,277,4.47,0.0,QwenIncompatibleError: rotary_position_embedding_required,2026-09-01T17:42:54.306722
+qwen_rte_zero_shot_20260901_174145,adaptive_svd,QWEN,RTE,FAIL,0.0,277,5.3,0.0,"QwenIncompatibleError: adaptive_svd: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:42:59.605178
+qwen_rte_zero_shot_20260901_174145,adasplash,QWEN,RTE,FAIL,0.0,277,3.2,0.0,"QwenIncompatibleError: adasplash: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:43:02.803251
+qwen_rte_zero_shot_20260901_174145,adasvd,QWEN,RTE,PASS,50.9,277,24.18,1261.09,,2026-09-01T17:43:26.981734
+qwen_rte_zero_shot_20260901_174145,admm,QWEN,RTE,PASS,52.35,277,13.92,1255.8,,2026-09-01T17:43:40.904315
+qwen_rte_zero_shot_20260901_174145,admm_pruner,QWEN,RTE,PASS,47.65,277,30.75,9349.61,,2026-09-01T17:44:11.656726
+qwen_rte_zero_shot_20260901_174145,aegis_hybrid,QWEN,RTE,PASS,44.77,277,13.95,1195.99,,2026-09-01T17:44:25.611531
+qwen_rte_zero_shot_20260901_174145,aegis_spectron_fp8,QWEN,RTE,FAIL,0.0,277,3.93,0.0,"QwenIncompatibleError: aegis_spectron_fp8: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:44:29.537311
+qwen_rte_zero_shot_20260901_174145,aegis_v1,QWEN,RTE,FAIL,0.0,277,5.96,0.0,"QwenIncompatibleError: aegis_v1: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:44:35.497717
+qwen_rte_zero_shot_20260901_174145,aegis_v2,QWEN,RTE,PASS,53.79,277,17.18,1195.99,,2026-09-01T17:44:52.675890
+qwen_rte_zero_shot_20260901_174145,aegis_v3,QWEN,RTE,FAIL,0.0,277,7.57,0.0,"QwenIncompatibleError: aegis_v3: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:45:00.244734
+qwen_rte_zero_shot_20260901_174145,aegis_v4,QWEN,RTE,FAIL,0.0,277,6.92,0.0,"QwenIncompatibleError: aegis_v4: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:45:07.169459
+qwen_rte_zero_shot_20260901_174145,aegis_v5,QWEN,RTE,FAIL,0.0,277,6.88,0.0,"QwenIncompatibleError: aegis_v5: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:45:14.054517
+qwen_rte_zero_shot_20260901_174145,aegis_v6,QWEN,RTE,FAIL,0.0,277,3.99,0.0,"QwenIncompatibleError: aegis_v6: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:45:18.049844
+qwen_rte_zero_shot_20260901_174145,armor,QWEN,RTE,PASS,46.57,277,24.07,6537.69,,2026-09-01T17:45:42.121081
+qwen_rte_zero_shot_20260901_174145,ast,QWEN,RTE,PASS,48.01,277,65.54,6482.93,,2026-09-01T17:46:47.660473
+qwen_rte_zero_shot_20260901_174145,astro,QWEN,RTE,PASS,58.48,277,14.73,3046.29,,2026-09-01T17:47:02.390421
+qwen_rte_zero_shot_20260901_174145,asvd,QWEN,RTE,FAIL,0.0,277,3.84,0.0,"QwenIncompatibleError: asvd: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:47:06.232269
+qwen_rte_zero_shot_20260901_174145,bam_umoe,QWEN,RTE,FAIL,0.0,277,4.26,0.0,"QwenIncompatibleError: bam_umoe: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:47:10.493493
+qwen_rte_zero_shot_20260901_174145,block_transformer_hiba,QWEN,RTE,PASS,47.65,277,9.54,1324.25,,2026-09-01T17:47:20.031661
+qwen_rte_zero_shot_20260901_174145,bonsai,QWEN,RTE,PASS,46.93,277,19.6,1359.01,,2026-09-01T17:47:39.633592
+qwen_rte_zero_shot_20260901_174145,cachenotes,QWEN,RTE,PASS,44.4,277,19.01,3829.56,,2026-09-01T17:47:58.646305
+qwen_rte_zero_shot_20260901_174145,chela_slay,QWEN,RTE,PASS,51.26,277,13.26,1325.72,,2026-09-01T17:48:11.911377
+qwen_rte_zero_shot_20260901_174145,cluster,QWEN,RTE,FAIL,0.0,277,3.92,0.0,"QwenIncompatibleError: cluster: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:48:15.833026
+qwen_rte_zero_shot_20260901_174145,come,QWEN,RTE,PASS,52.35,277,10.18,1056.3,,2026-09-01T17:48:26.009355
+qwen_rte_zero_shot_20260901_174145,compot,QWEN,RTE,PASS,52.71,277,30.32,4463.71,"fp32 retry after RuntimeError: ""geqrf_cuda"" not implemented for 'Half'",2026-09-01T17:48:56.330143
+qwen_rte_zero_shot_20260901_174145,compressed_attention,QWEN,RTE,PASS,46.93,277,12.13,1177.12,,2026-09-01T17:49:08.458923
+qwen_rte_zero_shot_20260901_174145,compressed_attention_layer_energy,QWEN,RTE,PASS,46.57,277,9.76,1177.12,,2026-09-01T17:49:18.217863
+qwen_rte_zero_shot_20260901_174145,compressed_mha,QWEN,RTE,PASS,49.82,277,12.83,1188.94,,2026-09-01T17:49:31.050401
+qwen_rte_zero_shot_20260901_174145,coopq,QWEN,RTE,PASS,51.62,277,38.59,3967.91,,2026-09-01T17:50:09.638506
+qwen_rte_zero_shot_20260901_174145,cosformer,QWEN,RTE,FAIL,0.0,277,3.87,0.0,"QwenIncompatibleError: cosformer: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:50:13.510652
+qwen_rte_zero_shot_20260901_174145,cr,QWEN,RTE,PASS,47.29,277,107.7,1000.42,,2026-09-01T17:52:01.214247
+qwen_rte_zero_shot_20260901_174145,cur,QWEN,RTE,PASS,52.71,277,23.87,1056.57,,2026-09-01T17:52:25.083808
+qwen_rte_zero_shot_20260901_174145,cur_moe,QWEN,RTE,PASS,52.71,277,32.85,3205.92,,2026-09-01T17:52:57.934818
+qwen_rte_zero_shot_20260901_174145,cur_moe_compressor,QWEN,RTE,PASS,52.71,277,15.97,3205.92,,2026-09-01T17:53:13.901562
+qwen_rte_zero_shot_20260901_174145,decay_linear_attn,QWEN,RTE,FAIL,0.0,277,3.26,0.0,"QwenIncompatibleError: decay_linear_attn: k_projection_out=896, requires=128 (GQA)",2026-09-01T17:53:17.157624
+qwen_rte_zero_shot_20260901_174145,delta_kv,QWEN,RTE,PASS,48.74,277,25.53,5538.93,,2026-09-01T17:53:42.687363
+qwen_rte_zero_shot_20260901_174145,direct_svd,QWEN,RTE,PASS,46.21,277,15.36,1268.0,,2026-09-01T17:53:58.045739
