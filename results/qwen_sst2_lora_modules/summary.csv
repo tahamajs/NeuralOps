@@ -121,3 +121,31 @@ nasc,SKIP_QWEN_INCOMPATIBLE,0.0,2.72,"nasc: k_projection_out=896, requires=128 (
 nexus,SKIP_QWEN_INCOMPATIBLE,0.0,0.78,"nexus: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:02:44.373978
 nha,SKIP_QWEN_INCOMPATIBLE,0.0,0.86,"nha: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:02:45.580312
 nli_softmax,PASS,88.76,38.12,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:03:23.995198
+nmf,PASS,48.97,746.03,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:15:50.566911
+nsa,SKIP_QWEN_INCOMPATIBLE,0.0,0.67,"nsa: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:15:51.813458
+nystrom,SKIP_QWEN_INCOMPATIBLE,0.0,0.72,"nystrom: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:15:52.883356
+oats,PASS,50.57,151.02,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:18:24.236457
+oha,SKIP_QWEN_INCOMPATIBLE,0.0,0.56,"oha: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:18:25.324391
+optimal_subspace_projection,PASS,48.97,70.39,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:19:35.997758
+orion,SKIP,0.0,7.83,"RuntimeError: shape '[4, 24, 14, 64]' is invalid for input of size 12288",adapted_qwen,2026-09-01T23:19:44.776187
+performer,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-09-01T23:19:45.057833
+phantom,SKIP,0.0,63.2,"RuntimeError: shape '[4, 24, 14, 64]' is invalid for input of size 12288",adapted_qwen,2026-09-01T23:20:48.261679
+primal,SKIP_QWEN_INCOMPATIBLE,0.0,0.46,"primal: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:20:49.066502
+progressive_token_pruning,SKIP_QWEN_INCOMPATIBLE,0.0,0.72,"progressive_token_pruning: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:20:50.132152
+projection_factorized_attn,SKIP_QWEN_INCOMPATIBLE,0.0,3.55,"projection_factorized_attn: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:20:54.024579
+proxsparse,PASS,49.08,46.87,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:21:41.220898
+qcqa,SKIP_QWEN_INCOMPATIBLE,0.0,0.56,"qcqa: k_projection_out=256, requires=128 (GQA)",unsupported,2026-09-01T23:21:42.376887
+rala,SKIP_QWEN_INCOMPATIBLE,0.0,1.0,"rala: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:21:43.675609
+rala_compressor,SKIP_QWEN_INCOMPATIBLE,0.0,0.86,"rala_compressor: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:21:44.888051
+reap_moe,SKIP_QWEN_INCOMPATIBLE,0.0,1.03,"reap_moe: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:21:46.276927
+regla,SKIP_QWEN_INCOMPATIBLE,0.0,0.61,"regla: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:21:47.191480
+replaceme,PASS,88.76,38.2,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:22:25.742004
+res_svd,SKIP_QWEN_INCOMPATIBLE,0.0,0.45,"res_svd: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:22:26.589048
+rotational_slicegpt,PASS,48.74,1356.94,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:45:03.858634
+routing,SKIP_QWEN_INCOMPATIBLE,0.0,0.59,"routing: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:45:04.853859
+rpc,PASS,50.34,29.84,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:45:35.063619
+rpca,PASS,49.2,243.6,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:49:39.267005
+saes,PASS,48.85,200.0,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",adapted_qwen,2026-09-01T23:52:59.696039
+salr,SKIP,0.0,11.44,AttributeError: 'SALRLayer' object has no attribute 'weight',adapted_qwen,2026-09-01T23:53:11.512489
+salt,SKIP_QWEN_INCOMPATIBLE,0.0,2.94,"salt: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:53:15.077197
+samba_m3,SKIP_QWEN_INCOMPATIBLE,0.0,0.71,"samba_m3: k_projection_out=896, requires=128 (GQA)",unsupported,2026-09-01T23:53:16.157414
