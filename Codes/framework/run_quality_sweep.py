@@ -348,7 +348,7 @@ def main():
         ram_percent = lambda: 0.0
     worker_count = 4 if ram_percent() < 80.0 else 2
     executor = ThreadPoolExecutor(max_workers=worker_count)
-    module_rank = max(16, adapter.head_dim) if family == "qwen" else 16
+    module_rank = max(16, getattr(adapter, "head_dim", 16))
     pending = {}
     def queue_copy(module_name):
         if module_name not in pending:
@@ -401,7 +401,7 @@ def main():
                     LOG.info("module=%s path=%s", name, path_name)
                     if args.recovery_steps > 0:
                         recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
-                        if not recovery_targets or name in recovery_targets:
+                        if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
                             LOG.info("Running %d LoRA recovery fine-tuning steps for %s", args.recovery_steps, name)
                             trainable = [p for p in model.parameters() if p.requires_grad]
                             if trainable:
