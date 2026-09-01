@@ -285,7 +285,7 @@ class AdaptiveSVDAttention(nn.Module):
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
         scores = apply_attention_mask(scores, attention_mask)
 
-        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(hidden_states.dtype)
         attn_weights = self.dropout(attn_weights)
 
         if head_mask is not None:

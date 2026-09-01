@@ -78,16 +78,17 @@ def entmax15_bisect(
     # Softmax fallback for numerical stabilization when support is empty or ill-conditioned
     if valid_mask is not None:
         scores_for_sm = scores.masked_fill(~valid_mask, -10000.0)
-        sf = F.softmax(scores_for_sm, dim=dim).masked_fill(~valid_mask, 0.0)
+        sf = torch.nan_to_num(F.softmax(scores_for_sm.float(), dim=dim), nan=0.0).to(scores.dtype)
+        sf = sf.masked_fill(~valid_mask, 0.0)
         sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
         sf = sf / sf_denom
     else:
-        sf = F.softmax(scores, dim=dim)
+        sf = torch.nan_to_num(F.softmax(scores.float(), dim=dim), nan=0.0).to(scores.dtype)
 
     is_empty = (denom < 1e-7) | torch.isnan(denom)
-    p_normalized = p / denom.clamp(min=1e-9)
+    p_normalized = torch.nan_to_num(p / denom.clamp(min=1e-9), nan=0.0)
     p = torch.where(is_empty, sf, p_normalized)
-    return p
+    return torch.nan_to_num(p, nan=0.0)
 
 
 @ATTENTION_REGISTRY.register("adasplash")
@@ -194,17 +195,17 @@ class AdaSplashAttention(BaseAttention):
         # Apply entmax or softmax
         if self.alpha == 1.0:
             logits_masked = logits.masked_fill(~key_valid_4d, -10000.0)
-            attn = F.softmax(logits_masked, dim=-1)
+            attn = torch.nan_to_num(F.softmax(logits_masked.float(), dim=-1), nan=0.0).to(dtype)
         elif self.alpha == 1.5:
             attn = entmax15_bisect(
                 logits,
                 valid_mask=key_valid_4d,
                 dim=-1,
                 n_iter=self.n_iter,
-            )
+            ).to(dtype)
         else:
             logits_masked = logits.masked_fill(~key_valid_4d, -10000.0)
-            attn = F.softmax(logits_masked, dim=-1)
+            attn = torch.nan_to_num(F.softmax(logits_masked.float(), dim=-1), nan=0.0).to(dtype)
 
         attn = self.dropout(attn)
         if head_mask is not None:
