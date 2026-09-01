@@ -272,6 +272,7 @@ def main():
             dropout=args.lora_dropout,
             target_modules=args.lora_target_modules,
         )
+        base.to(device)
         # Ensure classification head is trainable
         head = next((getattr(base, attr, None) for attr in
                      ("score", "classifier", "classification_head", "classification_head.dense")
