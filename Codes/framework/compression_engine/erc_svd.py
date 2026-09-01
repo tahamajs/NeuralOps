@@ -100,8 +100,8 @@ class ERCCompressor(BaseCompressor):
             idx = torch.where(cum_energy >= target_retention)[0]
             r = int(idx[0].item()) + 1 if len(idx) > 0 else max_r
 
-        # Dynamic rank expansion up to max_r = min(d_in, d_out) strictly satisfying Frobenius error bound
-        # (Artificial rank ceiling override removed)
+        if self.rank is not None:
+            r = min(r, self.rank)
         r = max(1, min(r, max_r))
 
         # Symmetrical square-root singular value distribution
