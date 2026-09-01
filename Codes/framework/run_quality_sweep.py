@@ -136,11 +136,12 @@ def encode(tokenizer, batch, dataset_name, seq_len, device):
 
 
 @torch.inference_mode()
-def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device):
+def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True):
     model.eval(); correct = total = 0
     for i in range(0, len(ds), batch_size):
         x, y = encode(tokenizer, {k: ds[k][i:i+batch_size] for k in ds.column_names}, name, seq_len, device)
-        logits = model(**x).logits
+        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+            logits = model(**x).logits
         correct += int((logits.argmax(-1) == y).sum()); total += len(y)
     return 100.0 * correct / max(1, total)
 
@@ -229,6 +230,7 @@ def main():
     ap.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout probability")
     ap.add_argument("--lora_target_modules", default="q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj",
                     help="Comma-separated target submodule names for LoRA")
+    ap.add_argument("--learning_rate", type=float, default=2e-4, help="Learning rate for fine-tuning")
     ap.add_argument("--recovery_steps", type=int, default=0,
                     help="Post-injection LoRA recovery fine-tuning steps")
     ap.add_argument("--recovery_modules", default="",
@@ -269,12 +271,15 @@ def main():
     # If LoRA mode is requested, apply LoRA wrappers to the backbone
     if args.finetune_mode == "lora":
         from framework.utils.lora import apply_lora, save_lora_weights, load_lora_weights
+        target_mods = args.lora_target_modules
+        if family == "t5":
+            target_mods = "q,k,v,o,wi,wo,wi_0,wi_1,dense"
         base, num_lora = apply_lora(
             base,
             r=args.lora_r,
             alpha=args.lora_alpha,
             dropout=args.lora_dropout,
-            target_modules=args.lora_target_modules,
+            target_modules=target_mods,
         )
         base.to(device)
         # Ensure classification head is trainable
@@ -287,7 +292,9 @@ def main():
 
     checkpoint = out / "finetuned_model.pt"
     # Also support loading from shared parent LoRA baseline if specified in env/parent dir
-    parent_checkpoint = out.parent / "qwen_sst2_lora_baseline" / "finetuned_model.pt"
+    parent_checkpoint = out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt"
+    if not parent_checkpoint.exists():
+        parent_checkpoint = out.parent / "qwen_sst2_lora_baseline" / "finetuned_model.pt"
     if checkpoint.exists():
         LOG.info("Loading cached fine-tuned checkpoint: %s", checkpoint)
         state = torch.load(checkpoint, map_location="cpu", weights_only=False)
@@ -305,8 +312,8 @@ def main():
     else:
         if args.finetune_steps > 0:
             if args.finetune_mode == "lora":
-                LOG.info("Fine-tuning LoRA adapters for %d steps before module injection", args.finetune_steps)
-                finetune_lora(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
+                LOG.info("Fine-tuning LoRA adapters for %d steps before module injection (lr=%.1e)", args.finetune_steps, args.learning_rate)
+                finetune_lora(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=args.learning_rate)
                 from framework.utils.lora import save_lora_weights
                 save_lora_weights(base, str(checkpoint), metadata={"finetune_mode": "lora", "steps": args.finetune_steps, "dataset": args.dataset, "seed": args.seed})
             else:
@@ -399,7 +406,7 @@ def main():
                             trainable = [p for p in model.parameters() if p.requires_grad]
                             if trainable:
                                 finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
-                acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device), 2)
+                acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16"), 2)
             except QwenIncompatibleError as exc:
                 status, err = "SKIP_QWEN_INCOMPATIBLE", str(exc)
                 path_name = "unsupported" if qwen else path_name
