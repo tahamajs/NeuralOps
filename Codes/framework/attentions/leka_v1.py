@@ -34,16 +34,17 @@ class LEKAV1Attention(BaseAttention):
 
     def __init__(
         self,
-        config: Any,
+        config: Optional[Any] = None,
         comp_config: Optional[Any] = None,
         layer_idx: int = 0,
         total_layers: int = 6,
         bert_mode: bool = False,
         rank: Optional[int] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_attention_heads: int = getattr(config, "num_attention_heads", 4)
-        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.num_attention_heads: int = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
+        hidden_size: int = getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
         self.attention_head_size: int = hidden_size // self.num_attention_heads if self.num_attention_heads > 0 else 64
         self.all_head_size: int = self.num_attention_heads * self.attention_head_size
         self.head_dim: int = self.attention_head_size
