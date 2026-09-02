@@ -280,6 +280,7 @@ def main():
                     help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
     args = ap.parse_args(); logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     torch.manual_seed(args.seed)
+    torch.set_num_threads(4)
     if torch.cuda.is_available(): torch.cuda.manual_seed_all(args.seed)
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

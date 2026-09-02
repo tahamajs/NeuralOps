@@ -198,11 +198,11 @@ class AASVDCompressor(BaseCompressor):
         r = min(r, in_feat, out_feat)
 
         if cov is not None:
-            # Principal activation directions via SVD of covariance in FP32
+            # Principal activation directions via SVD of covariance in FP32 directly on GPU
             try:
-                cov_fp32 = cov.cpu().float()
+                cov_fp32 = cov.to(device=layer.weight.device, dtype=torch.float32)
                 _, _, Vh_act = torch.linalg.svd(cov_fp32, full_matrices=False)
-                anchor = Vh_act[:r, :].to(device=layer.weight.device, dtype=torch.float32)  # [r, in_feat]
+                anchor = Vh_act[:r, :]  # [r, in_feat]
             except Exception:
                 anchor = torch.eye(in_feat, device=layer.weight.device, dtype=torch.float32)[:r, :]
 
@@ -212,8 +212,9 @@ class AASVDCompressor(BaseCompressor):
         else:
             W_proj = layer.weight.data.float()
 
-        # Truncated SVD on projected weight in FP32
-        U, S, Vt = torch.linalg.svd(W_proj.cpu().float(), full_matrices=False)
+        # Truncated SVD on projected weight directly on GPU in FP32
+        W_proj_gpu = W_proj.to(device=layer.weight.device, dtype=torch.float32)
+        U, S, Vt = torch.linalg.svd(W_proj_gpu, full_matrices=False)
 
         # FIX: Symmetrical Square-Root Singular Value Allocation U_r = U @ sqrt(S), V_r = sqrt(S) @ V^T
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))

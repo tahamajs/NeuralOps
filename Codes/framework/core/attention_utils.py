@@ -502,7 +502,7 @@ def inject_attention(
                         if lin1 is not None and lin2 is not None:
                             _copy_projection_weights(lin1, w, None)
                             with torch.no_grad():
-                                W_f = w.detach().cpu().float()
+                                W_f = w.detach().float()
                                 if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
                                     if W_f.shape[1] != lin1.weight.shape[1] and W_f.shape[0] == lin1.weight.shape[1]:
                                         W_f = W_f.t()
@@ -530,7 +530,7 @@ def inject_attention(
                         lin2_o = getattr(new_attn, "out_proj2", getattr(new_attn, "o_proj2", None))
                         if lin1_o is not None and lin2_o is not None:
                             with torch.no_grad():
-                                W_f = src_w_o.detach().cpu().float()
+                                W_f = src_w_o.detach().float()
                                 if W_f.shape[1] != lin1_o.weight.shape[1] and W_f.shape[0] == lin1_o.weight.shape[1]:
                                     W_f = W_f.t()
                                 U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
@@ -587,7 +587,7 @@ def inject_attention(
                         if lin1 is not None and lin2 is not None:
                             if src_weight is not None:
                                 with torch.no_grad():
-                                    W_f = src_weight.detach().cpu().float()
+                                    W_f = src_weight.detach().float()
                                     if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
                                         if W_f.shape[1] != lin1.weight.shape[1] and W_f.shape[0] == lin1.weight.shape[1]:
                                             W_f = W_f.t()
