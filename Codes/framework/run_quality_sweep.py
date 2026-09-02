@@ -275,6 +275,7 @@ def main():
     ap.add_argument("--learning_rate", type=float, default=2e-4)
     ap.add_argument("--precision", choices=("fp32", "fp16"), default="fp16")
     ap.add_argument("--seq_len", type=int, default=128)
+    ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--strict_compat", action="store_true",
                     help="Skip modules without a truthful native/adapted Qwen path")
