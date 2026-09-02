@@ -348,7 +348,8 @@ def main():
              active_opt, args.muon_lr, args.adam_lr if active_opt == "muon" else args.learning_rate, args.weight_decay)
     LOG.info("  precision:         %s", args.precision)
     LOG.info("=" * 80)
-    if hasattr(base, "gradient_checkpointing_enable"):
+    # Only enable gradient checkpointing for long sequences (> 512) to avoid PyTorch SavedTensorHooks generator assert
+    if args.seq_len > 512 and hasattr(base, "gradient_checkpointing_enable"):
         base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 
     checkpoint = out / "finetuned_model.pt"

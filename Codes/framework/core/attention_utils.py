@@ -623,10 +623,13 @@ def inject_attention(
                                         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                                         U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=src_weight.device, dtype=src_weight.dtype)
                                         V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=src_weight.device, dtype=src_weight.dtype)
-                                        lin1.weight.data[:r, :].copy_(V_b)
-                                        lin2.weight.data[:, :r].copy_(U_b)
+                                        min_out = min(lin2.weight.shape[0], U_b.shape[0])
+                                        min_in = min(lin1.weight.shape[1], V_b.shape[1])
+                                        lin1.weight.data[:r, :min_in].copy_(V_b[:, :min_in])
+                                        lin2.weight.data[:min_out, :r].copy_(U_b[:min_out, :])
                                         if src_bias is not None and getattr(lin2, "bias", None) is not None:
-                                            lin2.bias.data.copy_(src_bias.to(lin2.bias.device, lin2.bias.dtype))
+                                            min_b = min(lin2.bias.shape[0], src_bias.shape[0])
+                                            lin2.bias.data[:min_b].copy_(src_bias[:min_b].to(lin2.bias.device, lin2.bias.dtype))
                             elif proj_key == "o":
                                 # Identity for dual out_proj
                                 with torch.no_grad():
