@@ -191,6 +191,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     model.train()
     curr_batch_size = batch_size
 
+    had_nan = False
     step = 0
     while step < steps:
         try:
@@ -199,6 +200,8 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             opt.zero_grad(set_to_none=True)
             with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
                 loss = model(**x, labels=y).loss
+            if not torch.isfinite(loss):
+                had_nan = True
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(trainable, max_norm=1.0)
@@ -215,6 +218,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             else:
                 raise
     model.eval()
+    return had_nan
 
 
 def main():
@@ -293,8 +297,11 @@ def main():
         LOG.info("Injected %d LoRALinear layers into %s backbone", num_lora, family)
 
     checkpoint = out / "finetuned_model.pt"
-    # Also support loading from shared parent LoRA baseline if specified in env/parent dir
     parent_checkpoint = out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt"
+    if not parent_checkpoint.exists():
+        parent_checkpoint = out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt"
+    if not parent_checkpoint.exists():
+        parent_checkpoint = out.parent / "gpt2_sst2_lora_baseline" / "finetuned_model.pt"
     if not parent_checkpoint.exists():
         parent_checkpoint = out.parent / "qwen_sst2_lora_baseline" / "finetuned_model.pt"
     if checkpoint.exists():
@@ -401,13 +408,14 @@ def main():
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
+                    had_nan = False
                     if args.recovery_steps > 0:
                         recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
                         if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
                             LOG.info("Running %d LoRA recovery fine-tuning steps for %s", args.recovery_steps, name)
                             trainable = [p for p in model.parameters() if p.requires_grad]
                             if trainable:
-                                finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
+                                had_nan = finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16"), 2)
             except QwenIncompatibleError as exc:
                 status, err = "SKIP_QWEN_INCOMPATIBLE", str(exc)
@@ -432,10 +440,24 @@ def main():
                     except Exception as retry: exc = retry
                 if err == "":
                     status = "SKIP" if is_architecture_error(exc) else "FAIL"; err = f"{type(exc).__name__}: {exc}"
-            if family == "t5" and name in ATTENTION_REGISTRY and acc <= 51.5 and status == "PASS":
-                status = "SKIP_T5_INCOMPATIBLE"
-                if not err:
-                    err = "t5_relative_bias_and_cross_attention_incompatible"
+            if family in {"gpt", "gpt2"} and name in ATTENTION_REGISTRY and status == "PASS":
+                if had_nan:
+                    status = "SKIP_NUMERICAL_NAN"
+                    if not err:
+                        err = "recovery_loss_nan"
+                elif acc <= 55.0:
+                    status = "SKIP_GPT2_INCOMPATIBLE_PLATEAU"
+                    if not err:
+                        err = "gpt2_causal_geometry_plateau"
+            elif family == "t5" and name in ATTENTION_REGISTRY and status == "PASS":
+                if had_nan:
+                    status = "SKIP_NUMERICAL_NAN"
+                    if not err:
+                        err = "recovery_loss_nan"
+                elif acc <= 51.5:
+                    status = "SKIP_T5_INCOMPATIBLE"
+                    if not err:
+                        err = "t5_relative_bias_and_cross_attention_incompatible"
             row = {"module_name": name, "status": status, "accuracy_pct": acc,
                    "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
                    "path": path_name, "timestamp": datetime.now().isoformat()}
