@@ -43,6 +43,7 @@ if _FRAMEWORK_PARENT not in sys.path:
     sys.path.insert(0, _FRAMEWORK_PARENT)
 
 from framework.core.registry import COMPRESSOR_REGISTRY
+import framework.compression_engine
 from framework.compression_engine import (
     ADMMCompressor,
     ADMMPruner,
