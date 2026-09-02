@@ -200,7 +200,7 @@ class SVDMamba(BaseAttention):
         delta = self.dt_proj(delta)
         delta = F.softplus(delta + self.dt_bias)
 
-        A = -torch.exp(self.A_log)                # [d_state]
+        A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x_conv.dtype)                # [d_state]
 
         # Vectorized / Ultra-Light Memory-Efficient Chunked Associative Scan (O(L*D*S) memory)
         log_alpha = delta.unsqueeze(-1) * A.view(1, 1, 1, -1) # [B, L, inner, d_state]

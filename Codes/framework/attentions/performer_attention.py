@@ -114,8 +114,8 @@ class PerformerAttention(BaseAttention):
         proj = torch.matmul(x, self.omega.to(dtype=x.dtype, device=x.device).t())
         if self.kernel_type in ["favor_plus", "exp", "favor"]:
             diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5  # (B, H, N, 1)
-            max_proj = proj.amax(dim=-1, keepdim=True).detach()
-            phi = torch.exp(proj - max_proj - diag_sq) + self.eps
+            diff = torch.clamp(proj - max_proj - diag_sq, min=-30.0, max=10.0)
+            phi = torch.exp(diff) + self.eps
             phi = phi / (math.sqrt(self.num_features) + self.eps)
         elif self.kernel_type == "elu":
             phi = (F.elu(proj) + 1.0) / (math.sqrt(self.num_features) + self.eps)
