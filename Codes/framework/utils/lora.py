@@ -20,14 +20,21 @@ class LoRALinear(nn.Module):
 
     def __init__(
         self,
-        linear: nn.Linear,
+        linear: nn.Module,
         r: int = 16,
         alpha: float = 32.0,
         dropout: float = 0.05,
     ) -> None:
         super().__init__()
-        self.in_features = linear.in_features
-        self.out_features = linear.out_features
+        if hasattr(linear, "in_features"):
+            self.in_features = linear.in_features
+            self.out_features = linear.out_features
+        elif hasattr(linear, "weight"):
+            # HuggingFace Conv1D (used in GPT-2) has weight shape [in_features, out_features]
+            self.in_features = linear.weight.shape[0]
+            self.out_features = linear.weight.shape[1]
+        else:
+            raise ValueError(f"Unsupported linear module: {type(linear)}")
         self.r = int(r)
         self.alpha = float(alpha)
         self.scaling = float(alpha) / max(1, self.r) if self.r > 0 else 1.0
@@ -125,6 +132,9 @@ DEFAULT_TARGET_MODULES = (
     "wo",
     "wi_0",
     "wi_1",
+    "c_attn",
+    "c_proj",
+    "c_fc",
 )
 
 
@@ -138,7 +148,7 @@ def apply_lora(
     """Freeze base model parameters and inject LoRALinear into matching target modules.
 
     Args:
-        model: PyTorch module (e.g. Qwen2, DistilBERT, RoBERTa).
+        model: PyTorch module (e.g. Qwen2, DistilBERT, RoBERTa, GPT-2).
         r: LoRA rank dimension.
         alpha: LoRA scaling factor (scaling = alpha / r).
         dropout: Dropout probability applied to LoRA adapter input.
@@ -166,8 +176,9 @@ def apply_lora(
             full_name = f"{prefix}.{name}" if prefix else name
             # Check if this child's name matches any target module
             is_target = any(target in name for target in targets) or any(target == name for target in targets)
+            is_linear_like = isinstance(child, nn.Linear) or child.__class__.__name__ == "Conv1D"
 
-            if isinstance(child, nn.Linear) and is_target:
+            if is_linear_like and is_target:
                 # Do not adapt classification heads
                 if any(head in name.lower() for head in ("score", "classifier", "lm_head")):
                     continue
