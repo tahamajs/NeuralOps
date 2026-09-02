@@ -114,8 +114,8 @@ class AegisSpectronFP8Attention(BaseAttention):
                 n_heads = num_heads or config.get("num_attention_heads", 12)
                 rank = config.get("svd_rank", min(128, h_size))
             else:
-                h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
-                n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
+                h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768
+                n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12
                 rank = getattr(config, "svd_rank", min(128, h_size)) if config is not None else 128
             config = AegisSpectronFP8Config(
                 hidden_size=h_size,
@@ -127,6 +127,9 @@ class AegisSpectronFP8Attention(BaseAttention):
             )
         super().__init__(config)
         self.config: AegisSpectronFP8Config = config
+        self.num_heads = config.num_heads
+        self.head_dim = config.head_dim
+        self.hidden_size = config.hidden_size
         self.router = SpectronSpectralEntropyRouter(config)
 
         self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)

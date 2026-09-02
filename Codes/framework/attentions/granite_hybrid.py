@@ -252,12 +252,16 @@ class GraniteHybridBlock(BaseAttention):
         self.counter += 1
         attn_weights: Optional[torch.Tensor] = None
 
-        if self.counter % (self.ratio + 1) < self.ratio:
-            x = self.mamba(hidden_states)
+        kv = encoder_hidden_states if encoder_hidden_states is not None else kwargs.get("key_value_states", None)
+        if kv is not None:
+            x, attn_weights = self.attn(hidden_states, kv, kv)
         else:
-            x, attn_weights = self.attn(
-                hidden_states, hidden_states, hidden_states
-            )
+            if self.counter % (self.ratio + 1) < self.ratio:
+                x = self.mamba(hidden_states)
+            else:
+                x, attn_weights = self.attn(
+                    hidden_states, hidden_states, hidden_states
+                )
 
         x = x + self.moe(x)
         return x, (attn_weights if output_attentions else None)
