@@ -86,8 +86,8 @@ def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
         if is_output_submodule:
             continue
 
-        # Heuristic 1: Module class name indicates attention
-        if any(x in class_name for x in ["attention", "selfattn", "selfattention", "crossattn"]):
+        # Heuristic 1: Module class name indicates attention or linear-recurrent block
+        if any(x in class_name for x in ["attention", "selfattn", "selfattention", "crossattn", "deltanet", "gated_deltanet", "gatedattention"]):
             raw_candidates.append((name, module))
             seen_names.add(name)
             continue
@@ -99,6 +99,7 @@ def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
             or hasattr(module, "q_lin")
             or hasattr(module, "query")
             or hasattr(module, "c_attn")
+            or hasattr(module, "qk_proj")
         ):
             # Avoid leaf nn.Linear layers that might happen to match attributes
             if not isinstance(module, (nn.Linear, nn.LayerNorm, nn.Dropout, nn.Embedding)):

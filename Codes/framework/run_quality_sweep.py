@@ -252,7 +252,7 @@ def main():
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--strict_compat", action="store_true",
                     help="Skip modules without a truthful native/adapted Qwen path")
-    ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "qwen", "t5", "ssm", "unknown"), default="auto")
+    ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown"), default="auto")
     ap.add_argument("--parent_checkpoint", type=str, default=None,
                     help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
     args = ap.parse_args(); logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

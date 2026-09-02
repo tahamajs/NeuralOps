@@ -229,7 +229,7 @@ def is_module_declared_compatible(name: str, family: str) -> Tuple[bool, str]:
         return True, ""
 
     is_encoder = family in {"bert", "roberta", "distilbert"}
-    is_decoder = family in {"gpt", "gpt2", "qwen", "llama", "mistral"}
+    is_decoder = family in {"gpt", "gpt2", "qwen", "qwen3_5", "qwen3.5", "llama", "mistral"}
     is_enc_dec = family in {"t5"}
 
     if is_encoder and not caps.get("supports_bidirectional", True):
