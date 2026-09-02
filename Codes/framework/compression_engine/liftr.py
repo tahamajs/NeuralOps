@@ -60,40 +60,44 @@ class _LinearizedAttentionWrapper(nn.Module):
             else:
                 x = torch.zeros(1, 1, 768)
 
+        def _fmt(out: torch.Tensor) -> Union[torch.Tensor, Tuple[torch.Tensor, None]]:
+            is_linear_attn = hasattr(self.original_attn, "in_proj_qkv") or "deltanet" in type(self.original_attn).__name__.lower() or "linear" in type(self.original_attn).__name__.lower()
+            return out if is_linear_attn else (out, None)
+
         # Check if original module is DistilBERT-style or custom
         if hasattr(self.original_attn, "q_lin") and hasattr(self.original_attn, "v_lin") and hasattr(self.original_attn, "out_lin"):
             # DistilBERT MultiHeadSelfAttention
             v = self.original_attn.v_lin(x)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             output = self.original_attn.out_lin(context)
-            return (output, None)
+            return _fmt(output)
         elif hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "o_proj"):
             # LLaMA / Mistral / Gemma style
             v = self.original_attn.v_proj(x)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             output = self.original_attn.o_proj(context)
-            return (output, None)
+            return _fmt(output)
         elif hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "out_proj"):
             # OPT / Falcon style
             v = self.original_attn.v_proj(x)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             output = self.original_attn.out_proj(context)
-            return (output, None)
+            return _fmt(output)
         elif hasattr(self.original_attn, "query") and hasattr(self.original_attn, "value"):
             # BERT BertSelfAttention
             v = self.original_attn.value(x)
             context = v.mean(dim=1, keepdim=True).expand_as(v)
             out_layer = getattr(self.original_attn, "dense", None)
             output = out_layer(context) if out_layer is not None else context
-            return (output, None)
+            return _fmt(output)
         else:
             # Fallback to calling original attention or identity
             try:
                 m = mask if mask is not None else attention_mask
                 res = self.original_attn(x, attention_mask=m, **kwargs)
-                return res if isinstance(res, tuple) else (res, None)
+                return res if isinstance(res, tuple) else _fmt(res)
             except Exception:
-                return (x, None)
+                return _fmt(x)
 
 
 class LIFTRCompressor(BaseCompressor):

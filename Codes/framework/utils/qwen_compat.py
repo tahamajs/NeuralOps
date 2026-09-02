@@ -169,4 +169,5 @@ def is_architecture_error(exc: BaseException) -> bool:
         "shape", "size mismatch", "unexpected keyword", "unexpected argument", "has no attribute",
         "not enough values to unpack", "too many values to unpack", "values to unpack",
         "attention mask", "position_embeddings", "mat1 and mat2", "cannot be multiplied",
+        "unsupported operand type", "tensor' and 'tuple'",
     ))
