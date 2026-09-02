@@ -220,6 +220,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     model.train()
     curr_batch_size = batch_size
 
+    micro_bs = 8 if (device.type == "cuda" and curr_batch_size > 8) else curr_batch_size
     had_nan = False
     step = 0
     t_start = time.monotonic()
@@ -230,16 +231,31 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             raise TimeoutError(f"Module training exceeded {timeout}s stall timeout")
         try:
             if batches is not None and len(batches) > 0:
-                x, y = batches[step % len(batches)]
+                bx, by = batches[step % len(batches)]
             else:
                 i = (step * curr_batch_size) % max(1, len(train) - curr_batch_size)
-                x, y = encode(tokenizer, {k: train[k][i:i+curr_batch_size] for k in train.column_names}, name, seq_len, device)
+                bx, by = encode(tokenizer, {k: train[k][i:i+curr_batch_size] for k in train.column_names}, name, seq_len, device)
+
             opt.zero_grad(set_to_none=True)
-            with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
-                loss = model(**x, labels=y).loss
-            if not torch.isfinite(loss):
-                had_nan = True
-            scaler.scale(loss).backward()
+            total_n = by.size(0)
+            step_loss = 0.0
+            
+            # Micro-batch accumulation to strictly prevent VRAM OOM while preserving batch_size=64 semantics
+            for c_start in range(0, total_n, micro_bs):
+                c_end = min(c_start + micro_bs, total_n)
+                cx = {k: v[c_start:c_end] for k, v in bx.items()}
+                cy = by[c_start:c_end]
+                frac = (c_end - c_start) / total_n
+
+                with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+                    out = model(**cx, labels=cy)
+                    loss_chunk = out.loss * frac
+
+                if not torch.isfinite(out.loss):
+                    had_nan = True
+                step_loss += float(out.loss) * frac
+                scaler.scale(loss_chunk).backward()
+
             try:
                 scaler.unscale_(opt)
                 torch.nn.utils.clip_grad_norm_(trainable, max_norm=1.0)
@@ -248,14 +264,14 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             scaler.step(opt)
             scaler.update()
             if (step + 1) % 5 == 0 or step == steps - 1 or step == 0:
-                LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d)", step + 1, steps, float(loss), curr_batch_size)
+                LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d, micro_bs=%d)", step + 1, steps, step_loss, total_n, micro_bs)
             step += 1
         except torch.cuda.OutOfMemoryError:
             opt.zero_grad(set_to_none=True)
             torch.cuda.empty_cache()
-            if curr_batch_size > 1:
-                curr_batch_size //= 2
-                LOG.warning("CUDA OOM during LoRA training; reducing batch size to %d", curr_batch_size)
+            if micro_bs > 1:
+                micro_bs //= 2
+                LOG.warning("CUDA OOM during LoRA training; reducing micro-batch size to %d (effective bs=%d)", micro_bs, curr_batch_size)
             else:
                 raise
     model.eval()
