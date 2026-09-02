@@ -460,9 +460,19 @@ saved metadata: {'shape': torch.Size([512, 50, 64]), 'dtype': torch.",438.47,202
 t5,sst2,grecodec,PASS,76.49,adapted_t5,,258.41,2026-09-02T06:09:19.652304
 t5,sst2,grecodec_compressor,PASS,79.36,adapted_t5,,259.77,2026-09-02T06:13:39.975506
 t5,sst2,griffin_ssd,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,65.58,2026-09-02T06:14:45.972067
+saved metadata: {'shape': torch.Size([512, 50, 64]), 'dtype': torch.",438.47,2026-09-02T06:04:59.993920
+t5,sst2,grecodec,PASS,76.49,adapted_t5,,258.41,2026-09-02T06:09:19.652304
+t5,sst2,grecodec_compressor,PASS,79.36,adapted_t5,,259.77,2026-09-02T06:13:39.975506
+t5,sst2,griffin_ssd,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,65.58,2026-09-02T06:14:45.972067
 t5,sst2,halo_regla,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,54.9,2026-09-02T06:15:41.205474
 t5,sst2,hamming,SKIP_T5_INCOMPATIBLE,50.92,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,48.09,2026-09-02T06:16:29.703998
 t5,sst2,hashed_net,PASS,51.49,adapted_t5,,129.01,2026-09-02T06:18:39.112071
 t5,sst2,hgrn2_gated_deltanet,SKIP_SLOW,0.0,adapted_t5,exceeded_10m_timeout,600.0,2026-09-02T06:28:45
 t5,sst2,hgrn2_layer,SKIP_SLOW,0.0,adapted_t5,exceeded_10m_timeout,600.0,2026-09-02T06:39:40
 t5,sst2,hgrn2_outer,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,73.26,2026-09-02T06:41:37.141657
+qwen3_5,sst2,aasvd,PASS,81.31,adapted_qwen3_5,,379.35,2026-09-02T20:41:01.005000
+qwen3_5,sst2,a3,SKIP_QWEN3_5_INCOMPATIBLE,0.0,unsupported,qwen3_5_incompatible_a3,0.0,2026-09-02T20:33:35.519966
+qwen3_5,sst2,adaptive_svd,SKIP_QWEN3_5_INCOMPATIBLE,0.0,unsupported,qwen3_5_incompatible_adaptive_svd,0.0,2026-09-02T20:33:35.520354
+qwen3_5,sst2,adaptive_span,SKIP_QWEN3_5_INCOMPATIBLE,0.0,unsupported,qwen3_5_incompatible_adaptive_span,0.0,2026-09-02T20:33:35.520500
+qwen3_5,sst2,adasplash,SKIP_QWEN3_5_INCOMPATIBLE,0.0,unsupported,qwen3_5_incompatible_adasplash,0.0,2026-09-02T20:33:35.520700
+qwen3_5,sst2,adaptive_sparse,SKIP_QWEN3_5_INCOMPATIBLE,0.0,unsupported,qwen3_5_incompatible_adaptive_sparse,0.0,2026-09-02T20:33:35.520900

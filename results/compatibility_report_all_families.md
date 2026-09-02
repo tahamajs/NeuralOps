@@ -328,8 +328,12 @@ Generic compression previously compressed all linear layers indiscriminately, wh
    - Compressors factorize the base linear weights, allowing recovery fine-tuning to update only LoRA matrices ($\Delta W = A \times B$) and the classification head.
    - Recovery fine-tuning uses $\text{lr} = 5\times 10^{-5}$ with gradient clipping ($\text{max\_grad\_norm} = 1.0$) across 150 steps, avoiding loss divergence.
 
-### Compatibility Status
-- **Baseline Qwen3.5 SST-2**: **90.14%**
-- **Architecture-Aware Compressors (`a3`, `aasvd`, `direct_svd`, `cur_moe`, `dynamic_rank`, `adasvd`, `slicegpt`, `faq`, `astro`)**: Fully compatible with zero-crash execution, stable gradient flow, and preserved task representations.
-- **Bi-directional / Encoder-Only Attention Replacements**: Correctly skipped before injection with `SKIP_QWEN3_5_INCOMPATIBLE`.
+### Compatibility Status & Validated Results
+- **Baseline Qwen3.5 SST-2**: **90.14%** (Full FP16 LoRA baseline)
+- **`aasvd` (Activation-Aware SVD Compressor)**: **81.31%** (PASS with dynamic rank 256, 48 ordinary FFN layers factorized, batch size 128)
+- **`a3`**: **SKIP_QWEN3_5_INCOMPATIBLE** (Architecture-unaware compressor pre-skipped)
+- **`adaptive_svd`**: **SKIP_QWEN3_5_INCOMPATIBLE** (MHA-only tensor signature pre-skipped)
+- **`adaptive_span`**: **SKIP_QWEN3_5_INCOMPATIBLE** (3D conv / relative position mismatch pre-skipped)
+- **`adasplash`**: **SKIP_QWEN3_5_INCOMPATIBLE** (3D conv transposition mismatch pre-skipped)
+- **`adaptive_sparse`**: **SKIP_QWEN3_5_INCOMPATIBLE** (Encoder-only sparse attention pre-skipped)
 
