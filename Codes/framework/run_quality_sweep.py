@@ -429,6 +429,13 @@ def main():
             if n < len(names) and names[n] not in existing:
                 queue_copy(names[n])
             injected = False
+            # Merge LoRA adapters into base weights before applying compressor or attention
+            for m in model.modules():
+                if hasattr(m, "merge") and callable(m.merge):
+                    try:
+                        m.merge()
+                    except Exception:
+                        pass
             try:
                 if family in {"gpt", "gpt2"} and name in {
                     "gated_deltanet_block",
@@ -449,10 +456,9 @@ def main():
                         recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
                         if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
                             LOG.info("Running %d LoRA recovery fine-tuning steps for %s", args.recovery_steps, name)
-                            if typ == "attention":
-                                for p_name, p in model.named_parameters():
-                                    if "attn" in p_name or ".lora_" in p_name or any(h in p_name.lower() for h in ("score", "classifier", "lm_head")):
-                                        p.requires_grad = True
+                            for p_name, p in model.named_parameters():
+                                if any(h in p_name.lower() for h in ("attn", "attention", ".lora_", "score", "classifier", "lm_head", ".u", ".v", "down", "up")):
+                                    p.requires_grad = True
                             trainable = [p for p in model.parameters() if p.requires_grad]
                             if trainable:
                                 had_nan = finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
