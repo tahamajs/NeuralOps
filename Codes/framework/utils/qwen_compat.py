@@ -146,6 +146,8 @@ def qwen_module_policy(module_name: str) -> str:
         "a3", "aasvd", "adaptive_svd", "asvd", "cluster",
         "cluster_attention", "goldfinch_ahn", "griffin_ssd", "hgrn2_layer",
         "hgrn2_outer", "fusion_attn", "aegis_v2", "adaptive_svd_attention",
+        "huffman", "block_transformer_hiba", "chela_slay", "fasa",
+        "gated_deltanet_block", "granite_hybrid", "hgrn2_gated_deltanet",
     }
     if name in explicit_incompatible:
         return "incompatible"
@@ -165,5 +167,6 @@ def is_architecture_error(exc: BaseException) -> bool:
     text = str(exc).lower()
     return any(token in text for token in (
         "shape", "size mismatch", "unexpected keyword", "unexpected argument", "has no attribute",
-        "not enough values to unpack", "attention mask", "position_embeddings",
+        "not enough values to unpack", "too many values to unpack", "values to unpack",
+        "attention mask", "position_embeddings", "mat1 and mat2", "cannot be multiplied",
     ))
