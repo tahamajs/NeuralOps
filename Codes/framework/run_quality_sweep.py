@@ -426,8 +426,6 @@ def main():
             # Side effect is projection alias installation; the model itself
             # is not replaced, preserving native HF forward semantics.
             wrap_for_family(model, family)
-            if n < len(names) and names[n] not in existing:
-                queue_copy(names[n])
             typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
             if typ == "attention":
                 # For attention replacement modules, merge baseline LoRA adapters into base weights
