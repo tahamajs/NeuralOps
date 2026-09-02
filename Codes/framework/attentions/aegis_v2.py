@@ -258,7 +258,7 @@ class AegisAttentionV2(nn.Module):
         alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)
         fused = alpha * local_out + (1.0 - alpha) * global_out
 
-        fused = fused.reshape(B, N, H_dim)
+        fused = fused.reshape(B, N, self.all_head_size)
         out = self.out_proj2(self.out_proj1(fused))
         out = self.dropout(out)
         if mask_2d is not None:
