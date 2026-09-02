@@ -169,7 +169,10 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
         head = next((sub for name, sub in model.named_modules()
                      if name.endswith("classification_head")), None)
     if head is None: raise RuntimeError("Qwen sequence-classification head not found")
-    for p in head.parameters(): p.requires_grad = True
+    for p in head.parameters():
+        p.requires_grad = True
+        if p.dtype != torch.float32:
+            p.data = p.data.float()
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=5e-4)
     scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
     model.train()
@@ -380,7 +383,7 @@ def main():
             base.load_state_dict(state["state_dict"], strict=False)
         else:
             base.load_state_dict(state, strict=False)
-    elif parent_checkpoint.exists() and args.finetune_steps == 0:
+    elif parent_checkpoint.exists():
         LOG.info("Loading shared baseline checkpoint from parent directory: %s", parent_checkpoint)
         state = torch.load(parent_checkpoint, map_location="cpu", weights_only=False)
         if isinstance(state, dict) and "state_dict" in state:
