@@ -135,7 +135,28 @@ DEFAULT_TARGET_MODULES = (
     "c_attn",
     "c_proj",
     "c_fc",
+    "in_proj",
+    "out_proj",
+    "down",
+    "up",
+    "fc1",
+    "fc2",
+    "Wqkv",
+    "qkv_proj",
+    "qkv",
 )
+
+
+def find_all_linear_submodule_names(model: nn.Module) -> set[str]:
+    """Dynamically extract all Linear/Conv1D layer leaf names from model, excluding task heads."""
+    names = set()
+    for name, module in model.named_modules():
+        is_linear_like = isinstance(module, (nn.Linear, nn.Conv1d)) or module.__class__.__name__ in ("Conv1D", "Linear", "LoRALinear")
+        if is_linear_like:
+            if not any(head in name.lower() for head in ("score", "classifier", "lm_head")):
+                leaf_name = name.split(".")[-1]
+                names.add(leaf_name)
+    return names
 
 
 def apply_lora(
