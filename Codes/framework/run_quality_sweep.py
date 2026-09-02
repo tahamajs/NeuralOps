@@ -337,8 +337,8 @@ def main():
         parent_checkpoint = next((c for c in candidates if c.exists()), candidates[0])
 
     # Auto-detect if checkpoint or parent_checkpoint is a LoRA checkpoint
-    is_lora_mode = (args.finetune_mode == "lora")
-    active_ckpt = checkpoint if checkpoint.exists() else (parent_checkpoint if parent_checkpoint.exists() and args.finetune_steps == 0 else None)
+    is_lora_mode = (args.finetune_mode == "lora" or family == "qwen3_5")
+    active_ckpt = checkpoint if checkpoint.exists() else (parent_checkpoint if parent_checkpoint.exists() else None)
     if active_ckpt is not None:
         try:
             probe = torch.load(active_ckpt, map_location="cpu", weights_only=False)
