@@ -41,8 +41,8 @@ class AegisConfigV3:
     fusion_gate_bias: float = 1.8
 
     def __init__(self, **kwargs):
-        self.hidden_size = kwargs.get("hidden_size", 128)
-        self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 4))
+        self.hidden_size = kwargs.get("hidden_size", 768)
+        self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
         self.num_attention_heads = self.num_heads
         self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
         self.window_size = kwargs.get("window_size", 64)
