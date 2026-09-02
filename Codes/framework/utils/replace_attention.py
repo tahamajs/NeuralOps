@@ -112,7 +112,13 @@ class UniversalAttentionWrapper(nn.Module):
             raise RuntimeError(f"Failed to execute forward pass on {type(self.inner).__name__}")
 
         # 4. Standardize output format to a tuple for HuggingFace models
+        # Outer transformers layers (e.g. RobertaAttention) expect (context_layer, [optional_attentions])
         if isinstance(out, tuple):
+            # Ensure at least 2 elements if output_attentions is requested or expected
+            if len(out) >= 2:
+                return out
+            elif len(out) == 1:
+                return (out[0], None)
             return out
         return (out, None)
 

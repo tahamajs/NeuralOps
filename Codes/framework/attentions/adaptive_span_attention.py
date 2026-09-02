@@ -15,7 +15,7 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("adaptive_span")
+@ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=False)
 class AdaptiveSpanAttention(BaseAttention):
     r"""
     Adaptive Span Attention (Sukhbaatar et al., 2019).

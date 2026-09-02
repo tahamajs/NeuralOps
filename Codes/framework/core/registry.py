@@ -4,7 +4,7 @@ All framework components (attentions, compressors, trainers, visualizers, etc.)
 are stored in registries, enabling dynamic discovery and plug‑and‑play integration.
 """
 
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 import logging
@@ -13,30 +13,65 @@ logger = logging.getLogger(__name__)
 
 
 class Registry:
-    """A named dictionary that maps string keys to classes or factory functions."""
+    """A named dictionary that maps string keys to classes or factory functions with capability metadata."""
 
     def __init__(self, name: str) -> None:
         self.name = name
         self._dict: Dict[str, Callable] = {}
+        self._metadata: Dict[str, Dict[str, Any]] = {}
 
-    def register(self, key: Optional[str] = None) -> Callable:
+    def register(
+        self,
+        key: Optional[str] = None,
+        supports_causal: Optional[bool] = None,
+        supports_bidirectional: Optional[bool] = None,
+        supports_cross_attention: Optional[bool] = None,
+        supports_gqa: Optional[bool] = None,
+        **extra_metadata: Any,
+    ) -> Callable:
         """
-        Decorator to register a class/factory under the given key.
+        Decorator to register a class/factory under the given key with capability flags.
 
         Usage:
-            @ATTENTION_REGISTRY.register("griffin")
+            @ATTENTION_REGISTRY.register("griffin", supports_causal=True, supports_bidirectional=False)
             class GriffinAttention(BaseAttention): ...
         """
 
         def decorator(obj: Callable) -> Callable:
-            """Decorator."""
             nonlocal key
             if key is None:
                 key = obj.__name__
-            self._dict[key.lower()] = obj
+            k = key.lower()
+            self._dict[k] = obj
+
+            # Derive capabilities from explicit kwargs or attributes on the registered object
+            caps = {
+                "supports_causal": getattr(obj, "supports_causal", True if supports_causal is None else supports_causal),
+                "supports_bidirectional": getattr(obj, "supports_bidirectional", True if supports_bidirectional is None else supports_bidirectional),
+                "supports_cross_attention": getattr(obj, "supports_cross_attention", True if supports_cross_attention is None else supports_cross_attention),
+                "supports_gqa": getattr(obj, "supports_gqa", False if supports_gqa is None else supports_gqa),
+            }
+            caps.update(extra_metadata)
+            self._metadata[k] = caps
             return obj
 
         return decorator
+
+    def get_metadata(self, key: str) -> Dict[str, Any]:
+        """Retrieve capability metadata for a registered component."""
+        self._try_lazy_load(key)
+        k = key.lower()
+        if k in self._metadata:
+            return dict(self._metadata[k])
+        obj = self.get(key)
+        if obj is not None:
+            return {
+                "supports_causal": getattr(obj, "supports_causal", True),
+                "supports_bidirectional": getattr(obj, "supports_bidirectional", True),
+                "supports_cross_attention": getattr(obj, "supports_cross_attention", True),
+                "supports_gqa": getattr(obj, "supports_gqa", False),
+            }
+        return {}
 
     def _try_lazy_load(self, key: str) -> None:
         """Attempt to lazily load package modules when a key is queried."""
@@ -171,3 +206,36 @@ def get_evaluatable_modules(include_compressors: bool = True) -> List[str]:
     attns = [k for k in ATTENTION_REGISTRY.keys() if not is_helper_module(k)]
     comps = [k for k in COMPRESSOR_REGISTRY.keys() if not is_helper_module(k)] if include_compressors else []
     return sorted(list(set(attns + comps)))
+
+
+def get_module_capabilities(name: str) -> Dict[str, Any]:
+    """Return capability flags for either attention or compressor module."""
+    k = name.lower()
+    if k in ATTENTION_REGISTRY:
+        return ATTENTION_REGISTRY.get_metadata(k)
+    if k in COMPRESSOR_REGISTRY:
+        return COMPRESSOR_REGISTRY.get_metadata(k)
+    return {}
+
+
+def is_module_declared_compatible(name: str, family: str) -> Tuple[bool, str]:
+    """Check whether a module's declared capabilities satisfy a model family's architectural requirements."""
+    if name == "full":
+        return True, ""
+    family = family.lower()
+    caps = get_module_capabilities(name)
+    if not caps:
+        return True, ""
+
+    is_encoder = family in {"bert", "roberta", "distilbert"}
+    is_decoder = family in {"gpt", "gpt2", "qwen", "llama", "mistral"}
+    is_enc_dec = family in {"t5"}
+
+    if is_encoder and not caps.get("supports_bidirectional", True):
+        return False, "declared_causal_only_incompatible_with_encoder"
+    if is_decoder and not caps.get("supports_causal", True):
+        return False, "declared_bidirectional_only_incompatible_with_decoder"
+    if is_enc_dec and not caps.get("supports_cross_attention", True):
+        return False, "declared_lacks_cross_attention_for_encoder_decoder"
+
+    return True, ""

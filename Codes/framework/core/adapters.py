@@ -5,6 +5,14 @@ Model‑family adapters. Extracts projection weights and biases cleanly across a
 from typing import Any, Optional
 
 
+CANONICAL_PROJECTION_ALIASES = {
+    "q": ["q", "query", "q_proj", "query_proj", "q_lin", "Wq", "wq", "c_attn", "in_proj", "Wqkv", "qkv_proj", "qkv"],
+    "k": ["k", "key", "k_proj", "key_proj", "k_lin", "Wk", "wk"],
+    "v": ["v", "value", "v_proj", "value_proj", "v_lin", "Wv", "wv"],
+    "o": ["o", "out_proj", "o_proj", "out_lin", "dense", "c_proj", "wo", "W_o", "Wo"],
+}
+
+
 class UniversalAdapter:
     """Universal adapter supporting BERT, DistilBERT, RoBERTa, LLaMA, GPT2, DeBERTa, etc."""
 
@@ -21,13 +29,7 @@ class UniversalAdapter:
         - Conv1D: transposes weight from [in, out] to [out, in]
         """
         target = getattr(old_attn, "self", old_attn)
-
-        q_names = ["q", "query", "q_proj", "q_lin", "Wq", "c_attn"]
-        k_names = ["k", "key", "k_proj", "k_lin", "Wk"]
-        v_names = ["v", "value", "v_proj", "v_lin", "Wv"]
-        o_names = ["o", "out_proj", "o_proj", "out_lin", "dense", "c_proj"]
-
-        candidate_names = {"q": q_names, "k": k_names, "v": v_names, "o": o_names}.get(proj, [])
+        candidate_names = CANONICAL_PROJECTION_ALIASES.get(proj, [])
 
         def _unwrap(mod: Any) -> Any:
             """Unwrap LoRALinear / merged adapter layers to their base_layer."""

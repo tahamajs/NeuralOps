@@ -98,11 +98,19 @@ def causal_mask_from_attention_mask(attention_mask: Optional[torch.Tensor], adap
 
 
 def install_projection_aliases(module: nn.Module) -> nn.Module:
+    """Installs bidirectional attribute aliases across all canonical projection naming schemes."""
+    from framework.core.adapters import CANONICAL_PROJECTION_ALIASES
     for child in module.modules():
-        for legacy, native in (("q_lin", "q_proj"), ("k_lin", "k_proj"),
-                               ("v_lin", "v_proj"), ("out_lin", "o_proj")):
-            if not hasattr(child, legacy) and hasattr(child, native):
-                object.__setattr__(child, legacy, getattr(child, native))
+        for group in CANONICAL_PROJECTION_ALIASES.values():
+            present_attr = next((name for name in group if hasattr(child, name)), None)
+            if present_attr is not None:
+                mod = getattr(child, present_attr)
+                for alias in group:
+                    if not hasattr(child, alias):
+                        try:
+                            object.__setattr__(child, alias, mod)
+                        except (AttributeError, TypeError):
+                            pass
     return module
 
 
