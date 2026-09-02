@@ -15,7 +15,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.utils.compat import should_compress_linear
+from framework.utils.compat import should_compress_linear, get_dynamic_compression_rank
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +108,9 @@ class DirectSVDCompressor(BaseCompressor):
             r = int(round(target_r * (max_r / ref_dim)))
         else:
             r = int(round(32 * (max_r / ref_dim)))
+
+        # Dynamic architecture-aware rank selection for Qwen3.5 / large models
+        r = get_dynamic_compression_rank(in_f, out_f, model_or_family=self.model, default_rank=r, comp_config=getattr(self, "cfg", None))
 
         # Enforce minimum rank floor r_min >= 16 and physical bounds
         r = max(r_floor, min(r, max_r))

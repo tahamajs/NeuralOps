@@ -28,7 +28,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.utils.compat import should_compress_linear
+from framework.utils.compat import should_compress_linear, get_dynamic_compression_rank
 from framework.compression_engine.pruning_utils import (
     get_calibration_tensors,
     recalibrate_layernorms,
@@ -222,7 +222,8 @@ class A3Compressor(BaseCompressor):
         device = module.weight.device
         dtype = module.weight.dtype
         W = module.weight.data.float()
-        r = min(self.rank, in_f, out_f)
+        r = get_dynamic_compression_rank(in_f, out_f, model_or_family=self.model, default_rank=self.rank, comp_config=getattr(self, "config", None))
+        r = min(r, in_f, out_f)
 
         # Perform direct SVD on W
         try:

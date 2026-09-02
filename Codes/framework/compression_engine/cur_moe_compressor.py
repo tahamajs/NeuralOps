@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear, get_dynamic_compression_rank
 
 from .cur_linear import (
     CURLinear,
@@ -100,13 +101,15 @@ class CURMoECompressor(BaseCompressor):
         })
         if len(self.compressed_layers) == 0:
             for name, module in list(self.model.named_modules()):
+                if not should_compress_linear(self.model, name):
+                    continue
                 last_part = name.split(".")[-1]
                 if last_part in _ATTN_NAMES:
                     continue  # preserve pretrained attention weights intact
                 if isinstance(module, nn.Linear) and not isinstance(module, CURLinear):
                     max_rank = min(module.in_features, module.out_features)
-                    # Use at least rank=128 to retain ≥95% singular energy in FFN layers
-                    r = min(max(self.rank, 128), max_rank)
+                    r = get_dynamic_compression_rank(module.in_features, module.out_features, model_or_family=self.model, default_rank=max(self.rank, 128), comp_config=getattr(self, "cfg", None))
+                    r = min(r, max_rank)
                     cur_layer = CURLinear.from_linear(
                         module,
                         rank=r,
