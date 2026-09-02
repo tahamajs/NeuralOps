@@ -178,16 +178,17 @@ class SimpleSSM(BaseAttention):
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
-        B, L, D = hidden_states.shape
-
-        x_proj = self.in_proj(hidden_states)
+        # Pre-normalize input to prevent unnormalized T5 embeddings from blowing up SSM in FP16
+        x_norm = F.layer_norm(hidden_states, (hidden_states.shape[-1],))
+        x_proj = self.in_proj(x_norm)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
         # 1D conv with exact sequence length retention
         x_ssm = self.conv1d(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2)
         x_ssm = F.silu(x_ssm)
 
-        dt = F.softplus(self.dt_proj(x_ssm))
+        # Discretization step size dt is physically bounded to [0.001, 0.1]
+        dt = F.softplus(self.dt_proj(x_ssm)).clamp(min=1e-3, max=0.1)
 
         mask_bool = None
         if attention_mask is not None:
