@@ -175,6 +175,7 @@ HELPER_SUFFIXES = (
     "_attn_inject",
     "_module_inject",
     "_compressor_fn",
+    "_factory",
 )
 
 
