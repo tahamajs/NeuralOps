@@ -197,20 +197,27 @@ def _copy_projection_weights(
     target_weight_param = getattr(target_mod, "weight", None)
     if isinstance(target_weight_param, nn.Parameter):
         with torch.no_grad():
-            if target_mod.weight.shape == src_weight.shape:
-                target_mod.weight.data.copy_(src_weight)
-            elif target_mod.weight.shape == src_weight.t().shape:
-                target_mod.weight.data.copy_(src_weight.t())
+            if src_weight.dim() > 2:
+                src_weight_2d = src_weight.reshape(src_weight.shape[0], -1)
+            else:
+                src_weight_2d = src_weight
+
+            if target_mod.weight.shape == src_weight_2d.shape:
+                target_mod.weight.data.copy_(src_weight_2d)
+            elif src_weight_2d.ndim == 2 and target_mod.weight.shape == src_weight_2d.t().shape:
+                target_mod.weight.data.copy_(src_weight_2d.t())
             elif (
-                target_mod.weight.shape[1] == src_weight.shape[1]
-                and target_mod.weight.shape[0] < src_weight.shape[0]
+                src_weight_2d.ndim == 2
+                and target_mod.weight.shape[1] == src_weight_2d.shape[1]
+                and target_mod.weight.shape[0] < src_weight_2d.shape[0]
             ):
-                target_mod.weight.data.copy_(src_weight[: target_mod.weight.shape[0]])
+                target_mod.weight.data.copy_(src_weight_2d[: target_mod.weight.shape[0]])
             elif (
-                target_mod.weight.shape[1] == src_weight.shape[0]
-                and target_mod.weight.shape[0] < src_weight.shape[1]
+                src_weight_2d.ndim == 2
+                and target_mod.weight.shape[1] == src_weight_2d.shape[0]
+                and target_mod.weight.shape[0] < src_weight_2d.shape[1]
             ):
-                target_mod.weight.data.copy_(src_weight.t()[: target_mod.weight.shape[0]])
+                target_mod.weight.data.copy_(src_weight_2d.t()[: target_mod.weight.shape[0]])
 
             if hasattr(target_mod, "bias") and isinstance(getattr(target_mod, "bias", None), nn.Parameter):
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
