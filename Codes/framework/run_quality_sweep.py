@@ -561,7 +561,14 @@ def main():
                         had_nan = False
                         if args.recovery_steps > 0:
                             recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
-                            if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
+                            should_recover = (
+                                not recovery_targets
+                                or "all" in recovery_targets
+                                or (typ == "attention" and "attention" in recovery_targets)
+                                or (typ == "compressor" and "compressor" in recovery_targets)
+                                or name in recovery_targets
+                            )
+                            if should_recover:
                                 rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
                                 rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
                                 LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
@@ -582,7 +589,16 @@ def main():
                                         optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
                                         weight_decay=args.weight_decay, timeout=args.timeout,
                                     )
-                    return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+                    try:
+                        return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+                    finally:
+                        if model is not None:
+                            try:
+                                model.zero_grad(set_to_none=True)
+                                model.to("cpu")
+                            except Exception:
+                                pass
+                            torch.cuda.empty_cache()
 
                 # Hard timeout enforcing max timeout (e.g. 120s / 2 minutes) across injection, recovery, and eval
                 with ThreadPoolExecutor(max_workers=1) as pool:
