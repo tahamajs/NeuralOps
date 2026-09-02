@@ -389,36 +389,12 @@ def main():
     eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
     names = modules() if args.modules == "all" else [x.strip() for x in args.modules.split(",") if x.strip()]
     path = out / "summary.csv"; existing = {r["module_name"] for r in csv.DictReader(path.open())} if path.exists() else set()
-    # Deep-copying CPU tensors is safe to overlap with the active CUDA
-    # evaluation. Keep the pool bounded: four full Qwen copies can consume
-    # several GB of host RAM, while CUDA work remains serialized.
-    try:
-        import psutil
-        ram_percent = lambda: psutil.virtual_memory().percent
-    except ImportError:
-        ram_percent = lambda: 0.0
-    worker_count = 4 if ram_percent() < 80.0 else 2
-    executor = ThreadPoolExecutor(max_workers=worker_count)
     module_rank = max(16, getattr(adapter, "head_dim", 16))
-    pending = {}
-    def queue_copy(module_name):
-        if module_name not in pending:
-            pending[module_name] = executor.submit(copy.deepcopy, base)
-    for candidate in names:
-        if candidate not in existing:
-            queue_copy(candidate)
-            if len(pending) >= 4: break
     with path.open("a", newline="", encoding="utf8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         if not existing: w.writeheader()
         for n, name in enumerate(names, 1):
             if name in existing: continue
-            if worker_count == 4 and ram_percent() >= 80.0:
-                LOG.warning("Host RAM is %.1f%%; reducing CPU prefetch workers 4 -> 2", ram_percent())
-                for future in pending.values(): future.cancel()
-                executor.shutdown(wait=False, cancel_futures=True)
-                pending.clear(); worker_count = 2
-                executor = ThreadPoolExecutor(max_workers=worker_count)
             t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
             support = module_family_support(name).get(family, "unknown")
             if name != "full" and support == "incompatible":
@@ -444,8 +420,9 @@ def main():
                        "path": path_name, "timestamp": datetime.now().isoformat()}
                 w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
                 continue
-            queue_copy(name)
-            model = pending.pop(name).result().to(device)
+
+            # Sequential single-model clone directly to GPU (Zero host RAM bloat)
+            model = copy.deepcopy(base).to(device)
             # Side effect is projection alias installation; the model itself
             # is not replaced, preserving native HF forward semantics.
             wrap_for_family(model, family)
@@ -559,6 +536,5 @@ def main():
                    "path": path_name, "timestamp": datetime.now().isoformat()}
             w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s %.2f%%", n, len(names), name, status, acc)
             del model; gc.collect(); torch.cuda.empty_cache()
-    executor.shutdown(wait=True)
 
 if __name__ == "__main__": main()
