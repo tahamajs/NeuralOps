@@ -140,9 +140,10 @@ class Jamba2Block(BaseAttention):
                 pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)
                 scores = scores.masked_fill(pad_mask, -10000.0)
             elif attention_mask.dim() == 4:
-                scores = scores + attention_mask
+                scores = scores + attention_mask.clamp(min=-10000.0).to(scores.dtype)
 
-        probs = F.softmax(scores, dim=-1)
+        probs = F.softmax(scores.float(), dim=-1).to(scores.dtype)
+        probs = torch.nan_to_num(probs, nan=0.0)
         probs = self.dropout(probs)
         if head_mask is not None:
             probs = probs * head_mask
