@@ -359,6 +359,10 @@ class AdaptiveSVDAttention(nn.Module):
         attn_weights = self.dropout(attn_weights)
 
         if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             attn_weights = attn_weights * head_mask
 
         context = torch.matmul(attn_weights, V)
