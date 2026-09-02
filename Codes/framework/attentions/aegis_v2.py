@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.attention_utils import repeat_kv
 
 
 @dataclass
@@ -20,7 +21,9 @@ class AegisAttentionConfigV2:
     r"""Configuration dataclass for AegisAttentionV2."""
     hidden_size: int = 768
     num_attention_heads: int = 12
+    num_heads: int = 12
     head_dim: int = 64
+    num_key_value_heads: int = 12
     local_window: int = 64
     rank: int = 64
     kernel_feature_dim: int = 128
@@ -29,44 +32,31 @@ class AegisAttentionConfigV2:
     gate_init_bias: float = 1.8
 
 
+AegisConfigV2 = AegisAttentionConfigV2
+
+
+@ATTENTION_REGISTRY.register("aegis_v2")
 class AegisAttentionV2(nn.Module):
-    r"""
-    Aegis-Attention V2 Layer.
-
-    Mathematical Formulation:
-        1. Low-Rank Projection:
-           $$Q = X W_{Q1} W_{Q2}, \quad K = X W_{K1} W_{K2}, \quad V = X W_{V1} W_{V2}$$
-           with $W_1 \in \mathbb{R}^{D \times r}, W_2 \in \mathbb{R}^{r \times D}$.
-
-        2. Local Band Attention:
-           $$A^{\text{local}}_{ij} = \text{Softmax}\left(\frac{Q_i K_j^T}{\sqrt{d_h}} + M^{\text{band}}_{ij} + M^{\text{pad}}_j\right)$$
-           $$O^{\text{local}}_i = \sum_{j} A^{\text{local}}_{ij} V_j$$
-
-        3. Global Kernel Linear Attention with Token Pruning:
-           $$\phi(u) = \text{ELU}(u) + 1, \quad g = \sigma(\text{PruneGate}(X)) \in [0, 1]^{B \times N \times H}$$
-           $$K_g = g \odot K, \quad V_g = g \odot V$$
-           $$O^{\text{global}}_i = \frac{\phi(Q_i) \left(\sum_j \phi(K_{g, j})^T V_{g, j}\right)}{\phi(Q_i) \left(\sum_j \phi(K_{g, j})^T \mathbf{1}\right) + \epsilon}$$
-
-        4. Gated Fusion:
-           $$\alpha = \sigma(\text{FusionGate}(X) + b_{\text{gate}}) \in [0, 1]^{B \times N \times H \times 1}$$
-           $$O_i = \alpha_i \odot O^{\text{local}}_i + (1 - \alpha_i) \odot O^{\text{global}}_i$$
-           $$\text{Output} = O W_{O1} W_{O2}$$
-    """
+    r"""AEGIS-Attention V2 Multi-Head Layer."""
 
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any = None,
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        if not isinstance(config, AegisAttentionConfigV2):
-            h_size = getattr(config, "hidden_size", 768) if config is not None else 768
-            n_heads = getattr(config, "num_attention_heads", 4) if config is not None else 12
-            config = AegisAttentionConfigV2(
+        if config is None or not isinstance(config, AegisConfigV2):
+            h_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12)) if config is not None else 12
+            h_dim = getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads)
+            n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
+            config = AegisConfigV2(
                 hidden_size=h_size,
                 num_attention_heads=n_heads,
-                head_dim=h_size // max(1, n_heads),
+                num_heads=n_heads,
+                num_key_value_heads=n_kv_heads,
+                head_dim=h_dim,
                 local_window=getattr(config, "block_size", getattr(config, "local_window", 64)) if config is not None else 64,
                 rank=getattr(config, "lora_r", getattr(config, "rank", 64)) if config is not None else 64,
                 kernel_feature_dim=getattr(config, "rff_features", getattr(config, "kernel_feature_dim", 128)) if config is not None else 128,
@@ -78,19 +68,24 @@ class AegisAttentionV2(nn.Module):
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.head_dim
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads)
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.supports_gqa: bool = True
         self.local_window: int = config.local_window
         self.rank: int = config.rank
         self.kernel_dim: int = config.kernel_feature_dim
         self.dropout: nn.Dropout = nn.Dropout(config.dropout)
 
         self.q_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.q_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
+        self.q_proj2 = nn.Linear(self.rank, self.all_head_size, bias=True)
         self.k_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.k_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
+        self.k_proj2 = nn.Linear(self.rank, self.all_kv_head_size, bias=True)
         self.v_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.v_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
+        self.v_proj2 = nn.Linear(self.rank, self.all_kv_head_size, bias=True)
 
-        self.out_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
+        self.out_proj1 = nn.Linear(self.all_head_size, self.rank, bias=False)
         self.out_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
 
         if config.use_adaptive_pruning:
@@ -187,13 +182,12 @@ class AegisAttentionV2(nn.Module):
         def lr(lin1: nn.Linear, lin2: nn.Linear, x: torch.Tensor) -> torch.Tensor:
             return lin2(lin1(x))
 
-        Q = lr(self.q_proj1, self.q_proj2, hidden_states)
-        K = lr(self.k_proj1, self.k_proj2, hidden_states)
-        V = lr(self.v_proj1, self.v_proj2, hidden_states)
-
-        Q = Q.view(B, N, self.num_heads, self.head_dim)
-        K = K.view(B, N, self.num_heads, self.head_dim)
-        V = V.view(B, N, self.num_heads, self.head_dim)
+        Q = lr(self.q_proj1, self.q_proj2, hidden_states).view(B, N, self.num_heads, self.head_dim)
+        K = lr(self.k_proj1, self.k_proj2, hidden_states).view(B, N, self.num_kv_heads, self.head_dim)
+        V = lr(self.v_proj1, self.v_proj2, hidden_states).view(B, N, self.num_kv_heads, self.head_dim)
+        if self.kv_repeat > 1:
+            K = repeat_kv(K.transpose(1, 2), self.kv_repeat).transpose(1, 2)
+            V = repeat_kv(V.transpose(1, 2), self.kv_repeat).transpose(1, 2)
 
         if mask_2d is not None:
             m4 = mask_2d.unsqueeze(-1).unsqueeze(-1)
@@ -209,7 +203,14 @@ class AegisAttentionV2(nn.Module):
         band = band.unsqueeze(0).unsqueeze(0)
         mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
         scores = scores.masked_fill(~band, mask_val)
-        if mask_2d is not None:
+        if attention_mask is not None and attention_mask.dim() == 4:
+            if attention_mask.shape[1] == 1 or attention_mask.shape[1] == scores.shape[1]:
+                scores = scores + attention_mask.to(scores.dtype)
+            elif scores.shape[1] % attention_mask.shape[1] == 0:
+                scores = scores + repeat_kv(attention_mask, scores.shape[1] // attention_mask.shape[1]).to(scores.dtype)
+            else:
+                scores = scores + attention_mask[:, :1].to(scores.dtype)
+        elif mask_2d is not None:
             key_mask = mask_2d.unsqueeze(1).unsqueeze(2)
             scores = scores.masked_fill(~key_mask, mask_val)
 
