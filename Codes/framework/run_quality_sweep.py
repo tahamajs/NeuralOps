@@ -559,36 +559,35 @@ def main():
                         path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                         LOG.info("module=%s path=%s", name, path_name)
                         had_nan = False
-                        if args.recovery_steps > 0:
-                            recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
-                            should_recover = (
+                        recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
+                        should_recover = (
+                            args.recovery_steps > 0
+                            and typ == "attention"
+                            and (
                                 not recovery_targets
                                 or "all" in recovery_targets
-                                or (typ == "attention" and "attention" in recovery_targets)
-                                or (typ == "compressor" and "compressor" in recovery_targets)
+                                or "attention" in recovery_targets
                                 or name in recovery_targets
                             )
-                            if should_recover:
-                                rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
-                                rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
-                                LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
-                                if typ == "attention":
-                                    # Re-enable zero-init LoRA adapters for clean post-injection adaptation on attention modules
-                                    for m in model.modules():
-                                        if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
-                                            m.reset_parameters()
-                                            m.merged = False
+                        )
+                        if should_recover:
+                            rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
+                            rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
+                            LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
+                            for m in model.modules():
+                                if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
+                                    m.reset_parameters()
+                                    m.merged = False
 
-                                # Task 3: Use get_recovery_params to freeze compressor factors and unfreeze only LoRA + head
-                                from framework.utils.compat import get_recovery_params
-                                trainable = get_recovery_params(model)
-                                if trainable:
-                                    had_nan = finetune_lora(
-                                        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device,
-                                        args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
-                                        optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
-                                        weight_decay=args.weight_decay, timeout=args.timeout,
-                                    )
+                            from framework.utils.compat import get_recovery_params
+                            trainable = get_recovery_params(model)
+                            if trainable:
+                                had_nan = finetune_lora(
+                                    model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device,
+                                    args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
+                                    optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
+                                    weight_decay=args.weight_decay, timeout=args.timeout,
+                                )
                     try:
                         return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
                     finally:
