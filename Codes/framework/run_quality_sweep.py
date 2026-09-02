@@ -280,6 +280,10 @@ def main():
     if not parent_checkpoint.exists():
         parent_checkpoint = out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt"
     if not parent_checkpoint.exists():
+        parent_checkpoint = out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt"
+    if not parent_checkpoint.exists():
+        parent_checkpoint = out.parent / "roberta_sst2_lora_baseline" / "finetuned_model.pt"
+    if not parent_checkpoint.exists():
         parent_checkpoint = out.parent / "gpt2_sst2_lora_baseline" / "finetuned_model.pt"
     if not parent_checkpoint.exists():
         parent_checkpoint = out.parent / "qwen_sst2_lora_baseline" / "finetuned_model.pt"
@@ -306,6 +310,8 @@ def main():
             target_mods = "q,k,v,o,wi,wo,wi_0,wi_1,dense"
         elif family in {"gpt", "gpt2"}:
             target_mods = "c_attn,c_proj,c_fc,q_proj,k_proj,v_proj,o_proj,down,up,down_proj,up_proj,in_proj,out_proj"
+        elif family in {"roberta", "bert"}:
+            target_mods = "query,key,value,dense,q_proj,k_proj,v_proj,out_proj,down,up,down_proj,up_proj"
         base, num_lora = apply_lora(
             base,
             r=args.lora_r,

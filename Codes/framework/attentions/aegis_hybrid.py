@@ -190,6 +190,41 @@ class AegisHybridAttention(nn.Module):
         return self.out_proj
 
     def _copy_pretrained(self, old_attn: nn.Module) -> None:
+        if hasattr(old_attn, "c_attn") and hasattr(old_attn, "c_proj"):
+            c_attn_w = old_attn.c_attn.weight.data
+            if old_attn.c_attn.__class__.__name__ == "Conv1D" and c_attn_w.size(0) < c_attn_w.size(1):
+                c_attn_w = c_attn_w.t()
+            hidden_dim = self.hidden_size
+            q_w, k_w, v_w = c_attn_w.split(hidden_dim, dim=0)
+            c_attn_b = old_attn.c_attn.bias.data if old_attn.c_attn.bias is not None else None
+            q_b, k_b, v_b = (c_attn_b.split(hidden_dim, dim=0)) if c_attn_b is not None else (None, None, None)
+
+            for (w, b, p1, p2) in [(q_w, q_b, self.q_proj1, self.q_proj2), (k_w, k_b, self.k_proj1, self.k_proj2), (v_w, v_b, self.v_proj1, self.v_proj2)]:
+                with torch.no_grad():
+                    U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
+                    r = min(self.rank, U.size(1), Vh.size(0))
+                    p1.weight.data.zero_()
+                    p2.weight.data.zero_()
+                    p1.weight.data[:r, :].copy_(Vh[:r, :].to(p1.weight.dtype))
+                    p2.weight.data[:, :r].copy_((U[:, :r] @ torch.diag(S[:r])).to(p2.weight.dtype))
+                    if b is not None and p2.bias is not None:
+                        p2.bias.data.copy_(b.to(p2.bias.dtype))
+
+            c_proj_w = old_attn.c_proj.weight.data
+            if old_attn.c_proj.__class__.__name__ == "Conv1D" and c_proj_w.size(0) < c_proj_w.size(1):
+                c_proj_w = c_proj_w.t()
+            c_proj_b = old_attn.c_proj.bias.data if old_attn.c_proj.bias is not None else None
+            with torch.no_grad():
+                U, S, Vh = torch.linalg.svd(c_proj_w.float(), full_matrices=False)
+                r = min(self.rank, U.size(1), Vh.size(0))
+                self.out_proj1.weight.data.zero_()
+                self.out_proj2.weight.data.zero_()
+                self.out_proj1.weight.data[:r, :].copy_(Vh[:r, :].to(self.out_proj1.weight.dtype))
+                self.out_proj2.weight.data[:, :r].copy_((U[:, :r] @ torch.diag(S[:r])).to(self.out_proj2.weight.dtype))
+                if c_proj_b is not None and self.out_proj2.bias is not None:
+                    self.out_proj2.bias.data.copy_(c_proj_b.to(self.out_proj2.bias.dtype))
+            return
+
         q_src = getattr(old_attn, "q_lin", getattr(old_attn, "query", getattr(old_attn, "q_proj", getattr(old_attn, "q", None))))
         k_src = getattr(old_attn, "k_lin", getattr(old_attn, "key", getattr(old_attn, "k_proj", getattr(old_attn, "k", None))))
         v_src = getattr(old_attn, "v_lin", getattr(old_attn, "value", getattr(old_attn, "v_proj", getattr(old_attn, "v", None))))
