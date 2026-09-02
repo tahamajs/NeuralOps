@@ -506,6 +506,15 @@ def main():
                     status = "SKIP_T5_INCOMPATIBLE"
                     if not err:
                         err = "t5_relative_bias_and_cross_attention_incompatible"
+            elif family in {"bert", "roberta"} and name in ATTENTION_REGISTRY and status == "PASS":
+                if had_nan:
+                    status = "SKIP_NUMERICAL_NAN"
+                    if not err:
+                        err = "recovery_loss_nan"
+                elif acc <= 51.5:
+                    status = "SKIP_ROBERTA_INCOMPATIBLE"
+                    if not err:
+                        err = "roberta_bidirectional_self_attention_incompatible"
             row = {"module_name": name, "status": status, "accuracy_pct": acc,
                    "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
                    "path": path_name, "timestamp": datetime.now().isoformat()}

@@ -63,14 +63,16 @@ def get_transformer_layers(model: nn.Module) -> List[nn.Module]:
 
 
 def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
-    """Return (name, module) for all attention sub‑modules."""
+    """Return (name, module) for all leaf attention sub-modules."""
     attn_modules = []
     for name, module in model.named_modules():
+        if not name:
+            continue
         class_name = module.__class__.__name__.lower()
         if any(x in class_name for x in ["attention", "selfattn", "selfattention"]):
             attn_modules.append((name, module))
             continue
-        # Attribute‑based detection
+        # Attribute-based detection
         if (
             hasattr(module, "q_proj")
             or hasattr(module, "k_proj")
@@ -78,7 +80,22 @@ def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
             or hasattr(module, "query")
         ):
             attn_modules.append((name, module))
-    return attn_modules
+
+    # Crucial: Filter out parent composite containers whose children are also attention modules.
+    # For example, in RoBERTa/BERT:
+    # "roberta.encoder.layer.0.attention" is a container that includes "self" (RobertaSelfAttention)
+    # and "output" (RobertaSelfOutput: dense, LayerNorm, residual connection).
+    # Replacing the outer container destroys LayerNorm and the residual stream!
+    # We must only return the innermost/leaf self-attention module.
+    all_names = [name for name, _ in attn_modules]
+    leaf_modules = []
+    for name, module in attn_modules:
+        is_parent_container = any(other != name and other.startswith(name + ".") for other in all_names)
+        is_output_submodule = name.endswith(".output") or name.endswith("_output")
+        if not is_parent_container and not is_output_submodule:
+            leaf_modules.append((name, module))
+
+    return leaf_modules
 
 
 def get_ffn_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
