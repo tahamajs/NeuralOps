@@ -197,7 +197,7 @@ def prepare_train_batches(tokenizer, ds, name, seq_len, batch_size, device, max_
     return batches
 
 
-def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4, timeout=600, precomputed_batches=None):
+def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4, timeout=600, precomputed_batches=None, optimizer_type="adamw", muon_lr=0.02, adam_lr=None, weight_decay=0.01):
     """Fine-tune LoRA adapters and sequence classification head with adaptive batch size and timeout."""
     trainable = [p for p in model.parameters() if p.requires_grad]
     if not trainable:
@@ -206,9 +206,15 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     for p in trainable:
         if p.dtype != torch.float32:
             p.data = p.data.float()
-    LOG.info("LoRA fine-tuning: %d trainable parameters across %d tensors (lr=%.1e)",
-             sum(p.numel() for p in trainable), len(trainable), lr)
-    opt = torch.optim.AdamW(trainable, lr=lr, weight_decay=0.01)
+    LOG.info("LoRA fine-tuning: %d trainable parameters across %d tensors (lr=%.1e, optimizer=%s)",
+             sum(p.numel() for p in trainable), len(trainable), lr, optimizer_type)
+    if optimizer_type == "muon":
+        from framework.trainer.optimizers import create_muon_adamw_optimizer
+        adam_lr_val = adam_lr if adam_lr is not None else lr
+        opt = create_muon_adamw_optimizer(model, lr_muon=muon_lr, lr_adam=adam_lr_val, weight_decay=weight_decay)
+        LOG.info("Configured Muon optimizer for 2D matrix params (lr=%.1e) + AdamW for 1D params (lr=%.1e)", muon_lr, adam_lr_val)
+    else:
+        opt = torch.optim.AdamW(trainable, lr=lr, weight_decay=weight_decay)
     scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
     model.train()
     curr_batch_size = batch_size
@@ -264,13 +270,19 @@ def main():
                     help="Fine-tune mode: head-only or full-backbone LoRA adapters")
     ap.add_argument("--lora_r", type=int, default=16, help="LoRA rank dimension")
     ap.add_argument("--lora_alpha", type=float, default=32.0, help="LoRA scaling alpha")
-    ap.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout probability")
     ap.add_argument("--lora_target_modules", default="q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj",
                     help="Target modules for LoRA injection (comma-separated)")
-    ap.add_argument("--recovery_steps", type=int, default=0,
+    ap.add_argument("--recovery_steps", type=int, default=50,
                     help="Fine-tuning steps after module injection to recover accuracy")
     ap.add_argument("--recovery_modules", default="",
                     help="Comma-separated module names to apply recovery fine-tuning (empty=all)")
+    ap.add_argument("--optimizer", choices=("adamw", "muon"), default="adamw",
+                    help="Optimizer to use for recovery fine-tuning (adamw or muon)")
+    ap.add_argument("--use_muon", action="store_true",
+                    help="Enable Muon optimizer for 2D matrix parameters during recovery")
+    ap.add_argument("--muon_lr", type=float, default=0.02, help="Learning rate for Muon optimizer")
+    ap.add_argument("--adam_lr", type=float, default=5e-5, help="Learning rate for AdamW optimizer")
+    ap.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
     ap.add_argument("--batch_size", type=int, default=32)
     ap.add_argument("--learning_rate", type=float, default=2e-4)
     ap.add_argument("--precision", choices=("fp32", "fp16"), default="fp16")
@@ -322,6 +334,18 @@ def main():
              getattr(base.config, "num_attention_heads", "?"),
              getattr(base.config, "head_dim", "?"), getattr(base.config, "num_hidden_layers", "?"))
     LOG.info("detected model family=%s adapter=%s", family, adapter.as_dict())
+    active_opt = "muon" if (args.use_muon or args.optimizer == "muon") else "adamw"
+    LOG.info("=" * 80)
+    LOG.info("ACTIVE SWEEP CONFIGURATION:")
+    LOG.info("  model:             %s", args.model)
+    LOG.info("  family:            %s", family)
+    LOG.info("  dataset:           %s", args.dataset)
+    LOG.info("  batch_size:        %d", args.batch_size)
+    LOG.info("  recovery_steps:    %d", args.recovery_steps)
+    LOG.info("  optimizer:         %s (muon_lr=%.1e, adam_lr=%.1e, weight_decay=%.1e)",
+             active_opt, args.muon_lr, args.adam_lr if active_opt == "muon" else args.learning_rate, args.weight_decay)
+    LOG.info("  precision:         %s", args.precision)
+    LOG.info("=" * 80)
     if hasattr(base, "gradient_checkpointing_enable"):
         base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 
@@ -438,6 +462,8 @@ def main():
         if not existing: w.writeheader()
         for n, name in enumerate(names, 1):
             if name in existing: continue
+            LOG.info(">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
+                     n, len(names), name, args.recovery_steps, args.batch_size, active_opt)
             t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
             if family == "qwen3_5" and name != "full":
                 skip_modules = {
@@ -535,7 +561,12 @@ def main():
                             from framework.utils.compat import get_recovery_params
                             trainable = get_recovery_params(model)
                             if trainable:
-                                had_nan = finetune_lora(model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches)
+                                had_nan = finetune_lora(
+                                    model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device,
+                                    args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
+                                    optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
+                                    weight_decay=args.weight_decay,
+                                )
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
             except TimeoutError as exc:
                 status, err = "SKIP_SLOW", str(exc)

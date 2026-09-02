@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.attention_utils import repeat_kv
 
 
 @dataclass
@@ -21,6 +22,7 @@ class AegisHybridConfig:
     hidden_size: int = 768
     num_attention_heads: int = 12
     head_dim: int = 64
+    num_key_value_heads: int = 12
     local_window: int = 64
     rank: int = 64
     kernel_feature_dim: int = 128
@@ -78,15 +80,20 @@ class AegisHybridAttention(nn.Module):
             if isinstance(config, dict):
                 h_size = hidden_size or config.get("hidden_size", config.get("dim", 768))
                 n_heads = num_heads or config.get("num_attention_heads", 12)
+                h_dim = config.get("head_dim", h_size // max(1, n_heads))
+                n_kv_heads = config.get("num_key_value_heads", n_heads)
                 rank = config.get("rank", min(64, h_size))
             else:
                 h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
                 n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
+                h_dim = getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads)
+                n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
                 rank = getattr(config, "rank", min(64, h_size)) if config is not None else 64
             config = AegisHybridConfig(
                 hidden_size=h_size,
                 num_attention_heads=n_heads,
-                head_dim=h_size // max(1, n_heads),
+                head_dim=h_dim,
+                num_key_value_heads=n_kv_heads,
                 local_window=getattr(config, "local_window", getattr(config, "block_size", 64)) if not isinstance(config, dict) else config.get("local_window", 64),
                 rank=rank,
                 kernel_feature_dim=getattr(config, "kernel_feature_dim", getattr(config, "rff_features", 128)) if not isinstance(config, dict) else config.get("kernel_feature_dim", 128),
@@ -96,18 +103,23 @@ class AegisHybridAttention(nn.Module):
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.head_dim
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads)
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.supports_gqa: bool = True
         self.local_window: int = config.local_window
         self.rank: int = config.rank
         self.kernel_dim: int = config.kernel_feature_dim
         self.dropout: nn.Dropout = nn.Dropout(config.dropout)
 
         self.q_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.q_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
+        self.q_proj2 = nn.Linear(self.rank, self.all_head_size, bias=True)
         self.k_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.k_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
+        self.k_proj2 = nn.Linear(self.rank, self.all_kv_head_size, bias=True)
         self.v_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.v_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
-        self.out_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
+        self.v_proj2 = nn.Linear(self.rank, self.all_kv_head_size, bias=True)
+        self.out_proj1 = nn.Linear(self.all_head_size, self.rank, bias=False)
         self.out_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
 
         if config.use_adaptive_pruning:
@@ -291,13 +303,12 @@ class AegisHybridAttention(nn.Module):
         def lr(p1: nn.Linear, p2: nn.Linear, x: torch.Tensor) -> torch.Tensor:
             return p2(p1(x))
 
-        Q = lr(self.q_proj1, self.q_proj2, hidden_states)
-        K = lr(self.k_proj1, self.k_proj2, hidden_states)
-        V = lr(self.v_proj1, self.v_proj2, hidden_states)
-
-        Q = Q.view(B, N, self.num_heads, self.head_dim)
-        K = K.view(B, N, self.num_heads, self.head_dim)
-        V = V.view(B, N, self.num_heads, self.head_dim)
+        Q = lr(self.q_proj1, self.q_proj2, hidden_states).view(B, N, self.num_heads, self.head_dim)
+        K = lr(self.k_proj1, self.k_proj2, hidden_states).view(B, N, self.num_kv_heads, self.head_dim)
+        V = lr(self.v_proj1, self.v_proj2, hidden_states).view(B, N, self.num_kv_heads, self.head_dim)
+        if self.kv_repeat > 1:
+            K = repeat_kv(K.transpose(1, 2), self.kv_repeat).transpose(1, 2)
+            V = repeat_kv(V.transpose(1, 2), self.kv_repeat).transpose(1, 2)
 
         mask_2d: Optional[torch.Tensor] = None
         if attention_mask is not None:
@@ -324,7 +335,14 @@ class AegisHybridAttention(nn.Module):
         mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
         scores = scores.masked_fill(~band_mask, mask_val)
 
-        if mask_2d is not None:
+        if attention_mask is not None and attention_mask.dim() == 4:
+            if attention_mask.shape[1] == 1 or attention_mask.shape[1] == scores.shape[1]:
+                scores = scores + attention_mask.to(scores.dtype)
+            elif scores.shape[1] % attention_mask.shape[1] == 0:
+                scores = scores + repeat_kv(attention_mask, scores.shape[1] // attention_mask.shape[1]).to(scores.dtype)
+            else:
+                scores = scores + attention_mask[:, :1].to(scores.dtype)
+        elif mask_2d is not None:
             key_mask = mask_2d.unsqueeze(1).unsqueeze(2)
             scores = scores.masked_fill(~key_mask, mask_val)
 
@@ -369,7 +387,7 @@ class AegisHybridAttention(nn.Module):
         fused = alpha * local_out + (1.0 - alpha) * global_out
 
         # ============== 4. Output projection ==============
-        fused = fused.reshape(B, N, H_dim)
+        fused = fused.reshape(B, N, self.all_head_size)
         out = self.out_proj2(self.out_proj1(fused))
         out = self.dropout(out)
 

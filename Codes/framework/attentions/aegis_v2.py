@@ -288,11 +288,15 @@ def inject_aegis_v2(
             old_attn = layer.attention
     h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768)))) if model_config is not None else 768
     n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)))) if model_config is not None else 12
+    h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads))) if model_config is not None else h_size // max(1, n_heads)
+    n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads)) if model_config is not None else n_heads
 
     cfg = AegisAttentionConfigV2(
         hidden_size=h_size,
         num_attention_heads=n_heads,
-        head_dim=h_size // max(1, n_heads),
+        num_heads=n_heads,
+        num_key_value_heads=n_kv_heads,
+        head_dim=h_dim,
         local_window=getattr(comp_config, "block_size", 64),
         rank=getattr(comp_config, "lora_r", 64),
         kernel_feature_dim=getattr(comp_config, "rff_features", 128),
