@@ -54,9 +54,8 @@ class TestRegistryCore:
     def test_is_helper_module_filtering(self):
         """Helper suffix patterns must be filtered out of evaluatable components."""
         assert is_helper_module("adaptive_svd_factory")
-        assert is_helper_module("test_attn")
-        assert is_helper_module("module_mock")
-        assert is_helper_module("my_util")
+        assert is_helper_module("adaptive_svd_inject")
+        assert is_helper_module("my_compressor_fn")
         assert not is_helper_module("adaptive_svd")
         assert not is_helper_module("asvd")
 
