@@ -322,7 +322,7 @@ def main():
              getattr(base.config, "num_attention_heads", "?"),
              getattr(base.config, "head_dim", "?"), getattr(base.config, "num_hidden_layers", "?"))
     LOG.info("detected model family=%s adapter=%s", family, adapter.as_dict())
-    if hasattr(base, "gradient_checkpointing_enable") and not (family == "qwen3_5" and getattr(adapter, "hidden_size", 0) <= 1024):
+    if hasattr(base, "gradient_checkpointing_enable"):
         base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 
     checkpoint = out / "finetuned_model.pt"
