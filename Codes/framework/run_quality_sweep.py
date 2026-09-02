@@ -251,10 +251,11 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
                 LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d)", step + 1, steps, float(loss), curr_batch_size)
             step += 1
         except torch.cuda.OutOfMemoryError:
+            opt.zero_grad(set_to_none=True)
+            torch.cuda.empty_cache()
             if curr_batch_size > 1:
                 curr_batch_size //= 2
                 LOG.warning("CUDA OOM during LoRA training; reducing batch size to %d", curr_batch_size)
-                torch.cuda.empty_cache()
             else:
                 raise
     model.eval()
@@ -262,6 +263,8 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
 
 
 def main():
+    import os
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     ap.add_argument("--dataset_dir", default=None); ap.add_argument("--dataset", default="sst2")
@@ -511,6 +514,9 @@ def main():
                 continue
 
             # Sequential single-model clone directly on GPU (Zero host RAM bloat, zero PCIe latency)
+            model = None
+            gc.collect()
+            torch.cuda.empty_cache()
             model = copy.deepcopy(base)
             # Side effect is projection alias installation; the model itself
             # is not replaced, preserving native HF forward semantics.
