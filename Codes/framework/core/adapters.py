@@ -13,10 +13,10 @@ class UniversalAdapter:
         """Extract (weight, bias) for projection 'q', 'k', 'v', or 'o'."""
         target = getattr(old_attn, "self", old_attn)
 
-        q_names = ["query", "q_proj", "q_lin", "Wq", "c_attn"]
-        k_names = ["key", "k_proj", "k_lin", "Wk"]
-        v_names = ["value", "v_proj", "v_lin", "Wv"]
-        o_names = ["out_proj", "o_proj", "out_lin", "dense", "c_proj"]
+        q_names = ["q", "query", "q_proj", "q_lin", "Wq", "c_attn"]
+        k_names = ["k", "key", "k_proj", "k_lin", "Wk"]
+        v_names = ["v", "value", "v_proj", "v_lin", "Wv"]
+        o_names = ["o", "out_proj", "o_proj", "out_lin", "dense", "c_proj"]
 
         candidate_names = {"q": q_names, "k": k_names, "v": v_names, "o": o_names}.get(proj, [])
 
