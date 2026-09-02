@@ -184,7 +184,15 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
     model.eval()
 
 
-def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4, timeout=600):
+def prepare_train_batches(tokenizer, ds, name, seq_len, batch_size, device, max_batches=20):
+    batches = []
+    for i in range(0, min(len(ds), max_batches * batch_size), batch_size):
+        x, y = encode(tokenizer, {k: ds[k][i:i+batch_size] for k in ds.column_names}, name, seq_len, device)
+        batches.append((x, y))
+    return batches
+
+
+def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4, timeout=600, precomputed_batches=None):
     """Fine-tune LoRA adapters and sequence classification head with adaptive batch size and timeout."""
     trainable = [p for p in model.parameters() if p.requires_grad]
     if not trainable:
@@ -203,13 +211,17 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     had_nan = False
     step = 0
     t_start = time.monotonic()
+    batches = precomputed_batches if precomputed_batches else None
     while step < steps:
         if time.monotonic() - t_start > timeout:
             LOG.warning("Training step %d/%d exceeded timeout %.0fs; aborting", step, steps, timeout)
             raise TimeoutError(f"Module training exceeded {timeout}s stall timeout")
         try:
-            i = (step * curr_batch_size) % max(1, len(train) - curr_batch_size)
-            x, y = encode(tokenizer, {k: train[k][i:i+curr_batch_size] for k in train.column_names}, name, seq_len, device)
+            if batches is not None and len(batches) > 0:
+                x, y = batches[step % len(batches)]
+            else:
+                i = (step * curr_batch_size) % max(1, len(train) - curr_batch_size)
+                x, y = encode(tokenizer, {k: train[k][i:i+curr_batch_size] for k in train.column_names}, name, seq_len, device)
             opt.zero_grad(set_to_none=True)
             with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
                 loss = model(**x, labels=y).loss
@@ -387,6 +399,7 @@ def main():
         "seed": args.seed
     }), encoding="utf-8")
     eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
+    train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=20)
     names = modules() if args.modules == "all" else [x.strip() for x in args.modules.split(",") if x.strip()]
     path = out / "summary.csv"; existing = {r["module_name"] for r in csv.DictReader(path.open())} if path.exists() else set()
     module_rank = max(16, getattr(adapter, "head_dim", 16))
@@ -475,7 +488,7 @@ def main():
                             from framework.utils.compat import get_recovery_params
                             trainable = get_recovery_params(model)
                             if trainable:
-                                had_nan = finetune_lora(model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=rec_lr)
+                                had_nan = finetune_lora(model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches)
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
             except TimeoutError as exc:
                 status, err = "SKIP_SLOW", str(exc)
