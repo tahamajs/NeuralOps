@@ -146,11 +146,56 @@ class AdaSplashAttention(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         # Copy pretrained weights if available
+        self.is_decoder: bool = getattr(config, "is_decoder", False)
+        self.has_relative_attention_bias: bool = False
+        self.relative_attention_bias: Optional[nn.Embedding] = None
+        self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
+        self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
+
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
+    def _relative_position_bucket(
+        self, relative_position: torch.Tensor, bidirectional: bool = True, num_buckets: int = 32, max_distance: int = 128
+    ) -> torch.Tensor:
+        relative_buckets = 0
+        if bidirectional:
+            num_buckets //= 2
+            relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
+            relative_position = torch.abs(relative_position)
+        else:
+            relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
+        max_exact = num_buckets // 2
+        is_small = relative_position < max_exact
+        relative_position_if_large = max_exact + (
+            torch.log(relative_position.float() / max_exact)
+            / math.log(max_distance / max_exact)
+            * (num_buckets - max_exact)
+        ).to(torch.long)
+        relative_position_if_large = torch.min(
+            relative_position_if_large, torch.full_like(relative_position_if_large, num_buckets - 1)
+        )
+        relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
+        return relative_buckets
+
+    def compute_bias(self, query_length: int, key_length: int, device: Optional[torch.device] = None) -> torch.Tensor:
+        if self.relative_attention_bias is not None:
+            context_position = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
+            memory_position = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
+            relative_position = memory_position - context_position
+            relative_position_bucket = self._relative_position_bucket(
+                relative_position,
+                bidirectional=(not self.is_decoder),
+                num_buckets=self.relative_attention_num_buckets,
+                max_distance=self.relative_attention_max_distance,
+            )
+            values = self.relative_attention_bias(relative_position_bucket)
+            values = values.permute([2, 0, 1]).unsqueeze(0)
+            return values
+        return torch.zeros((1, self.num_heads, query_length, key_length), device=device)
+
     def copy_weights(self, src: Any) -> None:
-        r"""Universal adapter weight copying."""
+        r"""Universal adapter weight copying with T5 relative position bias preservation."""
         from framework.core.adapters import UniversalAdapter
 
         for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
@@ -161,6 +206,14 @@ class AdaSplashAttention(BaseAttention):
                     target.bias.data.copy_(b)
             except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
+
+        if hasattr(src, "has_relative_attention_bias"):
+            self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
+        if hasattr(src, "relative_attention_bias") and src.relative_attention_bias is not None:
+            self.relative_attention_bias = src.relative_attention_bias
+            self.has_relative_attention_bias = True
+        if hasattr(src, "is_decoder"):
+            self.is_decoder = bool(src.is_decoder)
 
     def forward(
         self,
@@ -176,47 +229,65 @@ class AdaSplashAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        B, L, D = hidden_states.shape
+        # Check for cross-attention
+        key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
+        is_cross_attention = key_value_states is not None
+        kv_input = key_value_states if is_cross_attention else hidden_states
+
+        B, L_q, D = hidden_states.shape
+        L_k = kv_input.shape[1]
         H, Dh = self.num_heads, self.head_dim
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L_q, H, Dh).transpose(1, 2)
+        k = self.k_proj(kv_input).view(B, L_k, H, Dh).transpose(1, 2)
+        v = self.v_proj(kv_input).view(B, L_k, H, Dh).transpose(1, 2)
 
         scale = Dh ** -0.5
-        logits = torch.matmul(q, k.transpose(-2, -1)) * scale
+        logits = torch.matmul(q, k.transpose(-2, -1)) * scale  # [B, H, L_q, L_k]
 
-        # Valid mask handling
-        valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)  # [B, L]
-        key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, L]
+        # Handle T5 position bias
+        position_bias = kwargs.get("position_bias", None)
+        if position_bias is None and self.has_relative_attention_bias:
+            position_bias = self.compute_bias(L_q, L_k, device=device)
+
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        if position_bias is not None:
+            if mask is not None and mask.dim() == 4:
+                position_bias = position_bias + mask.to(logits.dtype)
+            logits = logits + position_bias.to(logits.dtype)
+        elif mask is not None:
+            if mask.dim() == 4:
+                logits = logits + mask.to(logits.dtype)
+            else:
+                valid_m = get_token_valid_mask(mask, B, L_k, device)
+                if valid_m is not None:
+                    logits = logits.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
         # Apply entmax or softmax
-        if self.alpha == 1.0:
-            logits_masked = logits.masked_fill(~key_valid_4d, -10000.0)
-            attn = torch.nan_to_num(F.softmax(logits_masked.float(), dim=-1), nan=0.0).to(dtype)
-        elif self.alpha == 1.5:
+        if self.alpha == 1.5 and not is_cross_attention:
             attn = entmax15_bisect(
                 logits,
-                valid_mask=key_valid_4d,
+                valid_mask=None,
                 dim=-1,
                 n_iter=self.n_iter,
             ).to(dtype)
         else:
-            logits_masked = logits.masked_fill(~key_valid_4d, -10000.0)
-            attn = torch.nan_to_num(F.softmax(logits_masked.float(), dim=-1), nan=0.0).to(dtype)
+            attn = torch.nan_to_num(F.softmax(logits.float(), dim=-1), nan=0.0).to(dtype)
 
         attn = self.dropout(attn)
         if head_mask is not None:
             attn = attn * head_mask
 
         # Compute context
-        out = torch.matmul(attn, v)  # [B, H, L, Dh]
-        # Mask padding queries
-        out = out * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
-        out = out.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-        return self.out_proj(out), (attn if output_attentions else None)
+        out = torch.matmul(attn, v)  # [B, H, L_q, Dh]
+        out = out.transpose(1, 2).contiguous().view(B, L_q, self.all_head_size)
+        output = self.out_proj(out)
+
+        if position_bias is not None:
+            return output, position_bias
+        return output, (attn if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("adasplash_inject")
