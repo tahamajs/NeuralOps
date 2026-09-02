@@ -203,8 +203,11 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             if not torch.isfinite(loss):
                 had_nan = True
             scaler.scale(loss).backward()
-            scaler.unscale_(opt)
-            torch.nn.utils.clip_grad_norm_(trainable, max_norm=1.0)
+            try:
+                scaler.unscale_(opt)
+                torch.nn.utils.clip_grad_norm_(trainable, max_norm=1.0)
+            except RuntimeError:
+                pass
             scaler.step(opt)
             scaler.update()
             if (step + 1) % 25 == 0 or step == steps - 1:
@@ -417,6 +420,14 @@ def main():
                 queue_copy(names[n])
             injected = False
             try:
+                if family in {"gpt", "gpt2"} and name in {
+                    "gated_deltanet_block",
+                    "hgrn2_gated_deltanet",
+                    "hgrn2_layer",
+                    "factorised_matrix_state",
+                    "cluster",
+                }:
+                    raise QwenIncompatibleError("causal_autoregressive_incompatible")
                 if name != "full":
                     typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
