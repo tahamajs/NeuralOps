@@ -77,20 +77,69 @@ def _find_submodule_by_regex(module: nn.Module, patterns: List[re.Pattern]) -> O
     return None
 
 
+def compute_reconstruction_error(src_weight: torch.Tensor, target_mod: nn.Module) -> float:
+    """Computes relative Frobenius reconstruction error ||W_src - W_target||_F / (||W_src||_F + 1e-9).
+    
+    Can be called standalone to verify weight copying fidelity across any module architecture.
+    """
+    if src_weight is None or target_mod is None:
+        return 1.0
+
+    with torch.no_grad():
+        W_s = src_weight.detach().cpu().float()
+        if hasattr(target_mod, "__class__") and target_mod.__class__.__name__ == "Conv1D":
+            W_s = W_s.t() if (W_s.ndim == 2 and W_s.size(0) > W_s.size(1)) else W_s
+
+        W_t = None
+        # Case 1: Reconstructed property or leaf parameter
+        p_weight = getattr(target_mod, "weight", None)
+        if isinstance(p_weight, nn.Parameter):
+            W_t = p_weight.detach().cpu().float()
+        elif hasattr(target_mod, "weight") and isinstance(target_mod.weight, torch.Tensor):
+            W_t = target_mod.weight.detach().cpu().float()
+        elif hasattr(target_mod, "U") and hasattr(target_mod, "V"):
+            W_t = (target_mod.U @ target_mod.V).detach().cpu().float()
+        elif hasattr(target_mod, "up") and hasattr(target_mod, "down"):
+            W_t = (target_mod.up.weight @ target_mod.down.weight).detach().cpu().float()
+        elif hasattr(target_mod, "up_proj") and hasattr(target_mod, "down_proj"):
+            W_t = (target_mod.up_proj.weight @ target_mod.down_proj.weight).detach().cpu().float()
+
+        if W_t is None:
+            return 1.0
+
+        if W_s.shape != W_t.shape:
+            if W_s.shape == W_t.t().shape:
+                W_t = W_t.t()
+            else:
+                return 1.0
+
+        diff = torch.norm(W_s - W_t, p="fro")
+        denom = torch.norm(W_s, p="fro") + 1e-9
+        return float((diff / denom).item())
+
+
 def _slice_fused_qkv_weights(
     fused_weight: torch.Tensor,
     fused_bias: Optional[torch.Tensor],
     num_heads: int,
     num_kv_heads: Optional[int] = None,
     head_dim: Optional[int] = None,
+    source_mod: Optional[nn.Module] = None,
 ) -> Dict[str, Tuple[torch.Tensor, Optional[torch.Tensor]]]:
     """
     Slices fused QKV projection tensors into separate Q, K, and V weight and bias tensors
     supporting Standard Multi-Head Attention (MHA), Grouped-Query Attention (GQA), and Multi-Query Attention (MQA).
-    Automatically detects and handles both nn.Linear [total_out_dim, in_dim] and Conv1D [in_dim, total_out_dim] layouts.
+    Automatically detects and handles both nn.Linear [total_out_dim, in_dim] and Conv1D [in_dim, total_out_dim] layouts
+    using runtime shape introspection and class verification.
     """
-    # Detect Conv1D orientation: [in_dim, total_out_dim] where out_dim > in_dim (e.g. 2304 > 768)
-    if fused_weight.ndim == 2 and fused_weight.size(0) < fused_weight.size(1):
+    is_conv1d = False
+    if source_mod is not None:
+        is_conv1d = source_mod.__class__.__name__ == "Conv1D" or hasattr(source_mod, "nf")
+    elif fused_weight.ndim == 2 and fused_weight.size(0) < fused_weight.size(1):
+        # Shape-based Conv1D orientation: [in_dim, total_out_dim] where total_out_dim > in_dim (e.g. 2304 > 768)
+        is_conv1d = True
+
+    if is_conv1d and fused_weight.ndim == 2 and fused_weight.size(0) < fused_weight.size(1):
         fused_weight = fused_weight.t()
 
     total_out_dim = fused_weight.size(0)
@@ -127,7 +176,7 @@ def _slice_fused_qkv_weights(
     }
 
 
-# FIX: Public functional alias for fused QKV slicing
+# Public functional alias for fused QKV slicing
 slice_fused_qkv = _slice_fused_qkv_weights
 
 
@@ -139,12 +188,14 @@ def _copy_projection_weights(
     """
     Copies projection weights and biases into target module (nn.Linear, Conv1D, SVD, or low-rank factors).
     Automatically handles transposed orientations and low-rank factorizations (down/up, U/V).
+    Uses strict leaf Parameter verification rather than bare hasattr checks.
     """
     if target_mod is None or src_weight is None:
         return
 
-    # 1. Standard nn.Linear or single weight module target (where .weight is an actual Parameter)
-    if isinstance(getattr(target_mod, "weight", None), nn.Parameter):
+    # 1. Standard nn.Linear or single weight module target (where .weight is an actual leaf Parameter)
+    target_weight_param = getattr(target_mod, "weight", None)
+    if isinstance(target_weight_param, nn.Parameter):
         with torch.no_grad():
             if target_mod.weight.shape == src_weight.shape:
                 target_mod.weight.data.copy_(src_weight)
@@ -161,7 +212,7 @@ def _copy_projection_weights(
             ):
                 target_mod.weight.data.copy_(src_weight.t()[: target_mod.weight.shape[0]])
 
-            if hasattr(target_mod, "bias") and target_mod.bias is not None:
+            if hasattr(target_mod, "bias") and isinstance(getattr(target_mod, "bias", None), nn.Parameter):
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
                     target_mod.bias.data.copy_(src_bias)
                 elif src_bias is not None and target_mod.bias.shape[0] <= src_bias.shape[0]:
@@ -226,7 +277,7 @@ def _copy_projection_weights(
                 elif hasattr(target_mod, "bias") and target_mod.bias is not None and src_bias is not None:
                     target_mod.bias.data.copy_(src_bias.to(target_mod.bias.device, target_mod.bias.dtype))
 
-            if hasattr(target_mod, "bias") and target_mod.bias is not None:
+            if hasattr(target_mod, "bias") and target_mod.bias is not None and isinstance(target_mod.bias, nn.Parameter):
                 if src_bias is not None:
                     target_mod.bias.data.copy_(src_bias.to(target_mod.bias.device, target_mod.bias.dtype))
                 else:
@@ -234,7 +285,7 @@ def _copy_projection_weights(
         return
 
 
-# FIX: Public functional alias for setting low-rank projection weights
+# Public functional alias for setting low-rank projection weights
 split_and_set_qkv_weights = _copy_projection_weights
 
 

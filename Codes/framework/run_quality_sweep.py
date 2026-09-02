@@ -253,6 +253,8 @@ def main():
     ap.add_argument("--strict_compat", action="store_true",
                     help="Skip modules without a truthful native/adapted Qwen path")
     ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "qwen", "t5", "ssm", "unknown"), default="auto")
+    ap.add_argument("--parent_checkpoint", type=str, default=None,
+                    help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
     args = ap.parse_args(); logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     torch.manual_seed(args.seed)
     if torch.cuda.is_available(): torch.cuda.manual_seed_all(args.seed)
@@ -280,17 +282,16 @@ def main():
         base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 
     checkpoint = out / "finetuned_model.pt"
-    parent_checkpoint = out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt"
-    if not parent_checkpoint.exists():
-        parent_checkpoint = out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt"
-    if not parent_checkpoint.exists():
-        parent_checkpoint = out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt"
-    if not parent_checkpoint.exists():
-        parent_checkpoint = out.parent / "roberta_sst2_lora_baseline" / "finetuned_model.pt"
-    if not parent_checkpoint.exists():
-        parent_checkpoint = out.parent / "gpt2_sst2_lora_baseline" / "finetuned_model.pt"
-    if not parent_checkpoint.exists():
-        parent_checkpoint = out.parent / "qwen_sst2_lora_baseline" / "finetuned_model.pt"
+    if args.parent_checkpoint:
+        parent_checkpoint = Path(args.parent_checkpoint)
+    else:
+        # Dynamically discover parent baseline checkpoint for any family and dataset
+        candidates = [
+            out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
+            out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt",
+            out.parent / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
+        ]
+        parent_checkpoint = next((c for c in candidates if c.exists()), candidates[0])
 
     # Auto-detect if checkpoint or parent_checkpoint is a LoRA checkpoint
     is_lora_mode = (args.finetune_mode == "lora")
@@ -308,14 +309,14 @@ def main():
 
     # If LoRA mode is requested or detected, apply LoRA wrappers to the backbone
     if is_lora_mode:
-        from framework.utils.lora import apply_lora, save_lora_weights, load_lora_weights
-        target_mods = args.lora_target_modules
-        if family == "t5":
-            target_mods = "q,k,v,o,wi,wo,wi_0,wi_1,dense"
-        elif family in {"gpt", "gpt2"}:
-            target_mods = "c_attn,c_proj,c_fc,q_proj,k_proj,v_proj,o_proj,down,up,down_proj,up_proj,in_proj,out_proj"
-        elif family in {"roberta", "bert"}:
-            target_mods = "query,key,value,dense,q_proj,k_proj,v_proj,out_proj,down,up,down_proj,up_proj"
+        from framework.utils.lora import apply_lora, save_lora_weights, load_lora_weights, find_all_linear_submodule_names
+        # Dynamically discover all linear submodules from the base model, excluding task heads
+        dynamic_targets = find_all_linear_submodule_names(base)
+        default_cli_targets = "q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj"
+        if args.lora_target_modules != default_cli_targets:
+            target_mods = {x.strip() for x in args.lora_target_modules.split(",") if x.strip()}
+        else:
+            target_mods = dynamic_targets if dynamic_targets else default_cli_targets
         base, num_lora = apply_lora(
             base,
             r=args.lora_r,
@@ -414,6 +415,15 @@ def main():
                        "path": path_name, "timestamp": datetime.now().isoformat()}
                 w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
                 continue
+            from framework.core.registry import is_module_declared_compatible
+            is_compat, reason = is_module_declared_compatible(name, family)
+            if name != "full" and not is_compat:
+                status, err, path_name = f"SKIP_{family.upper()}_INCOMPATIBLE_DECLARED", reason, "declared_incompatible"
+                row = {"module_name": name, "status": status, "accuracy_pct": acc,
+                       "elapsed_s": round(time.monotonic()-t, 2), "error": err,
+                       "path": path_name, "timestamp": datetime.now().isoformat()}
+                w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
+                continue
             if family == "qwen" and args.strict_compat and name != "full" and qwen_module_policy(name) == "incompatible":
                 status, err, path_name = "SKIP_NO_SUPPORT", "qwen_incompatible", "strict_skip"
                 row = {"module_name": name, "status": status, "accuracy_pct": acc,
@@ -428,13 +438,22 @@ def main():
             wrap_for_family(model, family)
             if n < len(names) and names[n] not in existing:
                 queue_copy(names[n])
-            # Merge baseline LoRA adapters into base weights so injected modules observe full task representations
-            for m in model.modules():
-                if hasattr(m, "merge") and callable(m.merge):
-                    try:
-                        m.merge()
-                    except Exception:
-                        pass
+            typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
+            if typ == "attention":
+                # For attention replacement modules, merge baseline LoRA adapters into base weights
+                # so that get_weight_bias extracts full fine-tuned representations into new_attn.
+                for m in model.modules():
+                    if hasattr(m, "merge") and callable(m.merge):
+                        try:
+                            m.merge()
+                        except Exception:
+                            pass
+            else:
+                # For compressor modules, do NOT merge LoRA into base weights.
+                # Keep base_layer and lora_A/lora_B deltas separate: the compressor factorizes
+                # the frozen base_layer.weight, while LoRA deltas remain active and trainable for recovery.
+                pass
+
             try:
                 if family in {"gpt", "gpt2"} and name in {
                     "gated_deltanet_block",
@@ -445,7 +464,6 @@ def main():
                 }:
                     raise QwenIncompatibleError("causal_autoregressive_incompatible")
                 if name != "full":
-                    typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
@@ -455,11 +473,12 @@ def main():
                         recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
                         if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
                             LOG.info("Running %d LoRA recovery fine-tuning steps for %s", args.recovery_steps, name)
-                            # Re-enable zero-init LoRA adapters for clean post-injection adaptation
-                            for m in model.modules():
-                                if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
-                                    m.reset_parameters()
-                                    m.merged = False
+                            if typ == "attention":
+                                # Re-enable zero-init LoRA adapters for clean post-injection adaptation on attention modules
+                                for m in model.modules():
+                                    if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
+                                        m.reset_parameters()
+                                        m.merged = False
 
                             for p_name, p in model.named_parameters():
                                 p_low = p_name.lower()

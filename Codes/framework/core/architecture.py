@@ -4,9 +4,12 @@ Provides unified access to layers, attention, FFN, embeddings, classifiers
 across all common HuggingFace architectures.
 """
 
+import logging
 from typing import List, Optional, Tuple
 
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 def detect_architecture(model: nn.Module) -> str:
@@ -63,37 +66,72 @@ def get_transformer_layers(model: nn.Module) -> List[nn.Module]:
 
 
 def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
-    """Return (name, module) for all leaf attention sub-modules."""
-    attn_modules = []
+    """Return (name, module) for all leaf attention sub-modules across any transformer architecture.
+    
+    Applies strict path-prefix deduplication so parent composite containers are never
+    returned alongside their inner leaf attention blocks, preventing accidental deletion
+    of LayerNorm, output projections, and residual streams.
+    """
+    raw_candidates: List[Tuple[str, nn.Module]] = []
+    seen_names = set()
+
     for name, module in model.named_modules():
         if not name:
             continue
-        class_name = module.__class__.__name__.lower()
-        if any(x in class_name for x in ["attention", "selfattn", "selfattention"]):
-            attn_modules.append((name, module))
+        if name in seen_names:
             continue
-        # Attribute-based detection
+
+        class_name = module.__class__.__name__.lower()
+        is_output_submodule = name.endswith(".output") or name.endswith("_output") or "selfoutput" in class_name
+        if is_output_submodule:
+            continue
+
+        # Heuristic 1: Module class name indicates attention
+        if any(x in class_name for x in ["attention", "selfattn", "selfattention", "crossattn"]):
+            raw_candidates.append((name, module))
+            seen_names.add(name)
+            continue
+
+        # Heuristic 2: Attribute-based detection (modules holding projections)
         if (
             hasattr(module, "q_proj")
             or hasattr(module, "k_proj")
             or hasattr(module, "q_lin")
             or hasattr(module, "query")
+            or hasattr(module, "c_attn")
         ):
-            attn_modules.append((name, module))
+            # Avoid leaf nn.Linear layers that might happen to match attributes
+            if not isinstance(module, (nn.Linear, nn.LayerNorm, nn.Dropout, nn.Embedding)):
+                raw_candidates.append((name, module))
+                seen_names.add(name)
 
-    # Crucial: Filter out parent composite containers whose children are also attention modules.
-    # For example, in RoBERTa/BERT:
-    # "roberta.encoder.layer.0.attention" is a container that includes "self" (RobertaSelfAttention)
-    # and "output" (RobertaSelfOutput: dense, LayerNorm, residual connection).
-    # Replacing the outer container destroys LayerNorm and the residual stream!
-    # We must only return the innermost/leaf self-attention module.
-    all_names = [name for name, _ in attn_modules]
-    leaf_modules = []
-    for name, module in attn_modules:
-        is_parent_container = any(other != name and other.startswith(name + ".") for other in all_names)
-        is_output_submodule = name.endswith(".output") or name.endswith("_output")
-        if not is_parent_container and not is_output_submodule:
+    # Apply strict path-prefix deduplication:
+    # If module A's path is a strict prefix of module B's path (e.g. A="...attention", B="...attention.self"),
+    # A is an outer container holding B. We keep only the deepest/leaf modules (B) and drop A.
+    all_cand_names = [name for name, _ in raw_candidates]
+    leaf_modules: List[Tuple[str, nn.Module]] = []
+
+    for name, module in raw_candidates:
+        is_parent = any(other != name and other.startswith(name + ".") for other in all_cand_names)
+        if not is_parent:
             leaf_modules.append((name, module))
+
+    # Expected count sanity validation based on model configuration
+    cfg = getattr(model, "config", None)
+    if cfg is not None:
+        enc_layers = getattr(cfg, "num_hidden_layers", getattr(cfg, "num_layers", getattr(cfg, "n_layer", None)))
+        is_enc_dec = getattr(cfg, "is_encoder_decoder", False)
+        dec_layers = getattr(cfg, "num_decoder_layers", enc_layers) if is_enc_dec else 0
+
+        if enc_layers is not None:
+            expected_min = (enc_layers + 2 * dec_layers) if is_enc_dec else enc_layers
+            if len(leaf_modules) != expected_min:
+                logger.warning(
+                    "get_attention_modules detected %d modules, expected approximately %d "
+                    "(layers=%s, is_encoder_decoder=%s). Detected: %s",
+                    len(leaf_modules), expected_min, enc_layers, is_enc_dec,
+                    [n for n, _ in leaf_modules]
+                )
 
     return leaf_modules
 

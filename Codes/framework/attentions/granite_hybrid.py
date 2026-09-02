@@ -75,18 +75,19 @@ class Mamba2(nn.Module):
         x_ssm, z = x_proj.chunk(2, dim=-1)  # each (B, L, inner)
         x_ssm = self.conv1d(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2)
         dt = F.softplus(self.dt_proj(x_ssm))  # (B, L, inner_dim)
-        A = -torch.exp(self.A_log)  # (inner_dim, d_state)
+        A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)  # (inner_dim, d_state)
 
         # Vectorized cumsum / linear recurrence approximation for fast training
         # dt: (B, L, inner_dim), A: (inner_dim, d_state)
         # Prevents Python loop step timeout under gradient checkpointing (use_reentrant=False compatible)
-        dA = torch.exp(torch.einsum("bli,in->blin", dt, A))  # (B, L, inner_dim, d_state)
+        dA_exp_arg = torch.clamp(torch.einsum("bli,in->blin", dt, A), min=-30.0, max=10.0)
+        dA = torch.exp(dA_exp_arg)  # (B, L, inner_dim, d_state)
         dBX = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))  # (B, L, inner_dim, d_state)
         
         # Fast parallel prefix product scan along L
         log_dA = torch.log(dA.clamp_min(1e-12))
         log_dA_cumsum = torch.cumsum(log_dA, dim=1)
-        decay_factor = torch.exp(log_dA_cumsum)
+        decay_factor = torch.exp(torch.clamp(log_dA_cumsum, min=-30.0, max=10.0))
         h = torch.cumsum(dBX / (decay_factor + 1e-12), dim=1) * decay_factor
         
         out = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1) * F.silu(z)

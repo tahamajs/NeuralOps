@@ -120,7 +120,7 @@ class UPIMambaBlock(BaseAttention):
         """Sequential UPI SSM scan."""
         B, L, D = x_ssm.shape
         d_state = self.d_state
-        A = torch.exp(self.A_log)  # [D, d_state]
+        A = torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x_ssm.dtype)  # [D, d_state]
 
         h = torch.zeros(B, D, d_state, device=x_ssm.device, dtype=x_ssm.dtype)
         outputs = []
@@ -131,7 +131,7 @@ class UPIMambaBlock(BaseAttention):
             dt_t = dt[:, t, :].unsqueeze(-1)                     # [B, D, 1]
             gamma_t = gamma[:, t, :].unsqueeze(-1)               # [B, D, 1]
 
-            dA = torch.exp(-dt_t * A.unsqueeze(0)) * (1.0 - 0.5 * gamma_t)
+            dA = torch.exp(torch.clamp(-dt_t * A.unsqueeze(0), min=-30.0, max=10.0)) * (1.0 - 0.5 * gamma_t)
             dB_x = (dt_t * xt.unsqueeze(-1)).repeat(1, 1, d_state)
 
             h_next = dA * h + dB_x
