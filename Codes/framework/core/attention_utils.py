@@ -341,7 +341,8 @@ def inject_attention(
         # Do not let a legacy full-MHA replacement silently retain randomly
         # initialized K/V projections on GQA decoders.  Such a module must
         # explicitly advertise the geometry it implements.
-        if family in {"qwen", "gpt"} and not getattr(new_attn, "supports_gqa", False):
+        is_gqa = (family == "qwen" and family_adapter.num_key_value_heads != family_adapter.num_heads)
+        if is_gqa and not getattr(new_attn, "supports_gqa", False):
             expected = {
                 "q": family_adapter.q_proj_out,
                 "k": family_adapter.kv_proj_out,
