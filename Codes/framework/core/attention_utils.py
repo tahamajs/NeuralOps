@@ -234,15 +234,31 @@ def _copy_projection_weights(
         setter_fn = getattr(target_mod, "set_low_rank_factors", getattr(target_mod, "set_svd_factors", None))
         with torch.no_grad():
             W_float = src_weight.detach().cpu().float()
-            # Ensure W_float is in [out_features, in_features] layout
-            if down_mod is not None and hasattr(down_mod, "weight"):
-                target_in_dim = down_mod.weight.shape[1]
-                if W_float.shape[1] != target_in_dim and W_float.shape[0] == target_in_dim:
-                    W_float = W_float.t()
-            elif hasattr(target_mod, "V") and hasattr(target_mod.V, "shape"):
-                target_in_dim = target_mod.V.shape[1]
-                if W_float.shape[1] != target_in_dim and W_float.shape[0] == target_in_dim:
-                    W_float = W_float.t()
+            if W_float.dim() > 2:
+                W_float = W_float.reshape(W_float.shape[0], -1)
+            elif W_float.dim() == 1:
+                W_float = W_float.unsqueeze(0)
+            target_out_dim = getattr(target_mod, "out_features", None)
+            if target_out_dim is None:
+                if up_mod is not None and hasattr(up_mod, "weight"):
+                    target_out_dim = up_mod.weight.shape[0]
+                elif hasattr(target_mod, "U") and hasattr(target_mod.U, "shape"):
+                    target_out_dim = target_mod.U.shape[0]
+
+            target_in_dim = getattr(target_mod, "in_features", None)
+            if target_in_dim is None:
+                if down_mod is not None and hasattr(down_mod, "weight"):
+                    target_in_dim = down_mod.weight.shape[1]
+                elif hasattr(target_mod, "V") and hasattr(target_mod.V, "shape"):
+                    target_in_dim = target_mod.V.shape[1]
+
+            if target_in_dim is not None and W_float.shape[1] != target_in_dim and W_float.shape[0] == target_in_dim:
+                W_float = W_float.t()
+
+            if target_out_dim is not None and W_float.shape[0] > target_out_dim:
+                W_float = W_float[:target_out_dim, :]
+            if target_in_dim is not None and W_float.shape[1] > target_in_dim:
+                W_float = W_float[:, :target_in_dim]
 
             U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
 
