@@ -208,8 +208,53 @@ class AdaptiveSVDAttention(nn.Module):
         )
         self.dropout = nn.Dropout(dropout_p)
 
+        self.is_decoder: bool = getattr(config, "is_decoder", False)
+        self.has_relative_attention_bias: bool = False
+        self.relative_attention_bias: Optional[nn.Embedding] = None
+        self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
+        self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
+
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+    def _relative_position_bucket(
+        self, relative_position: torch.Tensor, bidirectional: bool = True, num_buckets: int = 32, max_distance: int = 128
+    ) -> torch.Tensor:
+        relative_buckets = 0
+        if bidirectional:
+            num_buckets //= 2
+            relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
+            relative_position = torch.abs(relative_position)
+        else:
+            relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
+        max_exact = num_buckets // 2
+        is_small = relative_position < max_exact
+        relative_position_if_large = max_exact + (
+            torch.log(relative_position.float() / max_exact)
+            / math.log(max_distance / max_exact)
+            * (num_buckets - max_exact)
+        ).to(torch.long)
+        relative_position_if_large = torch.min(
+            relative_position_if_large, torch.full_like(relative_position_if_large, num_buckets - 1)
+        )
+        relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
+        return relative_buckets
+
+    def compute_bias(self, query_length: int, key_length: int, device: Optional[torch.device] = None) -> torch.Tensor:
+        if self.relative_attention_bias is not None:
+            context_position = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
+            memory_position = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
+            relative_position = memory_position - context_position
+            relative_position_bucket = self._relative_position_bucket(
+                relative_position,
+                bidirectional=(not self.is_decoder),
+                num_buckets=self.relative_attention_num_buckets,
+                max_distance=self.relative_attention_max_distance,
+            )
+            values = self.relative_attention_bias(relative_position_bucket)
+            values = values.permute([2, 0, 1]).unsqueeze(0)
+            return values
+        return torch.zeros((1, self.num_heads, query_length, key_length), device=device)
 
     def _compute_energy_rank(self, S: torch.Tensor, max_rank: int, min_rank: int = 16) -> int:
         r"""
@@ -259,6 +304,14 @@ class AdaptiveSVDAttention(nn.Module):
             except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
+        if hasattr(src, "has_relative_attention_bias"):
+            self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
+        if hasattr(src, "relative_attention_bias") and src.relative_attention_bias is not None:
+            self.relative_attention_bias = src.relative_attention_bias
+            self.has_relative_attention_bias = True
+        if hasattr(src, "is_decoder"):
+            self.is_decoder = bool(src.is_decoder)
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -273,17 +326,34 @@ class AdaptiveSVDAttention(nn.Module):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Forward pass of Adaptive SVD Attention with universal masking."""
-        B, N, _ = hidden_states.shape
+        """Forward pass of Adaptive SVD Attention with universal T5 & masking support."""
+        key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
+        is_cross_attention = key_value_states is not None
+        kv_input = key_value_states if is_cross_attention else hidden_states
+
+        B, N_q, _ = hidden_states.shape
+        N_k = kv_input.shape[1]
         H, D = self.num_heads, self.head_dim
 
-        Q = self.query(hidden_states).view(B, N, H, D).transpose(1, 2)
-        K = self.key(hidden_states).view(B, N, H, D).transpose(1, 2)
-        V = self.value(hidden_states).view(B, N, H, D).transpose(1, 2)
+        Q = self.query(hidden_states).view(B, N_q, H, D).transpose(1, 2)
+        K = self.key(kv_input).view(B, N_k, H, D).transpose(1, 2)
+        V = self.value(kv_input).view(B, N_k, H, D).transpose(1, 2)
 
         scale = D**-0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-        scores = apply_attention_mask(scores, attention_mask)
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N_q, N_k]
+
+        # Handle T5 position bias
+        position_bias = kwargs.get("position_bias", None)
+        if position_bias is None and self.has_relative_attention_bias:
+            position_bias = self.compute_bias(N_q, N_k, device=hidden_states.device)
+
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        if position_bias is not None:
+            if mask is not None and mask.dim() == 4:
+                position_bias = position_bias + mask.to(scores.dtype)
+            scores = scores + position_bias.to(scores.dtype)
+        elif mask is not None:
+            scores = apply_attention_mask(scores, mask)
 
         attn_weights = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(hidden_states.dtype)
         attn_weights = self.dropout(attn_weights)
@@ -292,8 +362,10 @@ class AdaptiveSVDAttention(nn.Module):
             attn_weights = attn_weights * head_mask
 
         context = torch.matmul(attn_weights, V)
-        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
         output = self.out_proj(context)
 
+        if position_bias is not None:
+            return output, position_bias
         return output, attn_weights if output_attentions else None
 
