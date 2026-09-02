@@ -7,7 +7,7 @@ attention/compression module from the same fine-tuned checkpoint.
 from __future__ import annotations
 
 import argparse, copy, csv, gc, importlib, json, logging, sys, time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from datetime import datetime
 from pathlib import Path
 
@@ -538,38 +538,48 @@ def main():
                     "cluster",
                 }:
                     raise QwenIncompatibleError("causal_autoregressive_incompatible")
-                if name != "full":
-                    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-                    injected = True
-                    path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
-                    LOG.info("module=%s path=%s", name, path_name)
-                    had_nan = False
-                    if args.recovery_steps > 0:
-                        recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
-                        if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
-                            # Task 5: Hyperparameters for Qwen3.5 vs other families
-                            rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
-                            rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
-                            LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
-                            if typ == "attention":
-                                # Re-enable zero-init LoRA adapters for clean post-injection adaptation on attention modules
-                                for m in model.modules():
-                                    if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
-                                        m.reset_parameters()
-                                        m.merged = False
 
-                            # Task 3: Use get_recovery_params to freeze compressor factors and unfreeze only LoRA + head
-                            from framework.utils.compat import get_recovery_params
-                            trainable = get_recovery_params(model)
-                            if trainable:
-                                had_nan = finetune_lora(
-                                    model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device,
-                                    args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
-                                    optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
-                                    weight_decay=args.weight_decay,
-                                )
-                acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
-            except TimeoutError as exc:
+                def _run_candidate_pipeline():
+                    nonlocal model, injected, path_name, had_nan
+                    if name != "full":
+                        model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+                        injected = True
+                        path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
+                        LOG.info("module=%s path=%s", name, path_name)
+                        had_nan = False
+                        if args.recovery_steps > 0:
+                            recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
+                            if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
+                                rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
+                                rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
+                                LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
+                                if typ == "attention":
+                                    # Re-enable zero-init LoRA adapters for clean post-injection adaptation on attention modules
+                                    for m in model.modules():
+                                        if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
+                                            m.reset_parameters()
+                                            m.merged = False
+
+                                # Task 3: Use get_recovery_params to freeze compressor factors and unfreeze only LoRA + head
+                                from framework.utils.compat import get_recovery_params
+                                trainable = get_recovery_params(model)
+                                if trainable:
+                                    had_nan = finetune_lora(
+                                        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device,
+                                        args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
+                                        optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
+                                        weight_decay=args.weight_decay, timeout=args.timeout,
+                                    )
+                    return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+
+                # Hard timeout enforcing max timeout (e.g. 120s / 2 minutes) across injection, recovery, and eval
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    future = pool.submit(_run_candidate_pipeline)
+                    try:
+                        acc = future.result(timeout=args.timeout)
+                    except (TimeoutError, FuturesTimeoutError) as to_err:
+                        raise TimeoutError(f"Module pipeline exceeded hard {args.timeout}s timeout") from to_err
+            except (TimeoutError, FuturesTimeoutError) as exc:
                 status, err = "SKIP_SLOW", str(exc)
             except QwenIncompatibleError as exc:
                 status, err = f"SKIP_{family.upper()}_INCOMPATIBLE", str(exc)
