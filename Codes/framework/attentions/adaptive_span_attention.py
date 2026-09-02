@@ -1,7 +1,3 @@
-r"""
-Adaptive Span Attention Module.
-Paper: https://arxiv.org/abs/1905.07799
-"""
 
 from typing import Any, Optional, Tuple
 import math
