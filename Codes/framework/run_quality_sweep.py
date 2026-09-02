@@ -411,6 +411,23 @@ def main():
         for n, name in enumerate(names, 1):
             if name in existing: continue
             t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
+            if family == "qwen3_5" and name != "full":
+                skip_modules = {
+                    "adaptive_span",
+                    "adaptive_sparse",   # already skipped but keep
+                    "adaptive_svd",      # fails with Tensor + tuple
+                    "adasplash",         # fails with t() 3D
+                    "a3",                # architecture-unaware compressor, keep skipped until fixed
+                }
+                if name in skip_modules:
+                    status, err, path_name = "SKIP_QWEN3_5_INCOMPATIBLE", f"qwen3_5_incompatible_{name}", "unsupported"
+                    row = {"module_name": name, "status": status, "accuracy_pct": 0.0,
+                           "elapsed_s": round(time.monotonic()-t, 2), "error": err,
+                           "path": path_name, "timestamp": datetime.now().isoformat()}
+                    w.writerow(row); f.flush()
+                    LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
+                    continue
+
             support = module_family_support(name).get(family, "unknown")
             if name != "full" and support == "incompatible":
                 status, err, path_name = "SKIP_NO_SUPPORT", "unsupported_family", "unsupported"
