@@ -298,6 +298,9 @@ def main():
         candidates = [
             out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
             out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt",
+            out.parent / f"qwen3_5_{args.dataset}_lora_baseline" / "finetuned_model.pt",
+            out.parent / f"qwen3_5_{args.dataset}_full_sweep" / "finetuned_model.pt",
+            out.parent / f"{family}_{args.dataset}_full_sweep" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
         ]
         parent_checkpoint = next((c for c in candidates if c.exists()), candidates[0])
@@ -482,7 +485,10 @@ def main():
                     if args.recovery_steps > 0:
                         recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
                         if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
-                            LOG.info("Running %d LoRA recovery fine-tuning steps for %s", args.recovery_steps, name)
+                            # Task 5: Hyperparameters for Qwen3.5 vs other families
+                            rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
+                            rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
+                            LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
                             if typ == "attention":
                                 # Re-enable zero-init LoRA adapters for clean post-injection adaptation on attention modules
                                 for m in model.modules():
@@ -490,24 +496,11 @@ def main():
                                         m.reset_parameters()
                                         m.merged = False
 
-                            for p_name, p in model.named_parameters():
-                                p_low = p_name.lower()
-                                is_head = any(h in p_low for h in ("score", "classifier", "lm_head", "pre_classifier"))
-                                is_lora = ".lora_" in p_low
-                                is_factor = (
-                                    any(p_name.endswith(suf) for suf in (".U", ".V", ".A", ".B", ".u", ".v", ".a", ".b"))
-                                    or any(h in p_low for h in (".adapter.", "linear_u", "linear_v", "lora_a", "lora_b"))
-                                )
-                                is_injected = (".inner." in p_name) or (typ == "attention" and "attention" in p_low and any(sub in p_low for sub in (".q_", ".k_", ".v_", ".out_", "w_q", "w_k", "w_v", "w_o", "query", "key", "value")))
-                                is_backbone_norm_emb = any(h in p_low for h in ("embeddings", "layernorm", "layer_norm", "intermediate"))
-                                if (is_head or is_lora or is_factor or is_injected) and not is_backbone_norm_emb:
-                                    p.requires_grad = True
-                                else:
-                                    p.requires_grad = False
-
-                            trainable = [p for p in model.parameters() if p.requires_grad]
+                            # Task 3: Use get_recovery_params to freeze compressor factors and unfreeze only LoRA + head
+                            from framework.utils.compat import get_recovery_params
+                            trainable = get_recovery_params(model)
                             if trainable:
-                                had_nan = finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
+                                had_nan = finetune_lora(model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=rec_lr)
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
             except TimeoutError as exc:
                 status, err = "SKIP_SLOW", str(exc)
