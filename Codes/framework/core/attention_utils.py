@@ -82,19 +82,14 @@ def _slice_fused_qkv_weights(
     head_dim: Optional[int] = None,
 ) -> Dict[str, Tuple[torch.Tensor, Optional[torch.Tensor]]]:
     """
-    FIX: Slices fused QKV projection tensors into separate Q, K, and V weight and bias tensors
+    Slices fused QKV projection tensors into separate Q, K, and V weight and bias tensors
     supporting Standard Multi-Head Attention (MHA), Grouped-Query Attention (GQA), and Multi-Query Attention (MQA).
-    
-    Args:
-        fused_weight: Fused QKV weight tensor of shape [total_out_dim, in_dim]
-        fused_bias: Optional fused bias tensor of shape [total_out_dim]
-        num_heads: Number of query attention heads
-        num_kv_heads: Number of key/value heads (for GQA/MQA)
-        head_dim: Dimension per attention head
-        
-    Returns:
-        Dictionary mapping 'q', 'k', 'v' to tuples of (weight, optional_bias).
+    Automatically detects and handles both nn.Linear [total_out_dim, in_dim] and Conv1D [in_dim, total_out_dim] layouts.
     """
+    # Detect Conv1D orientation: [in_dim, total_out_dim] where out_dim > in_dim (e.g. 2304 > 768)
+    if fused_weight.ndim == 2 and fused_weight.size(0) < fused_weight.size(1):
+        fused_weight = fused_weight.t()
+
     total_out_dim = fused_weight.size(0)
     in_dim = fused_weight.size(1)
 
@@ -139,21 +134,29 @@ def _copy_projection_weights(
     src_bias: Optional[torch.Tensor],
 ) -> None:
     """
-    FIX: Symmetrically distributes singular values across U and V using square-root scaling:
-    U_r = U[:, :r] @ diag(sqrt(S[:r]))
-    V_r = diag(sqrt(S[:r])) @ V^T[:r, :]
-    This eliminates gradient scale mismatch during backpropagation.
+    Copies projection weights and biases into target module (nn.Linear, Conv1D, SVD, or low-rank factors).
+    Automatically handles transposed orientations and low-rank factorizations (down/up, U/V).
     """
-    # 1. Standard nn.Linear target
-    if hasattr(target_mod, "weight") and isinstance(target_mod.weight, torch.Tensor):
+    if target_mod is None or src_weight is None:
+        return
+
+    # 1. Standard nn.Linear or single weight module target (where .weight is an actual Parameter)
+    if isinstance(getattr(target_mod, "weight", None), nn.Parameter):
         with torch.no_grad():
             if target_mod.weight.shape == src_weight.shape:
                 target_mod.weight.data.copy_(src_weight)
+            elif target_mod.weight.shape == src_weight.t().shape:
+                target_mod.weight.data.copy_(src_weight.t())
             elif (
                 target_mod.weight.shape[1] == src_weight.shape[1]
                 and target_mod.weight.shape[0] < src_weight.shape[0]
             ):
                 target_mod.weight.data.copy_(src_weight[: target_mod.weight.shape[0]])
+            elif (
+                target_mod.weight.shape[1] == src_weight.shape[0]
+                and target_mod.weight.shape[0] < src_weight.shape[1]
+            ):
+                target_mod.weight.data.copy_(src_weight.t()[: target_mod.weight.shape[0]])
 
             if hasattr(target_mod, "bias") and target_mod.bias is not None:
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
@@ -164,16 +167,29 @@ def _copy_projection_weights(
                     nn.init.zeros_(target_mod.bias)
         return
 
-    # 2. Factorized SVD Linear Module (e.g. SVDLinear)
-    if (
+    # 2. Low-rank / Factorized Module (down/up, down_proj/up_proj, U/V, or setter methods)
+    down_mod = getattr(target_mod, "down", getattr(target_mod, "down_proj", None))
+    up_mod = getattr(target_mod, "up", getattr(target_mod, "up_proj", None))
+    is_low_rank = (
         hasattr(target_mod, "set_low_rank_factors")
         or hasattr(target_mod, "set_svd_factors")
         or (hasattr(target_mod, "U") and hasattr(target_mod, "V"))
-    ):
+        or (down_mod is not None and up_mod is not None)
+    )
+    if is_low_rank:
         setter_fn = getattr(target_mod, "set_low_rank_factors", getattr(target_mod, "set_svd_factors", None))
         with torch.no_grad():
-            # Perform SVD in FP32 on CPU for numerical stability across all matrix sizes
             W_float = src_weight.detach().cpu().float()
+            # Ensure W_float is in [out_features, in_features] layout
+            if down_mod is not None and hasattr(down_mod, "weight"):
+                target_in_dim = down_mod.weight.shape[1]
+                if W_float.shape[1] != target_in_dim and W_float.shape[0] == target_in_dim:
+                    W_float = W_float.t()
+            elif hasattr(target_mod, "V") and hasattr(target_mod.V, "shape"):
+                target_in_dim = target_mod.V.shape[1]
+                if W_float.shape[1] != target_in_dim and W_float.shape[0] == target_in_dim:
+                    W_float = W_float.t()
+
             U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
 
             target_rank = getattr(
@@ -181,22 +197,31 @@ def _copy_projection_weights(
                 "rank",
                 getattr(target_mod, "svd_rank", getattr(getattr(target_mod, "U", None), "size", lambda i: 32)(1)),
             )
+            if down_mod is not None and hasattr(down_mod, "weight"):
+                target_rank = down_mod.weight.shape[0]
+
             r = min(target_rank, U.size(1), Vt.size(0))
 
-            # FIX: Symmetrically distribute singular energy: U_r = U @ sqrt(S), V_r = sqrt(S) @ V^T
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_balanced = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
-                device=src_weight.device, dtype=getattr(target_mod, "U", src_weight).dtype
+                device=src_weight.device, dtype=src_weight.dtype
             )
             V_balanced = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
-                device=src_weight.device, dtype=getattr(target_mod, "V", src_weight).dtype
+                device=src_weight.device, dtype=src_weight.dtype
             )
 
             if setter_fn is not None:
                 setter_fn(U_balanced, V_balanced)
-            else:
+            elif hasattr(target_mod, "U") and hasattr(target_mod, "V"):
                 target_mod.U.data.copy_(U_balanced)
                 target_mod.V.data.copy_(V_balanced)
+            elif down_mod is not None and up_mod is not None:
+                down_mod.weight.data.copy_(V_balanced)
+                up_mod.weight.data.copy_(U_balanced)
+                if hasattr(up_mod, "bias") and up_mod.bias is not None and src_bias is not None:
+                    up_mod.bias.data.copy_(src_bias.to(up_mod.bias.device, up_mod.bias.dtype))
+                elif hasattr(target_mod, "bias") and target_mod.bias is not None and src_bias is not None:
+                    target_mod.bias.data.copy_(src_bias.to(target_mod.bias.device, target_mod.bias.dtype))
 
             if hasattr(target_mod, "bias") and target_mod.bias is not None:
                 if src_bias is not None:
@@ -398,6 +423,9 @@ def inject_attention(
                 # Output projection
                 try:
                     src_w_o, src_b_o = adapter.get_weight_bias(old_attn, "o")
+                    c_proj_mod = getattr(old_attn, "c_proj", None)
+                    if c_proj_mod is not None and c_proj_mod.__class__.__name__ == "Conv1D":
+                        src_w_o = src_w_o.t()
                     target_o = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
                     if target_o is not None:
                         _copy_projection_weights(target_o, src_w_o, src_b_o)
