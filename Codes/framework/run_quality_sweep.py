@@ -135,12 +135,21 @@ def encode(tokenizer, batch, dataset_name, seq_len, device):
     return {k: v.to(device) for k, v in x.items()}, torch.tensor(batch["label"], device=device)
 
 
-@torch.inference_mode()
-def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True):
-    model.eval(); correct = total = 0
+def prepare_eval_batches(tokenizer, ds, name, seq_len, batch_size, device):
+    batches = []
     for i in range(0, len(ds), batch_size):
         x, y = encode(tokenizer, {k: ds[k][i:i+batch_size] for k in ds.column_names}, name, seq_len, device)
-        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
+        batches.append((x, y))
+    return batches
+
+
+@torch.inference_mode()
+def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True, precomputed_batches=None):
+    model.eval(); correct = total = 0
+    batches = precomputed_batches if precomputed_batches is not None else prepare_eval_batches(tokenizer, ds, name, seq_len, batch_size, device)
+    device_type = "cuda" if device.type == "cuda" else "cpu"
+    for x, y in batches:
+        with torch.autocast(device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
             logits = model(**x).logits
         correct += int((logits.argmax(-1) == y).sum()); total += len(y)
     return 100.0 * correct / max(1, total)
@@ -374,6 +383,7 @@ def main():
         "dataset": args.dataset,
         "seed": args.seed
     }), encoding="utf-8")
+    eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
     names = modules() if args.modules == "all" else [x.strip() for x in args.modules.split(",") if x.strip()]
     path = out / "summary.csv"; existing = {r["module_name"] for r in csv.DictReader(path.open())} if path.exists() else set()
     # Deep-copying CPU tensors is safe to overlap with the active CUDA
@@ -486,7 +496,7 @@ def main():
                                 is_lora = ".lora_" in p_low
                                 is_factor = (
                                     any(p_name.endswith(suf) for suf in (".U", ".V", ".A", ".B", ".u", ".v", ".a", ".b"))
-                                    or any(h in p_low for h in ("down_proj", "up_proj", "span_logits", ".adapter.", "linear_u", "linear_v"))
+                                    or any(h in p_low for h in (".adapter.", "linear_u", "linear_v", "lora_a", "lora_b"))
                                 )
                                 is_injected = (".inner." in p_name) or (typ == "attention" and "attention" in p_low and any(sub in p_low for sub in (".q_", ".k_", ".v_", ".out_", "w_q", "w_k", "w_v", "w_o", "query", "key", "value")))
                                 is_backbone_norm_emb = any(h in p_low for h in ("embeddings", "layernorm", "layer_norm", "intermediate"))
@@ -498,7 +508,7 @@ def main():
                             trainable = [p for p in model.parameters() if p.requires_grad]
                             if trainable:
                                 had_nan = finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
-                acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16"), 2)
+                acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
             except TimeoutError as exc:
                 status, err = "SKIP_SLOW", str(exc)
             except QwenIncompatibleError as exc:
@@ -519,7 +529,7 @@ def main():
                     try:
                         model.float(); typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
                         model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-                        acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device), 2)
+                        acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, precomputed_batches=eval_batches), 2)
                         err = f"fp32 retry: {exc}"
                     except Exception as retry: exc = retry
                 if err == "":
