@@ -175,7 +175,7 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
     model.train()
     for step in range(steps):
         i = (step * batch_size) % len(train)
-        x, y = encode(tokenizer, {k: train[k][i:i+batch_size] for k in train.column_names}, name, seq_len, device)
+        x, y = encode(tokenizer, train[i:i+batch_size], name, seq_len, device)
         opt.zero_grad(set_to_none=True)
         with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
             loss = model(**x, labels=y).loss
@@ -184,10 +184,12 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
     model.eval()
 
 
-def prepare_train_batches(tokenizer, ds, name, seq_len, batch_size, device, max_batches=20):
+def prepare_train_batches(tokenizer, ds, name, seq_len, batch_size, device, max_batches=10):
     batches = []
-    for i in range(0, min(len(ds), max_batches * batch_size), batch_size):
-        x, y = encode(tokenizer, {k: ds[k][i:i+batch_size] for k in ds.column_names}, name, seq_len, device)
+    end_idx = min(len(ds), max_batches * batch_size)
+    for i in range(0, end_idx, batch_size):
+        slice_data = ds[i:i+batch_size]
+        x, y = encode(tokenizer, slice_data, name, seq_len, device)
         batches.append((x, y))
     return batches
 
@@ -387,10 +389,7 @@ def main():
         for name, p in base.named_parameters():
             if not p.requires_grad:
                 p.data = p.data.half()
-    # Keep exactly one fine-tuned checkpoint in host memory. Module workers
-    # receive independent CPU copies, then only the active copy is transferred
-    # to CUDA. This avoids reloading weights for every module.
-    base.cpu()
+    base.to(device)
     (out / "finetune_metadata.json").write_text(json.dumps({
         "classification_head_trained": True,
         "finetune_mode": args.finetune_mode,
@@ -398,8 +397,10 @@ def main():
         "dataset": args.dataset,
         "seed": args.seed
     }), encoding="utf-8")
+    LOG.info("Precomputing validation and training batches directly on device %s...", device)
     eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
-    train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=20)
+    train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=10)
+    LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
     names = modules() if args.modules == "all" else [x.strip() for x in args.modules.split(",") if x.strip()]
     path = out / "summary.csv"; existing = {r["module_name"] for r in csv.DictReader(path.open())} if path.exists() else set()
     module_rank = max(16, getattr(adapter, "head_dim", 16))
@@ -434,8 +435,8 @@ def main():
                 w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
                 continue
 
-            # Sequential single-model clone directly to GPU (Zero host RAM bloat)
-            model = copy.deepcopy(base).to(device)
+            # Sequential single-model clone directly on GPU (Zero host RAM bloat, zero PCIe latency)
+            model = copy.deepcopy(base)
             # Side effect is projection alias installation; the model itself
             # is not replaced, preserving native HF forward semantics.
             wrap_for_family(model, family)
