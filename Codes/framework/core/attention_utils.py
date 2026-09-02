@@ -473,15 +473,70 @@ def inject_attention(
             else:
                 # Standard decoupled Q, K, V, O projections
                 for proj_key in ["q", "k", "v", "o"]:
+                    src_weight, src_bias = None, None
                     try:
                         src_weight, src_bias = adapter.get_weight_bias(old_attn, proj_key)
                     except (ValueError, AttributeError) as e:
                         logger.debug("Could not get %s projection weights for %s: %s", proj_key, name, e)
-                        continue
 
                     target_proj = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS[proj_key])
                     if target_proj is not None:
-                        _copy_projection_weights(target_proj, src_weight, src_bias)
+                        if src_weight is not None:
+                            _copy_projection_weights(target_proj, src_weight, src_bias)
+                        elif proj_key == "o":
+                            # Encoder self-attention (BERT/RoBERTa .self) has no internal out_proj
+                            # because the outer attention container already applies output.dense.
+                            # Initialize new_attn.out_proj to Identity so context passes through transparently.
+                            with torch.no_grad():
+                                if hasattr(target_proj, "weight") and target_proj.weight.ndim == 2:
+                                    if target_proj.weight.shape[0] == target_proj.weight.shape[1]:
+                                        nn.init.eye_(target_proj.weight)
+                                    else:
+                                        nn.init.zeros_(target_proj.weight)
+                                        min_d = min(target_proj.weight.shape[0], target_proj.weight.shape[1])
+                                        target_proj.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+                                elif hasattr(target_proj, "set_svd_factors") or (hasattr(target_proj, "U") and hasattr(target_proj, "V")):
+                                    # Low-rank / factorized linear layer: set factors to truncated identity
+                                    d_out = getattr(target_proj, "out_features", getattr(target_proj, "d_out", hidden_size or 768))
+                                    d_in = getattr(target_proj, "in_features", getattr(target_proj, "d_in", hidden_size or 768))
+                                    eye_mat = torch.eye(d_out, d_in, device=target_proj.U.device if hasattr(target_proj, "U") else None)
+                                    _copy_projection_weights(target_proj, eye_mat, None)
+                                if hasattr(target_proj, "bias") and target_proj.bias is not None:
+                                    nn.init.zeros_(target_proj.bias)
+                    else:
+                        # Support indexed dual projections (e.g. aegis_hybrid, svd_linear_attention: q_proj1, q_proj2)
+                        lin1 = getattr(new_attn, f"{proj_key}_proj1", getattr(new_attn, f"{proj_key}1", None))
+                        lin2 = getattr(new_attn, f"{proj_key}_proj2", getattr(new_attn, f"{proj_key}2", None))
+                        if proj_key == "o":
+                            lin1 = lin1 or getattr(new_attn, "out_proj1", getattr(new_attn, "o_proj1", None))
+                            lin2 = lin2 or getattr(new_attn, "out_proj2", getattr(new_attn, "o_proj2", None))
+                        if lin1 is not None and lin2 is not None:
+                            if src_weight is not None:
+                                with torch.no_grad():
+                                    W_f = src_weight.detach().cpu().float()
+                                    if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
+                                        if W_f.shape[1] != lin1.weight.shape[1] and W_f.shape[0] == lin1.weight.shape[1]:
+                                            W_f = W_f.t()
+                                        U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
+                                        r = min(lin1.weight.shape[0], lin2.weight.shape[1], U.size(1), Vt.size(0))
+                                        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                                        U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=src_weight.device, dtype=src_weight.dtype)
+                                        V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=src_weight.device, dtype=src_weight.dtype)
+                                        lin1.weight.data[:r, :].copy_(V_b)
+                                        lin2.weight.data[:, :r].copy_(U_b)
+                                        if src_bias is not None and getattr(lin2, "bias", None) is not None:
+                                            lin2.bias.data.copy_(src_bias.to(lin2.bias.device, lin2.bias.dtype))
+                            elif proj_key == "o":
+                                # Identity for dual out_proj
+                                with torch.no_grad():
+                                    if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
+                                        nn.init.zeros_(lin1.weight)
+                                        nn.init.zeros_(lin2.weight)
+                                        r = min(lin1.weight.shape[0], lin2.weight.shape[1], lin1.weight.shape[1], lin2.weight.shape[0])
+                                        lin1.weight.data[:r, :r].fill_diagonal_(1.0)
+                                        lin2.weight.data[:r, :r].fill_diagonal_(1.0)
+                                        if getattr(lin2, "bias", None) is not None:
+                                            nn.init.zeros_(lin2.bias)
 
         from framework.utils.replace_attention import UniversalAttentionWrapper
         wrapped_attn = UniversalAttentionWrapper(new_attn)

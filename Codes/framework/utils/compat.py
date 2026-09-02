@@ -30,14 +30,19 @@ def is_decoder_projection_name(name: str) -> bool:
     if leaf in {"weight", "bias"}:
         parts = name.rsplit(".", 2)
         leaf = parts[-2].lower() if len(parts) >= 2 else leaf
-    return leaf in {"q_proj", "k_proj", "v_proj", "o_proj", "out_proj"}
+    return leaf in {"q_proj", "k_proj", "v_proj", "o_proj", "out_proj", "c_attn", "c_proj"}
 
 
 def should_compress_linear(model: Any, name: str) -> bool:
-    """Keep decoder compression restricted to attention projections.
-
-    Encoder behavior intentionally remains the historical, unrestricted path.
-    """
+    """Keep decoder compression restricted to attention projections while protecting task heads across all architectures."""
+    leaf = name.rsplit(".", 1)[-1].lower()
+    if leaf in {"weight", "bias"}:
+        parts = name.rsplit(".", 2)
+        leaf = parts[-2].lower() if len(parts) >= 2 else leaf
+    if leaf in {"classifier", "score", "lm_head", "pooler", "pre_classifier"} or any(
+        k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "pre_classifier"]
+    ):
+        return False
     family = detect_family(model)
     return not is_decoder_family(family) or is_decoder_projection_name(name)
 
@@ -162,7 +167,14 @@ def module_family_support(name: str) -> dict[str, str]:
     n = name.lower()
     incompatible = ("linear", "rnn", "ssm", "mamba", "performer", "cosformer", "random", "recurrent", "span", "delta_net")
     qwen = "incompatible" if any(x in n for x in incompatible) else "adapted"
-    if n in {"full", "faq", "frandi_compressor", "astro"}: qwen = "adapted"
-    return {"bert": "encoder_compatible", "roberta": "encoder_compatible",
-            "gpt": qwen, "qwen": qwen, "t5": "encoder_decoder_compatible",
-            "ssm": "incompatible", "unknown": "unknown"}
+    if n in {"full", "faq", "frandi_compressor", "astro"}:
+        qwen = "adapted"
+    return {
+        "bert": "encoder_compatible",
+        "roberta": "encoder_compatible",
+        "gpt": qwen,
+        "qwen": qwen,
+        "t5": "encoder_decoder_compatible",
+        "ssm": "incompatible",
+        "unknown": "unknown",
+    }

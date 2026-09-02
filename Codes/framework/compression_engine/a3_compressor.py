@@ -28,6 +28,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 from framework.compression_engine.pruning_utils import (
     get_calibration_tensors,
     recalibrate_layernorms,
@@ -248,20 +249,22 @@ class A3Compressor(BaseCompressor):
                 # Never compress the classification head / pre_classifier directly to preserve logits
                 if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
                     continue
-                is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
-                is_qwen_attention = any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj"])
-                is_target = is_qwen_attention if is_qwen else True
-                if self.target_attention_only:
-                    is_target = any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"])
-                if is_target:
-                    cov = cov_map.get(name, None)
-                    fisher = fisher_map.get(name, None)
-                    factorized_layer = self.compress_linear(module, cov=cov, fisher=fisher)
-                    replace_module(self.model, name, factorized_layer)
-                    factorized_count += 1
+                if not should_compress_linear(self.model, name):
+                    continue
+                if self.target_attention_only and not any(
+                    k in name.lower()
+                    for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value"]
+                ):
+                    continue
 
-        # LayerNorm Recalibration
-        if self.recalibrate_ln:
+                cov = cov_map.get(name, None)
+                fisher = fisher_map.get(name, None)
+                factorized_layer = self.compress_linear(module, cov=cov, fisher=fisher)
+                replace_module(self.model, name, factorized_layer)
+                factorized_count += 1
+
+        # LayerNorm Recalibration - only execute if valid calibration texts/tokenizer/loader are present
+        if self.recalibrate_ln and (self.calibration_loader is not None or self.calibration_texts is not None or self.tokenizer is not None):
             recalibrate_layernorms(
                 self.model,
                 tokenizer=self.tokenizer,
