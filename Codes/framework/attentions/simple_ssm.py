@@ -178,8 +178,10 @@ class SimpleSSM(BaseAttention):
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
+        B, L, D = hidden_states.shape
+
         # Pre-normalize input to prevent unnormalized T5 embeddings from blowing up SSM in FP16
-        x_norm = F.layer_norm(hidden_states, (hidden_states.shape[-1],))
+        x_norm = F.layer_norm(hidden_states, (D,))
         x_proj = self.in_proj(x_norm)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
