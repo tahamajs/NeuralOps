@@ -284,7 +284,10 @@ def main():
     args = ap.parse_args(); logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     torch.manual_seed(args.seed)
     torch.set_num_threads(4)
-    if torch.cuda.is_available(): torch.cuda.manual_seed_all(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type != "cuda": raise RuntimeError("Qwen quality sweep requires CUDA")
@@ -318,7 +321,7 @@ def main():
              getattr(base.config, "num_attention_heads", "?"),
              getattr(base.config, "head_dim", "?"), getattr(base.config, "num_hidden_layers", "?"))
     LOG.info("detected model family=%s adapter=%s", family, adapter.as_dict())
-    if hasattr(base, "gradient_checkpointing_enable"):
+    if hasattr(base, "gradient_checkpointing_enable") and not (family == "qwen3_5" and getattr(adapter, "hidden_size", 0) <= 1024):
         base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 
     checkpoint = out / "finetuned_model.pt"
