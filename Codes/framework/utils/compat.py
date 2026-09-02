@@ -21,7 +21,7 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 
 def is_decoder_family(family: str) -> bool:
-    return family in {"gpt", "qwen"}
+    return family in {"gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral", "falcon"}
 
 
 def is_decoder_projection_name(name: str) -> bool:
@@ -33,18 +33,95 @@ def is_decoder_projection_name(name: str) -> bool:
     return leaf in {"q_proj", "k_proj", "v_proj", "o_proj", "out_proj", "c_attn", "c_proj"}
 
 
-def should_compress_linear(model: Any, name: str) -> bool:
-    """Keep decoder compression restricted to attention projections while protecting task heads across all architectures."""
+def should_compress_linear(model: Any, name: str, family: Optional[str] = None) -> bool:
+    """
+    Family-aware check for whether a linear layer should be compressed.
+    
+    Task 1: For qwen3_5, sensitive layers (attention, DeltaNet, GQA, MoE routers/experts,
+    norms, RoPE, embeddings, heads) are protected, compressing only ordinary FFN dense layers.
+    For other families, original safe linear layer compression behavior is preserved.
+    """
     leaf = name.rsplit(".", 1)[-1].lower()
     if leaf in {"weight", "bias"}:
         parts = name.rsplit(".", 2)
         leaf = parts[-2].lower() if len(parts) >= 2 else leaf
+
+    name_low = name.lower()
+    # Exclude head/classifier/output layers across all models
     if leaf in {"classifier", "score", "lm_head", "pooler", "pre_classifier"} or any(
-        k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "pre_classifier"]
+        k in name_low for k in ["classifier", "score", "lm_head", "pooler", "pre_classifier", "classification_head"]
     ):
         return False
-    family = detect_family(model)
-    return not is_decoder_family(family) or is_decoder_projection_name(name)
+
+    fam = family or (detect_family(model) if not isinstance(model, str) else model)
+
+    if fam == "qwen3_5":
+        # Skip any layer containing sensitive keywords
+        sensitive_keywords = (
+            "attn", "attention", "delta", "delta_net", "gate",
+            "expert", "router", "norm", "rope", "embed", "lm_head",
+            "score", "classifier", "pre_classifier", "conv1d", "in_proj"
+        )
+        if any(kw in name_low for kw in sensitive_keywords):
+            return False
+        # For Qwen3.5, only compress ordinary FFN dense layers
+        allowed_keywords = ("mlp", "ffn", "dense", "feed_forward", "linear", "down_proj", "up_proj")
+        return any(kw in name_low for kw in allowed_keywords)
+
+    if is_decoder_family(fam):
+        return is_decoder_projection_name(name) or any(kw in name_low for kw in ["mlp", "ffn", "dense", "feed_forward"])
+
+    return True
+
+
+def get_dynamic_compression_rank(
+    in_features: int,
+    out_features: int,
+    model_or_family: Any = None,
+    default_rank: int = 16,
+    comp_config: Optional[dict] = None,
+) -> int:
+    """
+    Compute architecture-aware dynamic compression rank (Task 2).
+    
+    For Qwen3.5: rank = min(256, max(128, min(in_features, out_features) // 4))
+    For other families: preserves default fixed/configured rank.
+    """
+    comp_config = comp_config or {}
+    if "qwen3_5_rank" in comp_config and comp_config["qwen3_5_rank"] is not None:
+        return int(comp_config["qwen3_5_rank"])
+    if "dynamic_rank" in comp_config and comp_config["dynamic_rank"] is not None:
+        return int(comp_config["dynamic_rank"])
+
+    fam = model_or_family if isinstance(model_or_family, str) else (detect_family(model_or_family) if model_or_family is not None else "unknown")
+    if fam == "qwen3_5":
+        return min(256, max(128, min(in_features, out_features) // 4))
+    return default_rank
+
+
+def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
+    """
+    Task 3: Recovery parameter selection.
+    
+    Returns only LoRA adapter parameters and classification head parameters.
+    All other parameters (including compressor factors like .down.weight, .up.weight, .U, .V, .A, .B)
+    are explicitly frozen (requires_grad=False).
+    """
+    for p_name, p in model.named_parameters():
+        p_low = p_name.lower()
+        is_head = any(h in p_low for h in ("score.", "classifier.", "pre_classifier.", "score", "classifier"))
+        is_lora = (
+            p_low.endswith(".lora_a.weight")
+            or p_low.endswith(".lora_b.weight")
+            or p_low.endswith(".lora_a.bias")
+            or p_low.endswith(".lora_b.bias")
+            or ".lora_" in p_low
+        )
+        if is_head or is_lora:
+            p.requires_grad = True
+        else:
+            p.requires_grad = False
+    return [p for p in model.parameters() if p.requires_grad]
 
 
 def maybe_apply_rotary(q: torch.Tensor, k: torch.Tensor, adapter: ModelAdapter,

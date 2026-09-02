@@ -238,5 +238,10 @@ def is_module_declared_compatible(name: str, family: str) -> Tuple[bool, str]:
         return False, "declared_bidirectional_only_incompatible_with_decoder"
     if is_enc_dec and not caps.get("supports_cross_attention", True):
         return False, "declared_lacks_cross_attention_for_encoder_decoder"
+    if family in {"qwen3_5", "qwen3.5"}:
+        if not caps.get("supports_causal", True):
+            return False, "declared_bidirectional_only_incompatible_with_qwen3_5"
+        if caps.get("requires_mha", False) and not caps.get("supports_gqa", True):
+            return False, "declared_mha_only_incompatible_with_qwen3_5_gqa"
 
     return True, ""

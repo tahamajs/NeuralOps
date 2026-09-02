@@ -21,9 +21,10 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.utils.compat import should_compress_linear
+from framework.utils.compat import should_compress_linear, get_dynamic_compression_rank
 
 logger = logging.getLogger(__name__)
+
 
 # FIX: Comprehensive multi-domain calibration corpus (>512 tokens)
 DEFAULT_CALIBRATION_CORPUS: List[str] = [
@@ -193,7 +194,8 @@ class AASVDCompressor(BaseCompressor):
         """
         in_feat = layer.in_features
         out_feat = layer.out_features
-        r = min(rank or self.rank, in_feat, out_feat)
+        r = get_dynamic_compression_rank(in_feat, out_feat, model_or_family=self.model, default_rank=rank or self.rank, comp_config=getattr(self, "comp_config", None))
+        r = min(r, in_feat, out_feat)
 
         if cov is not None:
             # Principal activation directions via SVD of covariance in FP32
@@ -318,8 +320,9 @@ class AASVDCompressor(BaseCompressor):
         replaced_count = 0
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and name in covariances and should_compress_linear(self.model, name):
-                is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
-                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"]):
+                from framework.utils.model_family import detect_family
+                fam = detect_family(self.model)
+                if fam == "qwen" and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"]):
                     continue
                 svd_layer = self.compress_linear(module, rank=self.rank, cov=covariances[name])
                 replace_module(self.model, name, svd_layer)
@@ -336,8 +339,9 @@ class AASVDCompressor(BaseCompressor):
                 # Never compress classifier / score / lm_head directly
                 if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
                     continue
-                is_qwen = str(getattr(getattr(self.model, "config", None), "model_type", "")).lower().startswith("qwen")
-                if is_qwen and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"]):
+                from framework.utils.model_family import detect_family
+                fam = detect_family(self.model)
+                if fam == "qwen" and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"]):
                     continue
                 svd_layer = self.compress_linear(module, rank=self.rank, cov=None)
                 replace_module(self.model, name, svd_layer)
