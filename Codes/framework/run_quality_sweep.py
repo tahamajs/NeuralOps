@@ -440,7 +440,7 @@ def main():
         for name, p in base.named_parameters():
             if not p.requires_grad:
                 p.data = p.data.half()
-    base.to(device)
+    base.to("cpu")
     (out / "finetune_metadata.json").write_text(json.dumps({
         "classification_head_trained": True,
         "finetune_mode": args.finetune_mode,
@@ -514,15 +514,11 @@ def main():
                 continue
 
             # Sequential single-model clone directly on GPU (Zero host RAM bloat, zero PCIe latency)
+            # Deepcopy on CPU host memory (zero VRAM overhead) and send fresh candidate to device
             model = None
             gc.collect()
             torch.cuda.empty_cache()
-            try:
-                model = copy.deepcopy(base)
-            except torch.cuda.OutOfMemoryError:
-                gc.collect()
-                torch.cuda.empty_cache()
-                model = copy.deepcopy(base)
+            model = copy.deepcopy(base).to(device)
             # Side effect is projection alias installation; the model itself
             # is not replaced, preserving native HF forward semantics.
             wrap_for_family(model, family)
