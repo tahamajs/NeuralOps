@@ -428,8 +428,7 @@ def main():
             wrap_for_family(model, family)
             if n < len(names) and names[n] not in existing:
                 queue_copy(names[n])
-            injected = False
-            # Merge LoRA adapters into base weights before applying compressor or attention
+            # Merge baseline LoRA adapters into base weights so injected modules observe full task representations
             for m in model.modules():
                 if hasattr(m, "merge") and callable(m.merge):
                     try:
@@ -456,9 +455,27 @@ def main():
                         recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
                         if not recovery_targets or name in recovery_targets or "all" in recovery_targets:
                             LOG.info("Running %d LoRA recovery fine-tuning steps for %s", args.recovery_steps, name)
+                            # Re-enable zero-init LoRA adapters for clean post-injection adaptation
+                            for m in model.modules():
+                                if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
+                                    m.reset_parameters()
+                                    m.merged = False
+
                             for p_name, p in model.named_parameters():
-                                if any(h in p_name.lower() for h in ("attn", "attention", ".lora_", "score", "classifier", "lm_head", ".u", ".v", "down", "up")):
+                                p_low = p_name.lower()
+                                is_head = any(h in p_low for h in ("score", "classifier", "lm_head", "pre_classifier"))
+                                is_lora = ".lora_" in p_low
+                                is_factor = (
+                                    any(p_name.endswith(suf) for suf in (".U", ".V", ".A", ".B", ".u", ".v", ".a", ".b"))
+                                    or any(h in p_low for h in ("down_proj", "up_proj", "span_logits", ".adapter.", "linear_u", "linear_v"))
+                                )
+                                is_injected = (".inner." in p_name) or (typ == "attention" and "attention" in p_low and any(sub in p_low for sub in (".q_", ".k_", ".v_", ".out_", "w_q", "w_k", "w_v", "w_o", "query", "key", "value")))
+                                is_backbone_norm_emb = any(h in p_low for h in ("embeddings", "layernorm", "layer_norm", "intermediate"))
+                                if (is_head or is_lora or is_factor or is_injected) and not is_backbone_norm_emb:
                                     p.requires_grad = True
+                                else:
+                                    p.requires_grad = False
+
                             trainable = [p for p in model.parameters() if p.requires_grad]
                             if trainable:
                                 had_nan = finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
