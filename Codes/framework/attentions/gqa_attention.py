@@ -40,7 +40,9 @@ class GroupedQueryAttention(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        self.num_heads: int = config.num_attention_heads
+        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", 8))
+        self.hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", 512))
+        self.head_dim: int = getattr(config, "d_kv", self.hidden_size // self.num_heads)
         
         # Ensure num_kv_heads is an exact divisor of num_heads
         divisors = [d for d in range(1, self.num_heads + 1) if self.num_heads % d == 0]
@@ -51,9 +53,6 @@ class GroupedQueryAttention(nn.Module):
             # Pick a valid divisor <= num_heads // 2 (or 1)
             valid_divisors = [d for d in divisors if d <= max(1, self.num_heads // 2)]
             self.num_kv_heads: int = valid_divisors[-1] if valid_divisors else 1
-
-        self.head_dim: int = config.hidden_size // self.num_heads
-        self.hidden_size: int = config.hidden_size
 
         self.query: nn.Linear = nn.Linear(
             self.hidden_size, self.num_heads * self.head_dim

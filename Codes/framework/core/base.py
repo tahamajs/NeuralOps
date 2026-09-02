@@ -18,9 +18,9 @@ class BaseAttention(nn.Module):
         super().__init__()
         self.config = config
         self.rank = rank
-        self.num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
-        self.hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
-        self.head_dim = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
+        self.num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12
+        self.hidden_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768
+        self.head_dim = getattr(config, "d_kv", getattr(config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64))
 
     @abstractmethod
     def forward(
