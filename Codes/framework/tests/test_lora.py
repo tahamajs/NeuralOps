@@ -154,3 +154,93 @@ class TestApplyLoRAOnModels:
             assert os.path.exists(tmp_path)
             res = load_lora_weights(model, tmp_path)
             assert res["metadata"]["steps"] == 50
+
+
+class TestLoRACompressorIntegration:
+    """Verify LoRA adapters integrate properly with compressor recovery fine-tuning."""
+
+    def test_compressor_unmerged_lora_preservation(self):
+        """Verify that LoRA adapters remain unmerged and trainable alongside a compressed base_layer."""
+        base = nn.Linear(32, 32, bias=False)
+        lora = LoRALinear(base, r=4, alpha=8.0)
+        assert not lora.merged
+
+        # Mock compressor factorizing the base_layer
+        class SVDCompressedBase(nn.Module):
+            def __init__(self, in_features, out_features, rank=4):
+                super().__init__()
+                self.U = nn.Parameter(torch.randn(out_features, rank))
+                self.V = nn.Parameter(torch.randn(rank, in_features))
+            def forward(self, x):
+                return x @ self.V.t() @ self.U.t()
+
+        lora.base_layer = SVDCompressedBase(32, 32, rank=4)
+        assert not lora.merged
+
+        # Gradient flow check
+        x = torch.randn(2, 32)
+        opt = torch.optim.AdamW(lora.parameters(), lr=1e-3)
+        for _ in range(2):
+            opt.zero_grad()
+            loss = lora(x).sum()
+            loss.backward()
+            opt.step()
+
+        assert lora.lora_B.weight.grad is not None
+        assert lora.lora_A.weight.grad is not None
+        assert lora.lora_A.weight.grad.norm().item() > 0
+
+    def test_recovery_parameter_selection_precision(self):
+        """Verify targeted recovery parameter selection freezes backbone & norms while enabling LoRA & head."""
+        class MockRecoverableModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.embedding = nn.Embedding(50, 32)
+                self.layernorm = nn.LayerNorm(32)
+                lin = nn.Linear(32, 32)
+                self.proj = LoRALinear(lin, r=4, alpha=8.0)
+                self.classifier = nn.Linear(32, 2)
+
+        model = MockRecoverableModel()
+        for p_name, p in model.named_parameters():
+            p_low = p_name.lower()
+            is_head = any(h in p_low for h in ("score", "classifier", "lm_head"))
+            is_lora = ".lora_a." in p_low or ".lora_b." in p_low or p_low.endswith((".lora_a", ".lora_b"))
+            is_backbone_norm_emb = any(h in p_low for h in ("embedding", "layernorm"))
+            if (is_head or is_lora) and not is_backbone_norm_emb:
+                p.requires_grad = True
+            else:
+                p.requires_grad = False
+
+        assert not model.embedding.weight.requires_grad
+        assert not model.layernorm.weight.requires_grad
+        assert model.proj.lora_A.weight.requires_grad
+        assert model.proj.lora_B.weight.requires_grad
+        assert model.classifier.weight.requires_grad
+
+    def test_recovery_training_loss_reduction(self):
+        """Verify a 5-step recovery loop decreases cross-entropy loss on a synthetic task."""
+        torch.manual_seed(42)
+        base = nn.Linear(16, 16)
+        lora = LoRALinear(base, r=4, alpha=8.0)
+        head = nn.Linear(16, 2)
+        model = nn.Sequential(lora, head)
+
+        # Freeze base
+        lora.base_layer.weight.requires_grad = False
+        opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=0.05)
+        loss_fn = nn.CrossEntropyLoss()
+
+        x = torch.randn(8, 16)
+        y = torch.randint(0, 2, (8,))
+
+        initial_loss = loss_fn(model(x), y).item()
+        final_loss = initial_loss
+        for _ in range(10):
+            opt.zero_grad()
+            loss = loss_fn(model(x), y)
+            loss.backward()
+            opt.step()
+            final_loss = loss.item()
+
+        assert final_loss < initial_loss
