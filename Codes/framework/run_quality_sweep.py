@@ -270,6 +270,7 @@ def main():
                     help="Fine-tune mode: head-only or full-backbone LoRA adapters")
     ap.add_argument("--lora_r", type=int, default=16, help="LoRA rank dimension")
     ap.add_argument("--lora_alpha", type=float, default=32.0, help="LoRA scaling alpha")
+    ap.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout probability")
     ap.add_argument("--lora_target_modules", default="q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj",
                     help="Target modules for LoRA injection (comma-separated)")
     ap.add_argument("--recovery_steps", type=int, default=50,
