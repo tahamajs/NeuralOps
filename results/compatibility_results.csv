@@ -376,8 +376,93 @@ t5,cola,zerokv_neo,SKIP,0.0,adapted,AttributeError: 'Embedding' object has no at
 t5,cola,zeros,PASS,30.87,legacy_bert,,10.54,2026-09-01T11:17:31.891408
 qwen,sst2,lora_baseline_full,PASS,88.76,adapted_qwen,,500_steps_lora,2026-09-01T20:17:28
 t5,sst2,lora_baseline_full,PASS,89.33,adapted_t5,,500_steps_lora,2026-09-02T02:24:33
-t5,sst2,aasvd,PASS,50.92,adapted_t5,,151.24,2026-09-02T02:27:04.942527
-t5,sst2,admm,PASS,51.61,adapted_t5,,78.12,2026-09-02T02:28:23.395055
-t5,sst2,direct_svd,PASS,51.03,adapted_t5,,130.22,2026-09-02T02:30:33.861555
+t5,sst2,aasvd,PASS,73.97,adapted_t5,,150.32,2026-09-02T04:00:18.488540
+t5,sst2,admm,PASS,62.96,adapted_t5,,73.37,2026-09-02T04:09:06.595691
+t5,sst2,direct_svd,PASS,73.62,adapted_t5,,116.02,2026-09-02T05:00:18.937282
 t5,sst2,slicegpt,PASS,83.83,adapted_t5,,151.67,2026-09-02T02:33:05.838200
-t5,sst2,armor,PASS,83.72,adapted_t5,,205.72,2026-09-02T02:36:31.823474
+t5,sst2,armor,PASS,83.94,adapted_t5,,165.04,2026-09-02T04:23:32.967092
+t5,sst2,full,PASS,89.33,adapted,,2.13,2026-09-02T03:55:32.590111
+t5,sst2,a3,PASS,75.92,adapted_t5,,120.77,2026-09-02T03:57:47.930730
+t5,sst2,adaptive_span,SKIP_T5_INCOMPATIBLE,49.54,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,45.35,2026-09-02T04:01:04.185853
+t5,sst2,adaptive_sparse,SKIP_T5_INCOMPATIBLE,47.25,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,73.57,2026-09-02T04:02:18.037180
+t5,sst2,adaptive_svd,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,66.11,2026-09-02T04:03:24.567330
+t5,sst2,adasplash,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,123.67,2026-09-02T04:05:28.684014
+t5,sst2,adasvd,PASS,85.67,adapted_t5,,143.77,2026-09-02T04:07:52.749157
+t5,sst2,admm_pruner,PASS,83.49,adapted_t5,,91.77,2026-09-02T04:10:38.718177
+t5,sst2,aegis_hybrid,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,64.38,2026-09-02T04:11:43.422800
+t5,sst2,aegis_spectron_fp8,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,80.32,2026-09-02T04:13:04.108093
+t5,sst2,aegis_v1,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,70.99,2026-09-02T04:14:15.651707
+t5,sst2,aegis_v2,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,65.23,2026-09-02T04:15:21.268895
+t5,sst2,aegis_v3,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,69.27,2026-09-02T04:16:30.901344
+t5,sst2,aegis_v4,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,69.03,2026-09-02T04:17:40.319204
+t5,sst2,aegis_v5,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,94.56,2026-09-02T04:19:15.238291
+t5,sst2,aegis_v6,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,91.98,2026-09-02T04:20:47.590798
+t5,sst2,ast,PASS,85.67,adapted_t5,,77.32,2026-09-02T04:24:50.758544
+t5,sst2,astro,PASS,89.79,adapted_t5,,69.06,2026-09-02T04:26:00.250782
+t5,sst2,asvd,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,42.61,2026-09-02T04:26:43.177388
+t5,sst2,bam_umoe,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,612.2,2026-09-02T04:36:55.685888
+t5,sst2,block_transformer_hiba,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,37.63,2026-09-02T04:37:35.100570
+t5,sst2,bonsai,PASS,79.47,adapted_t5,,76.08,2026-09-02T04:38:52.223919
+t5,sst2,cachenotes,PASS,84.63,adapted_t5,,71.72,2026-09-02T04:40:04.442489
+t5,sst2,chela_slay,SKIP_T5_INCOMPATIBLE,48.74,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,55.77,2026-09-02T04:41:00.487636
+t5,sst2,cluster,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,70.37,2026-09-02T04:42:11.214332
+t5,sst2,come,PASS,87.84,adapted_t5,,60.87,2026-09-02T04:43:12.498373
+t5,sst2,compot,PASS,55.16,adapted,"fp32 retry: ""geqrf_cuda"" not implemented for 'Half'",4.85,2026-09-02T04:43:17.760263
+t5,sst2,compressed_attention,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,32.36,2026-09-02T04:43:50.495825
+t5,sst2,compressed_attention_layer_energy,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,32.44,2026-09-02T04:44:23.246737
+t5,sst2,compressed_mha,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,33.51,2026-09-02T04:44:57.103274
+t5,sst2,coopq,PASS,89.79,adapted_t5,,169.09,2026-09-02T04:47:46.492909
+t5,sst2,cosformer,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,50.68,2026-09-02T10:18:32.871980
+t5,sst2,cr,PASS,75.0,adapted_t5,,94.23,2026-09-02T04:50:10.211007
+t5,sst2,cur,PASS,49.08,adapted_t5,,95.24,2026-09-02T04:51:45.818606
+t5,sst2,cur_moe,PASS,49.08,adapted_t5,,135.07,2026-09-02T04:54:01.260087
+t5,sst2,cur_moe_compressor,PASS,49.08,adapted_t5,,134.81,2026-09-02T04:56:16.400426
+t5,sst2,decay_linear_attn,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,53.9,2026-09-02T04:57:10.636383
+t5,sst2,delta_kv,PASS,86.24,adapted_t5,,71.59,2026-09-02T04:58:22.543219
+t5,sst2,dobi,PASS,74.31,adapted_t5,,148.35,2026-09-02T05:02:47.679873
+t5,sst2,dynamic_rank,PASS,81.19,adapted_t5,,108.53,2026-09-02T05:04:36.661269
+t5,sst2,eat,SKIP_T5_INCOMPATIBLE,48.97,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,34.14,2026-09-02T10:19:07.328133
+t5,sst2,enlighten,PASS,87.5,adapted_t5,,88.59,2026-09-02T05:06:39.578367
+t5,sst2,entropy_budget,PASS,72.82,adapted_t5,,119.68,2026-09-02T05:08:39.777699
+t5,sst2,entropy_rank_allocator,PASS,80.16,adapted_t5,,109.18,2026-09-02T05:10:29.224916
+t5,sst2,erc,PASS,74.54,adapted_t5,,117.16,2026-09-02T05:12:26.819853
+t5,sst2,expert_choice_moe,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,106.63,2026-09-02T05:14:13.890422
+t5,sst2,factorised_matrix_state,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,61.79,2026-09-02T05:15:16.087081
+t5,sst2,faq,PASS,89.91,adapted_t5,,69.08,2026-09-02T05:16:25.802523
+t5,sst2,fasa,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,40.25,2026-09-02T05:17:06.477699
+t5,sst2,flap,PASS,85.67,adapted_t5,,69.39,2026-09-02T05:18:16.144283
+t5,sst2,flash3,PASS,51.61,adapted_t5,,28.8,2026-09-02T05:18:45.381991
+t5,sst2,flash3_fp8,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,30.47,2026-09-02T05:19:16.167383
+t5,sst2,flat_llm,PASS,82.45,adapted_t5,,73.49,2026-09-02T05:20:30.112771
+t5,sst2,frandi,PASS,56.42,adapted,"fp32 retry: ""geqrf_cuda"" not implemented for 'Half'",4.9,2026-09-02T05:20:35.427035
+t5,sst2,frandi_compressor,PASS,89.33,adapted_t5,,68.74,2026-09-02T05:21:44.523815
+t5,sst2,fused_svd_kernel,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,574.5,2026-09-02T05:50:19.884507
+t5,sst2,fusion_attn,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,34.25,2026-09-02T05:50:54.505945
+t5,sst2,galerkin,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,42.43,2026-09-02T05:51:37.258651
+t5,sst2,gated_delta_net,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,67.85,2026-09-02T05:52:45.452266
+t5,sst2,gated_deltanet_block,SKIP_T5_INCOMPATIBLE,51.15,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,66.96,2026-09-02T05:53:52.858914
+t5,sst2,gated_linear_attn,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,43.32,2026-09-02T10:19:51.079851
+t5,sst2,gfws,PASS,76.61,adapted_t5,,81.0,2026-09-02T05:56:21.831862
+t5,sst2,goldfinch_ahn,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,43.65,2026-09-02T05:57:05.879668
+t5,sst2,gqa,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,34.85,2026-09-02T05:57:41.073264
+t5,sst2,granite_hybrid,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,"fp32 retry: torch.utils.checkpoint: Recomputed values for the following tensors have different metadata than during the forward pass.
+tensor at position 0:
+saved metadata: {'shape': torch.Size([3200, 512]), 'dtype': torch.float16, 'device': device(type='cuda', index=0)}
+recomputed metadata: {'shape': torch.Size([512, 2048]), 'dtype': torch.float16, 'device': device(type='cuda', index=0)}
+tensor at position 1:
+saved metadata: {'shape': torch.Size([512, 1536]), 'dtype': torch.float16, 'device': device(type='cuda', index=0)}
+recomputed metadata: {'shape': torch.Size([3200, 512]), 'dtype': torch.float16, 'device': device(type='cuda', index=0)}
+tensor at position 2:
+saved metadata: {'shape': torch.Size([512, 64, 50]), 'dtype': torch.float16, 'device': device(type='cuda', index=0)}
+recomputed metadata: {'shape': torch.Size([64, 1024, 50]), 'dtype': torch.float16, 'device': device(type='cuda', index=0)}
+tensor at position 3:
+saved metadata: {'shape': torch.Size([512, 50, 64]), 'dtype': torch.",438.47,2026-09-02T06:04:59.993920
+t5,sst2,grecodec,PASS,76.49,adapted_t5,,258.41,2026-09-02T06:09:19.652304
+t5,sst2,grecodec_compressor,PASS,79.36,adapted_t5,,259.77,2026-09-02T06:13:39.975506
+t5,sst2,griffin_ssd,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,65.58,2026-09-02T06:14:45.972067
+t5,sst2,halo_regla,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,54.9,2026-09-02T06:15:41.205474
+t5,sst2,hamming,SKIP_T5_INCOMPATIBLE,50.92,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,48.09,2026-09-02T06:16:29.703998
+t5,sst2,hashed_net,PASS,51.49,adapted_t5,,129.01,2026-09-02T06:18:39.112071
+t5,sst2,hgrn2_gated_deltanet,SKIP_SLOW,0.0,adapted_t5,exceeded_10m_timeout,600.0,2026-09-02T06:28:45
+t5,sst2,hgrn2_layer,SKIP_SLOW,0.0,adapted_t5,exceeded_10m_timeout,600.0,2026-09-02T06:39:40
+t5,sst2,hgrn2_outer,SKIP_T5_INCOMPATIBLE,49.08,adapted_t5,t5_relative_bias_and_cross_attention_incompatible,73.26,2026-09-02T06:41:37.141657
