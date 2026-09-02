@@ -160,3 +160,85 @@ class TestCompressionEngines(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+from framework.utils.compat import should_compress_linear
+from framework.compression_engine.a3_compressor import A3Compressor
+from framework.compression_engine.direct_svd import DirectSVDCompressor
+from framework.utils.lora import LoRALinear
+
+
+class TestCompressorGuardsAndPrecision(unittest.TestCase):
+    """Verify safeguards, precision stability, and head protection."""
+
+    def setUp(self):
+        torch.manual_seed(42)
+
+    def test_should_compress_linear_head_protection(self):
+        """Verify classifier heads, pooler, and embeddings are skipped by compressors."""
+        class DummyModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.encoder_linear = nn.Linear(32, 32)
+                self.classifier = nn.Linear(32, 2)
+                self.score = nn.Linear(32, 2)
+                self.lm_head = nn.Linear(32, 100)
+                self.pooler = nn.Linear(32, 32)
+
+        model = DummyModel()
+        self.assertTrue(should_compress_linear(model, "encoder_linear"))
+        self.assertFalse(should_compress_linear(model, "classifier"))
+        self.assertFalse(should_compress_linear(model, "score"))
+        self.assertFalse(should_compress_linear(model, "lm_head"))
+        self.assertFalse(should_compress_linear(model, "pooler"))
+
+    def test_fp32_and_fp16_numerical_stability(self):
+        """Verify SVD compression forward remains finite in both fp32 and fp16."""
+        layer = nn.Linear(32, 32)
+        aasvd = AASVDCompressor(nn.Sequential(layer), rank=8)
+        compressed = aasvd.compress_linear(layer, rank=8)
+
+        # FP32
+        x_32 = torch.randn(2, 4, 32, dtype=torch.float32)
+        out_32 = compressed(x_32)
+        self.assertTrue(torch.isfinite(out_32).all())
+
+        # FP16
+        compressed_16 = compressed.half()
+        x_16 = torch.randn(2, 4, 32, dtype=torch.float16)
+        out_16 = compressed_16(x_16)
+        self.assertTrue(torch.isfinite(out_16).all())
+
+    def test_a3_compressor_flow(self):
+        class SmallModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.fc1 = nn.Linear(32, 32)
+                self.fc2 = nn.Linear(32, 32)
+            def forward(self, x):
+                return self.fc2(self.fc1(x))
+
+        m = SmallModel()
+        comp = A3Compressor(m, rank=8)
+        compressed_m, stats = comp.compress()
+        x = torch.randn(2, 32)
+        out = compressed_m(x)
+        self.assertEqual(out.shape, (2, 32))
+        self.assertTrue(torch.isfinite(out).all())
+
+    def test_compressor_preserves_unmerged_lora(self):
+        """Compressor operating on a LoRA-wrapped linear decomposes base_layer without corrupting adapter."""
+        base = nn.Linear(32, 32)
+        lora = LoRALinear(base, r=4, alpha=8.0)
+        self.assertFalse(lora.merged)
+
+        # Factorize base_layer directly
+        aasvd = AASVDCompressor(nn.Sequential(base), rank=8)
+        svd_layer = aasvd.compress_linear(lora.base_layer, rank=8)
+        lora.base_layer = svd_layer
+
+        self.assertFalse(lora.merged)
+        x = torch.randn(2, 32)
+        out = lora(x)
+        self.assertEqual(out.shape, (2, 32))
+        self.assertTrue(torch.isfinite(out).all())
