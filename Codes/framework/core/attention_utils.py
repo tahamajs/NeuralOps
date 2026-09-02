@@ -659,7 +659,7 @@ def inject_attention(
                                             nn.init.zeros_(lin2.bias)
 
         from framework.utils.replace_attention import UniversalAttentionWrapper
-        return_tuple = "self_attn" in name or "attention" in name or getattr(old_attn, "is_decoder", False)
+        return_tuple = "self_attn" in name.lower() or "attention" in name.lower() or getattr(old_attn, "is_decoder", False)
         wrapped_attn = UniversalAttentionWrapper(new_attn, layer_name=name, return_tuple=return_tuple)
         replace_module(model, name, wrapped_attn)
         replaced += 1
