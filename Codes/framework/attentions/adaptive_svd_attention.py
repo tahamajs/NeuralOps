@@ -108,10 +108,12 @@ class AdaptiveSVDLinear(nn.Module):
         r"""Sets the SVD factors $U$ and $V$ with precomputed truncated SVD decomposition."""
         with torch.no_grad():
             r = min(U.size(1), V.size(0), self.svd_rank)
+            out_dim = min(self.out_features, U.size(0))
+            in_dim = min(self.in_features, V.size(1))
             self.U.zero_()
             self.V.zero_()
-            self.U[:, :r].copy_(U[:, :r])
-            self.V[:r, :].copy_(V[:r, :])
+            self.U[:out_dim, :r].copy_(U[:out_dim, :r])
+            self.V[:r, :in_dim].copy_(V[:r, :in_dim])
             if self.B is not None:
                 nn.init.zeros_(self.B)
 
