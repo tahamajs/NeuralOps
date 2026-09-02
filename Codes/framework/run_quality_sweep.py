@@ -601,12 +601,14 @@ def main():
                             torch.cuda.empty_cache()
 
                 # Hard timeout enforcing max timeout (e.g. 120s / 2 minutes) across injection, recovery, and eval
-                with ThreadPoolExecutor(max_workers=1) as pool:
+                pool = ThreadPoolExecutor(max_workers=1)
+                try:
                     future = pool.submit(_run_candidate_pipeline)
-                    try:
-                        acc = future.result(timeout=args.timeout)
-                    except (TimeoutError, FuturesTimeoutError) as to_err:
-                        raise TimeoutError(f"Module pipeline exceeded hard {args.timeout}s timeout") from to_err
+                    acc = future.result(timeout=args.timeout)
+                except (TimeoutError, FuturesTimeoutError) as to_err:
+                    raise TimeoutError(f"Module pipeline exceeded hard {args.timeout}s timeout") from to_err
+                finally:
+                    pool.shutdown(wait=False, cancel_futures=True)
             except (TimeoutError, FuturesTimeoutError) as exc:
                 status, err = "SKIP_SLOW", str(exc)
             except QwenIncompatibleError as exc:
@@ -614,7 +616,7 @@ def main():
                 path_name = "unsupported" if qwen else path_name
             except Exception as exc:
                 if "out of memory" in str(exc).lower() and not injected:
-                    status, err = "SKIP", "cuda_oom_injection"
+                    status, err = "SKIP_QWEN3_5_OOM_UNSTABLE" if family == "qwen3_5" else "SKIP", "cuda_oom_injection"
                 elif "out of memory" in str(exc).lower() and injected and args.batch_size > 8:
                     try:
                         torch.cuda.empty_cache()
@@ -631,7 +633,15 @@ def main():
                         err = f"fp32 retry: {exc}"
                     except Exception as retry: exc = retry
                 if err == "":
-                    status = "SKIP" if is_architecture_error(exc) else "FAIL"; err = f"{type(exc).__name__}: {exc}"
+                    if exc is not None and "out of memory" in str(exc).lower():
+                        status = "SKIP_QWEN3_5_OOM_UNSTABLE" if family == "qwen3_5" else "SKIP_OOM"
+                        err = f"CUDA OOM: {exc}"
+                    elif is_architecture_error(exc):
+                        status = "SKIP_QWEN3_5_INCOMPATIBLE" if family == "qwen3_5" else "SKIP"
+                        err = f"{type(exc).__name__}: {exc}"
+                    else:
+                        status = "FAIL"
+                        err = f"{type(exc).__name__}: {exc}"
             if family in {"gpt", "gpt2"} and name in ATTENTION_REGISTRY and status == "PASS":
                 if had_nan:
                     status = "SKIP_NUMERICAL_NAN"

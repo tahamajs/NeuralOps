@@ -16,9 +16,11 @@ class UniversalAttentionWrapper(nn.Module):
       - GPT-2: forward(x, layer_past, ...) -> tuple (out, present)
     """
 
-    def __init__(self, inner_attn: nn.Module) -> None:
+    def __init__(self, inner_attn: nn.Module, layer_name: str = "", return_tuple: Optional[bool] = None) -> None:
         super().__init__()
         self.inner = inner_attn
+        self.layer_name = layer_name
+        self.return_tuple = return_tuple
 
     def forward(self, *args: Any, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         # 1. Extract hidden states / input tensor
@@ -119,13 +121,23 @@ class UniversalAttentionWrapper(nn.Module):
         is_dec = is_decoder_family(fam) or fam in {"qwen3_5", "qwen", "gpt", "llama", "ssm"}
 
         if isinstance(out, tuple):
-            if is_dec and not kwargs.get("output_attentions", False):
-                return out[0]
-            return out
+            first = out[0]
+            second = out[1] if len(out) > 1 else None
+        else:
+            first = out
+            second = None
 
-        if is_dec:
-            return out
-        return (out, None)
+        if self.return_tuple is not None:
+            return (first, second) if self.return_tuple else first
+
+        if fam in {"qwen3_5", "qwen", "llama", "mistral"}:
+            if "linear_attn" in self.layer_name:
+                return first
+            return (first, second)
+
+        if is_dec and not kwargs.get("output_attentions", False):
+            return first
+        return (first, second)
 
     def _forward_t5(
         self,

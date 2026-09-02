@@ -19,6 +19,7 @@ import torch.nn.functional as F
 
 from .adapters import get_adapter
 from .architecture import detect_architecture, get_attention_modules
+from .gqa_utils import get_qkv_projection_dims, repeat_kv, reshape_for_attention
 from .model_utils import replace_module
 from .registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter, detect_family
@@ -430,7 +431,17 @@ def inject_attention(
         if "linear_attn" in name and not getattr(attn_class, "supports_delta_net", False):
             continue
 
-        # Dynamically infer dimensions from old_attn if not already determined
+        # Dynamically infer dimensions from family_adapter and old_attn
+        if family_adapter is not None:
+            if hidden_size is None:
+                hidden_size = getattr(family_adapter, "hidden_size", None)
+            if num_heads is None:
+                num_heads = getattr(family_adapter, "num_heads", None)
+            if num_kv_heads is None:
+                num_kv_heads = getattr(family_adapter, "num_key_value_heads", None)
+            if head_dim is None:
+                head_dim = getattr(family_adapter, "head_dim", None)
+
         if hidden_size is None or num_heads is None:
             for _, child in old_attn.named_children():
                 if hasattr(child, "weight") and isinstance(child.weight, torch.Tensor) and child.weight.ndim == 2:
@@ -439,8 +450,10 @@ def inject_attention(
                     break
             if num_heads is None:
                 num_heads = getattr(old_attn, "num_heads", getattr(old_attn, "num_attention_heads", None))
+            if num_kv_heads is None:
+                num_kv_heads = getattr(old_attn, "num_key_value_heads", num_heads)
             if head_dim is None and hidden_size is not None and num_heads is not None:
-                head_dim = hidden_size // max(1, num_heads)
+                head_dim = getattr(old_attn, "head_dim", hidden_size // max(1, num_heads))
 
         # Ensure config exists or construct minimal namespace config
         if config is None:
@@ -565,10 +578,13 @@ def inject_attention(
                                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                                 U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=src_w_o.device, dtype=src_w_o.dtype)
                                 V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=src_w_o.device, dtype=src_w_o.dtype)
-                                lin1_o.weight.data[:r, :].copy_(V_b)
-                                lin2_o.weight.data[:, :r].copy_(U_b)
+                                min_out = min(lin2_o.weight.shape[0], U_b.shape[0])
+                                min_in = min(lin1_o.weight.shape[1], V_b.shape[1])
+                                lin1_o.weight.data[:r, :min_in].copy_(V_b[:, :min_in])
+                                lin2_o.weight.data[:min_out, :r].copy_(U_b[:min_out, :])
                                 if src_b_o is not None and getattr(lin2_o, "bias", None) is not None:
-                                    lin2_o.bias.data.copy_(src_b_o.to(lin2_o.bias.device, lin2_o.bias.dtype))
+                                    min_b = min(lin2_o.bias.shape[0], src_b_o.shape[0])
+                                    lin2_o.bias.data[:min_b].copy_(src_b_o[:min_b].to(lin2_o.bias.device, lin2_o.bias.dtype))
                 except (ValueError, AttributeError) as e:
                     logger.debug("Could not copy output projection for %s: %s", name, e)
             else:
@@ -643,7 +659,8 @@ def inject_attention(
                                             nn.init.zeros_(lin2.bias)
 
         from framework.utils.replace_attention import UniversalAttentionWrapper
-        wrapped_attn = UniversalAttentionWrapper(new_attn)
+        return_tuple = "self_attn" in name or "attention" in name or getattr(old_attn, "is_decoder", False)
+        wrapped_attn = UniversalAttentionWrapper(new_attn, layer_name=name, return_tuple=return_tuple)
         replace_module(model, name, wrapped_attn)
         replaced += 1
 
