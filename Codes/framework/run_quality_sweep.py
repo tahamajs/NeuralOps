@@ -274,6 +274,8 @@ def main():
         target_mods = args.lora_target_modules
         if family == "t5":
             target_mods = "q,k,v,o,wi,wo,wi_0,wi_1,dense"
+        elif family in {"gpt", "gpt2"}:
+            target_mods = "c_attn,c_proj,c_fc"
         base, num_lora = apply_lora(
             base,
             r=args.lora_r,
