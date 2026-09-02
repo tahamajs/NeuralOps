@@ -175,8 +175,8 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
     model.eval()
 
 
-def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4):
-    """Fine-tune LoRA adapters and sequence classification head with adaptive batch size."""
+def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=2e-4, timeout=600):
+    """Fine-tune LoRA adapters and sequence classification head with adaptive batch size and timeout."""
     trainable = [p for p in model.parameters() if p.requires_grad]
     if not trainable:
         raise RuntimeError("No trainable LoRA or head parameters found")
@@ -193,7 +193,11 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
 
     had_nan = False
     step = 0
+    t_start = time.monotonic()
     while step < steps:
+        if time.monotonic() - t_start > timeout:
+            LOG.warning("Training step %d/%d exceeded timeout %.0fs; aborting", step, steps, timeout)
+            raise TimeoutError(f"Module training exceeded {timeout}s stall timeout")
         try:
             i = (step * curr_batch_size) % max(1, len(train) - curr_batch_size)
             x, y = encode(tokenizer, {k: train[k][i:i+curr_batch_size] for k in train.column_names}, name, seq_len, device)
@@ -453,6 +457,8 @@ def main():
                             if trainable:
                                 had_nan = finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16"), 2)
+            except TimeoutError as exc:
+                status, err = "SKIP_SLOW", str(exc)
             except QwenIncompatibleError as exc:
                 status, err = f"SKIP_{family.upper()}_INCOMPATIBLE", str(exc)
                 path_name = "unsupported" if qwen else path_name
