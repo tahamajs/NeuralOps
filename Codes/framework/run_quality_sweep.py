@@ -272,8 +272,31 @@ def main():
     if hasattr(base, "gradient_checkpointing_enable"):
         base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 
-    # If LoRA mode is requested, apply LoRA wrappers to the backbone
-    if args.finetune_mode == "lora":
+    checkpoint = out / "finetuned_model.pt"
+    parent_checkpoint = out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt"
+    if not parent_checkpoint.exists():
+        parent_checkpoint = out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt"
+    if not parent_checkpoint.exists():
+        parent_checkpoint = out.parent / "gpt2_sst2_lora_baseline" / "finetuned_model.pt"
+    if not parent_checkpoint.exists():
+        parent_checkpoint = out.parent / "qwen_sst2_lora_baseline" / "finetuned_model.pt"
+
+    # Auto-detect if checkpoint or parent_checkpoint is a LoRA checkpoint
+    is_lora_mode = (args.finetune_mode == "lora")
+    active_ckpt = checkpoint if checkpoint.exists() else (parent_checkpoint if parent_checkpoint.exists() and args.finetune_steps == 0 else None)
+    if active_ckpt is not None:
+        try:
+            probe = torch.load(active_ckpt, map_location="cpu", weights_only=False)
+            if isinstance(probe, dict):
+                if probe.get("metadata", {}).get("finetune_mode") == "lora":
+                    is_lora_mode = True
+                elif any(".lora_" in k for k in probe.get("state_dict", probe).keys()):
+                    is_lora_mode = True
+        except Exception:
+            pass
+
+    # If LoRA mode is requested or detected, apply LoRA wrappers to the backbone
+    if is_lora_mode:
         from framework.utils.lora import apply_lora, save_lora_weights, load_lora_weights
         target_mods = args.lora_target_modules
         if family == "t5":
@@ -296,14 +319,6 @@ def main():
             for p in head.parameters(): p.requires_grad = True
         LOG.info("Injected %d LoRALinear layers into %s backbone", num_lora, family)
 
-    checkpoint = out / "finetuned_model.pt"
-    parent_checkpoint = out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt"
-    if not parent_checkpoint.exists():
-        parent_checkpoint = out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt"
-    if not parent_checkpoint.exists():
-        parent_checkpoint = out.parent / "gpt2_sst2_lora_baseline" / "finetuned_model.pt"
-    if not parent_checkpoint.exists():
-        parent_checkpoint = out.parent / "qwen_sst2_lora_baseline" / "finetuned_model.pt"
     if checkpoint.exists():
         LOG.info("Loading cached fine-tuned checkpoint: %s", checkpoint)
         state = torch.load(checkpoint, map_location="cpu", weights_only=False)
@@ -377,7 +392,7 @@ def main():
                 executor.shutdown(wait=False, cancel_futures=True)
                 pending.clear(); worker_count = 2
                 executor = ThreadPoolExecutor(max_workers=worker_count)
-            t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
+            t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
             support = module_family_support(name).get(family, "unknown")
             if name != "full" and support == "incompatible":
                 status, err, path_name = "SKIP_NO_SUPPORT", "unsupported_family", "unsupported"
@@ -418,7 +433,7 @@ def main():
                                 had_nan = finetune_lora(model, tokenizer, train, args.dataset, args.recovery_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=1e-4)
                 acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16"), 2)
             except QwenIncompatibleError as exc:
-                status, err = "SKIP_QWEN_INCOMPATIBLE", str(exc)
+                status, err = f"SKIP_{family.upper()}_INCOMPATIBLE", str(exc)
                 path_name = "unsupported" if qwen else path_name
             except Exception as exc:
                 if "out of memory" in str(exc).lower() and not injected:
