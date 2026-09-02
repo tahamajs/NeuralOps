@@ -88,3 +88,8 @@ hashed_net,PASS,51.49,129.01,,adapted_t5,2026-09-02T06:18:39.112071
 hgrn2_gated_deltanet,SKIP_SLOW,0.0,600.0,exceeded_10m_timeout,adapted_t5,2026-09-02T06:28:45
 hgrn2_layer,SKIP_SLOW,0.0,600.0,exceeded_10m_timeout,adapted_t5,2026-09-02T06:39:40
 hgrn2_outer,SKIP_T5_INCOMPATIBLE,49.08,73.26,t5_relative_bias_and_cross_attention_incompatible,adapted_t5,2026-09-02T06:41:37.141657
+hla,SKIP_T5_INCOMPATIBLE,49.08,54.0,t5_relative_bias_and_cross_attention_incompatible,adapted_t5,2026-09-02T10:31:07.383361
+huffman,PASS,87.61,174.98,,adapted_t5,2026-09-02T10:34:02.665051
+hybrid_svd,PASS,71.1,55.1,,adapted_t5,2026-09-02T10:34:58.061330
+hybridkv,PASS,85.89,37.16,,adapted_t5,2026-09-02T10:35:35.558374
+hymba_transx,SKIP_SLOW,0.0,600.0,exceeded_10m_timeout,adapted_t5,2026-09-02T10:45:37
