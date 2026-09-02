@@ -290,15 +290,25 @@ def _copy_projection_weights(
             if setter_fn is not None:
                 setter_fn(U_balanced, V_balanced)
             elif hasattr(target_mod, "U") and hasattr(target_mod, "V"):
-                target_mod.U.data.copy_(U_balanced)
-                target_mod.V.data.copy_(V_balanced)
+                r_u0 = min(target_mod.U.shape[0], U_balanced.shape[0])
+                r_u1 = min(target_mod.U.shape[1], U_balanced.shape[1])
+                target_mod.U.data[:r_u0, :r_u1].copy_(U_balanced[:r_u0, :r_u1])
+                r_v0 = min(target_mod.V.shape[0], V_balanced.shape[0])
+                r_v1 = min(target_mod.V.shape[1], V_balanced.shape[1])
+                target_mod.V.data[:r_v0, :r_v1].copy_(V_balanced[:r_v0, :r_v1])
             elif down_mod is not None and up_mod is not None:
-                down_mod.weight.data.copy_(V_balanced)
-                up_mod.weight.data.copy_(U_balanced)
+                r_d0 = min(down_mod.weight.shape[0], V_balanced.shape[0])
+                r_d1 = min(down_mod.weight.shape[1], V_balanced.shape[1])
+                down_mod.weight.data[:r_d0, :r_d1].copy_(V_balanced[:r_d0, :r_d1])
+                r_u0 = min(up_mod.weight.shape[0], U_balanced.shape[0])
+                r_u1 = min(up_mod.weight.shape[1], U_balanced.shape[1])
+                up_mod.weight.data[:r_u0, :r_u1].copy_(U_balanced[:r_u0, :r_u1])
                 if hasattr(up_mod, "bias") and up_mod.bias is not None and src_bias is not None:
-                    up_mod.bias.data.copy_(src_bias.to(up_mod.bias.device, up_mod.bias.dtype))
+                    min_b = min(up_mod.bias.shape[0], src_bias.shape[0])
+                    up_mod.bias.data[:min_b].copy_(src_bias[:min_b].to(up_mod.bias.device, up_mod.bias.dtype))
                 elif hasattr(target_mod, "bias") and target_mod.bias is not None and src_bias is not None:
-                    target_mod.bias.data.copy_(src_bias.to(target_mod.bias.device, target_mod.bias.dtype))
+                    min_b = min(target_mod.bias.shape[0], src_bias.shape[0])
+                    target_mod.bias.data[:min_b].copy_(src_bias[:min_b].to(target_mod.bias.device, target_mod.bias.dtype))
 
             if hasattr(target_mod, "bias") and target_mod.bias is not None and isinstance(target_mod.bias, nn.Parameter):
                 if src_bias is not None:
@@ -354,6 +364,19 @@ def apply_rope_after_up_projection(
     return q_embed, k_embed
 
 
+def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
+    r"""
+    Expand grouped-query K/V heads along head dimension: [B, Hkv, L, D] -> [B, Hkv * n_rep, L, D].
+    If n_rep <= 1, returns x unchanged without tensor allocation.
+    """
+    if n_rep <= 1:
+        return x
+    if x.dim() != 4:
+        raise ValueError(f"repeat_kv expects [B, Hkv, L, D], got shape {tuple(x.shape)}")
+    b, h, l, d = x.shape
+    return x[:, :, None, :, :].expand(b, h, n_rep, l, d).reshape(b, h * n_rep, l, d)
+
+
 def inject_attention(
     model: nn.Module,
     attention_type: str,
@@ -403,6 +426,10 @@ def inject_attention(
         logger.warning("No attention modules found to replace for architecture '%s'", arch)
 
     for name, old_attn in modules_list:
+        # In hybrid architectures (like Qwen3.5), only replace linear_attn if candidate explicitly supports DeltaNet
+        if "linear_attn" in name and not getattr(attn_class, "supports_delta_net", False):
+            continue
+
         # Dynamically infer dimensions from old_attn if not already determined
         if hidden_size is None or num_heads is None:
             for _, child in old_attn.named_children():
@@ -443,7 +470,7 @@ def inject_attention(
         # Do not let a legacy full-MHA replacement silently retain randomly
         # initialized K/V projections on GQA decoders.  Such a module must
         # explicitly advertise the geometry it implements.
-        is_gqa = (family == "qwen" and family_adapter.num_key_value_heads != family_adapter.num_heads)
+        is_gqa = (family in ("qwen", "qwen3_5") and family_adapter.num_key_value_heads != family_adapter.num_heads)
         if is_gqa and not getattr(new_attn, "supports_gqa", False):
             expected = {
                 "q": family_adapter.q_proj_out,

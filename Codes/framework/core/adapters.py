@@ -54,8 +54,11 @@ class UniversalAdapter:
             if not (isinstance(w, nn.Parameter) or isinstance(w, torch.Tensor)):
                 return None
             w = w.data if hasattr(w, "data") else w
+            # Projections must strictly be 2D weight matrices (excludes 1D norms, 3D convolutions, etc.)
+            if w.ndim != 2:
+                return None
             # Conv1D stores weights transposed: [in_features, out_features]
-            if w.ndim == 2 and w.shape[0] < w.shape[1]:
+            if w.shape[0] < w.shape[1]:
                 w = w.t().contiguous()
             bias = getattr(mod, "bias", None)
             bias = bias.data if (bias is not None and hasattr(bias, "data")) else bias

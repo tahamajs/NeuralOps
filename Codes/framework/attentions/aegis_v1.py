@@ -150,6 +150,9 @@ def kernel_linear_attention(
     return ctx.to(orig_dtype)
 
 
+from framework.core.attention_utils import repeat_kv
+
+
 @ATTENTION_REGISTRY.register("aegis_v1_module")
 @ATTENTION_REGISTRY.register("AegisAttentionV1")
 @ATTENTION_REGISTRY.register("aegis_v1")
@@ -164,10 +167,14 @@ class AegisAttentionV1(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        self.hidden_size: int = getattr(model_config, "hidden_size", 768)
-        self.num_heads: int = getattr(model_config, "num_attention_heads", 4)
-        self.head_dim: int = self.hidden_size // self.num_heads
+        self.hidden_size: int = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "dim", 768)))
+        self.num_heads: int = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", 4))
+        self.head_dim: int = getattr(model_config, "head_dim", getattr(model_config, "d_kv", self.hidden_size // max(1, self.num_heads)))
+        self.num_kv_heads: int = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", self.num_heads))
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.supports_gqa: bool = True
         self.cfg: AegisConfigV1 = aegis_cfg if aegis_cfg is not None else AegisConfigV1()
 
         # Adjust local/global heads if default doesn't match num_heads
@@ -179,14 +186,20 @@ class AegisAttentionV1(nn.Module):
             self.num_global_heads = self.cfg.num_global_heads
 
         if pretrained_attn is not None:
-            q_lin = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
-            k_lin = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
-            v_lin = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
-            out_lin = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
+            q_lin = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+            k_lin = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+            v_lin = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+            out_lin = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
         else:
+            q_lin, k_lin, v_lin, out_lin = None, None, None, None
+
+        if q_lin is None or not hasattr(q_lin, "weight"):
             q_lin = nn.Linear(self.hidden_size, self.all_head_size)
-            k_lin = nn.Linear(self.hidden_size, self.all_head_size)
-            v_lin = nn.Linear(self.hidden_size, self.all_head_size)
+        if k_lin is None or not hasattr(k_lin, "weight"):
+            k_lin = nn.Linear(self.hidden_size, self.all_kv_head_size)
+        if v_lin is None or not hasattr(v_lin, "weight"):
+            v_lin = nn.Linear(self.hidden_size, self.all_kv_head_size)
+        if out_lin is None or not hasattr(out_lin, "weight"):
             out_lin = nn.Linear(self.all_head_size, self.hidden_size)
 
         self.q_proj = FactorisedLinear(
@@ -312,10 +325,16 @@ class AegisAttentionV1(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
 
+        H, D = self.num_heads, self.head_dim
+        Hkv = self.num_kv_heads
+
         if N < self.cfg.local_window:
-            Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-            K = self.k_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-            V = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+            Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+            K = self.k_proj(hidden_states).view(B, N, Hkv, D).transpose(1, 2)
+            V = self.v_proj(hidden_states).view(B, N, Hkv, D).transpose(1, 2)
+            if self.kv_repeat > 1:
+                K = repeat_kv(K, self.kv_repeat)
+                V = repeat_kv(V, self.kv_repeat)
             attn = torch.matmul(Q, K.transpose(-2, -1)) * (self.head_dim**-0.5)
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
@@ -323,17 +342,24 @@ class AegisAttentionV1(nn.Module):
                     mask_val = torch.finfo(attn.dtype).min if attn.dtype.is_floating_point else -1e4
                     attn = attn + (1.0 - mask) * mask_val
                 elif attention_mask.dim() == 4:
-                    attn = attn + attention_mask.to(attn.dtype)
+                    if attention_mask.shape[1] == 1 or attention_mask.shape[1] == attn.shape[1]:
+                        attn = attn + attention_mask.to(attn.dtype)
+                    elif attn.shape[1] % attention_mask.shape[1] == 0:
+                        attn = attn + repeat_kv(attention_mask, attn.shape[1] // attention_mask.shape[1]).to(attn.dtype)
+                    else:
+                        attn = attn + attention_mask[:, :1].to(attn.dtype)
             attn = F.softmax(attn, dim=-1)
             out = torch.matmul(attn, V).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
             return self.out_proj(out), (attn if output_attentions else None)
 
-        H, D = self.num_heads, self.head_dim
         Hl, Hg = self.num_local_heads, self.num_global_heads
 
         Q_all = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
-        K_all = self.k_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
-        V_all = self.v_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+        K_all = self.k_proj(hidden_states).view(B, N, Hkv, D).transpose(1, 2)
+        V_all = self.v_proj(hidden_states).view(B, N, Hkv, D).transpose(1, 2)
+        if self.kv_repeat > 1:
+            K_all = repeat_kv(K_all, self.kv_repeat)
+            V_all = repeat_kv(V_all, self.kv_repeat)
 
         Q_local, Q_global = Q_all[:, :Hl], Q_all[:, Hl:]
         K_local, K_global = K_all[:, :Hl], K_all[:, Hl:]

@@ -112,14 +112,18 @@ class UniversalAttentionWrapper(nn.Module):
             raise RuntimeError(f"Failed to execute forward pass on {type(self.inner).__name__}")
 
         # 4. Standardize output format
-        if isinstance(out, tuple):
-            return out
-
         from framework.utils.compat import is_decoder_family
         from framework.utils.model_family import detect_family
         cfg = getattr(self.inner, "config", getattr(self, "config", None))
         fam = detect_family(cfg) if cfg is not None else "unknown"
-        if is_decoder_family(fam) or fam in {"qwen3_5", "qwen", "gpt", "llama", "ssm"}:
+        is_dec = is_decoder_family(fam) or fam in {"qwen3_5", "qwen", "gpt", "llama", "ssm"}
+
+        if isinstance(out, tuple):
+            if is_dec and not kwargs.get("output_attentions", False):
+                return out[0]
+            return out
+
+        if is_dec:
             return out
         return (out, None)
 
