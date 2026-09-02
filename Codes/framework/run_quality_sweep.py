@@ -517,7 +517,12 @@ def main():
             model = None
             gc.collect()
             torch.cuda.empty_cache()
-            model = copy.deepcopy(base)
+            try:
+                model = copy.deepcopy(base)
+            except torch.cuda.OutOfMemoryError:
+                gc.collect()
+                torch.cuda.empty_cache()
+                model = copy.deepcopy(base)
             # Side effect is projection alias installation; the model itself
             # is not replaced, preserving native HF forward semantics.
             wrap_for_family(model, family)
