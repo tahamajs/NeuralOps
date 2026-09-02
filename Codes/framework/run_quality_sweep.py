@@ -16,8 +16,9 @@ from datasets import load_from_disk
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent.parent
-sys.path[:0] = [str(ROOT), str(ROOT / "Codes")]
+CODES = HERE.parent
+ROOT = CODES.parent
+sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
 from framework.eval_all_models_datasets import apply_module_to_model
 from framework.utils.qwen_compat import (QwenIncompatibleError, install_qwen_aliases,
