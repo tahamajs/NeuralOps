@@ -61,7 +61,7 @@ class ExpertChoiceMoE(nn.Module):
             logits = logits + torch.randn_like(logits) * self.noise_std
 
         # Softmax over tokens per expert for expert-choice gating [T, E]
-        gate_scores = F.softmax(logits, dim=0)
+        gate_scores = F.softmax(logits.float(), dim=0).to(dtype=logits.dtype)
 
         # Expert capacity: number of tokens each expert processes
         k = max(1, min(T, int(T * self.capacity_factor / self.n_experts)))
