@@ -247,7 +247,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
                 pass
             scaler.step(opt)
             scaler.update()
-            if (step + 1) % 25 == 0 or step == steps - 1:
+            if (step + 1) % 5 == 0 or step == steps - 1 or step == 0:
                 LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d)", step + 1, steps, float(loss), curr_batch_size)
             step += 1
         except torch.cuda.OutOfMemoryError:
