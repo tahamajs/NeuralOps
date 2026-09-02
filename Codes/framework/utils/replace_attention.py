@@ -63,6 +63,23 @@ class UniversalAttentionWrapper(nn.Module):
                     expects_bidirectional=bool(getattr(self.inner, "expects_bidirectional", False)),
                 )
 
+        key_value_states = kwargs.pop("key_value_states", None)
+        position_bias = kwargs.pop("position_bias", None)
+
+        from framework.core.t5_compat import is_t5_model
+        cfg = getattr(self.inner, "config", getattr(self, "config", None))
+        is_t5 = is_t5_model(cfg) or key_value_states is not None or position_bias is not None
+
+        if is_t5:
+            out, ret_pos_bias = self._forward_t5(
+                hidden_states=hidden_states,
+                attention_mask=attention_mask,
+                key_value_states=key_value_states,
+                position_bias=position_bias,
+                **kwargs
+            )
+            return out, ret_pos_bias
+
         # Clean redundant or mismatched args
         kwargs.pop("key", None)
         kwargs.pop("value", None)
@@ -98,6 +115,105 @@ class UniversalAttentionWrapper(nn.Module):
         if isinstance(out, tuple):
             return out
         return (out, None)
+
+    def _forward_t5(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        key_value_states: Optional[torch.Tensor] = None,
+        position_bias: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """T5 forward pass executing relative position bias and cross/self attention correctly."""
+        # 1. If inner module implements custom forward_t5, call it
+        if hasattr(self.inner, "forward_t5") and callable(self.inner.forward_t5):
+            res = self.inner.forward_t5(
+                hidden_states,
+                attention_mask=attention_mask,
+                key_value_states=key_value_states,
+                position_bias=position_bias,
+                **kwargs
+            )
+            if isinstance(res, tuple):
+                return res[0], (res[1] if len(res) > 1 else position_bias)
+            return res, position_bias
+
+        # 2. Determine cross-attention vs self-attention
+        is_cross_attention = key_value_states is not None
+        kv_input = key_value_states if is_cross_attention else hidden_states
+        B, N_q, D = hidden_states.shape
+        N_k = kv_input.shape[1]
+        H = getattr(self.inner, "num_heads", getattr(self, "num_heads", 8))
+        d = getattr(self.inner, "head_dim", getattr(self, "head_dim", 64))
+
+        # 3. Position bias computation and propagation
+        if position_bias is None:
+            compute_bias_fn = getattr(self.inner, "compute_bias", getattr(self, "compute_bias", None))
+            has_rel = getattr(self.inner, "has_relative_attention_bias", getattr(self, "has_relative_attention_bias", False))
+            rel_emb = getattr(self.inner, "relative_attention_bias", getattr(self, "relative_attention_bias", None))
+
+            if has_rel and compute_bias_fn is not None and rel_emb is not None:
+                position_bias = compute_bias_fn(N_q, N_k, device=hidden_states.device)
+            else:
+                position_bias = torch.zeros((1, H, N_q, N_k), device=hidden_states.device, dtype=hidden_states.dtype)
+
+            if attention_mask is not None:
+                causal_mask = attention_mask[:, :, :, :N_k] if attention_mask.dim() == 4 else None
+                if causal_mask is not None:
+                    position_bias = position_bias + causal_mask.to(position_bias.dtype)
+
+        # 4. Extract projection layers from self.inner
+        q_mod = getattr(self.inner, "q_proj", getattr(self.inner, "q", getattr(self.inner, "query", None)))
+        k_mod = getattr(self.inner, "k_proj", getattr(self.inner, "k", getattr(self.inner, "key", None)))
+        v_mod = getattr(self.inner, "v_proj", getattr(self.inner, "v", getattr(self.inner, "value", None)))
+        o_mod = getattr(self.inner, "out_proj", getattr(self.inner, "o", getattr(self.inner, "dense", None)))
+
+        if q_mod is not None and k_mod is not None and v_mod is not None:
+            Q = q_mod(hidden_states).view(B, N_q, H, d).transpose(1, 2)
+            
+            k_out = k_mod(kv_input)
+            H_kv = k_out.shape[-1] // d if d > 0 else H
+            K = k_out.view(B, N_k, H_kv, d).transpose(1, 2)
+            if H_kv < H:
+                K = K.repeat_interleave(H // H_kv, dim=1)
+
+            v_out = v_mod(kv_input)
+            H_v = v_out.shape[-1] // d if d > 0 else H
+            V = v_out.view(B, N_k, H_v, d).transpose(1, 2)
+            if H_v < H:
+                V = V.repeat_interleave(H // H_v, dim=1)
+
+            # T5 computes Q @ K.T without sqrt(d) division
+            scores = torch.matmul(Q, K.transpose(-2, -1))
+            if position_bias is not None:
+                scores = scores + position_bias.to(scores.dtype)
+
+            if attention_mask is not None and attention_mask.dim() == 2:
+                min_val = torch.finfo(scores.dtype).min if scores.dtype.is_floating_point else -1e4
+                extended_mask = attention_mask.unsqueeze(1).unsqueeze(2) == 0
+                scores = scores.masked_fill(extended_mask, min_val)
+
+            # Float32 Softmax to guarantee finite FP16
+            import torch.nn.functional as F
+            probs = F.softmax(scores.float(), dim=-1).to(scores.dtype)
+            probs = torch.nan_to_num(probs, nan=0.0)
+
+            dropout = getattr(self.inner, "dropout", None)
+            if dropout is not None and callable(dropout):
+                probs = dropout(probs)
+
+            context = torch.matmul(probs, V).transpose(1, 2).contiguous().view(B, N_q, -1)
+            output = o_mod(context) if o_mod is not None else context
+            return output, position_bias
+
+        # Fallback to direct inner call
+        try:
+            res = self.inner(hidden_states, key_value_states=key_value_states, encoder_hidden_states=key_value_states, **kwargs)
+        except TypeError:
+            res = self.inner(hidden_states, **kwargs)
+        if isinstance(res, tuple):
+            return res[0], (res[1] if len(res) > 1 and res[1] is not None else position_bias)
+        return res, position_bias
 
     def __getattr__(self, name: str) -> Any:
         try:
@@ -279,8 +395,34 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
             except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
 
+        # Match device and dtype of old_module
+        try:
+            old_param = next(old_module.parameters())
+            new_attn.to(dtype=old_param.dtype, device=old_param.device)
+        except (StopIteration, RuntimeError):
+            pass
+
         # Wrap in universal adapter
         wrapped_attn = UniversalAttentionWrapper(new_attn)
+
+        # Pass T5 metadata to new_attn and wrapper
+        from framework.core.t5_compat import is_t5_model
+        if is_t5_model(config):
+            for attr in [
+                "has_relative_attention_bias",
+                "relative_attention_bias",
+                "relative_attention_num_buckets",
+                "relative_attention_max_distance",
+                "is_decoder",
+                "layer_idx",
+            ]:
+                if hasattr(old_module, attr):
+                    val = getattr(old_module, attr)
+                    setattr(new_attn, attr, val)
+                    setattr(wrapped_attn, attr, val)
+            if hasattr(old_module, "compute_bias"):
+                setattr(new_attn, "compute_bias", old_module.compute_bias)
+                setattr(wrapped_attn, "compute_bias", old_module.compute_bias)
 
         parts = name.split(".")
         parent_name = ".".join(parts[:-1])
