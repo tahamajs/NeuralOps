@@ -133,7 +133,7 @@ class SimpleSSM(BaseAttention):
         # Vectorized power-decay matrix calculation for diagonal SSM state
         # dA: [B, L, D, d_state]
         # For sequence length L=128, construct pairwise transition kernel
-        pos = torch.arange(L, device=x_ssm.device, dtype=torch.float32)
+        pos = torch.arange(L, device=x_ssm.device, dtype=x_ssm.dtype)
         diff = pos.unsqueeze(1) - pos.unsqueeze(0)  # [L, L], diff[i, j] = i - j
         
         causal_mask_fwd = (diff >= 0).to(x_ssm.dtype)
@@ -146,17 +146,17 @@ class SimpleSSM(BaseAttention):
         dA_mean = dA.mean(dim=1).mean(dim=-1).unsqueeze(-1).unsqueeze(-1).clamp(min=1e-4, max=0.9999)  # [B, D, 1, 1]
         
         # Kernel matrix: [B, D, L, L]
-        K_fwd = torch.pow(dA_mean, abs_diff_fwd.unsqueeze(0).unsqueeze(0)) * causal_mask_fwd.unsqueeze(0).unsqueeze(0)
-        K_bwd = torch.pow(dA_mean, abs_diff_bwd.unsqueeze(0).unsqueeze(0)) * causal_mask_bwd.unsqueeze(0).unsqueeze(0)
+        K_fwd = (torch.pow(dA_mean, abs_diff_fwd.unsqueeze(0).unsqueeze(0)) * causal_mask_fwd.unsqueeze(0).unsqueeze(0)).to(dtype=x_ssm.dtype)
+        K_bwd = (torch.pow(dA_mean, abs_diff_bwd.unsqueeze(0).unsqueeze(0)) * causal_mask_bwd.unsqueeze(0).unsqueeze(0)).to(dtype=x_ssm.dtype)
 
         # u: [B, L, D, 1] -> u_val: [B, D, L]
-        u_val = u.squeeze(-1).transpose(1, 2)
+        u_val = u.squeeze(-1).transpose(1, 2).to(dtype=K_fwd.dtype)
         
         h_fwd_flat = torch.matmul(K_fwd, u_val.unsqueeze(-1)).squeeze(-1).transpose(1, 2)  # [B, L, D]
         h_bwd_flat = torch.matmul(K_bwd, u_val.unsqueeze(-1)).squeeze(-1).transpose(1, 2)  # [B, L, D]
 
-        out_fwd = h_fwd_flat * self.D.view(1, 1, D)
-        out_bwd = h_bwd_flat * self.D.view(1, 1, D)
+        out_fwd = (h_fwd_flat * self.D.view(1, 1, D).to(dtype=h_fwd_flat.dtype)).to(dtype=x_ssm.dtype)
+        out_bwd = (h_bwd_flat * self.D.view(1, 1, D).to(dtype=h_bwd_flat.dtype)).to(dtype=x_ssm.dtype)
 
         return out_fwd, out_bwd
 
