@@ -254,8 +254,8 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
-    ap.add_argument("--dataset_dir", required=True); ap.add_argument("--dataset", default="sst2")
-    ap.add_argument("--output_dir", required=True); ap.add_argument("--modules", default="all")
+    ap.add_argument("--dataset_dir", default=None); ap.add_argument("--dataset", default="sst2")
+    ap.add_argument("--output_dir", required=True); ap.add_argument("--modules", default=["all"], nargs="*")
     ap.add_argument("--max_steps", type=int, default=1); ap.add_argument("--finetune_steps", type=int, default=200)
     ap.add_argument("--finetune_mode", choices=("head", "lora"), default="head",
                     help="Fine-tune mode: head-only or full-backbone LoRA adapters")
@@ -263,15 +263,15 @@ def main():
     ap.add_argument("--lora_alpha", type=float, default=32.0, help="LoRA scaling alpha")
     ap.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout probability")
     ap.add_argument("--lora_target_modules", default="q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj",
-                    help="Comma-separated target submodule names for LoRA")
-    ap.add_argument("--learning_rate", type=float, default=2e-4, help="Learning rate for fine-tuning")
+                    help="Target modules for LoRA injection (comma-separated)")
     ap.add_argument("--recovery_steps", type=int, default=0,
-                    help="Post-injection LoRA recovery fine-tuning steps")
+                    help="Fine-tuning steps after module injection to recover accuracy")
     ap.add_argument("--recovery_modules", default="",
-                    help="Comma-separated module names to apply post-injection recovery fine-tuning")
-    ap.add_argument("--seq_len", type=int, default=64); ap.add_argument("--timeout", type=int, default=1800)
-    ap.add_argument("--precision", choices=("fp16", "fp32"), default="fp16"); ap.add_argument("--batch_size", type=int, default=8)
-    ap.add_argument("--gradient_checkpointing_use_reentrant", default="False")
+                    help="Comma-separated module names to apply recovery fine-tuning (empty=all)")
+    ap.add_argument("--batch_size", type=int, default=32)
+    ap.add_argument("--learning_rate", type=float, default=2e-4)
+    ap.add_argument("--precision", choices=("fp32", "fp16"), default="fp16")
+    ap.add_argument("--seq_len", type=int, default=128)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--strict_compat", action="store_true",
                     help="Skip modules without a truthful native/adapted Qwen path")
@@ -285,6 +285,19 @@ def main():
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type != "cuda": raise RuntimeError("Qwen quality sweep requires CUDA")
+    if args.dataset_dir is None:
+        for cand in [
+            Path("D:/SVD_Project/Codes/framework/data/glue_data") / args.dataset,
+            Path("Codes/framework/data/glue_data") / args.dataset,
+            Path(__file__).parent / "data" / "glue_data" / args.dataset,
+        ]:
+            if cand.exists():
+                args.dataset_dir = str(cand)
+                break
+    if args.parent_checkpoint is None:
+        cand_parent = Path("D:/SVD_Project/results/qwen3_5_sst2_full_sweep/finetuned_model.pt")
+        if cand_parent.exists():
+            args.parent_checkpoint = str(cand_parent)
     ds = load_from_disk(args.dataset_dir); train, val = ds["train"], ds["validation"]
     tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True); tokenizer.padding_side = "left"
     if tokenizer.pad_token_id is None: tokenizer.pad_token = tokenizer.eos_token
@@ -400,9 +413,17 @@ def main():
     }), encoding="utf-8")
     LOG.info("Precomputing validation and training batches directly on device %s...", device)
     eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
-    train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=10)
+    train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
     LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
-    names = modules() if args.modules == "all" else [x.strip() for x in args.modules.split(",") if x.strip()]
+    if isinstance(args.modules, list):
+        raw_mods = []
+        for item in args.modules:
+            raw_mods.extend([x.strip() for x in item.split(",") if x.strip()])
+        names = modules() if (not raw_mods or raw_mods == ["all"]) else raw_mods
+    elif args.modules == "all":
+        names = modules()
+    else:
+        names = [x.strip() for x in args.modules.split(",") if x.strip()]
     path = out / "summary.csv"; existing = {r["module_name"] for r in csv.DictReader(path.open())} if path.exists() else set()
     module_rank = max(16, getattr(adapter, "head_dim", 16))
     with path.open("a", newline="", encoding="utf8") as f:
