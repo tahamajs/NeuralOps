@@ -36,7 +36,8 @@ def is_decoder_projection_name(name: str) -> bool:
 SENSITIVE_PATTERNS = [
     "attn", "attention", "delta", "delta_net", "gate", "expert",
     "router", "norm", "rope", "embed", "lm_head", "score", "classifier",
-    "conv1d", "in_proj", "q_proj", "k_proj", "v_proj", "o_proj", "out_proj"
+    "conv1d", "in_proj", "q_proj", "k_proj", "v_proj", "o_proj", "out_proj",
+    "lora"
 ]
 ALLOWED_FFN_PATTERNS = ["mlp", "ffn", "dense", "feed_forward", "down_proj", "up_proj", "wi", "wo"]
 
