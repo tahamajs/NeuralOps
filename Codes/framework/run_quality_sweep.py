@@ -527,7 +527,9 @@ def main():
                 # For compressor modules, do NOT merge LoRA into base weights.
                 # Keep base_layer and lora_A/lora_B deltas separate: the compressor factorizes
                 # the frozen base_layer.weight, while LoRA deltas remain active and trainable for recovery.
-                pass
+            injected = False
+            had_nan = False
+            path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
 
             try:
                 if family in {"gpt", "gpt2"} and name in {
