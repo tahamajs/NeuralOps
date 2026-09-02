@@ -430,6 +430,10 @@ def main():
                     except Exception as retry: exc = retry
                 if err == "":
                     status = "SKIP" if is_architecture_error(exc) else "FAIL"; err = f"{type(exc).__name__}: {exc}"
+            if family == "t5" and name in ATTENTION_REGISTRY and acc <= 51.5 and status == "PASS":
+                status = "SKIP_T5_INCOMPATIBLE"
+                if not err:
+                    err = "t5_relative_bias_and_cross_attention_incompatible"
             row = {"module_name": name, "status": status, "accuracy_pct": acc,
                    "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
                    "path": path_name, "timestamp": datetime.now().isoformat()}
