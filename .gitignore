@@ -221,3 +221,4 @@ results_kaggle_gpu/
 *.zip
 *.tar.gz
 *.rar
+*.bundle
