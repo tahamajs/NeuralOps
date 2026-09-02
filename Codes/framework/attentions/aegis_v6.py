@@ -17,12 +17,16 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
+from framework.core.attention_utils import repeat_kv
+
+
 @dataclass
 class AegisConfigV3:
-    hidden_size: int = 768
-    num_heads = 4
-    num_attention_heads: int = 4
-    head_dim: int = 64
+    hidden_size: Optional[int] = None
+    num_heads: Optional[int] = None
+    num_attention_heads: Optional[int] = None
+    num_key_value_heads: Optional[int] = None
+    head_dim: Optional[int] = None
     window_size: int = 64
     svd_rank: int = 128
     low_rank_update: int = 16
@@ -41,12 +45,15 @@ class AegisConfigV3:
     fusion_gate_bias: float = 1.8
 
     def __init__(self, **kwargs):
-        self.hidden_size = kwargs.get("hidden_size", 768)
-        self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
+        self.hidden_size = kwargs.get("hidden_size")
+        self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads"))
         self.num_attention_heads = self.num_heads
-        self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
+        self.num_key_value_heads = kwargs.get("num_key_value_heads", self.num_heads)
+        self.head_dim = kwargs.get("head_dim")
+        if self.head_dim is None and self.hidden_size is not None and self.num_heads is not None:
+            self.head_dim = self.hidden_size // max(1, self.num_heads)
         self.window_size = kwargs.get("window_size", 64)
-        self.svd_rank = kwargs.get("svd_rank", min(128, self.hidden_size))
+        self.svd_rank = kwargs.get("svd_rank", min(128, self.hidden_size if self.hidden_size is not None else 128))
         self.low_rank_update = kwargs.get("low_rank_update", 16)
         self.kernel_feature_dim = kwargs.get("kernel_feature_dim", 128)
         self.dropout = kwargs.get("dropout", 0.1)
@@ -63,8 +70,12 @@ class AegisConfigV3:
         self.fusion_gate_bias = kwargs.get("fusion_gate_bias", 1.8)
 
     def __post_init__(self):
-        self.num_attention_heads = self.num_heads
-        self.head_dim = self.hidden_size // self.num_heads
+        if self.num_heads is not None:
+            self.num_attention_heads = self.num_heads
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_heads
+        if self.head_dim is None and self.hidden_size is not None and self.num_heads is not None:
+            self.head_dim = self.hidden_size // max(1, self.num_heads)
 
 
 class FactorisedLowRankProjection(nn.Module):
@@ -210,12 +221,17 @@ class ContextFusionGate(nn.Module):
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = head_dim
-        self.proj = nn.Linear(hidden_size // num_heads + 2 * head_dim, 1, bias=True)
+        self.hidden_proj = nn.Linear(hidden_size, num_heads * head_dim, bias=False) if hidden_size != num_heads * head_dim else None
+        self.proj = nn.Linear(3 * head_dim, 1, bias=True)
         nn.init.constant_(self.proj.bias, init_bias)
 
     def forward(self, hidden_states: torch.Tensor, local_out: torch.Tensor, global_out: torch.Tensor) -> torch.Tensor:
         B, h, N, d = local_out.shape
-        hidden_per_head = hidden_states.view(B, N, h, d).permute(0, 2, 1, 3)
+        if self.hidden_proj is not None:
+            h_expanded = self.hidden_proj(hidden_states)
+        else:
+            h_expanded = hidden_states
+        hidden_per_head = h_expanded.view(B, N, h, d).permute(0, 2, 1, 3)
         concat = torch.cat([hidden_per_head, local_out, global_out], dim=-1)
         logits = self.proj(concat)
         return torch.sigmoid(logits)
@@ -232,22 +248,50 @@ class AegisAttentionV3(BaseAttention):
         **kwargs: Any,
     ):
         if not isinstance(config, AegisConfigV3):
-            h_size = getattr(config, "hidden_size", 768) if config is not None else 768
-            n_heads = getattr(config, "num_attention_heads", 4) if config is not None else 12
+            h_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
+            if h_size is None and pretrained_attn is not None:
+                for obj in [pretrained_attn, getattr(pretrained_attn, "self", None), getattr(pretrained_attn, "output", None)]:
+                    if obj is not None and hasattr(obj, "dense") and hasattr(obj.dense, "out_features"):
+                        h_size = obj.dense.out_features
+                        break
+            if h_size is None:
+                h_size = kwargs.get("hidden_size")
+
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", None))))
+            if n_heads is None:
+                n_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads"))
+
+            h_dim = getattr(config, "head_dim", getattr(config, "d_kv", None))
+            if h_dim is None and h_size is not None and n_heads is not None:
+                h_dim = h_size // max(1, n_heads)
+            elif h_dim is None:
+                h_dim = kwargs.get("head_dim")
+
+            n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+            if n_kv_heads is None:
+                n_kv_heads = kwargs.get("num_key_value_heads", n_heads)
+
             config = AegisConfigV3(
                 hidden_size=h_size,
                 num_heads=n_heads,
-                window_size=getattr(config, "window_size", 64) if config is not None else 64,
-                svd_rank=getattr(config, "svd_rank", 128) if config is not None else 128,
-                low_rank_update=getattr(config, "low_rank_update", 16) if config is not None else 16,
-                kernel_feature_dim=getattr(config, "kernel_feature_dim", 128) if config is not None else 128,
-                dropout=getattr(config, "dropout", 0.1) if config is not None else 0.1,
+                num_key_value_heads=n_kv_heads,
+                head_dim=h_dim,
+                window_size=getattr(config, "window_size", kwargs.get("window_size", 64)),
+                svd_rank=getattr(config, "svd_rank", kwargs.get("svd_rank", min(128, h_size) if h_size is not None else 128)),
+                low_rank_update=getattr(config, "low_rank_update", kwargs.get("low_rank_update", 16)),
+                kernel_feature_dim=getattr(config, "kernel_feature_dim", kwargs.get("kernel_feature_dim", 128)),
+                dropout=getattr(config, "dropout", kwargs.get("dropout", 0.1)),
             )
         super().__init__(config)
         self.cfg: AegisConfigV3 = config
+        self.hidden_size: int = config.hidden_size
         self.h: int = config.num_heads
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.h)
+        self.kv_repeat: int = max(1, self.h // max(1, self.num_kv_heads))
         self.d: int = config.head_dim
         self.all_head_size: int = self.h * self.d
+        self.all_kv_head_size: int = self.num_kv_heads * self.d
+        self.supports_gqa: bool = True
         self.window: int = config.window_size
 
         if pretrained_attn is not None and pretrained_qkv is None:
@@ -263,10 +307,10 @@ class AegisAttentionV3(BaseAttention):
         Vp_b = pretrained_qkv.get("v_b") if pretrained_qkv else None
         Op_b = pretrained_qkv.get("o_b") if pretrained_qkv else None
 
-        self.q_proj = FactorisedLowRankProjection(config.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update, Qp, Qp_b)
-        self.k_proj = FactorisedLowRankProjection(config.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update, Kp, Kp_b)
-        self.v_proj = FactorisedLowRankProjection(config.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update, Vp, Vp_b)
-        self.out_proj = FactorisedLowRankProjection(self.all_head_size, config.hidden_size, config.svd_rank, config.low_rank_update, Op, Op_b)
+        self.q_proj = FactorisedLowRankProjection(self.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update, Qp, Qp_b)
+        self.k_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update, Kp, Kp_b)
+        self.v_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update, Vp, Vp_b)
+        self.out_proj = FactorisedLowRankProjection(self.all_head_size, self.hidden_size, config.svd_rank, config.low_rank_update, Op, Op_b)
 
         self.pre_norm = config.use_pre_norm
         if self.pre_norm:
@@ -329,9 +373,9 @@ class AegisAttentionV3(BaseAttention):
                         if b is not None and layer.bias is not None:
                             layer.bias.data.copy_(b.to(device=layer.bias.device, dtype=layer.bias.dtype))
 
-    def _reshape(self, x: torch.Tensor) -> torch.Tensor:
+    def _reshape(self, x: torch.Tensor, num_heads: int) -> torch.Tensor:
         B, N, _ = x.shape
-        return x.view(B, N, self.h, self.d).permute(0, 2, 1, 3)
+        return x.view(B, N, num_heads, self.d).permute(0, 2, 1, 3)
 
     def _convert_mask_to_binary(self, attention_mask: Optional[torch.Tensor], B: int, N: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
         if attention_mask is None:
@@ -410,9 +454,12 @@ class AegisAttentionV3(BaseAttention):
             attention_mask, B, N, hidden_states.device, hidden_states.dtype
         )
 
-        Q = self._reshape(self.q_proj(hidden_states))
-        K = self._reshape(self.k_proj(hidden_states))
-        V = self._reshape(self.v_proj(hidden_states))
+        Q = self._reshape(self.q_proj(hidden_states), self.h)
+        K = self._reshape(self.k_proj(hidden_states), self.num_kv_heads)
+        V = self._reshape(self.v_proj(hidden_states), self.num_kv_heads)
+        if self.kv_repeat > 1:
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
 
         q_gate, in_gate = self.gates(hidden_states, Q)
 

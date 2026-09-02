@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.attention_utils import repeat_kv
 
 
 @dataclass
@@ -152,27 +153,23 @@ def local_window_attention(
     return torch.matmul(attn, V)
 
 
+@ATTENTION_REGISTRY.register("aegis_v5")
 class AegisAttention(nn.Module):
     r"""
-    AEGIS-Attention V5 multi-head hybrid module.
+    AEGIS-Attention V5 Layer.
 
-    Divides $H$ heads into $H_l$ local window heads and $H_g$ global RFF linear heads.
-    Projections are low-rank factorized via truncated SVD.
+    Dynamic hybrid architecture coupling soft-picked local-band attention and stabilized
+    kernel linear attention with zero-sum keys, optimized with SVD-factorized linear mappings.
 
     Complexity:
         - Local Attention: $\mathcal{O}(B \cdot H_l \cdot N \cdot W_{\text{local}} \cdot d_h)$.
         - Global Attention: $\mathcal{O}(B \cdot H_g \cdot N \cdot F \cdot d_h)$.
-        - Linear Projections: $\mathcal{O}(B \cdot N \cdot D \cdot r)$.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: $[B, N, D]$
-        - Projected $Q, K, V$: $[B, H, N, d_h]$
-        - Output: $[B, N, D]$
+        - Projections: $\mathcal{O}(B \cdot N \cdot D \cdot r)$.
     """
 
     def __init__(
         self,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         aegis_cfg: Optional[AegisConfigV5] = None,
         pretrained_attn: Optional[nn.Module] = None,
         bert_mode: bool = False,
@@ -182,10 +179,14 @@ class AegisAttention(nn.Module):
         super().__init__()
         if model_config is None and config is not None:
             model_config = config
+        self.hidden_size: int = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "dim", 768))) if model_config is not None else 768
         self.num_heads: int = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", 4)) if model_config is not None else 12
-        self.hidden_size: int = getattr(model_config, "hidden_size", getattr(model_config, "d_model", 768)) if model_config is not None else 768
-        self.head_dim: int = self.hidden_size // max(1, self.num_heads)
+        self.head_dim: int = getattr(model_config, "head_dim", getattr(model_config, "d_kv", self.hidden_size // max(1, self.num_heads)))
+        self.num_kv_heads: int = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", self.num_heads))
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.supports_gqa: bool = True
         self.cfg: AegisConfigV5 = aegis_cfg if aegis_cfg is not None else AegisConfigV5()
         self.bert_mode: bool = bert_mode
 
@@ -208,8 +209,8 @@ class AegisAttention(nn.Module):
             return nn.Linear(in_f, out_f)
 
         q_lin = _extract_lin("q", self.hidden_size, self.all_head_size)
-        k_lin = _extract_lin("k", self.hidden_size, self.all_head_size)
-        v_lin = _extract_lin("v", self.hidden_size, self.all_head_size)
+        k_lin = _extract_lin("k", self.hidden_size, self.all_kv_head_size)
+        v_lin = _extract_lin("v", self.hidden_size, self.all_kv_head_size)
         out_lin = _extract_lin("o", self.all_head_size, self.hidden_size)
 
         self.q_proj = FactorisedLinear(
@@ -308,11 +309,15 @@ class AegisAttention(nn.Module):
         """
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
+        Hkv = self.num_kv_heads
         Hl, Hg = self.num_local_heads, self.num_global_heads
 
         Q_all = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
-        K_all = self.k_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
-        V_all = self.v_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+        K_all = self.k_proj(hidden_states).view(B, N, Hkv, D).transpose(1, 2)
+        V_all = self.v_proj(hidden_states).view(B, N, Hkv, D).transpose(1, 2)
+        if self.kv_repeat > 1:
+            K_all = repeat_kv(K_all, self.kv_repeat)
+            V_all = repeat_kv(V_all, self.kv_repeat)
 
         Q_local, Q_global = Q_all[:, :Hl], Q_all[:, Hl:]
         K_local, K_global = K_all[:, :Hl], K_all[:, Hl:]
