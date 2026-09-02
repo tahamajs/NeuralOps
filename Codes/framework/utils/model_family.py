@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 
-FAMILIES = ("bert", "roberta", "gpt", "qwen", "t5", "ssm", "unknown")
+FAMILIES = ("bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown")
 
 
 def _config(obj: Any) -> Any:
@@ -15,6 +15,8 @@ def detect_family(model_or_config: Any) -> str:
     cfg = _config(model_or_config)
     model_type = str(getattr(cfg, "model_type", "")).lower()
     cls = type(model_or_config).__name__.lower()
+    if any(x in model_type or x in cls for x in ("qwen3_5", "qwen3.5", "qwen35", "qwen3")):
+        return "qwen3_5"
     if model_type.startswith("qwen") or "qwen" in cls:
         return "qwen"
     if model_type in {"bert", "distilbert", "electra", "deberta", "albert"}:
@@ -57,10 +59,10 @@ class ModelAdapter:
             "q": ("q_lin", "q_proj"), "k": ("k_lin", "k_proj"),
             "v": ("v_lin", "v_proj"), "o": ("out_lin", "o_proj"),
         }
-        self.causal = self.family in {"gpt", "qwen", "ssm"}
-        self.mask_rank = 4 if self.family in {"gpt", "qwen"} else (2 if self.family in {"bert", "roberta"} else 3)
+        self.causal = self.family in {"gpt", "qwen", "qwen3_5", "ssm"}
+        self.mask_rank = 4 if self.family in {"gpt", "qwen", "qwen3_5"} else (2 if self.family in {"bert", "roberta"} else 3)
         self.bidirectional = not self.causal
-        self.position_embedding = "rotary" if self.family in {"gpt", "qwen"} else ("absolute" if self.family in {"bert", "roberta", "t5"} else "none")
+        self.position_embedding = "rotary" if self.family in {"gpt", "qwen", "qwen3_5"} else ("absolute" if self.family in {"bert", "roberta", "t5"} else "none")
 
     def projection(self, module: Any, kind: str) -> Any:
         legacy, native = self.projection_aliases[kind]
