@@ -33,6 +33,21 @@ def is_decoder_projection_name(name: str) -> bool:
     return leaf in {"q_proj", "k_proj", "v_proj", "o_proj", "out_proj", "c_attn", "c_proj"}
 
 
+SENSITIVE_PATTERNS = [
+    "attn", "attention", "delta", "delta_net", "gate", "expert",
+    "router", "norm", "rope", "embed", "lm_head", "score", "classifier",
+    "conv1d", "in_proj", "q_proj", "k_proj", "v_proj", "o_proj", "out_proj"
+]
+ALLOWED_FFN_PATTERNS = ["mlp", "ffn", "dense", "feed_forward", "down_proj", "up_proj", "wi", "wo"]
+
+
+def should_compress_qwen3_5(name: str) -> bool:
+    n = name.lower()
+    if any(p in n for p in SENSITIVE_PATTERNS):
+        return False
+    return any(p in n for p in ALLOWED_FFN_PATTERNS)
+
+
 def should_compress_linear(model: Any, name: str, family: Optional[str] = None) -> bool:
     """
     Family-aware check for whether a linear layer should be compressed.
@@ -56,17 +71,7 @@ def should_compress_linear(model: Any, name: str, family: Optional[str] = None) 
     fam = family or (detect_family(model) if not isinstance(model, str) else model)
 
     if fam == "qwen3_5":
-        # Skip any layer containing sensitive keywords
-        sensitive_keywords = (
-            "attn", "attention", "delta", "delta_net", "gate",
-            "expert", "router", "norm", "rope", "embed", "lm_head",
-            "score", "classifier", "pre_classifier", "conv1d", "in_proj"
-        )
-        if any(kw in name_low for kw in sensitive_keywords):
-            return False
-        # For Qwen3.5, only compress ordinary FFN dense layers
-        allowed_keywords = ("mlp", "ffn", "dense", "feed_forward", "linear", "down_proj", "up_proj")
-        return any(kw in name_low for kw in allowed_keywords)
+        return should_compress_qwen3_5(name)
 
     if is_decoder_family(fam):
         return is_decoder_projection_name(name) or any(kw in name_low for kw in ["mlp", "ffn", "dense", "feed_forward"])
@@ -107,21 +112,18 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     All other parameters (including compressor factors like .down.weight, .up.weight, .U, .V, .A, .B)
     are explicitly frozen (requires_grad=False).
     """
-    for p_name, p in model.named_parameters():
-        p_low = p_name.lower()
-        is_head = any(h in p_low for h in ("score.", "classifier.", "pre_classifier.", "score", "classifier"))
-        is_lora = (
-            p_low.endswith(".lora_a.weight")
-            or p_low.endswith(".lora_b.weight")
-            or p_low.endswith(".lora_a.bias")
-            or p_low.endswith(".lora_b.bias")
-            or ".lora_" in p_low
-        )
-        if is_head or is_lora:
-            p.requires_grad = True
-        else:
-            p.requires_grad = False
-    return [p for p in model.parameters() if p.requires_grad]
+    trainable_params = []
+    for name, param in model.named_parameters():
+        n_low = name.lower()
+        if ".lora_a.weight" in n_low or ".lora_b.weight" in n_low or ".lora_a.bias" in n_low or ".lora_b.bias" in n_low or ".lora_" in n_low:
+            trainable_params.append(param)
+        elif name.startswith("score.") or name.startswith("classifier.") or any(h in n_low for h in ("score.", "classifier.", "classification_head")):
+            trainable_params.append(param)
+
+    for name, param in model.named_parameters():
+        param.requires_grad = any(param is p for p in trainable_params)
+
+    return trainable_params
 
 
 def maybe_apply_rotary(q: torch.Tensor, k: torch.Tensor, adapter: ModelAdapter,
@@ -254,11 +256,16 @@ def module_family_support(name: str) -> dict[str, str]:
     qwen = "incompatible" if any(x in n for x in incompatible) else "adapted"
     if n in {"full", "faq", "frandi_compressor", "astro"}:
         qwen = "adapted"
+    qwen3_5_incompat = {"adaptive_span", "adaptive_sparse", "adaptive_svd", "adasplash", "a3"}
+    qwen3_5 = "incompatible" if (name in qwen3_5_incompat or any(x in n for x in ("ssm", "mamba", "performer", "cosformer", "span"))) else "adapted"
+    if n in {"full", "faq", "frandi_compressor", "astro", "aasvd"}:
+        qwen3_5 = "adapted"
     return {
         "bert": "encoder_compatible",
         "roberta": "encoder_compatible",
         "gpt": qwen,
         "qwen": qwen,
+        "qwen3_5": qwen3_5,
         "t5": "encoder_decoder_compatible",
         "ssm": "incompatible",
         "unknown": "unknown",
