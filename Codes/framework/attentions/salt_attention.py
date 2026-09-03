@@ -134,12 +134,30 @@ class SALTAttention(BaseAttention):
         for proj, attr in [("q", "q_proj"), ("k", "k_proj"), ("v", "v_proj"), ("o", "out_proj")]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
+                # GPT-2 fused c_attn: weight is [3*hidden, hidden] (after Conv1D transpose).
+                # UniversalAdapter returns the full fused tensor for q/k/v since 'c_attn'
+                # appears in the 'q' alias list.  Slice the correct portion out.
+                if proj in ("q", "k", "v") and w.size(0) == 3 * self.all_head_size:
+                    slice_map = {
+                        "q": slice(None, self.all_head_size),
+                        "k": slice(self.all_head_size, 2 * self.all_head_size),
+                        "v": slice(2 * self.all_head_size, None),
+                    }
+                    w = w[slice_map[proj]].contiguous()
+                    if b is not None:
+                        b = b[slice_map[proj]].contiguous()
                 mod = SALTLinear(w.size(1), w.size(0), self.rank, original_weight=w, original_bias=b)
-                if hasattr(w, "device"):
-                    mod.to(device=w.device, dtype=w.dtype)
+                mod.to(device=w.device, dtype=w.dtype)
                 setattr(self, attr, mod)
             except Exception:
-                setattr(self, attr, SALTLinear(hidden_size, hidden_size, self.rank))
+                # Infer device/dtype from src so fallback stays on GPU, not CPU
+                _params = list(src.parameters()) if hasattr(src, "parameters") else []
+                _fb_dev = _params[0].device if _params else None
+                _fb_dtype = _params[0].dtype if _params else torch.float32
+                fb = SALTLinear(hidden_size, hidden_size, self.rank)
+                if _fb_dev is not None:
+                    fb = fb.to(device=_fb_dev, dtype=_fb_dtype)
+                setattr(self, attr, fb)
 
     def copy_weights(self, src: Any) -> None:
         r"""Universal adapter weight copying."""
