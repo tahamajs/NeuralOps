@@ -110,15 +110,49 @@ class CoMeCompressor(BaseCompressor):
         self.stats: Dict[str, Any] = {}
 
     def _get_hidden_size(self, layer: nn.Module) -> int:
-        """Infers the hidden feature dimension from a transformer layer."""
+        """Infers the hidden feature dimension from a transformer layer.
+
+        Priority:
+        1. Explicit attribute on the layer itself (hidden_size / d_model / dim / embed_dim).
+        2. Same attributes on layer.config (HuggingFace style).
+        3. Output-projection Linear whose out_features equals the model hidden dim
+           (o_proj / out_proj / output / dense).  These project *back* to hidden_size.
+        4. Majority-vote over all Linear.in_features – avoids MLP intermediate sizes
+           (e.g. 2816 = up-proj intermediate) dominating when they appear first.
+        5. Hard-coded default 768.
+        """
+        # 1. Direct attribute on the layer object
         for attr in ["hidden_size", "d_model", "dim", "embed_dim"]:
             if hasattr(layer, attr):
-                return getattr(layer, attr)
+                return int(getattr(layer, attr))
+
+        # 2. Via layer.config (HuggingFace TransformerLayer carries a config ref)
+        if hasattr(layer, "config"):
+            for attr in ["hidden_size", "d_model", "dim"]:
+                if hasattr(layer.config, attr):
+                    return int(getattr(layer.config, attr))
+
+        # 3. Output-projection Linears project FROM all_head_size TO hidden_size;
+        #    their out_features is the true hidden_size.
+        _OUTPUT_PROJ_KEYS = ("o_proj", "out_proj", "output", "dense")
+        for name, m in layer.named_modules():
+            if isinstance(m, nn.Linear) and any(k in name for k in _OUTPUT_PROJ_KEYS):
+                return m.out_features
+
+        # 4. Majority vote over in_features of all Linear layers.
+        #    MLP intermediate projections (e.g. gate_proj, up_proj) produce large
+        #    outlier sizes; the hidden_size typically has the highest count.
+        sizes = [m.in_features for _, m in layer.named_modules() if isinstance(m, nn.Linear)]
+        if sizes:
+            from collections import Counter
+            return Counter(sizes).most_common(1)[0][0]
+
+        # 5. LayerNorm fallback
         for m in layer.modules():
-            if isinstance(m, nn.Linear):
-                return m.in_features
-            elif isinstance(m, nn.LayerNorm):
-                return m.normalized_shape[0] if isinstance(m.normalized_shape, tuple) else m.normalized_shape
+            if isinstance(m, nn.LayerNorm):
+                ns = m.normalized_shape
+                return ns[0] if isinstance(ns, (tuple, list)) else int(ns)
+
         return 768
 
     def _find_layer_container(self) -> Tuple[Optional[nn.Module], Optional[str], Optional[nn.ModuleList]]:
