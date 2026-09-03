@@ -91,7 +91,7 @@ def entmax15_bisect(
     return torch.nan_to_num(p, nan=0.0)
 
 
-@ATTENTION_REGISTRY.register("adasplash")
+@ATTENTION_REGISTRY.register("adasplash", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("adasplash_attention")
 class AdaSplashAttention(BaseAttention):
     r"""
@@ -109,6 +109,8 @@ class AdaSplashAttention(BaseAttention):
            $$A = \text{1.5-entmax}(S, \text{dim}=-1)$$
            $$O = A V W_O$$
     """
+
+    supports_gqa: bool = True
 
     def __init__(
         self,
@@ -128,10 +130,13 @@ class AdaSplashAttention(BaseAttention):
         hidden_size: int = getattr(config, "hidden_size", 768)
         self.head_dim: int = hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, self.kv_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.kv_head_size)
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
         dropout_p = getattr(
@@ -241,8 +246,12 @@ class AdaSplashAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         q = self.q_proj(hidden_states).view(B, L_q, H, Dh).transpose(1, 2)
-        k = self.k_proj(kv_input).view(B, L_k, H, Dh).transpose(1, 2)
-        v = self.v_proj(kv_input).view(B, L_k, H, Dh).transpose(1, 2)
+        kv_heads = self.num_kv_heads
+        k = self.k_proj(kv_input).view(B, L_k, kv_heads, Dh).transpose(1, 2)  # [B, kv_heads, L_k, Dh]
+        v = self.v_proj(kv_input).view(B, L_k, kv_heads, Dh).transpose(1, 2)  # [B, kv_heads, L_k, Dh]
+        if self.kv_repeat > 1:
+            k = k.unsqueeze(3).expand(-1, -1, -1, self.kv_repeat, -1).reshape(B, H, L_k, Dh)
+            v = v.unsqueeze(3).expand(-1, -1, -1, self.kv_repeat, -1).reshape(B, H, L_k, Dh)
 
         scale = Dh ** -0.5
         logits = torch.matmul(q, k.transpose(-2, -1)) * scale  # [B, H, L_q, L_k]

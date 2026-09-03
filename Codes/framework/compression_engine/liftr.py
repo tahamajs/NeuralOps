@@ -118,9 +118,12 @@ class _LinearizedAttentionWrapper(nn.Module):
             try:
                 m = mask if mask is not None else attention_mask
                 res = self.original_attn(x, attention_mask=m, **kwargs)
+                # Always unwrap tuple to a plain tensor before re-wrapping with _fmt.
+                # Previously, non-linear-attn modules returned the raw sub-module tuple
+                # (e.g. (tensor, None)) which caused TypeError when the caller added the
+                # residual: `hidden_states + output` where output was a tuple.
                 if isinstance(res, tuple):
-                    is_lin = hasattr(self.original_attn, "in_proj_qkv") or "deltanet" in type(self.original_attn).__name__.lower() or "linear" in type(self.original_attn).__name__.lower()
-                    return res[0] if is_lin else res
+                    res = res[0]
                 return _fmt(res)
             except Exception:
                 return _fmt(x)

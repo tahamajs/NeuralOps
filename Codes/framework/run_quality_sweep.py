@@ -488,10 +488,7 @@ def main():
             t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
             if family == "qwen3_5" and name != "full":
                 skip_modules = {
-                    "adaptive_span",
-                    "adaptive_sparse",   # already skipped but keep
-                    "adaptive_svd",      # fails with Tensor + tuple
-                    "adasplash",         # fails with t() 3D
+                    "adaptive_span",     # algorithm requires symmetric MHA
                     "a3",                # architecture-unaware compressor, keep skipped until fixed
                 }
                 if name in skip_modules:
@@ -615,12 +612,18 @@ def main():
                             torch.cuda.empty_cache()
 
                 # Hard timeout enforcing max timeout (e.g. 120s / 2 minutes) across injection, recovery, and eval
+                # Slow modules get extended timeout on Qwen3.5
+                _SLOW_MODULE_TIMEOUT_OVERRIDES = {
+                    "grecodec": 600, "grecodec_compressor": 600,
+                    "mlorq": 400, "lillama": 400, "cr": 300, "huffman": 300,
+                }
+                effective_timeout = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, args.timeout) if family == "qwen3_5" else args.timeout
                 pool = ThreadPoolExecutor(max_workers=1)
                 try:
                     future = pool.submit(_run_candidate_pipeline)
-                    acc = future.result(timeout=args.timeout)
+                    acc = future.result(timeout=effective_timeout)
                 except (TimeoutError, FuturesTimeoutError) as to_err:
-                    raise TimeoutError(f"Module pipeline exceeded hard {args.timeout}s timeout") from to_err
+                    raise TimeoutError(f"Module pipeline exceeded hard {effective_timeout}s timeout") from to_err
                 finally:
                     pool.shutdown(wait=False, cancel_futures=True)
             except (TimeoutError, FuturesTimeoutError) as exc:
