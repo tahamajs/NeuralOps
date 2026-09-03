@@ -69,7 +69,15 @@ class CoMeBridgedLayer(nn.Module):
         self.bridge = bridge
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        out = self.layer(*args, **kwargs)
+        # Convert any integer attention mask to bool to avoid RuntimeError in SDPA
+        if "attention_mask" in kwargs and isinstance(kwargs["attention_mask"], torch.Tensor):
+            if kwargs["attention_mask"].dtype in (torch.int64, torch.int32, torch.int16, torch.int8):
+                kwargs["attention_mask"] = kwargs["attention_mask"].bool()
+        new_args = list(args)
+        if len(new_args) > 1 and isinstance(new_args[1], torch.Tensor):
+            if new_args[1].dtype in (torch.int64, torch.int32, torch.int16, torch.int8):
+                new_args[1] = new_args[1].bool()
+        out = self.layer(*new_args, **kwargs)
         if self.bridge is not None:
             out = self.bridge(out)
         return out
