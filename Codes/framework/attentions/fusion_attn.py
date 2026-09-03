@@ -58,27 +58,57 @@ class FUSIONATTN(BaseAttention):
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         with torch.no_grad():
-            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
-            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
-            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
-            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+            # Try to detect fused c_attn (GPT-2 style): one module holds Q+K+V concatenated
+            c_attn = getattr(pretrained_attn, "c_attn", None)
+            c_proj = getattr(pretrained_attn, "c_proj", None)
+            if c_attn is not None and hasattr(c_attn, "weight"):
+                # GPT-2 Conv1D: weight is [in, 3*out], so after transpose [3*out, in]
+                W = c_attn.weight.data  # shape [in_features, 3*n_embd] for Conv1D
+                if W.shape[0] < W.shape[1]:
+                    W = W.t().contiguous()  # now [3*n_embd, n_embd]
+                B_bias = getattr(c_attn, "bias", None)
+                n_embd = W.shape[0] // 3
+                wq = W[:n_embd]; wk = W[n_embd:2*n_embd]; wv = W[2*n_embd:]
+                bq = B_bias[:n_embd] if B_bias is not None else None
+                bk = B_bias[n_embd:2*n_embd] if B_bias is not None else None
+                bv = B_bias[2*n_embd:] if B_bias is not None else None
+                self.q_proj.weight.data.copy_(wq)
+                self.k_proj.weight.data.copy_(wk)
+                self.v_proj.weight.data.copy_(wv)
+                if bq is not None and self.q_proj.bias is not None:
+                    self.q_proj.bias.data.copy_(bq)
+                if bk is not None and self.k_proj.bias is not None:
+                    self.k_proj.bias.data.copy_(bk)
+                if bv is not None and self.v_proj.bias is not None:
+                    self.v_proj.bias.data.copy_(bv)
+            else:
+                q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
+                k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
+                v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
+                if q_src is not None and hasattr(q_src, "weight"):
+                    self.q_proj.weight.data.copy_(q_src.weight.data)
+                    if q_src.bias is not None and self.q_proj.bias is not None:
+                        self.q_proj.bias.data.copy_(q_src.bias.data)
+                if k_src is not None and hasattr(k_src, "weight"):
+                    self.k_proj.weight.data.copy_(k_src.weight.data)
+                    if k_src.bias is not None and self.k_proj.bias is not None:
+                        self.k_proj.bias.data.copy_(k_src.bias.data)
+                if v_src is not None and hasattr(v_src, "weight"):
+                    self.v_proj.weight.data.copy_(v_src.weight.data)
+                    if v_src.bias is not None and self.v_proj.bias is not None:
+                        self.v_proj.bias.data.copy_(v_src.bias.data)
 
-            if q_src is not None and hasattr(q_src, "weight"):
-                self.q_proj.weight.copy_(q_src.weight)
-                if q_src.bias is not None:
-                    self.q_proj.bias.copy_(q_src.bias)
-            if k_src is not None and hasattr(k_src, "weight"):
-                self.k_proj.weight.copy_(k_src.weight)
-                if k_src.bias is not None:
-                    self.k_proj.bias.copy_(k_src.bias)
-            if v_src is not None and hasattr(v_src, "weight"):
-                self.v_proj.weight.copy_(v_src.weight)
-                if v_src.bias is not None:
-                    self.v_proj.bias.copy_(v_src.bias)
+            # Output projection — try c_proj first (GPT-2), then common aliases
+            out_src = c_proj if c_proj is not None else getattr(
+                pretrained_attn, "out_lin", getattr(pretrained_attn, "dense",
+                getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
             if out_src is not None and hasattr(out_src, "weight"):
-                self.out_proj.weight.copy_(out_src.weight)
-                if out_src.bias is not None:
-                    self.out_proj.bias.copy_(out_src.bias)
+                W_out = out_src.weight.data
+                if W_out.shape[0] < W_out.shape[1]:  # Conv1D transposed
+                    W_out = W_out.t().contiguous()
+                self.out_proj.weight.data.copy_(W_out)
+                if out_src.bias is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.data.copy_(out_src.bias.data)
 
     def _moba_block_attention(self, q, k, v, gate_scores):
         B, H, N, D = q.shape

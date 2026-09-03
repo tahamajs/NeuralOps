@@ -220,6 +220,9 @@ class HuffmanCompressor(BaseCompressor):
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Profile and apply Huffman entropy coding across all linear layers."""
+        # Detect model device before any weight surgery
+        _model_device = next((p.device for p in self.model.parameters()), torch.device("cpu"))
+
         total_orig_bytes = 0
         total_comp_bytes = 0
         total_entropy = 0.0
@@ -235,8 +238,11 @@ class HuffmanCompressor(BaseCompressor):
                 num_layers += 1
 
                 # Reconstruct simulated weights
-                W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=W.device)
+                W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=_model_device)
                 module.weight.data = W_rec.to(device=module.weight.device, dtype=module.weight.dtype)
+
+        # Ensure all parameters are on the original device (e.g. GPT-2 Conv1D / Embeddings)
+        self.model.to(device=_model_device)
 
         stats = self.get_compression_stats()
         stats["quantize_bits"] = self.quantize_bits

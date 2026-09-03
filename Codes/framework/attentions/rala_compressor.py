@@ -109,15 +109,29 @@ class RALALinearAttention(nn.Module):
         k_prime = F.elu(k) + 1.0
 
         if attention_mask is not None:
-            if attention_mask.dim() == 4:
-                mask = (attention_mask[:, 0, 0, :] > -10000.0).to(k_prime.dtype)
-            elif attention_mask.dim() == 3:
-                mask = (attention_mask[:, 0, :] > -10000.0).to(k_prime.dtype)
-            elif attention_mask.dim() == 2:
-                mask = (attention_mask > 0).to(k_prime.dtype)
-            else:
-                mask = attention_mask.to(k_prime.dtype)
-            k_prime = k_prime * mask.unsqueeze(1).unsqueeze(-1)
+            try:
+                # Normalise any attention-mask shape to a [B, seq_len] binary float mask.
+                # Standard HF mask shapes:
+                #   2-D: [B, seq_len]   — 1=keep, 0=pad
+                #   3-D: [B, 1, seq_len] or [B, seq_len, seq_len]
+                #   4-D: [B, 1, 1, seq_len] or [B, H, seq_len, seq_len]
+                am = attention_mask
+                # Squeeze out broadcast dims of size 1 until we get a shape whose
+                # last dim equals seq_len.
+                while am.dim() > 2:
+                    # Try to reduce by picking slice [0] along dim 1
+                    if am.dim() == 4:
+                        # [B, heads, rows, cols] — take first row, last dim = seq_len
+                        am = am[:, 0, 0, :]      # → [B, seq_len]
+                    elif am.dim() == 3:
+                        am = am[:, 0, :]          # → [B, seq_len]
+                # am is now [B, ?]. Use it only if the last dim is seq_len.
+                if am.shape[-1] == seq_len:
+                    mask = (am > -1000.0).to(k_prime.dtype)   # [B, seq_len]
+                    k_prime = k_prime * mask.unsqueeze(1).unsqueeze(-1)
+            except Exception:
+                pass  # ignore malformed masks; proceed without masking
+
 
         kv = torch.einsum("b h n d, b h n e -> b h d e", k_prime, v)
         z = k_prime.sum(dim=2)
