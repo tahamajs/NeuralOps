@@ -228,9 +228,11 @@ class MambaSVDFlash(BaseAttention):
         # 2. Bidirectional Dense Attention Path
         # ---------------------------------------------------------
         Q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        K  = self.k_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        K   = self.k_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
         K = repeat_kv(K, getattr(self, 'kv_repeat', 1))
-        V_attn  = self.v_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        K = repeat_kv(K, getattr(self, 'kv_repeat', 1))
+        V_attn   = self.v_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
+        V_attn = repeat_kv(V_attn, getattr(self, 'kv_repeat', 1))
         V_attn = repeat_kv(V_attn, getattr(self, 'kv_repeat', 1))
 
         attn_mask = None

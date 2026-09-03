@@ -165,9 +165,11 @@ class FUSIONATTN(BaseAttention):
         B, N, D = hidden_states.shape
 
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k  = self.k_proj(hidden_states).view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k   = self.k_proj(hidden_states).view(B, N, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
         k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
-        v  = self.v_proj(hidden_states).view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v   = self.v_proj(hidden_states).view(B, N, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
         v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         if N <= 128:
@@ -194,7 +196,8 @@ class FUSIONATTN(BaseAttention):
         k_padded = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
         num_blocks = q_padded.size(2) // self.block_size
         q_blocks = q_padded.reshape(B, self.num_heads, num_blocks, self.block_size, self.head_dim).mean(dim=-2)
-        k_blocks = k_padded.reshape(B, self.num_heads, num_blocks, self.block_size, self.head_dim).mean(dim=-2)
+        k_blocks  = k_padded.reshape(B, getattr(self, "num_kv_heads", self.num_heads), num_blocks, self.block_size, self.head_dim).mean(dim=-2)
+        k_blocks = repeat_kv(k_blocks, getattr(self, 'kv_repeat', 1))
 
         q_gate = self.attn_gate(q_blocks).squeeze(-1)
         k_gate = self.attn_gate(k_blocks).squeeze(-1)

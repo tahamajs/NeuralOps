@@ -124,8 +124,10 @@ class ChelaSlayAttention(BaseAttention):
         x = hidden_states
         B, L, D = x.shape
         q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k  = self.W_k(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).permute(0, 2, 1, 3)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v  = self.W_v(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).permute(0, 2, 1, 3)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         # Standard dense softmax stream
         dense_scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim**-0.5)

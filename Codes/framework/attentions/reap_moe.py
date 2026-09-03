@@ -132,6 +132,9 @@ class REAPMoEAttention(BaseAttention):
         self.head_dim = self.dim // self.num_heads
         self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
         self.all_head_size = self.q_out
+        self.all_kv_head_size = getattr(self, 'kv_out', getattr(self, 'all_head_size', 768))
+        self.num_kv_heads = getattr(config, 'num_key_value_heads', getattr(config, 'num_kv_heads', getattr(self, 'num_heads', 1)))
+        self.supports_gqa = True
 
         self.q_lin = nn.Linear(self.dim, self.all_head_size)
         self.k_lin = nn.Linear(self.dim, getattr(self, "all_kv_head_size", self.all_head_size))
@@ -192,9 +195,11 @@ class REAPMoEAttention(BaseAttention):
         B, L, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k  = self.k_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k   = self.k_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
         k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
-        v  = self.v_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v   = self.v_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
         v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scale = 1.0 / math.sqrt(self.head_dim)
