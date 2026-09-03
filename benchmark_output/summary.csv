@@ -1,3 +1,0 @@
-Model,Score,Avg GLUE,SST2,MRPC,Params,Tokens/sec (512),Peak VRAM (512),Stability,Status
-full,88.0,0.4012,0.4375,0.3648,66.96M,"97,741.7",1051.8 MB,FAIL,OK
-svd_linear,0.0,N/A,N/A,N/A,59.93M,N/A,N/A,N/A,FAIL_SANITY
