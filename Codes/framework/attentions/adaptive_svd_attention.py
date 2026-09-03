@@ -137,9 +137,9 @@ class AdaptiveSVDLinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("adaptive_svd_attn")
-@ATTENTION_REGISTRY.register("adaptive_svd")
-@ATTENTION_REGISTRY.register("adaptive_svd_attention")
+@ATTENTION_REGISTRY.register("adaptive_svd_attn", supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_svd", supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_svd_attention", supports_gqa=True)
 class AdaptiveSVDAttention(nn.Module):
     r"""Multi-Head Attention with Adaptive SVD + Residual factorized projections."""
 
@@ -157,6 +157,10 @@ class AdaptiveSVDAttention(nn.Module):
         self.hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", 768))
         self.head_dim: int = self.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.supports_gqa: bool = True
         self.svd_rank: int = getattr(
             config,
             "svd_rank",
@@ -180,14 +184,14 @@ class AdaptiveSVDAttention(nn.Module):
         )
         self.key = AdaptiveSVDLinear(
             self.hidden_size,
-            self.all_head_size,
+            self.kv_head_size,
             self.svd_rank,
             self.residual_rank,
             bias=True,
         )
         self.value = AdaptiveSVDLinear(
             self.hidden_size,
-            self.all_head_size,
+            self.kv_head_size,
             self.svd_rank,
             self.residual_rank,
             bias=True,
@@ -338,8 +342,11 @@ class AdaptiveSVDAttention(nn.Module):
         H, D = self.num_heads, self.head_dim
 
         Q = self.query(hidden_states).view(B, N_q, H, D).transpose(1, 2)
-        K = self.key(kv_input).view(B, N_k, H, D).transpose(1, 2)
-        V = self.value(kv_input).view(B, N_k, H, D).transpose(1, 2)
+        K = self.key(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2)
+        V = self.value(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2)
+        if self.kv_repeat > 1:
+            K = K.unsqueeze(3).expand(-1, -1, -1, self.kv_repeat, -1).reshape(B, H, N_k, D)
+            V = V.unsqueeze(3).expand(-1, -1, -1, self.kv_repeat, -1).reshape(B, H, N_k, D)
 
         scale = D**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N_q, N_k]
