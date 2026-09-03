@@ -132,8 +132,13 @@ class LowRankLinear(nn.Module):
 
     def reset_parameters(self) -> None:
         """Reset parameters."""
-        nn.init.orthogonal_(self.U)
-        nn.init.orthogonal_(self.V)
+        with torch.no_grad():
+            u_fp32 = torch.empty_like(self.U, dtype=torch.float32)
+            v_fp32 = torch.empty_like(self.V, dtype=torch.float32)
+            nn.init.orthogonal_(u_fp32)
+            nn.init.orthogonal_(v_fp32)
+            self.U.data.copy_(u_fp32.to(self.U.dtype))
+            self.V.data.copy_(v_fp32.to(self.V.dtype))
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 

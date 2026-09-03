@@ -146,7 +146,7 @@ class LiLLaMACompressor(BaseCompressor):
                             if cum_e < 0.95:
                                 r_needed = int(torch.searchsorted(
                                     torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12),
-                                    torch.tensor(0.95)
+                                    torch.tensor(0.95, device=S.device)
                                 ).item()) + 1
                                 r = min(r_needed, len(S))
                             W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
@@ -162,7 +162,7 @@ class LiLLaMACompressor(BaseCompressor):
                     if cum_e < 0.95:
                         r_needed = int(torch.searchsorted(
                             torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12),
-                            torch.tensor(0.95)
+                            torch.tensor(0.95, device=S.device)
                         ).item()) + 1
                         r = min(r_needed, len(S))
                     W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])

@@ -143,10 +143,10 @@ class FUSIONATTN(BaseAttention):
             scores = torch.matmul(q, k.transpose(-2, -1)) * scale
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
-                    pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)
+                    pad_mask = (attention_mask == 0).to(scores.device).unsqueeze(1).unsqueeze(2)
                     scores = scores.masked_fill(pad_mask, -10000.0)
                 elif attention_mask.dim() == 4:
-                    scores = scores + attention_mask
+                    scores = scores + attention_mask.to(device=scores.device, dtype=scores.dtype)
 
             probs = F.softmax(scores, dim=-1)
             probs = self.dropout(probs)
