@@ -223,6 +223,8 @@ class MambaSVDFlash(BaseAttention):
             ssm_fwd = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False)
             ssm_bwd = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=True)
             ssm_out = 0.5 * (ssm_fwd + ssm_bwd)
+        if isinstance(ssm_out, tuple):
+            ssm_out = ssm_out[0]
 
         # ---------------------------------------------------------
         # 2. Bidirectional Dense Attention Path

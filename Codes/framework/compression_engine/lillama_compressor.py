@@ -144,10 +144,8 @@ class LiLLaMACompressor(BaseCompressor):
                             # PATCH: 95% energy guard — never truncate below 95% retention
                             cum_e = (S[:r] ** 2).sum() / ((S ** 2).sum() + 1e-12)
                             if cum_e < 0.95:
-                                r_needed = int(torch.searchsorted(
-                                    torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12),
-                                    torch.tensor(0.95, device=S.device)
-                                ).item()) + 1
+                                cum_ratio = torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12)
+                                r_needed = int((cum_ratio < 0.95).sum().item()) + 1
                                 r = min(r_needed, len(S))
                             W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
                         except Exception:
@@ -160,10 +158,8 @@ class LiLLaMACompressor(BaseCompressor):
                     r = min(self.rank, len(S))
                     cum_e = (S[:r] ** 2).sum() / ((S ** 2).sum() + 1e-12)
                     if cum_e < 0.95:
-                        r_needed = int(torch.searchsorted(
-                            torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12),
-                            torch.tensor(0.95, device=S.device)
-                        ).item()) + 1
+                        cum_ratio = torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12)
+                        r_needed = int((cum_ratio < 0.95).sum().item()) + 1
                         r = min(r_needed, len(S))
                     W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
 
