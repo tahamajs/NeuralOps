@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("mla")
+@ATTENTION_REGISTRY.register("mla", supports_causal=True, supports_gqa=True)
 class MLAAttention(nn.Module):
     r"""Multi-Head Latent Attention (MLA) Mechanism.
 
@@ -32,30 +32,36 @@ class MLAAttention(nn.Module):
         - hidden_states: $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
         - Output: Tuple of $([B, N, D], \text{Optional}[B, H, N, N])$.
     """
+    supports_gqa: bool = True
 
     def __init__(self, config: Any, rank: int = 128) -> None:
         super().__init__()
+        self.hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", 768))
         self.num_heads: int = getattr(
             config, "num_attention_heads", getattr(config, "n_heads", getattr(config, "n_head", getattr(config, "num_heads", 12)))
         )
-        self.head_dim: int = getattr(config, "head_dim", config.hidden_size // max(1, self.num_heads))
+        self.head_dim: int = getattr(config, "head_dim", self.hidden_size // max(1, self.num_heads))
+        self.q_dim: int = getattr(config, "q_proj_out", self.num_heads * self.head_dim)
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+        self.kv_dim: int = getattr(config, "kv_proj_out", self.num_kv_heads * self.head_dim)
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.rank: int = getattr(config, "mla_rank", rank)
 
         self.q_proj: nn.Linear = nn.Linear(
-            config.hidden_size, config.hidden_size, bias=False
+            self.hidden_size, self.q_dim, bias=False
         )
         self.kv_down: nn.Linear = nn.Linear(
-            config.hidden_size, self.rank, bias=False
+            self.hidden_size, self.rank, bias=False
         )
         self.k_up: nn.Linear = nn.Linear(
-            self.rank, config.hidden_size, bias=False
+            self.rank, self.kv_dim, bias=False
         )
         self.v_up: nn.Linear = nn.Linear(
-            self.rank, config.hidden_size, bias=False
+            self.rank, self.kv_dim, bias=False
         )
 
         self.out_proj: nn.Linear = nn.Linear(
-            config.hidden_size, config.hidden_size
+            self.q_dim, self.hidden_size
         )
         self.dropout: nn.Dropout = nn.Dropout(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)))
 
@@ -92,16 +98,20 @@ class MLAAttention(nn.Module):
                 try:
                     w_k_f = w_k.float()
                     w_v_f = w_v.float()
+                    if w_k_f.ndim == 2 and w_k_f.shape[1] != self.hidden_size and w_k_f.shape[0] == self.hidden_size:
+                        w_k_f = w_k_f.t()
+                    if w_v_f.ndim == 2 and w_v_f.shape[1] != self.hidden_size and w_v_f.shape[0] == self.hidden_size:
+                        w_v_f = w_v_f.t()
                     if w_k_f.shape[1] == self.hidden_size and w_v_f.shape[1] == self.hidden_size:
                         w_kv = torch.cat([w_k_f, w_v_f], dim=0)
                         u_kv, s_kv, vh_kv = torch.linalg.svd(w_kv, full_matrices=False)
                         r = min(self.rank, s_kv.shape[0], self.kv_down.weight.shape[0], self.k_up.weight.shape[1], self.v_up.weight.shape[1])
                         self.kv_down.weight.data[:r, :].copy_(vh_kv[:r, :].to(self.kv_down.weight.device, self.kv_down.weight.dtype))
                         up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)).to(self.k_up.weight.device, self.k_up.weight.dtype)
-                        d_k = w_k_f.shape[0]
-                        d_v = w_v_f.shape[0]
+                        d_k = min(w_k_f.shape[0], self.k_up.weight.shape[0])
+                        d_v = min(w_v_f.shape[0], self.v_up.weight.shape[0])
                         self.k_up.weight.data[:d_k, :r].copy_(up[:d_k, :r])
-                        self.v_up.weight.data[:d_v, :r].copy_(up[d_k:d_k+d_v, :r])
+                        self.v_up.weight.data[:d_v, :r].copy_(up[w_k_f.shape[0]:w_k_f.shape[0]+d_v, :r])
                 except Exception:
                     pass
 
@@ -138,11 +148,14 @@ class MLAAttention(nn.Module):
 
         latent: torch.Tensor = self.kv_down(hidden_states)
         k: torch.Tensor = self.k_up(latent).view(
-            batch_size, seq_len, self.num_heads, self.head_dim
+            batch_size, seq_len, self.num_kv_heads, self.head_dim
         )
         v: torch.Tensor = self.v_up(latent).view(
-            batch_size, seq_len, self.num_heads, self.head_dim
+            batch_size, seq_len, self.num_kv_heads, self.head_dim
         )
+        if self.kv_repeat > 1:
+            k = k.unsqueeze(3).expand(-1, -1, -1, self.kv_repeat, -1).reshape(batch_size, seq_len, self.num_heads, self.head_dim)
+            v = v.unsqueeze(3).expand(-1, -1, -1, self.kv_repeat, -1).reshape(batch_size, seq_len, self.num_heads, self.head_dim)
 
         q = q.transpose(1, 2)
         k = k.transpose(1, 2)
