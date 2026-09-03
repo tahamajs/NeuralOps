@@ -37,9 +37,10 @@ class _LinearizedAttentionWrapper(nn.Module):
     Preserves all original layer dimensions and return signature (context, weights_or_None).
     """
 
-    def __init__(self, original_attn: nn.Module) -> None:
+    def __init__(self, original_attn: nn.Module, layer_name: str = "") -> None:
         super().__init__()
         self.original_attn = original_attn
+        self.layer_name = layer_name
 
     def forward(
         self,
@@ -61,7 +62,12 @@ class _LinearizedAttentionWrapper(nn.Module):
                 x = torch.zeros(1, 1, 768)
 
         def _fmt(out: torch.Tensor) -> Union[torch.Tensor, Tuple[torch.Tensor, None]]:
-            is_linear_attn = hasattr(self.original_attn, "in_proj_qkv") or "deltanet" in type(self.original_attn).__name__.lower() or "linear" in type(self.original_attn).__name__.lower()
+            is_linear_attn = (
+                "linear_attn" in self.layer_name
+                or hasattr(self.original_attn, "in_proj_qkv")
+                or "deltanet" in type(self.original_attn).__name__.lower()
+                or "linear" in type(self.original_attn).__name__.lower()
+            )
             return out if is_linear_attn else (out, None)
 
         # Check if original module is LLaMA / Mistral / Gemma / Qwen style
@@ -163,7 +169,7 @@ class LIFTRCompressor(BaseCompressor):
             ):
                 # If child contains sub-projections, wrap it
                 if not isinstance(child, _LinearizedAttentionWrapper):
-                    setattr(module, name, _LinearizedAttentionWrapper(child))
+                    setattr(module, name, _LinearizedAttentionWrapper(child, layer_name=name))
                     self.linearized_attentions_count += 1
             else:
                 self._linearize_module(child)
