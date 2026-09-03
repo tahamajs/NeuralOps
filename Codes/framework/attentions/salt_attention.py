@@ -9,6 +9,7 @@ from typing import Any, Optional, Tuple
 import math
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -76,7 +77,7 @@ class SALTLinear(nn.Module):
         W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
         W_lora = self.A @ self.B
         W = (W_svd + W_lora).to(dtype=x.dtype)
-        return F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None)
+        return F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("salt_attention")

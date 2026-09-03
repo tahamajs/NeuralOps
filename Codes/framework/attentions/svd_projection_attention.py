@@ -7,6 +7,7 @@ import math
 from typing import Any, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -75,7 +76,7 @@ class SVDProjectionLinear(nn.Module):
             torch.Tensor: Output activations of shape `[*, out_features]`.
         """
         Vx = F.linear(x, self.V)
-        return F.linear(Vx, self.U, self.bias)
+        return F.linear(Vx, self.U, self.bias), getattr(self, '_attn_weights', None)
 
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor) -> None:
         """Set precomputed U and V factors."""

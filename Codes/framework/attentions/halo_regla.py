@@ -9,6 +9,7 @@ import math
 from typing import Any, Dict, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -36,7 +37,7 @@ class RotaryEmbedding(nn.Module):
         L = x.shape[2]
         cos = self.cos_cached[offset : offset + L].to(x.dtype).unsqueeze(0).unsqueeze(0)
         sin = self.sin_cached[offset : offset + L].to(x.dtype).unsqueeze(0).unsqueeze(0)
-        return (x * cos) + (rotate_half(x) * sin)
+        return (x * cos) + (rotate_half(x) * sin), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("halo_regla")
@@ -124,8 +125,10 @@ class HALOReGLAAttention(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, L, D = hidden_states.shape
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k  = self.k_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v  = self.v_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         # 1. Standard dense softmax stream
         dense_scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim**-0.5)

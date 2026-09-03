@@ -27,6 +27,7 @@ import math
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -185,7 +186,7 @@ class SVDLinear(nn.Module):
                 out = out + lora_out
                 if self.bias is not None:
                     out = out + self.bias
-            return out
+            return out, getattr(self, '_attn_weights', None)
 
         # Sequential standard projection
         latent = F.linear(x, self.V)  # [..., rank]
@@ -207,7 +208,7 @@ class SVDLinear(nn.Module):
 
         if self.bias is not None:
             out = out + self.bias
-        return out
+        return out, getattr(self, '_attn_weights', None)
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():
@@ -708,7 +709,7 @@ class SVDLinearAttention(BaseAttention):
         attn_out = attn_probs if output_attentions else None
 
         if return_state and updated_state is not None:
-            return output, attn_out, updated_state
+            return output, updated_state
 
         return output, attn_out
 

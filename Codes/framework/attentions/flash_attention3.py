@@ -7,6 +7,7 @@ alongside graceful fallback to PyTorch's hardware-accelerated Scaled Dot-Product
 
 from typing import Any, Optional, Tuple
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.attention_mask import get_token_valid_mask
@@ -57,7 +58,8 @@ class FlashAttention3(BaseAttention):
         self.num_key_value_heads = self.adapter.num_key_value_heads
         hidden_size = self.adapter.hidden_size
         self.head_dim = self.adapter.head_dim
-        self.all_head_size = self.adapter.q_proj_out
+        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
+        self.all_head_size = self.q_out
         self.kv_head_size = self.adapter.kv_proj_out
         self.use_fp8: bool = use_fp8
 

@@ -2,6 +2,7 @@ import math
 from typing import Any, Dict, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -88,7 +89,7 @@ class FactorisedLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Evaluates factorized linear transformation."""
-        return self.up(self.down(x))
+        return self.up(self.down(x)), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("minimal_svd")

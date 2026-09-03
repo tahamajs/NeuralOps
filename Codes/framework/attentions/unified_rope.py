@@ -23,6 +23,7 @@ import math
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -144,8 +145,10 @@ class UnifiedRoPE(BaseAttention):
         B, L, D = hidden_states.shape
 
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k  = self.k_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v  = self.v_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         q_rot = self._apply_rope(q, L)
         k_rot = self._apply_rope(k, L)

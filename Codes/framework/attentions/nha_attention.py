@@ -6,6 +6,7 @@ attention with global linear attention via Random Fourier Features.
 import math
 from typing import Any, Optional, Tuple
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -30,14 +31,15 @@ class NativeHybridAttention(BaseAttention):
         self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim = self.dim // self.num_heads
-        self.all_head_size = self.num_heads * self.head_dim
+        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
+        self.all_head_size = self.q_out
         self.window_size = window_size
         self.rff_features = rff_features
 
         # Projections
         self.q_proj = nn.Linear(self.dim, self.all_head_size)
-        self.k_proj = nn.Linear(self.dim, self.all_head_size)
-        self.v_proj = nn.Linear(self.dim, self.all_head_size)
+        self.k_proj = nn.Linear(self.dim, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.v_proj = nn.Linear(self.dim, getattr(self, "all_kv_head_size", self.all_head_size))
         self.out_proj = nn.Linear(self.all_head_size, self.dim)
 
         omega = self._build_orthogonal_matrix(self.head_dim, self.rff_features)

@@ -3,6 +3,7 @@ from typing import Any, Optional, Tuple
 import math
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -51,8 +52,8 @@ class AdaptiveSpanAttention(BaseAttention):
         self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.v_proj = nn.Linear(hidden_size, getattr(self, "all_kv_head_size", self.all_head_size))
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
         # Avoid saturation: initialize to 0 -> span ~ max_span / 2

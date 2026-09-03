@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
@@ -87,7 +88,7 @@ class FactorisedLinear(nn.Module):
         return self.up.out_features
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.up(self.down(x))
+        return self.up(self.down(x)), getattr(self, '_attn_weights', None)
 
 
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:

@@ -9,6 +9,7 @@ from typing import Any, Optional, Tuple
 import math
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -62,8 +63,8 @@ class HammingAttention(BaseAttention):
         self.sparsity_ratio: float = sparsity_ratio
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.v_proj = nn.Linear(hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(hidden_size, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.v_proj = nn.Linear(hidden_size, getattr(self, "all_kv_head_size", self.all_head_size))
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
         dropout_p = getattr(

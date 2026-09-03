@@ -26,6 +26,7 @@ Computational Complexity:
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -67,7 +68,7 @@ class TPAttention(BaseAttention):
         self.k_proj1: nn.Linear = nn.Linear(self.dim, self.num_heads * self.rank)
         self.k_proj2: nn.Linear = nn.Linear(self.dim, self.num_heads * self.rank)
         # Value and output projections are standard
-        self.v_proj: nn.Linear = nn.Linear(self.dim, self.num_heads * self.head_dim)
+        self.v_proj: nn.Linear = nn.Linear(self.dim, getattr(self, "q_out", self.num_heads * self.head_dim))
         self.out_proj: nn.Linear = nn.Linear(self.num_heads * self.head_dim, self.dim)
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 

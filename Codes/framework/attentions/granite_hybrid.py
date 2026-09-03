@@ -2,6 +2,7 @@ import math
 from typing import Any, Dict, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -91,7 +92,7 @@ class Mamba2(nn.Module):
         h = torch.cumsum(dBX / (decay_factor + 1e-12), dim=1) * decay_factor
         
         out = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1) * F.silu(z)
-        return self.out_proj(out)
+        return self.out_proj(out), getattr(self, '_attn_weights', None)
 
 
 class MixtureOfExperts(nn.Module):
@@ -165,7 +166,7 @@ class MixtureOfExperts(nn.Module):
                     * selected_weights
                     * self.experts[e](x * mask.unsqueeze(-1))
                 )
-        return out
+        return out, getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid")

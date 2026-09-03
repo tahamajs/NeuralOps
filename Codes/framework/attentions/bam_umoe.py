@@ -9,6 +9,7 @@ loss and pretrained weight transfer.
 from typing import Any, Optional, Tuple
 import math
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -82,7 +83,7 @@ class UnifiedMoE(nn.Module):
         )  # (B, L, k, out_dim)
 
         out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
-        return out
+        return out, getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("bam_umoe")
@@ -119,8 +120,8 @@ class BAMUMoEBlock(BaseAttention):
 
         # Pretrained Multi-Head Attention Projections
         self.q_lin = nn.Linear(self.dim, self.all_head_size)
-        self.k_lin = nn.Linear(self.dim, self.all_head_size)
-        self.v_lin = nn.Linear(self.dim, self.all_head_size)
+        self.k_lin = nn.Linear(self.dim, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.v_lin = nn.Linear(self.dim, getattr(self, "all_kv_head_size", self.all_head_size))
         self.out_lin = nn.Linear(self.all_head_size, self.dim)
 
         # MoE Modulation Branch
@@ -188,8 +189,10 @@ class BAMUMoEBlock(BaseAttention):
 
         # Base QKV projections
         q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k  = self.k_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v  = self.v_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         # MoE Value refinement
         moe_delta_v = self.qkv_moe(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)

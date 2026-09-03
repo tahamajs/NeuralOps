@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -25,7 +26,7 @@ except Exception:
         def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
             x1, x2 = self.in_proj(x).chunk(2, dim=-1)
             y = F.silu(x1) * x2
-            return self.out_proj(y)
+            return self.out_proj(y), getattr(self, '_attn_weights', None)
 
 
 @dataclass
@@ -55,7 +56,7 @@ class SpectralMamba(nn.Module):
         if isinstance(out, tuple):
             out = out[0]
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
-        return out * gate
+        return out * gate, getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("spectral_mamba")
@@ -153,8 +154,10 @@ class SpectralMambaAttention(BaseAttention):
         B, N, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        k  = self.k_lin(hidden_states).view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v  = self.v_lin(hidden_states).view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim**-0.5)
 
