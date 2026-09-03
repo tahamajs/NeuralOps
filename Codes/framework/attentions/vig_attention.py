@@ -132,20 +132,18 @@ class ViGAttention(BaseAttention):
             N_pad = N
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                valid: torch.Tensor = attention_mask.bool().to(x.device)
-                if pad_len > 0:
-                    valid = torch.cat(
-                        [
-                            valid,
-                            torch.zeros(
-                                B, pad_len, dtype=torch.bool, device=x.device
-                            ),
-                        ],
-                        dim=1,
-                    )
+            if attention_mask.dim() == 4:
+                valid_2d = (attention_mask[:, 0, 0, :] > -10000.0).to(x.device)
+            elif attention_mask.dim() == 3:
+                valid_2d = (attention_mask[:, 0, :] > -10000.0).to(x.device)
+            elif attention_mask.dim() == 2:
+                valid_2d = (attention_mask > 0).to(x.device)
             else:
-                valid = attention_mask.bool()
+                valid_2d = attention_mask.bool().to(x.device)
+            if pad_len > 0:
+                valid = torch.cat([valid_2d, torch.zeros(B, pad_len, dtype=torch.bool, device=x.device)], dim=1)
+            else:
+                valid = valid_2d
         else:
             valid = torch.ones(B, N_pad, dtype=torch.bool, device=x.device)
 

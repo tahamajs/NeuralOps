@@ -449,6 +449,10 @@ def inject_aegis_v1(
             aegis_cfg=cfg,
             pretrained_attn=old_attn,
         )
+    if old_attn is not None:
+        p = next(old_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
     if hasattr(layer, "attention"):
         layer.attention = new_attn
     return new_attn

@@ -136,11 +136,11 @@ class FRanDILinear(nn.Module):
             device=W.device,
         )
 
-        frandi_layer.A.data.copy_(A_data[:r, :].to(dtype=W.dtype))
-        frandi_layer.B.data.copy_(B_data[:, :r].to(dtype=W.dtype))
+        frandi_layer.A.data.copy_(A_data[:r, :].to(dtype=W.dtype, device=W.device))
+        frandi_layer.B.data.copy_(B_data[:, :r].to(dtype=W.dtype, device=W.device))
 
         if bias is not None and frandi_layer.bias is not None:
-            frandi_layer.bias.data.copy_(bias)
+            frandi_layer.bias.data.copy_(bias.to(dtype=W.dtype, device=W.device))
 
         return frandi_layer
 
