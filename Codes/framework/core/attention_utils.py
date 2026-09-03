@@ -219,12 +219,27 @@ def _copy_projection_weights(
                 and target_mod.weight.shape[0] < src_weight_2d.shape[1]
             ):
                 target_mod.weight.data.copy_(src_weight_2d.t()[: target_mod.weight.shape[0]])
+            elif (
+                src_weight_2d.ndim == 2
+                and target_mod.weight.shape[1] == src_weight_2d.shape[1]
+                and target_mod.weight.shape[0] > src_weight_2d.shape[0]
+                and target_mod.weight.shape[0] % src_weight_2d.shape[0] == 0
+            ):
+                repeat_factor = target_mod.weight.shape[0] // src_weight_2d.shape[0]
+                target_mod.weight.data.copy_(src_weight_2d.repeat(repeat_factor, 1))
 
             if hasattr(target_mod, "bias") and isinstance(getattr(target_mod, "bias", None), nn.Parameter):
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
                     target_mod.bias.data.copy_(src_bias)
                 elif src_bias is not None and target_mod.bias.shape[0] <= src_bias.shape[0]:
                     target_mod.bias.data.copy_(src_bias[: target_mod.bias.shape[0]])
+                elif (
+                    src_bias is not None
+                    and target_mod.bias.shape[0] > src_bias.shape[0]
+                    and target_mod.bias.shape[0] % src_bias.shape[0] == 0
+                ):
+                    repeat_factor = target_mod.bias.shape[0] // src_bias.shape[0]
+                    target_mod.bias.data.copy_(src_bias.repeat(repeat_factor))
                 elif src_bias is None:
                     nn.init.zeros_(target_mod.bias)
         return
@@ -496,10 +511,13 @@ def inject_attention(
                 target = _find_submodule_by_regex(new_attn, patterns)
                 out_features = getattr(target, "out_features", None)
                 if target is not None and out_features not in {expected[key], None}:
-                    raise QwenIncompatibleError(
-                        f"{attention_type}: {key}_projection_out={out_features}, "
-                        f"requires={expected[key]} (GQA)"
-                    )
+                    if expected[key] is not None and out_features is not None and out_features % expected[key] == 0:
+                        pass
+                    else:
+                        raise QwenIncompatibleError(
+                            f"{attention_type}: {key}_projection_out={out_features}, "
+                            f"requires={expected[key]} (GQA)"
+                        )
 
         # Match device and dtype of old attention layer
         old_param = next(old_attn.parameters(), None)
