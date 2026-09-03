@@ -28,7 +28,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -133,7 +132,7 @@ class FactorisedLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Compute low-rank linear projection: $y = (x B^T) A^T + b$."""
-        return self.up(self.down(x)), getattr(self, '_attn_weights', None)
+        return self.up(self.down(x))
 
 
 @ATTENTION_REGISTRY.register("orion_module")
@@ -315,10 +314,8 @@ class ORIONAttention(BaseAttention):
         K_all = self.k_proj(hidden_states)
         V_all = self.v_proj(hidden_states)
         Q_all = Q_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        K_all  = K_all.view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
-        K_all = repeat_kv(K_all, getattr(self, 'kv_repeat', 1))
-        V_all  = V_all.view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
-        V_all = repeat_kv(V_all, getattr(self, 'kv_repeat', 1))
+        K_all = K_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        V_all = V_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
 
         mask = (
             attention_mask
