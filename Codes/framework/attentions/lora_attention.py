@@ -73,7 +73,7 @@ class LoRALinear(nn.Module):
         lora_out = F.linear(self.dropout(x), self.lora_A)  # (..., rank)
         lora_out = F.linear(lora_out, self.lora_B)  # (..., out_features)
         lora_out = lora_out * (self.alpha / self.rank)
-        return orig_out + lora_out, getattr(self, '_attn_weights', None)
+        return orig_out + lora_out
 
 
 @ATTENTION_REGISTRY.register("lora_attn")

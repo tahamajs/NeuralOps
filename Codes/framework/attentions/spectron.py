@@ -170,7 +170,7 @@ class LowRankSparseLinear(nn.Module):
         r"""Compute low-rank plus sparse forward projection."""
         x_lr = self.up(self.down(x))
         x_sp = F.linear(x, self.sparse_weight)
-        return x_lr + x_sp, getattr(self, '_attn_weights', None)
+        return x_lr + x_sp
 
     def prune_sparse(self, sparsity: float) -> None:
         r"""Zero out smallest magnitude entries to maintain sparsity level."""

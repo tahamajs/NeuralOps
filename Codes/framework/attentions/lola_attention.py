@@ -154,7 +154,7 @@ class LowRankLinear(nn.Module):
         out = F.linear(Vx, self.U)
         if self.bias is not None:
             out = out + self.bias
-        return out, getattr(self, '_attn_weights', None)
+        return out
 
 
 @ATTENTION_REGISTRY.register("lola_attn")

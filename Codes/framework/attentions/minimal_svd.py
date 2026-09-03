@@ -89,7 +89,7 @@ class FactorisedLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Evaluates factorized linear transformation."""
-        return self.up(self.down(x)), getattr(self, '_attn_weights', None)
+        return self.up(self.down(x))
 
 
 @ATTENTION_REGISTRY.register("minimal_svd")
