@@ -64,23 +64,46 @@ class _LinearizedAttentionWrapper(nn.Module):
             is_linear_attn = hasattr(self.original_attn, "in_proj_qkv") or "deltanet" in type(self.original_attn).__name__.lower() or "linear" in type(self.original_attn).__name__.lower()
             return out if is_linear_attn else (out, None)
 
-        # Check if original module is DistilBERT-style or custom
-        if hasattr(self.original_attn, "q_lin") and hasattr(self.original_attn, "v_lin") and hasattr(self.original_attn, "out_lin"):
+        # Check if original module is LLaMA / Mistral / Gemma / Qwen style
+        if hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "o_proj"):
+            # LLaMA / Mistral / Gemma / Qwen style
+            v = self.original_attn.v_proj(x)
+            o_in = getattr(self.original_attn.o_proj, "in_features", v.shape[-1])
+            if v.shape[-1] != o_in:
+                rep = (o_in + v.shape[-1] - 1) // v.shape[-1]
+                v = v.repeat(1, 1, rep)[..., :o_in]
+            context = v.mean(dim=1, keepdim=True).expand(v.shape[0], v.shape[1], o_in)
+            output = self.original_attn.o_proj(context)
+            return _fmt(output)
+        elif hasattr(self.original_attn, "q_lin") and hasattr(self.original_attn, "v_lin") and hasattr(self.original_attn, "out_lin"):
             # DistilBERT MultiHeadSelfAttention
             v = self.original_attn.v_lin(x)
-            context = v.mean(dim=1, keepdim=True).expand_as(v)
+            o_in = getattr(self.original_attn.out_lin, "in_features", v.shape[-1])
+            if v.shape[-1] != o_in:
+                rep = (o_in + v.shape[-1] - 1) // v.shape[-1]
+                v = v.repeat(1, 1, rep)[..., :o_in]
+            context = v.mean(dim=1, keepdim=True).expand(v.shape[0], v.shape[1], o_in)
             output = self.original_attn.out_lin(context)
-            return _fmt(output)
-        elif hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "o_proj"):
-            # LLaMA / Mistral / Gemma style
-            v = self.original_attn.v_proj(x)
-            context = v.mean(dim=1, keepdim=True).expand_as(v)
-            output = self.original_attn.o_proj(context)
             return _fmt(output)
         elif hasattr(self.original_attn, "v_proj") and hasattr(self.original_attn, "out_proj"):
             # OPT / Falcon style
             v = self.original_attn.v_proj(x)
-            context = v.mean(dim=1, keepdim=True).expand_as(v)
+            o_in = getattr(self.original_attn.out_proj, "in_features", v.shape[-1])
+            if v.shape[-1] != o_in:
+                rep = (o_in + v.shape[-1] - 1) // v.shape[-1]
+                v = v.repeat(1, 1, rep)[..., :o_in]
+            context = v.mean(dim=1, keepdim=True).expand(v.shape[0], v.shape[1], o_in)
+            output = self.original_attn.out_proj(context)
+            return _fmt(output)
+        elif hasattr(self.original_attn, "in_proj_qkv") and hasattr(self.original_attn, "out_proj"):
+            # Qwen3.5 GatedDeltaNet / StarCoder style
+            in_dim = getattr(self.original_attn.out_proj, "in_features", x.shape[-1])
+            if x.shape[-1] != in_dim:
+                rep = max(1, (in_dim + x.shape[-1] - 1) // x.shape[-1])
+                context = x.repeat(1, 1, rep)[..., :in_dim]
+            else:
+                context = x
+            context = context.mean(dim=1, keepdim=True).expand(x.shape[0], x.shape[1], in_dim)
             output = self.original_attn.out_proj(context)
             return _fmt(output)
         elif hasattr(self.original_attn, "query") and hasattr(self.original_attn, "value"):
@@ -95,7 +118,10 @@ class _LinearizedAttentionWrapper(nn.Module):
             try:
                 m = mask if mask is not None else attention_mask
                 res = self.original_attn(x, attention_mask=m, **kwargs)
-                return res if isinstance(res, tuple) else _fmt(res)
+                if isinstance(res, tuple):
+                    is_lin = hasattr(self.original_attn, "in_proj_qkv") or "deltanet" in type(self.original_attn).__name__.lower() or "linear" in type(self.original_attn).__name__.lower()
+                    return res[0] if is_lin else res
+                return _fmt(res)
             except Exception:
                 return _fmt(x)
 
@@ -126,7 +152,12 @@ class LIFTRCompressor(BaseCompressor):
             elif isinstance(child, (nn.GELU, nn.SiLU)):
                 setattr(module, name, _LinearizedGELU())
                 self.linearized_activations_count += 1
-            elif self.replace_attention and ("attention" in name.lower() or "self_attn" in name.lower() or "attn" in name.lower()):
+            elif (
+                self.replace_attention
+                and ("attention" in name.lower() or "self_attn" in name.lower() or "attn" in name.lower())
+                and "norm" not in name.lower()
+                and not isinstance(child, (nn.LayerNorm, nn.RMSNorm))
+            ):
                 # If child contains sub-projections, wrap it
                 if not isinstance(child, _LinearizedAttentionWrapper):
                     setattr(module, name, _LinearizedAttentionWrapper(child))
