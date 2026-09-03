@@ -338,6 +338,7 @@ def main():
         torch.cuda.manual_seed_all(args.seed)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        torch.backends.cudnn.benchmark = True
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type != "cuda": raise RuntimeError("Qwen quality sweep requires CUDA")
@@ -483,9 +484,11 @@ def main():
         "seed": args.seed
     }), encoding="utf-8")
     LOG.info("Precomputing validation and training batches directly on device %s...", device)
-    eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
+    # Maximize GPU Tensor Core saturation during inference evaluation
+    eval_bs = 64 if (device.type == "cuda" and family in ("qwen3_5", "roberta")) else (128 if device.type == "cuda" else args.batch_size)
+    eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, eval_bs, device)
     train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
-    LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
+    LOG.info("Prepared %d eval batches (bs=%d) and %d train batches (bs=%d) directly on GPU.", len(eval_batches), eval_bs, len(train_batches), args.batch_size)
     if isinstance(args.modules, list):
         raw_mods = []
         for item in args.modules:
