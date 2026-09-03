@@ -83,7 +83,7 @@ class UnifiedMoE(nn.Module):
         )  # (B, L, k, out_dim)
 
         out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
-        return out, getattr(self, '_attn_weights', None)
+        return out
 
 
 @ATTENTION_REGISTRY.register("bam_umoe")

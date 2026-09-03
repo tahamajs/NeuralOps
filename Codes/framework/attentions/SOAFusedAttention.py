@@ -40,7 +40,7 @@ class FactorizedLinear(nn.Module):
         return self.up.out_features
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.up(self.down(x)), getattr(self, '_attn_weights', None)
+        return self.up(self.down(x))
 
 
 @ATTENTION_REGISTRY.register("soa_fused_module")
