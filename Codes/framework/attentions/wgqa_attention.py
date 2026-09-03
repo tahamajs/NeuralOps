@@ -11,13 +11,15 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("wgqa")
+@ATTENTION_REGISTRY.register("wgqa", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("wgqa_attention")
 class WeightedGroupedQueryAttention(BaseAttention):
     r"""
     Weighted Grouped-Query Attention with learnable per-channel KV importance weights
     and head-pooling pretrained weight transfer.
     """
+
+    supports_gqa: bool = True
 
     def __init__(
         self,
@@ -28,15 +30,15 @@ class WeightedGroupedQueryAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
+        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", kwargs.get("num_attention_heads", 4)))
         self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        cfg_kv = getattr(config, "num_key_value_heads", None)
+        self.head_dim: int = getattr(config, "head_dim", self.hidden_size // self.num_heads)
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         else:
             self.num_kv_heads = min(num_kv_heads, self.num_heads)
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
-        self.head_dim: int = self.hidden_size // self.num_heads
 
         # Learnable per-KV-head importance weights
         self.k_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))

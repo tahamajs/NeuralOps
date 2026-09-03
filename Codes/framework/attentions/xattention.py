@@ -18,7 +18,7 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("xattention")
+@ATTENTION_REGISTRY.register("xattention", supports_causal=True, supports_gqa=True)
 class XAttention(BaseAttention):
     r"""
     XAttention: Block-Sparse Attention Mechanism with Unified Probability Normalization.
@@ -41,6 +41,8 @@ class XAttention(BaseAttention):
         - Fine Attention: $\mathcal{O}(B \cdot H \cdot N \cdot (k \cdot B_s) \cdot d_k)$.
     """
 
+    supports_gqa: bool = True
+
     def __init__(
         self,
         config: Any,
@@ -51,16 +53,19 @@ class XAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", 4)
+        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", 4))
         hidden_size: int = getattr(config, "hidden_size", 768)
-        self.head_dim: int = hidden_size // self.num_heads
+        self.head_dim: int = getattr(config, "head_dim", hidden_size // self.num_heads)
         self.all_head_size: int = self.num_heads * self.head_dim
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.block_size: int = getattr(config, "xattn_block_size", block_size)
         self.sparsity: float = getattr(config, "xattn_sparsity", sparsity)
 
         self.query = nn.Linear(hidden_size, self.all_head_size)
-        self.key = nn.Linear(hidden_size, self.all_head_size)
-        self.value = nn.Linear(hidden_size, self.all_head_size)
+        self.key = nn.Linear(hidden_size, self.kv_head_size)
+        self.value = nn.Linear(hidden_size, self.kv_head_size)
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
         dropout_p = getattr(
@@ -84,6 +89,10 @@ class XAttention(BaseAttention):
         for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
+                if proj in ("k", "v") and w.shape[0] != target.weight.shape[0]:
+                    w = w[:target.weight.shape[0]]
+                    if b is not None:
+                        b = b[:target.bias.shape[0]]
                 target.weight.data.copy_(w)
                 if b is not None and target.bias is not None:
                     target.bias.data.copy_(b)
@@ -110,8 +119,11 @@ class XAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.query(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
-        K = self.key(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
-        V = self.value(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
+        K = self.key(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
+        V = self.value(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
+        if self.kv_repeat > 1:
+            K = K.repeat_interleave(self.kv_repeat, dim=1)
+            V = V.repeat_interleave(self.kv_repeat, dim=1)
 
         valid_mask = get_token_valid_mask(attention_mask, B, L, device)  # (B, L)
 

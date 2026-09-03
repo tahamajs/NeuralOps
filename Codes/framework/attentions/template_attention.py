@@ -31,7 +31,7 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("your_attention_name")
+@ATTENTION_REGISTRY.register("your_attention_name", supports_causal=True, supports_gqa=True)
 class YourCustomAttention(BaseAttention):
     r"""Template attention layer with optional low-rank pooling modulation.
 
@@ -41,11 +41,16 @@ class YourCustomAttention(BaseAttention):
         **kwargs: Extensible hyperparameter arguments.
     """
 
+    supports_gqa: bool = True
+
     def __init__(self, config: Any, rank: Optional[int] = None, **kwargs: Any) -> None:
         super().__init__(config, rank)
-        self.hidden_size: int = config.hidden_size
-        self.num_heads: int = config.num_attention_heads
-        self.head_dim: int = self.hidden_size // self.num_heads
+        self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", 4))
+        self.head_dim: int = getattr(config, "head_dim", self.hidden_size // self.num_heads)
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.dropout: float = float(
             getattr(
                 config,
@@ -56,10 +61,10 @@ class YourCustomAttention(BaseAttention):
 
         self.custom_param: float = float(kwargs.get("custom_param", 0.1))
 
-        self.query = nn.Linear(self.hidden_size, self.hidden_size)
-        self.key = nn.Linear(self.hidden_size, self.hidden_size)
-        self.value = nn.Linear(self.hidden_size, self.hidden_size)
-        self.out_proj = nn.Linear(self.hidden_size, self.hidden_size)
+        self.query = nn.Linear(self.hidden_size, self.num_heads * self.head_dim)
+        self.key = nn.Linear(self.hidden_size, self.kv_head_size)
+        self.value = nn.Linear(self.hidden_size, self.kv_head_size)
+        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size)
 
         if rank is not None and rank > 0:
             self.rank_proj: Optional[nn.Linear] = nn.Linear(self.hidden_size, rank, bias=False)
@@ -75,9 +80,9 @@ class YourCustomAttention(BaseAttention):
             if module.bias is not None:
                 nn.init.zeros_(module.bias)
 
-    def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
-        r"""Reshape `[Batch, SeqLen, HiddenSize]` to `[Batch, Heads, SeqLen, HeadDim]`."""
-        x = x.view(batch_size, -1, self.num_heads, self.head_dim)
+    def _reshape(self, x: torch.Tensor, batch_size: int, heads: int) -> torch.Tensor:
+        r"""Reshape `[Batch, SeqLen, Heads * HeadDim]` to `[Batch, Heads, SeqLen, HeadDim]`."""
+        x = x.view(batch_size, -1, heads, self.head_dim)
         return x.permute(0, 2, 1, 3)
 
     def forward(
@@ -110,9 +115,12 @@ class YourCustomAttention(BaseAttention):
         """
         batch_size, seq_len, _ = hidden_states.shape
 
-        Q = self._reshape(self.query(hidden_states), batch_size)
-        K = self._reshape(self.key(hidden_states), batch_size)
-        V = self._reshape(self.value(hidden_states), batch_size)
+        Q = self._reshape(self.query(hidden_states), batch_size, self.num_heads)
+        K = self._reshape(self.key(hidden_states), batch_size, self.num_kv_heads)
+        V = self._reshape(self.value(hidden_states), batch_size, self.num_kv_heads)
+        if self.kv_repeat > 1:
+            K = K.repeat_interleave(self.kv_repeat, dim=1)
+            V = V.repeat_interleave(self.kv_repeat, dim=1)
 
         scale = self.head_dim**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
