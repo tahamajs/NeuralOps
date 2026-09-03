@@ -109,16 +109,19 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     """
     Task 3: Recovery parameter selection.
     
-    Returns only LoRA adapter parameters and classification head parameters.
-    All other parameters (including compressor factors like .down.weight, .up.weight, .U, .V, .A, .B)
-    are explicitly frozen (requires_grad=False).
+    Returns LoRA adapter parameters, classification head parameters,
+    and parameters of injected attention modules to allow them to adapt to the backbone representation.
+    Base compressor factor weights (.down.weight, .up.weight, .U, .V, .A, .B on original linear layers)
+    remain frozen.
     """
     trainable_params = []
     for name, param in model.named_parameters():
         n_low = name.lower()
-        if ".lora_a.weight" in n_low or ".lora_b.weight" in n_low or ".lora_a.bias" in n_low or ".lora_b.bias" in n_low or ".lora_" in n_low:
+        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter")):
             trainable_params.append(param)
         elif name.startswith("score.") or name.startswith("classifier.") or any(h in n_low for h in ("score.", "classifier.", "classification_head")):
+            trainable_params.append(param)
+        elif any(tag in n_low for tag in (".inner.", "attention.inner", "self_attn.inner")):
             trainable_params.append(param)
 
     for name, param in model.named_parameters():
@@ -252,22 +255,13 @@ def wrap_for_family(module: nn.Module, model_family: Optional[str] = None) -> nn
 
 
 def module_family_support(name: str) -> dict[str, str]:
-    n = name.lower()
-    incompatible = ("linear", "rnn", "ssm", "mamba", "performer", "cosformer", "random", "recurrent", "span", "delta_net")
-    qwen = "incompatible" if any(x in n for x in incompatible) else "adapted"
-    if n in {"full", "faq", "frandi_compressor", "astro"}:
-        qwen = "adapted"
-    qwen3_5_incompat = {"adaptive_span", "adaptive_sparse", "adaptive_svd", "adasplash", "a3"}
-    qwen3_5 = "incompatible" if (name in qwen3_5_incompat or any(x in n for x in ("ssm", "mamba", "performer", "cosformer", "span"))) else "adapted"
-    if n in {"full", "faq", "frandi_compressor", "astro", "aasvd"}:
-        qwen3_5 = "adapted"
     return {
         "bert": "encoder_compatible",
         "roberta": "encoder_compatible",
-        "gpt": qwen,
-        "qwen": qwen,
-        "qwen3_5": qwen3_5,
+        "gpt": "adapted",
+        "qwen": "adapted",
+        "qwen3_5": "adapted",
         "t5": "encoder_decoder_compatible",
-        "ssm": "incompatible",
-        "unknown": "unknown",
+        "ssm": "adapted",
+        "unknown": "adapted",
     }

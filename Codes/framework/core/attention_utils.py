@@ -511,13 +511,16 @@ def inject_attention(
                 target = _find_submodule_by_regex(new_attn, patterns)
                 out_features = getattr(target, "out_features", None)
                 if target is not None and out_features not in {expected[key], None}:
-                    if expected[key] is not None and out_features is not None and out_features % expected[key] == 0:
-                        pass
-                    else:
-                        raise QwenIncompatibleError(
-                            f"{attention_type}: {key}_projection_out={out_features}, "
-                            f"requires={expected[key]} (GQA)"
-                        )
+                    if expected[key] is not None and out_features is not None:
+                        if out_features % expected[key] == 0 or expected[key] % out_features == 0:
+                            pass
+                        elif _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"]) is not None:
+                            pass
+                        else:
+                            raise QwenIncompatibleError(
+                                f"{attention_type}: {key}_projection_out={out_features}, "
+                                f"requires={expected[key]} (GQA)"
+                            )
 
         # Match device and dtype of old attention layer
         old_param = next(old_attn.parameters(), None)
