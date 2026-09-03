@@ -629,6 +629,7 @@ def main():
                 status, err = f"SKIP_{family.upper()}_INCOMPATIBLE", str(exc)
                 path_name = "unsupported" if qwen else path_name
             except Exception as exc:
+                LOG.exception("Module %s execution failure:", name)
                 if "out of memory" in str(exc).lower() and not injected:
                     status, err = "SKIP_QWEN3_5_OOM_UNSTABLE" if family == "qwen3_5" else "SKIP", "cuda_oom_injection"
                 elif "out of memory" in str(exc).lower() and injected and args.batch_size > 8:
