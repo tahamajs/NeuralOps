@@ -129,6 +129,12 @@ class CoMeCompressor(BaseCompressor):
            (e.g. 2816 = up-proj intermediate) dominating when they appear first.
         5. Hard-coded default 768.
         """
+        # 0. Via self.model.config (top-level model config is canonical)
+        if hasattr(self, "model") and hasattr(self.model, "config"):
+            for attr in ["hidden_size", "d_model", "dim"]:
+                if hasattr(self.model.config, attr):
+                    return int(getattr(self.model.config, attr))
+
         # 1. Direct attribute on the layer object
         for attr in ["hidden_size", "d_model", "dim", "embed_dim"]:
             if hasattr(layer, attr):
