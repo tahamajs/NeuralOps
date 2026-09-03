@@ -43,8 +43,11 @@ class COMPOTLinear(nn.Module):
         self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
 
-        nn.init.orthogonal_(self.A)
-        nn.init.xavier_uniform_(self.B)
+        with torch.no_grad():
+            A_f32 = torch.empty(self.rank, in_features, dtype=torch.float32)
+            nn.init.orthogonal_(A_f32)
+            self.A.copy_(A_f32.to(device=device, dtype=dtype))
+            nn.init.xavier_uniform_(self.B)
 
         if bias:
             self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
