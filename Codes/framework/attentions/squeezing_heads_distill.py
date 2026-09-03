@@ -20,6 +20,7 @@ Computational Complexity:
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
@@ -83,8 +84,10 @@ class SqueezingHeadsDistiller(nn.Module):
         x = hidden_states
         B, L, D = x.shape
         q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k  = self.k_proj(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v  = self.v_proj(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scale = self.head_dim**-0.5
         scores = torch.matmul(q, k.transpose(-2, -1)) * scale

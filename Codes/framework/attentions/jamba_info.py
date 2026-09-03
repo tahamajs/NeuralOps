@@ -5,6 +5,7 @@ Information-Bottlenecked Jamba Architecture with Dual Operational Modes.
 import math
 from typing import Any, Dict, Optional, Tuple
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -25,7 +26,7 @@ class InfoMambaConceptBottleneck(nn.Module):
         self.W_up: nn.Linear = nn.Linear(bottleneck_dim, dim, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.W_up(F.gelu(self.W_down(x)))
+        return self.W_up(F.gelu(self.W_down(x))), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("jamba_info")

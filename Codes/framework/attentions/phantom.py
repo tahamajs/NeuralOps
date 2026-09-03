@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -134,7 +135,7 @@ class FactorisedLinear_CUR(nn.Module):
             - Input: `[..., InDim]`
             - Output: `[..., OutDim]`
         """
-        return self.up(self.down(x))
+        return self.up(self.down(x)), getattr(self, '_attn_weights', None)
 
 
 def lsh_attention(

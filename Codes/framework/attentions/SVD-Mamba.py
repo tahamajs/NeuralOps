@@ -14,6 +14,7 @@ from typing import Any, Optional, Tuple
 from math import ceil
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -68,7 +69,7 @@ class SVDLinear(nn.Module):
         # (x @ V) -> [..., rank]
         # * S -> [..., rank]
         # @ U^T -> [..., out_features]
-        return ((x @ self.V) * self.S) @ self.U.t() + self.bias
+        return ((x @ self.V) * self.S) @ self.U.t() + self.bias, getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("svd_mamba")

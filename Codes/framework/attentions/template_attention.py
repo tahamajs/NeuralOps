@@ -25,6 +25,7 @@ Computational Complexity:
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -61,7 +62,7 @@ class YourCustomAttention(BaseAttention):
 
         self.custom_param: float = float(kwargs.get("custom_param", 0.1))
 
-        self.query = nn.Linear(self.hidden_size, self.num_heads * self.head_dim)
+        self.query = nn.Linear(self.hidden_size, getattr(self, "q_out", self.num_heads * self.head_dim))
         self.key = nn.Linear(self.hidden_size, self.kv_head_size)
         self.value = nn.Linear(self.hidden_size, self.kv_head_size)
         self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size)

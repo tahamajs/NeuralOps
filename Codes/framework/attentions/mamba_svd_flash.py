@@ -8,6 +8,7 @@ and pretrained Multi-Head Attention weight transfer.
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -216,7 +217,7 @@ class MambaSVDFlash(BaseAttention):
             def _ssm_fn(u, s, v, b_seq, c_seq, h_in, m):
                 fwd = self._svd_ssm_scan(u, s, v, b_seq, c_seq, h_in, mask=m, reverse=False)
                 bwd = self._svd_ssm_scan(u, s, v, b_seq, c_seq, h_in, mask=m, reverse=True)
-                return 0.5 * (fwd + bwd)
+                return 0.5 * (fwd + bwd), getattr(self, '_attn_weights', None)
             ssm_out = cp.checkpoint(_ssm_fn, U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask_bool, use_reentrant=False)
         else:
             ssm_fwd = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False)
@@ -227,8 +228,10 @@ class MambaSVDFlash(BaseAttention):
         # 2. Bidirectional Dense Attention Path
         # ---------------------------------------------------------
         Q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        K = self.k_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        V_attn = self.v_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        K  = self.k_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        K = repeat_kv(K, getattr(self, 'kv_repeat', 1))
+        V_attn  = self.v_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        V_attn = repeat_kv(V_attn, getattr(self, 'kv_repeat', 1))
 
         attn_mask = None
         if attention_mask is not None:

@@ -9,6 +9,7 @@ Fixes:
 import math
 from typing import Any, Optional, Tuple, Union
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.attention_mask import get_token_valid_mask
@@ -29,7 +30,8 @@ class LinformerAttention(nn.Module):
         super().__init__()
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
-        self.all_head_size = self.num_heads * self.head_dim
+        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
+        self.all_head_size = self.q_out
 
         self.k_proj_dim = getattr(config, "linformer_k", k if k is not None else getattr(config, "k", 64))
         self.max_seq_len = getattr(config, "max_position_embeddings", max_seq_len if max_seq_len is not None else 512)

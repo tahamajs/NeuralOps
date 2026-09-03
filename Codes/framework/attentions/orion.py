@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -132,7 +133,7 @@ class FactorisedLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Compute low-rank linear projection: $y = (x B^T) A^T + b$."""
-        return self.up(self.down(x))
+        return self.up(self.down(x)), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("orion_module")

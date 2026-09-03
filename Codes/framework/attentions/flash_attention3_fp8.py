@@ -8,6 +8,7 @@ reducing KV memory bandwidth and compute latency while maintaining accuracy.
 from typing import Any, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -68,8 +69,8 @@ class FlashAttention3FP8(BaseAttention):
         self.use_fp8: bool = use_fp8
 
         self.q_proj = nn.Linear(d_model, self.all_head_size)
-        self.k_proj = nn.Linear(d_model, self.all_head_size)
-        self.v_proj = nn.Linear(d_model, self.all_head_size)
+        self.k_proj = nn.Linear(d_model, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.v_proj = nn.Linear(d_model, getattr(self, "all_kv_head_size", self.all_head_size))
         self.out_proj = nn.Linear(self.all_head_size, d_model)
 
         dropout_p = (

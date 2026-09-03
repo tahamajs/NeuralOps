@@ -5,6 +5,7 @@ Progressive Token Pruning (PTP).
 import math
 from typing import Tuple, Any, Optional
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -32,12 +33,13 @@ class ProgressiveTokenPruning(BaseAttention):
         self.d_model = getattr(config, "hidden_size", d_model or kwargs.get("hidden_size", 768))
         self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim = self.d_model // self.num_heads
-        self.all_head_size = self.num_heads * self.head_dim
+        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
+        self.all_head_size = self.q_out
         self.keep_ratio = keep_ratio
 
         self.q_lin = nn.Linear(self.d_model, self.all_head_size)
-        self.k_lin = nn.Linear(self.d_model, self.all_head_size)
-        self.v_lin = nn.Linear(self.d_model, self.all_head_size)
+        self.k_lin = nn.Linear(self.d_model, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.v_lin = nn.Linear(self.d_model, getattr(self, "all_kv_head_size", self.all_head_size))
         self.out_lin = nn.Linear(self.all_head_size, self.d_model)
 
         self.score_network = nn.Sequential(
@@ -108,8 +110,10 @@ class ProgressiveTokenPruning(BaseAttention):
 
         # Attentive transformation over full sequence
         q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k_tensor = self.k_lin(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v_tensor = self.v_lin(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k_tensor  = self.k_lin(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k_tensor = repeat_kv(k_tensor, getattr(self, 'kv_repeat', 1))
+        v_tensor  = self.v_lin(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v_tensor = repeat_kv(v_tensor, getattr(self, 'kv_repeat', 1))
 
         # Prune keys and values for efficiency
         top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, self.num_heads, -1, self.head_dim)

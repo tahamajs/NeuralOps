@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
@@ -45,7 +46,7 @@ class SimpleRFFKernel(nn.Module):
             p = torch.matmul(x, self.proj.to(x.dtype))
             return torch.cat([torch.cos(p), torch.sin(p)], dim=-1) / (
                 self.proj.size(1) ** 0.25
-            )
+            ), getattr(self, '_attn_weights', None)
 
         return rff(q), rff(k)
 

@@ -15,6 +15,7 @@ Computational Complexity:
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 
 from framework.core.registry import ATTENTION_REGISTRY
@@ -60,7 +61,7 @@ class TokenCompressedAttention(nn.Module):
         """
         res = self.attn(hidden_states, attention_mask=attention_mask, **kwargs)
         if isinstance(res, tuple):
-            return res
+            return res, getattr(self, '_attn_weights', None)
         return res, None
 
 

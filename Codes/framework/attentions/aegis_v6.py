@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -138,7 +139,7 @@ class FactorisedLowRankProjection(nn.Module):
         xB = torch.matmul(x_f, self.B.float().t())
         out_lora = torch.matmul(xB, self.A.float().t())
         out = (out_svd + out_lora + self.bias.float()).to(orig_dtype)
-        return out
+        return out, getattr(self, '_attn_weights', None)
 
 
 @dataclass
@@ -187,7 +188,7 @@ class StableKernelFeatureMap(nn.Module):
         exp_in = phi - norm_sq
         exp_in = torch.clamp(exp_in, min=self.cfg.clamp_min, max=self.cfg.clamp_max)
         out = self.scale * torch.exp(exp_in)
-        return out
+        return out, getattr(self, '_attn_weights', None)
 
 
 class GatingModule(nn.Module):
@@ -234,7 +235,7 @@ class ContextFusionGate(nn.Module):
         hidden_per_head = h_expanded.view(B, N, h, d).permute(0, 2, 1, 3)
         concat = torch.cat([hidden_per_head, local_out, global_out], dim=-1)
         logits = self.proj(concat)
-        return torch.sigmoid(logits)
+        return torch.sigmoid(logits), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("aegis_v6")

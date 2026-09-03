@@ -25,6 +25,7 @@ import math
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
@@ -58,9 +59,9 @@ class QCQAAttention(nn.Module):
             )
         )
 
-        self.q_proj = nn.Linear(config.hidden_size, self.num_heads * self.head_dim)
-        self.k_proj = nn.Linear(config.hidden_size, self.num_kv_heads * self.head_dim)
-        self.v_proj = nn.Linear(config.hidden_size, self.num_kv_heads * self.head_dim)
+        self.q_proj = nn.Linear(config.hidden_size, getattr(self, "q_out", self.num_heads * self.head_dim))
+        self.k_proj = nn.Linear(config.hidden_size, getattr(self, "kv_out", getattr(self, "num_kv_heads", self.num_heads) * self.head_dim))
+        self.v_proj = nn.Linear(config.hidden_size, getattr(self, "kv_out", getattr(self, "num_kv_heads", self.num_heads) * self.head_dim))
 
         self.router = nn.Linear(self.head_dim, self.num_kv_heads, bias=False)
         self.router_temp: float = router_temp

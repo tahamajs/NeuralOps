@@ -5,6 +5,7 @@ Weighted Grouped-Query Attention (WGQA).
 import math
 from typing import Any, Optional, Tuple
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -44,9 +45,9 @@ class WeightedGroupedQueryAttention(BaseAttention):
         self.k_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))
         self.v_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))
 
-        self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim)
-        self.k_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)
-        self.v_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)
+        self.q_proj = nn.Linear(self.hidden_size, getattr(self, "q_out", self.num_heads * self.head_dim))
+        self.k_proj = nn.Linear(self.hidden_size, getattr(self, "kv_out", getattr(self, "num_kv_heads", self.num_heads) * self.head_dim))
+        self.v_proj = nn.Linear(self.hidden_size, getattr(self, "kv_out", getattr(self, "num_kv_heads", self.num_heads) * self.head_dim))
         self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size)
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1

@@ -18,6 +18,7 @@ import math
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -204,7 +205,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                 ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
                 ctx.eps = eps
                 ctx.use_rms_norm = use_rms_norm
-                return y_2d.view(*orig_shape[:-1], K_out)
+                return y_2d.view(*orig_shape[:-1], K_out), getattr(self, '_attn_weights', None)
             except Exception:
                 pass  # Fall back to PyTorch native reference below
 
@@ -230,7 +231,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
         ctx.eps = eps
         ctx.use_rms_norm = use_rms_norm
-        return y_2d.view(*orig_shape[:-1], K_out)
+        return y_2d.view(*orig_shape[:-1], K_out), getattr(self, '_attn_weights', None)
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
@@ -368,7 +369,7 @@ class FusedSVDLinear(nn.Module):
             bias=self.bias,
             eps=self.eps,
             use_rms_norm=self.use_rms_norm,
-        )
+        ), getattr(self, '_attn_weights', None)
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         """Set precomputed U and V low-rank factors."""

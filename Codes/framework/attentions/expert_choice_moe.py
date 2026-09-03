@@ -9,6 +9,7 @@ across all experts, dynamic per-token expert allocation, and superior zero-shot 
 from typing import Any, Optional, Tuple
 import math
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -83,7 +84,7 @@ class ExpertChoiceMoE(nn.Module):
         prob_mean = F.softmax(logits / 1.0, dim=-1).mean(dim=0)
         self.aux_loss = self.n_experts * torch.sum(prob_mean ** 2)
 
-        return out_flat.view(B, L, D)
+        return out_flat.view(B, L, D), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("expert_choice_moe")
@@ -106,11 +107,12 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
         self.head_dim = self.dim // self.num_heads
-        self.all_head_size = self.num_heads * self.head_dim
+        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
+        self.all_head_size = self.q_out
 
         self.q_lin = nn.Linear(self.dim, self.all_head_size)
-        self.k_lin = nn.Linear(self.dim, self.all_head_size)
-        self.v_lin = nn.Linear(self.dim, self.all_head_size)
+        self.k_lin = nn.Linear(self.dim, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.v_lin = nn.Linear(self.dim, getattr(self, "all_kv_head_size", self.all_head_size))
         self.out_lin = nn.Linear(self.all_head_size, self.dim)
 
         self.moe = ExpertChoiceMoE(self.dim, n_experts=n_experts, capacity_factor=capacity_factor)
@@ -167,8 +169,10 @@ class ExpertChoiceMoEAttention(BaseAttention):
         B, L, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k  = self.k_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v  = self.v_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(q, k.transpose(-2, -1)) * scale

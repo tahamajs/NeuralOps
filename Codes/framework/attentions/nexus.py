@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -230,7 +231,7 @@ class SeerGating(nn.Module):
         # Fix: use a full n_blocks×n_blocks True mask — all blocks attend to all blocks.
         # Sparsity is still enforced by the XAttention inter-block top-k scoring.
         mask = torch.ones(B, H, n_blocks, n_blocks, device=Q.device, dtype=torch.bool)
-        return mask
+        return mask, getattr(self, '_attn_weights', None)
 
 
 # ============================================================================
@@ -363,7 +364,7 @@ class DualStageStripeAttention(nn.Module):
             out_b = torch.matmul(attn, V_total)
             outputs.append(out_b)
 
-        return torch.cat(outputs, dim=2)
+        return torch.cat(outputs, dim=2), getattr(self, '_attn_weights', None)
 
 
 # ============================================================================
@@ -428,7 +429,7 @@ class SpectraformerRectify(nn.Module):
         Z = K_feat.sum(dim=2)
         ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)
         norm = torch.einsum("bhnf,bhf->bhn", Q_feat, Z).unsqueeze(-1)
-        return (ctx / (norm + 1e-5)).to(orig_dtype)
+        return (ctx / (norm + 1e-5)).to(orig_dtype), getattr(self, '_attn_weights', None)
 
 
 # ============================================================================

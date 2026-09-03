@@ -30,6 +30,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
@@ -169,7 +170,7 @@ class LowRankSparseLinear(nn.Module):
         r"""Compute low-rank plus sparse forward projection."""
         x_lr = self.up(self.down(x))
         x_sp = F.linear(x, self.sparse_weight)
-        return x_lr + x_sp
+        return x_lr + x_sp, getattr(self, '_attn_weights', None)
 
     def prune_sparse(self, sparsity: float) -> None:
         r"""Zero out smallest magnitude entries to maintain sparsity level."""
