@@ -510,6 +510,8 @@ def inject_attention(
             if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
                 try:
                     new_attn.copy_weights(old_attn)
+                    if old_param is not None:
+                        new_attn.to(device=old_param.device, dtype=old_param.dtype)
                 except (AttributeError, RuntimeError, ValueError) as e:
                     logger.debug("Custom copy_weights failed on %s: %s", name, e)
                 except Exception as e:

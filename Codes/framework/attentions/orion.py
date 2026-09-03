@@ -224,6 +224,8 @@ class ORIONAttention(BaseAttention):
                             self.cfg.svd_max_rank,
                         ).to(device=w.device, dtype=w.dtype)
                     )
+                    if hasattr(self, "rff_proj"):
+                        self.rff_proj.data = self.rff_proj.data.to(device=w.device, dtype=w.dtype)
             except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
                 pass
 
@@ -384,5 +386,9 @@ def inject_orion(
         dropout=getattr(comp_config, "dropout", 0.1),
     )
     new_attn = ORIONAttention(model_config, orion_cfg=cfg, pretrained_attn=old_attn)
+    if old_attn is not None:
+        p = next(old_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
     layer.attention = new_attn
     return new_attn

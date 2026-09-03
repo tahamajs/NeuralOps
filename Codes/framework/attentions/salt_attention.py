@@ -46,18 +46,21 @@ class SALTLinear(nn.Module):
         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         r = self.rank
 
-        self.register_buffer("U", U[:, :r].contiguous())
-        self.register_buffer("Vt", Vt[:r, :].contiguous())
-        self.register_buffer("S", S[:r].contiguous())
+        target_dev = original_weight.device if original_weight is not None else None
+        target_dtype = original_weight.dtype if original_weight is not None else torch.float32
 
-        self.gamma = nn.Parameter(torch.ones(r))
-        self.A = nn.Parameter(torch.randn(out_features, r) * 0.01)
-        self.B = nn.Parameter(torch.zeros(r, in_features))  # Zero init for exact initial preservation
+        self.register_buffer("U", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype))
+        self.register_buffer("Vt", Vt[:r, :].contiguous().to(device=target_dev, dtype=target_dtype))
+        self.register_buffer("S", S[:r].contiguous().to(device=target_dev, dtype=target_dtype))
+
+        self.gamma = nn.Parameter(torch.ones(r, device=target_dev, dtype=target_dtype))
+        self.A = nn.Parameter(torch.randn(out_features, r, device=target_dev, dtype=target_dtype) * 0.01)
+        self.B = nn.Parameter(torch.zeros(r, in_features, device=target_dev, dtype=target_dtype))  # Zero init for exact initial preservation
 
         if original_bias is not None:
-            self.bias = nn.Parameter(original_bias.clone())
+            self.bias = nn.Parameter(original_bias.clone().to(device=target_dev, dtype=target_dtype))
         else:
-            self.bias = nn.Parameter(torch.zeros(out_features))
+            self.bias = nn.Parameter(torch.zeros(out_features, device=target_dev, dtype=target_dtype))
 
     @property
     def weight(self) -> torch.Tensor:
@@ -131,7 +134,10 @@ class SALTAttention(BaseAttention):
         for proj, attr in [("q", "q_proj"), ("k", "k_proj"), ("v", "v_proj"), ("o", "out_proj")]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
-                setattr(self, attr, SALTLinear(w.size(1), w.size(0), self.rank, original_weight=w, original_bias=b))
+                mod = SALTLinear(w.size(1), w.size(0), self.rank, original_weight=w, original_bias=b)
+                if hasattr(w, "device"):
+                    mod.to(device=w.device, dtype=w.dtype)
+                setattr(self, attr, mod)
             except Exception:
                 setattr(self, attr, SALTLinear(hidden_size, hidden_size, self.rank))
 
@@ -194,5 +200,9 @@ def inject_salt_attention(
     **kwargs) -> SALTAttention:
     rank = getattr(comp_config, "rank", getattr(comp_config, "salt_rank", 16))
     new_attn = SALTAttention(config=model_config, rank=rank, pretrained_attn=old_attn)
+    if old_attn is not None:
+        p = next(old_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
     layer.attention = new_attn
     return new_attn
