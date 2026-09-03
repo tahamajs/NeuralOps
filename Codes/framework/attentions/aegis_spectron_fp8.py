@@ -89,7 +89,7 @@ class SpectronSpectralEntropyRouter(nn.Module):
 
         c = self.costs.to(dtype=H_b.dtype, device=X.device)
         logits = (H_b - self.lam * c) / self.tau
-        return F.softmax(logits, dim=-1), getattr(self, '_attn_weights', None)
+        return F.softmax(logits, dim=-1)
 
 
 def fp8_cast_simulate(x: torch.Tensor) -> torch.Tensor:

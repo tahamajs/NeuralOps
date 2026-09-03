@@ -205,7 +205,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                 ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
                 ctx.eps = eps
                 ctx.use_rms_norm = use_rms_norm
-                return y_2d.view(*orig_shape[:-1], K_out), getattr(self, '_attn_weights', None)
+                return y_2d.view(*orig_shape[:-1], K_out)
             except Exception:
                 pass  # Fall back to PyTorch native reference below
 
@@ -231,7 +231,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
         ctx.eps = eps
         ctx.use_rms_norm = use_rms_norm
-        return y_2d.view(*orig_shape[:-1], K_out), getattr(self, '_attn_weights', None)
+        return y_2d.view(*orig_shape[:-1], K_out)
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
