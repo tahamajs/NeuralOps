@@ -83,17 +83,37 @@ class MLAAttention(nn.Module):
         Returns:
             Tuple[torch.Tensor, Optional[torch.Tensor]]: Contextualized representation `[Batch, SeqLen, HiddenDim]` and attention probabilities.
         """
-        batch_size, seq_len, _ = hidden_states.shape
+        batch_size, seq_len, hidden_dim = hidden_states.shape
 
-        q: torch.Tensor = self.q_proj(hidden_states).view(
+        q_out: torch.Tensor = self.q_proj(hidden_states)
+        expected_qkv = self.num_heads * self.head_dim
+        if q_out.shape[-1] != expected_qkv:
+            import logging as _log
+            _log.getLogger(__name__).error(
+                "MLA DEBUG: q_proj output %s but expected last dim %d "
+                "(num_heads=%d, head_dim=%d, hidden_dim=%d, q_proj.weight=%s)",
+                q_out.shape, expected_qkv, self.num_heads, self.head_dim,
+                hidden_dim, self.q_proj.weight.shape,
+            )
+        q: torch.Tensor = q_out.view(
             batch_size, seq_len, self.num_heads, self.head_dim
         )
 
         latent: torch.Tensor = self.kv_down(hidden_states)
-        k: torch.Tensor = self.k_up(latent).view(
+        k_raw: torch.Tensor = self.k_up(latent)
+        v_raw: torch.Tensor = self.v_up(latent)
+        if k_raw.shape[-1] != expected_qkv or v_raw.shape[-1] != expected_qkv:
+            import logging as _log
+            _log.getLogger(__name__).error(
+                "MLA DEBUG: k_up output %s, v_up output %s, expected last dim %d "
+                "(k_up.weight=%s, v_up.weight=%s, latent=%s)",
+                k_raw.shape, v_raw.shape, expected_qkv,
+                self.k_up.weight.shape, self.v_up.weight.shape, latent.shape,
+            )
+        k: torch.Tensor = k_raw.view(
             batch_size, seq_len, self.num_heads, self.head_dim
         )
-        v: torch.Tensor = self.v_up(latent).view(
+        v: torch.Tensor = v_raw.view(
             batch_size, seq_len, self.num_heads, self.head_dim
         )
 
@@ -117,8 +137,15 @@ class MLAAttention(nn.Module):
         context = (
             context.transpose(1, 2)
             .contiguous()
-            .view(batch_size, seq_len, -1)
+            .view(batch_size, seq_len, expected_qkv)
         )
+        if context.shape[-1] != self.out_proj.in_features:
+            import logging as _log
+            _log.getLogger(__name__).error(
+                "MLA DEBUG: context %s but out_proj expects in_features=%d "
+                "(out_proj.weight=%s)",
+                context.shape, self.out_proj.in_features, self.out_proj.weight.shape,
+            )
         out: torch.Tensor = self.out_proj(context)
 
         if output_attentions:
