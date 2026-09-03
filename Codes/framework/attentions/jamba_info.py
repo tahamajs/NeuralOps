@@ -117,12 +117,12 @@ class JambaInfoBlock(BaseAttention):
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)
+                pad_mask = (attention_mask == 0).to(scores1.device).unsqueeze(1).unsqueeze(2)
                 scores1 = scores1.masked_fill(pad_mask, -10000.0)
                 scores2 = scores2.masked_fill(pad_mask, -10000.0)
             elif attention_mask.dim() == 4:
-                scores1 = scores1 + attention_mask
-                scores2 = scores2 + attention_mask
+                scores1 = scores1 + attention_mask.to(device=scores1.device, dtype=scores1.dtype)
+                scores2 = scores2 + attention_mask.to(device=scores2.device, dtype=scores2.dtype)
 
         attn1 = F.softmax(scores1, dim=-1)
         attn2 = F.softmax(scores2, dim=-1)

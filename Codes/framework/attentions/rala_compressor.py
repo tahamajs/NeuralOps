@@ -109,15 +109,15 @@ class RALALinearAttention(nn.Module):
         k_prime = F.elu(k) + 1.0
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask.unsqueeze(1).unsqueeze(-1).to(k_prime.dtype)
+            if attention_mask.dim() == 4:
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).to(k_prime.dtype)
             elif attention_mask.dim() == 3:
-                mask = attention_mask.unsqueeze(-1).to(k_prime.dtype)
-            elif attention_mask.dim() == 4:
-                mask = (attention_mask > -10000.0).to(k_prime.dtype)
+                mask = (attention_mask[:, 0, :] > -10000.0).to(k_prime.dtype)
+            elif attention_mask.dim() == 2:
+                mask = (attention_mask > 0).to(k_prime.dtype)
             else:
                 mask = attention_mask.to(k_prime.dtype)
-            k_prime = k_prime * mask
+            k_prime = k_prime * mask.unsqueeze(1).unsqueeze(-1)
 
         kv = torch.einsum("b h n d, b h n e -> b h d e", k_prime, v)
         z = k_prime.sum(dim=2)

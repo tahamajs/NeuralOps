@@ -113,20 +113,21 @@ class SliceGPTCompressor(BaseCompressor):
 
         return aggregated
 
-    def _compute_orthogonal_rotation(self, activations: torch.Tensor, d_in: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _compute_orthogonal_rotation(self, activations: torch.Tensor, d_in: int, device: Optional[torch.device] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Derives orthogonal matrix Q from activation covariance C_X = (1/N) X^T X via eigendecomposition.
         Returns:
             Q: Orthogonal rotation matrix [d_in, d_in]
             eigenvalues: Eigenvalue variance spectrum [d_in]
         """
+        dev = device if device is not None else torch.device("cpu")
         if activations is not None and activations.numel() > 0:
-            X = activations.reshape(-1, activations.shape[-1]).float()
+            X = activations.to(dev).reshape(-1, activations.shape[-1]).float()
             if X.shape[-1] == d_in:
                 N = X.shape[0]
                 C = (1.0 / max(N, 1)) * torch.matmul(X.T, X)
                 # Add small regularizer for numerical stability
-                C = C + 1e-6 * torch.eye(d_in)
+                C = C + 1e-6 * torch.eye(d_in, device=dev)
                 eigenvalues, Q = torch.linalg.eigh(C)
                 # Sort in descending order
                 idx = torch.argsort(eigenvalues, descending=True)
@@ -135,9 +136,9 @@ class SliceGPTCompressor(BaseCompressor):
                 return Q, eigenvalues
 
         # Fallback to Haar-distributed random orthogonal matrix
-        H = torch.randn(d_in, d_in)
+        H = torch.randn(d_in, d_in, device=dev)
         Q, _ = torch.linalg.qr(H)
-        eigenvalues = torch.ones(d_in)
+        eigenvalues = torch.ones(d_in, device=dev)
         return Q, eigenvalues
 
     def compress(
@@ -165,7 +166,7 @@ class SliceGPTCompressor(BaseCompressor):
 
                 # Get activations for this module
                 act = activations_map.get(name, None)
-                Q, eigvals = self._compute_orthogonal_rotation(act, d_in)
+                Q, eigvals = self._compute_orthogonal_rotation(act, d_in, device=device)
                 Q = Q.to(device=device, dtype=torch.float32)
                 W = module.weight.data.float()
 
