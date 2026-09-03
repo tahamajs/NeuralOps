@@ -61,7 +61,7 @@ class TokenCompressedAttention(nn.Module):
         """
         res = self.attn(hidden_states, attention_mask=attention_mask, **kwargs)
         if isinstance(res, tuple):
-            return res, getattr(self, '_attn_weights', None)
+            return res[0], (res[1] if len(res) > 1 else None)
         return res, None
 
 
