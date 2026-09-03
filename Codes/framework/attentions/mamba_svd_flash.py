@@ -217,7 +217,7 @@ class MambaSVDFlash(BaseAttention):
             def _ssm_fn(u, s, v, b_seq, c_seq, h_in, m):
                 fwd = self._svd_ssm_scan(u, s, v, b_seq, c_seq, h_in, mask=m, reverse=False)
                 bwd = self._svd_ssm_scan(u, s, v, b_seq, c_seq, h_in, mask=m, reverse=True)
-                return 0.5 * (fwd + bwd), getattr(self, '_attn_weights', None)
+                return 0.5 * (fwd + bwd)
             ssm_out = cp.checkpoint(_ssm_fn, U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask_bool, use_reentrant=False)
         else:
             ssm_fwd = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False)

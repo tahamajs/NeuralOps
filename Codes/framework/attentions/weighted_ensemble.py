@@ -78,9 +78,7 @@ class TaskAwareAttention(nn.Module):
         scores = scores + bias
         weights = F.softmax(scores, dim=-1)  # (1, M)
 
-        # Weighted sum
-        weighted = (all_logits * weights.unsqueeze(-1).unsqueeze(-1)).sum(dim=0)
-        return weighted, getattr(self, '_attn_weights', None)
+        return weighted
 
 
 class SmartWeightedEnsemble:

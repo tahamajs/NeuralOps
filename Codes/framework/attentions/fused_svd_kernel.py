@@ -369,7 +369,7 @@ class FusedSVDLinear(nn.Module):
             bias=self.bias,
             eps=self.eps,
             use_rms_norm=self.use_rms_norm,
-        ), getattr(self, '_attn_weights', None)
+        )
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         """Set precomputed U and V low-rank factors."""
