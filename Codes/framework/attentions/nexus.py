@@ -231,7 +231,7 @@ class SeerGating(nn.Module):
         # Fix: use a full n_blocks×n_blocks True mask — all blocks attend to all blocks.
         # Sparsity is still enforced by the XAttention inter-block top-k scoring.
         mask = torch.ones(B, H, n_blocks, n_blocks, device=Q.device, dtype=torch.bool)
-        return mask, getattr(self, '_attn_weights', None)
+        return mask
 
 
 # ============================================================================
@@ -364,7 +364,7 @@ class DualStageStripeAttention(nn.Module):
             out_b = torch.matmul(attn, V_total)
             outputs.append(out_b)
 
-        return torch.cat(outputs, dim=2), getattr(self, '_attn_weights', None)
+        return torch.cat(outputs, dim=2)
 
 
 # ============================================================================
@@ -373,12 +373,6 @@ class DualStageStripeAttention(nn.Module):
 class SpectraformerRectify(nn.Module):
     r"""Global linear attention module using Random Fourier Features (RFF).
 
-    Computes linearized attention in $\mathcal{O}(N \cdot F \cdot D)$ time complexity:
-        $$\text{Attn}(Q, K, V) = \frac{\phi(Q) (\phi(K)^T V)}{\phi(Q) (\phi(K)^T \mathbf{1})}$$
-    where $\phi(x) = \frac{1}{\sqrt{F}} \exp(x W_{rff})$.
-
-    Args:
-        head_dim: Dimension per attention head $d_h$.
         rff_features: Feature mapping dimensionality $F$.
     """
 
@@ -429,7 +423,7 @@ class SpectraformerRectify(nn.Module):
         Z = K_feat.sum(dim=2)
         ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)
         norm = torch.einsum("bhnf,bhf->bhn", Q_feat, Z).unsqueeze(-1)
-        return (ctx / (norm + 1e-5)).to(orig_dtype), getattr(self, '_attn_weights', None)
+        return (ctx / (norm + 1e-5)).to(orig_dtype)
 
 
 # ============================================================================

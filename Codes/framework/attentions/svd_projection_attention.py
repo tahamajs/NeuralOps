@@ -76,7 +76,7 @@ class SVDProjectionLinear(nn.Module):
             torch.Tensor: Output activations of shape `[*, out_features]`.
         """
         Vx = F.linear(x, self.V)
-        return F.linear(Vx, self.U, self.bias), getattr(self, '_attn_weights', None)
+        return F.linear(Vx, self.U, self.bias)
 
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor) -> None:
         """Set precomputed U and V factors."""

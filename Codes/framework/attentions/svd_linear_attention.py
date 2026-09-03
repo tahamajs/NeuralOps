@@ -186,7 +186,7 @@ class SVDLinear(nn.Module):
                 out = out + lora_out
                 if self.bias is not None:
                     out = out + self.bias
-            return out, getattr(self, '_attn_weights', None)
+            return out
 
         # Sequential standard projection
         latent = F.linear(x, self.V)  # [..., rank]
@@ -208,7 +208,7 @@ class SVDLinear(nn.Module):
 
         if self.bias is not None:
             out = out + self.bias
-        return out, getattr(self, '_attn_weights', None)
+        return out
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():
