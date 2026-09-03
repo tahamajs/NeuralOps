@@ -154,9 +154,11 @@ class SpectralMambaAttention(BaseAttention):
         B, N, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k  = self.k_lin(hidden_states).view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k   = self.k_lin(hidden_states).view(B, N, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
         k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
-        v  = self.v_lin(hidden_states).view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v   = self.v_lin(hidden_states).view(B, N, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
         v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim**-0.5)

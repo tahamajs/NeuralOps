@@ -107,10 +107,13 @@ class JambaInfoBlock(BaseAttention):
         B, L, D = x.shape
 
         q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k1 = self.W_k1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k1  = self.W_k1(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k1 = repeat_kv(k1, getattr(self, 'kv_repeat', 1))
         q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k2 = self.W_k2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k2  = self.W_k2(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k2 = repeat_kv(k2, getattr(self, 'kv_repeat', 1))
+        v  = self.W_v(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scale = 1.0 / math.sqrt(self.head_dim)
         scores1 = torch.matmul(q1, k1.transpose(-2, -1)) * scale

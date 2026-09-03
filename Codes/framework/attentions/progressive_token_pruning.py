@@ -35,6 +35,9 @@ class ProgressiveTokenPruning(BaseAttention):
         self.head_dim = self.d_model // self.num_heads
         self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
         self.all_head_size = self.q_out
+        self.all_kv_head_size = getattr(self, 'kv_out', getattr(self, 'all_head_size', 768))
+        self.num_kv_heads = getattr(config, 'num_key_value_heads', getattr(config, 'num_kv_heads', getattr(self, 'num_heads', 1)))
+        self.supports_gqa = True
         self.keep_ratio = keep_ratio
 
         self.q_lin = nn.Linear(self.d_model, self.all_head_size)
@@ -110,9 +113,11 @@ class ProgressiveTokenPruning(BaseAttention):
 
         # Attentive transformation over full sequence
         q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k_tensor  = self.k_lin(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k_tensor   = self.k_lin(x).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
         k_tensor = repeat_kv(k_tensor, getattr(self, 'kv_repeat', 1))
-        v_tensor  = self.v_lin(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k_tensor = repeat_kv(k_tensor, getattr(self, 'kv_repeat', 1))
+        v_tensor   = self.v_lin(x).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
+        v_tensor = repeat_kv(v_tensor, getattr(self, 'kv_repeat', 1))
         v_tensor = repeat_kv(v_tensor, getattr(self, 'kv_repeat', 1))
 
         # Prune keys and values for efficiency

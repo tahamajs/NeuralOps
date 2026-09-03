@@ -61,6 +61,9 @@ class AdaptiveSparseAttention(BaseAttention):
         self.head_dim = self.adapter.head_dim
         self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
         self.all_head_size = self.q_out
+        self.all_kv_head_size = getattr(self, 'kv_out', getattr(self, 'all_head_size', 768))
+        self.num_kv_heads = getattr(config, 'num_key_value_heads', getattr(config, 'num_kv_heads', getattr(self, 'num_heads', 1)))
+        self.supports_gqa = True
         self.kv_head_size = self.adapter.kv_proj_out
         self.default_sparsity: float = float(sparsity_ratio)
 

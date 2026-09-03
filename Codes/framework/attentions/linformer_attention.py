@@ -32,6 +32,9 @@ class LinformerAttention(nn.Module):
         self.head_dim = config.hidden_size // self.num_heads
         self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
         self.all_head_size = self.q_out
+        self.all_kv_head_size = getattr(self, 'kv_out', getattr(self, 'all_head_size', 768))
+        self.num_kv_heads = getattr(config, 'num_key_value_heads', getattr(config, 'num_kv_heads', getattr(self, 'num_heads', 1)))
+        self.supports_gqa = True
 
         self.k_proj_dim = getattr(config, "linformer_k", k if k is not None else getattr(config, "k", 64))
         self.max_seq_len = getattr(config, "max_position_embeddings", max_seq_len if max_seq_len is not None else 512)
