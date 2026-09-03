@@ -84,7 +84,7 @@ class ExpertChoiceMoE(nn.Module):
         prob_mean = F.softmax(logits / 1.0, dim=-1).mean(dim=0)
         self.aux_loss = self.n_experts * torch.sum(prob_mean ** 2)
 
-        return out_flat.view(B, L, D), getattr(self, '_attn_weights', None)
+        return out_flat.view(B, L, D)
 
 
 @ATTENTION_REGISTRY.register("expert_choice_moe")
@@ -174,9 +174,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         k   = self.k_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
         k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
-        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
         v   = self.v_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
-        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
         v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scale = 1.0 / math.sqrt(self.head_dim)
