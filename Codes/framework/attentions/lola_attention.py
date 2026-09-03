@@ -76,16 +76,16 @@ class LowRankCache(nn.Module):
             self._update_step = step
             # Only recompute SVD periodically (every 100 steps) or use subsampled projection
             if step % 50 == 1 or self.low_rank_k_buf.numel() == 0:
-                with torch.no_grad():
+                with torch.no_grad(), torch.autocast("cuda", enabled=False):
                     rk = self.recent_k.float()
                     # Fast top-k principal component via randomized subspace
                     q_proj = torch.randn(rk.size(1), self.low_rank_k, device=rk.device, dtype=torch.float32)
-                    y = torch.matmul(rk, q_proj)
+                    y = torch.matmul(rk, q_proj).float()
                     q_orth, _ = torch.linalg.qr(y)
                     self.low_rank_k_buf = torch.matmul(q_orth, torch.matmul(q_orth.T, rk)).to(self.recent_k.dtype)
                     
                     rv = self.recent_v.float()
-                    y_v = torch.matmul(rv, q_proj)
+                    y_v = torch.matmul(rv, q_proj).float()
                     q_orth_v, _ = torch.linalg.qr(y_v)
                     self.low_rank_v_buf = torch.matmul(q_orth_v, torch.matmul(q_orth_v.T, rv)).to(self.recent_v.dtype)
 
