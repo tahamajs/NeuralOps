@@ -139,7 +139,7 @@ def inject_mla(
         def __init__(self, cfg,
         **kwargs):
             self.hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "d_model", 768))
-            self.num_attention_heads = getattr(cfg, "num_attention_heads", 4)
+            self.num_attention_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "n_head", getattr(cfg, "num_heads", 12)))
             self.dropout = getattr(cfg, "attention_probs_dropout_prob", getattr(cfg, "dropout", 0.1))
             self.mla_rank = rank
 
@@ -171,4 +171,8 @@ def inject_mla(
                 pass
 
     layer.attention = new_attn
+    if old_attn is not None:
+        p = next(old_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
     return new_attn
