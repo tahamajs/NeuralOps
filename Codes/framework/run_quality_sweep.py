@@ -350,10 +350,6 @@ def main():
             if cand.exists():
                 args.dataset_dir = str(cand)
                 break
-    if args.parent_checkpoint is None:
-        cand_parent = Path("D:/SVD_Project/results/qwen3_5_sst2_full_sweep/finetuned_model.pt")
-        if cand_parent.exists():
-            args.parent_checkpoint = str(cand_parent)
     ds = load_from_disk(args.dataset_dir); train, val = ds["train"], ds["validation"]
     tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True); tokenizer.padding_side = "left"
     if tokenizer.pad_token_id is None: tokenizer.pad_token = tokenizer.eos_token
@@ -391,19 +387,33 @@ def main():
     if args.parent_checkpoint:
         parent_checkpoint = Path(args.parent_checkpoint)
     else:
-        # Dynamically discover parent baseline checkpoint for any family and dataset
+        # Dynamically discover parent baseline checkpoint specifically matching current model family and dataset
         candidates = [
             out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
             out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt",
-            out.parent / f"qwen3_5_{args.dataset}_lora_baseline" / "finetuned_model.pt",
-            out.parent / f"qwen3_5_{args.dataset}_full_sweep" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_full_sweep" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
         ]
-        parent_checkpoint = next((c for c in candidates if c.exists()), candidates[0])
+        parent_checkpoint = next((c for c in candidates if c.exists()), Path("non_existent_placeholder.pt"))
+
+    def _safe_load_state(target_model: nn.Module, raw_state: Any) -> None:
+        st = raw_state.get("state_dict", raw_state) if isinstance(raw_state, dict) else raw_state
+        model_st = target_model.state_dict()
+        filtered_st = {}
+        for k, v in st.items():
+            if k in model_st:
+                if hasattr(v, "shape") and hasattr(model_st[k], "shape"):
+                    if v.shape == model_st[k].shape:
+                        filtered_st[k] = v
+                    else:
+                        LOG.warning("Skipping checkpoint parameter '%s' due to shape mismatch: %s vs current model %s",
+                                    k, list(v.shape), list(model_st[k].shape))
+                else:
+                    filtered_st[k] = v
+        target_model.load_state_dict(filtered_st, strict=False)
 
     # Auto-detect if checkpoint or parent_checkpoint is a LoRA checkpoint
-    is_lora_mode = (args.finetune_mode == "lora" or family == "qwen3_5")
+    is_lora_mode = (args.finetune_mode == "lora" or family in ("qwen3_5", "qwen"))
     active_ckpt = checkpoint if checkpoint.exists() else (parent_checkpoint if parent_checkpoint.exists() else None)
     if active_ckpt is not None:
         try:
@@ -419,7 +429,6 @@ def main():
     # If LoRA mode is requested or detected, apply LoRA wrappers to the backbone
     if is_lora_mode:
         from framework.utils.lora import apply_lora, save_lora_weights, load_lora_weights, find_all_linear_submodule_names
-        # Dynamically discover all linear submodules from the base model, excluding task heads
         dynamic_targets = find_all_linear_submodule_names(base)
         default_cli_targets = "q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj"
         if args.lora_target_modules != default_cli_targets:
@@ -434,7 +443,6 @@ def main():
             target_modules=target_mods,
         )
         base.to(device)
-        # Ensure classification head is trainable
         head = next((getattr(base, attr, None) for attr in
                      ("score", "classifier", "classification_head", "classification_head.dense")
                      if getattr(base, attr, None) is not None), None)
@@ -445,17 +453,11 @@ def main():
     if checkpoint.exists():
         LOG.info("Loading cached fine-tuned checkpoint: %s", checkpoint)
         state = torch.load(checkpoint, map_location="cpu", weights_only=False)
-        if isinstance(state, dict) and "state_dict" in state:
-            base.load_state_dict(state["state_dict"], strict=False)
-        else:
-            base.load_state_dict(state, strict=False)
+        _safe_load_state(base, state)
     elif parent_checkpoint.exists():
         LOG.info("Loading shared baseline checkpoint from parent directory: %s", parent_checkpoint)
         state = torch.load(parent_checkpoint, map_location="cpu", weights_only=False)
-        if isinstance(state, dict) and "state_dict" in state:
-            base.load_state_dict(state["state_dict"], strict=False)
-        else:
-            base.load_state_dict(state, strict=False)
+        _safe_load_state(base, state)
     else:
         if args.finetune_steps > 0:
             if args.finetune_mode == "lora":
