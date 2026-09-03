@@ -79,7 +79,7 @@ class LowRankCache(nn.Module):
                 with torch.no_grad():
                     rk = self.recent_k.float()
                     # Fast top-k principal component via randomized subspace
-                    q_proj = torch.randn(rk.size(1), self.low_rank_k, device=rk.device)
+                    q_proj = torch.randn(rk.size(1), self.low_rank_k, device=rk.device, dtype=torch.float32)
                     y = torch.matmul(rk, q_proj)
                     q_orth, _ = torch.linalg.qr(y)
                     self.low_rank_k_buf = torch.matmul(q_orth, torch.matmul(q_orth.T, rk)).to(self.recent_k.dtype)
