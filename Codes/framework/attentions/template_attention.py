@@ -150,7 +150,7 @@ class YourCustomAttention(BaseAttention):
         context = (
             context.permute(0, 2, 1, 3)
             .contiguous()
-            .view(batch_size, seq_len, self.hidden_size)
+            .view(batch_size, seq_len, self.num_heads * self.head_dim)
         )
         output = self.out_proj(context)
 
