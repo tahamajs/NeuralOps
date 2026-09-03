@@ -505,19 +505,6 @@ def main():
             LOG.info(">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
                      n, len(names), name, args.recovery_steps, args.batch_size, active_opt)
             t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
-            if family == "qwen3_5" and name != "full":
-                skip_modules = {
-                    "adaptive_span",     # algorithm requires symmetric MHA
-                    "a3",                # architecture-unaware compressor, keep skipped until fixed
-                }
-                if name in skip_modules:
-                    status, err, path_name = "SKIP_QWEN3_5_INCOMPATIBLE", f"qwen3_5_incompatible_{name}", "unsupported"
-                    row = {"module_name": name, "status": status, "accuracy_pct": 0.0,
-                           "elapsed_s": round(time.monotonic()-t, 2), "error": err,
-                           "path": path_name, "timestamp": datetime.now().isoformat()}
-                    w.writerow(row); f.flush()
-                    LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
-                    continue
 
             support = module_family_support(name).get(family, "unknown")
             if name != "full" and support == "incompatible":
@@ -573,15 +560,6 @@ def main():
             path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
 
             try:
-                if family in {"gpt", "gpt2"} and name in {
-                    "gated_deltanet_block",
-                    "hgrn2_gated_deltanet",
-                    "hgrn2_layer",
-                    "factorised_matrix_state",
-                    "cluster",
-                }:
-                    raise QwenIncompatibleError("causal_autoregressive_incompatible")
-
                 def _run_candidate_pipeline():
                     nonlocal model, injected, path_name, had_nan
                     if name != "full":

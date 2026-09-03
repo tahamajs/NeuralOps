@@ -19,11 +19,11 @@ from framework.utils.model_family import ModelAdapter
 from framework.utils.compat import repeat_kv, maybe_apply_rotary, causal_mask_from_attention_mask
 
 
-@ATTENTION_REGISTRY.register("adaptive_sparse_attention", supports_causal=True, supports_bidirectional=False, supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_sparse", supports_causal=True, supports_bidirectional=False, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_sparse_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_sparse", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class AdaptiveSparseAttention(BaseAttention):
     supports_causal = True
-    supports_bidirectional = False
+    supports_bidirectional = True
     supports_gqa = True
     supports_rope = True
     r"""

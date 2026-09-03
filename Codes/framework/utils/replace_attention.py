@@ -130,13 +130,9 @@ class UniversalAttentionWrapper(nn.Module):
         if self.return_tuple is not None:
             return (first, second) if self.return_tuple else first
 
-        if fam in {"qwen3_5", "qwen", "llama", "mistral"}:
-            if "linear_attn" in self.layer_name:
-                return first
-            return (first, second)
-
-        if is_dec and not kwargs.get("output_attentions", False):
+        if "linear_attn" in self.layer_name:
             return first
+
         return (first, second)
 
     def _forward_t5(
