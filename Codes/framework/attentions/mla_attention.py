@@ -59,6 +59,52 @@ class MLAAttention(nn.Module):
         )
         self.dropout: nn.Dropout = nn.Dropout(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)))
 
+    def copy_weights(self, old_attn: Any) -> None:
+        """Initialize MLA projections from old attention weights via SVD."""
+        from framework.core.adapters import UniversalAdapter
+        with torch.no_grad():
+            # 1. Q projection
+            q_res = UniversalAdapter.get_weight_bias(old_attn, "q")
+            if q_res is not None:
+                w_q, _ = q_res
+                if w_q.shape == self.q_proj.weight.shape:
+                    self.q_proj.weight.data.copy_(w_q.to(self.q_proj.weight.device, self.q_proj.weight.dtype))
+                elif w_q.t().shape == self.q_proj.weight.shape:
+                    self.q_proj.weight.data.copy_(w_q.t().to(self.q_proj.weight.device, self.q_proj.weight.dtype))
+
+            # 2. Output projection
+            o_res = UniversalAdapter.get_weight_bias(old_attn, "o")
+            if o_res is not None:
+                w_o, b_o = o_res
+                if w_o.shape == self.out_proj.weight.shape:
+                    self.out_proj.weight.data.copy_(w_o.to(self.out_proj.weight.device, self.out_proj.weight.dtype))
+                elif w_o.t().shape == self.out_proj.weight.shape:
+                    self.out_proj.weight.data.copy_(w_o.t().to(self.out_proj.weight.device, self.out_proj.weight.dtype))
+                if b_o is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.data.copy_(b_o.to(self.out_proj.bias.device, self.out_proj.bias.dtype))
+
+            # 3. Joint K and V low-rank decomposition via stacked SVD
+            k_res = UniversalAdapter.get_weight_bias(old_attn, "k")
+            v_res = UniversalAdapter.get_weight_bias(old_attn, "v")
+            if k_res is not None and v_res is not None:
+                w_k, _ = k_res
+                w_v, _ = v_res
+                try:
+                    w_k_f = w_k.float()
+                    w_v_f = w_v.float()
+                    if w_k_f.shape[1] == self.hidden_size and w_v_f.shape[1] == self.hidden_size:
+                        w_kv = torch.cat([w_k_f, w_v_f], dim=0)
+                        u_kv, s_kv, vh_kv = torch.linalg.svd(w_kv, full_matrices=False)
+                        r = min(self.rank, s_kv.shape[0], self.kv_down.weight.shape[0], self.k_up.weight.shape[1], self.v_up.weight.shape[1])
+                        self.kv_down.weight.data[:r, :].copy_(vh_kv[:r, :].to(self.kv_down.weight.device, self.kv_down.weight.dtype))
+                        up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)).to(self.k_up.weight.device, self.k_up.weight.dtype)
+                        d_k = w_k_f.shape[0]
+                        d_v = w_v_f.shape[0]
+                        self.k_up.weight.data[:d_k, :r].copy_(up[:d_k, :r])
+                        self.v_up.weight.data[:d_v, :r].copy_(up[d_k:d_k+d_v, :r])
+                except Exception:
+                    pass
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -84,37 +130,17 @@ class MLAAttention(nn.Module):
         Returns:
             Tuple[torch.Tensor, Optional[torch.Tensor]]: Contextualized representation `[Batch, SeqLen, HiddenDim]` and attention probabilities.
         """
-        batch_size, seq_len, hidden_dim = hidden_states.shape
+        batch_size, seq_len, _ = hidden_states.shape
 
-        q_out: torch.Tensor = self.q_proj(hidden_states)
-        expected_qkv = self.num_heads * self.head_dim
-        if q_out.shape[-1] != expected_qkv:
-            import logging as _log
-            _log.getLogger(__name__).error(
-                "MLA DEBUG: q_proj output %s but expected last dim %d "
-                "(num_heads=%d, head_dim=%d, hidden_dim=%d, q_proj.weight=%s)",
-                q_out.shape, expected_qkv, self.num_heads, self.head_dim,
-                hidden_dim, self.q_proj.weight.shape,
-            )
-        q: torch.Tensor = q_out.view(
+        q: torch.Tensor = self.q_proj(hidden_states).view(
             batch_size, seq_len, self.num_heads, self.head_dim
         )
 
         latent: torch.Tensor = self.kv_down(hidden_states)
-        k_raw: torch.Tensor = self.k_up(latent)
-        v_raw: torch.Tensor = self.v_up(latent)
-        if k_raw.shape[-1] != expected_qkv or v_raw.shape[-1] != expected_qkv:
-            import logging as _log
-            _log.getLogger(__name__).error(
-                "MLA DEBUG: k_up output %s, v_up output %s, expected last dim %d "
-                "(k_up.weight=%s, v_up.weight=%s, latent=%s)",
-                k_raw.shape, v_raw.shape, expected_qkv,
-                self.k_up.weight.shape, self.v_up.weight.shape, latent.shape,
-            )
-        k: torch.Tensor = k_raw.view(
+        k: torch.Tensor = self.k_up(latent).view(
             batch_size, seq_len, self.num_heads, self.head_dim
         )
-        v: torch.Tensor = v_raw.view(
+        v: torch.Tensor = self.v_up(latent).view(
             batch_size, seq_len, self.num_heads, self.head_dim
         )
 
@@ -125,11 +151,17 @@ class MLAAttention(nn.Module):
         scores: torch.Tensor = torch.matmul(
             q, k.transpose(-2, -1)
         ) / math.sqrt(self.head_dim)
+
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                scores = scores + (1.0 - attention_mask[:, None, None, :]) * -10000.0
-            else:
-                scores = scores + attention_mask.unsqueeze(1)
+                scores = scores + (1.0 - attention_mask[:, None, None, :].to(scores.dtype)) * -10000.0
+            elif attention_mask.dim() == 3:
+                scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
+            elif attention_mask.dim() == 4:
+                if attention_mask.dtype == torch.bool:
+                    scores = scores.masked_fill(~attention_mask, -10000.0)
+                else:
+                    scores = scores + attention_mask.to(scores.dtype)
 
         attn_probs: torch.Tensor = torch.softmax(scores, dim=-1)
         attn_probs = self.dropout(attn_probs)
@@ -138,15 +170,8 @@ class MLAAttention(nn.Module):
         context = (
             context.transpose(1, 2)
             .contiguous()
-            .view(batch_size, seq_len, expected_qkv)
+            .view(batch_size, seq_len, self.num_heads * self.head_dim)
         )
-        if context.shape[-1] != self.out_proj.in_features:
-            import logging as _log
-            _log.getLogger(__name__).error(
-                "MLA DEBUG: context %s but out_proj expects in_features=%d "
-                "(out_proj.weight=%s)",
-                context.shape, self.out_proj.in_features, self.out_proj.weight.shape,
-            )
         out: torch.Tensor = self.out_proj(context)
 
         if output_attentions:
