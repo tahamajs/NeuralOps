@@ -307,6 +307,8 @@ def main():
     ap.add_argument("--learning_rate", type=float, default=2e-4)
     ap.add_argument("--precision", choices=("fp32", "fp16"), default="fp16")
     ap.add_argument("--seq_len", type=int, default=128)
+    ap.add_argument("--config", type=str, default=None,
+                    help="Path to YAML configuration file (e.g. configs/qwen3_5.yaml)")
     ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--strict_compat", action="store_true",
@@ -314,6 +316,21 @@ def main():
     ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown"), default="auto")
     ap.add_argument("--parent_checkpoint", type=str, default=None,
                     help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
+    
+    # Pre-parse to check if a config file is provided
+    pre_args, remaining_argv = ap.parse_known_args()
+    if pre_args.config and Path(pre_args.config).exists():
+        import yaml
+        with open(pre_args.config, "r", encoding="utf-8") as yf:
+            cfg_dict = yaml.safe_load(yf) or {}
+        # Set config values as parser defaults so CLI flags can still override them
+        for k, v in cfg_dict.items():
+            if k in ap._option_string_actions:
+                continue
+            # Map known keys
+            if hasattr(pre_args, k):
+                ap.set_defaults(**{k: v})
+
     args = ap.parse_args(); logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     torch.manual_seed(args.seed)
     torch.set_num_threads(4)
