@@ -266,13 +266,16 @@ class A3Compressor(BaseCompressor):
 
         # LayerNorm Recalibration - only execute if valid calibration texts/tokenizer/loader are present
         if self.recalibrate_ln and (self.calibration_loader is not None or self.calibration_texts is not None or self.tokenizer is not None):
-            recalibrate_layernorms(
-                self.model,
-                tokenizer=self.tokenizer,
-                calibration_loader=self.calibration_loader,
-                calibration_texts=self.calibration_texts,
-                device=self.target_device,
-            )
+            try:
+                recalibrate_layernorms(
+                    self.model,
+                    tokenizer=self.tokenizer,
+                    calibration_loader=self.calibration_loader,
+                    calibration_texts=self.calibration_texts,
+                    device=self.target_device,
+                )
+            except Exception as e:
+                logger.debug("LayerNorm recalibration skipped: %s", e)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()

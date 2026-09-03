@@ -37,7 +37,7 @@ class RotaryEmbedding(nn.Module):
         L = x.shape[2]
         cos = self.cos_cached[offset : offset + L].to(x.dtype).unsqueeze(0).unsqueeze(0)
         sin = self.sin_cached[offset : offset + L].to(x.dtype).unsqueeze(0).unsqueeze(0)
-        return (x * cos) + (rotate_half(x) * sin), getattr(self, '_attn_weights', None)
+        return (x * cos) + (rotate_half(x) * sin)
 
 
 @ATTENTION_REGISTRY.register("halo_regla")

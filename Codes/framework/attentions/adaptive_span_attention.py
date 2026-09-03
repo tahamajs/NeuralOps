@@ -12,8 +12,11 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=False)
+@ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class AdaptiveSpanAttention(BaseAttention):
+    supports_causal: bool = True
+    supports_bidirectional: bool = True
+    supports_gqa: bool = True
     r"""
     Adaptive Span Attention (Sukhbaatar et al., 2019).
 
@@ -42,8 +45,11 @@ class AdaptiveSpanAttention(BaseAttention):
         super().__init__(config, rank)
         self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", 4))
         hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", 768))
-        self.head_dim: int = hidden_size // self.num_heads
-        self.all_head_size: int = self.num_heads * self.head_dim
+        self.head_dim: int = getattr(config, "head_dim", hidden_size // max(1, self.num_heads))
+        self.all_head_size: int = getattr(config, "q_proj_out", self.num_heads * self.head_dim)
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+        self.kv_head_size: int = getattr(config, "kv_proj_out", self.num_kv_heads * self.head_dim)
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.max_span: int = getattr(config, "max_span", max_span)
         self.is_decoder: bool = getattr(config, "is_decoder", False)
         self.has_relative_attention_bias: bool = False
@@ -52,8 +58,8 @@ class AdaptiveSpanAttention(BaseAttention):
         self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(hidden_size, getattr(self, "all_kv_head_size", self.all_head_size))
-        self.v_proj = nn.Linear(hidden_size, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.k_proj = nn.Linear(hidden_size, self.kv_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.kv_head_size)
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
         # Avoid saturation: initialize to 0 -> span ~ max_span / 2
@@ -159,8 +165,11 @@ class AdaptiveSpanAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2)
-        K = self.k_proj(kv_input).view(B, N_k, H, d).transpose(1, 2)
-        V = self.v_proj(kv_input).view(B, N_k, H, d).transpose(1, 2)
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
+        if self.kv_repeat > 1:
+            K = K.unsqueeze(2).expand(-1, -1, self.kv_repeat, -1, -1).reshape(B, H, N_k, d)
+            V = V.unsqueeze(2).expand(-1, -1, self.kv_repeat, -1, -1).reshape(B, H, N_k, d)
 
         scale = d ** -0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N_q, N_k]

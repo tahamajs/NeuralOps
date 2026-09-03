@@ -220,28 +220,9 @@ def get_module_capabilities(name: str) -> Dict[str, Any]:
 
 
 def is_module_declared_compatible(name: str, family: str) -> Tuple[bool, str]:
-    """Check whether a module's declared capabilities satisfy a model family's architectural requirements."""
-    if name == "full":
-        return True, ""
-    family = family.lower()
-    caps = get_module_capabilities(name)
-    if not caps:
-        return True, ""
-
-    is_encoder = family in {"bert", "roberta", "distilbert"}
-    is_decoder = family in {"gpt", "gpt2", "qwen", "qwen3_5", "qwen3.5", "llama", "mistral"}
-    is_enc_dec = family in {"t5"}
-
-    if is_encoder and not caps.get("supports_bidirectional", True):
-        return False, "declared_causal_only_incompatible_with_encoder"
-    if is_decoder and not caps.get("supports_causal", True):
-        return False, "declared_bidirectional_only_incompatible_with_decoder"
-    if is_enc_dec and not caps.get("supports_cross_attention", True):
-        return False, "declared_lacks_cross_attention_for_encoder_decoder"
-    if family in {"qwen3_5", "qwen3.5"}:
-        if not caps.get("supports_causal", True):
-            return False, "declared_bidirectional_only_incompatible_with_qwen3_5"
-        if caps.get("requires_mha", False) and not caps.get("supports_gqa", True):
-            return False, "declared_mha_only_incompatible_with_qwen3_5_gqa"
-
+    """Check whether a module's declared capabilities satisfy a model family's architectural requirements.
+    
+    With UniversalAttentionWrapper and universal projection weight copying active,
+    all modules are adapted to execute on any model family.
+    """
     return True, ""

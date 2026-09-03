@@ -26,7 +26,7 @@ except Exception:
         def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
             x1, x2 = self.in_proj(x).chunk(2, dim=-1)
             y = F.silu(x1) * x2
-            return self.out_proj(y), getattr(self, '_attn_weights', None)
+            return self.out_proj(y)
 
 
 @dataclass
@@ -56,7 +56,7 @@ class SpectralMamba(nn.Module):
         if isinstance(out, tuple):
             out = out[0]
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
-        return out * gate, getattr(self, '_attn_weights', None)
+        return out * gate
 
 
 @ATTENTION_REGISTRY.register("spectral_mamba")
@@ -179,6 +179,8 @@ class SpectralMambaAttention(BaseAttention):
 
         # Spectral Mamba stream
         mamba_out = self.spectral_mamba(hidden_states)
+        if isinstance(mamba_out, tuple):
+            mamba_out = mamba_out[0]
 
         # Adaptive gating
         g = torch.sigmoid(self.gate(hidden_states))  # (B, N, 1)
