@@ -137,10 +137,9 @@ class DirectSVDEncoderLayer(nn.Module):
         ff_out = self.dropout(ff_out)
         hidden_states = residual + ff_out
 
-        outputs = (hidden_states,)
         if output_attentions:
-            outputs = outputs + (None,)
-        return outputs
+            return hidden_states, None
+        return hidden_states
 
 
 @COMPRESSOR_REGISTRY.register("hybrid_svd")
@@ -211,6 +210,9 @@ class HybridSVDCompressor(BaseCompressor):
                 if h_size is None and hasattr(module, "intermediate") and hasattr(module.intermediate, "dense"):
                     h_size = module.intermediate.dense.in_features
                 new_layer = DirectSVDEncoderLayer(config=cfg, hidden_size=h_size, svd_rank=self.svd_rank)
+                orig_param = next(module.parameters(), None)
+                if orig_param is not None:
+                    new_layer.to(device=orig_param.device, dtype=orig_param.dtype)
                 setattr(parent, child_name, new_layer)
                 replaced_count += 1
 
