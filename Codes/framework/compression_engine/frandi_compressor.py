@@ -41,10 +41,10 @@ class FRanDILinear(nn.Module):
         self.out_features = out_features
         self.rank = min(rank, in_features, out_features)
 
-        self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        A_init = torch.empty(self.rank, in_features, dtype=torch.float32, device=device)
+        nn.init.orthogonal_(A_init)
+        self.A = nn.Parameter(A_init.to(dtype=dtype))
         self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-
-        nn.init.orthogonal_(self.A)
         nn.init.xavier_uniform_(self.B)
 
         if bias:
