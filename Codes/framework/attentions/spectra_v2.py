@@ -46,7 +46,7 @@ class SimpleRFFKernel(nn.Module):
             p = torch.matmul(x, self.proj.to(x.dtype))
             return torch.cat([torch.cos(p), torch.sin(p)], dim=-1) / (
                 self.proj.size(1) ** 0.25
-            ), getattr(self, '_attn_weights', None)
+            )
 
         return rff(q), rff(k)
 

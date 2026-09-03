@@ -177,7 +177,7 @@ class FactorisedMatrixState(BaseAttention):
             def _scan_fn(q_, k_, v_, decay_, mask_):
                 yf = self._matrix_scan(q_, k_, v_, decay_, mask=mask_, reverse=False)
                 yb = self._matrix_scan(q_, k_, v_, decay_, mask=mask_, reverse=True)
-                return 0.5 * (yf + yb), getattr(self, '_attn_weights', None)
+                return 0.5 * (yf + yb)
             y = cp.checkpoint(_scan_fn, q, k, v, decay, mask_bool, use_reentrant=False)
         else:
             y_fwd = self._matrix_scan(q, k, v, decay, mask=mask_bool, reverse=False)
