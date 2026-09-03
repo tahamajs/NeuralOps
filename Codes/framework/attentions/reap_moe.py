@@ -197,9 +197,7 @@ class REAPMoEAttention(BaseAttention):
         q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         k   = self.k_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
         k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
-        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
         v   = self.v_lin(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
-        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
         v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scale = 1.0 / math.sqrt(self.head_dim)

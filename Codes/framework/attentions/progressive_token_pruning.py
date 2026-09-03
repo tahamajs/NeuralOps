@@ -115,9 +115,7 @@ class ProgressiveTokenPruning(BaseAttention):
         q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         k_tensor   = self.k_lin(x).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
         k_tensor = repeat_kv(k_tensor, getattr(self, 'kv_repeat', 1))
-        k_tensor = repeat_kv(k_tensor, getattr(self, 'kv_repeat', 1))
         v_tensor   = self.v_lin(x).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
-        v_tensor = repeat_kv(v_tensor, getattr(self, 'kv_repeat', 1))
         v_tensor = repeat_kv(v_tensor, getattr(self, 'kv_repeat', 1))
 
         # Prune keys and values for efficiency
