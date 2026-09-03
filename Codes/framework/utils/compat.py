@@ -121,7 +121,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             trainable_params.append(param)
         elif name.startswith("score.") or name.startswith("classifier.") or any(h in n_low for h in ("score.", "classifier.", "classification_head")):
             trainable_params.append(param)
-        elif any(tag in n_low for tag in (".inner.", "attention.inner", "self_attn.inner")):
+        elif any(tag in n_low for tag in (".inner.", "attention.", "self_attn.", ".attn.")):
             trainable_params.append(param)
 
     for name, param in model.named_parameters():
