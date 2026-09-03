@@ -15,6 +15,7 @@ import math
 from typing import Any, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -134,7 +135,7 @@ class AdaptiveSVDLinear(nn.Module):
             out = out + F.linear(Bx, self.A)
         if self.bias is not None:
             out = out + self.bias
-        return out
+        return out, getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("adaptive_svd_attn", supports_gqa=True)

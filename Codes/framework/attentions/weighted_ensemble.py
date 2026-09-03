@@ -29,6 +29,7 @@ from typing import List
 
 import numpy as np
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -79,7 +80,7 @@ class TaskAwareAttention(nn.Module):
 
         # Weighted sum
         weighted = (all_logits * weights.unsqueeze(-1).unsqueeze(-1)).sum(dim=0)
-        return weighted
+        return weighted, getattr(self, '_attn_weights', None)
 
 
 class SmartWeightedEnsemble:

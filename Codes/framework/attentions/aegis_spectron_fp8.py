@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -88,7 +89,7 @@ class SpectronSpectralEntropyRouter(nn.Module):
 
         c = self.costs.to(dtype=H_b.dtype, device=X.device)
         logits = (H_b - self.lam * c) / self.tau
-        return F.softmax(logits, dim=-1)
+        return F.softmax(logits, dim=-1), getattr(self, '_attn_weights', None)
 
 
 def fp8_cast_simulate(x: torch.Tensor) -> torch.Tensor:
@@ -140,8 +141,11 @@ class AegisSpectronFP8Attention(BaseAttention):
         self.hidden_size = config.hidden_size
         self.num_kv_heads = getattr(config, "num_key_value_heads", self.num_heads)
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.all_head_size = self.num_heads * self.head_dim
-        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
+        self.all_head_size = self.q_out
+        self.all_kv_head_size = getattr(self, 'kv_out', getattr(self, 'all_head_size', 768))
+        self.num_kv_heads = getattr(config, 'num_key_value_heads', getattr(config, 'num_kv_heads', self.num_heads))
+        self.supports_gqa = True
         self.supports_gqa = True
         self.router = SpectronSpectralEntropyRouter(config)
 

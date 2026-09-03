@@ -96,6 +96,21 @@ class UniversalAdapter:
             if idx < len(children_with_weight):
                 return _extract(children_with_weight[idx][1])
 
+
+        # 5. Fallback for Fused GPT-2 c_attn
+        if proj in ('q', 'k', 'v') and hasattr(old_attn, 'c_attn'):
+            fused_result = _extract(old_attn.c_attn)
+            if fused_result is not None:
+                w, b = fused_result
+                split_w = w.size(0) // 3
+                split_b = b.size(0) // 3 if b is not None else 0
+                if proj == 'q':
+                    return w[:split_w, :], (b[:split_b] if b is not None else None)
+                elif proj == 'k':
+                    return w[split_w:2*split_w, :], (b[split_b:2*split_b] if b is not None else None)
+                elif proj == 'v':
+                    return w[2*split_w:, :], (b[2*split_b:] if b is not None else None)
+
         raise ValueError(f"Could not extract '{proj}' projection weights from {type(old_attn).__name__}")
 
     @staticmethod

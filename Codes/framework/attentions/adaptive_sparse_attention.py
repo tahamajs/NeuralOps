@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 from typing import Any, Optional, Tuple, Union
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -58,7 +59,8 @@ class AdaptiveSparseAttention(BaseAttention):
         self.num_key_value_heads = self.adapter.num_key_value_heads
         hidden_size = self.adapter.hidden_size
         self.head_dim = self.adapter.head_dim
-        self.all_head_size = self.adapter.q_proj_out
+        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
+        self.all_head_size = self.q_out
         self.kv_head_size = self.adapter.kv_proj_out
         self.default_sparsity: float = float(sparsity_ratio)
 

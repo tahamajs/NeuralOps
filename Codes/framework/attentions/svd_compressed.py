@@ -29,6 +29,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -317,28 +318,28 @@ class SVDCompressedAttention(BaseAttention):
             out = self.q_up(self.q_down(x))
             if self.add_sparse:
                 out = out + F.linear(x, self.q_sparse_weight)
-            return out
+            return out, getattr(self, '_attn_weights', None)
 
         def proj_k(x: torch.Tensor) -> torch.Tensor:
             """Proj k."""
             out = self.k_up(self.k_down(x))
             if self.add_sparse:
                 out = out + F.linear(x, self.k_sparse_weight)
-            return out
+            return out, getattr(self, '_attn_weights', None)
 
         def proj_v(x: torch.Tensor) -> torch.Tensor:
             """Proj v."""
             out = self.v_up(self.v_down(x))
             if self.add_sparse:
                 out = out + F.linear(x, self.v_sparse_weight)
-            return out
+            return out, getattr(self, '_attn_weights', None)
 
         def proj_o(x: torch.Tensor) -> torch.Tensor:
             """Proj o."""
             out = self.o_up(self.o_down(x))
             if self.add_sparse:
                 out = out + F.linear(x, self.o_sparse_weight)
-            return out
+            return out, getattr(self, '_attn_weights', None)
 
         Q = proj_q(hidden_states)
         K = proj_k(hidden_states)

@@ -11,6 +11,7 @@ import math
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -73,7 +74,7 @@ class FactorisedSVDLoRAProjection(nn.Module):
         svd_term = torch.matmul(svd_term, self.U.t())
         lora_term = torch.matmul(x, self.lora_A.t())
         lora_term = torch.matmul(lora_term, self.lora_B.t())
-        return svd_term + lora_term + self.bias
+        return svd_term + lora_term + self.bias, getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("nasc")

@@ -8,6 +8,7 @@ enabling uncertainty-calibrated context forgetting and pretrained weight transfe
 from typing import Any, Optional, Tuple, Union
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 

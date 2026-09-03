@@ -9,6 +9,7 @@ import math
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -23,7 +24,7 @@ class GatedDeltaNetLayer(nn.Module):
         self.net = nn.Linear(d_model, d_model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.net(x)
+        return self.net(x), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("goldfinch_ahn")

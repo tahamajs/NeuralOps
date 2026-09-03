@@ -11,6 +11,7 @@ import math
 from typing import Any, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -47,7 +48,8 @@ class LEKAV3Attention(BaseAttention):
         self.num_attention_heads = getattr(config, "num_attention_heads", 4)
         hidden_size = getattr(config, "hidden_size", 768)
         self.attention_head_size = hidden_size // self.num_attention_heads if self.num_attention_heads > 0 else 64
-        self.all_head_size = self.num_attention_heads * self.attention_head_size
+        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
+        self.all_head_size = self.q_out
         self.head_dim = self.attention_head_size
         self.layer_idx = layer_idx
 

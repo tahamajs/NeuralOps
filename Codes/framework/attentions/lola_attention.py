@@ -2,6 +2,7 @@ import math
 from typing import Any, Dict, Optional, Tuple
 
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -153,7 +154,7 @@ class LowRankLinear(nn.Module):
         out = F.linear(Vx, self.U)
         if self.bias is not None:
             out = out + self.bias
-        return out
+        return out, getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("lola_attn")

@@ -5,6 +5,7 @@ HymbaTransX: Hybrid Differential Transformer & State Space Model Block.
 import math
 from typing import Any, Dict, Optional, Tuple
 import torch
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -46,7 +47,7 @@ class HeadRoPE(nn.Module):
         x_odd = x[..., 1::2]
         rot_even = x_even * cos[..., 0::2] - x_odd * sin[..., 0::2]
         rot_odd = x_odd * cos[..., 0::2] + x_even * sin[..., 0::2]
-        return torch.stack((rot_even, rot_odd), dim=-1).flatten(-2)
+        return torch.stack((rot_even, rot_odd), dim=-1).flatten(-2), getattr(self, '_attn_weights', None)
 
 
 @ATTENTION_REGISTRY.register("hymba_transx")
