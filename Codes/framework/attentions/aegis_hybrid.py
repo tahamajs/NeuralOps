@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
@@ -58,7 +57,7 @@ class FactorizedLinear(nn.Module):
         return self.lin2.out_features
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.lin2(self.lin1(x)), getattr(self, '_attn_weights', None)
+        return self.lin2(self.lin1(x))
 
 
 @ATTENTION_REGISTRY.register("aegis_hybrid")
@@ -302,7 +301,7 @@ class AegisHybridAttention(nn.Module):
         B, N, H_dim = hidden_states.shape
 
         def lr(p1: nn.Linear, p2: nn.Linear, x: torch.Tensor) -> torch.Tensor:
-            return p2(p1(x)), getattr(self, '_attn_weights', None)
+            return p2(p1(x))
 
         Q = lr(self.q_proj1, self.q_proj2, hidden_states).view(B, N, self.num_heads, self.head_dim)
         K = lr(self.k_proj1, self.k_proj2, hidden_states).view(B, N, self.num_kv_heads, self.head_dim)
@@ -354,7 +353,7 @@ class AegisHybridAttention(nn.Module):
 
         # ============== 2. Global linear attention ==============
         def phi(x: torch.Tensor) -> torch.Tensor:
-            return F.elu(x) + 1.0, getattr(self, '_attn_weights', None)
+            return F.elu(x) + 1.0
 
         if self.prune_gate is not None:
             keep = torch.sigmoid(self.prune_gate(hidden_states))

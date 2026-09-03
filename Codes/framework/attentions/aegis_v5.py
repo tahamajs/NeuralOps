@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
@@ -102,7 +101,7 @@ class FactorisedLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""Performs factorized linear projection: $y = (x W_{\text{down}}^T) W_{\text{up}}^T + b$."""
-        return self.up(self.down(x)), getattr(self, '_attn_weights', None)
+        return self.up(self.down(x))
 
 
 def softpick(x, dim: int = -1, temperature: float = 1.0):

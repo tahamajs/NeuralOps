@@ -9,7 +9,6 @@ and top-k token routing while strictly guaranteeing preservation of the [CLS] to
 from typing import Any, Optional, Tuple
 import math
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -32,7 +31,7 @@ class VariationalSpectralGate(nn.Module):
         eps = torch.randn_like(mu)
         z = mu + eps * torch.exp(torch.clamp(log_sigma, max=5.0))
         g = torch.sigmoid(z)
-        return g, log_sigma
+        return g, mu, log_sigma
 
 
 class HeadGate(nn.Module):
@@ -46,7 +45,7 @@ class HeadGate(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         pooled = x.mean(dim=1)
-        return torch.sigmoid(self.net(pooled)), getattr(self, '_attn_weights', None)
+        return torch.sigmoid(self.net(pooled))
 
 
 class TokenRouter(nn.Module):
@@ -114,7 +113,7 @@ class DynamicLowRankProjector(nn.Module):
         z = torch.matmul(x, self.V)  # [B, k, r]
         z = z * self.S.unsqueeze(0).unsqueeze(0) * gate.unsqueeze(1)
         out = torch.matmul(z, self.U.t()) + self.bias
-        return out, getattr(self, '_attn_weights', None)
+        return out
 
 
 @ATTENTION_REGISTRY.register("vspec")
@@ -206,11 +205,9 @@ class VSpecAttention(BaseAttention):
         K = self.Pk(routed, gk)
         V = self.Pv(routed, gv)
 
-        K  = K.view(B, -1, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
-        K = repeat_kv(K, getattr(self, 'kv_repeat', 1))
+        K = K.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
         Q = Q.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        V  = V.view(B, -1, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
-        V = repeat_kv(V, getattr(self, 'kv_repeat', 1))
+        V = V.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
 
         hg = self.head_gate(hidden_states).unsqueeze(-1).unsqueeze(-1)
 

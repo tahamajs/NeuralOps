@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
@@ -181,7 +180,7 @@ class AegisAttentionV2(nn.Module):
         mask_2d = token_valid
 
         def lr(lin1: nn.Linear, lin2: nn.Linear, x: torch.Tensor) -> torch.Tensor:
-            return lin2(lin1(x)), getattr(self, '_attn_weights', None)
+            return lin2(lin1(x))
 
         Q = lr(self.q_proj1, self.q_proj2, hidden_states).view(B, N, self.num_heads, self.head_dim)
         K = lr(self.k_proj1, self.k_proj2, hidden_states).view(B, N, self.num_kv_heads, self.head_dim)
@@ -222,7 +221,7 @@ class AegisAttentionV2(nn.Module):
 
         # ---- Global linear attention ----
         def phi(x: torch.Tensor) -> torch.Tensor:
-            return F.elu(x) + 1.0, getattr(self, '_attn_weights', None)
+            return F.elu(x) + 1.0
 
         if self.prune_gate is not None:
             keep = torch.sigmoid(self.prune_gate(hidden_states))
