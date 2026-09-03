@@ -131,8 +131,10 @@ class CompressedAttentionLayer(nn.Module):
         q, k, v = qkv.chunk(3, dim=-1)
 
         q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = k.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        v = v.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        k  = k.view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
+        v  = v.view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
 
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(q, k.transpose(-2, -1)) * scale

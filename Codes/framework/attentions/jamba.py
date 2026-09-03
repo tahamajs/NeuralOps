@@ -66,6 +66,9 @@ class Jamba2Block(BaseAttention):
         self.head_dim = d_model // n_heads
         self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
         self.all_head_size = self.q_out
+        self.all_kv_head_size = getattr(self, 'kv_out', getattr(self, 'all_head_size', 768))
+        self.num_kv_heads = getattr(config, 'num_key_value_heads', getattr(config, 'num_kv_heads', getattr(self, 'num_heads', 1)))
+        self.supports_gqa = True
 
         self.q_lin = nn.Linear(d_model, self.all_head_size)
         self.k_lin = nn.Linear(d_model, getattr(self, "all_kv_head_size", self.all_head_size))

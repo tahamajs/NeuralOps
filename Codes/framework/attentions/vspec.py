@@ -206,9 +206,11 @@ class VSpecAttention(BaseAttention):
         K = self.Pk(routed, gk)
         V = self.Pv(routed, gv)
 
-        K = K.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        K  = K.view(B, -1, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        K = repeat_kv(K, getattr(self, 'kv_repeat', 1))
         Q = Q.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        V = V.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        V  = V.view(B, -1, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        V = repeat_kv(V, getattr(self, 'kv_repeat', 1))
 
         hg = self.head_gate(hidden_states).unsqueeze(-1).unsqueeze(-1)
 

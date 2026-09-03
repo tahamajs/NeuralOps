@@ -169,8 +169,10 @@ class SVDLLMV2Attention(BaseAttention):
         V_act = ((hidden_states @ self.value_vh.t()) * self.value_s) @ self.value_u.t() + self.value_bias
 
         Q = Q_act.view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        K = K_act.view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        V = V_act.view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        K  = K_act.view(batch_size, seq_len, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).permute(0, 2, 1, 3)
+        K = repeat_kv(K, getattr(self, 'kv_repeat', 1))
+        V  = V_act.view(batch_size, seq_len, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).permute(0, 2, 1, 3)
+        V = repeat_kv(V, getattr(self, 'kv_repeat', 1))
 
         scale = self.head_dim**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale

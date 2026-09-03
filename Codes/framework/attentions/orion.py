@@ -315,8 +315,10 @@ class ORIONAttention(BaseAttention):
         K_all = self.k_proj(hidden_states)
         V_all = self.v_proj(hidden_states)
         Q_all = Q_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        K_all = K_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        V_all = V_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        K_all  = K_all.view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        K_all = repeat_kv(K_all, getattr(self, 'kv_repeat', 1))
+        V_all  = V_all.view(B, N, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
+        V_all = repeat_kv(V_all, getattr(self, 'kv_repeat', 1))
 
         mask = (
             attention_mask
