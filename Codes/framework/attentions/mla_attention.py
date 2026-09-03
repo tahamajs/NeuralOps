@@ -34,8 +34,10 @@ class MLAAttention(nn.Module):
 
     def __init__(self, config: Any, rank: int = 128) -> None:
         super().__init__()
-        self.num_heads: int = config.num_attention_heads
-        self.head_dim: int = config.hidden_size // self.num_heads
+        self.num_heads: int = getattr(
+            config, "num_attention_heads", getattr(config, "n_heads", getattr(config, "n_head", getattr(config, "num_heads", 12)))
+        )
+        self.head_dim: int = getattr(config, "head_dim", config.hidden_size // max(1, self.num_heads))
         self.rank: int = getattr(config, "mla_rank", rank)
 
         self.q_proj: nn.Linear = nn.Linear(
