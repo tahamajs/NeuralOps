@@ -5,7 +5,6 @@ Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + MoE Attention Block.
 from typing import Any, Optional, Tuple
 import math
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -64,15 +63,11 @@ class Jamba2Block(BaseAttention):
         self.d_model = d_model
         self.n_heads = n_heads
         self.head_dim = d_model // n_heads
-        self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
-        self.all_head_size = self.q_out
-        self.all_kv_head_size = getattr(self, 'kv_out', getattr(self, 'all_head_size', 768))
-        self.num_kv_heads = getattr(config, 'num_key_value_heads', getattr(config, 'num_kv_heads', getattr(self, 'num_heads', 1)))
-        self.supports_gqa = True
+        self.all_head_size = n_heads * self.head_dim
 
         self.q_lin = nn.Linear(d_model, self.all_head_size)
-        self.k_lin = nn.Linear(d_model, getattr(self, "all_kv_head_size", self.all_head_size))
-        self.v_lin = nn.Linear(d_model, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.k_lin = nn.Linear(d_model, self.all_head_size)
+        self.v_lin = nn.Linear(d_model, self.all_head_size)
         self.out_lin = nn.Linear(self.all_head_size, d_model)
 
         self.mamba = SVDMamba(d_model, config=config, rank=rank)

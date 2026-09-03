@@ -9,7 +9,6 @@ import math
 from typing import Any, Optional, Tuple
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -24,7 +23,7 @@ class GatedDeltaNetLayer(nn.Module):
         self.net = nn.Linear(d_model, d_model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.net(x), getattr(self, '_attn_weights', None)
+        return self.net(x)
 
 
 @ATTENTION_REGISTRY.register("goldfinch_ahn")
@@ -126,10 +125,8 @@ class GoldFinchAHNBlock(BaseAttention):
         B, L, D = x.shape
 
         q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k  = self.W_k(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
-        k = repeat_kv(k, getattr(self, 'kv_repeat', 1))
-        v  = self.W_v(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
-        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
+        k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
 
         scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim**-0.5)
 

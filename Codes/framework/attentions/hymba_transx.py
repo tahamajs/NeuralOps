@@ -5,7 +5,6 @@ HymbaTransX: Hybrid Differential Transformer & State Space Model Block.
 import math
 from typing import Any, Dict, Optional, Tuple
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
@@ -47,7 +46,7 @@ class HeadRoPE(nn.Module):
         x_odd = x[..., 1::2]
         rot_even = x_even * cos[..., 0::2] - x_odd * sin[..., 0::2]
         rot_odd = x_odd * cos[..., 0::2] + x_even * sin[..., 0::2]
-        return torch.stack((rot_even, rot_odd), dim=-1).flatten(-2), getattr(self, '_attn_weights', None)
+        return torch.stack((rot_even, rot_odd), dim=-1).flatten(-2)
 
 
 @ATTENTION_REGISTRY.register("hymba_transx")
@@ -122,13 +121,10 @@ class HymbaTransXBlock(BaseAttention):
         B, L, D = x.shape
 
         q1 = self.rope(self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2))
-        k1  = self.rope(self.W_k1(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2))
-        k1 = repeat_kv(k1, getattr(self, 'kv_repeat', 1))
+        k1 = self.rope(self.W_k1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2))
         q2 = self.rope(self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2))
-        k2  = self.rope(self.W_k2(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2))
-        k2 = repeat_kv(k2, getattr(self, 'kv_repeat', 1))
-        v  = self.W_v(x).view(B, L, getattr(self, "num_kv_heads", self.num_heads), self.head_dim).transpose(1, 2)
-        v = repeat_kv(v, getattr(self, 'kv_repeat', 1))
+        k2 = self.rope(self.W_k2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2))
+        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
 
         scale = 1.0 / math.sqrt(self.head_dim)
         scores1 = torch.matmul(q1, k1.transpose(-2, -1)) * scale
