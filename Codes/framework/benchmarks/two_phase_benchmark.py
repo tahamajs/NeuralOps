@@ -21,9 +21,11 @@ import time
 from typing import Any, Dict, List, Optional
 
 WORKDIR = Path(__file__).resolve().parent
-PROJECT_DIR = WORKDIR.parent.parent
+FRAMEWORK_DIR = WORKDIR.parent
+PROJECT_DIR = FRAMEWORK_DIR.parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
 sys.path.insert(0, str(PROJECT_DIR / "Codes"))
+sys.path.insert(0, str(FRAMEWORK_DIR))
 
 logging.basicConfig(
     level=logging.INFO,
