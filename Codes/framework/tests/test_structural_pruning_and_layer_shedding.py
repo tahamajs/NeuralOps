@@ -44,6 +44,7 @@ if _FRAMEWORK_PARENT not in sys.path:
 
 from framework.core.registry import COMPRESSOR_REGISTRY
 import framework.compression_engine
+from framework.compression_engine.admm_compressor import ADMMCompressor
 from framework.compression_engine import (
     
     ADMMPruner,
