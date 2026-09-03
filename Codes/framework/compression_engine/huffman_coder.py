@@ -236,7 +236,7 @@ class HuffmanCompressor(BaseCompressor):
 
                 # Reconstruct simulated weights
                 W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=W.device)
-                module.weight.data = W_rec.to(dtype=module.weight.dtype)
+                module.weight.data = W_rec.to(device=module.weight.device, dtype=module.weight.dtype)
 
         stats = self.get_compression_stats()
         stats["quantize_bits"] = self.quantize_bits
