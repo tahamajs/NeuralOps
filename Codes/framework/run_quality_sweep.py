@@ -630,13 +630,17 @@ def main():
                                 pass
                             torch.cuda.empty_cache()
 
-                # Hard timeout enforcing max timeout (e.g. 120s / 2 minutes) across injection, recovery, and eval
-                # Slow modules get extended timeout on Qwen3.5
+                # Hard timeout enforcing max timeout across injection, recovery, and eval
+                # Slow modules get extended timeout across all model families
                 _SLOW_MODULE_TIMEOUT_OVERRIDES = {
                     "grecodec": 600, "grecodec_compressor": 600,
-                    "mlorq": 400, "lillama": 400, "cr": 300, "huffman": 300,
+                    "mlorq": 500, "lillama": 500, "cr": 400, "huffman": 400,
+                    "primal": 300, "primal_attention": 300,
+                    "fused_svd_kernel": 300, "hla": 300, "nmf": 300,
+                    "rotational_slicegpt": 300, "svd_quant": 300,
+                    "svd_projection": 300,
                 }
-                effective_timeout = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, args.timeout) if family == "qwen3_5" else args.timeout
+                effective_timeout = max(args.timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, args.timeout))
                 pool = ThreadPoolExecutor(max_workers=1)
                 try:
                     future = pool.submit(_run_candidate_pipeline)
