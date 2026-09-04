@@ -29,9 +29,9 @@ class AegisHybridConfig:
     num_attention_heads: int = 12
     head_dim: int = 64
     num_key_value_heads: Optional[int] = None
-    local_window: int = 64
-    rank: int = 64
-    lora_rank: int = 16
+    local_window: int = 128
+    rank: int = 128
+    lora_rank: int = 32
     kernel_feature_dim: int = 128  # Kept for backward compatibility
     dropout: float = 0.1
     use_adaptive_pruning: bool = True
@@ -59,8 +59,8 @@ class FactorizedLinear(nn.Module):
         self,
         in_features_or_lin1: Union[int, nn.Linear],
         out_features_or_lin2: Optional[Union[int, nn.Linear]] = None,
-        rank: int = 64,
-        lora_rank: int = 16,
+        rank: int = 128,
+        lora_rank: int = 32,
         bias: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
@@ -205,10 +205,10 @@ class AegisHybridAttention(BaseAttention):
                 n_heads = num_heads or config.get("num_attention_heads", config.get("num_heads", 12))
                 h_dim = config.get("head_dim", h_size // max(1, n_heads))
                 n_kv_heads = config.get("num_key_value_heads", config.get("num_kv_heads", n_heads))
-                r = rank or config.get("rank", min(64, h_size))
-                l_rank = lora_rank or config.get("lora_rank", config.get("lora_r", 16))
+                r = rank or config.get("rank", min(128, h_size))
+                l_rank = lora_rank or config.get("lora_rank", config.get("lora_r", 32))
                 is_dec = config.get("is_decoder", False)
-                l_win = config.get("local_window", 64)
+                l_win = config.get("local_window", 128)
                 drop = config.get("dropout", 0.1)
                 gate_bias = config.get("gate_init_bias", 1.8)
                 use_prune = config.get("use_adaptive_pruning", True)
@@ -217,10 +217,10 @@ class AegisHybridAttention(BaseAttention):
                 n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
                 h_dim = getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads)
                 n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
-                r = rank or getattr(config, "rank", min(64, h_size)) if config is not None else 64
-                l_rank = lora_rank or getattr(config, "lora_rank", getattr(config, "lora_r", 16)) if config is not None else 16
+                r = rank or getattr(config, "rank", min(128, h_size)) if config is not None else 128
+                l_rank = lora_rank or getattr(config, "lora_rank", getattr(config, "lora_r", 32)) if config is not None else 32
                 is_dec = getattr(config, "is_decoder", False) if config is not None else False
-                l_win = getattr(config, "local_window", getattr(config, "block_size", 64)) if config is not None else 64
+                l_win = getattr(config, "local_window", getattr(config, "block_size", 128)) if config is not None else 128
                 drop = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", 0.1)) if config is not None else 0.1
                 gate_bias = getattr(config, "gate_init_bias", 1.8) if config is not None else 1.8
                 use_prune = getattr(config, "use_adaptive_pruning", getattr(config, "use_gate", True)) if config is not None else True
@@ -249,7 +249,7 @@ class AegisHybridAttention(BaseAttention):
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
         self.local_window: int = config.local_window
         self.rank: int = max(1, min(config.rank, self.hidden_size))
-        self.lora_rank: int = max(1, min(getattr(config, "lora_rank", 16), self.hidden_size))
+        self.lora_rank: int = max(1, min(getattr(config, "lora_rank", 32), self.hidden_size))
         self.dropout: nn.Dropout = nn.Dropout(config.dropout)
         self.is_decoder: bool = config.is_decoder or kwargs.get("is_decoder", False)
         self.is_nested_encoder: bool = False
@@ -649,7 +649,9 @@ class AegisHybridAttention(BaseAttention):
             elif mask.dim() == 3:
                 mask_2d = (mask[:, 0, :] > -5000.0).bool() if mask.shape[1] == 1 else (mask > -5000.0).any(dim=1).bool()
             elif mask.dim() == 4:
-                mask_2d = (mask[:, 0, 0, :] > -5000.0).bool()
+                # In causal masks [B, 1, N, N_k], row i only attends to j <= i.
+                # A key token j is non-padding if it can be attended to by any query:
+                mask_2d = (mask > -5000.0).any(dim=-2).squeeze(1).bool()
 
         # 5. Head mask preparation
         head_mask_tensor: Optional[torch.Tensor] = None
@@ -704,29 +706,33 @@ class AegisHybridAttention(BaseAttention):
 
         local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
 
-        # ============== Branch 2: Global Linear Attention ==============
-        # Transpose to [B, N, H, Dh] for token-wise pruning and masking
-        Q_g = Q.transpose(1, 2)
-        K_g = K.transpose(1, 2)
-        V_g = V.transpose(1, 2)
+        if not is_decoder:
+            # Bidirectional models (e.g. BERT, RoBERTa): disable global linear branch entirely
+            # local_window covers full sentence context, avoiding linear kernel dilution
+            fused = local_out.reshape(B, N, self.all_head_size)
+        else:
+            # ============== Branch 2: Global Linear Attention (Causal) ==============
+            # Transpose to [B, N, H, Dh] for token-wise pruning and masking
+            Q_g = Q.transpose(1, 2)
+            K_g = K.transpose(1, 2)
+            V_g = V.transpose(1, 2)
 
-        if self.prune_gate is not None:
-            keep = torch.sigmoid(self.prune_gate(hidden_states))  # [B, N, H]
-            K_g = K_g * keep.unsqueeze(-1)
-            V_g = V_g * keep.unsqueeze(-1)
+            if self.prune_gate is not None:
+                keep = torch.sigmoid(self.prune_gate(hidden_states))  # [B, N, H]
+                K_g = K_g * keep.unsqueeze(-1)
+                V_g = V_g * keep.unsqueeze(-1)
 
-        if mask_2d is not None:
-            mask_4d_tok = mask_2d.unsqueeze(-1).unsqueeze(-1)  # [B, N, 1, 1]
-            Q_g = Q_g * mask_4d_tok
-            K_g = K_g * mask_4d_tok
-            V_g = V_g * mask_4d_tok
+            if mask_2d is not None:
+                mask_4d_tok = mask_2d.unsqueeze(-1).unsqueeze(-1)  # [B, N, 1, 1]
+                Q_g = Q_g * mask_4d_tok
+                K_g = K_g * mask_4d_tok
+                V_g = V_g * mask_4d_tok
 
-        # Activation feature map phi(x) = ELU(x) + 1.0 computed in FP32 for numerical stability
-        phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
-        phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
-        V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
+            # Activation feature map phi(x) = ELU(x) + 1.0 computed in FP32 for numerical stability
+            phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
+            phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
+            V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
 
-        if is_decoder:
             # Causal global linear attention: tokens at i only aggregate j <= i
             sim = torch.matmul(phi_Q, phi_K.transpose(-2, -1))  # [B, H, N, N_k]
             causal_tril = (idx_q.unsqueeze(1) >= idx_k.unsqueeze(0)).unsqueeze(0).unsqueeze(0)
@@ -738,23 +744,16 @@ class AegisHybridAttention(BaseAttention):
             global_out_h = torch.matmul(sim, V_gf)  # [B, H, N, Dh]
             norm = sim.sum(dim=-1, keepdim=True)    # [B, H, N, 1]
             global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
-        else:
-            # Bidirectional global linear attention: associative O(N * Dh^2) matrix formulation
-            KV = torch.matmul(phi_K.transpose(-2, -1), V_gf)       # [B, H, Dh, Dh]
-            global_out_h = torch.matmul(phi_Q, KV)                 # [B, H, N, Dh]
-            Z = phi_K.sum(dim=-2, keepdim=True)                    # [B, H, 1, Dh]
-            norm = torch.matmul(phi_Q, Z.transpose(-2, -1))        # [B, H, N, 1]
-            global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
 
-        if head_mask_tensor is not None:
-            global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
+            if head_mask_tensor is not None:
+                global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
 
-        global_out = global_out_h.transpose(1, 2)  # [B, N, H, Dh]
+            global_out = global_out_h.transpose(1, 2)  # [B, N, H, Dh]
 
-        # ============== Branch 3: Adaptive Fusion & Output ==============
-        alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # [B, N, H, 1]
-        fused = alpha * local_out + (1.0 - alpha) * global_out                # [B, N, H, Dh]
-        fused = fused.reshape(B, N, self.all_head_size)
+            # ============== Branch 3: Adaptive Fusion & Output ==============
+            alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # [B, N, H, 1]
+            fused = alpha * local_out + (1.0 - alpha) * global_out                # [B, N, H, Dh]
+            fused = fused.reshape(B, N, self.all_head_size)
 
         # Nested encoder handling: skip out_proj if replacing inner SelfAttention in BERT/RoBERTa
         if self.is_nested_encoder:
@@ -799,30 +798,40 @@ def inject_aegis_hybrid(
         h_dim = model_config.get("head_dim", h_size // max(1, n_heads))
         n_kv_heads = model_config.get("num_key_value_heads", model_config.get("num_kv_heads", n_heads))
         is_dec = model_config.get("is_decoder", False)
-        l_rank = model_config.get("lora_rank", 16)
+        l_rank = model_config.get("lora_rank", 32)
     elif model_config is not None:
         h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768))))
         n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12))))
         h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads)))
         n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads))
         is_dec = getattr(model_config, "is_decoder", False)
-        l_rank = getattr(model_config, "lora_rank", 16)
+        l_rank = getattr(model_config, "lora_rank", 32)
     else:
         h_size = 768
         n_heads = 12
         h_dim = 64
         n_kv_heads = 12
         is_dec = False
-        l_rank = 16
+        l_rank = 32
+
+    target_rank = kwargs.get("rank", 128)
+    if comp_config is not None:
+        target_rank = getattr(comp_config, "lora_r", getattr(comp_config, "rank", target_rank))
+    target_lora_rank = kwargs.get("lora_rank", l_rank)
+    if comp_config is not None:
+        target_lora_rank = getattr(comp_config, "lora_rank", target_lora_rank)
+    target_window = kwargs.get("local_window", 128)
+    if comp_config is not None:
+        target_window = getattr(comp_config, "block_size", target_window)
 
     cfg = AegisHybridConfig(
         hidden_size=h_size,
         num_attention_heads=n_heads,
         head_dim=h_dim,
         num_key_value_heads=n_kv_heads,
-        local_window=getattr(comp_config, "block_size", 64) if comp_config is not None else 64,
-        rank=getattr(comp_config, "lora_r", getattr(comp_config, "rank", 64)) if comp_config is not None else 64,
-        lora_rank=getattr(comp_config, "lora_rank", l_rank),
+        local_window=target_window,
+        rank=target_rank,
+        lora_rank=target_lora_rank,
         kernel_feature_dim=getattr(comp_config, "rff_features", 128) if comp_config is not None else 128,
         dropout=getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1,
         use_adaptive_pruning=getattr(comp_config, "use_gate", True) if comp_config is not None else True,
