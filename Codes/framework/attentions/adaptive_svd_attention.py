@@ -19,7 +19,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.attention_mask import apply_attention_mask
+from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.utils.model_family import ModelAdapter
+from framework.utils.compat import maybe_apply_rotary, repeat_kv
 
 
 class AdaptiveSVDLinear(nn.Module):
@@ -137,11 +140,16 @@ class AdaptiveSVDLinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("adaptive_svd_attn", supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_svd", supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_svd_attention", supports_gqa=True)
-class AdaptiveSVDAttention(nn.Module):
+@ATTENTION_REGISTRY.register("adaptive_svd_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_svd", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_svd_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+class AdaptiveSVDAttention(BaseAttention):
     r"""Multi-Head Attention with Adaptive SVD + Residual factorized projections."""
+
+    supports_causal = True
+    supports_bidirectional = True
+    supports_gqa = True
+    supports_rope = True
 
     def __init__(
         self,
@@ -152,14 +160,15 @@ class AdaptiveSVDAttention(nn.Module):
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
-        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", 4))
-        self.hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", 768))
-        self.head_dim: int = self.hidden_size // self.num_heads
-        self.all_head_size: int = self.num_heads * self.head_dim
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
-        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        super().__init__(config)
+        self.adapter = ModelAdapter(config)
+        self.num_heads: int = self.adapter.num_heads
+        self.num_kv_heads: int = self.adapter.num_key_value_heads
+        self.hidden_size: int = self.adapter.hidden_size
+        self.head_dim: int = self.adapter.head_dim
+        self.all_head_size: int = self.adapter.q_proj_out if hasattr(self.adapter, "q_proj_out") else (self.num_heads * self.head_dim)
+        self.kv_head_size: int = self.adapter.kv_proj_out if hasattr(self.adapter, "kv_proj_out") else (self.num_kv_heads * self.head_dim)
+        self.kv_repeat: int = self.adapter.kv_repeat
         self.supports_gqa: bool = True
         self.svd_rank: int = getattr(
             config,
@@ -213,6 +222,7 @@ class AdaptiveSVDAttention(nn.Module):
             ),
         )
         self.dropout = nn.Dropout(dropout_p)
+        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
         self.is_decoder: bool = getattr(config, "is_decoder", False)
         self.has_relative_attention_bias: bool = False
@@ -344,9 +354,40 @@ class AdaptiveSVDAttention(nn.Module):
         Q = self.query(hidden_states).view(B, N_q, H, D).transpose(1, 2)
         K = self.key(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2)
         V = self.value(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2)
+
+        # Apply RoPE (Direct kwargs support for Qwen3.5/Mistral/LLaMA + fallback to maybe_apply_rotary)
+        position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+            cos, sin = position_embeddings[0], position_embeddings[1]
+            def _rotate_half(x):
+                return torch.cat((-x[..., x.shape[-1] // 2:], x[..., :x.shape[-1] // 2]), dim=-1)
+            if cos.dim() == 3:
+                cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
+            while cos.dim() < Q.dim():
+                cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
+            if cos.shape[-2] != Q.shape[-2]:
+                cos, sin = cos[..., :Q.shape[-2], :], sin[..., :Q.shape[-2], :]
+            rotary_dim = cos.shape[-1]
+            if rotary_dim <= Q.shape[-1]:
+                q_rot, q_pass = Q[..., :rotary_dim], Q[..., rotary_dim:]
+                k_rot, k_pass = K[..., :rotary_dim], K[..., rotary_dim:]
+                q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+                k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+                Q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
+                K = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
+            else:
+                cos_cut, sin_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
+                Q = (Q * cos_cut.to(Q.dtype)) + (_rotate_half(Q) * sin_cut.to(Q.dtype))
+                K = (K * cos_cut.to(K.dtype)) + (_rotate_half(K) * sin_cut.to(K.dtype))
+        elif hasattr(self.adapter, "position_embedding") and self.adapter.position_embedding == "rotary":
+            try:
+                Q, K = maybe_apply_rotary(Q, K, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
+            except Exception:
+                pass
+
         if self.kv_repeat > 1:
-            K = K.unsqueeze(3).expand(-1, -1, -1, self.kv_repeat, -1).reshape(B, H, N_k, D)
-            V = V.unsqueeze(3).expand(-1, -1, -1, self.kv_repeat, -1).reshape(B, H, N_k, D)
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
 
         scale = D**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N_q, N_k]
@@ -363,6 +404,11 @@ class AdaptiveSVDAttention(nn.Module):
             scores = scores + position_bias.to(scores.dtype)
         elif mask is not None:
             scores = apply_attention_mask(scores, mask)
+
+        # Explicit Causal Masking for autoregressive decoders
+        if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
+            causal_tril = torch.tril(torch.ones((N_q, N_k), device=hidden_states.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+            scores = scores.masked_fill(~causal_tril, -10000.0)
 
         attn_weights = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(hidden_states.dtype)
         attn_weights = self.dropout(attn_weights)
@@ -382,3 +428,27 @@ class AdaptiveSVDAttention(nn.Module):
             return output, position_bias
         return output, attn_weights if output_attentions else None
 
+
+@ATTENTION_REGISTRY.register("adaptive_svd_attention_inject")
+@ATTENTION_REGISTRY.register("adaptive_svd_inject")
+def inject_adaptive_svd(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module],
+    **kwargs: Any,
+) -> AdaptiveSVDAttention:
+    svd_rank = getattr(comp_config, "svd_rank", 32)
+    residual_rank = getattr(comp_config, "residual_rank", 8)
+    energy_threshold = getattr(comp_config, "energy_threshold", 0.92)
+    new_attn = AdaptiveSVDAttention(
+        config=model_config,
+        svd_rank=svd_rank,
+        residual_rank=residual_rank,
+        energy_threshold=energy_threshold,
+        pretrained_attn=old_attn,
+    )
+    layer.attention = new_attn
+    return new_attn
