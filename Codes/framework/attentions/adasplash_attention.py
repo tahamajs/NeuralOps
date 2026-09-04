@@ -115,6 +115,86 @@ def entmax15_bisect(
     return entmax_bisect(scores, alpha=1.5, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
 
 
+class AdaSplashLinear(nn.Module):
+    r"""
+    Linear projection layer with frozen base weights and trainable residual LoRA adapter.
+
+    Uses `lora_A` and `lora_B` parameter names so recovery optimizers and LoRA filters
+    (such as get_recovery_params) register them automatically as trainable parameters.
+    Base weights and biases are frozen to preserve pretrained representations.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        lora_rank: int = 16,
+        bias: bool = True,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.in_features: int = in_features
+        self.out_features: int = out_features
+        self.lora_rank: int = min(lora_rank, min(in_features, out_features))
+
+        factory_kwargs = {"dtype": dtype, "device": device}
+
+        # Base weights - frozen to maintain pretrained stability
+        self.weight: nn.Parameter = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs),
+            requires_grad=False,
+        )
+
+        if bias:
+            self.bias: Optional[nn.Parameter] = nn.Parameter(
+                torch.empty(out_features, **factory_kwargs),
+                requires_grad=False,
+            )
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_rank > 0:
+            self.lora_B: Optional[nn.Parameter] = nn.Parameter(
+                torch.empty((out_features, self.lora_rank), **factory_kwargs)
+            )
+            self.lora_A: Optional[nn.Parameter] = nn.Parameter(
+                torch.empty((self.lora_rank, in_features), **factory_kwargs)
+            )
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        with torch.no_grad():
+            if self.weight.dtype in (torch.float16, torch.bfloat16):
+                w_fp32 = torch.empty_like(self.weight, dtype=torch.float32, device="cpu")
+                nn.init.kaiming_uniform_(w_fp32, a=math.sqrt(5))
+                self.weight.copy_(w_fp32.to(dtype=self.weight.dtype, device=self.weight.device))
+            else:
+                nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+
+            if self.bias is not None:
+                nn.init.zeros_(self.bias)
+
+            if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+                if self.lora_B.dtype in (torch.float16, torch.bfloat16):
+                    b_fp32 = torch.empty_like(self.lora_B, dtype=torch.float32, device="cpu")
+                    nn.init.kaiming_uniform_(b_fp32, a=math.sqrt(5))
+                    self.lora_B.copy_(b_fp32.to(dtype=self.lora_B.dtype, device=self.lora_B.device))
+                else:
+                    nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_A)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+        return out
+
+
 @ATTENTION_REGISTRY.register("adasplash", supports_causal=True, supports_bidirectional=True, supports_gqa=True, supports_rope=True)
 @ATTENTION_REGISTRY.register("adasplash_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True, supports_rope=True)
 class AdaSplashAttention(BaseAttention):
@@ -154,6 +234,8 @@ class AdaSplashAttention(BaseAttention):
         self.alpha: float = float(getattr(config, "alpha", kwargs.get("alpha", alpha)))
         self.n_iter: int = n_iter
         self.splash_radius: int = int(getattr(config, "splash_radius", kwargs.get("splash_radius", splash_radius)))
+        lora_rank_cfg = getattr(config, "lora_rank", getattr(config, "residual_rank", getattr(config, "rank", kwargs.get("lora_rank", kwargs.get("rank", 16)))))
+        self.lora_rank: int = int(lora_rank_cfg) if lora_rank_cfg is not None else 16
         self.num_heads: int = self.adapter.num_heads
         self.num_kv_heads: int = self.adapter.num_key_value_heads
         self.hidden_size: int = self.adapter.hidden_size
@@ -162,10 +244,10 @@ class AdaSplashAttention(BaseAttention):
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = self.adapter.kv_repeat
 
-        self.q_proj = nn.Linear(self.hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(self.hidden_size, self.kv_head_size)
-        self.v_proj = nn.Linear(self.hidden_size, self.kv_head_size)
-        self.out_proj = nn.Linear(self.all_head_size, self.hidden_size)
+        self.q_proj = AdaSplashLinear(self.hidden_size, self.all_head_size, lora_rank=self.lora_rank)
+        self.k_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank)
+        self.v_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank)
+        self.out_proj = AdaSplashLinear(self.all_head_size, self.hidden_size, lora_rank=self.lora_rank)
 
         dropout_p = getattr(
             config,
@@ -322,6 +404,20 @@ class AdaSplashAttention(BaseAttention):
                     target.weight.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w[:min(out_d, src_out), :min(in_d, src_in)])
                     if b is not None and target.bias is not None:
                         target.bias.data[:min(len(target.bias), len(b))].copy_(b[:min(len(target.bias), len(b))])
+                    if getattr(target, "lora_A", None) is not None:
+                        nn.init.zeros_(target.lora_A)
+            elif proj == "o" and is_nested_encoder:
+                with torch.no_grad():
+                    if target.weight.shape[0] == target.weight.shape[1]:
+                        nn.init.eye_(target.weight)
+                    else:
+                        nn.init.zeros_(target.weight)
+                        min_d = min(target.weight.shape[0], target.weight.shape[1])
+                        target.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+                    if target.bias is not None:
+                        nn.init.zeros_(target.bias)
+                    if getattr(target, "lora_A", None) is not None:
+                        nn.init.zeros_(target.lora_A)
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
@@ -420,24 +516,25 @@ class AdaSplashAttention(BaseAttention):
             logits = logits + position_bias.to(logits.dtype)
 
         # Explicit Causal Masking for autoregressive decoders
-        if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
+        is_decoder = (
+            self.is_decoder
+            or getattr(self.config, "is_decoder", False)
+            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+        )
+        if is_decoder:
             causal_tril = torch.tril(torch.ones((L_q, L_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             logits = logits.masked_fill(~causal_tril, -10000.0)
 
         # Apply Local Splash Radius Masking
-        # Retains local tokens within window radius W while heavily penalizing tokens outside the window
-        if self.splash_radius > 0 and not is_cross_attention and L_k > self.splash_radius:
+        # Retains local tokens within window radius W while heavily penalizing tokens outside the window.
+        # Applied exclusively to autoregressive decoders where sliding-window causality is natural.
+        # For bidirectional encoders (e.g. RoBERTa, DistilBERT), splash masking is skipped by default
+        # to allow full-sequence sparse alpha-entmax attention without severing global context (e.g. [CLS]).
+        if is_decoder and self.splash_radius > 0 and not is_cross_attention and L_k > self.splash_radius:
             q_idx = torch.arange(L_q, device=device).unsqueeze(1)
             k_idx = torch.arange(L_k, device=device).unsqueeze(0)
-            if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
-                dist = q_idx - k_idx
-                splash_local = (dist >= 0) & (dist <= self.splash_radius)
-            else:
-                dist = torch.abs(q_idx - k_idx)
-                splash_local = (dist <= self.splash_radius)
-
-            # For tokens outside the splash window, add large negative bias (-10000.0)
-            # so they are excluded from entmax support, while local tokens retain original scores
+            dist = q_idx - k_idx
+            splash_local = (dist >= 0) & (dist <= self.splash_radius)
             logits = logits.masked_fill(~splash_local.unsqueeze(0).unsqueeze(0), -10000.0)
 
         # Apply α-entmax or softmax
@@ -500,10 +597,12 @@ def inject_adasplash(
     try:
         alpha = getattr(comp_config, "alpha", 1.5)
         splash_radius = getattr(comp_config, "splash_radius", 32)
+        lora_rank = getattr(comp_config, "lora_rank", getattr(comp_config, "residual_rank", getattr(comp_config, "rank", 16)))
         test_module = AdaSplashAttention(
             config=model_config,
             alpha=alpha,
             splash_radius=splash_radius,
+            lora_rank=lora_rank,
             pretrained_attn=old_attn,
         )
         layer.attention = test_module
