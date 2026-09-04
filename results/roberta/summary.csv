@@ -1,0 +1,190 @@
+module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
+full,PASS,93.58,2.76,,adapted_roberta,2026-09-04T08:28:17.187529
+a3,SKIP_ROBERTA_ARCHITECTURAL,50.92,37.21,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:28:54.631301
+aasvd,SKIP_ROBERTA_ARCHITECTURAL,50.92,34.12,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:29:28.980727
+adaptive_span,PASS,91.74,17.69,,adapted_roberta,2026-09-04T08:29:46.905075
+adaptive_sparse,PASS,91.86,28.95,,adapted_roberta,2026-09-04T08:30:16.083265
+adaptive_svd,SKIP_ROBERTA_ARCHITECTURAL,51.03,41.61,note: low_accuracy_plateau (51.03%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:30:57.964262
+adasplash,PASS,91.28,49.47,,adapted_roberta,2026-09-04T08:31:47.709390
+adasvd,SKIP_ROBERTA_ARCHITECTURAL,50.92,42.46,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:32:30.438994
+admm,SKIP_ROBERTA_ARCHITECTURAL,50.92,21.9,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:32:52.564082
+admm_pruner,SKIP_ROBERTA_ARCHITECTURAL,50.92,25.57,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:33:18.375555
+aegis_hybrid,PASS,58.72,29.17,,adapted_roberta,2026-09-04T08:33:47.791668
+aegis_spectron_fp8,SKIP_ROBERTA_ARCHITECTURAL,50.92,32.19,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:34:20.243726
+aegis_v1,PASS,56.88,33.68,,adapted_roberta,2026-09-04T08:34:54.170264
+aegis_v2,SKIP_ROBERTA_ARCHITECTURAL,50.92,29.35,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:35:23.795058
+aegis_v3,PASS,56.77,47.06,,adapted_roberta,2026-09-04T08:36:11.127797
+aegis_v4,SKIP_ROBERTA_ARCHITECTURAL,50.92,33.53,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:36:44.924709
+aegis_v5,SKIP_ROBERTA_ARCHITECTURAL,50.92,58.95,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:37:44.142928
+aegis_v6,SKIP_ROBERTA_ARCHITECTURAL,48.97,52.79,note: low_accuracy_plateau (48.97%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:38:37.216185
+armor,PASS,86.35,48.65,,adapted_roberta,2026-09-04T08:39:26.112099
+ast,SKIP_ROBERTA_ARCHITECTURAL,50.92,27.48,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:39:53.836786
+astro,PASS,83.14,18.75,,adapted_roberta,2026-09-04T08:40:12.818449
+asvd,PASS,58.94,37.95,,adapted_roberta,2026-09-04T08:40:51.008104
+bam_umoe,SKIP_ROBERTA_ARCHITECTURAL,50.92,195.63,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:44:06.910936
+block_transformer_hiba,PASS,85.32,16.82,,adapted_roberta,2026-09-04T08:44:24.136008
+bonsai,PASS,62.39,24.52,,adapted_roberta,2026-09-04T08:44:48.894750
+cachenotes,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.4,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:45:11.519101
+chela_slay,PASS,85.89,25.06,,adapted_roberta,2026-09-04T08:45:36.814079
+cluster,SKIP_ROBERTA_ARCHITECTURAL,50.92,28.2,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:46:05.290623
+come,PASS,78.67,13.83,,adapted_roberta,2026-09-04T15:25:33.499027
+compot,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.93,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:46:31.591434
+compressed_attention,SKIP_ROBERTA_ARCHITECTURAL,50.92,18.21,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:46:50.030302
+compressed_attention_layer_energy,SKIP_ROBERTA_ARCHITECTURAL,50.92,17.74,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:47:08.045808
+compressed_mha,SKIP_ROBERTA_ARCHITECTURAL,50.92,18.63,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:47:26.949364
+coopq,PASS,79.93,52.05,,adapted_roberta,2026-09-04T08:48:19.273467
+cosformer,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.64,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:48:42.154979
+cr,SKIP_ROBERTA_ARCHITECTURAL,50.92,38.85,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:49:21.275878
+cur,SKIP_ROBERTA_ARCHITECTURAL,49.08,26.88,note: low_accuracy_plateau (49.08%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:49:48.387628
+cur_moe,SKIP_ROBERTA_ARCHITECTURAL,49.08,39.55,note: low_accuracy_plateau (49.08%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:50:28.166805
+cur_moe_compressor,SKIP_ROBERTA_ARCHITECTURAL,50.34,39.18,note: low_accuracy_plateau (50.34%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:51:07.578744
+decay_linear_attn,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.04,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:51:31.851903
+delta_kv,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.42,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:51:54.548672
+direct_svd,SKIP_ROBERTA_ARCHITECTURAL,51.15,33.91,note: low_accuracy_plateau (51.15%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:52:28.692435
+dobi,SKIP_ROBERTA_ARCHITECTURAL,50.92,40.66,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:53:09.579742
+dynamic_rank,SKIP_ROBERTA_ARCHITECTURAL,50.92,33.12,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:53:42.929231
+eat,PASS,88.88,16.88,,adapted_roberta,2026-09-04T08:54:00.038823
+enlighten,SKIP_ROBERTA_ARCHITECTURAL,50.92,42.18,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:54:42.487240
+entropy_budget,SKIP_ROBERTA_ARCHITECTURAL,51.26,37.52,note: low_accuracy_plateau (51.26%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:55:20.241659
+entropy_rank_allocator,SKIP_ROBERTA_ARCHITECTURAL,50.92,33.64,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:55:54.113088
+erc,SKIP_ROBERTA_ARCHITECTURAL,50.92,34.2,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:56:28.543423
+expert_choice_moe,SKIP_ROBERTA_ARCHITECTURAL,50.92,51.75,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:57:20.525963
+factorised_matrix_state,SKIP_ROBERTA_ARCHITECTURAL,50.92,27.8,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:57:48.649249
+faq,PASS,84.63,18.73,,adapted_roberta,2026-09-04T08:58:07.655076
+fasa,PASS,85.09,18.91,,adapted_roberta,2026-09-04T08:58:26.799583
+flap,PASS,78.78,18.75,,adapted_roberta,2026-09-04T08:58:45.803165
+flash3,SKIP_ROBERTA_ARCHITECTURAL,51.15,15.25,note: low_accuracy_plateau (51.15%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T08:59:01.284760
+flash3_fp8,PASS,88.07,15.42,,adapted_roberta,2026-09-04T08:59:16.975349
+flat_llm,PASS,73.05,23.26,,adapted_roberta,2026-09-04T08:59:40.458764
+frandi,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.79,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:00:05.484744
+frandi_compressor,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.35,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:00:30.061927
+fused_svd_kernel,PASS,57.34,121.04,,adapted_roberta,2026-09-04T09:02:31.327059
+fusion_attn,PASS,93.12,17.35,,adapted_roberta,2026-09-04T09:02:49.009723
+galerkin,SKIP_ROBERTA_ARCHITECTURAL,50.92,19.19,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:03:08.469068
+gated_delta_net,SKIP_ROBERTA_ARCHITECTURAL,50.92,29.36,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:03:38.088009
+gated_deltanet_block,SKIP_ROBERTA_ARCHITECTURAL,50.92,29.52,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:04:07.882102
+gated_linear_attn,SKIP_ROBERTA_ARCHITECTURAL,50.92,29.58,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:04:37.746867
+gfws,SKIP_ROBERTA_ARCHITECTURAL,50.92,29.3,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:05:07.331145
+goldfinch_ahn,PASS,91.17,20.55,,adapted_roberta,2026-09-04T09:05:28.122908
+gqa,PASS,92.32,16.69,,adapted_roberta,2026-09-04T09:05:45.087273
+granite_hybrid,SKIP_ROBERTA_TIMEOUT,0.0,400.64,Module pipeline exceeded hard 400s timeout,adapted_roberta,2026-09-04T09:12:26.001265
+grecodec,SKIP_ROBERTA_ARCHITECTURAL,50.92,194.48,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:15:40.862764
+grecodec_compressor,SKIP_ROBERTA_ARCHITECTURAL,50.92,187.14,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:18:48.227103
+griffin_ssd,PASS,90.14,28.7,,adapted_roberta,2026-09-04T09:19:17.168564
+halo_regla,PASS,90.94,24.21,,adapted_roberta,2026-09-04T09:19:41.654754
+hamming,SKIP_ROBERTA_ARCHITECTURAL,50.92,21.02,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:20:02.955587
+hashed_net,SKIP_ROBERTA_ARCHITECTURAL,50.92,33.31,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:20:36.531948
+hgrn2_gated_deltanet,SKIP_ROBERTA_ARCHITECTURAL,50.92,47.42,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:21:24.200483
+hgrn2_layer,SKIP_ROBERTA_ARCHITECTURAL,50.92,32.84,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:21:57.323457
+hgrn2_outer,SKIP_ROBERTA_ARCHITECTURAL,48.51,30.43,note: low_accuracy_plateau (48.51%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:22:28.020468
+hla,SKIP_ROBERTA_ARCHITECTURAL,50.92,366.35,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:28:34.646027
+huffman,PASS,80.96,244.03,,adapted_roberta,2026-09-04T09:32:38.967746
+hybrid_svd,SKIP_ROBERTA_ARCHITECTURAL,50.92,68.04,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T15:26:41.772232
+hybridkv,PASS,80.96,18.36,,adapted_roberta,2026-09-04T09:32:59.767466
+hymba_transx,PASS,85.44,128.11,,adapted_roberta,2026-09-04T09:35:08.130101
+infini,PASS,88.99,18.66,,adapted_roberta,2026-09-04T09:35:27.066421
+jamba,SKIP_ROBERTA_ARCHITECTURAL,50.92,55.99,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:36:23.327460
+jamba_info,PASS,89.45,36.66,,adapted_roberta,2026-09-04T09:37:00.280395
+kda,SKIP_ROBERTA_ARCHITECTURAL,50.92,26.77,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:37:27.326632
+kmeans,PASS,92.89,32.46,,adapted_roberta,2026-09-04T09:38:00.056709
+kronecker,SKIP_ROBERTA_ARCHITECTURAL,50.92,41.69,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:38:42.002076
+kronecker_tt_lora,PASS,85.32,95.92,,adapted_roberta,2026-09-04T09:40:18.150420
+kvtc,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.93,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:40:41.326626
+leka_v1,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.98,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:41:04.544940
+leka_v2,SKIP_ROBERTA_ARCHITECTURAL,50.92,29.29,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:41:34.105793
+leka_v3,SKIP_ROBERTA_ARCHITECTURAL,50.92,26.33,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:42:00.703231
+liftr,SKIP_ROBERTA_ARCHITECTURAL,50.92,12.05,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:42:13.035181
+lillama,SKIP_ROBERTA_ARCHITECTURAL,49.08,51.16,note: low_accuracy_plateau (49.08%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:43:04.431512
+linformer,SKIP_ROBERTA_ARCHITECTURAL,50.92,19.27,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:43:23.942053
+lola,SKIP_ROBERTA_ARCHITECTURAL,50.92,39.89,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:44:04.109237
+lora_attn,PASS,86.7,31.94,,adapted_roberta,2026-09-04T09:44:36.322652
+lsc,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.38,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:45:00.982604
+lsh,SKIP_ROBERTA_ARCHITECTURAL,50.92,38.49,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:45:39.735226
+mamba,SKIP_ROBERTA_ARCHITECTURAL,50.92,13.89,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:45:53.914931
+mamba_shedder,PASS,80.62,19.88,,adapted_roberta,2026-09-04T09:46:14.051106
+mamba_svd_flash,SKIP_ROBERTA_ARCHITECTURAL,55.05,402.49,note: low_accuracy_plateau (55.05%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:52:56.777785
+mgie,SKIP_ROBERTA_ARCHITECTURAL,50.92,35.29,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:53:32.744365
+mgie_budget,SKIP_ROBERTA_ARCHITECTURAL,50.92,34.21,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:54:07.184336
+minimal_aurora,SKIP_ROBERTA_ARCHITECTURAL,50.92,37.36,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:54:44.778871
+minimal_nova,SKIP_ROBERTA_ARCHITECTURAL,50.92,37.04,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:55:22.102103
+minimal_prism,SKIP_ROBERTA_ARCHITECTURAL,50.92,36.5,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:55:58.866615
+minimal_svd,PASS,65.25,36.22,,adapted_roberta,2026-09-04T09:56:35.360888
+minimal_svd_v2,SKIP_ROBERTA_ARCHITECTURAL,51.49,36.3,note: low_accuracy_plateau (51.49%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:57:11.899990
+mixattention_moska,PASS,85.21,19.15,,adapted_roberta,2026-09-04T09:57:31.324282
+mla,SKIP_ROBERTA_ARCHITECTURAL,50.92,16.73,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:57:48.327109
+mlorq,PASS,86.35,56.81,,adapted_roberta,2026-09-04T09:58:45.411814
+moba,PASS,84.63,20.14,,adapted_roberta,2026-09-04T09:59:05.787006
+modegpt,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.19,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T09:59:30.220988
+moe_deltakv_paged,SKIP_ROBERTA_ARCHITECTURAL,51.72,40.36,note: low_accuracy_plateau (51.72%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:00:10.817425
+nasc,SKIP_ROBERTA_ARCHITECTURAL,52.41,54.49,note: low_accuracy_plateau (52.41%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:01:05.596985
+nexus,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.67,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:01:28.542038
+nha,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.4,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:01:53.221711
+nli_softmax,PASS,87.61,18.25,,adapted_roberta,2026-09-04T10:02:11.748397
+nmf,SKIP_ROBERTA_ARCHITECTURAL,49.08,222.84,note: low_accuracy_plateau (49.08%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:05:54.825610
+nsa,SKIP_ROBERTA_ARCHITECTURAL,52.06,17.74,note: low_accuracy_plateau (52.06%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:06:12.802058
+nystrom,SKIP_ROBERTA_ARCHITECTURAL,50.92,29.76,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:06:42.843589
+oats,PASS,68.23,42.01,,adapted_roberta,2026-09-04T10:07:25.132199
+oha,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.67,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:07:50.044811
+optimal_subspace_projection,SKIP_ROBERTA_ARCHITECTURAL,49.08,21.51,note: low_accuracy_plateau (49.08%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:08:11.824099
+orion,SKIP_ROBERTA_ARCHITECTURAL,50.92,48.18,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:09:00.237235
+performer,SKIP_ROBERTA_ARCHITECTURAL,49.89,21.05,note: low_accuracy_plateau (49.89%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:09:21.527808
+phantom,SKIP_ROBERTA_ARCHITECTURAL,50.92,61.24,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:10:23.039856
+primal,PASS,92.66,326.24,fp32 retry: expected scalar type Float but found Half,adapted_roberta,2026-09-04T10:15:49.543345
+progressive_token_pruning,PASS,72.94,18.25,,adapted_roberta,2026-09-04T10:16:08.054426
+projection_factorized_attn,PASS,72.13,61.13,,adapted_roberta,2026-09-04T10:17:09.549748
+proxsparse,SKIP_ROBERTA_ARCHITECTURAL,50.92,20.2,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:17:30.007178
+qcqa,SKIP_ROBERTA_ARCHITECTURAL,50.92,17.77,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:17:48.017921
+rala,SKIP_ROBERTA_ARCHITECTURAL,50.92,20.55,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:18:08.831826
+rala_compressor,SKIP_ROBERTA_ARCHITECTURAL,50.92,20.49,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:18:29.578861
+reap_moe,SKIP_ROBERTA_ARCHITECTURAL,50.92,52.92,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:19:22.782513
+regla,SKIP_ROBERTA_ARCHITECTURAL,50.92,21.08,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:19:44.163839
+replaceme,PASS,84.29,18.1,,adapted_roberta,2026-09-04T10:20:02.533832
+res_svd,PASS,75.92,52.65,,adapted_roberta,2026-09-04T10:20:55.423347
+rotational_slicegpt,SKIP_ROBERTA_ARCHITECTURAL,50.92,234.9,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:24:50.603623
+routing,SKIP_ROBERTA_ARCHITECTURAL,49.77,23.54,note: low_accuracy_plateau (49.77%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:25:14.383065
+rpc,PASS,87.5,17.67,,adapted_roberta,2026-09-04T10:25:32.324687
+rpca,SKIP_ROBERTA_ARCHITECTURAL,50.92,55.43,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:26:28.026936
+saes,SKIP_ROBERTA_ARCHITECTURAL,50.92,35.62,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:27:03.876638
+salr,PASS,81.88,18.55,,adapted_roberta,2026-09-04T10:27:22.657102
+salt,SKIP_ROBERTA_ARCHITECTURAL,50.92,25.84,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:27:48.734523
+samba_m3,SKIP_ROBERTA_ARCHITECTURAL,50.92,34.28,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:28:23.294328
+samba_moe,SKIP_ROBERTA_ARCHITECTURAL,50.92,69.17,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:29:32.747348
+sdrm,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.3,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:29:55.348488
+simple_ssm,SKIP_ROBERTA_ARCHITECTURAL,50.92,27.52,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:30:23.108087
+slicegpt,PASS,77.29,34.64,,adapted_roberta,2026-09-04T10:30:58.003393
+slicegpt_pca,SKIP_ROBERTA_ARCHITECTURAL,50.92,142.11,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T15:29:04.121251
+slim,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.92,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:31:22.519414
+soa_attn,PASS,74.08,18.85,,adapted_roberta,2026-09-04T10:31:41.607524
+soa_fused_attn,PASS,78.44,19.0,,adapted_roberta,2026-09-04T10:32:00.874887
+soka,SKIP_ROBERTA_ARCHITECTURAL,50.92,32.15,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:32:33.265134
+span_expanded,SKIP_ROBERTA_ARCHITECTURAL,50.92,18.41,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:32:51.908136
+sparsegpt,PASS,76.38,116.76,,adapted_roberta,2026-09-04T10:34:48.943841
+spectra_v2,PASS,89.22,16.88,,adapted_roberta,2026-09-04T10:35:06.066587
+spectral_mamba,PASS,87.61,34.87,,adapted_roberta,2026-09-04T10:35:41.207649
+spectral_residual_lora,SKIP_ROBERTA_ARCHITECTURAL,50.92,40.2,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:36:21.681702
+spectron,PASS,73.62,42.96,,adapted_roberta,2026-09-04T10:37:04.868738
+squeezing_heads_distiller,PASS,84.06,16.36,,adapted_roberta,2026-09-04T10:37:21.497566
+subspace_projection,SKIP_ROBERTA_ARCHITECTURAL,50.92,24.78,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:37:46.553640
+svd,PASS,88.53,16.82,,adapted_roberta,2026-09-04T10:38:03.608259
+svd-mamba,SKIP_ROBERTA_ARCHITECTURAL,50.92,221.18,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:41:45.068801
+svd_compressed,SKIP_ROBERTA_ARCHITECTURAL,50.92,21.97,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:42:07.315001
+svd_linear,PASS,65.83,61.1,,adapted_roberta,2026-09-04T10:43:08.683673
+svd_linear_decay,PASS,69.04,62.42,,adapted_roberta,2026-09-04T10:44:11.382627
+svd_llm_v2,PASS,66.4,24.26,,adapted_roberta,2026-09-04T10:44:35.918608
+svd_proj_attn,PASS,65.37,36.13,,adapted_roberta,2026-09-04T10:45:12.329753
+swift_svd,SKIP_ROBERTA_ARCHITECTURAL,51.61,33.92,note: low_accuracy_plateau (51.61%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:45:46.520705
+swift_svd_act,SKIP_ROBERTA_ARCHITECTURAL,50.92,33.84,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:46:20.588769
+token_compressed,PASS,59.86,18.73,,adapted_roberta,2026-09-04T10:46:39.550800
+tpa,SKIP_ROBERTA_ARCHITECTURAL,50.92,101.13,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:48:20.951174
+tt,SKIP_ROBERTA_ARCHITECTURAL,50.92,39.76,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:49:00.980065
+unified_rope,PASS,88.3,19.24,,adapted_roberta,2026-09-04T10:49:20.424930
+uniql,SKIP_ROBERTA_ARCHITECTURAL,50.92,22.91,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:49:43.608893
+upi_stuffed_mamba,SKIP_ROBERTA_TIMEOUT,0.0,240.67,Module pipeline exceeded hard 240s timeout,adapted_roberta,2026-09-04T10:53:44.515382
+vig,SKIP_ROBERTA_ARCHITECTURAL,50.92,45.77,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:54:30.940459
+vspec,SKIP_ROBERTA_ARCHITECTURAL,50.92,78.01,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T15:30:22.371461
+wgqa,PASS,88.88,17.24,,adapted_roberta,2026-09-04T10:55:13.412979
+xattention,SKIP_ROBERTA_ARCHITECTURAL,51.15,21.82,note: low_accuracy_plateau (51.15%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:55:35.679362
+your_attention_name,PASS,89.11,17.9,,adapted_roberta,2026-09-04T10:55:53.852787
+your_compressor_name,SKIP_ROBERTA_ARCHITECTURAL,50.92,33.59,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:56:27.717656
+zerokv_neo,SKIP_ROBERTA_ARCHITECTURAL,50.92,19.0,note: low_accuracy_plateau (50.92%) <= chance threshold (56.00% = majority 50.92% + 3*SE),adapted_roberta,2026-09-04T10:56:46.951958
+zeros,PASS,75.34,17.78,,adapted_roberta,2026-09-04T10:57:04.965816
