@@ -82,6 +82,12 @@ class SALRLayer(nn.Module):
         out = F.linear(latent, self.U, self.bias)  # [..., out_features]
         return out
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Effective reconstructed weight matrix."""
+        V_masked = self.V * self.mask.to(dtype=self.V.dtype)
+        return torch.matmul(self.U, V_masked)
+
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, sparsity={self.sparsity}"
 
