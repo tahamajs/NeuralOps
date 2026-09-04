@@ -186,7 +186,15 @@ class SpectralMambaAttention(BaseAttention):
 
         # Adaptive gating
         g = torch.sigmoid(self.gate(hidden_states))  # (B, N, 1)
+        while isinstance(g, (tuple, list)):
+            g = g[0]
+        while isinstance(attn_out, (tuple, list)):
+            attn_out = attn_out[0]
+        while isinstance(mamba_out, (tuple, list)):
+            mamba_out = mamba_out[0]
         out = g * attn_out + (1.0 - g) * mamba_out
+        while isinstance(out, (tuple, list)):
+            out = out[0]
 
         if output_attentions:
             return out, attn_weights
