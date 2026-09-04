@@ -155,6 +155,16 @@ A principal vulnerability within differentiable span gating concerns the risk of
 ### Materialization Constraints and Memory Landscape in Standard Frameworks
 A persistent architectural bottleneck in high-level tensor frameworks arises from the eager materialization of full intermediate affinity structures. In un-fused PyTorch execution pipelines, the dense pairwise score tensor $\mathbb{R}^{B \times H \times N \times N}$ is completely computed in global high-bandwidth memory (HBM) prior to the application of the boolean span mask via `masked_fill`. Consequently, the intermediate spatial allocation remains bound to quadratic complexity $\mathcal{O}(N^2)$ during forward and backward passes, negating theoretical memory savings unless custom hardware-aligned block-sparse kernels (e.g., custom Triton or CUDA primitives) are explicitly deployed to restrict DRAM transactions to active span windows.
 
+### The "Padding Trap" and Causal Decoder Incompatibility
+During the evaluation of Qwen3.5-0.8B, the model's accuracy plateaued at 57.00% (barely crossing the 56.00% PASS threshold). Our ablation studies revealed a fundamental structural conflict between Adaptive Span Attention and sequence classification tasks utilizing Right-Padding.
+
+In a right-padded batch (e.g., maximum sequence length $N=128$), a short sentence (e.g., 20 tokens) is followed by `<pad>` tokens. The sequence classification head dynamically extracts the hidden state of the *true* final token (index 19) and discards the rest. 
+We attempted a brute-force "Periscope" fix by forcefully opening the attention window for the last 15 physical tokens of the sequence (`span_bool[..., -15:, :] = True`). However, the training loss remained mathematically identical down to the fourth decimal place. 
+
+**Root Cause Analysis:** The periscope hack only granted global context to the trailing `<pad>` tokens, which the classifier ultimately ignores. The *true* final token remained heavily restricted by the learned local span and was completely blinded to the full sentence context. 
+
+**Conclusion:** This experiment empirically proves that Adaptive Span Attention is inherently incompatible with Right-Padded Causal Decoders in sequence classification. Resolving this requires either converting the tokenizer to Left-Padding (which disrupts standard causal generation logic) or injecting complex, batch-aware dynamic mask indexing that degrades throughput.
+
 ---
 
 ## 6. Hardware Acceleration Blueprint & Triton Kernel Design
