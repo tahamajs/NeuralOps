@@ -43,7 +43,12 @@ class SubspaceLinear(nn.Module):
         self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
 
-        nn.init.orthogonal_(self.A)
+        if dtype in (torch.float16, torch.bfloat16):
+            A_fp32 = torch.empty(self.rank, in_features, dtype=torch.float32)
+            nn.init.orthogonal_(A_fp32)
+            self.A.data.copy_(A_fp32.to(dtype=dtype, device=device))
+        else:
+            nn.init.orthogonal_(self.A)
         nn.init.xavier_uniform_(self.B)
 
         if bias:
