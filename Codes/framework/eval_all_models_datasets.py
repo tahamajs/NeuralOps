@@ -105,15 +105,17 @@ def build_model_instance(
         )
         model = DistilBertForSequenceClassification(cfg)
     elif family == "gpt2":
-        from transformers import GPT2Config, GPT2LMHeadModel
+        from transformers import GPT2Config, GPT2ForSequenceClassification
         cfg = GPT2Config(
             n_embd=hidden_size,
             n_head=num_heads,
             n_layer=num_layers,
             n_inner=hidden_size * 4,
             vocab_size=50257,
+            num_labels=num_labels,
+            pad_token_id=50256,
         )
-        model = GPT2LMHeadModel(cfg)
+        model = GPT2ForSequenceClassification(cfg)
     elif family == "t5":
         from transformers import T5Config, T5EncoderModel
         cfg = T5Config(
