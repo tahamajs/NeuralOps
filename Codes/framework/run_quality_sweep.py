@@ -559,6 +559,31 @@ def main():
             had_nan = False
             path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
 
+            # Hard timeout enforcing max timeout across injection, recovery, and eval
+            # Slow modules get extended timeout across all model families
+            _SLOW_MODULE_TIMEOUT_OVERRIDES = {
+                "grecodec": 600, "grecodec_compressor": 600,
+                "mlorq": 500, "lillama": 500, "cr": 500, "huffman": 500,
+                "primal": 400, "primal_attention": 400,
+                "fused_svd_kernel": 400, "hla": 400, "nmf": 400,
+                "rotational_slicegpt": 400, "rotational_slicegpt_int4": 400,
+                "slicegpt": 400, "slicegpt_pca": 400, "slicegpt_compressor": 400,
+                "sparsegpt": 400, "granite_hybrid": 400, "mamba_svd_flash": 400,
+                "uniql": 400, "vspec": 400, "saes": 400, "hymba_transx": 400,
+                "orion": 400, "phantom": 400, "soka": 400, "sdrm": 400,
+                "hybridkv": 400, "jamba_info": 400, "kmeans": 400,
+                "kronecker": 400, "kvtc": 400, "lsc": 400, "mgie": 400,
+                "mgie_budget": 400, "mixattention_moska": 400, "modegpt": 400,
+                "nli_softmax": 400, "oats": 400, "optimal_subspace_projection": 400,
+                "rpc": 400, "rpca": 400, "samba_moe": 400, "slim": 400,
+                "soa_attn": 400, "soa_fused_attn": 400, "spectral_residual_lora": 400,
+                "spectron": 400, "svd_llm_v2": 400, "swift_svd": 400,
+                "swift_svd_act": 400, "tt": 400, "svd_quant": 400,
+                "svd_projection": 400,
+            }
+            base_timeout = 360 if family in ("qwen3_5", "qwen") else max(args.timeout, 240)
+            effective_timeout = max(base_timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, base_timeout))
+
             try:
                 def _run_candidate_pipeline():
                     nonlocal model, injected, path_name, had_nan
@@ -595,7 +620,7 @@ def main():
                                     model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device,
                                     args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
                                     optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
-                                    weight_decay=args.weight_decay, timeout=args.timeout,
+                                    weight_decay=args.weight_decay, timeout=effective_timeout,
                                 )
                     try:
                         return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
@@ -608,17 +633,6 @@ def main():
                                 pass
                             torch.cuda.empty_cache()
 
-                # Hard timeout enforcing max timeout across injection, recovery, and eval
-                # Slow modules get extended timeout across all model families
-                _SLOW_MODULE_TIMEOUT_OVERRIDES = {
-                    "grecodec": 600, "grecodec_compressor": 600,
-                    "mlorq": 500, "lillama": 500, "cr": 400, "huffman": 400,
-                    "primal": 300, "primal_attention": 300,
-                    "fused_svd_kernel": 300, "hla": 300, "nmf": 300,
-                    "rotational_slicegpt": 300, "svd_quant": 300,
-                    "svd_projection": 300,
-                }
-                effective_timeout = max(args.timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, args.timeout))
                 pool = ThreadPoolExecutor(max_workers=1)
                 try:
                     future = pool.submit(_run_candidate_pipeline)
