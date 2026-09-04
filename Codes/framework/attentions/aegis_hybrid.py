@@ -403,11 +403,12 @@ class AegisHybridAttention(BaseAttention):
             if proj.lin2.bias is not None:
                 proj.lin2.bias.requires_grad = False
 
-            # Trainable LoRA adapter initialized to 0 contribution
+            # Trainable LoRA adapter: A is initialized with Kaiming uniform, B is zeroed so initial delta is 0
             if getattr(proj, "lora_A", None) is not None:
-                nn.init.zeros_(proj.lora_A)
+                nn.init.kaiming_uniform_(proj.lora_A, a=math.sqrt(5))
                 proj.lora_A.requires_grad = True
             if getattr(proj, "lora_B", None) is not None:
+                nn.init.zeros_(proj.lora_B)
                 proj.lora_B.requires_grad = True
 
     def _copy_pretrained(self, old_attn: nn.Module) -> None:
