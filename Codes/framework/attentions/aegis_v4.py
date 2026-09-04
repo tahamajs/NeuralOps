@@ -73,12 +73,15 @@ class FactorisedLinear(nn.Module):
             A = U[:, :rank] * S[:rank].unsqueeze(0)
             B = Vt[:rank, :]
 
-        self.down = nn.Linear(in_dim, rank, bias=False)
-        self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
-        self.down.weight.data.copy_(B.float())
-        self.up.weight.data.copy_(A.float())
+        device = pretrained_weight.device
+        dtype = pretrained_weight.dtype
+        
+        self.down = nn.Linear(in_dim, rank, bias=False, device=device, dtype=dtype)
+        self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None), device=device, dtype=dtype)
+        self.down.weight.data.copy_(B.to(device=device, dtype=dtype))
+        self.up.weight.data.copy_(A.to(device=device, dtype=dtype))
         if pretrained_bias is not None and self.up.bias is not None:
-            self.up.bias.data.copy_(pretrained_bias.float())
+            self.up.bias.data.copy_(pretrained_bias.to(device=device, dtype=dtype))
         elif self.up.bias is not None:
             self.up.bias.data.zero_()
 
@@ -297,12 +300,14 @@ class AegisAttention(nn.Module):
             self.cfg.max_rank,
         )
 
+        device = q_lin.weight.device
+        dtype = q_lin.weight.dtype
         self.rff_proj: nn.Parameter = nn.Parameter(
-            torch.randn(self.num_global_heads, self.head_dim, self.cfg.rff_features) * 0.02
+            torch.randn(self.num_global_heads, self.head_dim, self.cfg.rff_features, device=device, dtype=dtype) * 0.02
         )
 
         if self.cfg.use_adaptive_gate:
-            self.blend_logits: Optional[nn.Parameter] = nn.Parameter(torch.zeros(self.num_heads))
+            self.blend_logits: Optional[nn.Parameter] = nn.Parameter(torch.zeros(self.num_heads, device=device, dtype=dtype))
             self.gate_bias: float = self.cfg.gate_init_bias
         else:
             self.blend_logits = None
