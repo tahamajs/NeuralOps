@@ -284,7 +284,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     ap.add_argument("--dataset_dir", default=None); ap.add_argument("--dataset", default="sst2")
-    ap.add_argument("--output_dir", required=True); ap.add_argument("--modules", default=["all"], nargs="*")
+    ap.add_argument("--output_dir", default=None); ap.add_argument("--modules", default=["all"], nargs="*")
+    ap.add_argument("--module_filter", dest="modules", nargs="*", help="Alias for --modules")
     ap.add_argument("--max_steps", type=int, default=1); ap.add_argument("--finetune_steps", type=int, default=200)
     ap.add_argument("--finetune_mode", choices=("head", "lora"), default="head",
                     help="Fine-tune mode: head-only or full-backbone LoRA adapters")
@@ -341,6 +342,9 @@ def main():
         torch.cuda.manual_seed_all(args.seed)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+    if args.output_dir is None:
+        safe_model = Path(args.model).name.replace("-", "_").lower()
+        args.output_dir = f"D:/SVD_Project/results/{safe_model}_{args.dataset}_sweep"
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
     if args.dataset_dir is None:
