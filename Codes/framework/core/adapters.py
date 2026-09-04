@@ -3,6 +3,7 @@ Model‑family adapters. Extracts projection weights and biases cleanly across a
 """
 
 from typing import Any, Optional
+import torch
 
 
 CANONICAL_PROJECTION_ALIASES = {
