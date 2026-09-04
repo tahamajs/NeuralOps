@@ -260,7 +260,42 @@ Inspecting the converged parameter manifold $\theta_h$ reveals distinct function
 2. **Intermediate Layers ($\frac{L}{3} < \ell \le \frac{2L}{3}$)**: Heads exhibit a multimodal bimodal distribution; approximately $60\%$ of heads maintain short spans for intra-sentence syntax, while $40\%$ expand toward medium spans ($S_h \in [64, 128]$) to track clause linkages and pronoun coreference.
 3. **Upper Transformer Layers ($\frac{2L}{3} < \ell \le L$)**: Logits remain saturated at upper bounds ($\theta_h \ge 4.0$, $S_h \to S_{\max}$), ensuring global context integration required for task-level semantic abstraction and classifier readout.
 
-This convergence pattern proves that differentiable span gating acts as an autonomous neural architecture search, dynamically allocating memory resources where semantic complexity requires long-range modeling while aggressively pruning redundant attention bands in syntactically local layers.
+### 8.6 Checkpoint Persistence & Architectural State Serialization
+To enable downstream downstream inference, analysis, or fine-tuning without redundant retraining, the evaluation pipeline automatically persists complete module checkpoints and metadata into `results/<run_dir>/checkpoints/<module_name>/`:
+
+```
+results/<experiment_dir>/
+├── <model_name>_<module_name>_full_metrics.json    # VRAM, Throughput, per-head span distributions, scalability
+├── summary.csv                                     # Aggregated benchmark scores, latency, and status
+└── checkpoints/
+    └── adaptive_span/
+        └── weights.pt                              # PyTorch binary payload
+```
+
+#### Checkpoint Payload Architecture (`weights.pt`)
+The exported binary payload contains full serialization of all learnable parameters:
+- `module_name`: Registered identifier (e.g. `adaptive_span`).
+- `model_name` & `model_family`: Target foundation architecture (`bert`, `roberta`, `gpt`, `qwen3_5`).
+- `accuracy_pct`: Verified post-transplant evaluation accuracy on validation split.
+- `module_state_dict`: Exact tensors for all learnable attention parameters (e.g. `span_logits` per head, projection weights, and compressor states).
+- `lora_state_dict`: Complete state dictionary of all trained LoRA low-rank adapter matrices (`lora_A`, `lora_B`).
+
+#### Restoring and Utilizing Persisted Weights
+Downstream tasks can reload the trained modules and adapters directly:
+```python
+import torch
+
+# Load full module state and LoRA adapters
+checkpoint = torch.load("results/qwen3_5_adaptive_span_sweep/checkpoints/adaptive_span/weights.pt", map_location="cpu")
+print(f"Loaded {checkpoint['module_name']} for {checkpoint['model_family']} (Acc: {checkpoint['accuracy_pct']}%)")
+
+# Inject weights into model instance
+model.load_state_dict(checkpoint["lora_state_dict"], strict=False)
+for name, param in checkpoint["module_state_dict"].items():
+    # Load exact learned span logits and projection parameters
+    param_tensor = model.get_submodule(name.rsplit(".", 1)[0])
+    getattr(param_tensor, name.rsplit(".", 1)[1]).data.copy_(param)
+```
 
 ---
 
