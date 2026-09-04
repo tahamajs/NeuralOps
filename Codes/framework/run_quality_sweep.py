@@ -219,7 +219,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
     model.train()
     curr_batch_size = batch_size
-    micro_bs = 16 if (device.type == "cuda" and curr_batch_size > 16) else curr_batch_size
+    micro_bs = min(curr_batch_size, 4 if device.type == "cuda" else curr_batch_size)
     had_nan = False
     step = 0
     t_start = time.monotonic()
