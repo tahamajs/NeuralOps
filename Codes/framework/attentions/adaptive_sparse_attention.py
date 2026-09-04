@@ -209,25 +209,27 @@ class AdaptiveSparseAttention(BaseAttention):
                 if valid_m is not None:
                     scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
-        # Dynamic Top-K Adaptive Sparsification per head
-        sparsity_per_head = torch.sigmoid(self.sparsity_logits).clamp(0.0, 0.95)  # [H]
-        k_per_head = torch.clamp(
-            ((1.0 - sparsity_per_head) * N_k).long(),
-            min=1,
-            max=N_k,
-        )  # [H]
+        # 1. Explicit Causal Masking (CRITICAL for GPT-2 / Qwen before Top-K)
+        if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
+            causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+            scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        # Apply top-k mask per head
-        sparse_scores = []
-        for h in range(H):
-            k_val = int(k_per_head[h].item())
-            h_scores = scores[:, h, :, :]  # [B, N_q, N_k]
-            if k_val < N_k:
-                topk_thresh = torch.topk(h_scores, k=k_val, dim=-1, largest=True).values[..., -1:]
-                h_scores = h_scores.masked_fill(h_scores < topk_thresh, -10000.0)
-            sparse_scores.append(h_scores.unsqueeze(1))
+        # 2. Vectorized Top-K Thresholding (NO loops, NO .item() calls)
+        # We detach the logits for the index calculation since dynamic 'k' indexing is non-differentiable
+        sparsity_per_head = torch.sigmoid(self.sparsity_logits.detach()).clamp(0.0, 0.95)  # [H]
+        k_per_head = torch.clamp(((1.0 - sparsity_per_head) * N_k).long(), min=1, max=N_k)  # [H]
 
-        scores = torch.cat(sparse_scores, dim=1)  # [B, H, N_q, N_k]
+        # Sort scores along the key dimension
+        sorted_scores, _ = torch.sort(scores, dim=-1, descending=True)  # [B, H, N_q, N_k]
+        
+        # Broadcast k_per_head to gather the threshold value
+        k_indices = (k_per_head - 1).view(1, H, 1, 1).expand(B, H, N_q, 1)
+        
+        # Gather the exact threshold score for each head efficiently
+        topk_thresh = torch.gather(sorted_scores, dim=-1, index=k_indices)  # [B, H, N_q, 1]
+
+        # 3. Apply the Sparse Mask
+        scores = scores.masked_fill(scores < topk_thresh, -10000.0)
 
         attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
