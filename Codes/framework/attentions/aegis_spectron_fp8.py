@@ -4,11 +4,14 @@ Aegis-Spectron-FP8 Hybrid Attention Module.
 Integrates Aegis multi-branch local/global feature fusion with Spectron Lagrangian spectral entropy routing.
 Dynamic routing measures singular value entropy per token to distribute token representation across:
 1. Local Sliding-Window Attention (O(N * W) with strict causal masking for decoders)
-2. Global Low-Rank SVD Attention (True O(N * r * D) Linear Attention with Normalization, bypassed for decoders)
+2. Global Low-Rank SVD Attention (True O(N * r * D) Linear Attention with Normalization;
+   associative KV-first for bidirectional models, cumulative sum causal recurrence for decoders)
 3. Linear State Recurrence (True O(N * D) via Numerically Stable CumSum EMA, strictly causal for decoders)
 
-Equipped with FactorizedLinear base weights + trainable residual LoRA adapters for parameter-efficient recovery fine-tuning.
-Supports RoPE (Rotary Position Embeddings) and GQA (Grouped-Query Attention).
+Equipped with:
+- Functional FP8 quantization simulation (E4M3 and E5M2) with dynamic range scaling.
+- FactorizedLinear base weights + trainable residual LoRA adapters for parameter-efficient recovery fine-tuning.
+- Support for RoPE (Rotary Position Embeddings) and GQA (Grouped-Query Attention).
 """
 
 import math
@@ -23,6 +26,79 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.attention_utils import repeat_kv
 from framework.core.gqa_utils import get_qkv_projection_dims
+
+
+def fp8_cast_simulate(
+    x: torch.Tensor,
+    format: str = "e4m3",
+    per_channel: bool = False,
+) -> torch.Tensor:
+    r"""
+    Simulates FP8 quantization error using dynamic scaling and cast-dequantize roundtrip.
+
+    Supported formats:
+      - "e4m3" / "float8_e4m3fn": 1 sign, 4 exponent, 3 mantissa bits (max ~448.0)
+      - "e5m2" / "float8_e5m2": 1 sign, 5 exponent, 2 mantissa bits (max ~57344.0)
+
+    Args:
+      x: Input tensor of arbitrary shape (float32, float16, bfloat16).
+      format: FP8 format string ("e4m3" or "e5m2").
+      per_channel: If True, dynamic scaling is computed along the last dimension (dim=-1),
+                   otherwise per-tensor scaling is applied.
+
+    Returns:
+      Tensor with identical shape and dtype containing simulated FP8 rounding noise.
+    """
+    if not isinstance(x, torch.Tensor) or not x.is_floating_point():
+        return x
+
+    orig_dtype = x.dtype
+    x_f = x.float()
+
+    fmt = format.lower()
+    if fmt in ("e4m3", "float8_e4m3fn"):
+        max_val = 448.0
+        torch_dtype = getattr(torch, "float8_e4m3fn", None)
+        mantissa_bits = 3
+    elif fmt in ("e5m2", "float8_e5m2"):
+        max_val = 57344.0
+        torch_dtype = getattr(torch, "float8_e5m2", None)
+        mantissa_bits = 2
+    else:
+        raise ValueError(f"Unsupported FP8 format: '{format}'. Supported formats: 'e4m3', 'e5m2'")
+
+    # 1. Prefer torchao if installed
+    try:
+        from torchao.quantization.quant_api import to_fp8
+        return to_fp8(x, format=fmt).to(orig_dtype)
+    except Exception:
+        pass
+
+    # Dynamic scaling factor calculation
+    if per_channel:
+        amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)
+    else:
+        amax = x_f.abs().amax().clamp(min=1e-12)
+
+    scale = max_val / amax
+    x_scaled = (x_f * scale).clamp(min=-max_val, max=max_val)
+
+    # 2. PyTorch native float8 roundtrip
+    if torch_dtype is not None:
+        try:
+            x_fp8 = x_scaled.to(torch_dtype)
+            x_dequant = x_fp8.to(orig_dtype) / scale.to(orig_dtype)
+            return x_dequant
+        except Exception:
+            pass
+
+    # 3. Mathematical fallback: bit-depth IEEE-754 mantissa rounding
+    abs_x = torch.abs(x_scaled).clamp(min=1e-12)
+    exp = torch.floor(torch.log2(abs_x))
+    factor = 2.0 ** (exp - mantissa_bits)
+    rounded = torch.round(abs_x / factor) * factor
+    x_dequant = (torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale
+    return x_dequant.to(orig_dtype)
 
 
 @dataclass
@@ -43,6 +119,7 @@ class AegisSpectronFP8Config:
     dropout: float = 0.1
     router_init_bias: Tuple[float, float, float] = (2.5, 1.5, 1.5)
     is_decoder: bool = False
+    fp8_format: str = "e4m3"
 
     def __init__(self, **kwargs):
         self.hidden_size = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
@@ -60,6 +137,7 @@ class AegisSpectronFP8Config:
         self.dropout = kwargs.get("dropout", 0.1)
         self.router_init_bias = kwargs.get("router_init_bias", (2.5, 1.5, 1.5))
         self.is_decoder = kwargs.get("is_decoder", False)
+        self.fp8_format = kwargs.get("fp8_format", "e4m3")
 
 
 class FactorizedLinear(nn.Module):
@@ -223,6 +301,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 w_size = config.get("window_size", config.get("local_window", 64))
                 drop = config.get("dropout", 0.1)
                 is_dec = config.get("is_decoder", False)
+                fp8_fmt = config.get("fp8_format", "e4m3")
             else:
                 h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768
                 n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12
@@ -233,6 +312,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 w_size = getattr(config, "window_size", getattr(config, "local_window", getattr(config, "block_size", 64))) if config is not None else 64
                 drop = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config is not None else 0.1
                 is_dec = getattr(config, "is_decoder", False) if config is not None else False
+                fp8_fmt = getattr(config, "fp8_format", "e4m3") if config is not None else "e4m3"
 
             config = AegisSpectronFP8Config(
                 hidden_size=h_size,
@@ -244,6 +324,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 lora_rank=lora_rank,
                 dropout=drop,
                 is_decoder=is_dec,
+                fp8_format=fp8_fmt,
             )
         super().__init__(config)
         self.config: AegisSpectronFP8Config = config
@@ -260,6 +341,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         self.is_nested_encoder = False
         self.rank = config.svd_rank
         self.lora_rank = config.lora_rank
+        self.fp8_format = getattr(config, "fp8_format", "e4m3")
         self.rotary_emb = None
         self.adapter = None
 
@@ -630,16 +712,29 @@ class AegisSpectronFP8Attention(BaseAttention):
         Q_lr = torch.matmul(Q_flat, self.svd_U)  # [B, N, rank]
         K_lr = torch.matmul(K_flat, self.svd_U)  # [B, N, rank]
 
-        # Use ELU+1 kernel for non-negativity (Linear Attention)
+        # Non-negative kernel mapping phi(x) = ELU(x) + 1
         phi_Q = F.elu(Q_lr) + 1.0
         phi_K = F.elu(K_lr) + 1.0
 
         if getattr(self, "is_decoder", False):
-            # Disable Global Branch for Decoders to prevent FP16 CumSum NaN explosions
-            # (Fallback to Local + Linear branches only)
-            return torch.zeros_like(Q)
+            # Causal Global Linear Attention via Cumulative Sums in FP32
+            phi_Q_f = phi_Q.float()
+            phi_K_f = phi_K.float()
+            V_f = V_flat.float()
+
+            # Numerator: cumsum_{j <= t} phi_K_j * V_j -> [B, N, rank, D]
+            KV_pair = phi_K_f.unsqueeze(-1) * V_f.unsqueeze(-2)
+            KV_cumsum = torch.cumsum(KV_pair, dim=1)
+            num = torch.einsum("bnr,bnrd->bnd", phi_Q_f, KV_cumsum)
+
+            # Denominator: cumsum_{j <= t} phi_K_j -> [B, N, rank]
+            K_cumsum = torch.cumsum(phi_K_f, dim=1)
+            den = (phi_Q_f * K_cumsum).sum(dim=-1, keepdim=True) + 1e-6
+
+            out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
+            return out_lr.view(B, N, h, d).transpose(1, 2)
         else:
-            # True Bidirectional Linear Attention with Normalization
+            # True Bidirectional Linear Attention with Normalization (Associative KV-first)
             KV = torch.matmul(phi_K.transpose(-1, -2), V_flat)
             Z = phi_K.sum(dim=1, keepdim=True)
             num = torch.matmul(phi_Q, KV)
@@ -698,16 +793,19 @@ class AegisSpectronFP8Attention(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, D = hidden_states.shape
 
+        # Functional FP8 simulation (E4M3/E5M2) on input hidden states
+        X_fp8 = fp8_cast_simulate(hidden_states, format=getattr(self.config, "fp8_format", "e4m3"))
+
         # Token-level routing
-        alpha = self.router(hidden_states)  # [B, N, 3]
+        alpha = self.router(X_fp8)  # [B, N, 3]
         alpha_loc = alpha[:, :, 0].unsqueeze(1).unsqueeze(-1)   # [B, 1, N, 1]
         alpha_glob = alpha[:, :, 1].unsqueeze(1).unsqueeze(-1)  # [B, 1, N, 1]
         alpha_lin = alpha[:, :, 2].unsqueeze(1).unsqueeze(-1)   # [B, 1, N, 1]
 
         # Projections via FactorizedLinear (base + LoRA)
-        Q = self.q_proj(hidden_states).view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
-        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
-        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
+        Q = self.q_proj(X_fp8).view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
+        K = self.k_proj(X_fp8).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
+        V = self.v_proj(X_fp8).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
 
         # Apply Rotary Position Embeddings (RoPE) immediately after projections and BEFORE branching
         position_embeddings = kwargs.get("position_embeddings", None)
@@ -750,7 +848,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         # 3 Independent Branches
         out_loc = self._local_branch(Q, K, V, attention_mask)
         out_glob = self._global_branch(Q, K, V)
-        out_lin = self._linear_branch(hidden_states)
+        out_lin = self._linear_branch(X_fp8)
 
         # Token-level dynamic fusion
         out_fused = (alpha_loc * out_loc) + (alpha_glob * out_glob) + (alpha_lin * out_lin)
@@ -801,6 +899,7 @@ def inject_aegis_spectron_fp8(
         lora_rank=getattr(comp_config, "lora_rank", getattr(comp_config, "lora_r", 32)) if comp_config else 32,
         dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
         is_decoder=is_dec,
+        fp8_format=getattr(comp_config, "fp8_format", "e4m3") if comp_config else "e4m3",
     )
 
     # Injection Pre-test: safely abort without corrupting the model if weight copying fails
