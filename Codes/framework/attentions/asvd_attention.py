@@ -69,6 +69,16 @@ class ASVDLinear(nn.Module):
             self.U.data.zero_()
             self.V.data.zero_()
             self.S.data.zero_()
+            if U.size(0) < self.U.size(0):
+                rep = (self.U.size(0) + U.size(0) - 1) // U.size(0)
+                U = U.repeat(rep, 1)[:self.U.size(0), :]
+            elif U.size(0) > self.U.size(0):
+                U = U[:self.U.size(0), :]
+            if V.size(1) < self.V.size(1):
+                rep = (self.V.size(1) + V.size(1) - 1) // V.size(1)
+                V = V.repeat(1, rep)[:, :self.V.size(1)]
+            elif V.size(1) > self.V.size(1):
+                V = V[:, :self.V.size(1)]
             self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
             self.V.data[:r, :].copy_(V[:r, :].to(device=self.V.device, dtype=self.V.dtype))
             if S is not None:
