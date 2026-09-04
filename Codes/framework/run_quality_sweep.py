@@ -144,6 +144,80 @@ def prepare_eval_batches(tokenizer, ds, name, seq_len, batch_size, device):
     return batches
 
 
+def collect_and_export_full_metrics(model, eval_batches, model_name, seq_len=128, device=None, fp16=True, out_dir="results"):
+    """Capture, compute, and export comprehensive profiling metrics (ACL/NeurIPS standards)."""
+    import json, time, os
+    from pathlib import Path
+    out_path = Path(out_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    metrics = {"model": model_name, "hardware": {}, "architecture": {}, "scalability": {}}
+    dev = device if device is not None else next(model.parameters()).device
+    device_type = "cuda" if dev.type == "cuda" else "cpu"
+
+    # 1. Hardware Metrics
+    if device_type == "cuda":
+        torch.cuda.reset_peak_memory_stats(dev)
+    t0 = time.time()
+    total_tokens = 0
+    with torch.inference_mode():
+        for i, (bx, by) in enumerate(eval_batches):
+            if i >= 10:  # Sample first 10 batches for benchmark throughput profiling
+                break
+            with torch.autocast(device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
+                _ = model(**bx).logits
+            total_tokens += bx["input_ids"].numel()
+    elapsed = max(1e-4, time.time() - t0)
+    if device_type == "cuda":
+        metrics["hardware"]["peak_vram_mb"] = round(torch.cuda.max_memory_allocated(dev) / (1024 * 1024), 2)
+    else:
+        metrics["hardware"]["peak_vram_mb"] = 0.0
+    metrics["hardware"]["tokens_per_sec"] = round(total_tokens / elapsed, 2)
+
+    # 2. Span & Sparsity Metrics
+    span_data = {}
+    total_span, total_heads = 0.0, 0
+    for name, mod in model.named_modules():
+        if hasattr(mod, "span_logits"):
+            max_s = getattr(mod, "max_span", seq_len)
+            spans = (torch.sigmoid(mod.span_logits.detach().cpu()) * max_s).tolist()
+            span_data[name] = [round(s, 2) for s in spans]
+            total_span += sum(spans)
+            total_heads += len(spans)
+
+    metrics["architecture"]["span_distribution"] = span_data
+    if total_heads > 0:
+        avg_span = total_span / total_heads
+        metrics["architecture"]["mean_span"] = round(avg_span, 2)
+        metrics["architecture"]["sparsity_ratio_percent"] = round((1.0 - (avg_span / max(1, seq_len))) * 100.0, 2)
+    else:
+        metrics["architecture"]["mean_span"] = float(seq_len)
+        metrics["architecture"]["sparsity_ratio_percent"] = 0.0
+
+    # 3. Scalability (Dummy pass for VRAM scaling across lengths)
+    scalability = {}
+    if device_type == "cuda":
+        for test_len in [128, 256, 512, 1024]:
+            try:
+                torch.cuda.empty_cache()
+                torch.cuda.reset_peak_memory_stats(dev)
+                dummy_ids = torch.randint(10, 100, (1, test_len), device=dev)
+                dummy_mask = torch.ones((1, test_len), device=dev, dtype=torch.long)
+                with torch.inference_mode():
+                    with torch.autocast(device_type, dtype=torch.float16, enabled=fp16):
+                        _ = model(input_ids=dummy_ids, attention_mask=dummy_mask)
+                scalability[f"L_{test_len}_vram_mb"] = round(torch.cuda.max_memory_allocated(dev) / (1024 * 1024), 2)
+            except Exception as e:
+                scalability[f"L_{test_len}_vram_mb"] = f"OOM or unsupported ({e})"
+                torch.cuda.empty_cache()
+    metrics["scalability"] = scalability
+
+    # Export
+    save_file = out_path / f"{model_name}_full_metrics.json"
+    save_file.write_text(json.dumps(metrics, indent=4), encoding="utf-8")
+    LOG.info("Exported comprehensive profiling metrics to %s", save_file)
+    return metrics
+
+
 @torch.inference_mode()
 def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True, precomputed_batches=None):
     model.eval(); correct = total = 0
