@@ -35,6 +35,8 @@ class QwenIncompatibleError(RuntimeError):
 
 def is_qwen_model(model: nn.Module) -> bool:
     config = getattr(model, "config", None)
+    if config is not None and hasattr(config, "text_config"):
+        config = config.text_config
     model_type = str(getattr(config, "model_type", "")).lower()
     return model_type.startswith("qwen") or "qwen" in model.__class__.__name__.lower()
 
@@ -42,6 +44,8 @@ def is_qwen_model(model: nn.Module) -> bool:
 def is_qwen_attention(module: nn.Module) -> bool:
     """Detect a native Qwen attention block without importing transformers."""
     cfg = getattr(module, "config", None)
+    if cfg is not None and hasattr(cfg, "text_config"):
+        cfg = cfg.text_config
     return str(getattr(cfg, "model_type", "")).lower().startswith("qwen") or (
         hasattr(module, "q_proj") and hasattr(module, "o_proj") and
         ("qwen" in module.__class__.__name__.lower() or hasattr(module, "rotary_emb"))
@@ -50,6 +54,8 @@ def is_qwen_attention(module: nn.Module) -> bool:
 
 def qwen_config_proxy(model_or_config: Any) -> QwenConfigProxy:
     config = getattr(model_or_config, "config", model_or_config)
+    if hasattr(config, "text_config"):
+        config = config.text_config
     hidden = int(getattr(config, "hidden_size"))
     heads = int(getattr(config, "num_attention_heads"))
     return QwenConfigProxy(
@@ -65,6 +71,12 @@ def install_qwen_aliases(model: nn.Module) -> nn.Module:
     """Install non-structural projection aliases on every Qwen attention block."""
     if not is_qwen_model(model):
         return model
+    cfg = getattr(model, "config", None)
+    if cfg is not None and hasattr(cfg, "text_config"):
+        tc = cfg.text_config
+        for attr in ("hidden_size", "num_attention_heads", "num_key_value_heads", "head_dim", "num_hidden_layers"):
+            if hasattr(tc, attr) and not hasattr(cfg, attr):
+                setattr(cfg, attr, getattr(tc, attr))
     for module in model.modules():
         if not hasattr(module, "q_proj"):
             continue

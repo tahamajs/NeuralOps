@@ -8,7 +8,10 @@ FAMILIES = ("bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown")
 
 
 def _config(obj: Any) -> Any:
-    return getattr(obj, "config", obj)
+    cfg = getattr(obj, "config", obj)
+    if hasattr(cfg, "text_config"):
+        return cfg.text_config
+    return cfg
 
 
 def detect_family(model_or_config: Any) -> str:

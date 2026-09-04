@@ -414,10 +414,11 @@ def inject_attention(
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     config = getattr(model, "config", None)
     if config is not None:
-        hidden_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
-        num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", None))))
-        head_dim = getattr(config, "head_dim", getattr(config, "d_kv", (hidden_size // max(1, num_heads) if (hidden_size and num_heads) else None)))
-        num_kv_heads = getattr(config, "num_key_value_heads", num_heads)
+        cfg_source = getattr(config, "text_config", config)
+        hidden_size = getattr(cfg_source, "hidden_size", getattr(cfg_source, "d_model", getattr(cfg_source, "n_embd", getattr(cfg_source, "dim", None))))
+        num_heads = getattr(cfg_source, "num_attention_heads", getattr(cfg_source, "num_heads", getattr(cfg_source, "n_heads", getattr(cfg_source, "n_head", None))))
+        head_dim = getattr(cfg_source, "head_dim", getattr(cfg_source, "d_kv", (hidden_size // max(1, num_heads) if (hidden_size and num_heads) else None)))
+        num_kv_heads = getattr(cfg_source, "num_key_value_heads", num_heads)
         if hidden_size is not None:
             setattr(config, "hidden_size", hidden_size)
         if num_heads is not None:
