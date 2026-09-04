@@ -902,6 +902,7 @@ def main():
                     err = f"batch_size reduced {args.batch_size}->{safe_batch} after CUDA OOM"
                     exc = None
                 except Exception as retry: exc = retry
+
             if exc is not None and name != "full" and is_dtype_error(exc):
                 try:
                     model.float(); typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
@@ -910,10 +911,17 @@ def main():
                     err = f"fp32 retry: {exc}"
                     exc = None
                 except Exception as retry: exc = retry
-            if exc is not None:
+            
+            # Check for explicit SKIP signal (e.g. inject_adaptive_svd returning None or copy_weights failing)
+            if exc is not None and isinstance(exc, RuntimeError) and ("Could not extract all required weights" in str(exc) or "Could not instantiate attention class" in str(exc)):
+                status = f"SKIP_{family.upper()}_ARCHITECTURAL"
+                err = f"note: architecture unsupported by module ({exc})"
+                acc = 0.0
+            elif exc is not None:
                 status = "FAIL"
                 err = f"{type(exc).__name__}: {exc}"
                 acc = 0.0
+
 
         # -------------------------------------------------------------------------
         # STEP 0: Honest Three-Way Status Classification

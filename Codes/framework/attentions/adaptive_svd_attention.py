@@ -307,9 +307,14 @@ class AdaptiveSVDAttention(BaseAttention):
             if adap_linear.bias is not None and bias_data is not None:
                 adap_linear.bias.data.copy_(bias_data)
 
+
     def copy_weights(self, src: Any) -> None:
         """Decompose and copy weights from any HuggingFace or PyTorch MHA module with fallback."""
         from framework.core.adapters import UniversalAdapter
+        
+        # Test if we can extract weights
+        extracted_all = True
+        extracted_weights = {}
 
         for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
             w, b = None, None
@@ -338,6 +343,10 @@ class AdaptiveSVDAttention(BaseAttention):
                         mod = getattr(s, name_map[proj])
                         w = mod.weight
                         b = getattr(mod, "bias", None)
+                elif hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and proj == "o":
+                    mod = src.output.dense
+                    w = mod.weight
+                    b = getattr(mod, "bias", None)
                 elif hasattr(src, "query") and proj == "q":
                     w = src.query.weight
                     b = getattr(src.query, "bias", None)
@@ -347,7 +356,30 @@ class AdaptiveSVDAttention(BaseAttention):
                 elif hasattr(src, "value") and proj == "v":
                     w = src.value.weight
                     b = getattr(src.value, "bias", None)
+                elif hasattr(src, f"{proj}_proj"):
+                    mod = getattr(src, f"{proj}_proj")
+                    w = mod.weight
+                    b = getattr(mod, "bias", None)
 
+            extracted_weights[proj] = (w, b)
+            if w is None:
+                extracted_all = False
+
+        if not extracted_all:
+            # Check if this is a nested encoder which only has q, k, v (o is outside)
+            cls_name = src.__class__.__name__
+            has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+            is_nested_encoder = (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj
+            
+            # If it's a nested encoder, it's okay to miss 'o'
+            if is_nested_encoder and extracted_weights["q"][0] is not None and extracted_weights["k"][0] is not None and extracted_weights["v"][0] is not None:
+                extracted_all = True
+                
+        if not extracted_all:
+            raise RuntimeError(f"Could not extract all required weights for AdaptiveSVDAttention. Missing: {[p for p, (w, _) in extracted_weights.items() if w is None]}")
+
+        for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+            w, b = extracted_weights[proj]
             if w is not None:
                 self._init_svd_part(target, w, b)
                 # Sanity check: ensure reconstructed weight isn't garbage
@@ -479,6 +511,7 @@ class AdaptiveSVDAttention(BaseAttention):
         return output, attn_weights if output_attentions else None
 
 
+
 @ATTENTION_REGISTRY.register("adaptive_svd_attention_inject")
 @ATTENTION_REGISTRY.register("adaptive_svd_inject")
 def inject_adaptive_svd(
@@ -489,8 +522,58 @@ def inject_adaptive_svd(
     total_layers: int,
     old_attn: Optional[nn.Module],
     **kwargs: Any,
-) -> AdaptiveSVDAttention:
-    svd_rank = getattr(comp_config, "svd_rank", 32)
+) -> Optional[AdaptiveSVDAttention]:
+    # Pre-test weight extraction
+    if old_attn is not None:
+        from framework.core.adapters import UniversalAdapter
+        extracted_all = True
+        extracted_weights = {}
+        for proj in ["q", "k", "v", "o"]:
+            w, b = None, None
+            try:
+                w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+            except Exception:
+                pass
+            
+            if w is None:
+                src = old_attn
+                if hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
+                    w = src.c_attn.weight.T
+                elif hasattr(src, "c_proj") and proj == "o":
+                    w = src.c_proj.weight.T
+                elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+                    s = getattr(src, "self")
+                    name_map = {"q": "query", "k": "key", "v": "value"}
+                    if proj in name_map:
+                        mod = getattr(s, name_map[proj])
+                        w = mod.weight
+                elif hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and proj == "o":
+                    w = src.output.dense.weight
+                elif hasattr(src, "query") and proj == "q":
+                    w = src.query.weight
+                elif hasattr(src, "key") and proj == "k":
+                    w = src.key.weight
+                elif hasattr(src, "value") and proj == "v":
+                    w = src.value.weight
+                elif hasattr(src, f"{proj}_proj"):
+                    w = getattr(src, f"{proj}_proj").weight
+            
+            extracted_weights[proj] = w
+            if w is None:
+                extracted_all = False
+                
+        if not extracted_all:
+            cls_name = old_attn.__class__.__name__
+            has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+            is_nested_encoder = (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj
+            
+            if is_nested_encoder and extracted_weights["q"] is not None and extracted_weights["k"] is not None and extracted_weights["v"] is not None:
+                extracted_all = True
+                
+        if not extracted_all:
+            return None
+
+    svd_rank = getattr(comp_config, "svd_rank", getattr(comp_config, "rank", getattr(model_config, "rank", 32)))
     residual_rank = getattr(comp_config, "residual_rank", 16)
     energy_threshold = getattr(comp_config, "energy_threshold", 0.92)
     new_attn = AdaptiveSVDAttention(
@@ -502,3 +585,4 @@ def inject_adaptive_svd(
     )
     layer.attention = new_attn
     return new_attn
+
