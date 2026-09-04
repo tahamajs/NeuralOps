@@ -239,18 +239,27 @@ class AdaptiveSpanAttention(BaseAttention):
             pos = torch.arange(N_q, device=device, dtype=torch.float32)
             dist = (pos.unsqueeze(0) - pos.unsqueeze(1)).abs()       # [N, N]
             span_bool = dist.unsqueeze(0) <= span.unsqueeze(1).unsqueeze(2)  # [H, N, N]
-            # --- NEW: PERISCOPE TOKEN HACK ---
-            # In causal sequence classification, sentences have dynamic lengths (e.g. non-pad tokens at index 2..30),
-            # followed by padding up to max_length (128).
-            # If queries cannot attend back to token 0, the classifier loses earlier semantic context.
-            # We enforce causal attention and ensure all valid tokens have full visibility of preceding tokens:
+            # --- PADDING-AWARE PERISCOPE LOGIC FOR CAUSAL & BIDIRECTIONAL DECODERS ---
+            # If causal decoder, enforce causal mask first
             if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
                 causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
                 scores = scores.masked_fill(~causal_tril, -10000.0)
+
+            # Expand span_bool to [B, H, N, N]
+            span_bool = span_bool.unsqueeze(0).expand(B, -1, -1, -1).clone()
+
+            # Dynamically open periscope visibility for the true last token before padding
+            if attention_mask is not None:
+                mask_2d = attention_mask.view(attention_mask.size(0), -1)
+                last_token_indices = mask_2d.sum(dim=-1) - 1
+                for batch_idx, last_idx in enumerate(last_token_indices):
+                    idx_val = max(0, min(int(last_idx.item()), N_q - 1))
+                    span_bool[batch_idx, :, idx_val, :] = True
             else:
-                span_bool = span_bool.unsqueeze(0)  # [1, H, N, N]
-                scores = scores.masked_fill(~span_bool.to(scores.device), -10000.0)
-            # ---------------------------------
+                span_bool[:, :, -1, :] = True
+
+            scores = scores.masked_fill(~span_bool.to(scores.device), -10000.0)
+            # --------------------------------------------------------------------------
 
         attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
