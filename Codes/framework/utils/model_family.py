@@ -65,7 +65,7 @@ class ModelAdapter:
         self.causal = self.family in {"gpt", "qwen", "qwen3_5", "ssm"}
         self.mask_rank = 4 if self.family in {"gpt", "qwen", "qwen3_5"} else (2 if self.family in {"bert", "roberta"} else 3)
         self.bidirectional = not self.causal
-        self.position_embedding = "rotary" if self.family in {"gpt", "qwen", "qwen3_5"} else ("absolute" if self.family in {"bert", "roberta", "t5"} else "none")
+        self.position_embedding = "rotary" if self.family in {"qwen", "qwen3_5"} else ("absolute" if self.family in {"bert", "roberta", "gpt", "t5"} else "none")
         self.supports_gqa = self.num_key_value_heads < self.num_heads or self.family == "qwen3_5"
         self.supports_delta_net = self.family == "qwen3_5"
         self.supports_moe = self.family == "qwen3_5"
