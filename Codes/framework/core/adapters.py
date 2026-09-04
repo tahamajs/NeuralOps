@@ -110,6 +110,21 @@ class UniversalAdapter:
                 elif proj == 'v':
                     return w[2*split_w:, :], (b[2*split_b:] if b is not None else None)
 
+        # 4b. Fallback for Qwen3.5 / fused in_proj_qkv
+        if proj in ('q', 'k', 'v') and hasattr(old_attn, 'in_proj_qkv'):
+            fused_result = _extract(old_attn.in_proj_qkv)
+            if fused_result is not None:
+                w, b = fused_result
+                k_dim = getattr(old_attn, "key_dim", getattr(old_attn, "k_dim", w.size(0) // 3))
+                v_dim = getattr(old_attn, "value_dim", getattr(old_attn, "v_dim", w.size(0) // 3))
+                q_dim = w.size(0) - k_dim - v_dim if (k_dim + v_dim < w.size(0)) else k_dim
+                if proj == 'q':
+                    return w[:q_dim, :], (b[:q_dim] if b is not None else None)
+                elif proj == 'k':
+                    return w[q_dim:q_dim + k_dim, :], (b[q_dim:q_dim + k_dim] if b is not None else None)
+                elif proj == 'v':
+                    return w[q_dim + k_dim:q_dim + k_dim + v_dim, :], (b[q_dim + k_dim:q_dim + k_dim + v_dim] if b is not None else None)
+
         # 5. Positional fallback: scan all Linear children of target in declaration order.
         #    q=first, k=second, v=third (the typical pattern for BERT/RoBERTa variants).
         ordered_proj_map = {"q": 0, "k": 1, "v": 2}
