@@ -184,17 +184,18 @@ class AdaptiveSpanAttention(BaseAttention):
 
         # Apply RoPE if available in kwargs (Crucial for Qwen3.5/LLaMA/Mistral)
         position_embeddings = kwargs.get("position_embeddings", None)
-        if position_embeddings is not None:
-            from framework.utils.compat import apply_rotary
-            try:
-                Q, K = apply_rotary(Q, K, position_embeddings)
-            except Exception:
-                try:
-                    from transformers.models.qwen2.modeling_qwen2 import apply_rotary_pos_emb
-                    cos, sin = position_embeddings
-                    Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=kwargs.get("position_ids"))
-                except Exception:
-                    pass
+        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+            cos, sin = position_embeddings[0], position_embeddings[1]
+            def _rotate_half(x):
+                return torch.cat((-x[..., x.shape[-1] // 2:], x[..., :x.shape[-1] // 2]), dim=-1)
+            if cos.dim() == 3:
+                cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
+            while cos.dim() < Q.dim():
+                cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
+            if cos.shape[-2] != Q.shape[-2]:
+                cos, sin = cos[..., :Q.shape[-2], :], sin[..., :Q.shape[-2], :]
+            Q = (Q * cos.to(Q.dtype)) + (_rotate_half(Q) * sin.to(Q.dtype))
+            K = (K * cos.to(K.dtype)) + (_rotate_half(K) * sin.to(K.dtype))
 
         if self.kv_repeat > 1:
             K = K.unsqueeze(2).expand(-1, -1, self.kv_repeat, -1, -1).reshape(B, H, N_k, d)
