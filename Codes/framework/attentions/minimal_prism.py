@@ -58,7 +58,7 @@ class FactorisedLinear(nn.Module):
             target_energy = energy if energy is not None else self.energy
             total_energy = (S**2).sum()
             cum_energy = torch.cumsum(S**2, dim=0) / (total_energy + 1e-12)
-            calc_rank = int(torch.searchsorted(cum_energy, target_energy).item()) + 1
+            calc_rank = int((cum_energy < target_energy).sum().item()) + 1
             r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
             r = max(1, r)
 

@@ -190,6 +190,10 @@ class MambaSVDFlash(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Execute the forward MambaSVD-Flash pass."""
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
+        while isinstance(attention_mask, (tuple, list)):
+            attention_mask = attention_mask[0]
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
@@ -200,6 +204,8 @@ class MambaSVDFlash(BaseAttention):
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 mask_bool = attention_mask.bool()
+            elif attention_mask.dim() == 3:
+                mask_bool = (attention_mask.squeeze(1) > -10000.0).bool()
             elif attention_mask.dim() == 4:
                 mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 

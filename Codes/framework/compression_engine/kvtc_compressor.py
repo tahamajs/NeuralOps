@@ -152,7 +152,7 @@ class KVTCCompressor(BaseCompressor):
                 total_energy = (S**2).sum()
                 if total_energy > 0:
                     cum_energy = torch.cumsum(S**2, dim=0) / total_energy
-                    rank = int(torch.searchsorted(cum_energy, self.pca_energy).item()) + 1
+                    rank = int((cum_energy < self.pca_energy).sum().item()) + 1
                 else:
                     rank = min(W.shape)
                 rank = max(1, min(rank, min(W.shape)))

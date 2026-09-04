@@ -42,6 +42,7 @@ class LabelSmoothingLoss(nn.Module):
     def forward(self, logits, labels) -> Any:
         """Forward pass — compute module output from inputs."""
         log_probs = F.log_softmax(logits, dim=-1)
+        labels = labels.to(log_probs.device)
         nll = -log_probs.gather(dim=-1, index=labels.unsqueeze(1))
         smooth = -log_probs.mean(dim=-1)
         return (self.confidence * nll + self.smoothing * smooth).mean()
