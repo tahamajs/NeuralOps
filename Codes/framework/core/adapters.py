@@ -59,7 +59,8 @@ class UniversalAdapter:
             if w.ndim != 2:
                 return None
             # Conv1D stores weights transposed: [in_features, out_features]
-            if w.shape[0] < w.shape[1]:
+            is_conv1d = (mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf")
+            if is_conv1d or (w.shape[0] < w.shape[1]):
                 w = w.t().contiguous()
             bias = getattr(mod, "bias", None)
             bias = bias.data if (bias is not None and hasattr(bias, "data")) else bias
