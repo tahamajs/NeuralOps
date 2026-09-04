@@ -98,29 +98,33 @@ class FactorisedLowRankProjection(nn.Module):
         self.out_features = out_features
 
         if pretrained_weight is not None:
+            device = pretrained_weight.device
+            dtype = pretrained_weight.dtype
             W = pretrained_weight.detach().float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             S = torch.clamp(S, min=1e-6)
             effective_rank = min(svd_rank, U.size(1), Vt.size(0))
-            U_init = U[:, :effective_rank].clone()
-            S_init = S[:effective_rank].clone()
-            V_init = Vt[:effective_rank, :].clone().t()
+            U_init = U[:, :effective_rank].to(device=device, dtype=dtype)
+            S_init = S[:effective_rank].to(device=device, dtype=dtype)
+            V_init = Vt[:effective_rank, :].t().to(device=device, dtype=dtype)
         else:
+            device = torch.device("cpu")
+            dtype = torch.float32
             effective_rank = min(svd_rank, in_features, out_features)
-            U_init = torch.randn(out_features, effective_rank) * 0.02
-            S_init = torch.ones(effective_rank)
-            V_init = torch.randn(in_features, effective_rank) * 0.02
+            U_init = torch.randn(out_features, effective_rank, device=device, dtype=dtype) * 0.02
+            S_init = torch.ones(effective_rank, device=device, dtype=dtype)
+            V_init = torch.randn(in_features, effective_rank, device=device, dtype=dtype) * 0.02
 
         self.register_buffer("U", U_init)
         self.S = nn.Parameter(S_init)
         self.register_buffer("V", V_init)
-        self.A = nn.Parameter(torch.zeros(out_features, lora_rank))
-        self.B = nn.Parameter(torch.zeros(lora_rank, in_features))
+        self.A = nn.Parameter(torch.zeros(out_features, lora_rank, device=device, dtype=dtype))
+        self.B = nn.Parameter(torch.zeros(lora_rank, in_features, device=device, dtype=dtype))
         nn.init.normal_(self.B, std=0.02)
         if pretrained_bias is not None:
-            self.bias = nn.Parameter(pretrained_bias.detach().clone().float())
+            self.bias = nn.Parameter(pretrained_bias.detach().to(device=device, dtype=dtype))
         else:
-            self.bias = nn.Parameter(torch.zeros(out_features))
+            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
 
     @property
     def weight(self) -> torch.Tensor:

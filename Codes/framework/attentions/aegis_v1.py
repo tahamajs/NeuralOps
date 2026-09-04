@@ -61,12 +61,15 @@ class FactorisedLinear(nn.Module):
             A = U[:, :rank] * S[:rank].unsqueeze(0)
             B = Vt[:rank, :]
 
-        self.down = nn.Linear(in_dim, rank, bias=False)
-        self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
-        self.down.weight.data.copy_(B.to(self.down.weight.dtype))
-        self.up.weight.data.copy_(A.to(self.up.weight.dtype))
+        device = pretrained_weight.device
+        dtype = pretrained_weight.dtype
+
+        self.down = nn.Linear(in_dim, rank, bias=False, device=device, dtype=dtype)
+        self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None), device=device, dtype=dtype)
+        self.down.weight.data.copy_(B.to(device=device, dtype=dtype))
+        self.up.weight.data.copy_(A.to(device=device, dtype=dtype))
         if pretrained_bias is not None and self.up.bias is not None:
-            self.up.bias.data.copy_(pretrained_bias.to(self.up.bias.dtype))
+            self.up.bias.data.copy_(pretrained_bias.to(device=device, dtype=dtype))
         elif self.up.bias is not None:
             self.up.bias.data.zero_()
 
@@ -240,14 +243,16 @@ class AegisAttentionV1(nn.Module):
         )
 
         # Initialize orthogonal random features (ORF) for global kernel stability
-        rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features)
+        device = q_lin.weight.device if q_lin is not None else torch.device("cpu")
+        dtype = q_lin.weight.dtype if q_lin is not None else torch.float32
+        rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features, device=device, dtype=dtype)
         for h in range(self.num_global_heads):
-            q_mat, _ = torch.linalg.qr(torch.randn(max(self.head_dim, self.cfg.rff_features), max(self.head_dim, self.cfg.rff_features)))
+            q_mat, _ = torch.linalg.qr(torch.randn(max(self.head_dim, self.cfg.rff_features), max(self.head_dim, self.cfg.rff_features), device=device, dtype=dtype))
             rff_init[h] = q_mat[:self.head_dim, :self.cfg.rff_features] / math.sqrt(self.cfg.rff_features)
         self.rff_proj: nn.Parameter = nn.Parameter(rff_init)
 
         if self.cfg.use_adaptive_gate:
-            self.blend_logits: Optional[nn.Parameter] = nn.Parameter(torch.zeros(self.num_heads))
+            self.blend_logits: Optional[nn.Parameter] = nn.Parameter(torch.zeros(self.num_heads, device=device, dtype=dtype))
             self.gate_bias: float = max(2.0, self.cfg.gate_init_bias)
         else:
             self.blend_logits = None
