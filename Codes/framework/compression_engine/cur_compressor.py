@@ -45,12 +45,11 @@ class CURCompressor(BaseCompressor):
             self.model = model
             self._original_params = self._count_params(self.model)
 
-        self.compressed_layers = []
+        from framework.utils.compat import should_compress_linear
         for name, module in list(self.model.named_modules()):
             if not isinstance(module, nn.Linear) or isinstance(module, CURLinear):
                 continue
-            # Never compress classifier / lm_head / score
-            if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
+            if not should_compress_linear(self.model, name):
                 continue
             if self.target_names and not any(t in name for t in self.target_names):
                 continue

@@ -69,26 +69,7 @@ class CoMeBridgedLayer(nn.Module):
         self.bridge = bridge
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        # Normalize attention_mask from 4D Qwen causal mask [B,H,L,L] → 2D bool [B,L]
-        # or from integer dtype to bool, to avoid shape/dtype mismatches in SDPA.
-        if "attention_mask" in kwargs and isinstance(kwargs["attention_mask"], torch.Tensor):
-            m = kwargs["attention_mask"]
-            if m.dim() == 4:
-                # 4D causal mask: values > -1e4 mean "attend", collapse to [B, L]
-                kwargs["attention_mask"] = (m[:, 0, 0, :] > -1e4)
-            elif m.dtype in (torch.int64, torch.int32, torch.int16, torch.int8):
-                kwargs["attention_mask"] = m.bool()
-
-        new_args = list(args)
-        # Normalize positional attention_mask argument (index 1)
-        if len(new_args) > 1 and isinstance(new_args[1], torch.Tensor):
-            m = new_args[1]
-            if m.dim() == 4:
-                new_args[1] = (m[:, 0, 0, :] > -1e4)
-            elif m.dtype in (torch.int64, torch.int32, torch.int16, torch.int8):
-                new_args[1] = m.bool()
-
-        out = self.layer(*new_args, **kwargs)
+        out = self.layer(*args, **kwargs)
         if self.bridge is not None:
             out = self.bridge(out)
         return out

@@ -268,6 +268,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
         except torch.cuda.OutOfMemoryError:
             opt.zero_grad(set_to_none=True)
             torch.cuda.empty_cache()
+            model.to(device)
             if micro_bs > 1:
                 micro_bs //= 2
                 LOG.warning("CUDA OOM during LoRA training; reducing micro-batch size to %d (effective bs=%d)", micro_bs, curr_batch_size)
@@ -689,6 +690,7 @@ def main():
             "granite_hybrid": 4, "grecodec": 4, "grecodec_compressor": 4,
             "hymba_transx": 4, "mamba_svd_flash": 8, "spectral_mamba": 8,
             "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
+            "asvd": 8, "cosformer": 8, "cur": 8, "vig": 8,
         }
         effective_batch_size = _OOM_MODULE_BATCH_OVERRIDES.get(name, args.batch_size)
 
