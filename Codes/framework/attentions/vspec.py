@@ -227,6 +227,6 @@ class VSpecAttention(BaseAttention):
         # Reverse routing: scatter back into output
         output = hidden_states.clone()
         for b in range(B):
-            output[b, idx[b]] = out[b]
+            output[b, idx[b]] = out[b].to(output.dtype)
 
         return output, (attn_weights if output_attentions else None)
