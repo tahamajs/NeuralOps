@@ -240,11 +240,18 @@ class AdaptiveSpanAttention(BaseAttention):
             dist = (pos.unsqueeze(0) - pos.unsqueeze(1)).abs()       # [N, N]
             span_bool = dist.unsqueeze(0) <= span.unsqueeze(1).unsqueeze(2)  # [H, N, N]
             # --- NEW: PERISCOPE TOKEN HACK ---
-            # Force the last token in the query sequence (dim -2) to attend to all key tokens.
-            # This is critical for Causal LMs doing classification on the last token.
+            # For Causal LMs doing sequence classification, the last non-pad token aggregates context.
+            # We ensure all non-padding tokens can attend backwards without span truncation blocking classification.
+            span_bool = span_bool.unsqueeze(0)  # [1, H, N, N]
+            # Make the last query positions fully open to all prior key positions
+            span_bool = span_bool.clone()
             span_bool[..., -1, :] = True
+            # Also ensure causal models receive causal triangle masking
+            if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
+                causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+                scores = scores.masked_fill(~causal_tril, -10000.0)
             # ---------------------------------
-            scores = scores.masked_fill(~span_bool.to(scores.device).unsqueeze(0), -10000.0)
+            scores = scores.masked_fill(~span_bool.to(scores.device), -10000.0)
 
         attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
