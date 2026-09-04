@@ -185,8 +185,34 @@ class AdaptiveSparseAttention(BaseAttention):
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2)
         K = self.k_proj(kv_input).view(B, N_k, self.num_key_value_heads, d).transpose(1, 2)
         V = self.v_proj(kv_input).view(B, N_k, self.num_key_value_heads, d).transpose(1, 2)
-        Q, K = maybe_apply_rotary(Q, K, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
-        K, V = repeat_kv(K, self.adapter.kv_repeat), repeat_kv(V, self.adapter.kv_repeat)
+        # Apply RoPE if available in kwargs (Crucial for Qwen3.5/LLaMA/Mistral)
+        position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+            cos, sin = position_embeddings[0], position_embeddings[1]
+            def _rotate_half(x):
+                return torch.cat((-x[..., x.shape[-1] // 2:], x[..., :x.shape[-1] // 2]), dim=-1)
+            if cos.dim() == 3:
+                cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
+            while cos.dim() < Q.dim():
+                cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
+            if cos.shape[-2] != Q.shape[-2]:
+                cos, sin = cos[..., :Q.shape[-2], :], sin[..., :Q.shape[-2], :]
+            rotary_dim = cos.shape[-1]
+            if rotary_dim <= Q.shape[-1]:
+                q_rot, q_pass = Q[..., :rotary_dim], Q[..., rotary_dim:]
+                k_rot, k_pass = K[..., :rotary_dim], K[..., rotary_dim:]
+                q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+                k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+                Q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
+                K = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
+            else:
+                cos_cut, sin_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
+                Q = (Q * cos_cut.to(Q.dtype)) + (_rotate_half(Q) * sin_cut.to(Q.dtype))
+                K = (K * cos_cut.to(K.dtype)) + (_rotate_half(K) * sin_cut.to(K.dtype))
+
+        if self.adapter.kv_repeat > 1:
+            K = repeat_kv(K, self.adapter.kv_repeat)
+            V = repeat_kv(V, self.adapter.kv_repeat)
 
         scale = d ** -0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N_q, N_k]
