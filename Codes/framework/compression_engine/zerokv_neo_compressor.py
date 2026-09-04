@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 
 class ZeroKVNeoCache:
@@ -130,7 +131,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress linear projection weights preserving attention sinks and heavy hitters."""
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and self._is_attention_proj(name):
+            if isinstance(module, nn.Linear) and self._is_attention_proj(name) and should_compress_linear(self.model, name):
                 W = module.weight.data
                 out_f, in_f = W.shape
 
