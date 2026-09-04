@@ -111,6 +111,19 @@ class UniversalAdapter:
                 elif proj == 'v':
                     return w[2*split_w:, :], (b[2*split_b:] if b is not None else None)
 
+        # 6. Fallback for 'o' projection when replacing leaf self-attention without local out_proj
+        # (e.g. RoBERTa/BERT RobertaSelfAttention where output.dense resides in the parent container).
+        # Returning an Identity matrix ensures:
+        #   (a) custom modules don't crash during weight copying, and
+        #   (b) context passes through transparently to parent.output.dense without double projection!
+        if proj == "o":
+            for mod in target.modules():
+                if hasattr(mod, "weight") and isinstance(getattr(mod, "weight", None), torch.Tensor) and mod.weight.ndim == 2:
+                    d = mod.weight.shape[0]
+                    eye_w = torch.eye(d, dtype=mod.weight.dtype, device=mod.weight.device)
+                    zero_b = torch.zeros(d, dtype=mod.weight.dtype, device=mod.weight.device)
+                    return eye_w, zero_b
+
         raise ValueError(f"Could not extract '{proj}' projection weights from {type(old_attn).__name__}")
 
     @staticmethod
