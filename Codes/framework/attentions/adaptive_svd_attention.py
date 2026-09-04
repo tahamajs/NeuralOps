@@ -385,8 +385,8 @@ class AdaptiveSVDAttention(BaseAttention):
                 # Sanity check: ensure reconstructed weight isn't garbage
                 reconstructed = (target.U @ target.V).detach()
                 error = (torch.norm(w.to(reconstructed.device).float() - reconstructed.float()) / (torch.norm(w.float()) + 1e-8)).item()
-                if error > 0.5:
-                    print(f"WARNING: High SVD reconstruction error ({error:.2f}) for {proj}. Fallback might be needed.")
+                if error > 0.05:
+                    print(f"CRITICAL WARNING: High SVD reconstruction error ({error:.2f}) for {proj} exceeds 5% threshold.")
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
@@ -585,4 +585,5 @@ def inject_adaptive_svd(
     )
     layer.attention = new_attn
     return new_attn
+
 
