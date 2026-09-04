@@ -13,6 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 
 class SubspaceLinear(nn.Module):
@@ -158,6 +159,8 @@ class SubspaceProjectionCompressor(BaseCompressor):
         self.compressed_layers = []
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and not isinstance(module, SubspaceLinear):
+                if not should_compress_linear(self.model, name):
+                    continue
                 if self.target_layers and not any(t in name for t in self.target_layers):
                     continue
 
