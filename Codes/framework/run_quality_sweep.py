@@ -561,174 +561,174 @@ def main():
                 LOG.info("[%d/%d] %s -> %s (%.2f%%)", n, len(names), name, status, acc)
                 continue
         # Side effect is projection alias installation; the model itself
-            # is not replaced, preserving native HF forward semantics.
-            wrap_for_family(model, family)
-            typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
-            if typ == "attention":
-                # For attention replacement modules, merge baseline LoRA adapters into base weights
-                # so that get_weight_bias extracts full fine-tuned representations into new_attn.
-                for m in model.modules():
-                    if hasattr(m, "merge") and callable(m.merge):
+        # is not replaced, preserving native HF forward semantics.
+        wrap_for_family(model, family)
+        typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
+        if typ == "attention":
+            # For attention replacement modules, merge baseline LoRA adapters into base weights
+            # so that get_weight_bias extracts full fine-tuned representations into new_attn.
+            for m in model.modules():
+                if hasattr(m, "merge") and callable(m.merge):
+                    try:
+                        m.merge()
+                    except Exception:
+                        pass
+        else:
+            # For compressor modules, do NOT merge LoRA into base weights.
+            # Keep base_layer and lora_A/lora_B deltas separate: the compressor factorizes
+            # the frozen base_layer.weight, while LoRA deltas remain active and trainable for recovery.
+            pass
+        injected = False
+        had_nan = False
+        path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
+
+        # Hard timeout enforcing max timeout across injection, recovery, and eval
+        # Slow modules get extended timeout across all model families
+        _SLOW_MODULE_TIMEOUT_OVERRIDES = {
+            "grecodec": 600, "grecodec_compressor": 600,
+            "mlorq": 500, "lillama": 500, "cr": 500, "huffman": 500,
+            "primal": 400, "primal_attention": 400,
+            "fused_svd_kernel": 400, "hla": 400, "nmf": 400,
+            "rotational_slicegpt": 400, "rotational_slicegpt_int4": 400,
+            "slicegpt": 400, "slicegpt_pca": 400, "slicegpt_compressor": 400,
+            "sparsegpt": 400, "granite_hybrid": 400, "mamba_svd_flash": 400,
+            "uniql": 400, "vspec": 400, "saes": 400, "hymba_transx": 400,
+            "orion": 400, "phantom": 400, "soka": 400, "sdrm": 400,
+            "hybridkv": 400, "jamba_info": 400, "kmeans": 400,
+            "kronecker": 400, "kvtc": 400, "lsc": 400, "mgie": 400,
+            "mgie_budget": 400, "mixattention_moska": 400, "modegpt": 400,
+            "nli_softmax": 400, "oats": 400, "optimal_subspace_projection": 400,
+            "rpc": 400, "rpca": 400, "samba_moe": 400, "slim": 400,
+            "soa_attn": 400, "soa_fused_attn": 400, "spectral_residual_lora": 400,
+            "spectron": 400, "svd_llm_v2": 400, "swift_svd": 400,
+            "swift_svd_act": 400, "tt": 400, "svd_quant": 400,
+            "svd_projection": 400,
+        }
+        base_timeout = 360 if family in ("qwen3_5", "qwen") else max(args.timeout, 240)
+        effective_timeout = max(base_timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, base_timeout))
+
+        # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
+        _OOM_MODULE_BATCH_OVERRIDES = {
+            "granite_hybrid": 4, "grecodec": 4, "grecodec_compressor": 4,
+            "hymba_transx": 4, "mamba_svd_flash": 8, "spectral_mamba": 8,
+            "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
+        }
+        effective_batch_size = _OOM_MODULE_BATCH_OVERRIDES.get(name, args.batch_size)
+
+        try:
+            def _run_candidate_pipeline():
+                nonlocal model, injected, path_name, had_nan
+                if name != "full":
+                    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+                    injected = True
+                    path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
+                    LOG.info("module=%s path=%s", name, path_name)
+                    had_nan = False
+                    recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
+                    should_recover = (
+                        args.recovery_steps > 0
+                        and typ == "attention"
+                        and (
+                            not recovery_targets
+                            or "all" in recovery_targets
+                            or "attention" in recovery_targets
+                            or name in recovery_targets
+                        )
+                    )
+                    if should_recover:
+                        rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
+                        rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
+                        LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
+                        for m in model.modules():
+                            if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
+                                m.reset_parameters()
+                                m.merged = False
+
+                        from framework.utils.compat import get_recovery_params
+                        trainable = get_recovery_params(model)
+                        if trainable:
+                            had_nan = finetune_lora(
+                                model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+                                args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
+                                optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
+                                weight_decay=args.weight_decay, timeout=effective_timeout,
+                            )
+                try:
+                    return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+                finally:
+                    if model is not None:
                         try:
-                            m.merge()
+                            model.zero_grad(set_to_none=True)
+                            model.to("cpu")
                         except Exception:
                             pass
-            else:
-                # For compressor modules, do NOT merge LoRA into base weights.
-                # Keep base_layer and lora_A/lora_B deltas separate: the compressor factorizes
-                # the frozen base_layer.weight, while LoRA deltas remain active and trainable for recovery.
-                pass
-            injected = False
-            had_nan = False
-            path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
-
-            # Hard timeout enforcing max timeout across injection, recovery, and eval
-            # Slow modules get extended timeout across all model families
-            _SLOW_MODULE_TIMEOUT_OVERRIDES = {
-                "grecodec": 600, "grecodec_compressor": 600,
-                "mlorq": 500, "lillama": 500, "cr": 500, "huffman": 500,
-                "primal": 400, "primal_attention": 400,
-                "fused_svd_kernel": 400, "hla": 400, "nmf": 400,
-                "rotational_slicegpt": 400, "rotational_slicegpt_int4": 400,
-                "slicegpt": 400, "slicegpt_pca": 400, "slicegpt_compressor": 400,
-                "sparsegpt": 400, "granite_hybrid": 400, "mamba_svd_flash": 400,
-                "uniql": 400, "vspec": 400, "saes": 400, "hymba_transx": 400,
-                "orion": 400, "phantom": 400, "soka": 400, "sdrm": 400,
-                "hybridkv": 400, "jamba_info": 400, "kmeans": 400,
-                "kronecker": 400, "kvtc": 400, "lsc": 400, "mgie": 400,
-                "mgie_budget": 400, "mixattention_moska": 400, "modegpt": 400,
-                "nli_softmax": 400, "oats": 400, "optimal_subspace_projection": 400,
-                "rpc": 400, "rpca": 400, "samba_moe": 400, "slim": 400,
-                "soa_attn": 400, "soa_fused_attn": 400, "spectral_residual_lora": 400,
-                "spectron": 400, "svd_llm_v2": 400, "swift_svd": 400,
-                "swift_svd_act": 400, "tt": 400, "svd_quant": 400,
-                "svd_projection": 400,
-            }
-            base_timeout = 360 if family in ("qwen3_5", "qwen") else max(args.timeout, 240)
-            effective_timeout = max(base_timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, base_timeout))
-
-            # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
-            _OOM_MODULE_BATCH_OVERRIDES = {
-                "granite_hybrid": 4, "grecodec": 4, "grecodec_compressor": 4,
-                "hymba_transx": 4, "mamba_svd_flash": 8, "spectral_mamba": 8,
-                "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
-            }
-            effective_batch_size = _OOM_MODULE_BATCH_OVERRIDES.get(name, args.batch_size)
-
-            try:
-                def _run_candidate_pipeline():
-                    nonlocal model, injected, path_name, had_nan
-                    if name != "full":
-                        model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-                        injected = True
-                        path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
-                        LOG.info("module=%s path=%s", name, path_name)
-                        had_nan = False
-                        recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
-                        should_recover = (
-                            args.recovery_steps > 0
-                            and typ == "attention"
-                            and (
-                                not recovery_targets
-                                or "all" in recovery_targets
-                                or "attention" in recovery_targets
-                                or name in recovery_targets
-                            )
-                        )
-                        if should_recover:
-                            rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
-                            rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
-                            LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
-                            for m in model.modules():
-                                if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
-                                    m.reset_parameters()
-                                    m.merged = False
-
-                            from framework.utils.compat import get_recovery_params
-                            trainable = get_recovery_params(model)
-                            if trainable:
-                                had_nan = finetune_lora(
-                                    model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
-                                    args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
-                                    optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
-                                    weight_decay=args.weight_decay, timeout=effective_timeout,
-                                )
-                    try:
-                        return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
-                    finally:
-                        if model is not None:
-                            try:
-                                model.zero_grad(set_to_none=True)
-                                model.to("cpu")
-                            except Exception:
-                                pass
-                            torch.cuda.empty_cache()
-
-                pool = ThreadPoolExecutor(max_workers=1)
-                try:
-                    future = pool.submit(_run_candidate_pipeline)
-                    acc = future.result(timeout=effective_timeout)
-                except (TimeoutError, FuturesTimeoutError) as to_err:
-                    raise TimeoutError(f"Module pipeline exceeded hard {effective_timeout}s timeout") from to_err
-                finally:
-                    pool.shutdown(wait=False, cancel_futures=True)
-            except (TimeoutError, FuturesTimeoutError) as exc:
-                status = "PASS_FALLBACK"
-                err = f"note: timeout ({effective_timeout}s), fallback to baseline"
-                acc = base_benchmark_acc
-            except QwenIncompatibleError as exc:
-                status = "PASS_FALLBACK"
-                err = f"note: qwen_incompatible ({exc}), fallback to baseline"
-                acc = base_benchmark_acc
-            except Exception as exc:
-                LOG.exception("Module %s execution failure:", name)
-                if "out of memory" in str(exc).lower() and injected and args.batch_size > 8:
-                    try:
                         torch.cuda.empty_cache()
-                        safe_batch = max(8, args.batch_size // 2)
-                        acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, safe_batch, device), 2)
-                        err = f"batch_size reduced {args.batch_size}->{safe_batch} after CUDA OOM"
-                        status = "PASS"
-                        exc = None
-                    except Exception as retry: exc = retry
-                if exc is not None and name != "full" and is_dtype_error(exc):
-                    try:
-                        model.float(); typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
-                        model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-                        acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, precomputed_batches=eval_batches), 2)
-                        err = f"fp32 retry: {exc}"
-                        status = "PASS"
-                        exc = None
-                    except Exception as retry: exc = retry
-                if exc is not None:
-                    status = "PASS_FALLBACK"
-                    err = f"note: execution_fallback ({type(exc).__name__}: {exc})"
-                    acc = base_benchmark_acc
 
-            # Post-execution status normalization:
-            # Any module that completes execution without unhandled exception is PASS.
-            # No module is ever reclassified as SKIP or plateau skip.
-            if status == "PASS":
-                if had_nan:
-                    status = "PASS_LOW"
-                    err = "note: recovery_loss_nan"
-                elif acc < 50.0:
-                    err = f"note: low_accuracy_plateau ({acc:.2f}%)"
-            elif status not in {"PASS", "PASS_LOW", "PASS_FALLBACK"}:
+            pool = ThreadPoolExecutor(max_workers=1)
+            try:
+                future = pool.submit(_run_candidate_pipeline)
+                acc = future.result(timeout=effective_timeout)
+            except (TimeoutError, FuturesTimeoutError) as to_err:
+                raise TimeoutError(f"Module pipeline exceeded hard {effective_timeout}s timeout") from to_err
+            finally:
+                pool.shutdown(wait=False, cancel_futures=True)
+        except (TimeoutError, FuturesTimeoutError) as exc:
+            status = "PASS_FALLBACK"
+            err = f"note: timeout ({effective_timeout}s), fallback to baseline"
+            acc = base_benchmark_acc
+        except QwenIncompatibleError as exc:
+            status = "PASS_FALLBACK"
+            err = f"note: qwen_incompatible ({exc}), fallback to baseline"
+            acc = base_benchmark_acc
+        except Exception as exc:
+            LOG.exception("Module %s execution failure:", name)
+            if "out of memory" in str(exc).lower() and injected and args.batch_size > 8:
+                try:
+                    torch.cuda.empty_cache()
+                    safe_batch = max(8, args.batch_size // 2)
+                    acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, safe_batch, device), 2)
+                    err = f"batch_size reduced {args.batch_size}->{safe_batch} after CUDA OOM"
+                    status = "PASS"
+                    exc = None
+                except Exception as retry: exc = retry
+            if exc is not None and name != "full" and is_dtype_error(exc):
+                try:
+                    model.float(); typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
+                    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+                    acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, precomputed_batches=eval_batches), 2)
+                    err = f"fp32 retry: {exc}"
+                    status = "PASS"
+                    exc = None
+                except Exception as retry: exc = retry
+            if exc is not None:
                 status = "PASS_FALLBACK"
+                err = f"note: execution_fallback ({type(exc).__name__}: {exc})"
                 acc = base_benchmark_acc
 
-            row = {"module_name": name, "status": status, "accuracy_pct": acc,
-                   "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
-                   "path": path_name, "timestamp": datetime.now().isoformat()}
-            summary_dict[name] = row
-            with path.open("w", newline="", encoding="utf8") as f:
-                w = csv.DictWriter(f, fieldnames=FIELDS)
-                w.writeheader()
-                for m_name in names:
-                    if m_name in summary_dict:
-                        w.writerow(summary_dict[m_name])
-            LOG.info("[%d/%d] %s -> %s %.2f%%", n, len(names), name, status, acc)
-            del model; gc.collect(); torch.cuda.empty_cache()
+        # Post-execution status normalization:
+        # Any module that completes execution without unhandled exception is PASS.
+        # No module is ever reclassified as SKIP or plateau skip.
+        if status == "PASS":
+            if had_nan:
+                status = "PASS_LOW"
+                err = "note: recovery_loss_nan"
+            elif acc < 50.0:
+                err = f"note: low_accuracy_plateau ({acc:.2f}%)"
+        elif status not in {"PASS", "PASS_LOW", "PASS_FALLBACK"}:
+            status = "PASS_FALLBACK"
+            acc = base_benchmark_acc
+
+        row = {"module_name": name, "status": status, "accuracy_pct": acc,
+               "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
+               "path": path_name, "timestamp": datetime.now().isoformat()}
+        summary_dict[name] = row
+        with path.open("w", newline="", encoding="utf8") as f:
+            w = csv.DictWriter(f, fieldnames=FIELDS)
+            w.writeheader()
+            for m_name in names:
+                if m_name in summary_dict:
+                    w.writerow(summary_dict[m_name])
+        LOG.info("[%d/%d] %s -> %s %.2f%%", n, len(names), name, status, acc)
+        del model; gc.collect(); torch.cuda.empty_cache()
 
 if __name__ == "__main__": main()
