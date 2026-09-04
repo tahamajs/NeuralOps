@@ -400,6 +400,8 @@ class SVDLinearAttention(BaseAttention):
             _slice_fused_qkv_weights,
         )
 
+        from framework.core.adapters import UniversalAdapter
+
         # 1. Check for unified fused QKV layer
         fused_mod = None
         for child_name, child_mod in pretrained_attn.named_children():
@@ -418,27 +420,35 @@ class SVDLinearAttention(BaseAttention):
                 w, b = sliced[proj_key]
                 self._factorize_and_set(target, w, b)
 
-            # Output projection
-            target_o = _find_submodule_by_regex(pretrained_attn, PROJ_REGEX_PATTERNS["o"])
-            if target_o is not None and hasattr(target_o, "weight"):
-                self._factorize_and_set(
-                    self.out_proj,
-                    target_o.weight.data,
-                    target_o.bias.data if hasattr(target_o, "bias") and target_o.bias is not None else None,
-                )
+            # Output projection via UniversalAdapter
+            try:
+                w, b = UniversalAdapter.get_weight_bias(pretrained_attn, "o")
+                self._factorize_and_set(self.out_proj, w, b)
+            except Exception:
+                target_o = _find_submodule_by_regex(pretrained_attn, PROJ_REGEX_PATTERNS["o"])
+                if target_o is not None and hasattr(target_o, "weight"):
+                    self._factorize_and_set(
+                        self.out_proj,
+                        target_o.weight.data,
+                        target_o.bias.data if hasattr(target_o, "bias") and target_o.bias is not None else None,
+                    )
         else:
-            # 2. Decoupled Q, K, V, O projections
+            # 2. Decoupled Q, K, V, O projections using UniversalAdapter
             for proj_key, target in [
                 ("q", self.q_proj),
                 ("k", self.k_proj),
                 ("v", self.v_proj),
                 ("o", self.out_proj),
             ]:
-                sub = _find_submodule_by_regex(pretrained_attn, PROJ_REGEX_PATTERNS[proj_key])
-                if sub is not None and hasattr(sub, "weight"):
-                    w = sub.weight.data
-                    b = sub.bias.data if hasattr(sub, "bias") and sub.bias is not None else None
+                try:
+                    w, b = UniversalAdapter.get_weight_bias(pretrained_attn, proj_key)
                     self._factorize_and_set(target, w, b)
+                except Exception:
+                    sub = _find_submodule_by_regex(pretrained_attn, PROJ_REGEX_PATTERNS[proj_key])
+                    if sub is not None and hasattr(sub, "weight"):
+                        w = sub.weight.data
+                        b = sub.bias.data if hasattr(sub, "bias") and sub.bias is not None else None
+                        self._factorize_and_set(target, w, b)
 
     def _factorize_and_set(
         self, target_linear: SVDLinear, weight: torch.Tensor, bias: Optional[torch.Tensor] = None

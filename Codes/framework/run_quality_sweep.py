@@ -6,7 +6,7 @@ attention/compression module from the same fine-tuned checkpoint.
 """
 from __future__ import annotations
 
-import argparse, copy, csv, gc, importlib, json, logging, sys, time
+import argparse, copy, csv, gc, importlib, json, logging, math, sys, time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from datetime import datetime
 from pathlib import Path
@@ -316,6 +316,8 @@ def main():
     ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown"), default="auto")
     ap.add_argument("--parent_checkpoint", type=str, default=None,
                     help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
+    ap.add_argument("--fresh", action="store_true",
+                    help="Fresh clean sweep: do not resume or skip any modules")
     
     # Pre-parse to check if a config file is provided
     pre_args, remaining_argv = ap.parse_known_args()
@@ -398,8 +400,15 @@ def main():
 
     def _safe_load_state(target_model: nn.Module, raw_state: Any) -> None:
         st = raw_state.get("state_dict", raw_state) if isinstance(raw_state, dict) else raw_state
+        meta = raw_state.get("metadata", {}) if isinstance(raw_state, dict) else {}
+        alpha = float(meta.get("alpha", 32.0))
+        r = float(meta.get("r", 16.0))
+        scaling = alpha / max(1.0, r)
+
         model_st = target_model.state_dict()
         filtered_st = {}
+
+        # 1. Direct matches
         for k, v in st.items():
             if k in model_st:
                 if hasattr(v, "shape") and hasattr(model_st[k], "shape"):
@@ -410,6 +419,33 @@ def main():
                                     k, list(v.shape), list(model_st[k].shape))
                 else:
                     filtered_st[k] = v
+
+        # 2. Check for LoRA-wrapped layers in checkpoint mapped to plain layers in model
+        #    e.g. checkpoint has 'classifier.dense.base_layer.weight' (+ optional lora_A/B), model has 'classifier.dense.weight'
+        for k in model_st:
+            if k not in filtered_st:
+                base_key = k.replace(".weight", ".base_layer.weight").replace(".bias", ".base_layer.bias")
+                if base_key in st:
+                    val = st[base_key].clone()
+                    if k.endswith(".weight"):
+                        prefix = k[:-len(".weight")]
+                        lora_a_key = f"{prefix}.lora_A.weight"
+                        lora_b_key = f"{prefix}.lora_B.weight"
+                        if lora_a_key in st and lora_b_key in st:
+                            delta = (st[lora_b_key] @ st[lora_a_key]) * scaling
+                            val = val + delta.to(val.dtype)
+                    filtered_st[k] = val
+                    LOG.info("Reconstructed unmerged model layer '%s' from checkpoint LoRA '%s'", k, base_key)
+
+        # 3. Check for plain layers in checkpoint mapped to LoRA base_layer in model
+        #    e.g. checkpoint has 'classifier.dense.weight', model has 'classifier.dense.base_layer.weight'
+        for k in model_st:
+            if k not in filtered_st and ".base_layer." in k:
+                plain_key = k.replace(".base_layer.", ".")
+                if plain_key in st:
+                    filtered_st[k] = st[plain_key]
+                    LOG.info("Mapped plain checkpoint layer '%s' into LoRA base_layer '%s'", plain_key, k)
+
         target_model.load_state_dict(filtered_st, strict=False)
 
     # Auto-detect if checkpoint or parent_checkpoint is a LoRA checkpoint
@@ -486,11 +522,52 @@ def main():
     eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
     train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
     LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
-    # Pre-evaluate base model to get baseline benchmark accuracy for reference and fallback
+    # Pre-evaluate base model to get baseline benchmark accuracy for reference
     base.to(device)
     base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
     base.to("cpu")
     LOG.info("Baseline model benchmark accuracy on validation set: %.2f%%", base_benchmark_acc)
+
+    # -------------------------------------------------------------------------
+    # STEP 0: Dynamically Compute True Majority-Class Baseline & Statistical Margin
+    # -------------------------------------------------------------------------
+    # Formula & Rationale:
+    # 1. Validation split label distribution is counted dynamically: p0 = majority_count / N.
+    #    For binary SST-2 (N=872, 444 neg, 428 pos), p0 = 444 / 872 = 50.92%.
+    # 2. Under the null hypothesis H0 (classifier outputs uninformative/random labels or
+    #    majority-class constant), test accuracy follows a Binomial(N, p0) distribution.
+    # 3. Standard Error (SE) of the sample accuracy = sqrt(p0 * (1 - p0) / N).
+    #    For SST-2: SE = sqrt(0.50917 * 0.49083 / 872) = 1.693%.
+    # 4. Statistical Significance Margin = z * SE (z = 3.0, corresponding to one-tailed
+    #    p < 0.0013, 99.87% confidence level).
+    #    Margin = 3.0 * 1.693% = 5.08%.
+    # 5. PASS Threshold = p0 + margin.
+    #    For SST-2: 50.92% + 5.08% = 56.00%.
+    # Any module with accuracy <= pass_threshold is statistically indistinguishable from
+    # random chance or majority-class guess, and is classified as SKIP_<FAMILY>_INCOMPATIBLE_ACCURACY_PLATEAU.
+    # -------------------------------------------------------------------------
+    val_labels = val["label"] if "label" in val.features else [x["label"] for x in val]
+    from collections import Counter
+    label_counts = Counter(val_labels)
+    total_val_samples = len(val_labels)
+    majority_count = max(label_counts.values()) if label_counts else 0
+    majority_baseline_ratio = majority_count / total_val_samples if total_val_samples > 0 else 0.5
+    majority_baseline_pct = round(majority_baseline_ratio * 100.0, 2)
+
+    p0 = majority_baseline_ratio
+    se = math.sqrt(p0 * (1.0 - p0) / max(1, total_val_samples))
+    z_score = 3.0  # 3 standard errors above chance for 99.87% confidence
+    stat_margin_pct = round(z_score * se * 100.0, 2)
+    pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
+
+    LOG.info("=" * 80)
+    LOG.info("STATISTICAL BENCHMARK THRESHOLDS (Validation N=%d):", total_val_samples)
+    LOG.info("  Validation Majority Count: %d / %d", majority_count, total_val_samples)
+    LOG.info("  True Majority Baseline:    %.2f%%", majority_baseline_pct)
+    LOG.info("  Standard Error (SE):       %.3f%%", se * 100.0)
+    LOG.info("  Statistical Margin (3*SE): %.2f%%", stat_margin_pct)
+    LOG.info("  PASS Threshold (Min Acc):  %.2f%%", pass_threshold_pct)
+    LOG.info("=" * 80)
 
     if isinstance(args.modules, list):
         raw_mods = []
@@ -512,8 +589,8 @@ def main():
         with path.open("r", encoding="utf8") as f:
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
-    # Only skip modules that already achieved a PASS variant
-    existing = {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW", "PASS_FALLBACK"}}
+    # In fresh mode, evaluate everything; otherwise only skip legitimate PASS results
+    existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW"}}
     module_rank = max(16, getattr(adapter, "head_dim", 16))
 
     for n, name in enumerate(names, 1):
@@ -627,18 +704,31 @@ def main():
                     recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
                     should_recover = (
                         args.recovery_steps > 0
-                        and typ == "attention"
                         and (
                             not recovery_targets
                             or "all" in recovery_targets
-                            or "attention" in recovery_targets
+                            or typ in recovery_targets
                             or name in recovery_targets
                         )
                     )
                     if should_recover:
-                        rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
-                        rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
-                        LOG.info("Running %d LoRA recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
+                        FROM_SCRATCH_MODULES = {
+                            "linear_attention", "ssm", "cosformer", "rff", "fourier",
+                            "simple_ssm", "gated_linear_attn", "decay_linear_attn",
+                            "cluster", "cur", "cur_moe", "cur_moe_compressor",
+                            "performer", "nystrom", "mamba", "svd-mamba", "upi_stuffed_mamba",
+                            "vig", "galerkin", "regla", "hgrn2_layer", "hgrn2_outer",
+                            "hgrn2_gated_deltanet", "gated_delta_net", "gated_deltanet_block",
+                            "factorised_matrix_state", "linformer", "lsh", "hashed_net",
+                            "hamming", "spectron", "span_expanded", "gfws", "hla", "oha", "kda",
+                        }
+                        if name in FROM_SCRATCH_MODULES:
+                            rec_steps = max(args.recovery_steps, 50)
+                            rec_lr = 2e-4
+                        else:
+                            rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
+                            rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
+                        LOG.info("Running %d recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
                         for m in model.modules():
                             if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
                                 m.reset_parameters()
@@ -673,13 +763,13 @@ def main():
             finally:
                 pool.shutdown(wait=False, cancel_futures=True)
         except (TimeoutError, FuturesTimeoutError) as exc:
-            status = "PASS_FALLBACK"
-            err = f"note: timeout ({effective_timeout}s), fallback to baseline"
-            acc = base_benchmark_acc
+            status = f"SKIP_{family.upper()}_TIMEOUT"
+            err = f"Module pipeline exceeded hard {effective_timeout}s timeout"
+            acc = 0.0
         except QwenIncompatibleError as exc:
-            status = "PASS_FALLBACK"
-            err = f"note: qwen_incompatible ({exc}), fallback to baseline"
-            acc = base_benchmark_acc
+            status = f"SKIP_{family.upper()}_INCOMPATIBLE_GQA"
+            err = str(exc)
+            acc = 0.0
         except Exception as exc:
             LOG.exception("Module %s execution failure:", name)
             if "out of memory" in str(exc).lower() and injected and args.batch_size > 8:
@@ -688,7 +778,6 @@ def main():
                     safe_batch = max(8, args.batch_size // 2)
                     acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, safe_batch, device), 2)
                     err = f"batch_size reduced {args.batch_size}->{safe_batch} after CUDA OOM"
-                    status = "PASS"
                     exc = None
                 except Exception as retry: exc = retry
             if exc is not None and name != "full" and is_dtype_error(exc):
@@ -697,26 +786,33 @@ def main():
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, precomputed_batches=eval_batches), 2)
                     err = f"fp32 retry: {exc}"
-                    status = "PASS"
                     exc = None
                 except Exception as retry: exc = retry
             if exc is not None:
-                status = "PASS_FALLBACK"
-                err = f"note: execution_fallback ({type(exc).__name__}: {exc})"
-                acc = base_benchmark_acc
+                status = "FAIL"
+                err = f"{type(exc).__name__}: {exc}"
+                acc = 0.0
 
-        # Post-execution status normalization:
-        # Any module that completes execution without unhandled exception is PASS.
-        # No module is ever reclassified as SKIP or plateau skip.
-        if status == "PASS":
-            if had_nan:
-                status = "PASS_LOW"
-                err = "note: recovery_loss_nan"
-            elif acc < 50.0:
-                err = f"note: low_accuracy_plateau ({acc:.2f}%)"
-        elif status not in {"PASS", "PASS_LOW", "PASS_FALLBACK"}:
-            status = "PASS_FALLBACK"
-            acc = base_benchmark_acc
+        # -------------------------------------------------------------------------
+        # STEP 0: Honest Three-Way Status Classification
+        # -------------------------------------------------------------------------
+        # 1. FAIL: Module crashed with unhandled exception during injection/train/eval
+        # 2. SKIP_<FAMILY>_*: Module timed out, has GQA/architectural mismatch, or
+        #    plateaued at/below the statistical chance threshold (majority + 3*SE)
+        # 3. PASS: Module executed cleanly and achieved accuracy meaningfully above chance
+        # -------------------------------------------------------------------------
+        if not status.startswith("SKIP_") and status != "FAIL":
+            if acc >= pass_threshold_pct:
+                status = "PASS"
+                if had_nan:
+                    status = "PASS_LOW"
+                    err = "note: recovery_loss_nan"
+            else:
+                status = f"SKIP_{family.upper()}_INCOMPATIBLE_ACCURACY_PLATEAU"
+                err = (
+                    f"note: low_accuracy_plateau ({acc:.2f}%) <= chance threshold "
+                    f"({pass_threshold_pct:.2f}% = majority {majority_baseline_pct:.2f}% + 3*SE)"
+                )
 
         row = {"module_name": name, "status": status, "accuracy_pct": acc,
                "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
