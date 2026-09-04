@@ -31,6 +31,7 @@ class AegisHybridConfig:
     num_key_value_heads: Optional[int] = None
     local_window: int = 64
     rank: int = 64
+    lora_rank: int = 16
     kernel_feature_dim: int = 128  # Kept for backward compatibility
     dropout: float = 0.1
     use_adaptive_pruning: bool = True
@@ -44,11 +45,14 @@ class AegisHybridConfig:
 
 class FactorizedLinear(nn.Module):
     r"""
-    Factorized linear projection with internal rank-r factorization:
-        x -> lin1(x) [in_features -> rank] -> lin2(lin1(x)) [rank -> out_features]
-    Owns `lin1` and `lin2` internally as registered submodules, preventing
-    dynamic module creation traps and ensuring compatibility with state_dict,
-    optimizer registration, and PyTorch forward/backward hooks.
+    Factorized linear projection with internal rank-r base factorization and trainable residual LoRA adapter:
+        Base: x -> lin1(x) [in_features -> rank] -> lin2(lin1(x)) [rank -> out_features] (frozen)
+        LoRA: x -> lora_A(x) [in_features -> lora_rank] -> lora_B(...) [lora_rank -> out_features] (trainable)
+        out = lin2(lin1(x)) + F.linear(F.linear(x, self.lora_A), self.lora_B)
+
+    Uses `lora_A` and `lora_B` parameter names so recovery optimizers (such as get_recovery_params)
+    register them automatically as trainable parameters.
+    Base weights and biases are frozen to maintain pretrained representations.
     """
 
     def __init__(
@@ -56,13 +60,13 @@ class FactorizedLinear(nn.Module):
         in_features_or_lin1: Union[int, nn.Linear],
         out_features_or_lin2: Optional[Union[int, nn.Linear]] = None,
         rank: int = 64,
+        lora_rank: int = 16,
         bias: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
         if isinstance(in_features_or_lin1, nn.Linear) and isinstance(out_features_or_lin2, nn.Linear):
-            # Compatibility with legacy (lin1, lin2) passing
             self.lin1 = in_features_or_lin1
             self.lin2 = out_features_or_lin2
             self.in_features = self.lin1.in_features
@@ -70,7 +74,7 @@ class FactorizedLinear(nn.Module):
             self.rank = self.lin1.out_features
         else:
             in_features = int(in_features_or_lin1)
-            out_features = int(out_features_or_lin2)  # type: ignore[arg-type]
+            out_features = int(out_features_or_lin2)
             self.in_features = in_features
             self.out_features = out_features
             self.rank = max(1, min(rank, in_features, out_features))
@@ -78,27 +82,64 @@ class FactorizedLinear(nn.Module):
             factory_kwargs = {"device": device, "dtype": dtype}
             self.lin1 = nn.Linear(in_features, self.rank, bias=False, **factory_kwargs)
             self.lin2 = nn.Linear(self.rank, out_features, bias=bias, **factory_kwargs)
-            self.reset_parameters()
+
+        # Base weights are frozen to prevent catastrophic unlearning
+        self.lin1.weight.requires_grad = False
+        self.lin2.weight.requires_grad = False
+        if self.lin2.bias is not None:
+            self.lin2.bias.requires_grad = False
+
+        # Trainable residual LoRA adapter
+        self.lora_rank: int = min(lora_rank, min(self.in_features, self.out_features)) if lora_rank > 0 else 0
+        factory_kwargs = {"device": device, "dtype": dtype}
+        if self.lora_rank > 0:
+            self.lora_B: Optional[nn.Parameter] = nn.Parameter(
+                torch.empty((self.out_features, self.lora_rank), **factory_kwargs)
+            )
+            self.lora_A: Optional[nn.Parameter] = nn.Parameter(
+                torch.empty((self.lora_rank, self.in_features), **factory_kwargs)
+            )
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        nn.init.kaiming_uniform_(self.lin1.weight, a=math.sqrt(5))
-        nn.init.kaiming_uniform_(self.lin2.weight, a=math.sqrt(5))
-        if self.lin2.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.lin2.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.lin2.bias, -bound, bound)
+        with torch.no_grad():
+            nn.init.kaiming_uniform_(self.lin1.weight, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.lin2.weight, a=math.sqrt(5))
+            if self.lin2.bias is not None:
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.lin2.weight)
+                bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+                nn.init.uniform_(self.lin2.bias, -bound, bound)
+
+            if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+                if self.lora_B.dtype in (torch.float16, torch.bfloat16):
+                    b_fp32 = torch.empty_like(self.lora_B, dtype=torch.float32, device="cpu")
+                    nn.init.kaiming_uniform_(b_fp32, a=math.sqrt(5))
+                    self.lora_B.copy_(b_fp32.to(dtype=self.lora_B.dtype, device=self.lora_B.device))
+                else:
+                    nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_A)
 
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""
-        return torch.matmul(self.lin2.weight, self.lin1.weight)
+        w = torch.matmul(self.lin2.weight, self.lin1.weight)
+        if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+            w = w + torch.matmul(self.lora_B, self.lora_A)
+        return w
 
     @property
     def bias(self) -> Optional[torch.Tensor]:
         return self.lin2.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.lin2(self.lin1(x))
+        out = self.lin2(self.lin1(x))
+        if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+        return out
 
 
 @ATTENTION_REGISTRY.register(
@@ -130,7 +171,7 @@ class AegisHybridAttention(BaseAttention):
     Aegis-Hybrid Attention combining Local Windowed Attention and Global Linear Attention.
 
     Architectural Foundation:
-    - Low-rank factorized projections for Q, K, V, and O with persistent submodules.
+    - Low-rank factorized projections for Q, K, V, and O with persistent submodules and trainable LoRA adapters.
     - Causal & bidirectional local windowed attention with band masking.
     - Causal cumulative/triangular or bidirectional global linear attention with token pruning.
     - Rotary Position Embeddings (RoPE) integration before pathway split.
@@ -152,6 +193,7 @@ class AegisHybridAttention(BaseAttention):
         num_heads: Optional[int] = None,
         pretrained_attn: Optional[nn.Module] = None,
         rank: Optional[int] = None,
+        lora_rank: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -164,6 +206,7 @@ class AegisHybridAttention(BaseAttention):
                 h_dim = config.get("head_dim", h_size // max(1, n_heads))
                 n_kv_heads = config.get("num_key_value_heads", config.get("num_kv_heads", n_heads))
                 r = rank or config.get("rank", min(64, h_size))
+                l_rank = lora_rank or config.get("lora_rank", config.get("lora_r", 16))
                 is_dec = config.get("is_decoder", False)
                 l_win = config.get("local_window", 64)
                 drop = config.get("dropout", 0.1)
@@ -174,7 +217,8 @@ class AegisHybridAttention(BaseAttention):
                 n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
                 h_dim = getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads)
                 n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
-                r = rank or getattr(config, "rank", getattr(config, "lora_r", min(64, h_size))) if config is not None else 64
+                r = rank or getattr(config, "rank", min(64, h_size)) if config is not None else 64
+                l_rank = lora_rank or getattr(config, "lora_rank", getattr(config, "lora_r", 16)) if config is not None else 16
                 is_dec = getattr(config, "is_decoder", False) if config is not None else False
                 l_win = getattr(config, "local_window", getattr(config, "block_size", 64)) if config is not None else 64
                 drop = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", 0.1)) if config is not None else 0.1
@@ -188,6 +232,7 @@ class AegisHybridAttention(BaseAttention):
                 num_key_value_heads=n_kv_heads,
                 local_window=l_win,
                 rank=r,
+                lora_rank=l_rank,
                 dropout=drop,
                 use_adaptive_pruning=use_prune,
                 gate_init_bias=gate_bias,
@@ -204,16 +249,17 @@ class AegisHybridAttention(BaseAttention):
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
         self.local_window: int = config.local_window
         self.rank: int = max(1, min(config.rank, self.hidden_size))
+        self.lora_rank: int = max(1, min(getattr(config, "lora_rank", 16), self.hidden_size))
         self.dropout: nn.Dropout = nn.Dropout(config.dropout)
         self.is_decoder: bool = config.is_decoder or kwargs.get("is_decoder", False)
         self.is_nested_encoder: bool = False
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
-        # Fix 1: Explicitly instantiate persistent FactorizedLinear modules
-        self.q_proj = FactorizedLinear(self.hidden_size, self.all_head_size, rank=self.rank, bias=True)
-        self.k_proj = FactorizedLinear(self.hidden_size, self.all_kv_head_size, rank=self.rank, bias=True)
-        self.v_proj = FactorizedLinear(self.hidden_size, self.all_kv_head_size, rank=self.rank, bias=True)
-        self.out_proj = FactorizedLinear(self.all_head_size, self.hidden_size, rank=self.rank, bias=True)
+        # Persistent FactorizedLinear submodules equipped with trainable LoRA adapters
+        self.q_proj = FactorizedLinear(self.hidden_size, self.all_head_size, rank=self.rank, lora_rank=self.lora_rank, bias=True)
+        self.k_proj = FactorizedLinear(self.hidden_size, self.all_kv_head_size, rank=self.rank, lora_rank=self.lora_rank, bias=True)
+        self.v_proj = FactorizedLinear(self.hidden_size, self.all_kv_head_size, rank=self.rank, lora_rank=self.lora_rank, bias=True)
+        self.out_proj = FactorizedLinear(self.all_head_size, self.hidden_size, rank=self.rank, lora_rank=self.lora_rank, bias=True)
 
         if config.use_adaptive_pruning:
             self.prune_gate: Optional[nn.Sequential] = nn.Sequential(
@@ -231,7 +277,7 @@ class AegisHybridAttention(BaseAttention):
         if pretrained_attn is not None:
             self._copy_pretrained(pretrained_attn)
 
-    # Legacy submodule access aliases (returning the internal persistent sub-layers)
+    # Legacy submodule access aliases
     @property
     def q_proj1(self) -> nn.Linear:
         return self.q_proj.lin1
@@ -350,6 +396,19 @@ class AegisHybridAttention(BaseAttention):
                 proj.lin2.bias.data[:min_b].copy_(b.detach()[:min_b].to(proj.lin2.bias.dtype))
             elif proj.lin2.bias is not None:
                 proj.lin2.bias.data.zero_()
+
+            # Ensure base factorized linear weights remain frozen
+            proj.lin1.weight.requires_grad = False
+            proj.lin2.weight.requires_grad = False
+            if proj.lin2.bias is not None:
+                proj.lin2.bias.requires_grad = False
+
+            # Trainable LoRA adapter initialized to 0 contribution
+            if getattr(proj, "lora_A", None) is not None:
+                nn.init.zeros_(proj.lora_A)
+                proj.lora_A.requires_grad = True
+            if getattr(proj, "lora_B", None) is not None:
+                proj.lora_B.requires_grad = True
 
     def _copy_pretrained(self, old_attn: nn.Module) -> None:
         """Comprehensive weight extraction across DistilBERT, RoBERTa, GPT-2, and Qwen3.5."""
@@ -473,6 +532,15 @@ class AegisHybridAttention(BaseAttention):
                 self.out_proj.lin2.weight.data[:r, :r].fill_diagonal_(1.0)
                 if self.out_proj.lin2.bias is not None:
                     self.out_proj.lin2.bias.data.zero_()
+                self.out_proj.lin1.weight.requires_grad = False
+                self.out_proj.lin2.weight.requires_grad = False
+                if self.out_proj.lin2.bias is not None:
+                    self.out_proj.lin2.bias.requires_grad = False
+                if getattr(self.out_proj, "lora_A", None) is not None:
+                    nn.init.zeros_(self.out_proj.lora_A)
+                    self.out_proj.lora_A.requires_grad = True
+                if getattr(self.out_proj, "lora_B", None) is not None:
+                    self.out_proj.lora_B.requires_grad = True
 
         # Rotary and decoder metadata inheritance
         if hasattr(old_attn, "rotary_emb") and old_attn.rotary_emb is not None:
@@ -525,7 +593,7 @@ class AegisHybridAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        # 1. Projections via FactorizedLinear
+        # 1. Projections via FactorizedLinear (base + LoRA)
         Q = self.q_proj(hidden_states).view(B, N, self.num_heads, Dh).transpose(1, 2)  # [B, H, N, Dh]
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)  # [B, H_kv, N_k, Dh]
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)  # [B, H_kv, N_k, Dh]
@@ -731,18 +799,21 @@ def inject_aegis_hybrid(
         h_dim = model_config.get("head_dim", h_size // max(1, n_heads))
         n_kv_heads = model_config.get("num_key_value_heads", model_config.get("num_kv_heads", n_heads))
         is_dec = model_config.get("is_decoder", False)
+        l_rank = model_config.get("lora_rank", 16)
     elif model_config is not None:
         h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768))))
         n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12))))
         h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads)))
         n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads))
         is_dec = getattr(model_config, "is_decoder", False)
+        l_rank = getattr(model_config, "lora_rank", 16)
     else:
         h_size = 768
         n_heads = 12
         h_dim = 64
         n_kv_heads = 12
         is_dec = False
+        l_rank = 16
 
     cfg = AegisHybridConfig(
         hidden_size=h_size,
@@ -751,6 +822,7 @@ def inject_aegis_hybrid(
         num_key_value_heads=n_kv_heads,
         local_window=getattr(comp_config, "block_size", 64) if comp_config is not None else 64,
         rank=getattr(comp_config, "lora_r", getattr(comp_config, "rank", 64)) if comp_config is not None else 64,
+        lora_rank=getattr(comp_config, "lora_rank", l_rank),
         kernel_feature_dim=getattr(comp_config, "rff_features", 128) if comp_config is not None else 128,
         dropout=getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1,
         use_adaptive_pruning=getattr(comp_config, "use_gate", True) if comp_config is not None else True,
