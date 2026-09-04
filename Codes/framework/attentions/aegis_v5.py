@@ -334,18 +334,26 @@ class AegisAttention(nn.Module):
             token_valid=token_valid,
         )
 
-        Q_feat = F.elu(torch.einsum("bhnd,hdf->bhnf", Q_global, self.rff_proj)) + 1.0
-        K_feat = F.elu(torch.einsum("bhnd,hdf->bhnf", K_global, self.rff_proj)) + 1.0
+        # Compute RFF kernels in fp32 to avoid NaN in fp16 training
+        orig_dtype = Q_global.dtype
+        Q_g_fp32 = Q_global.float()
+        K_g_fp32 = K_global.float()
+        rff_fp32 = self.rff_proj.float()
+        Q_feat = F.elu(torch.einsum("bhnd,hdf->bhnf", Q_g_fp32, rff_fp32)) + 1.0
+        K_feat = F.elu(torch.einsum("bhnd,hdf->bhnf", K_g_fp32, rff_fp32)) + 1.0
 
         if token_valid is not None:
             mask_g = token_valid.unsqueeze(1).unsqueeze(-1)
             K_feat = K_feat.masked_fill(~mask_g, 0.0)
-            V_global = V_global.masked_fill(~mask_g, 0.0)
+            V_global = V_global.float().masked_fill(~mask_g, 0.0)
+        else:
+            V_global = V_global.float()
 
         KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_global)
         K_sum = K_feat.sum(dim=2, keepdim=True)
-        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)).clamp(min=1e-5)
+        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)).clamp(min=1e-6)
         ctx_global = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
+        ctx_global = torch.nan_to_num(ctx_global, nan=0.0, posinf=0.0, neginf=0.0).to(orig_dtype)
 
         if self.blend_logits is not None:
             global_signal = ctx_global.mean(dim=1, keepdim=True).expand(-1, H, -1, -1)
