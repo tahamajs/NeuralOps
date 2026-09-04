@@ -110,18 +110,16 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     Task 3: Recovery parameter selection.
     
     Returns LoRA adapter parameters, classification head parameters,
-    and parameters of injected attention modules to allow them to adapt to the backbone representation.
-    Base compressor factor weights (.down.weight, .up.weight, .U, .V, .A, .B on original linear layers)
-    remain frozen.
+    and parameters of injected attention/adapter modules to allow them to adapt to the backbone representation.
     """
     trainable_params = []
     for name, param in model.named_parameters():
         n_low = name.lower()
-        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter")):
+        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt")):
             trainable_params.append(param)
-        elif name.startswith("score.") or name.startswith("classifier.") or any(h in n_low for h in ("score.", "classifier.", "classification_head")):
+        elif any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
             trainable_params.append(param)
-        elif any(tag in n_low for tag in (".inner.", "attention.", "self_attn.", ".attn.")):
+        elif any(tag in n_low for tag in (".inner.", "attention.", "self_attn.", ".attn.", "swa_mamba", "kernel_linear")):
             trainable_params.append(param)
 
     for name, param in model.named_parameters():
