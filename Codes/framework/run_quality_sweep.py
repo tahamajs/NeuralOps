@@ -599,6 +599,14 @@ def main():
             base_timeout = 360 if family in ("qwen3_5", "qwen") else max(args.timeout, 240)
             effective_timeout = max(base_timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, base_timeout))
 
+            # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
+            _OOM_MODULE_BATCH_OVERRIDES = {
+                "granite_hybrid": 4, "grecodec": 4, "grecodec_compressor": 4,
+                "hymba_transx": 4, "mamba_svd_flash": 8, "spectral_mamba": 8,
+                "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
+            }
+            effective_batch_size = _OOM_MODULE_BATCH_OVERRIDES.get(name, args.batch_size)
+
             try:
                 def _run_candidate_pipeline():
                     nonlocal model, injected, path_name, had_nan
@@ -632,13 +640,13 @@ def main():
                             trainable = get_recovery_params(model)
                             if trainable:
                                 had_nan = finetune_lora(
-                                    model, tokenizer, train, args.dataset, rec_steps, args.seq_len, args.batch_size, device,
+                                    model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
                                     args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
                                     optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
                                     weight_decay=args.weight_decay, timeout=effective_timeout,
                                 )
                     try:
-                        return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+                        return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
                     finally:
                         if model is not None:
                             try:
