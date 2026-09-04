@@ -37,7 +37,7 @@ class AegisHybridConfig:
     use_adaptive_pruning: bool = True
     gate_init_bias: float = 1.8
     is_decoder: bool = False
-    use_global: bool = False
+    use_global: bool = True
 
     def __post_init__(self) -> None:
         if self.num_key_value_heads is None:
@@ -216,6 +216,7 @@ class AegisHybridAttention(BaseAttention):
                 drop = config.get("dropout", 0.1)
                 gate_bias = config.get("gate_init_bias", 1.8)
                 use_prune = config.get("use_adaptive_pruning", True)
+                use_glob = config.get("use_global", True)
             else:
                 h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
                 n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
@@ -235,6 +236,7 @@ class AegisHybridAttention(BaseAttention):
                 drop = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", 0.1)) if config is not None else 0.1
                 gate_bias = getattr(config, "gate_init_bias", 1.8) if config is not None else 1.8
                 use_prune = getattr(config, "use_adaptive_pruning", getattr(config, "use_gate", True)) if config is not None else True
+                use_glob = getattr(config, "use_global", True) if config is not None else True
 
             config = AegisHybridConfig(
                 hidden_size=h_size,
@@ -248,6 +250,7 @@ class AegisHybridAttention(BaseAttention):
                 use_adaptive_pruning=use_prune,
                 gate_init_bias=gate_bias,
                 is_decoder=is_dec or kwargs.get("is_decoder", False),
+                use_global=use_glob,
             )
 
         self.config = config
@@ -277,7 +280,7 @@ class AegisHybridAttention(BaseAttention):
             is_dec = True
 
         self.is_decoder: bool = bool(is_dec)
-        self.use_global: bool = False
+        self.use_global: bool = getattr(config, "use_global", True)
         self.is_nested_encoder: bool = False
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
@@ -737,14 +740,11 @@ class AegisHybridAttention(BaseAttention):
 
         local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
 
-        # 2. Check for Bypass (short sequences or explicit local-only mode)
-        if (not self.use_global) or (self.local_window >= N):
-            if not getattr(self, "_logged_debug", False):
-                print("DEBUG: Using local branch only", flush=True)
-                self._logged_debug = True
+        # 2. Hybrid Combination: Local Window Attention + True O(N) Global Linear Attention
+        if not self.use_global:
             fused = local_out
         else:
-            # Global branch (executed only when use_global is True and local_window < N)
+            # --- GLOBAL LINEAR ATTENTION BRANCH ---
             Q_g = Q.transpose(1, 2)
             K_g = K.transpose(1, 2)
             V_g = V.transpose(1, 2)
@@ -758,19 +758,37 @@ class AegisHybridAttention(BaseAttention):
             phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
             V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
 
+            # CRITICAL: Mask padding tokens POST-phi so they don't corrupt the KV state
             if mask_2d is not None:
-                phi_Q = phi_Q * mask_2d.unsqueeze(1).unsqueeze(-1).float()
-                phi_K = phi_K * mask_2d.unsqueeze(1).unsqueeze(-1).float()
-                V_gf = V_gf * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+                mask_4d = mask_2d.unsqueeze(1).unsqueeze(-1).float() # [B, 1, N, 1]
+                phi_Q = phi_Q * mask_4d
+                phi_K = phi_K * mask_4d
+                V_gf = V_gf * mask_4d
 
-            sim = torch.matmul(phi_Q, phi_K.transpose(-2, -1))  # [B, H, N, N_k]
-            causal_tril = (idx_q.unsqueeze(1) >= idx_k.unsqueeze(0)).unsqueeze(0).unsqueeze(0)
-            sim = sim.masked_fill(~causal_tril, 0.0)
+            if is_decoder:
+                # TRUE O(N) CAUSAL LINEAR ATTENTION using Cumulative Sum
+                # KV_states shape: [B, H, N, Dh, Dh]
+                KV_states = torch.einsum("bhnd,bhne->bhnde", phi_K, V_gf)
+                KV_cumsum = torch.cumsum(KV_states, dim=2)
+                
+                # Numerator: phi_Q @ KV_cumsum
+                global_out_h = torch.einsum("bhnd,bhnde->bhne", phi_Q, KV_cumsum)
+                
+                # Denominator (Normalization)
+                K_cumsum = torch.cumsum(phi_K, dim=2) # [B, H, N, Dh]
+                norm = torch.einsum("bhnd,bhnd->bhn", phi_Q, K_cumsum).unsqueeze(-1) # [B, H, N, 1]
+            else:
+                # TRUE O(N) BIDIRECTIONAL LINEAR ATTENTION
+                # KV shape: [B, H, Dh, Dh]
+                KV = torch.einsum("bhnd,bhne->bhde", phi_K, V_gf)
+                global_out_h = torch.einsum("bhnd,bhde->bhne", phi_Q, KV)
+                
+                # Denominator (Normalization)
+                K_sum = phi_K.sum(dim=2) # [B, H, Dh]
+                norm = torch.einsum("bhnd,bhd->bhn", phi_Q, K_sum).unsqueeze(-1) # [B, H, N, 1]
 
-            global_out_h = torch.matmul(sim, V_gf)  # [B, H, N, Dh]
-            norm = sim.sum(dim=-1, keepdim=True)    # [B, H, N, 1]
             global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
-
+            
             if head_mask_tensor is not None:
                 global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
 
@@ -857,6 +875,7 @@ def inject_aegis_hybrid(
     target_window = kwargs.get("local_window", 128)
     if comp_config is not None:
         target_window = getattr(comp_config, "block_size", target_window)
+    target_use_global = kwargs.get("use_global", getattr(comp_config, "use_global", True) if comp_config is not None else True)
 
     cfg = AegisHybridConfig(
         hidden_size=h_size,
@@ -871,6 +890,7 @@ def inject_aegis_hybrid(
         use_adaptive_pruning=getattr(comp_config, "use_gate", True) if comp_config is not None else True,
         gate_init_bias=getattr(comp_config, "gate_init_bias", 1.8) if comp_config is not None else 1.8,
         is_decoder=is_dec or kwargs.get("is_decoder", False),
+        use_global=target_use_global,
     )
 
     # Pre-test weight extraction before committing to replacement
