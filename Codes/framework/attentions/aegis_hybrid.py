@@ -281,6 +281,11 @@ class AegisHybridAttention(BaseAttention):
 
         self.is_decoder: bool = bool(is_dec)
         self.use_global: bool = getattr(config, "use_global", True)
+
+        # CRITICAL FALLBACK: Disable global linear attention for decoders due to FP16 CumSum instability
+        if self.is_decoder:
+            self.use_global = False
+
         self.is_nested_encoder: bool = False
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
@@ -452,10 +457,19 @@ class AegisHybridAttention(BaseAttention):
             if proj == "o":
                 if hasattr(old_attn, "c_proj"):
                     mod = old_attn.c_proj
-                    w = mod.weight.data
-                    if mod.__class__.__name__ == "Conv1D":
-                        w = w.t()
-                    b = mod.bias.data if getattr(mod, "bias", None) is not None else None
+                    if hasattr(mod, "merge") and not getattr(mod, "merged", False):
+                        try:
+                            mod.merge()
+                        except Exception:
+                            pass
+                    base_mod = getattr(mod, "base_layer", mod)
+                    w = getattr(base_mod, "weight", getattr(mod, "weight", None))
+                    if w is not None:
+                        w = w.data
+                        if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (w.shape[0] < w.shape[1]):
+                            w = w.t()
+                    bias_holder = getattr(base_mod, "bias", getattr(mod, "bias", None))
+                    b = bias_holder.data if bias_holder is not None else None
                 elif hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
                     mod = old_attn.output.dense
                     w = mod.weight.data
@@ -480,15 +494,24 @@ class AegisHybridAttention(BaseAttention):
             # 2. GPT-2 Fused c_attn
             elif hasattr(old_attn, "c_attn") and proj in ["q", "k", "v"]:
                 mod = old_attn.c_attn
-                c_w = mod.weight.data
-                if mod.__class__.__name__ == "Conv1D":
-                    c_w = c_w.t()
-                split_size = c_w.size(0) // 3
-                idx = {"q": 0, "k": 1, "v": 2}[proj]
-                w = c_w[idx * split_size : (idx + 1) * split_size, :]
-                if getattr(mod, "bias", None) is not None:
-                    c_b = mod.bias.data
-                    b = c_b[idx * split_size : (idx + 1) * split_size]
+                if hasattr(mod, "merge") and not getattr(mod, "merged", False):
+                    try:
+                        mod.merge()
+                    except Exception:
+                        pass
+                base_mod = getattr(mod, "base_layer", mod)
+                c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
+                if c_w is not None:
+                    c_w = c_w.data
+                    if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (c_w.shape[0] < c_w.shape[1]):
+                        c_w = c_w.t()
+                    split_size = c_w.size(0) // 3
+                    idx = {"q": 0, "k": 1, "v": 2}[proj]
+                    w = c_w[idx * split_size : (idx + 1) * split_size, :]
+                    bias_holder = getattr(base_mod, "bias", getattr(mod, "bias", None))
+                    if bias_holder is not None:
+                        c_b = bias_holder.data
+                        b = c_b[idx * split_size : (idx + 1) * split_size]
 
             # 3. RoBERTa / BERT nested self-attention (old_attn.self)
             elif hasattr(old_attn, "self") and proj in ["q", "k", "v"]:
@@ -741,7 +764,7 @@ class AegisHybridAttention(BaseAttention):
         local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
 
         # 2. Hybrid Combination: Local Window Attention + True O(N) Global Linear Attention
-        if not self.use_global:
+        if (not self.use_global) or is_decoder:
             fused = local_out
         else:
             # --- GLOBAL LINEAR ATTENTION BRANCH ---
