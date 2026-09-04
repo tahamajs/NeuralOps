@@ -208,7 +208,10 @@ class AegisHybridAttention(BaseAttention):
                 n_kv_heads = config.get("num_key_value_heads", config.get("num_kv_heads", n_heads))
                 r = rank or config.get("rank", min(128, h_size))
                 l_rank = lora_rank or config.get("lora_rank", config.get("lora_r", 32))
+                model_type = config.get("model_type", "")
                 is_dec = config.get("is_decoder", False)
+                if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+                    is_dec = True
                 l_win = config.get("local_window", 128)
                 drop = config.get("dropout", 0.1)
                 gate_bias = config.get("gate_init_bias", 1.8)
@@ -220,7 +223,14 @@ class AegisHybridAttention(BaseAttention):
                 n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
                 r = rank or getattr(config, "rank", min(128, h_size)) if config is not None else 128
                 l_rank = lora_rank or getattr(config, "lora_rank", getattr(config, "lora_r", 32)) if config is not None else 32
+                model_type = getattr(config, "model_type", "") if config is not None else ""
                 is_dec = getattr(config, "is_decoder", False) if config is not None else False
+                if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+                    is_dec = True
+                elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+                    is_dec = True
+                elif pretrained_attn is not None and (hasattr(pretrained_attn, "c_attn") or pretrained_attn.__class__.__name__ in ("GPT2Attention", "Qwen2Attention")):
+                    is_dec = True
                 l_win = getattr(config, "local_window", getattr(config, "block_size", 128)) if config is not None else 128
                 drop = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", 0.1)) if config is not None else 0.1
                 gate_bias = getattr(config, "gate_init_bias", 1.8) if config is not None else 1.8
@@ -240,6 +250,7 @@ class AegisHybridAttention(BaseAttention):
                 is_decoder=is_dec or kwargs.get("is_decoder", False),
             )
 
+        self.config = config
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.head_dim
@@ -252,12 +263,19 @@ class AegisHybridAttention(BaseAttention):
         self.rank: int = max(1, min(config.rank, self.hidden_size))
         self.lora_rank: int = max(1, min(getattr(config, "lora_rank", 32), self.hidden_size))
         self.dropout: nn.Dropout = nn.Dropout(config.dropout)
-        is_dec = (
-            getattr(config, "is_decoder", False)
-            or getattr(config, "model_type", "").lower() in ("gpt2", "gpt", "qwen", "qwen2", "llama", "mistral")
-            or (hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])))
-            or kwargs.get("is_decoder", False)
-        )
+        
+        # Enforce decoder detection unconditionally
+        model_type = getattr(config, "model_type", "") if config else ""
+        is_dec = getattr(config, "is_decoder", False)
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            is_dec = True
+        elif pretrained_attn is not None and (hasattr(pretrained_attn, "c_attn") or pretrained_attn.__class__.__name__ in ("GPT2Attention", "Qwen2Attention")):
+            is_dec = True
+        if kwargs.get("is_decoder", False):
+            is_dec = True
+
         self.is_decoder: bool = bool(is_dec)
         self.use_global: bool = False
         self.is_nested_encoder: bool = False
@@ -719,52 +737,52 @@ class AegisHybridAttention(BaseAttention):
 
         local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
 
-        if not self.use_global:
-            out = local_out.reshape(B, N, self.all_head_size)
-            if not self.is_nested_encoder:
-                out = self.out_proj(out)
-                out = self.dropout(out)
-            if not is_decoder and mask_2d is not None:
-                out = out * mask_2d.unsqueeze(-1)
-            return out, (attn_local if output_attentions else None)
+        # 2. Check for Bypass (short sequences or explicit local-only mode)
+        if (not self.use_global) or (self.local_window >= N):
+            if not getattr(self, "_logged_debug", False):
+                print("DEBUG: Using local branch only", flush=True)
+                self._logged_debug = True
+            fused = local_out
+        else:
+            # Global branch (executed only when use_global is True and local_window < N)
+            Q_g = Q.transpose(1, 2)
+            K_g = K.transpose(1, 2)
+            V_g = V.transpose(1, 2)
 
-        # Global branch (executed only when use_global is True)
-        Q_g = Q.transpose(1, 2)
-        K_g = K.transpose(1, 2)
-        V_g = V.transpose(1, 2)
+            if self.prune_gate is not None:
+                keep = torch.sigmoid(self.prune_gate(hidden_states))  # [B, N, H]
+                K_g = K_g * keep.unsqueeze(-1)
+                V_g = V_g * keep.unsqueeze(-1)
 
-        if self.prune_gate is not None:
-            keep = torch.sigmoid(self.prune_gate(hidden_states))  # [B, N, H]
-            K_g = K_g * keep.unsqueeze(-1)
-            V_g = V_g * keep.unsqueeze(-1)
+            phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
+            phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
+            V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
 
-        phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
-        phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
-        V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
+            if mask_2d is not None:
+                phi_Q = phi_Q * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+                phi_K = phi_K * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+                V_gf = V_gf * mask_2d.unsqueeze(1).unsqueeze(-1).float()
 
-        if mask_2d is not None:
-            phi_Q = phi_Q * mask_2d.unsqueeze(1).unsqueeze(-1).float()
-            phi_K = phi_K * mask_2d.unsqueeze(1).unsqueeze(-1).float()
-            V_gf = V_gf * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+            sim = torch.matmul(phi_Q, phi_K.transpose(-2, -1))  # [B, H, N, N_k]
+            causal_tril = (idx_q.unsqueeze(1) >= idx_k.unsqueeze(0)).unsqueeze(0).unsqueeze(0)
+            sim = sim.masked_fill(~causal_tril, 0.0)
 
-        sim = torch.matmul(phi_Q, phi_K.transpose(-2, -1))  # [B, H, N, N_k]
-        causal_tril = (idx_q.unsqueeze(1) >= idx_k.unsqueeze(0)).unsqueeze(0).unsqueeze(0)
-        sim = sim.masked_fill(~causal_tril, 0.0)
+            global_out_h = torch.matmul(sim, V_gf)  # [B, H, N, Dh]
+            norm = sim.sum(dim=-1, keepdim=True)    # [B, H, N, 1]
+            global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
 
-        global_out_h = torch.matmul(sim, V_gf)  # [B, H, N, Dh]
-        norm = sim.sum(dim=-1, keepdim=True)    # [B, H, N, 1]
-        global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
+            if head_mask_tensor is not None:
+                global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
 
-        if head_mask_tensor is not None:
-            global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
+            global_out = global_out_h.transpose(1, 2)  # [B, N, H, Dh]
 
-        global_out = global_out_h.transpose(1, 2)  # [B, N, H, Dh]
+            alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # [B, N, H, 1]
+            fused = alpha * local_out + (1.0 - alpha) * global_out                # [B, N, H, Dh]
 
-        alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # [B, N, H, 1]
-        fused = alpha * local_out + (1.0 - alpha) * global_out                # [B, N, H, Dh]
+        # 3. CRITICAL: Output Projection MUST happen for both branches
         fused = fused.reshape(B, N, self.all_head_size)
 
-        if self.is_nested_encoder:
+        if getattr(self, "is_nested_encoder", False):
             out = fused
         else:
             out = self.out_proj(fused)
@@ -800,26 +818,34 @@ def inject_aegis_hybrid(
         elif hasattr(layer, "attention"):
             old_attn = layer.attention
 
+    model_type = getattr(model_config, "model_type", "") if model_config else ""
+    is_dec = getattr(model_config, "is_decoder", False) if model_config else False
+    if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+        is_dec = True
+    elif hasattr(model_config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(model_config, "architectures", []) or [])):
+        is_dec = True
+    elif old_attn is not None and (hasattr(old_attn, "c_attn") or old_attn.__class__.__name__ in ("GPT2Attention", "Qwen2Attention")):
+        is_dec = True
+    if kwargs.get("is_decoder", False):
+        is_dec = True
+
     if isinstance(model_config, dict):
         h_size = model_config.get("hidden_size", model_config.get("dim", 768))
         n_heads = model_config.get("num_attention_heads", model_config.get("num_heads", 12))
         h_dim = model_config.get("head_dim", h_size // max(1, n_heads))
         n_kv_heads = model_config.get("num_key_value_heads", model_config.get("num_kv_heads", n_heads))
-        is_dec = model_config.get("is_decoder", False)
         l_rank = model_config.get("lora_rank", 32)
     elif model_config is not None:
         h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768))))
         n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12))))
         h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads)))
         n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads))
-        is_dec = getattr(model_config, "is_decoder", False)
         l_rank = getattr(model_config, "lora_rank", 32)
     else:
         h_size = 768
         n_heads = 12
         h_dim = 64
         n_kv_heads = 12
-        is_dec = False
         l_rank = 32
 
     target_rank = kwargs.get("rank", 128)
