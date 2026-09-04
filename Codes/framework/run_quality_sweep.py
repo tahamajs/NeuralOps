@@ -806,10 +806,11 @@ def main():
                             "hgrn2_gated_deltanet", "gated_delta_net", "gated_deltanet_block",
                             "factorised_matrix_state", "linformer", "lsh", "hashed_net",
                             "hamming", "spectron", "span_expanded", "gfws", "hla", "oha", "kda",
+                            "aegis_hybrid",
                         }
                         if name in FROM_SCRATCH_MODULES:
                             rec_steps = max(args.recovery_steps, 50)
-                            rec_lr = 2e-4
+                            rec_lr = args.learning_rate if args.learning_rate else 2e-4
                         else:
                             rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
                             rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
