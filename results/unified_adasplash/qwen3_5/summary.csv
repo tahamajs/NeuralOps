@@ -1,0 +1,2 @@
+module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
+adasplash,PASS_LOW,52.18,456.61,note: evaluated accuracy (52.18%) below chance threshold (56.00%),adapted_qwen3_5,2026-09-05T00:30:52.241064
