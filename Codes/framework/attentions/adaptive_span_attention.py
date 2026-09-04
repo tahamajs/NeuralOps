@@ -42,19 +42,20 @@ class AdaptiveSpanAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", 4))
-        hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", 768))
-        self.head_dim: int = getattr(config, "head_dim", hidden_size // max(1, self.num_heads))
-        self.all_head_size: int = getattr(config, "q_proj_out", self.num_heads * self.head_dim)
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
-        self.kv_head_size: int = getattr(config, "kv_proj_out", self.num_kv_heads * self.head_dim)
+        cfg = getattr(config, "text_config", config)
+        self.num_heads: int = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 4))
+        hidden_size: int = getattr(cfg, "hidden_size", getattr(cfg, "d_model", 768))
+        self.head_dim: int = getattr(cfg, "head_dim", hidden_size // max(1, self.num_heads))
+        self.all_head_size: int = getattr(cfg, "q_proj_out", self.num_heads * self.head_dim)
+        self.num_kv_heads: int = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", self.num_heads))
+        self.kv_head_size: int = getattr(cfg, "kv_proj_out", self.num_kv_heads * self.head_dim)
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.max_span: int = getattr(config, "max_span", max_span)
-        self.is_decoder: bool = getattr(config, "is_decoder", False)
+        self.max_span: int = getattr(cfg, "max_span", max_span)
+        self.is_decoder: bool = getattr(cfg, "is_decoder", False)
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: Optional[nn.Embedding] = None
-        self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
-        self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
+        self.relative_attention_num_buckets: int = getattr(cfg, "relative_attention_num_buckets", 32)
+        self.relative_attention_max_distance: int = getattr(cfg, "relative_attention_max_distance", 128)
         self.supports_rope: bool = True
         self.supports_gqa: bool = True
 
@@ -194,8 +195,18 @@ class AdaptiveSpanAttention(BaseAttention):
                 cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
             if cos.shape[-2] != Q.shape[-2]:
                 cos, sin = cos[..., :Q.shape[-2], :], sin[..., :Q.shape[-2], :]
-            Q = (Q * cos.to(Q.dtype)) + (_rotate_half(Q) * sin.to(Q.dtype))
-            K = (K * cos.to(K.dtype)) + (_rotate_half(K) * sin.to(K.dtype))
+            rotary_dim = cos.shape[-1]
+            if rotary_dim <= Q.shape[-1]:
+                q_rot, q_pass = Q[..., :rotary_dim], Q[..., rotary_dim:]
+                k_rot, k_pass = K[..., :rotary_dim], K[..., rotary_dim:]
+                q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+                k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+                Q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
+                K = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
+            else:
+                cos_cut, sin_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
+                Q = (Q * cos_cut.to(Q.dtype)) + (_rotate_half(Q) * sin_cut.to(Q.dtype))
+                K = (K * cos_cut.to(K.dtype)) + (_rotate_half(K) * sin_cut.to(K.dtype))
 
         if self.kv_repeat > 1:
             K = K.unsqueeze(2).expand(-1, -1, self.kv_repeat, -1, -1).reshape(B, H, N_k, d)
