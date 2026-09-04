@@ -55,16 +55,20 @@ class CosformerAttention(BaseAttention):
         super().__init__(config, rank)
         self.num_heads: int = getattr(config, "num_attention_heads", 4)
         hidden_size: int = getattr(config, "hidden_size", 768)
-        self.head_dim: int = hidden_size // self.num_heads
+        self.head_dim: int = getattr(config, "head_dim", hidden_size // self.num_heads)
         self.all_head_size: int = self.num_heads * self.head_dim
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa: bool = True
         self.max_seq_len: int = getattr(config, "max_position_embeddings", max_seq_len)
         self.act_fun: str = act_fun
         self.eps: float = eps
         self.tau = nn.Parameter(torch.tensor(float(self.head_dim) ** 0.5))
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(hidden_size, getattr(self, "all_kv_head_size", self.all_head_size))
-        self.v_proj = nn.Linear(hidden_size, getattr(self, "all_kv_head_size", self.all_head_size))
+        self.k_proj = nn.Linear(hidden_size, self.all_kv_head_size)
+        self.v_proj = nn.Linear(hidden_size, self.all_kv_head_size)
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
         dropout_p = getattr(
@@ -123,8 +127,11 @@ class CosformerAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)  # [B, H, N, d]
-        K = self.k_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-        V = self.v_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
+        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+        if self.kv_repeat > 1:
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
 
         # 1. Non-negative activation with temperature scaling
         tau = torch.clamp(self.tau, min=0.1)
