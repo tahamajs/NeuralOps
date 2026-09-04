@@ -2,18 +2,24 @@ r"""
 Aegis-Hybrid Attention Mechanism.
 
 Combines low-rank factorized projections, localized sliding-window dense attention,
-global kernelized linear attention with token-importance pruning, and learned gating fusion.
+causal/bidirectional kernelized global linear attention with token-importance pruning,
+and learned gating fusion.
 """
+
+from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.attention_utils import repeat_kv
+from framework.utils.compat import repeat_kv
+from framework.utils.model_family import ModelAdapter
 
 
 @dataclass
@@ -25,19 +31,58 @@ class AegisHybridConfig:
     num_key_value_heads: int = 12
     local_window: int = 64
     rank: int = 64
-    kernel_feature_dim: int = 128
+    kernel_feature_dim: int = 128  # Kept for backward compatibility
     dropout: float = 0.1
     use_adaptive_pruning: bool = True
     gate_init_bias: float = 1.8
+    is_decoder: bool = False
 
 
 class FactorizedLinear(nn.Module):
-    r"""Factorized linear projection with reconstructed weight property for compatibility."""
+    r"""
+    Factorized linear projection with internal rank-r factorization:
+        x -> lin1(x) [in_features -> rank] -> lin2(lin1(x)) [rank -> out_features]
+    Owns `lin1` and `lin2` internally as registered submodules, preventing
+    dynamic module creation traps and ensuring compatibility with state_dict,
+    optimizer registration, and PyTorch forward/backward hooks.
+    """
 
-    def __init__(self, lin1: nn.Linear, lin2: nn.Linear) -> None:
+    def __init__(
+        self,
+        in_features_or_lin1: Union[int, nn.Linear],
+        out_features_or_lin2: Optional[Union[int, nn.Linear]] = None,
+        rank: int = 64,
+        bias: bool = True,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
         super().__init__()
-        self.lin1 = lin1
-        self.lin2 = lin2
+        if isinstance(in_features_or_lin1, nn.Linear) and isinstance(out_features_or_lin2, nn.Linear):
+            # Compatibility with legacy (lin1, lin2) passing
+            self.lin1 = in_features_or_lin1
+            self.lin2 = out_features_or_lin2
+            self.in_features = self.lin1.in_features
+            self.out_features = self.lin2.out_features
+            self.rank = self.lin1.out_features
+        else:
+            in_features = int(in_features_or_lin1)
+            out_features = int(out_features_or_lin2)  # type: ignore[arg-type]
+            self.in_features = in_features
+            self.out_features = out_features
+            self.rank = max(1, min(rank, in_features, out_features))
+
+            factory_kwargs = {"device": device, "dtype": dtype}
+            self.lin1 = nn.Linear(in_features, self.rank, bias=False, **factory_kwargs)
+            self.lin2 = nn.Linear(self.rank, out_features, bias=bias, **factory_kwargs)
+            self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        nn.init.kaiming_uniform_(self.lin1.weight, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.lin2.weight, a=math.sqrt(5))
+        if self.lin2.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.lin2.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.lin2.bias, -bound, bound)
 
     @property
     def weight(self) -> torch.Tensor:
@@ -46,26 +91,55 @@ class FactorizedLinear(nn.Module):
 
     @property
     def bias(self) -> Optional[torch.Tensor]:
-        return getattr(self.lin2, "bias", None)
-
-    @property
-    def in_features(self) -> int:
-        return self.lin1.in_features
-
-    @property
-    def out_features(self) -> int:
-        return self.lin2.out_features
+        return self.lin2.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.lin2(self.lin1(x))
 
 
-@ATTENTION_REGISTRY.register("aegis_hybrid")
-@ATTENTION_REGISTRY.register("aegis_hybrid_attn")
-class AegisHybridAttention(nn.Module):
+@ATTENTION_REGISTRY.register(
+    "aegis_hybrid",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+    supports_rope=True,
+    supports_delta_net=True,
+)
+@ATTENTION_REGISTRY.register(
+    "aegis_hybrid_attn",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+    supports_rope=True,
+    supports_delta_net=True,
+)
+@ATTENTION_REGISTRY.register(
+    "aegis_hybrid_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+    supports_rope=True,
+    supports_delta_net=True,
+)
+class AegisHybridAttention(BaseAttention):
     r"""
     Aegis-Hybrid Attention combining Local Windowed Attention and Global Linear Attention.
+
+    Architectural Foundation:
+    - Low-rank factorized projections for Q, K, V, and O with persistent submodules.
+    - Causal & bidirectional local windowed attention with band masking.
+    - Causal cumulative/triangular or bidirectional global linear attention with token pruning.
+    - Rotary Position Embeddings (RoPE) integration before pathway split.
+    - Correct grouped-query attention (GQA) head repetition.
+    - Architecture-aware pretrained weight transfer and nested encoder detection.
+    - Adaptive gating fusion of local and global contexts.
     """
+
+    supports_causal: bool = True
+    supports_bidirectional: bool = True
+    supports_gqa: bool = True
+    supports_rope: bool = True
+    supports_delta_net: bool = True
 
     def __init__(
         self,
@@ -73,33 +147,49 @@ class AegisHybridAttention(nn.Module):
         hidden_size: Optional[int] = None,
         num_heads: Optional[int] = None,
         pretrained_attn: Optional[nn.Module] = None,
+        rank: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
+        super().__init__(config, rank)
+        self.adapter = ModelAdapter(config) if config is not None else None
+
         if not isinstance(config, AegisHybridConfig):
             if isinstance(config, dict):
                 h_size = hidden_size or config.get("hidden_size", config.get("dim", 768))
-                n_heads = num_heads or config.get("num_attention_heads", 12)
+                n_heads = num_heads or config.get("num_attention_heads", config.get("num_heads", 12))
                 h_dim = config.get("head_dim", h_size // max(1, n_heads))
-                n_kv_heads = config.get("num_key_value_heads", n_heads)
-                rank = config.get("rank", min(64, h_size))
+                n_kv_heads = config.get("num_key_value_heads", config.get("num_kv_heads", n_heads))
+                r = rank or config.get("rank", min(64, h_size))
+                is_dec = config.get("is_decoder", False)
+                l_win = config.get("local_window", 64)
+                drop = config.get("dropout", 0.1)
+                gate_bias = config.get("gate_init_bias", 1.8)
+                use_prune = config.get("use_adaptive_pruning", True)
             else:
                 h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
                 n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
                 h_dim = getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads)
                 n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
-                rank = getattr(config, "rank", min(64, h_size)) if config is not None else 64
+                r = rank or getattr(config, "rank", getattr(config, "lora_r", min(64, h_size))) if config is not None else 64
+                is_dec = getattr(config, "is_decoder", False) if config is not None else False
+                l_win = getattr(config, "local_window", getattr(config, "block_size", 64)) if config is not None else 64
+                drop = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", 0.1)) if config is not None else 0.1
+                gate_bias = getattr(config, "gate_init_bias", 1.8) if config is not None else 1.8
+                use_prune = getattr(config, "use_adaptive_pruning", getattr(config, "use_gate", True)) if config is not None else True
+
             config = AegisHybridConfig(
                 hidden_size=h_size,
                 num_attention_heads=n_heads,
                 head_dim=h_dim,
                 num_key_value_heads=n_kv_heads,
-                local_window=getattr(config, "local_window", getattr(config, "block_size", 64)) if not isinstance(config, dict) else config.get("local_window", 64),
-                rank=rank,
-                kernel_feature_dim=getattr(config, "kernel_feature_dim", getattr(config, "rff_features", 128)) if not isinstance(config, dict) else config.get("kernel_feature_dim", 128),
-                dropout=getattr(config, "dropout", 0.1) if not isinstance(config, dict) else config.get("dropout", 0.1),
-                gate_init_bias=getattr(config, "gate_init_bias", 1.8) if not isinstance(config, dict) else config.get("gate_init_bias", 1.8),
+                local_window=l_win,
+                rank=r,
+                dropout=drop,
+                use_adaptive_pruning=use_prune,
+                gate_init_bias=gate_bias,
+                is_decoder=is_dec or kwargs.get("is_decoder", False),
             )
+
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.head_dim
@@ -107,148 +197,287 @@ class AegisHybridAttention(nn.Module):
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.supports_gqa: bool = True
         self.local_window: int = config.local_window
-        self.rank: int = config.rank
-        self.kernel_dim: int = config.kernel_feature_dim
+        self.rank: int = max(1, min(config.rank, self.hidden_size))
         self.dropout: nn.Dropout = nn.Dropout(config.dropout)
+        self.is_decoder: bool = config.is_decoder or kwargs.get("is_decoder", False)
+        self.is_nested_encoder: bool = False
+        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
-        self.q_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.q_proj2 = nn.Linear(self.rank, self.all_head_size, bias=True)
-        self.k_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.k_proj2 = nn.Linear(self.rank, self.all_kv_head_size, bias=True)
-        self.v_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
-        self.v_proj2 = nn.Linear(self.rank, self.all_kv_head_size, bias=True)
-        self.out_proj1 = nn.Linear(self.all_head_size, self.rank, bias=False)
-        self.out_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)
+        # Fix 1: Explicitly instantiate persistent FactorizedLinear modules
+        self.q_proj = FactorizedLinear(self.hidden_size, self.all_head_size, rank=self.rank, bias=True)
+        self.k_proj = FactorizedLinear(self.hidden_size, self.all_kv_head_size, rank=self.rank, bias=True)
+        self.v_proj = FactorizedLinear(self.hidden_size, self.all_kv_head_size, rank=self.rank, bias=True)
+        self.out_proj = FactorizedLinear(self.all_head_size, self.hidden_size, rank=self.rank, bias=True)
 
         if config.use_adaptive_pruning:
             self.prune_gate: Optional[nn.Sequential] = nn.Sequential(
-                nn.Linear(self.hidden_size, self.hidden_size // 4),
+                nn.Linear(self.hidden_size, max(1, self.hidden_size // 4)),
                 nn.ReLU(),
-                nn.Linear(self.hidden_size // 4, self.num_heads),
+                nn.Linear(max(1, self.hidden_size // 4), self.num_heads),
             )
         else:
             self.prune_gate = None
+
         self.fusion_gate = nn.Linear(self.hidden_size, self.num_heads)
-        self.fusion_gate.bias.data.fill_(config.gate_init_bias)
+        with torch.no_grad():
+            self.fusion_gate.bias.fill_(config.gate_init_bias)
 
         if pretrained_attn is not None:
             self._copy_pretrained(pretrained_attn)
 
+    # Legacy submodule access aliases (returning the internal persistent sub-layers)
     @property
-    def q_proj(self) -> "FactorizedLinear":
-        return FactorizedLinear(self.q_proj1, self.q_proj2)
+    def q_proj1(self) -> nn.Linear:
+        return self.q_proj.lin1
 
     @property
-    def k_proj(self) -> "FactorizedLinear":
-        return FactorizedLinear(self.k_proj1, self.k_proj2)
+    def q_proj2(self) -> nn.Linear:
+        return self.q_proj.lin2
 
     @property
-    def v_proj(self) -> "FactorizedLinear":
-        return FactorizedLinear(self.v_proj1, self.v_proj2)
+    def k_proj1(self) -> nn.Linear:
+        return self.k_proj.lin1
 
     @property
-    def out_proj(self) -> "FactorizedLinear":
-        return FactorizedLinear(self.out_proj1, self.out_proj2)
+    def k_proj2(self) -> nn.Linear:
+        return self.k_proj.lin2
 
-    # T5, BERT, DistilBERT, RoBERTa compatibility aliases
     @property
-    def q(self) -> "FactorizedLinear":
+    def v_proj1(self) -> nn.Linear:
+        return self.v_proj.lin1
+
+    @property
+    def v_proj2(self) -> nn.Linear:
+        return self.v_proj.lin2
+
+    @property
+    def out_proj1(self) -> nn.Linear:
+        return self.out_proj.lin1
+
+    @property
+    def out_proj2(self) -> nn.Linear:
+        return self.out_proj.lin2
+
+    # Compatibility aliases returning the SAME persistent initialized FactorizedLinear instances
+    @property
+    def q(self) -> FactorizedLinear:
         return self.q_proj
 
     @property
-    def k(self) -> "FactorizedLinear":
+    def k(self) -> FactorizedLinear:
         return self.k_proj
 
     @property
-    def v(self) -> "FactorizedLinear":
+    def v(self) -> FactorizedLinear:
         return self.v_proj
 
     @property
-    def o(self) -> "FactorizedLinear":
+    def o(self) -> FactorizedLinear:
         return self.out_proj
 
     @property
-    def query(self) -> "FactorizedLinear":
+    def query(self) -> FactorizedLinear:
         return self.q_proj
 
     @property
-    def key(self) -> "FactorizedLinear":
+    def key(self) -> FactorizedLinear:
         return self.k_proj
 
     @property
-    def value(self) -> "FactorizedLinear":
+    def value(self) -> FactorizedLinear:
         return self.v_proj
 
     @property
-    def dense(self) -> "FactorizedLinear":
+    def dense(self) -> FactorizedLinear:
         return self.out_proj
 
     @property
-    def q_lin(self) -> "FactorizedLinear":
+    def q_lin(self) -> FactorizedLinear:
         return self.q_proj
 
     @property
-    def k_lin(self) -> "FactorizedLinear":
+    def k_lin(self) -> FactorizedLinear:
         return self.k_proj
 
     @property
-    def v_lin(self) -> "FactorizedLinear":
+    def v_lin(self) -> FactorizedLinear:
         return self.v_proj
 
     @property
-    def out_lin(self) -> "FactorizedLinear":
+    def out_lin(self) -> FactorizedLinear:
         return self.out_proj
+
+    @property
+    def o_proj(self) -> FactorizedLinear:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -> FactorizedLinear:
+        return self.out_proj
+
+    @staticmethod
+    def _svd_init(
+        w: torch.Tensor,
+        b: Optional[torch.Tensor],
+        proj: FactorizedLinear,
+    ) -> None:
+        """Initializes FactorizedLinear using truncated SVD approximation: W ≈ U[:, :r] diag(S[:r]) Vh[:r, :]."""
+        with torch.no_grad():
+            W = w.detach().float()
+            if W.ndim != 2:
+                raise ValueError(f"Expected 2D weight matrix, got shape {W.shape}")
+            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            r = min(proj.rank, U.size(1), Vh.size(0), proj.lin1.weight.size(0), proj.lin2.weight.size(1))
+
+            proj.lin1.weight.data.zero_()
+            proj.lin2.weight.data.zero_()
+
+            in_copy = min(W.shape[1], proj.lin1.weight.size(1))
+            out_copy = min(W.shape[0], proj.lin2.weight.size(0))
+
+            proj.lin1.weight.data[:r, :in_copy].copy_(Vh[:r, :in_copy].to(proj.lin1.weight.dtype))
+            US = U[:out_copy, :r] @ torch.diag(S[:r])
+            proj.lin2.weight.data[:out_copy, :r].copy_(US.to(proj.lin2.weight.dtype))
+
+            if b is not None and proj.lin2.bias is not None:
+                min_b = min(b.numel(), proj.lin2.bias.numel())
+                proj.lin2.bias.data[:min_b].copy_(b.detach()[:min_b].to(proj.lin2.bias.dtype))
+            elif proj.lin2.bias is not None:
+                proj.lin2.bias.data.zero_()
 
     def _copy_pretrained(self, old_attn: nn.Module) -> None:
-        if hasattr(old_attn, "c_attn") and hasattr(old_attn, "c_proj"):
-            c_attn_w = old_attn.c_attn.weight.data
-            if old_attn.c_attn.__class__.__name__ == "Conv1D" and c_attn_w.size(0) < c_attn_w.size(1):
-                c_attn_w = c_attn_w.t()
-            hidden_dim = self.hidden_size
-            q_w, k_w, v_w = c_attn_w.split(hidden_dim, dim=0)
-            c_attn_b = old_attn.c_attn.bias.data if old_attn.c_attn.bias is not None else None
-            q_b, k_b, v_b = (c_attn_b.split(hidden_dim, dim=0)) if c_attn_b is not None else (None, None, None)
+        """Comprehensive weight extraction across DistilBERT, RoBERTa, GPT-2, and Qwen3.5."""
+        from framework.core.adapters import UniversalAdapter
 
-            for (w, b, p1, p2) in [(q_w, q_b, self.q_proj1, self.q_proj2), (k_w, k_b, self.k_proj1, self.k_proj2), (v_w, v_b, self.v_proj1, self.v_proj2)]:
-                with torch.no_grad():
-                    U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
-                    r = min(self.rank, U.size(1), Vh.size(0))
-                    p1.weight.data.zero_()
-                    p2.weight.data.zero_()
-                    p1.weight.data[:r, :].copy_(Vh[:r, :].to(p1.weight.dtype))
-                    p2.weight.data[:, :r].copy_((U[:, :r] @ torch.diag(S[:r])).to(p2.weight.dtype))
-                    if b is not None and p2.bias is not None:
-                        p2.bias.data.copy_(b.to(p2.bias.dtype))
+        extracted_weights = {}
+        for proj in ["q", "k", "v", "o"]:
+            w, b = None, None
 
-            c_proj_w = old_attn.c_proj.weight.data
-            if old_attn.c_proj.__class__.__name__ == "Conv1D" and c_proj_w.size(0) < c_proj_w.size(1):
-                c_proj_w = c_proj_w.t()
-            c_proj_b = old_attn.c_proj.bias.data if old_attn.c_proj.bias is not None else None
+            # 1. Output projection checks first
+            if proj == "o":
+                if hasattr(old_attn, "c_proj"):
+                    mod = old_attn.c_proj
+                    w = mod.weight.data
+                    if mod.__class__.__name__ == "Conv1D" and w.size(0) < w.size(1):
+                        w = w.t()
+                    b = mod.bias.data if getattr(mod, "bias", None) is not None else None
+                elif hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
+                    mod = old_attn.output.dense
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+                elif hasattr(old_attn, "dense"):
+                    mod = old_attn.dense
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+                elif hasattr(old_attn, "out_lin"):
+                    mod = old_attn.out_lin
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+                elif hasattr(old_attn, "out_proj"):
+                    mod = old_attn.out_proj
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+                elif hasattr(old_attn, "o_proj"):
+                    mod = old_attn.o_proj
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+
+            # 2. GPT-2 Fused c_attn
+            elif hasattr(old_attn, "c_attn") and proj in ["q", "k", "v"]:
+                mod = old_attn.c_attn
+                c_w = mod.weight.data
+                if mod.__class__.__name__ == "Conv1D" and c_w.size(0) < c_w.size(1):
+                    c_w = c_w.t()
+                split_size = c_w.size(0) // 3
+                idx = {"q": 0, "k": 1, "v": 2}[proj]
+                w = c_w[idx * split_size : (idx + 1) * split_size, :]
+                if getattr(mod, "bias", None) is not None:
+                    c_b = mod.bias.data
+                    b = c_b[idx * split_size : (idx + 1) * split_size]
+
+            # 3. RoBERTa / BERT nested self-attention (old_attn.self)
+            elif hasattr(old_attn, "self") and proj in ["q", "k", "v"]:
+                s = getattr(old_attn, "self")
+                name_map = {"q": "query", "k": "key", "v": "value"}
+                if hasattr(s, name_map[proj]):
+                    mod = getattr(s, name_map[proj])
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+
+            # 4. Qwen3.5 GatedDeltaNet fused in_proj_qkv
+            elif hasattr(old_attn, "in_proj_qkv") and proj in ["q", "k", "v"]:
+                mod = old_attn.in_proj_qkv
+                fused_w = mod.weight.data
+                fused_b = getattr(mod, "bias", None)
+                k_dim = getattr(old_attn, "key_dim", getattr(old_attn, "k_dim", fused_w.size(0) // 3))
+                v_dim = getattr(old_attn, "value_dim", getattr(old_attn, "v_dim", fused_w.size(0) // 3))
+                q_dim = fused_w.size(0) - k_dim - v_dim if (k_dim + v_dim < fused_w.size(0)) else k_dim
+                if proj == "q":
+                    w = fused_w[:q_dim, :]
+                    b = fused_b[:q_dim] if fused_b is not None else None
+                elif proj == "k":
+                    w = fused_w[q_dim : q_dim + k_dim, :]
+                    b = fused_b[q_dim : q_dim + k_dim] if fused_b is not None else None
+                elif proj == "v":
+                    w = fused_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                    b = fused_b[q_dim + k_dim : q_dim + k_dim + v_dim] if fused_b is not None else None
+
+            # 5. Fallback to UniversalAdapter
+            if w is None:
+                try:
+                    w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+                except Exception:
+                    pass
+
+            extracted_weights[proj] = (w, b)
+
+        # Detect nested encoder: BERT/RoBERTa RobertaSelfAttention where output projection resides in outer module
+        cls_name = old_attn.__class__.__name__
+        has_out_proj = any(
+            hasattr(old_attn, attr)
+            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
+        )
+        if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+            self.is_nested_encoder = True
+
+        missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
+        if not self.is_nested_encoder and extracted_weights["o"][0] is None:
+            missing.append("o")
+
+        if missing:
+            raise RuntimeError(
+                f"Could not extract all required weights for AegisHybridAttention from {cls_name}. Missing: {missing}"
+            )
+
+        # SVD initialization for Q, K, V
+        for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj)]:
+            w, b = extracted_weights[proj]
+            self._svd_init(w, b, target)
+
+        # SVD initialization for O (or identity for nested encoder)
+        w_o, b_o = extracted_weights["o"]
+        if w_o is not None:
+            self._svd_init(w_o, b_o, self.out_proj)
+        elif self.is_nested_encoder:
             with torch.no_grad():
-                U, S, Vh = torch.linalg.svd(c_proj_w.float(), full_matrices=False)
-                r = min(self.rank, U.size(1), Vh.size(0))
-                self.out_proj1.weight.data.zero_()
-                self.out_proj2.weight.data.zero_()
-                self.out_proj1.weight.data[:r, :].copy_(Vh[:r, :].to(self.out_proj1.weight.dtype))
-                self.out_proj2.weight.data[:, :r].copy_((U[:, :r] @ torch.diag(S[:r])).to(self.out_proj2.weight.dtype))
-                if c_proj_b is not None and self.out_proj2.bias is not None:
-                    self.out_proj2.bias.data.copy_(c_proj_b.to(self.out_proj2.bias.dtype))
-            return
+                self.out_proj.lin1.weight.data.zero_()
+                self.out_proj.lin2.weight.data.zero_()
+                r = min(self.out_proj.rank, self.hidden_size, self.all_head_size)
+                self.out_proj.lin1.weight.data[:r, :r].fill_diagonal_(1.0)
+                self.out_proj.lin2.weight.data[:r, :r].fill_diagonal_(1.0)
+                if self.out_proj.lin2.bias is not None:
+                    self.out_proj.lin2.bias.data.zero_()
 
-        q_src = getattr(old_attn, "q_lin", getattr(old_attn, "query", getattr(old_attn, "q_proj", getattr(old_attn, "q", None))))
-        k_src = getattr(old_attn, "k_lin", getattr(old_attn, "key", getattr(old_attn, "k_proj", getattr(old_attn, "k", None))))
-        v_src = getattr(old_attn, "v_lin", getattr(old_attn, "value", getattr(old_attn, "v_proj", getattr(old_attn, "v", None))))
-        out_src = getattr(old_attn, "out_lin", getattr(old_attn, "dense", getattr(old_attn, "out_proj", getattr(old_attn, "o", None))))
-        if q_src is not None and hasattr(q_src, "weight"):
-            self._svd_init(q_src, self.q_proj1, self.q_proj2, self.rank)
-        if k_src is not None and hasattr(k_src, "weight"):
-            self._svd_init(k_src, self.k_proj1, self.k_proj2, self.rank)
-        if v_src is not None and hasattr(v_src, "weight"):
-            self._svd_init(v_src, self.v_proj1, self.v_proj2, self.rank)
-        if out_src is not None and hasattr(out_src, "weight"):
-            self._svd_init(out_src, self.out_proj1, self.out_proj2, self.rank)
+        # Rotary and decoder metadata inheritance
+        if hasattr(old_attn, "rotary_emb") and old_attn.rotary_emb is not None:
+            self.rotary_emb = old_attn.rotary_emb
+        if hasattr(old_attn, "is_decoder"):
+            self.is_decoder = bool(old_attn.is_decoder)
+
+    def copy_weights(self, old_attn: Any) -> None:
+        """Public alias for framework attention replacer compatibility."""
+        self._copy_pretrained(old_attn)
 
     @classmethod
     def from_distilbert_pretrained(
@@ -259,30 +488,10 @@ class AegisHybridAttention(nn.Module):
             class DummyConfig:
                 pass
             model_config = DummyConfig()
-            model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
+            out_lin = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None))
+            model_config.hidden_size = out_lin.out_features if out_lin is not None else 768
+            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 12))
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
-
-    @staticmethod
-    def _svd_init(
-        orig_lin: nn.Linear,
-        lin1: nn.Linear,
-        lin2: nn.Linear,
-        rank: int,
-    ) -> None:
-        with torch.no_grad():
-            W = orig_lin.weight.data.float()
-            bias = orig_lin.bias.data if orig_lin.bias is not None else None
-            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
-            r = min(rank, U.size(1), Vh.size(0))
-
-            lin1.weight.data.zero_()
-            lin2.weight.data.zero_()
-
-            lin1.weight.data[:r, :].copy_(Vh[:r, :].to(lin1.weight.dtype))
-            lin2.weight.data[:, :r].copy_((U[:, :r] @ torch.diag(S[:r])).to(lin2.weight.dtype))
-            if bias is not None and lin2.bias is not None:
-                lin2.bias.data.copy_(bias.to(lin2.bias.dtype))
 
     def forward(
         self,
@@ -298,98 +507,188 @@ class AegisHybridAttention(nn.Module):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        B, N, H_dim = hidden_states.shape
+        r"""
+        Forward pass executing local windowed attention and global linear attention with learned fusion.
+        """
+        key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
+        is_cross_attention = key_value_states is not None
+        kv_input = key_value_states if is_cross_attention else hidden_states
 
-        def lr(p1: nn.Linear, p2: nn.Linear, x: torch.Tensor) -> torch.Tensor:
-            return p2(p1(x))
+        B, N, _ = hidden_states.shape
+        N_k = kv_input.shape[1]
+        Dh = self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
 
-        Q = lr(self.q_proj1, self.q_proj2, hidden_states).view(B, N, self.num_heads, self.head_dim)
-        K = lr(self.k_proj1, self.k_proj2, hidden_states).view(B, N, self.num_kv_heads, self.head_dim)
-        V = lr(self.v_proj1, self.v_proj2, hidden_states).view(B, N, self.num_kv_heads, self.head_dim)
-        if self.kv_repeat > 1:
-            K = repeat_kv(K.transpose(1, 2), self.kv_repeat).transpose(1, 2)
-            V = repeat_kv(V.transpose(1, 2), self.kv_repeat).transpose(1, 2)
+        # 1. Projections via FactorizedLinear
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, Dh).transpose(1, 2)  # [B, H, N, Dh]
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)  # [B, H_kv, N_k, Dh]
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)  # [B, H_kv, N_k, Dh]
 
-        mask_2d: Optional[torch.Tensor] = None
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask_2d = attention_mask.bool()
-            elif attention_mask.dim() == 4:
-                mask_2d = (attention_mask[:, 0, 0, :] > -10000.0).bool()
-            elif attention_mask.dim() == 3:
-                mask_2d = attention_mask.squeeze(1).bool()
+        # 2. Rotary Position Embeddings (RoPE) - applied before GQA repetition & pathway splitting
+        position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+            cos, sin = position_embeddings[0], position_embeddings[1]
 
-        if mask_2d is not None:
-            mask_4d = mask_2d.unsqueeze(-1).unsqueeze(-1)
-            Q = Q * mask_4d
-            K = K * mask_4d
-            V = V * mask_4d
+            def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+                return torch.cat((-x[..., x.shape[-1] // 2 :], x[..., : x.shape[-1] // 2]), dim=-1)
 
-        # ============== 1. Local window attention ==============
-        scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.einsum("bnhd,bmhd->bhnm", Q, K) * scale
+            if cos.dim() == 3:
+                cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
+            while cos.dim() < Q.dim():
+                cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
+            if cos.shape[-2] != Q.shape[-2]:
+                cos, sin = cos[..., : Q.shape[-2], :], sin[..., : Q.shape[-2], :]
 
-        idx = torch.arange(N, device=hidden_states.device)
-        band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.local_window
-        band_mask = band_mask.unsqueeze(0).unsqueeze(0)
-        mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
-        scores = scores.masked_fill(~band_mask, mask_val)
-
-        if attention_mask is not None and attention_mask.dim() == 4:
-            if attention_mask.shape[1] == 1 or attention_mask.shape[1] == scores.shape[1]:
-                scores = scores + attention_mask.to(scores.dtype)
-            elif scores.shape[1] % attention_mask.shape[1] == 0:
-                scores = scores + repeat_kv(attention_mask, scores.shape[1] // attention_mask.shape[1]).to(scores.dtype)
+            rotary_dim = cos.shape[-1]
+            if rotary_dim <= Q.shape[-1]:
+                q_rot, q_pass = Q[..., :rotary_dim], Q[..., rotary_dim:]
+                k_rot, k_pass = K[..., :rotary_dim], K[..., rotary_dim:]
+                q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+                k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+                Q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
+                K = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
             else:
-                scores = scores + attention_mask[:, :1].to(scores.dtype)
-        elif mask_2d is not None:
-            key_mask = mask_2d.unsqueeze(1).unsqueeze(2)
-            scores = scores.masked_fill(~key_mask, mask_val)
+                cos_cut, sin_cut = cos[..., : Q.shape[-1]], sin[..., : Q.shape[-1]]
+                Q = (Q * cos_cut.to(Q.dtype)) + (_rotate_half(Q) * sin_cut.to(Q.dtype))
+                K = (K * cos_cut.to(K.dtype)) + (_rotate_half(K) * sin_cut.to(K.dtype))
+        elif hasattr(self, "rotary_emb") and self.rotary_emb is not None:
+            try:
+                from framework.utils.compat import maybe_apply_rotary
+                Q, K = maybe_apply_rotary(Q, K, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
+            except Exception:
+                pass
 
-        attn_local = F.softmax(scores, dim=-1)
+        # 3. GQA Key-Value expansion: [B, H_kv, N_k, Dh] -> [B, H, N_k, Dh]
+        if self.kv_repeat > 1:
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
+
+        # 4. Token valid mask extraction
+        mask_2d: Optional[torch.Tensor] = None
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        if mask is not None:
+            if mask.dim() == 2:
+                if mask.dtype in (torch.int, torch.long, torch.bool):
+                    mask_2d = mask.bool()
+                else:
+                    mask_2d = (mask > -5000.0).bool()
+            elif mask.dim() == 3:
+                mask_2d = (mask[:, 0, :] > -5000.0).bool() if mask.shape[1] == 1 else (mask > -5000.0).any(dim=1).bool()
+            elif mask.dim() == 4:
+                mask_2d = (mask[:, 0, 0, :] > -5000.0).bool()
+
+        # 5. Head mask preparation
+        head_mask_tensor: Optional[torch.Tensor] = None
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask_tensor = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask_tensor = head_mask.unsqueeze(-1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                head_mask_tensor = head_mask.unsqueeze(-1)
+            elif head_mask.dim() == 4:
+                head_mask_tensor = head_mask
+
+        is_decoder = (
+            self.is_decoder
+            or getattr(self.adapter, "is_decoder", False)
+            or kwargs.get("is_decoder", False)
+        )
+
+        # ============== Branch 1: Local Window Attention ==============
+        scale = 1.0 / math.sqrt(Dh)
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N, N_k]
+
+        idx_q = torch.arange(N, device=device)
+        idx_k = torch.arange(N_k, device=device)
+        diff = idx_q.unsqueeze(1) - idx_k.unsqueeze(0)  # [N, N_k], diff[i, j] = i - j
+        band_mask = diff.abs() <= self.local_window
+
+        if is_decoder:
+            causal_mask = diff >= 0
+            band_mask = band_mask & causal_mask
+
+        scores = scores.masked_fill(~band_mask.unsqueeze(0).unsqueeze(0), -10000.0)
+
+        if mask is not None and mask.dim() == 4:
+            if mask.shape[1] == 1 or mask.shape[1] == scores.shape[1]:
+                scores = scores + mask.to(scores.dtype)
+            elif scores.shape[1] % mask.shape[1] == 0:
+                scores = scores + repeat_kv(mask, scores.shape[1] // mask.shape[1]).to(scores.dtype)
+            else:
+                scores = scores + mask[:, :1].to(scores.dtype)
+        elif mask_2d is not None:
+            key_mask = mask_2d.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N_k]
+            scores = scores.masked_fill(~key_mask, -10000.0)
+
+        attn_local = F.softmax(scores.float(), dim=-1).to(dtype)
         attn_local = torch.nan_to_num(attn_local, nan=0.0)
         attn_local = self.dropout(attn_local)
-        local_out = torch.einsum("bhnm,bmhd->bnhd", attn_local, V)
 
-        # ============== 2. Global linear attention ==============
-        def phi(x: torch.Tensor) -> torch.Tensor:
-            return F.elu(x) + 1.0
+        if head_mask_tensor is not None:
+            attn_local = attn_local * head_mask_tensor.to(attn_local.dtype)
+
+        local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
+
+        # ============== Branch 2: Global Linear Attention ==============
+        # Transpose to [B, N, H, Dh] for token-wise pruning and masking
+        Q_g = Q.transpose(1, 2)
+        K_g = K.transpose(1, 2)
+        V_g = V.transpose(1, 2)
 
         if self.prune_gate is not None:
-            keep = torch.sigmoid(self.prune_gate(hidden_states))
-            Kg = K * keep.unsqueeze(-1)
-            Vg = V * keep.unsqueeze(-1)
-        else:
-            Kg, Vg = K, V
+            keep = torch.sigmoid(self.prune_gate(hidden_states))  # [B, N, H]
+            K_g = K_g * keep.unsqueeze(-1)
+            V_g = V_g * keep.unsqueeze(-1)
 
         if mask_2d is not None:
-            mask_4d = mask_2d.unsqueeze(-1).unsqueeze(-1)
-            Kg = Kg * mask_4d
-            Vg = Vg * mask_4d
+            mask_4d_tok = mask_2d.unsqueeze(-1).unsqueeze(-1)  # [B, N, 1, 1]
+            Q_g = Q_g * mask_4d_tok
+            K_g = K_g * mask_4d_tok
+            V_g = V_g * mask_4d_tok
 
-        phi_K = phi(Kg)
-        phi_Q = phi(Q)
+        # Activation feature map phi(x) = ELU(x) + 1.0 computed in FP32 for numerical stability
+        phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
+        phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
+        V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
 
-        phi_K_h = phi_K.transpose(1, 2)  # (B, H, N, D)
-        Vg_h = Vg.transpose(1, 2)        # (B, H, N, D)
-        phi_Q_h = phi_Q.transpose(1, 2)  # (B, H, N, D)
+        if is_decoder:
+            # Causal global linear attention: tokens at i only aggregate j <= i
+            sim = torch.matmul(phi_Q, phi_K.transpose(-2, -1))  # [B, H, N, N_k]
+            causal_tril = (idx_q.unsqueeze(1) >= idx_k.unsqueeze(0)).unsqueeze(0).unsqueeze(0)
+            sim = sim.masked_fill(~causal_tril, 0.0)
+            if mask_2d is not None:
+                sim = sim * mask_2d.unsqueeze(1).unsqueeze(2).float()  # mask invalid keys
+                sim = sim * mask_2d.unsqueeze(1).unsqueeze(-1).float()  # mask invalid queries
 
-        KV = torch.matmul(phi_K_h.transpose(-2, -1), Vg_h)  # (B, H, D, D)
-        global_out_h = torch.matmul(phi_Q_h, KV)             # (B, H, N, D)
-        Z = phi_K_h.sum(dim=-2, keepdim=True)                # (B, H, 1, D)
-        norm = torch.matmul(phi_Q_h, Z.transpose(-2, -1))    # (B, H, N, 1)
-        norm_eps = 1e-4 if Kg.dtype in (torch.float16, torch.bfloat16) else 1e-5
-        global_out_h = global_out_h / (norm + norm_eps)
-        global_out = global_out_h.transpose(1, 2)            # (B, N, H, D)
+            global_out_h = torch.matmul(sim, V_gf)  # [B, H, N, Dh]
+            norm = sim.sum(dim=-1, keepdim=True)    # [B, H, N, 1]
+            global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
+        else:
+            # Bidirectional global linear attention: associative O(N * Dh^2) matrix formulation
+            KV = torch.matmul(phi_K.transpose(-2, -1), V_gf)       # [B, H, Dh, Dh]
+            global_out_h = torch.matmul(phi_Q, KV)                 # [B, H, N, Dh]
+            Z = phi_K.sum(dim=-2, keepdim=True)                    # [B, H, 1, Dh]
+            norm = torch.matmul(phi_Q, Z.transpose(-2, -1))        # [B, H, N, 1]
+            global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
 
-        # ============== 3. Adaptive fusion ==============
-        alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)
-        fused = alpha * local_out + (1.0 - alpha) * global_out
+        if head_mask_tensor is not None:
+            global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
 
-        # ============== 4. Output projection ==============
+        global_out = global_out_h.transpose(1, 2)  # [B, N, H, Dh]
+
+        # ============== Branch 3: Adaptive Fusion & Output ==============
+        alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # [B, N, H, 1]
+        fused = alpha * local_out + (1.0 - alpha) * global_out                # [B, N, H, Dh]
         fused = fused.reshape(B, N, self.all_head_size)
-        out = self.out_proj2(self.out_proj1(fused))
-        out = self.dropout(out)
+
+        # Nested encoder handling: skip out_proj if replacing inner SelfAttention in BERT/RoBERTa
+        if self.is_nested_encoder:
+            out = fused
+        else:
+            out = self.out_proj(fused)
+            out = self.dropout(out)
 
         if mask_2d is not None:
             out = out * mask_2d.unsqueeze(-1)
@@ -397,12 +696,11 @@ class AegisHybridAttention(nn.Module):
         return out, (attn_local if output_attentions else None)
 
     def get_ortho_loss(self) -> torch.Tensor:
-        return torch.tensor(0.0, device=self.out_proj2.weight.device)
+        return torch.tensor(0.0, device=self.out_proj.lin2.weight.device)
 
 
 @ATTENTION_REGISTRY.register("aegis_hybrid_fn")
 @ATTENTION_REGISTRY.register("aegis_hybrid_inject")
-# inject
 def inject_aegis_hybrid(
     layer: Any = None,
     model_config: Any = None,
@@ -411,35 +709,61 @@ def inject_aegis_hybrid(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> AegisHybridAttention:
-    r"""Injects AegisHybridAttention into a transformer layer."""
+) -> Optional[AegisHybridAttention]:
+    r"""
+    Injects AegisHybridAttention into a transformer layer with safe pre-test extraction.
+    Returns None on failure to preserve the original layer.
+    """
     if model_config is None:
         if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
             model_config = layer
         elif hasattr(layer, "attention"):
             old_attn = layer.attention
-    h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768)))) if model_config is not None else 768
-    n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)))) if model_config is not None else 12
-    h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads))) if model_config is not None else h_size // max(1, n_heads)
-    n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads)) if model_config is not None else n_heads
+
+    if isinstance(model_config, dict):
+        h_size = model_config.get("hidden_size", model_config.get("dim", 768))
+        n_heads = model_config.get("num_attention_heads", model_config.get("num_heads", 12))
+        h_dim = model_config.get("head_dim", h_size // max(1, n_heads))
+        n_kv_heads = model_config.get("num_key_value_heads", model_config.get("num_kv_heads", n_heads))
+        is_dec = model_config.get("is_decoder", False)
+    elif model_config is not None:
+        h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768))))
+        n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12))))
+        h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads)))
+        n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads))
+        is_dec = getattr(model_config, "is_decoder", False)
+    else:
+        h_size = 768
+        n_heads = 12
+        h_dim = 64
+        n_kv_heads = 12
+        is_dec = False
 
     cfg = AegisHybridConfig(
         hidden_size=h_size,
         num_attention_heads=n_heads,
         head_dim=h_dim,
         num_key_value_heads=n_kv_heads,
-        local_window=getattr(comp_config, "block_size", 64),
-        rank=getattr(comp_config, "lora_r", 64),
-        kernel_feature_dim=getattr(comp_config, "rff_features", 128),
-        dropout=getattr(comp_config, "dropout", 0.1),
-        use_adaptive_pruning=getattr(comp_config, "use_gate", True),
-        gate_init_bias=getattr(comp_config, "gate_init_bias", 1.8),
+        local_window=getattr(comp_config, "block_size", 64) if comp_config is not None else 64,
+        rank=getattr(comp_config, "lora_r", getattr(comp_config, "rank", 64)) if comp_config is not None else 64,
+        kernel_feature_dim=getattr(comp_config, "rff_features", 128) if comp_config is not None else 128,
+        dropout=getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1,
+        use_adaptive_pruning=getattr(comp_config, "use_gate", True) if comp_config is not None else True,
+        gate_init_bias=getattr(comp_config, "gate_init_bias", 1.8) if comp_config is not None else 1.8,
+        is_decoder=is_dec or kwargs.get("is_decoder", False),
     )
-    if model_config is None and old_attn is not None:
-        new_attn = AegisHybridAttention.from_distilbert_pretrained(old_attn, config=cfg)
+
+    # Pre-test weight extraction before committing to replacement
+    if old_attn is not None:
+        try:
+            test_attn = AegisHybridAttention(config=cfg, pretrained_attn=old_attn)
+        except Exception:
+            return None
+        new_attn = test_attn
     else:
-        new_attn = AegisHybridAttention(config=cfg, pretrained_attn=old_attn)
+        new_attn = AegisHybridAttention(config=cfg)
 
     if hasattr(layer, "attention"):
         layer.attention = new_attn
+
     return new_attn
