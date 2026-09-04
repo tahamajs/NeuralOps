@@ -633,9 +633,8 @@ def main():
                 with path.open("w", newline="", encoding="utf8") as f:
                     w = csv.DictWriter(f, fieldnames=FIELDS)
                     w.writeheader()
-                    for m_name in names:
-                        if m_name in summary_dict:
-                            w.writerow(summary_dict[m_name])
+                    for m_name in summary_dict:
+                        w.writerow(summary_dict[m_name])
                 LOG.info("[%d/%d] %s -> %s (%.2f%%)", n, len(names), name, status, acc)
                 continue
         # Side effect is projection alias installation; the model itself
@@ -823,9 +822,8 @@ def main():
         with path.open("w", newline="", encoding="utf8") as f:
             w = csv.DictWriter(f, fieldnames=FIELDS)
             w.writeheader()
-            for m_name in names:
-                if m_name in summary_dict:
-                    w.writerow(summary_dict[m_name])
+            for m_name in summary_dict:
+                w.writerow(summary_dict[m_name])
         LOG.info("[%d/%d] %s -> %s %.2f%%", n, len(names), name, status, acc)
         del model; gc.collect(); torch.cuda.empty_cache()
 
