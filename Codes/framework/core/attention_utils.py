@@ -489,19 +489,68 @@ def inject_attention(
                 dropout=0.1,
             )
 
+        # Ensure old_attn has canonical projection attributes for custom modules inspecting pretrained_attn
+        for proj_key, alias_list in [
+            ("q", ["query", "q_proj", "q_lin", "Wq", "wq", "q"]),
+            ("k", ["key", "k_proj", "k_lin", "Wk", "wk", "k"]),
+            ("v", ["value", "v_proj", "v_lin", "Wv", "wv", "v"]),
+            ("o", ["dense", "out_proj", "o_proj", "out_lin", "c_proj", "wo", "o"]),
+        ]:
+            try:
+                existing_mod = next((getattr(old_attn, a) for a in alias_list if hasattr(old_attn, a)), None)
+                if existing_mod is None and hasattr(old_attn, "self"):
+                    existing_mod = next((getattr(old_attn.self, a) for a in alias_list if hasattr(old_attn.self, a)), None)
+
+                if existing_mod is not None:
+                    for a in alias_list:
+                        if not hasattr(old_attn, a):
+                            try:
+                                setattr(old_attn, a, existing_mod)
+                            except Exception:
+                                pass
+                else:
+                    w, b = adapter.get_weight_bias(old_attn, proj_key)
+                    if w is not None:
+                        proxy = nn.Linear(w.shape[1], w.shape[0], bias=(b is not None), device=w.device, dtype=w.dtype)
+                        proxy.weight.data.copy_(w)
+                        if b is not None:
+                            proxy.bias.data.copy_(b)
+                        for a in alias_list:
+                            if not hasattr(old_attn, a):
+                                try:
+                                    setattr(old_attn, a, proxy)
+                                except Exception:
+                                    pass
+            except Exception as ex:
+                logger.debug("Failed to set projection aliases for %s on %s: %s", proj_key, name, ex)
+
         effective_rank = rank if rank is not None else getattr(config, "rank", 32)
 
-        # Standardized instantiation: (config, rank=32, **kwargs)
-        try:
-            new_attn = attn_class(config, rank=effective_rank, **kwargs)
-        except TypeError:
+        # Standardized instantiation: try passing pretrained_attn=old_attn first so modules
+        # can inherit pretrained weights during initialization, then fallback without it
+        attempts = [
+            lambda: attn_class(config, rank=effective_rank, pretrained_attn=old_attn, **kwargs),
+            lambda: attn_class(config, pretrained_attn=old_attn, **kwargs),
+            lambda: attn_class(config=config, pretrained_attn=old_attn, **kwargs),
+            lambda: attn_class(config, rank=effective_rank, **kwargs),
+            lambda: attn_class(config, **kwargs),
+            lambda: attn_class(rank=effective_rank, **kwargs),
+            lambda: attn_class(**kwargs),
+        ]
+        new_attn = None
+        for attempt in attempts:
             try:
-                new_attn = attn_class(config, **kwargs)
+                new_attn = attempt()
+                break
             except TypeError:
-                try:
-                    new_attn = attn_class(rank=effective_rank, **kwargs)
-                except TypeError:
-                    new_attn = attn_class(**kwargs)
+                continue
+            except Exception as e:
+                logger.debug("Instantiation attempt failed: %s", e)
+                continue
+
+        if new_attn is None:
+            raise RuntimeError(f"Could not instantiate attention class {attn_class.__name__}")
+
 
         # Do not let a legacy full-MHA replacement silently retain randomly
         # initialized K/V projections on GQA decoders.  Such a module must
