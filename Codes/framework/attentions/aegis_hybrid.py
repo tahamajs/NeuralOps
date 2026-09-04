@@ -707,9 +707,9 @@ class AegisHybridAttention(BaseAttention):
 
         local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
 
-        if not is_decoder:
-            # Bidirectional models (e.g. BERT, RoBERTa): disable global linear branch entirely
-            # local_window covers full sentence context, avoiding linear kernel dilution
+        if (not is_decoder) or (self.local_window >= max(N, N_k)):
+            # When local window covers the entire sequence (e.g. short-sequence tasks where N <= local_window)
+            # or for bidirectional models, skip the global linear branch entirely and use only local attention.
             fused = local_out.reshape(B, N, self.all_head_size)
         else:
             # ============== Branch 2: Global Linear Attention (Causal) ==============
