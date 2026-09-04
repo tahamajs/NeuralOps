@@ -3,6 +3,7 @@ from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor
+from framework.utils.compat import should_compress_linear
 
 
 class UniQLCompressor(BaseCompressor):
@@ -28,7 +29,7 @@ class UniQLCompressor(BaseCompressor):
     def compress(self) -> Any:
         """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
-            if isinstance(module, torch.nn.Linear):
+            if isinstance(module, torch.nn.Linear) and should_compress_linear(self.model, name):
                 W = module.weight.data.float()
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                 r = max(1, min(self.rank, min(W.shape), len(S)))
