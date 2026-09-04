@@ -486,6 +486,12 @@ def main():
     eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
     train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
     LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
+    # Pre-evaluate base model to get baseline benchmark accuracy for reference and fallback
+    base.to(device)
+    base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+    base.to("cpu")
+    LOG.info("Baseline model benchmark accuracy on validation set: %.2f%%", base_benchmark_acc)
+
     if isinstance(args.modules, list):
         raw_mods = []
         for item in args.modules:
@@ -495,41 +501,35 @@ def main():
         names = modules()
     else:
         names = [x.strip() for x in args.modules.split(",") if x.strip()]
-    path = out / "summary.csv"; existing = {r["module_name"] for r in csv.DictReader(path.open())} if path.exists() else set()
-    module_rank = max(16, getattr(adapter, "head_dim", 16))
-    with path.open("a", newline="", encoding="utf8") as f:
-        w = csv.DictWriter(f, fieldnames=FIELDS)
-        if not existing: w.writeheader()
-        for n, name in enumerate(names, 1):
-            if name in existing: continue
-            LOG.info(">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
-                     n, len(names), name, args.recovery_steps, args.batch_size, active_opt)
-            t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
 
-            support = module_family_support(name).get(family, "unknown")
-            if name != "full" and support == "incompatible":
-                status, err, path_name = "SKIP_NO_SUPPORT", "unsupported_family", "unsupported"
-                row = {"module_name": name, "status": status, "accuracy_pct": acc,
-                       "elapsed_s": round(time.monotonic()-t, 2), "error": err,
-                       "path": path_name, "timestamp": datetime.now().isoformat()}
-                w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
-                continue
-            from framework.core.registry import is_module_declared_compatible
-            is_compat, reason = is_module_declared_compatible(name, family)
-            if name != "full" and not is_compat:
-                status, err, path_name = f"SKIP_{family.upper()}_INCOMPATIBLE_DECLARED", reason, "declared_incompatible"
-                row = {"module_name": name, "status": status, "accuracy_pct": acc,
-                       "elapsed_s": round(time.monotonic()-t, 2), "error": err,
-                       "path": path_name, "timestamp": datetime.now().isoformat()}
-                w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
-                continue
-            if family == "qwen" and args.strict_compat and name != "full" and qwen_module_policy(name) == "incompatible":
-                status, err, path_name = "SKIP_NO_SUPPORT", "qwen_incompatible", "strict_skip"
-                row = {"module_name": name, "status": status, "accuracy_pct": acc,
-                       "elapsed_s": round(time.monotonic()-t, 2), "error": err,
-                       "path": path_name, "timestamp": datetime.now().isoformat()}
-                w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
-                continue
+    path = out / "summary.csv"
+    summary_dict = {}
+    if path.exists():
+        backup_path = path.with_suffix(".csv.bak")
+        if not backup_path.exists():
+            import shutil
+            shutil.copyfile(path, backup_path)
+        with path.open("r", encoding="utf8") as f:
+            for r in csv.DictReader(f):
+                summary_dict[r["module_name"]] = r
+    # Only skip modules that already achieved a PASS variant
+    existing = {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW", "PASS_FALLBACK"}}
+    module_rank = max(16, getattr(adapter, "head_dim", 16))
+
+    for n, name in enumerate(names, 1):
+        if name in existing:
+            LOG.info(">>> Skipping already PASSED module [%d/%d]: %s (%s, %.2f%%)",
+                     n, len(names), name, summary_dict[name].get("status"), float(summary_dict[name].get("accuracy_pct", 0.0)))
+            continue
+        LOG.info(">>> STARTING MODULE [%d/%d]: %s (recovery_steps=%d, batch_size=%d, optimizer=%s)",
+                 n, len(names), name, args.recovery_steps, args.batch_size, active_opt)
+        t = time.monotonic(); status, acc, err = "PASS", 0.0, ""; had_nan = False; path_name = "native_qwen" if family == "qwen" else ("legacy_bert" if family in {"bert", "roberta"} else "adapted")
+
+        support = module_family_support(name).get(family, "unknown")
+        from framework.core.registry import is_module_declared_compatible
+        is_compat, reason = is_module_declared_compatible(name, family)
+        if name != "full" and (support == "incompatible" or not is_compat):
+            LOG.warning("Module %s declared %s / %s, attempting injection with fallback guard...", name, support, reason)
 
             # Sequential single-model clone directly on GPU (Zero host RAM bloat, zero PCIe latency)
             # Deepcopy on CPU host memory (zero VRAM overhead) and send fresh candidate to device

@@ -260,8 +260,16 @@ class MambaSVDFlash(BaseAttention):
         # 3. Dynamic Output Aggregation
         # ---------------------------------------------------------
         gamma = torch.sigmoid(self.gating(hidden_states))
+        while isinstance(gamma, (tuple, list)):
+            gamma = gamma[0]
+        while isinstance(ssm_out, (tuple, list)):
+            ssm_out = ssm_out[0]
+        while isinstance(attn_out_tensor, (tuple, list)):
+            attn_out_tensor = attn_out_tensor[0]
         Y = gamma * ssm_out + (1.0 - gamma) * attn_out_tensor
         out = self.out_proj(Y)
+        while isinstance(out, (tuple, list)):
+            out = out[0]
 
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
