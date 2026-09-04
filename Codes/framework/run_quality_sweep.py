@@ -398,6 +398,9 @@ def main():
                     help="Explicit path to parent fine-tuned checkpoint (e.g. finetuned_model.pt)")
     ap.add_argument("--fresh", action="store_true",
                     help="Fresh clean sweep: do not resume or skip any modules")
+    ap.add_argument("--rank", type=int, default=None,
+                    help="SVD/projection rank for attention modules")
+
     
     # Pre-parse to check if a config file is provided
     pre_args, remaining_argv = ap.parse_known_args()
@@ -673,7 +676,7 @@ def main():
                 summary_dict[r["module_name"]] = r
     # In fresh mode, evaluate everything; otherwise only skip legitimate PASS results
     existing = set() if args.fresh else {m for m, r in summary_dict.items() if r.get("status") in {"PASS", "PASS_LOW"}}
-    module_rank = max(16, getattr(adapter, "head_dim", 16))
+    module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
 
     for n, name in enumerate(names, 1):
         if name in existing:
