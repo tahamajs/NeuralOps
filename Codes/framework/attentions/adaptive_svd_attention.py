@@ -8,7 +8,7 @@ $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau =
 with symmetrical $\sqrt{\Sigma}$ singular value distribution:
 $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = \sqrt{\Sigma_r} V^\top_{:r, :}$$
 augmented with trainable low-rank residual adapters:
-$$W \approx U_r V_r + A B$$
+$$W \approx U_r V_r + W_{\text{lora\_B}} W_{\text{lora\_A}}$$
 """
 
 import math
@@ -29,19 +29,8 @@ class AdaptiveSVDLinear(nn.Module):
     r"""
     Linear layer decomposed into a fixed/pretrained SVD base and a trainable residual adapter.
 
-    Mathematical Formulation:
-        Given an input $x \in \mathbb{R}^{B \times N \times d_{\text{in}}}$, the output is:
-        $$y = x V^\top U^\top + x B^\top A^\top + b$$
-        where:
-        - $U \in \mathbb{R}^{d_{\text{out}} \times r_{\text{svd}}}$ and $V \in \mathbb{R}^{r_{\text{svd}} \times d_{\text{in}}}$
-          represent the principal truncated SVD components ($W_{\text{svd}} = U V$).
-        - $A \in \mathbb{R}^{d_{\text{out}} \times r_{\text{res}}}$ and $B \in \mathbb{R}^{r_{\text{res}} \times d_{\text{in}}}$
-          represent the learnable residual adapter rank ($W_{\text{res}} = A B$).
-        - $b \in \mathbb{R}^{d_{\text{out}}}$ is an optional bias vector.
-
-    Complexity:
-        - Computation: $\mathcal{O}(B \cdot N \cdot (d_{\text{in}} r_{\text{svd}} + r_{\text{svd}} d_{\text{out}} + d_{\text{in}} r_{\text{res}} + r_{\text{res}} d_{\text{out}}))$ FLOPs.
-        - Parameter Count: $(d_{\text{out}} + d_{\text{in}}) \cdot (r_{\text{svd}} + r_{\text{res}}) + d_{\text{out}}$.
+    Uses `lora_A` and `lora_B` parameter names so fine-tuning optimizers and LoRA filters
+    register them automatically as trainable parameters.
     """
 
     def __init__(
@@ -66,11 +55,11 @@ class AdaptiveSVDLinear(nn.Module):
         self.V: nn.Parameter = nn.Parameter(torch.empty((svd_rank, in_features), **factory_kwargs))
 
         if residual_rank > 0:
-            self.A: Optional[nn.Parameter] = nn.Parameter(torch.empty((out_features, residual_rank), **factory_kwargs))
-            self.B: Optional[nn.Parameter] = nn.Parameter(torch.empty((residual_rank, in_features), **factory_kwargs))
+            self.lora_B: Optional[nn.Parameter] = nn.Parameter(torch.empty((out_features, residual_rank), **factory_kwargs))
+            self.lora_A: Optional[nn.Parameter] = nn.Parameter(torch.empty((residual_rank, in_features), **factory_kwargs))
         else:
-            self.register_parameter("A", None)
-            self.register_parameter("B", None)
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
 
         if bias:
             self.bias: Optional[nn.Parameter] = nn.Parameter(torch.empty(out_features, **factory_kwargs))
@@ -80,7 +69,7 @@ class AdaptiveSVDLinear(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        r"""Initializes parameters using orthogonal base and zeroed residual adapter (AB = 0 at init)."""
+        r"""Initializes parameters using orthogonal base and zeroed residual adapter (BA = 0 at init)."""
         with torch.no_grad():
             if self.U.dtype in (torch.float16, torch.bfloat16):
                 u_fp32 = torch.empty_like(self.U, dtype=torch.float32, device="cpu")
@@ -96,45 +85,46 @@ class AdaptiveSVDLinear(nn.Module):
             else:
                 nn.init.orthogonal_(self.V)
 
-            if self.A is not None and self.B is not None:
-                if self.A.dtype in (torch.float16, torch.bfloat16):
-                    a_fp32 = torch.empty_like(self.A, dtype=torch.float32, device="cpu")
-                    nn.init.kaiming_uniform_(a_fp32, a=math.sqrt(5))
-                    self.A.copy_(a_fp32.to(dtype=self.A.dtype, device=self.A.device))
+            if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+                if self.lora_B.dtype in (torch.float16, torch.bfloat16):
+                    b_fp32 = torch.empty_like(self.lora_B, dtype=torch.float32, device="cpu")
+                    nn.init.kaiming_uniform_(b_fp32, a=math.sqrt(5))
+                    self.lora_B.copy_(b_fp32.to(dtype=self.lora_B.dtype, device=self.lora_B.device))
                 else:
-                    nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))
-                nn.init.zeros_(self.B)
+                    nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_A)
+
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
 
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor) -> None:
-        r"""Sets the SVD factors $U$ and $V$ with precomputed truncated SVD decomposition."""
+        r"""Sets the SVD factors $U$ and $V$ safely clamped to tensor dimensions."""
         with torch.no_grad():
             r = min(U.size(1), V.size(0), self.svd_rank)
-            out_dim = min(self.out_features, U.size(0))
-            in_dim = min(self.in_features, V.size(1))
+            out_dim = min(self.U.size(0), U.size(0))
+            in_dim = min(self.V.size(1), V.size(1))
             self.U.zero_()
             self.V.zero_()
             self.U[:out_dim, :r].copy_(U[:out_dim, :r])
             self.V[:r, :in_dim].copy_(V[:r, :in_dim])
-            if self.B is not None:
-                nn.init.zeros_(self.B)
+            if getattr(self, "lora_A", None) is not None:
+                nn.init.zeros_(self.lora_A)
 
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix for compatibility."""
         W = torch.matmul(self.U, self.V)
-        if self.A is not None and self.B is not None:
-            W = W + torch.matmul(self.A, self.B)
+        if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+            W = W + torch.matmul(self.lora_B, self.lora_A)
         return W
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        r"""Forward computation for low-rank SVD + residual linear layer."""
+        r"""Forward computation for low-rank SVD + trainable residual adapter."""
         Vx = F.linear(x, self.V)
         out = F.linear(Vx, self.U)
-        if self.A is not None and self.B is not None:
-            Bx = F.linear(x, self.B)
-            out = out + F.linear(Bx, self.A)
+        if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+            Ax = F.linear(x, self.lora_A)
+            out = out + F.linear(Ax, self.lora_B)
         if self.bias is not None:
             out = out + self.bias
         return out
@@ -166,8 +156,8 @@ class AdaptiveSVDAttention(BaseAttention):
         self.num_kv_heads: int = self.adapter.num_key_value_heads
         self.hidden_size: int = self.adapter.hidden_size
         self.head_dim: int = self.adapter.head_dim
-        self.all_head_size: int = self.adapter.q_proj_out if hasattr(self.adapter, "q_proj_out") else (self.num_heads * self.head_dim)
-        self.kv_head_size: int = self.adapter.kv_proj_out if hasattr(self.adapter, "kv_proj_out") else (self.num_kv_heads * self.head_dim)
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = self.adapter.kv_repeat
         self.supports_gqa: bool = True
         self.svd_rank: int = getattr(
@@ -299,8 +289,6 @@ class AdaptiveSVDAttention(BaseAttention):
             max_r = min(adap_linear.svd_rank, U.size(1), Vt.size(0))
             r = self._compute_energy_rank(S, max_rank=max_r)
 
-            # Symmetrical square-root singular value distribution:
-            # U_r = U[:, :r] * sqrt(Sigma_r), V_r = sqrt(Sigma_r) * V_r^T
             sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_r = (U[:, :r] * sqrt_s.unsqueeze(0)).to(dtype=adap_linear.U.dtype, device=adap_linear.U.device)
             V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(dtype=adap_linear.V.dtype, device=adap_linear.V.device)
@@ -317,8 +305,8 @@ class AdaptiveSVDAttention(BaseAttention):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 self._init_svd_part(target, w, b)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
-                pass
+            except Exception as e:
+                print(f"Warning: Failed to copy weights for {proj} in Adaptive SVD: {e}")
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
@@ -342,7 +330,7 @@ class AdaptiveSVDAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Forward pass of Adaptive SVD Attention with universal T5 & masking support."""
+        """Forward pass of Adaptive SVD Attention with universal T5, GQA, RoPE & masking support."""
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross_attention = key_value_states is not None
         kv_input = key_value_states if is_cross_attention else hidden_states
