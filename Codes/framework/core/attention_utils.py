@@ -280,8 +280,16 @@ def _copy_projection_weights(
 
             if target_out_dim is not None and W_float.shape[0] > target_out_dim:
                 W_float = W_float[:target_out_dim, :]
+            elif target_out_dim is not None and W_float.shape[0] < target_out_dim:
+                rep = (target_out_dim + W_float.shape[0] - 1) // W_float.shape[0]
+                W_float = W_float.repeat(rep, 1)[:target_out_dim, :]
+                if src_bias is not None:
+                    src_bias = src_bias.repeat(rep)[:target_out_dim]
             if target_in_dim is not None and W_float.shape[1] > target_in_dim:
                 W_float = W_float[:, :target_in_dim]
+            elif target_in_dim is not None and W_float.shape[1] < target_in_dim:
+                rep = (target_in_dim + W_float.shape[1] - 1) // W_float.shape[1]
+                W_float = W_float.repeat(1, rep)[:, :target_in_dim]
 
             U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
 
