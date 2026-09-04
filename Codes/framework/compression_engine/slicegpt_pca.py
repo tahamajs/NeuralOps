@@ -137,8 +137,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                 total_var = torch.sum(torch.clamp(eigvals, min=0.0)).item()
                 if total_var > 0:
                     cum_var = torch.cumsum(torch.clamp(eigvals, min=0.0), dim=0) / total_var
-                    target_var = 1.0 - self.sparsity
-                    keep = int(torch.searchsorted(cum_var, target_var).item()) + 1
+                    keep = int((cum_var < target_var).sum().item()) + 1
                     keep = max(1, min(keep, d_in))
                 else:
                     keep = max(1, int(d_in * (1.0 - self.sparsity)))

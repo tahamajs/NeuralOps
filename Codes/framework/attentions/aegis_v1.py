@@ -55,7 +55,7 @@ class FactorisedLinear(nn.Module):
             S = torch.clamp(S, min=1e-6)
             total = (S**2).sum()
             cum = torch.cumsum(S**2, dim=0) / (total + 1e-5)
-            rank = int(torch.searchsorted(cum, energy).item()) + 1
+            rank = int((cum < energy).sum().item()) + 1
             rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
             self.rank: int = rank
             A = U[:, :rank] * S[:rank].unsqueeze(0)
