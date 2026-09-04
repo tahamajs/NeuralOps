@@ -252,8 +252,14 @@ class AegisHybridAttention(BaseAttention):
         self.rank: int = max(1, min(config.rank, self.hidden_size))
         self.lora_rank: int = max(1, min(getattr(config, "lora_rank", 32), self.hidden_size))
         self.dropout: nn.Dropout = nn.Dropout(config.dropout)
-        self.is_decoder: bool = config.is_decoder or kwargs.get("is_decoder", False)
-        self.use_global: bool = getattr(config, "use_global", False) or kwargs.get("use_global", False)
+        is_dec = (
+            getattr(config, "is_decoder", False)
+            or getattr(config, "model_type", "").lower() in ("gpt2", "gpt", "qwen", "qwen2", "llama", "mistral")
+            or (hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])))
+            or kwargs.get("is_decoder", False)
+        )
+        self.is_decoder: bool = bool(is_dec)
+        self.use_global: bool = False
         self.is_nested_encoder: bool = False
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
@@ -550,6 +556,8 @@ class AegisHybridAttention(BaseAttention):
             self.rotary_emb = old_attn.rotary_emb
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
+        elif hasattr(old_attn, "c_attn") or old_attn.__class__.__name__ in ("GPT2Attention", "Qwen2Attention"):
+            self.is_decoder = True
 
     def copy_weights(self, old_attn: Any) -> None:
         """Public alias for framework attention replacer compatibility."""
@@ -672,6 +680,8 @@ class AegisHybridAttention(BaseAttention):
             self.is_decoder
             or getattr(self.adapter, "is_decoder", False)
             or kwargs.get("is_decoder", False)
+            or getattr(getattr(self, "config", None), "is_decoder", False)
+            or getattr(getattr(self, "config", None), "model_type", "").lower() in ("gpt2", "gpt", "qwen", "qwen2", "llama")
         )
 
         # ============== Branch 1: Local Window Attention ==============
@@ -709,53 +719,51 @@ class AegisHybridAttention(BaseAttention):
 
         local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
 
-        if (not self.use_global) or (not is_decoder) or (self.local_window >= max(N, N_k)):
-            # When local window covers the entire sequence (e.g. short-sequence tasks where N <= local_window)
-            # or when use_global=False or for bidirectional models, skip the global linear branch entirely and use only local attention.
-            fused = local_out.reshape(B, N, self.all_head_size)
-        else:
-            # ============== Branch 2: Global Linear Attention (Causal) ==============
-            # Transpose to [B, N, H, Dh] for token-wise pruning and masking
-            Q_g = Q.transpose(1, 2)
-            K_g = K.transpose(1, 2)
-            V_g = V.transpose(1, 2)
+        if not self.use_global:
+            out = local_out.reshape(B, N, self.all_head_size)
+            if not self.is_nested_encoder:
+                out = self.out_proj(out)
+                out = self.dropout(out)
+            if not is_decoder and mask_2d is not None:
+                out = out * mask_2d.unsqueeze(-1)
+            return out, (attn_local if output_attentions else None)
 
-            if self.prune_gate is not None:
-                keep = torch.sigmoid(self.prune_gate(hidden_states))  # [B, N, H]
-                K_g = K_g * keep.unsqueeze(-1)
-                V_g = V_g * keep.unsqueeze(-1)
+        # Global branch (executed only when use_global is True)
+        Q_g = Q.transpose(1, 2)
+        K_g = K.transpose(1, 2)
+        V_g = V.transpose(1, 2)
 
-            # Activation feature map phi(x) = ELU(x) + 1.0 computed in FP32 for numerical stability
-            phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
-            phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
-            V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
+        if self.prune_gate is not None:
+            keep = torch.sigmoid(self.prune_gate(hidden_states))  # [B, N, H]
+            K_g = K_g * keep.unsqueeze(-1)
+            V_g = V_g * keep.unsqueeze(-1)
 
-            # Zero out padding tokens after phi(x) since ELU(0) + 1.0 = 1.0 would otherwise pollute normalization
-            if mask_2d is not None:
-                phi_Q = phi_Q * mask_2d.unsqueeze(1).unsqueeze(-1).float()
-                phi_K = phi_K * mask_2d.unsqueeze(1).unsqueeze(-1).float()
-                V_gf = V_gf * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+        phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
+        phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
+        V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
 
-            # Causal global linear attention: tokens at i only aggregate j <= i
-            sim = torch.matmul(phi_Q, phi_K.transpose(-2, -1))  # [B, H, N, N_k]
-            causal_tril = (idx_q.unsqueeze(1) >= idx_k.unsqueeze(0)).unsqueeze(0).unsqueeze(0)
-            sim = sim.masked_fill(~causal_tril, 0.0)
+        if mask_2d is not None:
+            phi_Q = phi_Q * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+            phi_K = phi_K * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+            V_gf = V_gf * mask_2d.unsqueeze(1).unsqueeze(-1).float()
 
-            global_out_h = torch.matmul(sim, V_gf)  # [B, H, N, Dh]
-            norm = sim.sum(dim=-1, keepdim=True)    # [B, H, N, 1]
-            global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
+        sim = torch.matmul(phi_Q, phi_K.transpose(-2, -1))  # [B, H, N, N_k]
+        causal_tril = (idx_q.unsqueeze(1) >= idx_k.unsqueeze(0)).unsqueeze(0).unsqueeze(0)
+        sim = sim.masked_fill(~causal_tril, 0.0)
 
-            if head_mask_tensor is not None:
-                global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
+        global_out_h = torch.matmul(sim, V_gf)  # [B, H, N, Dh]
+        norm = sim.sum(dim=-1, keepdim=True)    # [B, H, N, 1]
+        global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
 
-            global_out = global_out_h.transpose(1, 2)  # [B, N, H, Dh]
+        if head_mask_tensor is not None:
+            global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
 
-            # ============== Branch 3: Adaptive Fusion & Output ==============
-            alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # [B, N, H, 1]
-            fused = alpha * local_out + (1.0 - alpha) * global_out                # [B, N, H, Dh]
-            fused = fused.reshape(B, N, self.all_head_size)
+        global_out = global_out_h.transpose(1, 2)  # [B, N, H, Dh]
 
-        # Nested encoder handling: skip out_proj if replacing inner SelfAttention in BERT/RoBERTa
+        alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # [B, N, H, 1]
+        fused = alpha * local_out + (1.0 - alpha) * global_out                # [B, N, H, Dh]
+        fused = fused.reshape(B, N, self.all_head_size)
+
         if self.is_nested_encoder:
             out = fused
         else:
