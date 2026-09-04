@@ -55,14 +55,16 @@ class AdaptiveSpanAttention(BaseAttention):
         self.relative_attention_bias: Optional[nn.Embedding] = None
         self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
         self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
+        self.supports_rope: bool = True
+        self.supports_gqa: bool = True
 
         self.q_proj = nn.Linear(hidden_size, self.all_head_size)
         self.k_proj = nn.Linear(hidden_size, self.kv_head_size)
         self.v_proj = nn.Linear(hidden_size, self.kv_head_size)
         self.out_proj = nn.Linear(self.all_head_size, hidden_size)
 
-        # Avoid saturation: initialize to 0 -> span ~ max_span / 2
-        self.span_logits = nn.Parameter(torch.zeros(self.num_heads))
+        # Initialize to 5.0 so span starts fully open (sigmoid(5.0) ~ 0.993) preserving full context
+        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 5.0, dtype=torch.float32))
 
         dropout_p = getattr(
             config,
@@ -124,11 +126,24 @@ class AdaptiveSpanAttention(BaseAttention):
         for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
-                target.weight.data.copy_(w)
-                if b is not None and target.bias is not None:
-                    target.bias.data.copy_(b)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
-                pass
+                if w is not None:
+                    if target.weight.shape == w.shape:
+                        target.weight.data.copy_(w)
+                    elif target.weight.shape == w.t().shape:
+                        target.weight.data.copy_(w.t())
+                    else:
+                        print(f"CRITICAL WARNING: Shape mismatch copying {proj}: target {target.weight.shape} vs src {w.shape}")
+                        min_r = min(target.weight.shape[0], w.shape[0])
+                        min_c = min(target.weight.shape[1], w.shape[1])
+                        target.weight.data[:min_r, :min_c].copy_(w[:min_r, :min_c])
+                if b is not None and getattr(target, "bias", None) is not None:
+                    if target.bias.shape == b.shape:
+                        target.bias.data.copy_(b)
+                    else:
+                        min_b = min(target.bias.shape[0], b.shape[0])
+                        target.bias.data[:min_b].copy_(b[:min_b])
+            except Exception as e:
+                print(f"CRITICAL ERROR: Failed to copy {proj} weights: {e}")
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
@@ -166,6 +181,21 @@ class AdaptiveSpanAttention(BaseAttention):
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2)
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2)
+
+        # Apply RoPE if available in kwargs (Crucial for Qwen3.5/LLaMA/Mistral)
+        position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None:
+            from framework.utils.compat import apply_rotary
+            try:
+                Q, K = apply_rotary(Q, K, position_embeddings)
+            except Exception:
+                try:
+                    from transformers.models.qwen2.modeling_qwen2 import apply_rotary_pos_emb
+                    cos, sin = position_embeddings
+                    Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=kwargs.get("position_ids"))
+                except Exception:
+                    pass
+
         if self.kv_repeat > 1:
             K = K.unsqueeze(2).expand(-1, -1, self.kv_repeat, -1, -1).reshape(B, H, N_k, d)
             V = V.unsqueeze(2).expand(-1, -1, self.kv_repeat, -1, -1).reshape(B, H, N_k, d)
