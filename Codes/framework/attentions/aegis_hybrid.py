@@ -28,7 +28,7 @@ class AegisHybridConfig:
     hidden_size: int = 768
     num_attention_heads: int = 12
     head_dim: int = 64
-    num_key_value_heads: int = 12
+    num_key_value_heads: Optional[int] = None
     local_window: int = 64
     rank: int = 64
     kernel_feature_dim: int = 128  # Kept for backward compatibility
@@ -36,6 +36,10 @@ class AegisHybridConfig:
     use_adaptive_pruning: bool = True
     gate_init_bias: float = 1.8
     is_decoder: bool = False
+
+    def __post_init__(self) -> None:
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads
 
 
 class FactorizedLinear(nn.Module):
@@ -193,7 +197,8 @@ class AegisHybridAttention(BaseAttention):
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.head_dim
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads)
+        n_kv = getattr(config, "num_key_value_heads", None)
+        self.num_kv_heads: int = n_kv if (n_kv is not None and n_kv <= self.num_heads) else self.num_heads
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
