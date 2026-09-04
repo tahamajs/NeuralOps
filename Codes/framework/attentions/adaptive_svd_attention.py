@@ -27,10 +27,11 @@ from framework.utils.compat import maybe_apply_rotary, repeat_kv
 
 class AdaptiveSVDLinear(nn.Module):
     r"""
-    Linear layer decomposed into a fixed/pretrained SVD base and a trainable residual adapter.
+    Linear layer decomposed into a frozen SVD base and a trainable residual adapter.
 
     Uses `lora_A` and `lora_B` parameter names so fine-tuning optimizers and LoRA filters
-    register them automatically as trainable parameters.
+    register them automatically as trainable parameters. The SVD base U and V matrices
+    are frozen by default to preserve pretrained representation stability.
     """
 
     def __init__(
@@ -40,6 +41,7 @@ class AdaptiveSVDLinear(nn.Module):
         svd_rank: int,
         residual_rank: int = 16,
         bias: bool = True,
+        trainable_svd: bool = False,
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
     ) -> None:
@@ -51,8 +53,14 @@ class AdaptiveSVDLinear(nn.Module):
 
         factory_kwargs = {"dtype": dtype, "device": device}
 
-        self.U: nn.Parameter = nn.Parameter(torch.empty((out_features, svd_rank), **factory_kwargs))
-        self.V: nn.Parameter = nn.Parameter(torch.empty((svd_rank, in_features), **factory_kwargs))
+        self.U: nn.Parameter = nn.Parameter(
+            torch.empty((out_features, svd_rank), **factory_kwargs),
+            requires_grad=trainable_svd,
+        )
+        self.V: nn.Parameter = nn.Parameter(
+            torch.empty((svd_rank, in_features), **factory_kwargs),
+            requires_grad=trainable_svd,
+        )
 
         if residual_rank > 0:
             self.lora_B: Optional[nn.Parameter] = nn.Parameter(torch.empty((out_features, residual_rank), **factory_kwargs))
@@ -215,6 +223,7 @@ class AdaptiveSVDAttention(BaseAttention):
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
         self.is_decoder: bool = getattr(config, "is_decoder", False)
+        self.is_nested_encoder: bool = False
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: Optional[nn.Embedding] = None
         self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
@@ -302,29 +311,44 @@ class AdaptiveSVDAttention(BaseAttention):
         from framework.core.adapters import UniversalAdapter
 
         for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+            w, b = None, None
             try:
-                # Try universal adapter first
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
+            except Exception:
+                pass
+
+            if w is None:
+                # Manual fallback for GPT-2 Fused c_attn Conv1D
+                if hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
+                    fused_w = src.c_attn.weight.T  # [3 * D, D]
+                    fused_b = getattr(src.c_attn, "bias", None)
+                    split_size = fused_w.size(0) // 3
+                    idx = {"q": 0, "k": 1, "v": 2}[proj]
+                    w = fused_w[idx * split_size : (idx + 1) * split_size, :]
+                    b = fused_b[idx * split_size : (idx + 1) * split_size] if fused_b is not None else None
+                elif hasattr(src, "c_proj") and proj == "o":
+                    w = src.c_proj.weight.T
+                    b = getattr(src.c_proj, "bias", None)
+                # Manual fallback for RoBERTa / BERT self-attention
+                elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+                    s = getattr(src, "self")
+                    name_map = {"q": "query", "k": "key", "v": "value"}
+                    if proj in name_map:
+                        mod = getattr(s, name_map[proj])
+                        w = mod.weight
+                        b = getattr(mod, "bias", None)
+                elif hasattr(src, "query") and proj == "q":
+                    w = src.query.weight
+                    b = getattr(src.query, "bias", None)
+                elif hasattr(src, "key") and proj == "k":
+                    w = src.key.weight
+                    b = getattr(src.key, "bias", None)
+                elif hasattr(src, "value") and proj == "v":
+                    w = src.value.weight
+                    b = getattr(src.value, "bias", None)
+
+            if w is not None:
                 self._init_svd_part(target, w, b)
-            except Exception as e:
-                print(f"UniversalAdapter failed for {proj}. Attempting manual extraction...")
-                try:
-                    # Manual fallback for GPT-2 Fused c_attn Conv1D
-                    if hasattr(src, 'c_attn') and proj in ['q', 'k', 'v']:
-                        fused_w = src.c_attn.weight.T  # [3 * D, D]
-                        fused_b = src.c_attn.bias
-                        split_size = fused_w.size(0) // 3
-                        idx = {'q': 0, 'k': 1, 'v': 2}[proj]
-                        w = fused_w[idx * split_size : (idx + 1) * split_size, :]
-                        b = fused_b[idx * split_size : (idx + 1) * split_size] if fused_b is not None else None
-                        self._init_svd_part(target, w, b)
-                    # Manual fallback for GPT-2 output
-                    elif hasattr(src, 'c_proj') and proj == 'o':
-                        self._init_svd_part(target, src.c_proj.weight.T, src.c_proj.bias)
-                    else:
-                        print(f"CRITICAL: Failed to copy {proj} weights. SVD remains random! Error: {e}")
-                except Exception as inner_e:
-                    print(f"CRITICAL: Manual extraction failed for {proj}: {inner_e}")
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
@@ -333,6 +357,12 @@ class AdaptiveSVDAttention(BaseAttention):
             self.has_relative_attention_bias = True
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
+
+        # Detect if this module is replacing an inner encoder self-attention (BERT/RoBERTa)
+        # where the outer layer already applies output.dense (avoiding double output projection).
+        cls_name = src.__class__.__name__
+        if "SelfAttention" in cls_name or (hasattr(src, "query") and not hasattr(src, "dense") and not hasattr(src, "out_proj") and not hasattr(src, "c_proj")):
+            self.is_nested_encoder = True
 
     def forward(
         self,
@@ -423,7 +453,12 @@ class AdaptiveSVDAttention(BaseAttention):
 
         context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
-        output = self.out_proj(context)
+
+        # In nested encoders (BERT/RoBERTa .self), context passes through directly because output.dense applies after
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = self.out_proj(context)
 
         if position_bias is not None:
             return output, position_bias
