@@ -239,7 +239,12 @@ class AdaptiveSpanAttention(BaseAttention):
             pos = torch.arange(N_q, device=device, dtype=torch.float32)
             dist = (pos.unsqueeze(0) - pos.unsqueeze(1)).abs()       # [N, N]
             span_bool = dist.unsqueeze(0) <= span.unsqueeze(1).unsqueeze(2)  # [H, N, N]
-            scores = scores.masked_fill(~span_bool.unsqueeze(0), -10000.0)
+            # --- NEW: PERISCOPE TOKEN HACK ---
+            # Force the last token in the query sequence (dim -2) to attend to all key tokens.
+            # This is critical for Causal LMs doing classification on the last token.
+            span_bool[..., -1, :] = True
+            # ---------------------------------
+            scores = scores.masked_fill(~span_bool.to(scores.device).unsqueeze(0), -10000.0)
 
         attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
