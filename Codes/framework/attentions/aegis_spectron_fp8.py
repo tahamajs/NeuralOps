@@ -87,7 +87,7 @@ def fp8_cast_simulate(
     if torch_dtype is not None:
         try:
             x_fp8 = x_scaled.to(torch_dtype)
-            x_dequant = x_fp8.to(orig_dtype) / scale.to(orig_dtype)
+            x_dequant = (x_fp8.float() / scale.float()).to(orig_dtype)
             return x_dequant
         except Exception:
             pass
@@ -97,8 +97,8 @@ def fp8_cast_simulate(
     exp = torch.floor(torch.log2(abs_x))
     factor = 2.0 ** (exp - mantissa_bits)
     rounded = torch.round(abs_x / factor) * factor
-    x_dequant = (torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale
-    return x_dequant.to(orig_dtype)
+    x_dequant = ((torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale.float()).to(orig_dtype)
+    return x_dequant
 
 
 @dataclass
@@ -734,12 +734,17 @@ class AegisSpectronFP8Attention(BaseAttention):
             out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
             return out_lr.view(B, N, h, d).transpose(1, 2)
         else:
-            # True Bidirectional Linear Attention with Normalization (Associative KV-first)
-            KV = torch.matmul(phi_K.transpose(-1, -2), V_flat)
-            Z = phi_K.sum(dim=1, keepdim=True)
-            num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-1, -2)) + 1e-6
-            out_lr = (num / den) / math.sqrt(self.config.svd_rank)
+            # True Bidirectional Linear Attention with Normalization (FP32 to prevent FP16 Overflow)
+            phi_Q_f = phi_Q.float()
+            phi_K_f = phi_K.float()
+            V_f = V_flat.float()
+
+            KV = torch.matmul(phi_K_f.transpose(-1, -2), V_f)
+            Z = phi_K_f.sum(dim=1, keepdim=True)
+            num = torch.matmul(phi_Q_f, KV)
+            den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)) + 1e-6
+
+            out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
             return out_lr.view(B, N, h, d).transpose(1, 2)
 
     def _linear_branch(self, X: torch.Tensor) -> torch.Tensor:
