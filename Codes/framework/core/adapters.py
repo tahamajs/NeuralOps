@@ -7,8 +7,8 @@ import torch
 
 
 CANONICAL_PROJECTION_ALIASES = {
-    "q": ["q", "query", "q_proj", "query_proj", "q_lin", "Wq", "wq", "c_attn", "in_proj", "Wqkv", "qkv_proj", "qkv", "qk_proj", "in_proj_weight"],
-    "k": ["k", "key", "k_proj", "key_proj", "k_lin", "Wk", "wk", "qk_proj"],
+    "q": ["q", "query", "q_proj", "query_proj", "q_lin", "Wq", "wq"],
+    "k": ["k", "key", "k_proj", "key_proj", "k_lin", "Wk", "wk"],
     "v": ["v", "value", "v_proj", "value_proj", "v_lin", "Wv", "wv"],
     "o": ["o", "out_proj", "o_proj", "out_lin", "dense", "c_proj", "wo", "W_o", "Wo"],
 }
@@ -85,20 +85,7 @@ class UniversalAdapter:
                 if result is not None:
                     return result
 
-        # 4. Positional fallback: scan all Linear children of target in declaration order.
-        #    q=first, k=second, v=third (the typical pattern for BERT/RoBERTa variants).
-        ordered_proj_map = {"q": 0, "k": 1, "v": 2}
-        if proj in ordered_proj_map:
-            children_with_weight = [
-                (n, m) for n, m in target.named_children()
-                if _extract(m) is not None
-            ]
-            idx = ordered_proj_map[proj]
-            if idx < len(children_with_weight):
-                return _extract(children_with_weight[idx][1])
-
-
-        # 5. Fallback for Fused GPT-2 c_attn
+        # 4. Fallback for Fused GPT-2 c_attn (must precede positional fallback)
         if proj in ('q', 'k', 'v') and hasattr(old_attn, 'c_attn'):
             fused_result = _extract(old_attn.c_attn)
             if fused_result is not None:
@@ -111,6 +98,18 @@ class UniversalAdapter:
                     return w[split_w:2*split_w, :], (b[split_b:2*split_b] if b is not None else None)
                 elif proj == 'v':
                     return w[2*split_w:, :], (b[2*split_b:] if b is not None else None)
+
+        # 5. Positional fallback: scan all Linear children of target in declaration order.
+        #    q=first, k=second, v=third (the typical pattern for BERT/RoBERTa variants).
+        ordered_proj_map = {"q": 0, "k": 1, "v": 2}
+        if proj in ordered_proj_map:
+            children_with_weight = [
+                (n, m) for n, m in target.named_children()
+                if _extract(m) is not None
+            ]
+            idx = ordered_proj_map[proj]
+            if idx < len(children_with_weight):
+                return _extract(children_with_weight[idx][1])
 
         # 6. Fallback for 'o' projection when replacing leaf self-attention without local out_proj
         # (e.g. RoBERTa/BERT RobertaSelfAttention where output.dense resides in the parent container).

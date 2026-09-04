@@ -66,19 +66,17 @@ class ViGAttention(BaseAttention):
 
     def copy_weights(self, src: Any) -> None:
         """Copy weights and biases from pretrained multi-head attention module."""
+        from framework.core.adapters import UniversalAdapter
         with torch.no_grad():
-            self.q_proj.weight.copy_(src.q_lin.weight)
-            if src.q_lin.bias is not None:
-                self.q_proj.bias.copy_(src.q_lin.bias)
-            self.k_proj.weight.copy_(src.k_lin.weight)
-            if src.k_lin.bias is not None:
-                self.k_proj.bias.copy_(src.k_lin.bias)
-            self.v_proj.weight.copy_(src.v_lin.weight)
-            if src.v_lin.bias is not None:
-                self.v_proj.bias.copy_(src.v_lin.bias)
-            self.out_proj.weight.copy_(src.out_lin.weight)
-            if src.out_lin.bias is not None:
-                self.out_proj.bias.copy_(src.out_lin.bias)
+            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+                try:
+                    w, b = UniversalAdapter.get_weight_bias(src, proj_key)
+                    if w is not None:
+                        target.weight.data.copy_(w)
+                    if b is not None and target.bias is not None:
+                        target.bias.data.copy_(b)
+                except Exception:
+                    pass
 
     def forward(
         self,
