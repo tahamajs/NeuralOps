@@ -184,6 +184,26 @@ def install_projection_aliases(module: nn.Module) -> nn.Module:
     """Installs bidirectional attribute aliases across all canonical projection naming schemes."""
     from framework.core.adapters import CANONICAL_PROJECTION_ALIASES
     for child in module.modules():
+        # Bridge nested encoder attention blocks (RoBERTa, BERT, DeBERTa) to expose leaf projections
+        if hasattr(child, "self") and hasattr(child.self, "query"):
+            for attr_name in ["query", "key", "value"]:
+                val = getattr(child.self, attr_name, None)
+                if val is not None:
+                    try:
+                        object.__setattr__(child, attr_name, val)
+                    except (AttributeError, TypeError):
+                        pass
+        if hasattr(child, "output") and hasattr(child.output, "dense"):
+            val = getattr(child.output, "dense", None)
+            if val is not None:
+                try:
+                    object.__setattr__(child, "dense", val)
+                    object.__setattr__(child, "out_proj", val)
+                    object.__setattr__(child, "out_lin", val)
+                    object.__setattr__(child, "o_proj", val)
+                except (AttributeError, TypeError):
+                    pass
+
         for group in CANONICAL_PROJECTION_ALIASES.values():
             present_attr = next((name for name in group if hasattr(child, name)), None)
             if present_attr is not None:
