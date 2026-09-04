@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 from .tt_linear import TTLinearLayer
 
@@ -52,6 +53,8 @@ class TTCompressor(BaseCompressor):
         self.compressed_layers = []
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and not isinstance(module, TTLinearLayer):
+                if not should_compress_linear(self.model, name):
+                    continue
                 if self.target_layers and not any(t in name for t in self.target_layers):
                     continue
 

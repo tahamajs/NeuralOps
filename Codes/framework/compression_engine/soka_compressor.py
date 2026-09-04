@@ -23,6 +23,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +110,7 @@ class LowRankCompressor(BaseCompressor):
         """Replaces all Linear modules with LowRankLinear."""
         linear_layers: List[Tuple[str, nn.Linear]] = []
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
                 linear_layers.append((name, module))
 
         for name, module in linear_layers:

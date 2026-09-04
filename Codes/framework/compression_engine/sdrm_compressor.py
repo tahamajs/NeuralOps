@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 
 class SDRMCompressor(BaseCompressor):
@@ -25,7 +26,7 @@ class SDRMCompressor(BaseCompressor):
         layer_params = {}
         total_params = 0
         for name, module in self.model.named_modules():
-            if isinstance(module, torch.nn.Linear):
+            if isinstance(module, torch.nn.Linear) and should_compress_linear(self.model, name):
                 n, m = module.weight.shape
                 params = n * m
                 layer_params[name] = (module, params, n, m)
