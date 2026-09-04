@@ -260,6 +260,22 @@ Inspecting the converged parameter manifold $\theta_h$ reveals distinct function
 2. **Intermediate Layers ($\frac{L}{3} < \ell \le \frac{2L}{3}$)**: Heads exhibit a multimodal bimodal distribution; approximately $60\%$ of heads maintain short spans for intra-sentence syntax, while $40\%$ expand toward medium spans ($S_h \in [64, 128]$) to track clause linkages and pronoun coreference.
 3. **Upper Transformer Layers ($\frac{2L}{3} < \ell \le L$)**: Logits remain saturated at upper bounds ($\theta_h \ge 4.0$, $S_h \to S_{\max}$), ensuring global context integration required for task-level semantic abstraction and classifier readout.
 
+### 8.5 Automated Profiling & Scalability Metrics (Empirical Qwen3.5 Verification)
+Following the automated evaluation run on Qwen3.5-0.8B, the framework extracted and exported standard NeurIPS/ACL profiling metrics to `Qwen3.5-0.8B_adaptive_span_full_metrics.json`:
+
+- **Hardware Efficiency**:
+  - **Peak VRAM**: $1,743.41\text{ MB}$ (on NVIDIA RTX 4070 Laptop GPU)
+  - **Inference Throughput**: $1,170.02\text{ tokens/sec}$
+- **Architectural Behavior & Span Allocation**:
+  - Injected into all 6 full multi-head attention layers (`layers.3`, `layers.7`, `layers.11`, `layers.15`, `layers.19`, `layers.23`).
+  - **Effective Mean Span**: $127.12$ tokens per head ($99.31\%$ context preservation from $\theta_h = 5.0$ open initialization).
+  - **Global Sparsity Ratio**: $0.68\%$ (bounded initial relaxation protecting downstream fine-tuning).
+- **Context Scalability Stress Test (Activation VRAM Scaling)**:
+  - $L = 128$: $1,573.59\text{ MB}$
+  - $L = 256$: $1,592.25\text{ MB}$ ($+1.18\%$)
+  - $L = 512$: $1,615.43\text{ MB}$ ($+2.65\%$)
+  - $L = 1024$: $1,688.66\text{ MB}$ ($+7.31\%$)
+
 ### 8.6 Checkpoint Persistence & Architectural State Serialization
 To enable downstream downstream inference, analysis, or fine-tuning without redundant retraining, the evaluation pipeline automatically persists complete module checkpoints and metadata into `results/<run_dir>/checkpoints/<module_name>/`:
 
