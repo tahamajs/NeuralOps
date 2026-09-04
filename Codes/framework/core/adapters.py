@@ -64,6 +64,16 @@ class UniversalAdapter:
                 w = w.t().contiguous()
             bias = getattr(mod, "bias", None)
             bias = bias.data if (bias is not None and hasattr(bias, "data")) else bias
+            # Qwen3.5 Gated Q: query is fused with gate (dim 0 has 2 * num_heads * head_dim)
+            if proj == "q" and (hasattr(old_attn, "q_norm") or old_attn.__class__.__name__ == "Qwen3_5Attention" or hasattr(old_attn, "k_norm")):
+                cfg = getattr(old_attn, "config", None)
+                tc = getattr(cfg, "text_config", cfg)
+                h_dim = getattr(tc, "head_dim", 256)
+                n_heads = getattr(tc, "num_attention_heads", getattr(old_attn, "num_heads", 8))
+                if w.shape[0] == n_heads * h_dim * 2:
+                    w = w.view(n_heads, 2, h_dim, -1)[:, 0, :, :].reshape(n_heads * h_dim, -1).contiguous()
+                    if bias is not None:
+                        bias = bias.view(n_heads, 2, h_dim)[:, 0, :].reshape(n_heads * h_dim).contiguous()
             return w, bias
 
         # 1. Search in target (old_attn.self or old_attn)

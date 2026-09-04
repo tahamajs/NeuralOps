@@ -491,6 +491,14 @@ class AegisAttentionV3(BaseAttention):
         kw, kb = _get_proj("k")
         vw, vb = _get_proj("v")
         ow, ob = _get_proj("o")
+        if qw is not None:
+            tc_heads = getattr(getattr(layer, "config", None), "num_attention_heads", 8)
+            h_dim = getattr(getattr(layer, "config", None), "head_dim", 256)
+            expected_q = tc_heads * h_dim
+            if qw.shape[0] == expected_q * 2:
+                qw = qw.view(tc_heads, 2, h_dim, -1)[:, 0, :, :].reshape(expected_q, -1).contiguous()
+                if qb is not None:
+                    qb = qb.view(tc_heads, 2, h_dim)[:, 0, :].reshape(expected_q).contiguous()
         return {
             "q": qw, "k": kw, "v": vw, "o": ow,
             "q_b": qb, "k_b": kb, "v_b": vb, "o_b": ob,
