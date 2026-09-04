@@ -24,6 +24,7 @@ import torch.nn as nn
 
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 from framework.compression_engine.pruning_utils import (
     apply_24_structured_mask,
     compute_empirical_hessian,
@@ -218,7 +219,7 @@ class SparseGPTCompressor(BaseCompressor):
         pruned_layers_count = 0
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
                 act = activations_map.get(name, None)
                 self._compress_linear_module(module, act)
                 pruned_layers_count += 1
