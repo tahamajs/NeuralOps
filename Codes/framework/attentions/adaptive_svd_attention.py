@@ -38,7 +38,7 @@ class AdaptiveSVDLinear(nn.Module):
         in_features: int,
         out_features: int,
         svd_rank: int,
-        residual_rank: int = 8,
+        residual_rank: int = 16,
         bias: bool = True,
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
@@ -145,7 +145,7 @@ class AdaptiveSVDAttention(BaseAttention):
         self,
         config: Any,
         svd_rank: Optional[int] = None,
-        residual_rank: int = 8,
+        residual_rank: int = 16,
         energy_threshold: float = 0.92,
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
@@ -298,15 +298,33 @@ class AdaptiveSVDAttention(BaseAttention):
                 adap_linear.bias.data.copy_(bias_data)
 
     def copy_weights(self, src: Any) -> None:
-        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module with fallback."""
         from framework.core.adapters import UniversalAdapter
 
         for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
             try:
+                # Try universal adapter first
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 self._init_svd_part(target, w, b)
             except Exception as e:
-                print(f"Warning: Failed to copy weights for {proj} in Adaptive SVD: {e}")
+                print(f"UniversalAdapter failed for {proj}. Attempting manual extraction...")
+                try:
+                    # Manual fallback for GPT-2 Fused c_attn Conv1D
+                    if hasattr(src, 'c_attn') and proj in ['q', 'k', 'v']:
+                        fused_w = src.c_attn.weight.T  # [3 * D, D]
+                        fused_b = src.c_attn.bias
+                        split_size = fused_w.size(0) // 3
+                        idx = {'q': 0, 'k': 1, 'v': 2}[proj]
+                        w = fused_w[idx * split_size : (idx + 1) * split_size, :]
+                        b = fused_b[idx * split_size : (idx + 1) * split_size] if fused_b is not None else None
+                        self._init_svd_part(target, w, b)
+                    # Manual fallback for GPT-2 output
+                    elif hasattr(src, 'c_proj') and proj == 'o':
+                        self._init_svd_part(target, src.c_proj.weight.T, src.c_proj.bias)
+                    else:
+                        print(f"CRITICAL: Failed to copy {proj} weights. SVD remains random! Error: {e}")
+                except Exception as inner_e:
+                    print(f"CRITICAL: Manual extraction failed for {proj}: {inner_e}")
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
@@ -343,7 +361,7 @@ class AdaptiveSVDAttention(BaseAttention):
         K = self.key(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2)
         V = self.value(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2)
 
-        # Apply RoPE (Direct kwargs support for Qwen3.5/Mistral/LLaMA + fallback to maybe_apply_rotary)
+        # Apply RoPE (Direct kwargs support for Qwen3.5/Mistral/LLaMA)
         position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
             cos, sin = position_embeddings[0], position_embeddings[1]
@@ -367,11 +385,6 @@ class AdaptiveSVDAttention(BaseAttention):
                 cos_cut, sin_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
                 Q = (Q * cos_cut.to(Q.dtype)) + (_rotate_half(Q) * sin_cut.to(Q.dtype))
                 K = (K * cos_cut.to(K.dtype)) + (_rotate_half(K) * sin_cut.to(K.dtype))
-        elif hasattr(self.adapter, "position_embedding") and self.adapter.position_embedding == "rotary":
-            try:
-                Q, K = maybe_apply_rotary(Q, K, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
-            except Exception:
-                pass
 
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
@@ -429,7 +442,7 @@ def inject_adaptive_svd(
     **kwargs: Any,
 ) -> AdaptiveSVDAttention:
     svd_rank = getattr(comp_config, "svd_rank", 32)
-    residual_rank = getattr(comp_config, "residual_rank", 8)
+    residual_rank = getattr(comp_config, "residual_rank", 16)
     energy_threshold = getattr(comp_config, "energy_threshold", 0.92)
     new_attn = AdaptiveSVDAttention(
         config=model_config,
