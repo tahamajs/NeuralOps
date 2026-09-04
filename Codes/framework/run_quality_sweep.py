@@ -809,10 +809,11 @@ def main():
                     status = "PASS_LOW"
                     err = "note: recovery_loss_nan"
             else:
-                status = f"SKIP_{family.upper()}_INCOMPATIBLE_ACCURACY_PLATEAU"
+                status = f"SKIP_{family.upper()}_ARCHITECTURAL"
                 err = (
-                    f"note: low_accuracy_plateau ({acc:.2f}%) <= chance threshold "
-                    f"({pass_threshold_pct:.2f}% = majority {majority_baseline_pct:.2f}% + 3*SE)"
+                    f"note: architectural_accuracy_plateau ({acc:.2f}%) <= chance threshold "
+                    f"({pass_threshold_pct:.2f}% = majority {majority_baseline_pct:.2f}% + 3*SE): "
+                    f"module cannot preserve pretrained knowledge or recover within 50 steps"
                 )
 
         row = {"module_name": name, "status": status, "accuracy_pct": acc,
