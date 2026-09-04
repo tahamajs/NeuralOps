@@ -48,23 +48,24 @@ class AdaptiveSVDLinear(nn.Module):
         super().__init__()
         self.in_features: int = in_features
         self.out_features: int = out_features
-        self.svd_rank: int = svd_rank
-        self.residual_rank: int = residual_rank
+        max_possible_rank = min(in_features, out_features)
+        self.svd_rank: int = min(svd_rank, max_possible_rank)
+        self.residual_rank: int = min(residual_rank, max_possible_rank)
 
         factory_kwargs = {"dtype": dtype, "device": device}
 
         self.U: nn.Parameter = nn.Parameter(
-            torch.empty((out_features, svd_rank), **factory_kwargs),
+            torch.empty((out_features, self.svd_rank), **factory_kwargs),
             requires_grad=trainable_svd,
         )
         self.V: nn.Parameter = nn.Parameter(
-            torch.empty((svd_rank, in_features), **factory_kwargs),
+            torch.empty((self.svd_rank, in_features), **factory_kwargs),
             requires_grad=trainable_svd,
         )
 
-        if residual_rank > 0:
-            self.lora_B: Optional[nn.Parameter] = nn.Parameter(torch.empty((out_features, residual_rank), **factory_kwargs))
-            self.lora_A: Optional[nn.Parameter] = nn.Parameter(torch.empty((residual_rank, in_features), **factory_kwargs))
+        if self.residual_rank > 0:
+            self.lora_B: Optional[nn.Parameter] = nn.Parameter(torch.empty((out_features, self.residual_rank), **factory_kwargs))
+            self.lora_A: Optional[nn.Parameter] = nn.Parameter(torch.empty((self.residual_rank, in_features), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -349,6 +350,11 @@ class AdaptiveSVDAttention(BaseAttention):
 
             if w is not None:
                 self._init_svd_part(target, w, b)
+                # Sanity check: ensure reconstructed weight isn't garbage
+                reconstructed = (target.U @ target.V).detach()
+                error = (torch.norm(w.to(reconstructed.device).float() - reconstructed.float()) / (torch.norm(w.float()) + 1e-8)).item()
+                if error > 0.5:
+                    print(f"WARNING: High SVD reconstruction error ({error:.2f}) for {proj}. Fallback might be needed.")
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
@@ -358,11 +364,19 @@ class AdaptiveSVDAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-        # Detect if this module is replacing an inner encoder self-attention (BERT/RoBERTa)
+        # Safely detect if this module is replacing an inner encoder self-attention (BERT/RoBERTa)
         # where the outer layer already applies output.dense (avoiding double output projection).
+        # We verify the absence of own output projections so we never misflag DistilBERT (out_lin),
+        # GPT-2 (c_proj), LLaMA/Qwen (o_proj), or T5 (o).
         cls_name = src.__class__.__name__
-        if "SelfAttention" in cls_name or (hasattr(src, "query") and not hasattr(src, "dense") and not hasattr(src, "out_proj") and not hasattr(src, "c_proj")):
+        has_out_proj = any(
+            hasattr(src, attr)
+            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+        )
+        if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
             self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
     def forward(
         self,
