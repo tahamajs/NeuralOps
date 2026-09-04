@@ -193,13 +193,21 @@ class AegisAttentionV1(nn.Module):
         else:
             q_lin, k_lin, v_lin, out_lin = None, None, None, None
 
-        if q_lin is None or not hasattr(q_lin, "weight"):
-            q_lin = nn.Linear(self.hidden_size, self.all_head_size)
-        if k_lin is None or not hasattr(k_lin, "weight"):
+        if q_lin is None or not hasattr(q_lin, "weight") or q_lin.weight.shape[0] != self.all_head_size:
+            w_orig = getattr(q_lin, "weight", None)
+            b_orig = getattr(q_lin, "bias", None)
+            q_lin = nn.Linear(self.hidden_size, self.all_head_size, bias=(b_orig is not None))
+            if w_orig is not None and w_orig.shape[0] == 2 * self.all_head_size:
+                qw = w_orig.data.view(self.num_heads, 2, self.head_dim, -1)[:, 0, :, :].reshape(self.all_head_size, -1)
+                q_lin.weight.data.copy_(qw)
+                if b_orig is not None:
+                    qb = b_orig.data.view(self.num_heads, 2, self.head_dim)[:, 0, :].reshape(self.all_head_size)
+                    q_lin.bias.data.copy_(qb)
+        if k_lin is None or not hasattr(k_lin, "weight") or k_lin.weight.shape[0] != self.all_kv_head_size:
             k_lin = nn.Linear(self.hidden_size, self.all_kv_head_size)
-        if v_lin is None or not hasattr(v_lin, "weight"):
+        if v_lin is None or not hasattr(v_lin, "weight") or v_lin.weight.shape[0] != self.all_kv_head_size:
             v_lin = nn.Linear(self.hidden_size, self.all_kv_head_size)
-        if out_lin is None or not hasattr(out_lin, "weight"):
+        if out_lin is None or not hasattr(out_lin, "weight") or out_lin.weight.shape[0] != self.hidden_size:
             out_lin = nn.Linear(self.all_head_size, self.hidden_size)
 
         self.q_proj = FactorisedLinear(

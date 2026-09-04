@@ -132,7 +132,7 @@ def fields(name: str) -> tuple[str, str]:
 def encode(tokenizer, batch, dataset_name, seq_len, device):
     a, b = fields(dataset_name)
     texts = batch[a] if b is None else list(zip(batch[a], batch[b]))
-    x = tokenizer(texts, padding=True, truncation=True, max_length=seq_len, return_tensors="pt")
+    x = tokenizer(texts, padding="max_length", truncation=True, max_length=seq_len, return_tensors="pt")
     return {k: v.to(device) for k, v in x.items()}, torch.tensor(batch["label"], device=device)
 
 

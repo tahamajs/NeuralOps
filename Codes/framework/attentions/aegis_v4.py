@@ -251,7 +251,16 @@ class AegisAttention(nn.Module):
                             if attr and hasattr(obj, attr):
                                 mod = getattr(obj, attr)
                                 if hasattr(mod, "weight") and isinstance(mod.weight, torch.Tensor) and mod.weight.shape[1] == in_f:
-                                    return mod
+                                    if mod.weight.shape[0] == out_f:
+                                        return mod
+                                    elif mod.weight.shape[0] == 2 * out_f and p_name == "q":
+                                        lin = nn.Linear(in_f, out_f, bias=(getattr(mod, "bias", None) is not None))
+                                        qw = mod.weight.data.view(self.num_heads, 2, self.head_dim, -1)[:, 0, :, :].reshape(out_f, -1)
+                                        lin.weight.data.copy_(qw)
+                                        if getattr(mod, "bias", None) is not None:
+                                            qb = mod.bias.data.view(self.num_heads, 2, self.head_dim)[:, 0, :].reshape(out_f)
+                                            lin.bias.data.copy_(qb)
+                                        return lin
             return nn.Linear(in_f, out_f)
 
         q_lin = _extract_lin("q", self.hidden_size, self.all_head_size)
