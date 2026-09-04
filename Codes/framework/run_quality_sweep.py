@@ -681,7 +681,7 @@ def main():
             "swift_svd_act": 400, "tt": 400, "svd_quant": 400,
             "svd_projection": 400,
         }
-        base_timeout = 360 if family in ("qwen3_5", "qwen") else max(args.timeout, 240)
+        base_timeout = 600
         effective_timeout = max(base_timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, base_timeout))
 
         # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
