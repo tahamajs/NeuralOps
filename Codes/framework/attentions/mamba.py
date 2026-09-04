@@ -172,7 +172,13 @@ class Mamba(BaseAttention):
         # PATCH: Preservation gate — blends Mamba output with the pretrained residual.
         # sigmoid(-2.0) ≈ 0.12 at init → model starts 88% close to pretrained bypass.
         alpha = torch.sigmoid(self.pres_gate)
+        while isinstance(out, (tuple, list)):
+            out = out[0]
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
         out = alpha * out + (1.0 - alpha) * hidden_states
+        while isinstance(out, (tuple, list)):
+            out = out[0]
         return out, None
 
 

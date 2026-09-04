@@ -123,6 +123,8 @@ class HALOReGLAAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
         B, L, D = hidden_states.shape
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
         k   = self.k_proj(hidden_states).view(B, L, getattr(self, "num_kv_heads", getattr(self, "num_kv_heads", self.num_heads)), self.head_dim).transpose(1, 2)
