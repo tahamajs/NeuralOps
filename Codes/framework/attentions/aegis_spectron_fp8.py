@@ -2,23 +2,26 @@ r"""
 Aegis-Spectron-FP8 Hybrid Attention Module.
 
 Integrates Aegis multi-branch local/global feature fusion with Spectron Lagrangian spectral entropy routing.
-Dynamic routing measures singular value entropy to distribute token representation across:
-1. Local Sliding-Window Attention
-2. Global Low-Rank SVD Attention
-3. Linear State Recurrence
+Dynamic routing measures singular value entropy per token to distribute token representation across:
+1. Local Sliding-Window Attention (O(N * W))
+2. Global Low-Rank SVD Attention (True O(N * r * D) Linear Attention via Associative Property)
+3. Linear State Recurrence (True O(N * D) via Numerically Stable CumSum EMA)
+
+Equipped with FactorizedLinear base weights + trainable residual LoRA adapters for parameter-efficient recovery fine-tuning.
 """
 
 import math
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
+
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.attention_utils import repeat_kv
+from framework.core.gqa_utils import get_qkv_projection_dims
 
 
 @dataclass
@@ -30,6 +33,7 @@ class AegisSpectronFP8Config:
     head_dim: int = 64
     window_size: int = 64
     svd_rank: int = 128
+    lora_rank: int = 32
     temperature: float = 1.0
     lambda_cost: float = 0.1
     c_loc: float = 0.5
@@ -39,12 +43,13 @@ class AegisSpectronFP8Config:
     router_init_bias: Tuple[float, float, float] = (2.5, 1.5, 1.5)
 
     def __init__(self, **kwargs):
-        self.hidden_size = kwargs.get("hidden_size", 768)
-        self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 4))
-        self.num_key_value_heads = kwargs.get("num_key_value_heads", self.num_heads)
+        self.hidden_size = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
+        self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", kwargs.get("n_heads", 4)))
+        self.num_key_value_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads))
         self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
-        self.window_size = kwargs.get("window_size", 64)
-        self.svd_rank = kwargs.get("svd_rank", 128)
+        self.window_size = kwargs.get("window_size", kwargs.get("local_window", kwargs.get("block_size", 64)))
+        self.svd_rank = kwargs.get("svd_rank", kwargs.get("rank", min(128, self.hidden_size)))
+        self.lora_rank = kwargs.get("lora_rank", kwargs.get("lora_r", 32))
         self.temperature = kwargs.get("temperature", 1.0)
         self.lambda_cost = kwargs.get("lambda_cost", 0.1)
         self.c_loc = kwargs.get("c_loc", 0.5)
@@ -54,14 +59,112 @@ class AegisSpectronFP8Config:
         self.router_init_bias = kwargs.get("router_init_bias", (2.5, 1.5, 1.5))
 
 
+class FactorizedLinear(nn.Module):
+    r"""
+    Factorized linear projection with internal rank-r base factorization and trainable residual LoRA adapter:
+        Base: x -> lin1(x) [in_features -> rank] -> lin2(lin1(x)) [rank -> out_features] (frozen)
+        LoRA: x -> lora_A(x) [in_features -> lora_rank] -> lora_B(...) [lora_rank -> out_features] (trainable)
+        out = lin2(lin1(x)) + F.linear(F.linear(x, self.lora_A), self.lora_B)
+
+    Uses `lora_A` and `lora_B` parameter names so recovery optimizers (such as get_recovery_params)
+    register them automatically as trainable parameters.
+    Base weights and biases are frozen to maintain pretrained representations.
+    """
+
+    def __init__(
+        self,
+        in_features_or_lin1: Union[int, nn.Linear],
+        out_features_or_lin2: Optional[Union[int, nn.Linear]] = None,
+        rank: int = 128,
+        lora_rank: int = 32,
+        bias: bool = True,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        if isinstance(in_features_or_lin1, nn.Linear) and isinstance(out_features_or_lin2, nn.Linear):
+            self.lin1 = in_features_or_lin1
+            self.lin2 = out_features_or_lin2
+            self.in_features = self.lin1.in_features
+            self.out_features = self.lin2.out_features
+            self.rank = self.lin1.out_features
+        else:
+            in_features = int(in_features_or_lin1)
+            out_features = int(out_features_or_lin2)
+            self.in_features = in_features
+            self.out_features = out_features
+            self.rank = max(1, min(rank, in_features, out_features))
+
+            factory_kwargs = {"device": device, "dtype": dtype}
+            self.lin1 = nn.Linear(in_features, self.rank, bias=False, **factory_kwargs)
+            self.lin2 = nn.Linear(self.rank, out_features, bias=bias, **factory_kwargs)
+
+        # Base weights are frozen to prevent catastrophic unlearning
+        self.lin1.weight.requires_grad = False
+        self.lin2.weight.requires_grad = False
+        if self.lin2.bias is not None:
+            self.lin2.bias.requires_grad = False
+
+        # Trainable residual LoRA adapter
+        self.lora_rank: int = min(lora_rank, min(self.in_features, self.out_features)) if lora_rank > 0 else 0
+        factory_kwargs = {"device": device, "dtype": dtype}
+        if self.lora_rank > 0:
+            self.lora_B: Optional[nn.Parameter] = nn.Parameter(
+                torch.empty((self.out_features, self.lora_rank), **factory_kwargs)
+            )
+            self.lora_A: Optional[nn.Parameter] = nn.Parameter(
+                torch.empty((self.lora_rank, self.in_features), **factory_kwargs)
+            )
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        with torch.no_grad():
+            nn.init.kaiming_uniform_(self.lin1.weight, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.lin2.weight, a=math.sqrt(5))
+            if self.lin2.bias is not None:
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.lin2.weight)
+                bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+                nn.init.uniform_(self.lin2.bias, -bound, bound)
+
+            if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+                if self.lora_B.dtype in (torch.float16, torch.bfloat16):
+                    b_fp32 = torch.empty_like(self.lora_B, dtype=torch.float32, device="cpu")
+                    nn.init.kaiming_uniform_(b_fp32, a=math.sqrt(5))
+                    self.lora_B.copy_(b_fp32.to(dtype=self.lora_B.dtype, device=self.lora_B.device))
+                else:
+                    nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_A)
+
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix (out_features, in_features)."""
+        w = torch.matmul(self.lin2.weight, self.lin1.weight)
+        if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+            w = w + torch.matmul(self.lora_B, self.lora_A)
+        return w
+
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return self.lin2.bias
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = self.lin2(self.lin1(x))
+        if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+        return out
+
+
 class SpectronSpectralEntropyRouter(nn.Module):
     r"""
     Dynamic Spectron Router based on Spectral Entropy & Lagrangian Optimization.
-    Computes spectral entropy: $\mathcal{S}(X) = -\sum p_i \ln p_i$
+    Computes spectral entropy per token: $\mathcal{S}(X_t) = -\sum_d p_{t,d} \ln p_{t,d}$
     """
 
-    def __init__(self, config: AegisSpectronFP8Config,
-    **kwargs):
+    def __init__(self, config: AegisSpectronFP8Config, **kwargs):
         super().__init__()
         self.config = config
         self.tau = config.temperature
@@ -76,20 +179,20 @@ class SpectronSpectralEntropyRouter(nn.Module):
 
         with torch.no_grad():
             try:
-                # Fast spectral energy distribution across sequence dimensions
-                S_sq = torch.norm(X.float(), dim=-1).pow(2)  # [B, N]
-                S_sum = S_sq.sum(dim=-1, keepdim=True) + 1e-5
-                p = S_sq / S_sum
-                entropy = -(p * torch.log(p + 1e-5)).sum(dim=-1).to(dtype=X.dtype)
+                # Calculate entropy across the feature dimension for EACH token
+                S_sq = X.float().pow(2)  # [B, N, D]
+                p = S_sq / (S_sq.sum(dim=-1, keepdim=True) + 1e-5)
+                entropy = -(p * torch.log(p + 1e-5)).sum(dim=-1)  # [B, N]
             except Exception:
-                entropy = torch.ones(B, device=X.device, dtype=X.dtype)
+                entropy = torch.ones((B, N), device=X.device, dtype=X.dtype)
 
-        H_b = self.h_proj(X.mean(dim=1))
+        # Token-level routing projection (removed .mean(dim=1))
+        H_b = self.h_proj(X)  # [B, N, 3]
         H_b = H_b * entropy.unsqueeze(-1).to(dtype=H_b.dtype)
 
         c = self.costs.to(dtype=H_b.dtype, device=X.device)
         logits = (H_b - self.lam * c) / self.tau
-        return F.softmax(logits, dim=-1)
+        return F.softmax(logits, dim=-1)  # [B, N, 3]
 
 
 def fp8_cast_simulate(x: torch.Tensor) -> torch.Tensor:
@@ -97,11 +200,13 @@ def fp8_cast_simulate(x: torch.Tensor) -> torch.Tensor:
     return x
 
 
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8")
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8_attn")
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class AegisSpectronFP8Attention(BaseAttention):
     r"""
     Aegis-Spectron-FP8 Hybrid Architecture.
+    Combines sliding-window local attention, true O(N) low-rank global SVD linear attention,
+    and bidirectional linear state-space recurrence under token-level spectral entropy routing.
     """
 
     def __init__(
@@ -115,24 +220,32 @@ class AegisSpectronFP8Attention(BaseAttention):
         if not isinstance(config, AegisSpectronFP8Config):
             if isinstance(config, dict):
                 h_size = hidden_size or config.get("hidden_size", config.get("dim", 768))
-                n_heads = num_heads or config.get("num_attention_heads", 12)
+                n_heads = num_heads or config.get("num_attention_heads", config.get("num_heads", 12))
                 h_dim = config.get("head_dim", h_size // max(1, n_heads))
                 n_kv_heads = config.get("num_key_value_heads", n_heads)
-                rank = config.get("svd_rank", min(128, h_size))
+                rank = config.get("svd_rank", config.get("rank", min(128, h_size)))
+                lora_rank = config.get("lora_rank", config.get("lora_r", 32))
+                w_size = config.get("window_size", config.get("local_window", 64))
+                drop = config.get("dropout", 0.1)
             else:
                 h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768
                 n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12
                 h_dim = getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads)
                 n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
-                rank = getattr(config, "svd_rank", min(128, h_size)) if config is not None else 128
+                rank = getattr(config, "svd_rank", getattr(config, "rank", min(128, h_size))) if config is not None else 128
+                lora_rank = getattr(config, "lora_rank", getattr(config, "lora_r", 32)) if config is not None else 32
+                w_size = getattr(config, "window_size", getattr(config, "local_window", getattr(config, "block_size", 64))) if config is not None else 64
+                drop = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config is not None else 0.1
+
             config = AegisSpectronFP8Config(
                 hidden_size=h_size,
                 num_heads=n_heads,
                 num_key_value_heads=n_kv_heads,
                 head_dim=h_dim,
-                window_size=getattr(config, "window_size", getattr(config, "block_size", 64)) if not isinstance(config, dict) else config.get("window_size", 64),
+                window_size=w_size,
                 svd_rank=rank,
-                dropout=getattr(config, "dropout", 0.1) if not isinstance(config, dict) else config.get("dropout", 0.1),
+                lora_rank=lora_rank,
+                dropout=drop,
             )
         super().__init__(config)
         self.config: AegisSpectronFP8Config = config
@@ -143,16 +256,20 @@ class AegisSpectronFP8Attention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.q_out, self.kv_out, self.head_dim, self.kv_repeat = get_qkv_projection_dims(config)
         self.all_head_size = self.q_out
-        self.all_kv_head_size = getattr(self, 'kv_out', getattr(self, 'all_head_size', 768))
-        self.num_kv_heads = getattr(config, 'num_key_value_heads', getattr(config, 'num_kv_heads', self.num_heads))
+        self.all_kv_head_size = getattr(self, "kv_out", getattr(self, "all_head_size", self.hidden_size))
+        self.num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
         self.supports_gqa = True
-        self.supports_gqa = True
+        self.is_nested_encoder = False
+        self.rank = config.svd_rank
+        self.lora_rank = config.lora_rank
+
         self.router = SpectronSpectralEntropyRouter(config)
 
-        self.q_proj = nn.Linear(self.hidden_size, self.all_head_size)
-        self.k_proj = nn.Linear(self.hidden_size, self.all_kv_head_size)
-        self.v_proj = nn.Linear(self.hidden_size, self.all_kv_head_size)
-        self.out_proj = nn.Linear(self.all_head_size, self.hidden_size)
+        # Persistent FactorizedLinear projections equipped with trainable residual LoRA adapters
+        self.q_proj = FactorizedLinear(self.hidden_size, self.all_head_size, rank=self.rank, lora_rank=self.lora_rank, bias=True)
+        self.k_proj = FactorizedLinear(self.hidden_size, self.all_kv_head_size, rank=self.rank, lora_rank=self.lora_rank, bias=True)
+        self.v_proj = FactorizedLinear(self.hidden_size, self.all_kv_head_size, rank=self.rank, lora_rank=self.lora_rank, bias=True)
+        self.out_proj = FactorizedLinear(self.all_head_size, self.hidden_size, rank=self.rank, lora_rank=self.lora_rank, bias=True)
 
         self.linear_A = nn.Parameter(torch.ones(self.all_head_size))
         self.linear_B = nn.Parameter(torch.ones(self.all_head_size))
@@ -166,31 +283,258 @@ class AegisSpectronFP8Attention(BaseAttention):
         if pretrained_attn is not None:
             self._copy_pretrained(pretrained_attn)
 
+    # --------------------------------------------------------------------------
+    # Compatibility properties for parameter inspection & framework integration
+    # --------------------------------------------------------------------------
+    @property
+    def q(self) -> FactorizedLinear:
+        return self.q_proj
+
+    @property
+    def k(self) -> FactorizedLinear:
+        return self.k_proj
+
+    @property
+    def v(self) -> FactorizedLinear:
+        return self.v_proj
+
+    @property
+    def o(self) -> FactorizedLinear:
+        return self.out_proj
+
+    @property
+    def query(self) -> FactorizedLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> FactorizedLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> FactorizedLinear:
+        return self.v_proj
+
+    @property
+    def dense(self) -> FactorizedLinear:
+        return self.out_proj
+
+    @property
+    def q_lin(self) -> FactorizedLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> FactorizedLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> FactorizedLinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> FactorizedLinear:
+        return self.out_proj
+
+    @property
+    def o_proj(self) -> FactorizedLinear:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -> FactorizedLinear:
+        return self.out_proj
+
+    @staticmethod
+    def _svd_init(
+        w: torch.Tensor,
+        b: Optional[torch.Tensor],
+        proj: FactorizedLinear,
+    ) -> None:
+        """Initializes FactorizedLinear using truncated SVD approximation: W ≈ U[:, :r] diag(S[:r]) Vh[:r, :]."""
+        with torch.no_grad():
+            W = w.detach().float()
+            if W.ndim != 2:
+                raise ValueError(f"Expected 2D weight matrix, got shape {W.shape}")
+            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            r = min(proj.rank, U.size(1), Vh.size(0), proj.lin1.weight.size(0), proj.lin2.weight.size(1))
+
+            proj.lin1.weight.data.zero_()
+            proj.lin2.weight.data.zero_()
+
+            in_copy = min(W.shape[1], proj.lin1.weight.size(1))
+            out_copy = min(W.shape[0], proj.lin2.weight.size(0))
+
+            proj.lin1.weight.data[:r, :in_copy].copy_(Vh[:r, :in_copy].to(proj.lin1.weight.dtype))
+            US = U[:out_copy, :r] @ torch.diag(S[:r])
+            proj.lin2.weight.data[:out_copy, :r].copy_(US.to(proj.lin2.weight.dtype))
+
+            if b is not None and proj.lin2.bias is not None:
+                min_b = min(b.numel(), proj.lin2.bias.numel())
+                proj.lin2.bias.data[:min_b].copy_(b.detach()[:min_b].to(proj.lin2.bias.dtype))
+            elif proj.lin2.bias is not None:
+                proj.lin2.bias.data.zero_()
+
+            # Ensure base factorized linear weights remain frozen
+            proj.lin1.weight.requires_grad = False
+            proj.lin2.weight.requires_grad = False
+            if proj.lin2.bias is not None:
+                proj.lin2.bias.requires_grad = False
+
+            # Trainable LoRA adapter: A is initialized with Kaiming uniform, B is zeroed
+            if getattr(proj, "lora_A", None) is not None:
+                nn.init.kaiming_uniform_(proj.lora_A, a=math.sqrt(5))
+                proj.lora_A.requires_grad = True
+            if getattr(proj, "lora_B", None) is not None:
+                nn.init.zeros_(proj.lora_B)
+                proj.lora_B.requires_grad = True
+
     def _copy_pretrained(self, old_attn: nn.Module) -> None:
-        q_src = getattr(old_attn, "q_lin", getattr(old_attn, "query", None))
-        k_src = getattr(old_attn, "k_lin", getattr(old_attn, "key", None))
-        v_src = getattr(old_attn, "v_lin", getattr(old_attn, "value", None))
-        out_src = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None))
-        if q_src is not None:
-            self.q_proj.weight.data.copy_(q_src.weight.data)
-            if q_src.bias is not None:
-                self.q_proj.bias.data.copy_(q_src.bias.data)
+        """Comprehensive weight extraction across DistilBERT, RoBERTa, GPT-2, and Qwen."""
+        from framework.core.adapters import UniversalAdapter
+
+        extracted_weights = {}
+        for proj in ["q", "k", "v", "o"]:
+            w, b = None, None
+
+            # 1. Output projection checks first
+            if proj == "o":
+                if hasattr(old_attn, "c_proj"):
+                    mod = old_attn.c_proj
+                    if hasattr(mod, "merge") and not getattr(mod, "merged", False):
+                        try:
+                            mod.merge()
+                        except Exception:
+                            pass
+                    base_mod = getattr(mod, "base_layer", mod)
+                    w = getattr(base_mod, "weight", getattr(mod, "weight", None))
+                    if w is not None:
+                        w = w.data
+                        if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (w.shape[0] < w.shape[1]):
+                            w = w.t()
+                    bias_holder = getattr(base_mod, "bias", getattr(mod, "bias", None))
+                    b = bias_holder.data if bias_holder is not None else None
+                elif hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
+                    mod = old_attn.output.dense
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+                elif hasattr(old_attn, "dense"):
+                    mod = old_attn.dense
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+                elif hasattr(old_attn, "out_lin"):
+                    mod = old_attn.out_lin
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+                elif hasattr(old_attn, "out_proj"):
+                    mod = old_attn.out_proj
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+                elif hasattr(old_attn, "o_proj"):
+                    mod = old_attn.o_proj
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+
+            # 2. GPT-2 Fused c_attn
+            elif hasattr(old_attn, "c_attn") and proj in ["q", "k", "v"]:
+                mod = old_attn.c_attn
+                if hasattr(mod, "merge") and not getattr(mod, "merged", False):
+                    try:
+                        mod.merge()
+                    except Exception:
+                        pass
+                base_mod = getattr(mod, "base_layer", mod)
+                c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
+                if c_w is not None:
+                    c_w = c_w.data
+                    if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (c_w.shape[0] < c_w.shape[1]):
+                        c_w = c_w.t()
+                    split_size = c_w.size(0) // 3
+                    idx = {"q": 0, "k": 1, "v": 2}[proj]
+                    w = c_w[idx * split_size : (idx + 1) * split_size, :]
+                    bias_holder = getattr(base_mod, "bias", getattr(mod, "bias", None))
+                    if bias_holder is not None:
+                        c_b = bias_holder.data
+                        b = c_b[idx * split_size : (idx + 1) * split_size]
+
+            # 3. RoBERTa / BERT nested self-attention (old_attn.self)
+            elif hasattr(old_attn, "self") and proj in ["q", "k", "v"]:
+                s = getattr(old_attn, "self")
+                name_map = {"q": "query", "k": "key", "v": "value"}
+                if hasattr(s, name_map[proj]):
+                    mod = getattr(s, name_map[proj])
+                    w = mod.weight.data
+                    b = getattr(mod, "bias", None)
+
+            # 4. Qwen3.5 GatedDeltaNet fused in_proj_qkv
+            elif hasattr(old_attn, "in_proj_qkv") and proj in ["q", "k", "v"]:
+                mod = old_attn.in_proj_qkv
+                fused_w = mod.weight.data
+                fused_b = getattr(mod, "bias", None)
+                k_dim = getattr(old_attn, "key_dim", getattr(old_attn, "k_dim", fused_w.size(0) // 3))
+                v_dim = getattr(old_attn, "value_dim", getattr(old_attn, "v_dim", fused_w.size(0) // 3))
+                q_dim = fused_w.size(0) - k_dim - v_dim if (k_dim + v_dim < fused_w.size(0)) else k_dim
+                if proj == "q":
+                    w = fused_w[:q_dim, :]
+                    b = fused_b[:q_dim] if fused_b is not None else None
+                elif proj == "k":
+                    w = fused_w[q_dim : q_dim + k_dim, :]
+                    b = fused_b[q_dim : q_dim + k_dim] if fused_b is not None else None
+                elif proj == "v":
+                    w = fused_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                    b = fused_b[q_dim + k_dim : q_dim + k_dim + v_dim] if fused_b is not None else None
+
+            # 5. Direct named projections
+            if w is None:
+                for attr_candidate in [f"{proj}_lin", f"{proj}_proj", proj]:
+                    if hasattr(old_attn, attr_candidate):
+                        mod = getattr(old_attn, attr_candidate)
+                        if hasattr(mod, "weight"):
+                            w = mod.weight.data
+                            b = getattr(mod, "bias", None)
+                            if b is not None:
+                                b = b.data
+                            break
+
+            # 6. Fallback to UniversalAdapter
+            if w is None:
+                try:
+                    w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+                except Exception:
+                    pass
+
+            extracted_weights[proj] = (w, b)
+
+        cls_name = old_attn.__class__.__name__
+        has_out_proj = any(
+            hasattr(old_attn, attr)
+            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
+        )
+        if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+            self.is_nested_encoder = True
+
+        for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj)]:
+            w, b = extracted_weights[proj]
+            if w is not None:
+                self._svd_init(w, b, target)
+
+        w_o, b_o = extracted_weights["o"]
+        if w_o is not None:
+            self._svd_init(w_o, b_o, self.out_proj)
+        elif self.is_nested_encoder:
             with torch.no_grad():
-                U, S, _ = torch.linalg.svd(q_src.weight.data.float(), full_matrices=False)
-                r = min(self.config.svd_rank, U.size(1))
-                self.svd_U.data[:, :r].copy_(U[:, :r].to(self.svd_U.dtype))
-        if k_src is not None:
-            self.k_proj.weight.data.copy_(k_src.weight.data)
-            if k_src.bias is not None:
-                self.k_proj.bias.data.copy_(k_src.bias.data)
-        if v_src is not None:
-            self.v_proj.weight.data.copy_(v_src.weight.data)
-            if v_src.bias is not None:
-                self.v_proj.bias.data.copy_(v_src.bias.data)
-        if out_src is not None:
-            self.out_proj.weight.data.copy_(out_src.weight.data)
-            if out_src.bias is not None:
-                self.out_proj.bias.data.copy_(out_src.bias.data)
+                self.out_proj.lin1.weight.data.zero_()
+                self.out_proj.lin2.weight.data.zero_()
+                r = min(self.out_proj.rank, self.hidden_size, self.all_head_size)
+                self.out_proj.lin1.weight.data[:r, :r].fill_diagonal_(1.0)
+                self.out_proj.lin2.weight.data[:r, :r].fill_diagonal_(1.0)
+                if self.out_proj.lin2.bias is not None:
+                    self.out_proj.lin2.bias.data.zero_()
+                self.out_proj.lin1.weight.requires_grad = False
+                self.out_proj.lin2.weight.requires_grad = False
+
+        if extracted_weights["q"][0] is not None:
+            with torch.no_grad():
+                U, S, _ = torch.linalg.svd(extracted_weights["q"][0].float(), full_matrices=False)
+                r = min(self.config.svd_rank, U.size(1), self.svd_U.size(1))
+                self.svd_U.data[:, :r].copy_(U[:self.svd_U.size(0), :r].to(self.svd_U.dtype))
 
     @classmethod
     def from_distilbert_pretrained(
@@ -201,11 +545,18 @@ class AegisSpectronFP8Attention(BaseAttention):
             class DummyConfig:
                 pass
             model_config = DummyConfig()
-            model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
+            out_layer = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None))
+            model_config.hidden_size = out_layer.out_features if out_layer is not None else 768
+            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 12))
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
-    def _local_branch(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def _local_branch(
+        self,
+        Q: torch.Tensor,
+        K: torch.Tensor,
+        V: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         B, h, N, d = Q.shape
         W = self.config.window_size
 
@@ -214,7 +565,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         idx = torch.arange(N, device=Q.device)
         dist = (idx.unsqueeze(-1) - idx.unsqueeze(-2)).abs()
         mask = (dist > W).unsqueeze(0).unsqueeze(0)
-        mask_val = -10000.0 if attn_weights.dtype in (torch.float16, torch.bfloat16) else -10000.0
+        mask_val = -10000.0
         attn_weights = attn_weights.masked_fill(mask, mask_val)
 
         if attention_mask is not None:
@@ -241,41 +592,50 @@ class AegisSpectronFP8Attention(BaseAttention):
         K_flat = K.transpose(1, 2).contiguous().view(B, N, -1)
         V_flat = V.transpose(1, 2).contiguous().view(B, N, -1)
 
-        Q_lr = torch.matmul(Q_flat, self.svd_U)
-        K_lr = torch.matmul(K_flat, self.svd_U)
+        Q_lr = torch.matmul(Q_flat, self.svd_U)  # [B, N, rank]
+        K_lr = torch.matmul(K_flat, self.svd_U)  # [B, N, rank]
 
-        attn = torch.matmul(Q_lr, K_lr.transpose(-1, -2)) / math.sqrt(self.config.svd_rank)
-        attn = F.softmax(attn, dim=-1)
-        attn = torch.nan_to_num(attn, nan=0.0)
-        attn = F.dropout(attn, p=self.config.dropout, training=self.training)
+        # Use ELU+1 kernel for non-negativity (Linear Attention)
+        phi_Q = F.elu(Q_lr) + 1.0
+        phi_K = F.elu(K_lr) + 1.0
 
-        out_lr = torch.matmul(attn, V_flat)
+        # TRUE O(N): Multiply K^T and V FIRST: [B, rank, D]
+        KV = torch.matmul(phi_K.transpose(-1, -2), V_flat)
+
+        # Then multiply by Q: [B, N, D]
+        out_lr = torch.matmul(phi_Q, KV) / math.sqrt(self.config.svd_rank)
         return out_lr.view(B, N, h, d).transpose(1, 2)
 
     def _linear_branch(self, X: torch.Tensor) -> torch.Tensor:
         if self.linear_in is not None:
             X = self.linear_in(X)
         B, N, D = X.shape
-        gamma_t = torch.sigmoid(getattr(self, 'decay_param', self.linear_A)).clamp(min=1e-4, max=1.0 - 1e-4)  # [D]
-        log_gamma = torch.log(gamma_t).view(1, D, 1, 1)  # [1, D, 1, 1]
 
-        pos = torch.arange(N, device=X.device, dtype=X.dtype)
-        pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [N, N]
+        u = X * self.linear_B.view(1, 1, D)
+        gamma = torch.sigmoid(getattr(self, "decay_param", self.linear_A)).clamp(min=1e-4, max=1.0 - 1e-4)
 
-        # 1. Forward causal decay matrix
-        tril_mask = torch.tril(torch.ones(N, N, device=X.device, dtype=torch.bool))
-        D_causal = torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_gamma).clamp(min=-40.0, max=0.0)) * tril_mask.to(X.dtype)  # [1, D, N, N]
+        # O(N) Recurrence using CumSum trick: y_t = gamma^t * cumsum(u_i * gamma^{-i})
+        pos = torch.arange(N, device=X.device, dtype=torch.float32).view(1, N, 1)
+        gamma_fp32 = gamma.view(1, 1, D).float()
 
-        # 2. Backward anticausal decay matrix
-        triu_mask = torch.triu(torch.ones(N, N, device=X.device, dtype=torch.bool))
-        D_anti = torch.exp((-pos_diff.unsqueeze(0).unsqueeze(0) * log_gamma).clamp(min=-40.0, max=0.0)) * triu_mask.to(X.dtype)  # [1, D, N, N]
+        # Numerically stable pow using log & clamp to avoid float32 underflow/overflow
+        log_gamma = torch.log(gamma_fp32)
+        gamma_pow = torch.exp((pos * log_gamma).clamp(min=-30.0, max=0.0))
+        gamma_inv_pow = torch.exp((-pos * log_gamma).clamp(min=0.0, max=30.0))
 
-        u = (self.linear_B.view(1, D, 1) * X.permute(0, 2, 1)).unsqueeze(-1)  # [B, D, N, 1]
-        out_fwd = (torch.matmul(D_causal, u).squeeze(-1) * self.linear_C.view(1, D, 1)).permute(0, 2, 1)  # [B, N, D]
-        out_bwd = (torch.matmul(D_anti, u).squeeze(-1) * self.linear_C.view(1, D, 1)).permute(0, 2, 1)    # [B, N, D]
+        # Causal forward pass
+        u_scaled_fwd = u.float() * gamma_inv_pow
+        out_fwd = gamma_pow * torch.cumsum(u_scaled_fwd, dim=1)
+        out_fwd = out_fwd.to(X.dtype) * self.linear_C.view(1, 1, D)
 
-        gate = torch.sigmoid(getattr(self, 'bidir_gate', torch.tensor(0.5, device=X.device, dtype=X.dtype)))
+        # Anti-causal backward pass
+        u_scaled_bwd = torch.flip(u.float(), [1]) * gamma_inv_pow
+        out_bwd = gamma_pow * torch.cumsum(u_scaled_bwd, dim=1)
+        out_bwd = torch.flip(out_bwd, [1]).to(X.dtype) * self.linear_C.view(1, 1, D)
+
+        gate = torch.sigmoid(getattr(self, "bidir_gate", torch.tensor(0.5, device=X.device, dtype=X.dtype)))
         out_tensor = gate * out_fwd + (1.0 - gate) * out_bwd
+
         return out_tensor.view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
 
     def forward(
@@ -296,11 +656,13 @@ class AegisSpectronFP8Attention(BaseAttention):
 
         X_fp8 = fp8_cast_simulate(hidden_states)
 
-        alpha = self.router(X_fp8)
-        alpha_loc = alpha[:, 0].view(B, 1, 1, 1)
-        alpha_glob = alpha[:, 1].view(B, 1, 1, 1)
-        alpha_lin = alpha[:, 2].view(B, 1, 1, 1)
+        # Token-level routing
+        alpha = self.router(X_fp8)  # [B, N, 3]
+        alpha_loc = alpha[:, :, 0].unsqueeze(1).unsqueeze(-1)   # [B, 1, N, 1]
+        alpha_glob = alpha[:, :, 1].unsqueeze(1).unsqueeze(-1)  # [B, 1, N, 1]
+        alpha_lin = alpha[:, :, 2].unsqueeze(1).unsqueeze(-1)   # [B, 1, N, 1]
 
+        # Projections via FactorizedLinear (base + LoRA)
         Q = self.q_proj(X_fp8).view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
         K = self.k_proj(X_fp8).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
         V = self.v_proj(X_fp8).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
@@ -308,15 +670,20 @@ class AegisSpectronFP8Attention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
+        # 3 Independent Branches
         out_loc = self._local_branch(Q, K, V, attention_mask)
         out_glob = self._global_branch(Q, K, V)
         out_lin = self._linear_branch(X_fp8)
 
+        # Token-level dynamic fusion
         out_fused = (alpha_loc * out_loc) + (alpha_glob * out_glob) + (alpha_lin * out_lin)
         out_fused = out_fused.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
-        final_out = self.out_proj(out_fused)
-        return final_out, None
+        if getattr(self, "is_nested_encoder", False):
+            final_out = out_fused
+        else:
+            final_out = self.out_proj(out_fused)
+
         return final_out, None
 
 
@@ -344,9 +711,10 @@ def inject_aegis_spectron_fp8(
         hidden_size=h_size,
         num_heads=n_heads,
         head_dim=h_size // max(1, n_heads),
-        window_size=getattr(comp_config, "window_size", 64),
-        svd_rank=getattr(comp_config, "svd_rank", 128),
-        dropout=getattr(comp_config, "dropout", 0.1),
+        window_size=getattr(comp_config, "window_size", getattr(comp_config, "local_window", 64)) if comp_config else 64,
+        svd_rank=getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 128)) if comp_config else 128,
+        lora_rank=getattr(comp_config, "lora_rank", getattr(comp_config, "lora_r", 32)) if comp_config else 32,
+        dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
     )
     if model_config is None and old_attn is not None:
         new_attn = AegisSpectronFP8Attention.from_distilbert_pretrained(old_attn, config=cfg)
