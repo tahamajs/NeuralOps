@@ -195,8 +195,12 @@ def collect_and_export_full_metrics(model, eval_batches, model_name, seq_len=128
 
     # 3. Scalability (Dummy pass for VRAM scaling across lengths)
     scalability = {}
+    max_pos = getattr(getattr(model, "config", None), "max_position_embeddings", 2048) or 2048
     if device_type == "cuda":
         for test_len in [128, 256, 512, 1024]:
+            if test_len > max_pos - 2:
+                scalability[f"L_{test_len}_vram_mb"] = f"unsupported (exceeds model max_position_embeddings {max_pos})"
+                continue
             try:
                 torch.cuda.empty_cache()
                 torch.cuda.reset_peak_memory_stats(dev)
