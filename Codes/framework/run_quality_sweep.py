@@ -342,8 +342,7 @@ def main():
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
     out = Path(args.output_dir); out.mkdir(parents=True, exist_ok=True)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type != "cuda": raise RuntimeError("Qwen quality sweep requires CUDA")
+    device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"))
     if args.dataset_dir is None:
         for cand in [
             Path("D:/SVD_Project/Codes/framework/data/glue_data") / args.dataset,
@@ -354,13 +353,13 @@ def main():
                 args.dataset_dir = str(cand)
                 break
     ds = load_from_disk(args.dataset_dir); train, val = ds["train"], ds["validation"]
-    tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True); tokenizer.padding_side = "left"
+    tokenizer = AutoTokenizer.from_pretrained(args.model); tokenizer.padding_side = "left"
     if tokenizer.pad_token_id is None: tokenizer.pad_token = tokenizer.eos_token
     # Train the newly initialized classifier in fp32. GradScaler cannot
     # unscale gradients belonging to fp16 parameters. Cast the trained model
     # to the requested sweep precision immediately afterwards.
     dtype = torch.float32
-    base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, local_files_only=True, torch_dtype=dtype).to(device)
+    base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, torch_dtype=dtype).to(device)
     base.config.pad_token_id = tokenizer.pad_token_id; install_qwen_aliases(base)
     qwen = is_qwen_model(base)
     family = detect_family(base) if args.model_family == "auto" else args.model_family
