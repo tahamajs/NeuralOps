@@ -37,6 +37,7 @@ class AegisHybridConfig:
     use_adaptive_pruning: bool = True
     gate_init_bias: float = 1.8
     is_decoder: bool = False
+    use_global: bool = False
 
     def __post_init__(self) -> None:
         if self.num_key_value_heads is None:
@@ -252,6 +253,7 @@ class AegisHybridAttention(BaseAttention):
         self.lora_rank: int = max(1, min(getattr(config, "lora_rank", 32), self.hidden_size))
         self.dropout: nn.Dropout = nn.Dropout(config.dropout)
         self.is_decoder: bool = config.is_decoder or kwargs.get("is_decoder", False)
+        self.use_global: bool = getattr(config, "use_global", False) or kwargs.get("use_global", False)
         self.is_nested_encoder: bool = False
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
@@ -424,7 +426,7 @@ class AegisHybridAttention(BaseAttention):
                 if hasattr(old_attn, "c_proj"):
                     mod = old_attn.c_proj
                     w = mod.weight.data
-                    if mod.__class__.__name__ == "Conv1D" and w.size(0) < w.size(1):
+                    if mod.__class__.__name__ == "Conv1D":
                         w = w.t()
                     b = mod.bias.data if getattr(mod, "bias", None) is not None else None
                 elif hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
@@ -452,7 +454,7 @@ class AegisHybridAttention(BaseAttention):
             elif hasattr(old_attn, "c_attn") and proj in ["q", "k", "v"]:
                 mod = old_attn.c_attn
                 c_w = mod.weight.data
-                if mod.__class__.__name__ == "Conv1D" and c_w.size(0) < c_w.size(1):
+                if mod.__class__.__name__ == "Conv1D":
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 idx = {"q": 0, "k": 1, "v": 2}[proj]
@@ -707,9 +709,9 @@ class AegisHybridAttention(BaseAttention):
 
         local_out = torch.matmul(attn_local, V).transpose(1, 2)  # [B, N, H, Dh]
 
-        if (not is_decoder) or (self.local_window >= max(N, N_k)):
+        if (not self.use_global) or (not is_decoder) or (self.local_window >= max(N, N_k)):
             # When local window covers the entire sequence (e.g. short-sequence tasks where N <= local_window)
-            # or for bidirectional models, skip the global linear branch entirely and use only local attention.
+            # or when use_global=False or for bidirectional models, skip the global linear branch entirely and use only local attention.
             fused = local_out.reshape(B, N, self.all_head_size)
         else:
             # ============== Branch 2: Global Linear Attention (Causal) ==============
@@ -723,24 +725,21 @@ class AegisHybridAttention(BaseAttention):
                 K_g = K_g * keep.unsqueeze(-1)
                 V_g = V_g * keep.unsqueeze(-1)
 
-            if mask_2d is not None:
-                mask_4d_tok = mask_2d.unsqueeze(-1).unsqueeze(-1)  # [B, N, 1, 1]
-                Q_g = Q_g * mask_4d_tok
-                K_g = K_g * mask_4d_tok
-                V_g = V_g * mask_4d_tok
-
             # Activation feature map phi(x) = ELU(x) + 1.0 computed in FP32 for numerical stability
             phi_Q = (F.elu(Q_g.float()) + 1.0).transpose(1, 2)  # [B, H, N, Dh]
             phi_K = (F.elu(K_g.float()) + 1.0).transpose(1, 2)  # [B, H, N_k, Dh]
             V_gf = V_g.float().transpose(1, 2)                   # [B, H, N_k, Dh]
 
+            # Zero out padding tokens after phi(x) since ELU(0) + 1.0 = 1.0 would otherwise pollute normalization
+            if mask_2d is not None:
+                phi_Q = phi_Q * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+                phi_K = phi_K * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+                V_gf = V_gf * mask_2d.unsqueeze(1).unsqueeze(-1).float()
+
             # Causal global linear attention: tokens at i only aggregate j <= i
             sim = torch.matmul(phi_Q, phi_K.transpose(-2, -1))  # [B, H, N, N_k]
             causal_tril = (idx_q.unsqueeze(1) >= idx_k.unsqueeze(0)).unsqueeze(0).unsqueeze(0)
             sim = sim.masked_fill(~causal_tril, 0.0)
-            if mask_2d is not None:
-                sim = sim * mask_2d.unsqueeze(1).unsqueeze(2).float()  # mask invalid keys
-                sim = sim * mask_2d.unsqueeze(1).unsqueeze(-1).float()  # mask invalid queries
 
             global_out_h = torch.matmul(sim, V_gf)  # [B, H, N, Dh]
             norm = sim.sum(dim=-1, keepdim=True)    # [B, H, N, 1]
@@ -763,7 +762,7 @@ class AegisHybridAttention(BaseAttention):
             out = self.out_proj(fused)
             out = self.dropout(out)
 
-        if mask_2d is not None:
+        if not is_decoder and mask_2d is not None:
             out = out * mask_2d.unsqueeze(-1)
 
         return out, (attn_local if output_attentions else None)
