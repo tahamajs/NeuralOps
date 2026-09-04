@@ -602,6 +602,12 @@ def inject_attention(
                 if FUSED_QKV_REGEX.match(child_name) and hasattr(child_mod, "weight"):
                     fused_mod = child_mod
                     break
+            if fused_mod is None:
+                for candidate in ["c_attn", "qkv_proj", "query_key_value", "in_proj", "Wqkv"]:
+                    mod = getattr(old_attn, candidate, None)
+                    if mod is not None and hasattr(mod, "weight"):
+                        fused_mod = mod
+                        break
 
             if fused_mod is not None:
                 # Sliced Fused QKV handling
@@ -611,6 +617,7 @@ def inject_attention(
                     num_heads=num_heads if num_heads is not None else 12,
                     num_kv_heads=num_kv_heads or num_heads,
                     head_dim=head_dim,
+                    source_mod=fused_mod,
                 )
                 for proj_key in ["q", "k", "v"]:
                     w, b = sliced[proj_key]
@@ -640,9 +647,6 @@ def inject_attention(
                 # Output projection
                 try:
                     src_w_o, src_b_o = adapter.get_weight_bias(old_attn, "o")
-                    c_proj_mod = getattr(old_attn, "c_proj", None)
-                    if c_proj_mod is not None and c_proj_mod.__class__.__name__ == "Conv1D":
-                        src_w_o = src_w_o.t()
                     target_o = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
                     if target_o is not None:
                         _copy_projection_weights(target_o, src_w_o, src_b_o)
