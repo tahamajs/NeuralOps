@@ -822,7 +822,17 @@ def main():
                                 weight_decay=args.weight_decay, timeout=effective_timeout,
                             )
                 try:
-                    return round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+                    eval_acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+                    try:
+                        model_slug = Path(args.model).name.replace("/", "_").replace("\\", "_")
+                        collect_and_export_full_metrics(
+                            model, eval_batches, f"{model_slug}_{name}",
+                            seq_len=args.seq_len, device=device, fp16=args.precision == "fp16",
+                            out_dir=str(out),
+                        )
+                    except Exception as me_err:
+                        LOG.warning("Failed to collect/export full metrics for %s: %s", name, me_err)
+                    return eval_acc
                 finally:
                     if model is not None:
                         try:

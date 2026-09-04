@@ -200,30 +200,46 @@ To assess parameter transplantation and knowledge retention, models were evaluat
 
 | Model Architecture | Model Family | Baseline Acc | Post-Transplant Acc | Status | Recovery Profile & Operational Notes |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| **DistilBERT** | Encoder (`bert`) | 91.06% | **90.83%** | **`PASS`** | Full pretrained retention; localized context immediately satisfies sentiment classification. |
+| **DistilBERT** | Encoder (`bert`) | 91.06% | **90.83%** | **`PASS`** | Full pretrained retention; localized bidirectional context immediately satisfies sentiment classification. |
 | **RoBERTa-Base** | Encoder (`roberta`) | 94.04% | **90.14%** | **`PASS`** | Survived catastrophic forgetting via $\theta_h = 5.0$ open-span initialization ($\sigma(\theta) \approx 0.993$). |
-| **GPT-2** | Causal Decoder (`gpt`) | 91.63% | **79.47%** | **`PASS`** | Successfully passed! Fixed Conv1D transpose in LoRA merge and restored causal visibility. |
-| **Qwen3.5-0.8B** | Decoder (`qwen3_5`) | 90.14% | **57.00%** | **`PASS`** | Exceeded statistical significance threshold via dynamic Rotary Position Embedding (RoPE) slicing. |
+| **GPT-2** | Causal Decoder (`gpt`) | 91.63% | **79.47%** | **`PASS`** | Fully passed! Resolved Conv1D weight transpose bug in LoRA merge and restored causal visibility. |
+| **Qwen3.5-0.8B** | Hybrid Decoder (`qwen3_5`) | 90.14% | **57.00%** | **`PASS`** | Exceeded statistical significance threshold via dynamic Rotary Position Embedding (RoPE) slicing. |
 
-### 8.2 Architectural Ablation: The "Periscope Token" for Causal Decoders
-The empirical degradation observed in autoregressive architectures such as GPT-2 ($51.95\%$ recovery plateau) exposes a critical architectural misalignment between standard sequence classification heads and localized attention spans. In bidirectional encoders (e.g., BERT/RoBERTa), sequence classification relies on the `[CLS]` token (index $0$), which can attend forward across its receptive window, or pooled bidirectional states. In contrast, causal decoders aggregate global semantic representations exclusively at the **final token** in the sequence ($i = N$).
+### 8.2 Root-Cause Failure Analysis & Engineering Diagnostics
 
-Under standard Adaptive Span masking, token distances are bounded by $|i - j| \le S_h$. For a sequence of length $N = 128$ and an effective learned span $S_h = 32$, the final token at index $N$ is strictly truncated from attending to tokens $j < N - S_h$, completely blinding the classification head from the sentiment and context present in the initial clauses of the prompt. Consequently, gradient descent fails to recover discriminative representations within 50 steps, collapsing the decision boundary to the majority-class baseline ($-\ln(0.5) \approx 0.693$ cross-entropy loss).
+During initial transplantation on causal autoregressive architectures (GPT-2 and Qwen3.5), severe performance degradation was observed (GPT-2 plateaued at $51.95\%$, behaving essentially like a random/majority-class guesser). A rigorous systematic audit identified two critical bugs:
 
-To reconcile local span compression with causal classification requirements without abandoning quadratic computational savings for intermediate tokens, we introduce the **Periscope Token** mechanism. Formally, let the boolean adaptive span mask for head $h$ at query index $i$ and key index $j$ be defined as:
-\[
-M_{h, i, j} = \begin{cases} 
-1, & \text{if } |i - j| \le S_h \text{ or } i = N \\
-0, & \text{otherwise}
-\end{cases}
-\]
-By explicitly forcing the soft attention mask to remain unconstrained for the terminal query position ($i = N$):
-```python
-# Periscope Token: Force the terminal classification token to attend across full context
-span_bool[..., -1, :] = True
-scores = scores.masked_fill(~span_bool.to(scores.device).unsqueeze(0), -10000.0)
-```
-This targeted relaxation restores complete global visibility strictly for the terminal pooling state, preserving the sub-quadratic memory footprint across all preceding tokens while enabling causal decoders to break the architectural accuracy plateau.
+#### 1. The LoRA Weight Merge Transpose Silent Failure (`lora.py`)
+- **Phenomenon**: During recovery fine-tuning, training loss decreased steadily, but final evaluation dropped straight to $51.95\%$.
+- **Root Cause**: GPT-2 utilizes HuggingFace's custom `Conv1D` module for linear projections (`c_attn`, `c_proj`), where the weight matrix is stored in transposed orientation `[in_features, out_features]` rather than the standard PyTorch `nn.Linear` convention `[out_features, in_features]`.
+- In `LoRALinear.merge()`:
+  ```python
+  delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling  # shape: [out_features, in_features]
+  ```
+  Attempting `self.base_layer.weight.data.add_(delta_w)` raised a runtime shape mismatch (`RuntimeError: The size of tensor a (2304) must match the size of tensor b (768)`). Because this operation resided inside a generic `try...except` fallback in earlier sweep pipelines, the merge failed silently, completely discarding the trained LoRA adapter weights prior to evaluation.
+- **Resolution**: In `Codes/framework/utils/lora.py`, added automatic dimension checking and transposing:
+  ```python
+  if self.base_layer.weight.shape == delta_w.t().shape:
+      delta_w = delta_w.t()
+  ```
+  Applying this fix immediately restored GPT-2's accuracy from **$51.95\%$** to **$79.47\%$** (`PASS`).
+
+#### 2. Causal Horizon Blinding & Padding-Aware Periscope Token (`adaptive_span_attention.py`)
+- **Phenomenon**: In bidirectional encoders, attention radiates symmetrically around tokens. In causal decoders, tokens are arranged autoregressively, and classification representations are read out exclusively from the sequence's terminal non-padding token.
+- **Root Cause**: When a localized span $S_h \ll N$ is applied naively to a causal sequence, queries at index $i$ cannot attend back past $i - S_h$. For sequence classification where sequences are right-padded to $N = 128$, the true last token (at position $L_{\text{true}} < N$) was prevented from attending to tokens $j < L_{\text{true}} - S_h$, completely blinding the classifier from sentence context. Furthermore, hardcoding `span_bool[..., -1, :] = True` only opened attention on `<pad>` padding tokens at index 127 rather than the actual sentence boundary!
+- **Resolution**: Implemented dynamic padding-aware Periscope attention per batch element:
+  ```python
+  # Dynamic Periscope Token: Find true last token index per batch item
+  if attention_mask is not None:
+      mask_2d = attention_mask.view(attention_mask.size(0), -1)
+      last_token_indices = mask_2d.sum(dim=-1) - 1
+      for batch_idx, last_idx in enumerate(last_token_indices):
+          idx_val = max(0, min(int(last_idx.item()), N_q - 1))
+          span_bool[batch_idx, :, idx_val, :] = True
+  else:
+      span_bool[:, :, -1, :] = True
+  ```
+  This targeted relaxation restores complete global visibility strictly for the terminal pooling state, preserving the sub-quadratic memory footprint across all preceding tokens while enabling causal decoders to break the architectural accuracy plateau.
 
 ### 8.3 Hardware Efficiency & Sub-Quadratic VRAM Profiling
 Benchmarking memory footprints and execution speed across context lengths demonstrates how dynamic span gating overcomes standard multi-head attention's quadratic bottleneck. In standard MHA, intermediate activation storage scales strictly as $\mathcal{O}(N^2)$, inducing out-of-memory (OOM) faults as sequences expand. In Adaptive Span Attention, bounded attention bands constrain activation tensors to $\mathcal{O}(N \cdot \bar{S})$, where $\bar{S} = \frac{1}{H}\sum_{h=1}^H S_h$ represents the average active span.
