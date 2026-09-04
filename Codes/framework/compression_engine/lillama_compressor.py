@@ -86,10 +86,14 @@ class LiLLaMACompressor(BaseCompressor):
         with torch.no_grad():
             try:
                 if isinstance(calib_inputs, dict):
+                    calib_inputs = {k: v.to(self.target_device) if isinstance(v, torch.Tensor) else v
+                                    for k, v in calib_inputs.items()}
                     self.model(**calib_inputs)
                 elif isinstance(calib_inputs, torch.Tensor):
-                    self.model(calib_inputs)
+                    self.model(calib_inputs.to(self.target_device))
                 elif isinstance(calib_inputs, (list, tuple)):
+                    calib_inputs = [v.to(self.target_device) if isinstance(v, torch.Tensor) else v
+                                    for v in calib_inputs]
                     self.model(*calib_inputs)
             except Exception as e:
                 logger.debug("LiLLaMA IO activation collection forward pass exception: %s", e)
