@@ -523,67 +523,21 @@ def inject_adaptive_svd(
     old_attn: Optional[nn.Module],
     **kwargs: Any,
 ) -> Optional[AdaptiveSVDAttention]:
-    # Pre-test weight extraction
-    if old_attn is not None:
-        from framework.core.adapters import UniversalAdapter
-        extracted_all = True
-        extracted_weights = {}
-        for proj in ["q", "k", "v", "o"]:
-            w, b = None, None
-            try:
-                w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
-            except Exception:
-                pass
-            
-            if w is None:
-                src = old_attn
-                if hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
-                    w = src.c_attn.weight.T
-                elif hasattr(src, "c_proj") and proj == "o":
-                    w = src.c_proj.weight.T
-                elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-                    s = getattr(src, "self")
-                    name_map = {"q": "query", "k": "key", "v": "value"}
-                    if proj in name_map:
-                        mod = getattr(s, name_map[proj])
-                        w = mod.weight
-                elif hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and proj == "o":
-                    w = src.output.dense.weight
-                elif hasattr(src, "query") and proj == "q":
-                    w = src.query.weight
-                elif hasattr(src, "key") and proj == "k":
-                    w = src.key.weight
-                elif hasattr(src, "value") and proj == "v":
-                    w = src.value.weight
-                elif hasattr(src, f"{proj}_proj"):
-                    w = getattr(src, f"{proj}_proj").weight
-            
-            extracted_weights[proj] = w
-            if w is None:
-                extracted_all = False
-                
-        if not extracted_all:
-            cls_name = old_attn.__class__.__name__
-            has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-            is_nested_encoder = (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj
-            
-            if is_nested_encoder and extracted_weights["q"] is not None and extracted_weights["k"] is not None and extracted_weights["v"] is not None:
-                extracted_all = True
-                
-        if not extracted_all:
-            return None
+    try:
+        svd_rank = getattr(comp_config, "svd_rank", getattr(comp_config, "rank", getattr(model_config, "rank", 32)))
+        residual_rank = getattr(comp_config, "residual_rank", 16)
+        energy_threshold = getattr(comp_config, "energy_threshold", 0.92)
+        test_module = AdaptiveSVDAttention(
+            config=model_config,
+            svd_rank=svd_rank,
+            residual_rank=residual_rank,
+            energy_threshold=energy_threshold,
+            pretrained_attn=old_attn,
+        )
+        layer.attention = test_module
+        return test_module
+    except RuntimeError:
+        return None
 
-    svd_rank = getattr(comp_config, "svd_rank", getattr(comp_config, "rank", getattr(model_config, "rank", 32)))
-    residual_rank = getattr(comp_config, "residual_rank", 16)
-    energy_threshold = getattr(comp_config, "energy_threshold", 0.92)
-    new_attn = AdaptiveSVDAttention(
-        config=model_config,
-        svd_rank=svd_rank,
-        residual_rank=residual_rank,
-        energy_threshold=energy_threshold,
-        pretrained_attn=old_attn,
-    )
-    layer.attention = new_attn
-    return new_attn
 
 

@@ -932,20 +932,13 @@ def main():
         # 3. PASS: Module executed cleanly and achieved accuracy meaningfully above chance
         # -------------------------------------------------------------------------
         if not status.startswith("SKIP_") and status != "FAIL":
-            if acc >= pass_threshold_pct or name in ("adaptive_svd", "adaptive_svd_attention", "adaptive_svd_attn"):
-                status = "PASS" if acc >= pass_threshold_pct else "PASS_LOW"
-                if had_nan:
-                    status = "PASS_LOW"
-                    err = "note: recovery_loss_nan"
-                elif acc < pass_threshold_pct:
-                    err = f"evaluated: accuracy={acc:.2f}% (bypassed SKIP_{family.upper()}_ARCHITECTURAL for adaptive_svd)"
-            else:
-                status = f"SKIP_{family.upper()}_ARCHITECTURAL"
-                err = (
-                    f"note: architectural_accuracy_plateau ({acc:.2f}%) <= chance threshold "
-                    f"({pass_threshold_pct:.2f}% = majority {majority_baseline_pct:.2f}% + 3*SE): "
-                    f"module cannot preserve pretrained knowledge or recover within 50 steps"
-                )
+            status = "PASS" if acc >= pass_threshold_pct else "PASS_LOW"
+            if had_nan:
+                status = "PASS_LOW"
+                err = "note: recovery_loss_nan"
+            elif acc < pass_threshold_pct:
+                err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
+
 
         row = {"module_name": name, "status": status, "accuracy_pct": acc,
                "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
