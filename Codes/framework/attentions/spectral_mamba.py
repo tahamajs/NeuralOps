@@ -53,7 +53,7 @@ class SpectralMamba(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.mamba(x)
-        if isinstance(out, tuple):
+        while isinstance(out, (tuple, list)):
             out = out[0]
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
         return out * gate
@@ -176,10 +176,12 @@ class SpectralMambaAttention(BaseAttention):
 
         attn_ctx = torch.matmul(attn_weights, v).transpose(1, 2).contiguous().view(B, N, D)
         attn_out = self.out_lin(attn_ctx)
+        while isinstance(attn_out, (tuple, list)):
+            attn_out = attn_out[0]
 
         # Spectral Mamba stream
         mamba_out = self.spectral_mamba(hidden_states)
-        if isinstance(mamba_out, tuple):
+        while isinstance(mamba_out, (tuple, list)):
             mamba_out = mamba_out[0]
 
         # Adaptive gating

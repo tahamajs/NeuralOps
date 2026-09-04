@@ -148,7 +148,11 @@ class HALOReGLAAttention(BaseAttention):
 
         # 2. RoPE + Linear stream
         q_rope = self.rope(q)
+        while isinstance(q_rope, (tuple, list)):
+            q_rope = q_rope[0]
         k_rope = self.rope(k)
+        while isinstance(k_rope, (tuple, list)):
+            k_rope = k_rope[0]
 
         q_lin = F.elu(q_rope) + 1.0
         k_lin = F.elu(k_rope) + 1.0
