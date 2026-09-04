@@ -536,7 +536,22 @@ def main():
             model = None
             gc.collect()
             torch.cuda.empty_cache()
-            model = copy.deepcopy(base).to(device)
+            try:
+                model = copy.deepcopy(base).to(device)
+            except torch.cuda.OutOfMemoryError:
+                gc.collect()
+                torch.cuda.empty_cache()
+                time.sleep(2)
+                try:
+                    model = copy.deepcopy(base).to(device)
+                except torch.cuda.OutOfMemoryError as oom_err:
+                    status = "SKIP_OOM"
+                    err = f"CUDA OOM on base model cloning: {oom_err}"
+                    row = {"module_name": name, "status": status, "accuracy_pct": 0.0,
+                           "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
+                           "path": path_name, "timestamp": datetime.now().isoformat()}
+                    w.writerow(row); f.flush(); LOG.info("[%d/%d] %s -> %s (%s)", n, len(names), name, status, err)
+                    continue
             # Side effect is projection alias installation; the model itself
             # is not replaced, preserving native HF forward semantics.
             wrap_for_family(model, family)
