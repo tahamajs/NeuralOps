@@ -25,6 +25,10 @@ class UniversalAttentionWrapper(nn.Module):
     def forward(self, *args: Any, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         # 1. Extract hidden states / input tensor
         hidden_states: Optional[torch.Tensor] = None
+        if len(args) > 0 and isinstance(args[0], tuple):
+            # Unwrap tuple-wrapped hidden_states (e.g. BERT layer output passed through).
+            # The first element of the tuple is always the hidden tensor.
+            args = (args[0][0],) + args[1:]
         if len(args) > 0 and isinstance(args[0], torch.Tensor):
             hidden_states = args[0]
             args = args[1:]
