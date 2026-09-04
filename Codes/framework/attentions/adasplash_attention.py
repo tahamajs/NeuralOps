@@ -32,10 +32,22 @@ def entmax_bisect(
     When $\alpha = 1.0$, falls back to standard softmax.
     Includes softmax fallback when support is empty or ill-conditioned.
     """
+    device = scores.device
+    dtype = scores.dtype
+    neg_inf_val = torch.tensor(-10000.0, device=device, dtype=dtype)
+
+    # Ensure all scores are finite before processing to prevent NaNs
+    scores = torch.where(torch.isfinite(scores), scores, neg_inf_val)
+
     if abs(alpha - 1.0) < 1e-4:
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask, -10000.0)
-        return torch.nan_to_num(F.softmax(scores.float(), dim=dim), nan=0.0).to(scores.dtype)
+        scores_clean = torch.where(torch.isfinite(scores), scores, neg_inf_val)
+        sf = torch.nan_to_num(F.softmax(scores_clean.float(), dim=dim), nan=0.0).to(dtype)
+        if valid_mask is not None:
+            sf = sf.masked_fill(~valid_mask, 0.0)
+        sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
+        return (sf / sf_denom).to(dtype)
 
     alpha_minus_1 = max(1e-4, alpha - 1.0)
     inv_alpha_minus_1 = 1.0 / alpha_minus_1
@@ -79,14 +91,13 @@ def entmax_bisect(
     denom = p.sum(dim=dim, keepdim=True)
 
     # Softmax fallback for numerical stabilization when support is empty or ill-conditioned
+    scores_for_sm = scores.masked_fill(~valid_mask, -10000.0) if valid_mask is not None else scores
+    scores_for_sm = torch.where(torch.isfinite(scores_for_sm), scores_for_sm, neg_inf_val)
+    sf = torch.nan_to_num(F.softmax(scores_for_sm.float(), dim=dim), nan=0.0).to(dtype)
     if valid_mask is not None:
-        scores_for_sm = scores.masked_fill(~valid_mask, -10000.0)
-        sf = torch.nan_to_num(F.softmax(scores_for_sm.float(), dim=dim), nan=0.0).to(scores.dtype)
         sf = sf.masked_fill(~valid_mask, 0.0)
-        sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
-        sf = sf / sf_denom
-    else:
-        sf = torch.nan_to_num(F.softmax(scores.float(), dim=dim), nan=0.0).to(scores.dtype)
+    sf_denom = sf.sum(dim=dim, keepdim=True).clamp(min=1e-9)
+    sf = sf / sf_denom
 
     is_empty = (denom < 1e-7) | torch.isnan(denom)
     p_normalized = torch.nan_to_num(p / denom.clamp(min=1e-9), nan=0.0)
@@ -232,27 +243,44 @@ class AdaSplashAttention(BaseAttention):
                 pass
 
             if w is None:
-                # 1. GPT-2 Fused c_attn Conv1D
-                if hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
+                # 1. Output projection checks first (RoBERTa/BERT outer, GPT-2, DistilBERT, etc.)
+                if proj == "o":
+                    if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                        mod = src.output.dense
+                        w = mod.weight
+                        b = getattr(mod, "bias", None)
+                    elif hasattr(src, "dense"):
+                        mod = src.dense
+                        w = mod.weight
+                        b = getattr(mod, "bias", None)
+                    elif hasattr(src, "c_proj"):
+                        w = src.c_proj.weight.T
+                        b = getattr(src.c_proj, "bias", None)
+                    elif hasattr(src, "out_lin"):
+                        mod = src.out_lin
+                        w = mod.weight
+                        b = getattr(mod, "bias", None)
+                    elif hasattr(src, "o_proj"):
+                        mod = src.o_proj
+                        w = mod.weight
+                        b = getattr(mod, "bias", None)
+                    elif hasattr(src, "wo"):
+                        mod = src.wo
+                        w = mod.weight
+                        b = getattr(mod, "bias", None)
+                # 2. GPT-2 Fused c_attn Conv1D for Q, K, V
+                elif hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
                     fused_w = src.c_attn.weight.T  # [3 * D, D]
                     fused_b = getattr(src.c_attn, "bias", None)
                     split_size = fused_w.size(0) // 3
                     idx = {"q": 0, "k": 1, "v": 2}[proj]
                     w = fused_w[idx * split_size : (idx + 1) * split_size, :]
                     b = fused_b[idx * split_size : (idx + 1) * split_size] if fused_b is not None else None
-                elif hasattr(src, "c_proj") and proj == "o":
-                    w = src.c_proj.weight.T
-                    b = getattr(src.c_proj, "bias", None)
-                # 2. RoBERTa / BERT nested self-attention
-                elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+                # 3. RoBERTa / BERT nested self-attention strictly for Q, K, V
+                elif proj in ["q", "k", "v"] and hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
                     s = getattr(src, "self")
                     name_map = {"q": "query", "k": "key", "v": "value"}
-                    if proj in name_map:
-                        mod = getattr(s, name_map[proj])
-                        w = mod.weight
-                        b = getattr(mod, "bias", None)
-                elif hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and proj == "o":
-                    mod = src.output.dense
+                    mod = getattr(s, name_map[proj])
                     w = mod.weight
                     b = getattr(mod, "bias", None)
                 elif hasattr(src, "query") and proj == "q":
@@ -264,7 +292,7 @@ class AdaSplashAttention(BaseAttention):
                 elif hasattr(src, "value") and proj == "v":
                     w = src.value.weight
                     b = getattr(src.value, "bias", None)
-                # 3. Modern Decoders (Qwen3.5, LLaMA, Mistral)
+                # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral)
                 elif hasattr(src, f"{proj}_proj"):
                     mod = getattr(src, f"{proj}_proj")
                     w = mod.weight
@@ -379,18 +407,17 @@ class AdaSplashAttention(BaseAttention):
         scale = Dh ** -0.5
         logits = torch.matmul(q, k.transpose(-2, -1)) * scale  # [B, H, L_q, L_k]
 
-        # Handle T5 position bias
+        # Handle attention mask (padding mask) and T5 relative position bias
         position_bias = kwargs.get("position_bias", None)
         if position_bias is None and self.has_relative_attention_bias:
             position_bias = self.compute_bias(L_q, L_k, device=device)
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
-        if position_bias is not None:
-            if mask is not None and mask.dim() == 4:
-                position_bias = position_bias + mask.to(logits.dtype)
-            logits = logits + position_bias.to(logits.dtype)
-        elif mask is not None:
+        if mask is not None:
             logits = apply_attention_mask(logits, mask)
+
+        if position_bias is not None:
+            logits = logits + position_bias.to(logits.dtype)
 
         # Explicit Causal Masking for autoregressive decoders
         if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
@@ -398,20 +425,20 @@ class AdaSplashAttention(BaseAttention):
             logits = logits.masked_fill(~causal_tril, -10000.0)
 
         # Apply Local Splash Radius Masking
-        # Retains local tokens within window radius W while allowing global sparse entmax
+        # Retains local tokens within window radius W while heavily penalizing tokens outside the window
         if self.splash_radius > 0 and not is_cross_attention and L_k > self.splash_radius:
             q_idx = torch.arange(L_q, device=device).unsqueeze(1)
             k_idx = torch.arange(L_k, device=device).unsqueeze(0)
-            if self.is_decoder or getattr(self.config, "is_decoder", False):
+            if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
                 dist = q_idx - k_idx
                 splash_local = (dist >= 0) & (dist <= self.splash_radius)
             else:
                 dist = torch.abs(q_idx - k_idx)
                 splash_local = (dist <= self.splash_radius)
 
-            # Ensure local splash tokens maintain adequate activation support
-            logits_splash = logits.masked_fill(splash_local.unsqueeze(0).unsqueeze(0), 0.0)
-            logits = torch.maximum(logits, logits_splash)
+            # For tokens outside the splash window, add large negative bias (-10000.0)
+            # so they are excluded from entmax support, while local tokens retain original scores
+            logits = logits.masked_fill(~splash_local.unsqueeze(0).unsqueeze(0), -10000.0)
 
         # Apply α-entmax or softmax
         if not is_cross_attention:
@@ -427,12 +454,19 @@ class AdaSplashAttention(BaseAttention):
 
         attn = self.dropout(attn)
 
-        # Reshape head_mask safely to avoid broadcasting failures
+        # Reshape head_mask safely across all common dimensions
         if head_mask is not None:
             if head_mask.dim() == 1:
+                # [num_heads] -> [1, num_heads, 1, 1]
                 head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                # [batch, num_heads] -> [batch, num_heads, 1, 1]
+                head_mask = head_mask.view(-1, self.num_heads, 1, 1)
+            elif head_mask.dim() == 3:
+                # [batch, num_heads, seq_len] -> [batch, num_heads, seq_len, 1]
+                head_mask = head_mask.unsqueeze(-1)
+            elif head_mask.dim() == 4:
+                pass
             attn = attn * head_mask
 
         # Compute context
@@ -461,6 +495,8 @@ def inject_adasplash(
     old_attn: Optional[nn.Module],
     **kwargs: Any,
 ) -> Optional[AdaSplashAttention]:
+    if old_attn is None:
+        return None
     try:
         alpha = getattr(comp_config, "alpha", 1.5)
         splash_radius = getattr(comp_config, "splash_radius", 32)
@@ -472,5 +508,5 @@ def inject_adasplash(
         )
         layer.attention = test_module
         return test_module
-    except RuntimeError:
+    except (RuntimeError, Exception):
         return None
