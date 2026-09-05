@@ -331,7 +331,8 @@ class CoMeCompressor(BaseCompressor):
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Applies layer shedding with learnable inter-layer interpolation adapters."""
-        from framework.utils.compat import should_compress_linear, replace_module
+        from framework.utils.compat import should_compress_linear
+        from framework.core.model_utils import replace_module
 
         parent, attr_name, layers = self._find_layer_container()
         bridges_inserted = 0

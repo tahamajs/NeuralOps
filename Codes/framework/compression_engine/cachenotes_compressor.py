@@ -35,7 +35,8 @@ from framework.compression_engine.pruning_utils import (
     get_calibration_tensors,
     recalibrate_layernorms,
 )
-from framework.utils.compat import should_compress_linear, replace_module
+from framework.utils.compat import should_compress_linear
+from framework.core.model_utils import replace_module
 
 logger = logging.getLogger(__name__)
 
