@@ -128,7 +128,7 @@ The hardened `ASVDAttention` module was evaluated in an end-to-end benchmark acr
 | **DistilBERT** | `bert` (Bidirectional) | 66.4M | **`PASS`** | 91.06% | **90.37%** | 200 | 59.1s |
 | **RoBERTa-base** | `roberta` (Nested Encoder) | 124.6M | **`PASS`** | 62.61% | **89.68%** | 200 | 126.5s |
 | **GPT-2** | `gpt` (Autoregressive Causal) | 124.4M | `PASS_LOW` | 81.31% | **54.36%** | 200 | 153.7s |
-| **Qwen3.5-0.8B** | `qwen3_5` (Hybrid DeltaNet/GQA) | 834.0M | `RUNNING` | 67.89% | In Progress (RoPE Resolved) | 200 | — |
+| **Qwen3.5-0.8B** | `qwen3_5` (Hybrid DeltaNet/GQA) | 834.0M | **`PASS`** | 67.55% | **62.27%** | 200 | 1385.3s |
 
 ### 4.2 Key Profiling & Efficiency Metrics
 - **Parameter Compression**: Attention projection footprint reduced from $4 \times 768^2 = 2.36\text{M}$ parameters to $4 \times (2 \times 768 \times 32 + 32) = 197.1\text{k}$ parameters ($91.6\%$ parameter reduction per attention block).
@@ -217,6 +217,8 @@ The hardened `ASVDAttention` module was evaluated in an end-to-end benchmark acr
   q = torch.cat([q_rot, q_pass], dim=-1)
   k = torch.cat([k_rot, k_pass], dim=-1)
   ```
+- **Empirical Validation**:
+  With partial RoPE coordinate resolution and GQA KV replication (`repeat_kv`), Qwen3.5 successfully executed all 200 recovery steps without shape faults, reaching **62.27% PASS** (well exceeding the 56.00% pass threshold and 50.92% majority class baseline) with peak VRAM contained at $1,770.67\text{ MB}$ and throughput of $1,147.2\text{ tokens/sec}$.
 
 ---
 
