@@ -253,15 +253,23 @@ class ExpertChoiceMoEAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        if config is not None:
-            hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-            num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        elif source_attn is not None:
-            out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-            hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
-        else:
+        cfg_obj = getattr(config, "text_config", config) if config is not None else None
+        hidden_size = getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
+        num_heads = getattr(cfg_obj, "num_attention_heads", None) if cfg_obj is not None else None
+
+        if hidden_size is None and source_attn is not None:
+            for cand in ["q_lin", "query", "q_proj", "c_attn", "in_proj_weight", "qkv"]:
+                mod = getattr(source_attn, cand, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    w = mod.weight
+                    hidden_size = w.shape[1] if w.ndim == 2 else None
+                    break
+                elif isinstance(mod, torch.Tensor) and mod.ndim == 2:
+                    hidden_size = mod.shape[1]
+                    break
+        if hidden_size is None:
             hidden_size = kwargs.get("hidden_size", 768)
+        if num_heads is None:
             num_heads = kwargs.get("num_attention_heads", 12)
 
         super().__init__(config, rank)
