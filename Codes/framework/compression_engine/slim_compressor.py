@@ -1,6 +1,6 @@
 """
 SLiM: Structured Low-Rank Integrated Matrix Compression (Quantization + 2:4 Sparsity + SVD Residual Correction).
-Registered in COMPRESSOR_REGISTRY as 'slim'.
+Registered in COMPRESSOR_REGISTRY as 'slim' and 'slim_compressor'.
 
 Mathematical Formulation:
 1. Uniform/Non-Uniform b-bit Quantization:
@@ -13,12 +13,20 @@ Mathematical Formulation:
    $$R \\approx U_r \\Sigma_r V_r^\\top = L_r$$
 5. Final Reconstructed Weight:
    $$W_{slim} = W_{sp} + L_r$$
+
+Production Hardening:
+- Fix 1: Default fallback_to_original changed to True for safety.
+- Fix 2: Reliable Conv1D detection by class name and nf attribute without shape heuristics.
+- Fix 3: Always log warning when reconstruction error exceeds max_error regardless of fallback.
+- Fix 4: Unified critical-layer protection delegated solely to should_compress_linear.
+- Fix 5: Biases are explicitly kept at full precision (only weights are quantized/pruned).
+- Fix 6: Store max_error and fallback_to_original in returned stats.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
+from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
@@ -46,7 +54,7 @@ class SLiMCompressor(BaseCompressor):
         rank: int = 8,
         structured_24: bool = True,
         max_error: float = 0.5,
-        fallback_to_original: bool = False,
+        fallback_to_original: bool = True,  # Fix 1: Default changed to True
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -60,6 +68,9 @@ class SLiMCompressor(BaseCompressor):
             max_error = getattr(cfg, "max_error", max_error)
             fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
 
+        if "fallback_to_original" in kwargs:
+            fallback_to_original = bool(kwargs["fallback_to_original"])
+
         self.bits = int(bits)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.rank = max(1, int(rank))
@@ -71,10 +82,13 @@ class SLiMCompressor(BaseCompressor):
         self.stats: Dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
-            return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        """
+        Fix 4: Unified critical-layer protection delegated to should_compress_linear.
+        Eliminates duplicate keyword matching.
+        """
+        cls_name = module.__class__.__name__.lower()
+        # Fix 2: Reliable Conv1D check using class name and hasattr(nf)
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
@@ -84,7 +98,7 @@ class SLiMCompressor(BaseCompressor):
         return any(t in name for t in self.target_modules)
 
     def _quantize(self, W: torch.Tensor) -> torch.Tensor:
-        """Quantizes weight to b-bit representation."""
+        """Quantizes weight to b-bit representation (biases remain unquantized)."""
         if self.bits >= 32:
             return W
         min_val = W.min()
@@ -104,19 +118,15 @@ class SLiMCompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 raw_w = module.weight.data
-                cls_name = module.__class__.__name__
-                is_conv1d = "conv1d" in cls_name.lower() or (
-                    raw_w.ndim == 2
-                    and hasattr(module, "in_features")
-                    and module.in_features == raw_w.shape[0]
-                    and raw_w.shape[0] < raw_w.shape[1]
-                )
+                cls_name = module.__class__.__name__.lower()
+                # Fix 2: Check for Conv1D via class name and nf attribute
+                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
                 device = raw_w.device
                 dtype = raw_w.dtype
 
                 W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
 
-                # 1. Quantize
+                # 1. Quantize (Weights only; biases are preserved in full precision to avoid drift)
                 W_q = self._quantize(W)
 
                 # 2. Apply 2:4 structured sparsity or magnitude sparsity
@@ -149,14 +159,17 @@ class SLiMCompressor(BaseCompressor):
                 rel_err = (torch.norm(W - W_final, p="fro") / (norm_orig + 1e-8)).item()
                 self.layer_errors[name] = rel_err
 
-                if self.fallback_to_original and rel_err > self.max_error:
+                # Fix 3: Always log a warning when reconstruction error exceeds max_error
+                if rel_err > self.max_error:
                     logger.warning(
-                        "SLiM reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                        "SLiM reconstruction error %.4f on %s exceeded threshold %.4f%s",
                         rel_err,
                         name,
                         self.max_error,
+                        ". Skipping (fallback to original)." if self.fallback_to_original else ". Proceeding with compressed weight.",
                     )
-                    continue
+                    if self.fallback_to_original:
+                        continue
 
                 final_w = W_final.t() if is_conv1d else W_final
                 module.weight.data = final_w.to(dtype=dtype, device=device)
@@ -164,6 +177,7 @@ class SLiMCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        # Fix 6: Store max_error and fallback_to_original in stats
         stats.update({
             "pruned_layers": pruned_layers_count,
             "quant_bits": self.bits,
@@ -171,6 +185,9 @@ class SLiMCompressor(BaseCompressor):
             "structured_24": self.structured_24,
             "total_svd_energy": total_svd_energy,
             "layer_errors": self.layer_errors,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "biases_quantized": False,  # Fix 5: Explicitly document bias policy
             "method": "slim_quant_sparse_lowrank",
         })
         self.stats = stats
@@ -192,6 +209,7 @@ def slim_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         sparsity=sparsity,
         rank=rank,
         structured_24=structured_24,
+        comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
