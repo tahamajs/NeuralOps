@@ -75,6 +75,12 @@ class CoMeBridgedLayer(nn.Module):
         except AttributeError:
             return getattr(self.layer, name)
 
+    def __getitem__(self, key: Any) -> Any:
+        return self.layer[key]
+
+    def __contains__(self, key: Any) -> bool:
+        return key in self.layer
+
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         out = self.layer(*args, **kwargs)
         if self.bridge is not None:
