@@ -93,11 +93,20 @@ def get_dynamic_compression_rank(
     For Qwen3.5: rank = min(256, max(128, min(in_features, out_features) // 4))
     For other families: preserves default fixed/configured rank.
     """
-    comp_config = comp_config or {}
-    if "qwen3_5_rank" in comp_config and comp_config["qwen3_5_rank"] is not None:
-        return int(comp_config["qwen3_5_rank"])
-    if "dynamic_rank" in comp_config and comp_config["dynamic_rank"] is not None:
-        return int(comp_config["dynamic_rank"])
+    if isinstance(comp_config, dict):
+        if "qwen3_5_rank" in comp_config and comp_config["qwen3_5_rank"] is not None:
+            return int(comp_config["qwen3_5_rank"])
+        if "dynamic_rank" in comp_config and comp_config["dynamic_rank"] is not None:
+            return int(comp_config["dynamic_rank"])
+        if "rank" in comp_config and comp_config["rank"] is not None:
+            default_rank = int(comp_config["rank"])
+    elif comp_config is not None:
+        if hasattr(comp_config, "qwen3_5_rank") and getattr(comp_config, "qwen3_5_rank") is not None:
+            return int(getattr(comp_config, "qwen3_5_rank"))
+        if hasattr(comp_config, "dynamic_rank") and getattr(comp_config, "dynamic_rank") is not None:
+            return int(getattr(comp_config, "dynamic_rank"))
+        if hasattr(comp_config, "rank") and getattr(comp_config, "rank") is not None:
+            default_rank = int(getattr(comp_config, "rank"))
 
     fam = model_or_family if isinstance(model_or_family, str) else (detect_family(model_or_family) if model_or_family is not None else "unknown")
     if fam == "qwen3_5":
