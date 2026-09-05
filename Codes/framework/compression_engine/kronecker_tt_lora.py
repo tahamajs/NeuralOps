@@ -8,8 +8,7 @@ orthogonal initialization with spectral normalization, symmetric LoRA residual b
 and shape padding.
 """
 
-from __future__ import annotations
-
+import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -18,7 +17,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _init_orthogonal_spectral(shape: Tuple[int, ...], shape_2d: Tuple[int, int], device: torch.device, dtype: torch.dtype) -> torch.Tensor:
@@ -421,7 +423,15 @@ class KroneckerTTLoRACompressor(BaseCompressor):
                 try:
                     self.model(dummy)
                 except Exception:
-                    self.model(dummy.float())
+                    first_linear = next(
+                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, KroneckerTTLoRALayer))),
+                        None,
+                    )
+                    in_dim = getattr(first_linear, "in_features", 8)
+                    try:
+                        self.model(torch.randn(1, in_dim, device=dev))
+                    except Exception:
+                        self.model(torch.randn(1, 8, in_dim, device=dev))
         except Exception as e:
             logger.warning("Kronecker-TT-LoRA post-compression forward check warning: %s", e)
             forward_check_success = False
