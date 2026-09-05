@@ -199,6 +199,18 @@ class REAPMoE(nn.Module):
             )
 
         self.experts = nn.ModuleList([expert_layer() for _ in range(n_experts)])
+        # Zero-initialize final layer parameters so MoE output is exactly 0 at step 0
+        for exp in self.experts:
+            final_layer = exp[-1]
+            if isinstance(final_layer, SVDLinear):
+                nn.init.zeros_(final_layer.U)
+                nn.init.zeros_(final_layer.S)
+                if final_layer.bias is not None:
+                    nn.init.zeros_(final_layer.bias)
+            elif isinstance(final_layer, nn.Linear):
+                nn.init.zeros_(final_layer.weight)
+                if final_layer.bias is not None:
+                    nn.init.zeros_(final_layer.bias)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, L, D = x.shape
@@ -243,6 +255,13 @@ class REAPMoEAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None)
 
         self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        if (config is None or not hasattr(config, "hidden_size")) and "hidden_size" not in kwargs and pretrained_attn is not None:
+            for cand in ["q_lin", "query", "q_proj", "c_attn"]:
+                mod = getattr(pretrained_attn, cand, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    w = mod.weight
+                    self.dim = w.shape[1] if w.ndim == 2 else self.dim
+                    break
         self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads = getattr(
             config,
@@ -409,14 +428,15 @@ class REAPMoEAttention(BaseAttention):
                         if target_mod.bias is not None:
                             nn.init.zeros_(target_mod.bias)
                         continue
-                    else:
-                        raise RuntimeError(f"Missing required weights for {proj_key}")
+                src_norm = torch.linalg.norm(w.float()).item()
+                if src_norm < 1e-4:
+                    raise RuntimeError(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
                 elif w.t().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t())
-                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0 and w.shape[1] == target_mod.weight.shape[1]:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -520,12 +540,51 @@ class REAPMoEAttention(BaseAttention):
         return out, (probs if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("reap_moe_inject")
+@ATTENTION_REGISTRY.register("inject_reap_moe")
 def inject_reap_moe(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> Optional[REAPMoEAttention]:
+    """Single-layer injection function matching framework convention.
+
+    Creates and returns a new REAPMoEAttention module initialized from old_attn.
+    The framework assigns the returned module to layer.attention / layer.self.
+    """
+    if old_attn is None and layer is not None:
+        for attr in ["attention", "self", "attn", "self_attn"]:
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if hasattr(cand, "query") or hasattr(cand, "q_proj") or hasattr(cand, "q_lin") or hasattr(cand, "c_attn"):
+                    old_attn = cand
+                    break
+
+    if old_attn is None:
+        return None
+
+    try:
+        new_attn = REAPMoEAttention(
+            config=model_config,
+            pretrained_attn=old_attn,
+            comp_config=comp_config,
+            **kwargs,
+        )
+        return new_attn
+    except Exception:
+        return None
+
+
+def inject_reap_moe_model(
     model: nn.Module,
     target_layer_idx: Optional[int] = None,
     **kwargs: Any,
 ) -> Optional[nn.Module]:
-    """Safely replace attention in model with REAPMoEAttention."""
+    """Safely replace attention modules in an entire model with REAPMoEAttention."""
     try:
         replaced = 0
         for name, module in model.named_modules():
@@ -550,3 +609,4 @@ def inject_reap_moe(
         return model if replaced > 0 else None
     except Exception:
         return None
+
