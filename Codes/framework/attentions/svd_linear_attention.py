@@ -91,7 +91,7 @@ class SVDLinear(nn.Module):
         out_features: int,
         rank: int,
         bias: bool = True,
-        freeze_svd: bool = True,
+        freeze_svd: bool = False,
         lora_rank: Optional[int] = 16,
         lora_alpha: float = 32.0,
         use_fused_kernel: bool = False,
@@ -179,6 +179,7 @@ class SVDLinear(nn.Module):
                 norm_weight=self.norm_weight if self.use_rms_norm else None,
                 bias=base_bias,
                 eps=self.eps,
+                use_rms_norm=self.use_rms_norm,
             )
         else:
             Vx = F.linear(x, self.V)
@@ -223,7 +224,7 @@ class SVDLinearAttention(BaseAttention):
         old_attn: Optional[nn.Module] = None,
         rank: Optional[int] = None,
         mode: str = "exact",
-        freeze_svd: bool = True,
+        freeze_svd: bool = False,
         lora_rank: Optional[int] = 16,
         lora_alpha: float = 32.0,
         is_decoder: Optional[bool] = None,
@@ -401,8 +402,21 @@ class SVDLinearAttention(BaseAttention):
             else:
                 src = old_attn
 
+            # Pattern 0: PyTorch MultiheadAttention (in_proj_weight, in_proj_bias)
+            if hasattr(src, "in_proj_weight") and src.in_proj_weight is not None:
+                in_proj_w = src.in_proj_weight.detach()
+                in_proj_b = src.in_proj_bias.detach() if getattr(src, "in_proj_bias", None) is not None else None
+                chunks_w = in_proj_w.chunk(3, dim=0)
+                w_q, w_k, w_v = chunks_w[0], chunks_w[1], chunks_w[2]
+                if in_proj_b is not None:
+                    chunks_b = in_proj_b.chunk(3, dim=0)
+                    b_q, b_k, b_v = chunks_b[0], chunks_b[1], chunks_b[2]
+                if hasattr(src, "out_proj") and hasattr(src.out_proj, "weight"):
+                    w_o = src.out_proj.weight.detach()
+                    b_o = src.out_proj.bias.detach() if src.out_proj.bias is not None else None
+
             # Pattern 1: GPT-2 Fused c_attn
-            if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
+            elif hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
@@ -610,9 +624,12 @@ class SVDLinearAttention(BaseAttention):
             den = aff.sum(dim=-1, keepdim=True) + self.eps  # [B, H, N, 1]
             context = (num / den).to(q.dtype)
 
-            # Final state approximation
-            S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
-            Z = torch.zeros(B, H, D_k, 1, device=q.device, dtype=torch.float32)
+            # Exact final recurrent state
+            log_w_final = log_gamma[:, :, -1:] - log_gamma  # [B, H, N]
+            w_final = torch.exp(torch.clamp(log_w_final, max=0.0)).unsqueeze(-1)  # [B, H, N, 1]
+            phi_k_w = phi_k * w_final  # [B, H, N, D_k]
+            S = torch.matmul(phi_k_w.transpose(-1, -2), v_f)  # [B, H, D_k, D_v]
+            Z = phi_k_w.sum(dim=-2, keepdim=True).transpose(-1, -2)  # [B, H, D_k, 1]
             return context, (S, Z)
 
         # Sequential associative memory recurrence loop
