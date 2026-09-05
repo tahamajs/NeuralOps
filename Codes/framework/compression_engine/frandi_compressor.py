@@ -191,7 +191,6 @@ class FRanDILinear(nn.Module):
         return len(S)
 
 
-@COMPRESSOR_REGISTRY.register("frandi")
 @COMPRESSOR_REGISTRY.register("frandi_compressor")
 class FRanDICompressor(BaseCompressor):
     """
@@ -451,6 +450,7 @@ class FRanDICompressor(BaseCompressor):
         return layer, err
 
 
+@COMPRESSOR_REGISTRY.register("frandi")
 @COMPRESSOR_REGISTRY.register("frandi_factory")
 @COMPRESSOR_REGISTRY.register("frandi_compressor_factory")
 def frandi_factory(
