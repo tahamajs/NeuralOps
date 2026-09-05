@@ -125,10 +125,18 @@ class A3FactorizedLinear(nn.Module):
         is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
         in_f = getattr(linear, "in_features", None)
         out_f = getattr(linear, "out_features", None)
+        bias = getattr(linear, "bias", None)
+
+        if hasattr(linear, "nf"):
+            out_f = linear.nf
+            in_f = getattr(linear, "nx", None)
+
         if in_f is None or out_f is None:
             w = getattr(linear, "weight", None)
             if w is not None and w.ndim == 2:
-                if is_conv1d:
+                if bias is not None and bias.ndim == 1 and bias.shape[0] == w.shape[1] and bias.shape[0] != w.shape[0]:
+                    in_f, out_f = w.shape[0], w.shape[1]
+                elif is_conv1d:
                     in_f, out_f = w.shape[0], w.shape[1]
                 else:
                     out_f, in_f = w.shape[0], w.shape[1]
@@ -139,15 +147,16 @@ class A3FactorizedLinear(nn.Module):
             in_features=in_f,
             out_features=out_f,
             rank=rank,
-            bias=getattr(linear, "bias", None) is not None,
+            bias=bias is not None,
             dtype=linear.weight.dtype,
             device=linear.weight.device,
         )
         if U_factor is not None and V_factor is not None:
             layer.U.data.copy_(U_factor.to(device=layer.U.device, dtype=layer.U.dtype))
             layer.V.data.copy_(V_factor.to(device=layer.V.device, dtype=layer.V.dtype))
-        if getattr(linear, "bias", None) is not None:
-            layer.bias.data.copy_(linear.bias.data.to(device=layer.bias.device, dtype=layer.bias.dtype))
+        if bias is not None and layer.bias is not None:
+            if layer.bias.shape == bias.shape:
+                layer.bias.data.copy_(bias.data.to(device=layer.bias.device, dtype=layer.bias.dtype))
         return layer
 
 
@@ -344,8 +353,17 @@ class A3Compressor(BaseCompressor):
         device = module.weight.device
         dtype = module.weight.dtype
         raw_w = module.weight.data.float()
+        bias = getattr(module, "bias", None)
 
-        if is_conv1d:
+        if hasattr(module, "nf"):
+            out_f = module.nf
+            in_f = getattr(module, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
+            W = raw_w.t() if raw_w.shape == (in_f, out_f) else raw_w
+        elif bias is not None and bias.ndim == 1 and bias.shape[0] == raw_w.shape[1] and bias.shape[0] != raw_w.shape[0]:
+            W = raw_w.t()
+            out_f = bias.shape[0]
+            in_f = raw_w.shape[0]
+        elif is_conv1d:
             # HuggingFace Conv1D weights are [in_features, out_features]
             W = raw_w.t()
             in_f = W.shape[1]
@@ -457,8 +475,16 @@ class A3Compressor(BaseCompressor):
         )
         factorized_layer.U.data.copy_(U_final.to(dtype=dtype, device=device))
         factorized_layer.V.data.copy_(V_final.to(dtype=dtype, device=device))
-        if module.bias is not None:
-            factorized_layer.bias.data.copy_(module.bias.data.to(dtype=dtype, device=device))
+        if module.bias is not None and factorized_layer.bias is not None:
+            if factorized_layer.bias.shape == module.bias.shape:
+                factorized_layer.bias.data.copy_(module.bias.data.to(dtype=dtype, device=device))
+            else:
+                logger.warning(
+                    "A3 bias shape mismatch on %s: expected %s, got %s. Skipping bias copy.",
+                    name,
+                    factorized_layer.bias.shape,
+                    module.bias.shape,
+                )
 
         factorized_layer.reconstruction_error = best_err
         return factorized_layer, best_err, best_r
