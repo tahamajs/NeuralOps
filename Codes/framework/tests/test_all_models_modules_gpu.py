@@ -216,21 +216,8 @@ def run_single_module_test(
 
     # 3. Injection / Compression Step
     try:
-        if is_attn:
-            inject_attention(candidate, module_name, copy_weights=True)
-            comp_cls = COMPRESSOR_REGISTRY.get(module_name)
-            if hasattr(comp_cls, "compress") and not isinstance(comp_cls, type):
-                candidate, _ = comp_cls.compress(candidate)
-            elif callable(comp_cls):
-                try:
-                    res = comp_cls(candidate)
-                    candidate = res[0] if isinstance(res, tuple) else res
-                except TypeError:
-                    inst = comp_cls()
-                    if hasattr(inst, "compress"):
-                        candidate, _ = inst.compress(candidate)
-                    else:
-                        candidate = inst(candidate)
+        from framework.eval_all_models_datasets import apply_module_to_model
+        candidate, _ = apply_module_to_model(candidate, module_name, result["type"], rank=16, device=device)
     except Exception as e:
         result["status"] = "FAIL_INJECTION"
         result["error"] = f"injection error: {str(e)[:300]}"

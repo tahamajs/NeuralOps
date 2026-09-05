@@ -40,9 +40,7 @@ def make_gpu_batch(family: str, batch_size: int = 4, seq_len: int = 32, device: 
     }
     if family not in {"t5", "gpt2"}:
         b["token_type_ids"] = torch.zeros(batch_size, seq_len, dtype=torch.long, device=dev)
-    if family == "gpt2":
-        b["labels"] = torch.randint(100, vocab_size - 100, (batch_size, seq_len), device=dev)
-    elif family != "t5":
+    if family != "t5":
         b["labels"] = torch.zeros(batch_size, dtype=torch.long, device=dev)
     return b
 
@@ -70,14 +68,14 @@ def test_forward_pass_on_cuda(family: str):
         family, num_labels=2, hidden_size=64, num_heads=4, num_layers=1, device=device
     )
     batch = make_gpu_batch(family, batch_size=4, seq_len=32, device="cuda:0")
-    batch = _filter_batch(batch, family, model)
+    batch = _filter_batch(batch, model)
 
     model.eval()
     with torch.no_grad():
         out = model(**batch)
 
     assert out is not None
-    logits, loss = _extract_logits_and_loss(out, num_labels=2, labels=batch.get("labels"))
+    logits, loss = _extract_logits_and_loss(out)
     if logits is not None:
         assert logits.is_cuda is True, "Output logits not on CUDA"
     elif loss is not None:
@@ -100,14 +98,14 @@ def test_mixed_precision_autocast(module_name: str, precision_dtype: torch.dtype
     model, _ = apply_module_to_model(model, module_name, "attention", rank=8, device=device)
 
     batch = make_gpu_batch("bert", batch_size=4, seq_len=32, device="cuda:0")
-    batch = _filter_batch(batch, "bert", model)
+    batch = _filter_batch(batch, model)
 
     model.eval()
     with torch.no_grad():
         with torch.autocast(device_type="cuda", dtype=precision_dtype):
             out = model(**batch)
 
-    logits, loss = _extract_logits_and_loss(out, num_labels=2, labels=batch.get("labels"))
+    logits, loss = _extract_logits_and_loss(out)
     target_tensor = logits if logits is not None else loss
     assert target_tensor is not None
     assert not torch.isnan(target_tensor).any(), f"NaN detected under {precision_dtype} in {module_name}"
@@ -150,14 +148,14 @@ def test_compression_engine_gpu_numerical_stability(comp_name: str):
     compressed_model, ratio = apply_module_to_model(model, comp_name, "compressor", rank=8, device=device)
 
     batch = make_gpu_batch("bert", batch_size=4, seq_len=32, device="cuda:0")
-    batch = _filter_batch(batch, "bert", compressed_model)
+    batch = _filter_batch(batch, compressed_model)
 
     compressed_model.eval()
     with torch.no_grad():
         with torch.autocast(device_type="cuda", dtype=torch.float16):
             out = compressed_model(**batch)
 
-    logits, loss = _extract_logits_and_loss(out, num_labels=2, labels=batch.get("labels"))
+    logits, loss = _extract_logits_and_loss(out)
     target_tensor = logits if logits is not None else loss
     assert target_tensor is not None
     assert not torch.isnan(target_tensor).any(), f"NaN detected after {comp_name} compression on GPU"
