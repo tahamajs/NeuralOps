@@ -207,6 +207,7 @@ class A3Compressor(BaseCompressor):
         self.stats: Dict[str, Any] = {}
         self.compressed_layers: List[str] = []
         self.skipped_layers: List[str] = []
+        self.activations_cleared: bool = False
 
     def _collect_activations_and_fisher(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
         """
