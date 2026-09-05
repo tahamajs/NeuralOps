@@ -82,7 +82,10 @@ class LoRALinear(nn.Module):
         """In-place merge LoRA delta weight into the base linear layer."""
         if self.r > 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
             delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
-            if self.base_layer.weight.shape == delta_w.t().shape:
+            is_conv1d = "conv1d" in self.base_layer.__class__.__name__.lower() or (
+                not isinstance(self.base_layer, nn.Linear) and self.base_layer.weight.shape == (self.in_features, self.out_features)
+            )
+            if is_conv1d:
                 delta_w = delta_w.t()
             self.base_layer.weight.data.add_(delta_w.to(self.base_layer.weight.dtype))
             self.merged = True
@@ -91,7 +94,10 @@ class LoRALinear(nn.Module):
         """Subtract LoRA delta weight to revert the base linear layer to unmerged state."""
         if self.r > 0 and self.merged and self.lora_A is not None and self.lora_B is not None:
             delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
-            if self.base_layer.weight.shape == delta_w.t().shape:
+            is_conv1d = "conv1d" in self.base_layer.__class__.__name__.lower() or (
+                not isinstance(self.base_layer, nn.Linear) and self.base_layer.weight.shape == (self.in_features, self.out_features)
+            )
+            if is_conv1d:
                 delta_w = delta_w.t()
             self.base_layer.weight.data.sub_(delta_w.to(self.base_layer.weight.dtype))
             self.merged = False
