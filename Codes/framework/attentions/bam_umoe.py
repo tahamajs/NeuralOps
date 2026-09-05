@@ -326,17 +326,9 @@ class BAMUMoEBlock(BaseAttention):
         self.v_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_lin = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # MoE Modulation Branches
+        # MoE Value Refinement Modulation Branch (applies to self-attention values)
         self.qkv_moe = UnifiedMoE(self.dim, num_experts=num_experts, top_k=top_k, output_dim=self.all_head_size)
-        self.ffn_moe = UnifiedMoE(self.dim, num_experts=num_experts, top_k=top_k, output_dim=self.dim)
 
-        self.norm1 = nn.LayerNorm(self.dim)
-        self.norm2 = nn.LayerNorm(self.dim)
-        if self.freeze_base:
-            self.norm1.weight.requires_grad = False
-            self.norm1.bias.requires_grad = False
-            self.norm2.weight.requires_grad = False
-            self.norm2.bias.requires_grad = False
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
@@ -491,7 +483,7 @@ class BAMUMoEBlock(BaseAttention):
                             extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
                             break
 
-        # 5. Fallback via UniversalAdapter
+        # 5. Fallback via UniversalAdapter if any projections were missing
         missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
@@ -502,12 +494,17 @@ class BAMUMoEBlock(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception:
+                # Log or preserve warning, but proceed to strict validation check
                 pass
 
         # Verify all mandatory projections were extracted
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(f"BAMUMoEBlock copy_weights failed: missing projections {missing_after} in {pretrained_attn}")
+            raise RuntimeError(
+                f"BAMUMoEBlock copy_weights failed: missing mandatory projections {missing_after} "
+                f"from module {pretrained_attn.__class__.__name__} ({pretrained_attn}). "
+                f"Ensure the pretrained layer exposes valid linear or fused projections."
+            )
 
         # 6. Copy weights into target LoRALinear layers with strict dimension safety
         target_map = {
@@ -530,9 +527,6 @@ class BAMUMoEBlock(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-
-                out_d = min(target_mod.weight.size(0), w.size(0))
-                in_d = min(target_mod.weight.size(1), w.size(1))
 
                 # Handle transposed orientation if necessary (only if shape does not match already)
                 if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
@@ -602,7 +596,11 @@ class BAMUMoEBlock(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         # 4. MoE Value Refinement
-        # When self-attention, refine V with qkv_moe output (at step 0, qkv_moe outputs 0.0)
+        # Note on MoE Scope: qkv_moe is intentionally applied ONLY to self-attention (not is_cross_attention).
+        # In cross-attention (encoder-decoder models like T5/BART), the key and value representations
+        # are projected from encoder_hidden_states across different semantic spaces. Pretrained
+        # cross-attention value projections are highly calibrated; injecting unaligned MoE value
+        # refinement there would disrupt cross-attention alignment and destabilize sequence generation.
         if not is_cross_attention:
             moe_delta_v = self.qkv_moe(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
             v = v + 0.1 * moe_delta_v
@@ -656,8 +654,8 @@ class BAMUMoEBlock(BaseAttention):
         else:
             final_out = self.out_lin(attn_out)
 
-        # Accumulate auxiliary load-balancing loss
-        self.aux_loss = self.qkv_moe.aux_loss + (self.ffn_moe.aux_loss if hasattr(self, "ffn_moe") else torch.tensor(0.0))
+        # Accumulate auxiliary load-balancing loss from active MoE branches
+        self.aux_loss = self.qkv_moe.aux_loss
 
         return final_out, (probs if output_attentions else None)
 
