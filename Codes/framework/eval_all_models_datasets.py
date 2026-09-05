@@ -521,12 +521,23 @@ def apply_module_to_model(
                                 try:
                                     res = fn()
                                     if isinstance(res, tuple) and len(res) > 0 and isinstance(res[0], nn.Module):
+                                        if len(res) > 1 and isinstance(res[1], dict):
+                                            try:
+                                                res[0].compression_stats = res[1]
+                                            except Exception:
+                                                pass
                                         return res[0]
                                     if isinstance(res, nn.Module):
                                         return res
                                 except (TypeError, ValueError, RuntimeError):
                                     continue
-                return getattr(instance, "model", None)
+                m = getattr(instance, "model", None)
+                if m is not None and hasattr(instance, "get_compression_stats"):
+                    try:
+                        m.compression_stats = instance.get_compression_stats()
+                    except Exception:
+                        pass
+                return m
 
             # Strategy 1: Instantiate with model passed to constructor
             candidate = None
