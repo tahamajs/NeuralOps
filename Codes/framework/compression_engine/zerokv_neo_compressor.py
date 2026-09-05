@@ -1,9 +1,17 @@
 """
 ZeroKV-Neo: L2-norm based KV cache eviction with attention sink and heavy-hitter preservation.
 Registered as 'zerokv_neo'.
+Production-hardened with:
+- Bounded O(1) cache memory management with safe dimension handling
+- Relative Frobenius error validation on pruned weights
+- Adaptive keep_ratio retry loop
+- Conv1D support (GPT-2)
+- Critical layer protection (classifier, score, lm_head, pooler, embedding)
+- Detailed per-layer error stats logging
 """
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
@@ -11,6 +19,8 @@ import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
+
+logger = logging.getLogger(__name__)
 
 
 class ZeroKVNeoCache:
@@ -49,7 +59,6 @@ class ZeroKVNeoCache:
         Append new KV tokens and evict non-essential tokens when exceeding capacity.
         Shapes: (B, H, N, D).
         """
-        orig_shape = new_k.shape
         k_4d = new_k
         v_4d = new_v
         if new_k.ndim == 2:
@@ -81,8 +90,8 @@ class ZeroKVNeoCache:
 
         sink_k = self.k_cache[:, :, :sinks, :]
         sink_v = self.v_cache[:, :, :sinks, :]
-        win_k = self.k_cache[:, :, -window:, :] if window > 0 else torch.empty(0)
-        win_v = self.v_cache[:, :, -window:, :] if window > 0 else torch.empty(0)
+        win_k = self.k_cache[:, :, -window:, :] if window > 0 else self.k_cache[:, :, :0, :]
+        win_v = self.v_cache[:, :, -window:, :] if window > 0 else self.v_cache[:, :, :0, :]
 
         if heavy_budget > 0 and cur_len > (sinks + window):
             mid_k = self.k_cache[:, :, sinks : cur_len - window, :]
@@ -110,9 +119,12 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
     Args:
         model: PyTorch model.
-        keep_ratio: Fraction of output neurons to retain (default 0.3).
+        keep_ratio: Fraction of output channels to retain (default 0.3).
         num_attention_sinks: Number of initial sink channels pinned (default 4).
         heavy_hitter_ratio: Fraction allocated to heavy hitters (default 0.1).
+        max_error: Maximum allowed relative Frobenius error (default 0.85).
+        max_retries: Number of keep_ratio retry steps on error threshold excess (default 3).
+        fallback_to_original: If True, keep original layer on high error (default True).
     """
 
     def __init__(
@@ -121,33 +133,106 @@ class ZeroKVNeoCompressor(BaseCompressor):
         keep_ratio: float = 0.3,
         num_attention_sinks: int = 4,
         heavy_hitter_ratio: float = 0.1,
+        max_error: float = 0.85,
+        max_retries: int = 3,
+        fallback_to_original: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="zerokv_neo", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            keep_ratio = getattr(cfg, "zerokv_keep_ratio", getattr(cfg, "keep_ratio", keep_ratio))
+            num_attention_sinks = getattr(cfg, "zerokv_num_sinks", getattr(cfg, "num_attention_sinks", num_attention_sinks))
+            heavy_hitter_ratio = getattr(cfg, "zerokv_heavy_ratio", getattr(cfg, "heavy_hitter_ratio", heavy_hitter_ratio))
+            max_error = getattr(cfg, "max_error", getattr(cfg, "max_reconstruction_error", max_error))
+            max_retries = getattr(cfg, "max_retries", max_retries)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
+        if "keep_ratio" in kwargs and kwargs["keep_ratio"] is not None:
+            keep_ratio = kwargs["keep_ratio"]
+        if "max_error" in kwargs and kwargs["max_error"] is not None:
+            max_error = float(kwargs["max_error"])
+        if "max_retries" in kwargs and kwargs["max_retries"] is not None:
+            max_retries = int(kwargs["max_retries"])
+        if "fallback_to_original" in kwargs:
+            fallback_to_original = bool(kwargs["fallback_to_original"])
+
         self.keep_ratio = float(keep_ratio)
         self.num_attention_sinks = int(num_attention_sinks)
         self.heavy_hitter_ratio = float(heavy_hitter_ratio)
+        self.max_error = float(max_error)
+        self.max_retries = max(0, int(max_retries))
+        self.fallback_to_original = bool(fallback_to_original)
+        self.compressed_layers: List[Dict[str, Any]] = []
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        # Protect critical classification heads, poolers, lm_heads, and embeddings
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+
+        cls_name = module.__class__.__name__
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or "conv1d" in cls_name.lower()
+            or (
+                hasattr(module, "weight")
+                and hasattr(module.weight, "ndim")
+                and module.weight.ndim == 2
+                and not isinstance(module, (nn.Embedding, nn.LayerNorm, nn.RMSNorm))
+            )
+        )
+        if not is_linear_like:
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        return self._is_attention_proj(name)
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress linear projection weights preserving attention sinks and heavy hitters."""
-        for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and self._is_attention_proj(name) and should_compress_linear(self.model, name):
-                W = module.weight.data
-                out_f, in_f = W.shape
+        self.compressed_layers = []
+        total_error = 0.0
 
-                total_keep = max(1, min(int(out_f * self.keep_ratio), out_f))
-                row_norms = torch.norm(W.float(), dim=1)
+        for name, module in list(self.model.named_modules()):
+            if not self._is_target_module(name, module):
+                continue
 
+            raw_w = module.weight.data
+            orig_dtype = raw_w.dtype
+            orig_device = raw_w.device
+            cls_name = module.__class__.__name__
+
+            is_conv1d = "conv1d" in cls_name.lower() or (
+                raw_w.ndim == 2
+                and hasattr(module, "in_features")
+                and module.in_features == raw_w.shape[0]
+                and raw_w.shape[0] < raw_w.shape[1]
+            )
+
+            if is_conv1d:
+                W = raw_w.t().float().contiguous()
+                in_f = W.shape[1]
+                out_f = W.shape[0]
+            else:
+                W = raw_w.float().contiguous()
+                out_f, in_f = W.shape[0], W.shape[1]
+
+            norm_orig = torch.linalg.norm(W).item() + 1e-8
+            row_norms = torch.norm(W, dim=1)
+
+            cur_keep = self.keep_ratio
+            best_mask = None
+            best_err = float("inf")
+            best_keep = cur_keep
+            best_sinks = 0
+            best_heavy = 0
+
+            for attempt in range(self.max_retries + 1):
+                total_keep = max(1, min(int(round(out_f * cur_keep)), out_f))
                 n_sinks = min(self.num_attention_sinks, total_keep)
-                n_heavy = min(
-                    max(0, int(out_f * self.heavy_hitter_ratio)), total_keep - n_sinks
-                )
+                n_heavy = total_keep - n_sinks
 
-                # Pin initial output channels as attention sinks
-                sink_idx = torch.arange(n_sinks, device=W.device)
-
-                # Select heavy hitters from remaining channels based on norm
-                remaining_mask = torch.ones(out_f, dtype=torch.bool, device=W.device)
+                sink_idx = torch.arange(n_sinks, device=orig_device)
+                remaining_mask = torch.ones(out_f, dtype=torch.bool, device=orig_device)
                 remaining_mask[sink_idx] = False
 
                 if n_heavy > 0 and remaining_mask.any():
@@ -156,21 +241,89 @@ class ZeroKVNeoCompressor(BaseCompressor):
                     _, top_rem = torch.topk(rem_norms, min(n_heavy, rem_norms.numel()))
                     heavy_idx = rem_indices[top_rem]
                 else:
-                    heavy_idx = torch.tensor([], device=W.device, dtype=torch.long)
+                    heavy_idx = torch.tensor([], device=orig_device, dtype=torch.long)
 
                 keep_idx = torch.cat([sink_idx, heavy_idx])
-                mask = torch.zeros(out_f, device=W.device)
+                mask = torch.zeros(out_f, device=orig_device, dtype=torch.float32)
                 mask[keep_idx] = 1.0
 
-                module.weight.data = (W * mask.unsqueeze(1)).to(dtype=module.weight.dtype)
-                if module.bias is not None:
-                    module.bias.data = module.bias.data * mask
+                W_pruned = W * mask.unsqueeze(1)
+                rel_err = (torch.linalg.norm(W - W_pruned).item()) / norm_orig
 
+                if rel_err < best_err:
+                    best_err = rel_err
+                    best_mask = mask
+                    best_keep = cur_keep
+                    best_sinks = n_sinks
+                    best_heavy = len(heavy_idx)
+
+                if rel_err <= self.max_error or cur_keep >= 1.0:
+                    break
+
+                step = max(0.1, (1.0 - cur_keep) / max(1, self.max_retries - attempt))
+                cur_keep = min(1.0, cur_keep + step)
+
+            if best_err > self.max_error:
+                logger.warning(
+                    "ZeroKV-Neo: %s error (%.4f) exceeded threshold (%.4f).",
+                    name,
+                    best_err,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    logger.info("ZeroKV-Neo: Keeping original module for %s.", name)
+                    continue
+
+            if best_mask is None:
+                continue
+
+            # Assign pruned weights
+            if is_conv1d:
+                W_assigned = (W * best_mask.unsqueeze(1)).t().contiguous().to(dtype=orig_dtype, device=orig_device)
+            else:
+                W_assigned = (W * best_mask.unsqueeze(1)).to(dtype=orig_dtype, device=orig_device)
+
+            if W_assigned.shape != module.weight.shape:
+                logger.error("ZeroKV-Neo shape mismatch for %s: %s vs %s", name, W_assigned.shape, module.weight.shape)
+                continue
+
+            module.weight.data.copy_(W_assigned)
+            if getattr(module, "bias", None) is not None and module.bias is not None:
+                b_pruned = (module.bias.data.float() * best_mask).to(dtype=orig_dtype, device=orig_device)
+                module.bias.data.copy_(b_pruned)
+
+            self.compressed_layers.append(
+                {
+                    "name": name,
+                    "original_shape": (in_f, out_f),
+                    "keep_ratio": float(best_keep),
+                    "num_sinks": best_sinks,
+                    "num_heavy": best_heavy,
+                    "rel_error": float(best_err),
+                }
+            )
+            total_error += best_err
+
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        stats["keep_ratio"] = self.keep_ratio
-        stats["num_attention_sinks"] = self.num_attention_sinks
-        stats["heavy_hitter_ratio"] = self.heavy_hitter_ratio
-        stats["kv_cache_budget_saving"] = f"{(1.0 - self.keep_ratio) * 100:.1f}% Footprint Reduction"
+        avg_err = (total_error / len(self.compressed_layers)) if self.compressed_layers else 0.0
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "num_compressed_layers": len(self.compressed_layers),
+                "keep_ratio": self.keep_ratio,
+                "num_attention_sinks": self.num_attention_sinks,
+                "heavy_hitter_ratio": self.heavy_hitter_ratio,
+                "avg_reconstruction_error": avg_err,
+                "max_error": self.max_error,
+                "kv_cache_budget_saving": f"{(1.0 - self.keep_ratio) * 100:.1f}% Footprint Reduction",
+            }
+        )
+        logger.info(
+            "ZeroKV-Neo compression finished: %d layers compressed, avg error: %.4f",
+            len(self.compressed_layers),
+            avg_err,
+        )
         return self.model, stats
 
     @staticmethod
@@ -186,9 +339,10 @@ class ZeroKVNeoCompressor(BaseCompressor):
             "query",
             "key",
             "value",
+            "c_attn",
+            "in_proj_qkv",
+            "attn",
             "attention",
-            "fc",
-            "dense",
         ]
         return any(kw in name.lower() for kw in attn_keywords)
 
@@ -196,15 +350,17 @@ class ZeroKVNeoCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("zerokv_neo")
 def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """ZeroKV-Neo compressor factory function."""
-    keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "zerokv_keep_ratio", 0.3) if comp_config else 0.3)
-    num_sinks = kwargs.pop("num_attention_sinks", kwargs.pop("num_sinks", getattr(comp_config, "zerokv_num_sinks", 4) if comp_config else 4))
-    heavy_ratio = kwargs.pop("heavy_hitter_ratio", kwargs.pop("heavy_ratio", getattr(comp_config, "zerokv_heavy_ratio", 0.1) if comp_config else 0.1))
+    keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "zerokv_keep_ratio", getattr(comp_config, "keep_ratio", 0.3)) if comp_config else 0.3)
+    num_sinks = kwargs.pop("num_attention_sinks", kwargs.pop("num_sinks", getattr(comp_config, "zerokv_num_sinks", getattr(comp_config, "num_attention_sinks", 4)) if comp_config else 4))
+    heavy_ratio = kwargs.pop("heavy_hitter_ratio", kwargs.pop("heavy_ratio", getattr(comp_config, "zerokv_heavy_ratio", getattr(comp_config, "heavy_hitter_ratio", 0.1)) if comp_config else 0.1))
     compressor = ZeroKVNeoCompressor(
         model,
         keep_ratio=keep_ratio,
         num_attention_sinks=num_sinks,
         heavy_hitter_ratio=heavy_ratio,
+        comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+

@@ -55,7 +55,7 @@ class SwiftSVDCompressor(BaseCompressor):
         target_modules: Optional[List[str]] = None,
         max_error: float = 0.20,
         max_retries: int = 3,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="swift_svd", **kwargs)
@@ -141,7 +141,9 @@ class SwiftSVDCompressor(BaseCompressor):
             W = raw_w
             out_f, in_f = W.shape[0], W.shape[1]
 
-        max_r = min(out_f, in_f)
+        # Bound rank so parameter count r*(in_f + out_f) < in_f*out_f
+        max_param_r = max(1, int((in_f * out_f) / (in_f + out_f)) - 1)
+        max_r = min(out_f, in_f, max_param_r)
         if max_r < 1:
             return None, 0.0, 0
 
@@ -149,7 +151,7 @@ class SwiftSVDCompressor(BaseCompressor):
         if rank is not None:
             target_r = max(1, min(int(rank), max_r))
         else:
-            target_r = max(1, min(int(round(max_r * self.rank_ratio)), max_r))
+            target_r = max(1, min(int(round(min(out_f, in_f) * self.rank_ratio)), max_r))
 
         # Compute full SVD in FP32
         try:

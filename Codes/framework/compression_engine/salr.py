@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -16,6 +16,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -97,15 +98,9 @@ class SALRCompressor(BaseCompressor):
     """
     SALR Compressor: Structure-Aware Low-Rank and Sparse Pruning.
 
-    Factorizes dense nn.Linear layers into symmetric low-rank factors
+    Factorizes dense nn.Linear or Conv1D layers into symmetric low-rank factors
     (U * sqrt(Sigma), sqrt(Sigma) * V^T) and applies structured sparse pruning
     to trailing singular components in the bottleneck.
-
-    Args:
-        model: PyTorch model.
-        rank: Target rank r.
-        sparsity: Sparsity fraction within the rank bottleneck in [0.0, 1.0).
-        target_modules: Optional list of layer name filters.
     """
 
     def __init__(
@@ -114,6 +109,8 @@ class SALRCompressor(BaseCompressor):
         rank: int = 64,
         sparsity: float = 0.5,
         target_modules: Optional[list[str]] = None,
+        max_error: float = 0.5,
+        fallback_to_original: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="salr", **kwargs)
@@ -121,6 +118,8 @@ class SALRCompressor(BaseCompressor):
         if cfg is not None:
             rank = getattr(cfg, "salr_rank", getattr(cfg, "rank", rank))
             sparsity = getattr(cfg, "salr_sparsity", getattr(cfg, "sparsity", sparsity))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -128,11 +127,21 @@ class SALRCompressor(BaseCompressor):
         self.rank = int(rank)
         self.sparsity = float(sparsity)
         self.target_modules = target_modules
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.layer_errors: Dict[str, float] = {}
+        self.replaced_layers: List[Dict[str, Any]] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if not isinstance(module, nn.Linear):
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
             return False
         if isinstance(module, SALRLayer):
+            return False
+        if not should_compress_linear(self.model, name):
             return False
         if self.target_modules is None:
             return True
@@ -140,19 +149,42 @@ class SALRCompressor(BaseCompressor):
 
     def compress_linear(
         self,
-        layer: nn.Linear,
+        layer: nn.Module,
         rank: int,
-    ) -> SALRLayer:
-        """Decompose a single linear layer into SALRLayer."""
-        out_f = layer.out_features
-        in_f = layer.in_features
-        r = max(1, min(rank, out_f, in_f))
+    ) -> Optional[SALRLayer]:
+        """Decompose a single linear or Conv1D layer into SALRLayer with validation."""
+        raw_w = layer.weight.data
+        cls_name = layer.__class__.__name__
+        is_conv1d = "conv1d" in cls_name.lower() or (
+            raw_w.ndim == 2
+            and hasattr(layer, "in_features")
+            and layer.in_features == raw_w.shape[0]
+            and raw_w.shape[0] < raw_w.shape[1]
+        )
+
+        if is_conv1d:
+            W = raw_w.t().float()
+            out_f = W.shape[0]
+            in_f = W.shape[1]
+        else:
+            W = raw_w.float()
+            out_f = getattr(layer, "out_features", W.shape[0])
+            in_f = getattr(layer, "in_features", W.shape[1])
+
+        max_r = min(out_f, in_f)
+        # Cap rank to guarantee parameter reduction
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        r = max(1, min(rank, max_r, param_cap))
+
         device = layer.weight.device
         dtype = layer.weight.dtype
 
         # SVD in FP32
-        W = layer.weight.data.float()
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        except Exception as e:
+            logger.warning("SALR SVD failure: %s", e)
+            return None
 
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
@@ -171,10 +203,27 @@ class SALRCompressor(BaseCompressor):
         if layer.bias is not None:
             salr_layer.bias.data.copy_(layer.bias.data)
 
+        # Frobenius reconstruction error check
+        W_rec = salr_layer.weight.float()
+        norm_orig = torch.norm(W, p="fro")
+        rel_err = (torch.norm(W - W_rec, p="fro") / (norm_orig + 1e-8)).item()
+
+        if self.fallback_to_original and rel_err > self.max_error:
+            logger.warning(
+                "SALR reconstruction error %.4f exceeded threshold %.4f. Keeping original layer.",
+                rel_err,
+                self.max_error,
+            )
+            return None
+
+        salr_layer.reconstruction_error = rel_err
         return salr_layer
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all linear layers in the model."""
+        self.layer_errors = {}
+        self.replaced_layers = []
+
         target_layers = [
             (name, mod)
             for name, mod in self.model.named_modules()
@@ -187,9 +236,16 @@ class SALRCompressor(BaseCompressor):
 
         for name, module in target_layers:
             new_layer = self.compress_linear(module, rank=self.rank)
-            replace_module(self.model, name, new_layer)
+            if new_layer is not None:
+                err = getattr(new_layer, "reconstruction_error", 0.0)
+                self.layer_errors[name] = err
+                self.replaced_layers.append({"name": name, "rank": new_layer.rank, "error": err})
+                replace_module(self.model, name, new_layer)
 
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        stats["layer_errors"] = self.layer_errors
+        stats["compressed_layers"] = len(self.replaced_layers)
         return self.model, stats
 
 
@@ -198,3 +254,10 @@ def salr_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn
     compressor = SALRCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+__all__ = [
+    "SALRLayer",
+    "SALRCompressor",
+    "salr_factory",
+]

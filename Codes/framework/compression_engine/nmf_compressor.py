@@ -88,60 +88,77 @@ class NMFLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: nn.Linear,
+        linear: nn.Module,
         rank: int = 64,
         max_iter: int = 100,
     ) -> "NMFLinear":
         """
-        Fit Non-negative Matrix Factorization on linear layer weights using
-        PyTorch Multiplicative Updates (Lee & Seung 2001).
+        Fit Non-negative Matrix Factorization on linear or Conv1D layer weights using
+        PyTorch Multiplicative Updates (Lee & Seung 2001) or sklearn NMF.
         """
-        W = linear.weight.data
-        bias = linear.bias.data if linear.bias is not None else None
-        out_f, in_f = W.shape
-        r = max(1, min(rank, out_f, in_f))
+        raw_w = linear.weight.data
+        cls_name = linear.__class__.__name__
+        is_conv1d = "conv1d" in cls_name.lower() or (
+            raw_w.ndim == 2
+            and hasattr(linear, "in_features")
+            and linear.in_features == raw_w.shape[0]
+            and raw_w.shape[0] < raw_w.shape[1]
+        )
+
+        if is_conv1d:
+            W = raw_w.t().contiguous()
+            out_f, in_f = W.shape
+        else:
+            W = raw_w
+            out_f, in_f = W.shape
+
+        bias = linear.bias.data if getattr(linear, "bias", None) is not None else None
+        max_r = min(out_f, in_f)
+        # Cap rank to guarantee parameter reduction
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1) if (in_f * out_f > 16) else max_r
+        r = max(1, min(rank, max_r, param_cap))
 
         min_val = W.min().item()
         shift_val = min_val - 1e-5 if min_val < 0 else 0.0
         W_pos = (W.float() - shift_val).clamp_min(1e-6)
 
-        # Try sklearn if available on CPU for fast coordinate descent
         fitted = False
         H_init: Optional[torch.Tensor] = None
         V_init: Optional[torch.Tensor] = None
 
         try:
+            import warnings
             from sklearn.decomposition import NMF as skNMF
-            sk_model = skNMF(
-                n_components=r,
-                init="nndsvda",
-                max_iter=max_iter,
-                tol=1e-4,
-                random_state=42,
-            )
-            H_np = sk_model.fit_transform(W_pos.cpu().numpy())
-            V_np = sk_model.components_
-            H_init = torch.tensor(H_np, dtype=W.dtype, device=W.device)
-            V_init = torch.tensor(V_np, dtype=W.dtype, device=W.device)
-            fitted = True
+            from sklearn.exceptions import ConvergenceWarning
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ConvergenceWarning)
+                sk_model = skNMF(
+                    n_components=r,
+                    init="nndsvda",
+                    max_iter=max_iter,
+                    tol=1e-4,
+                    random_state=42,
+                )
+                H_np = sk_model.fit_transform(W_pos.cpu().numpy())
+                V_np = sk_model.components_
+                H_init = torch.tensor(H_np, dtype=W.dtype, device=W.device)
+                V_init = torch.tensor(V_np, dtype=W.dtype, device=W.device)
+                fitted = True
         except Exception:
             fitted = False
 
         if not fitted or H_init is None or V_init is None:
-            # Native PyTorch Multiplicative Updates (GPU/MPS/CPU compatible)
-            # NNDSVD-like initialization via SVD
             U, S, Vt = torch.linalg.svd(W_pos, full_matrices=False)
             H_init = (U[:, :r].abs() * torch.sqrt(S[:r].unsqueeze(0))).clamp_min(1e-4)
             V_init = (torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :].abs()).clamp_min(1e-4)
 
             for _ in range(max_iter):
-                # V update: V = V * (H^T @ W_pos) / (H^T @ H @ V + eps)
                 HT = H_init.t()
                 HTW = torch.matmul(HT, W_pos)
                 HTHV = torch.matmul(torch.matmul(HT, H_init), V_init).clamp_min(1e-10)
                 V_init = V_init * (HTW / HTHV)
 
-                # H update: H = H * (W_pos @ V^T) / (H @ V @ V^T + eps)
                 VT = V_init.t()
                 WVT = torch.matmul(W_pos, VT)
                 HVVT = torch.matmul(torch.matmul(H_init, V_init), VT).clamp_min(1e-10)
@@ -177,6 +194,8 @@ class NMFCompressor(BaseCompressor):
         max_iter: Maximum multiplicative update iterations.
         cfg: Optional configuration object.
         target_layers: Optional layer name filter.
+        max_error: Maximum relative Frobenius error threshold (default 0.35).
+        fallback_to_original: If True, keep original layer on high reconstruction error.
     """
 
     def __init__(
@@ -186,6 +205,8 @@ class NMFCompressor(BaseCompressor):
         max_iter: int = 100,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
+        max_error: float = 0.35,
+        fallback_to_original: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="nmf", **kwargs)
@@ -193,7 +214,25 @@ class NMFCompressor(BaseCompressor):
         self.max_iter = max_iter or getattr(cfg, "nmf_max_iter", 100)
         self.cfg = cfg
         self.target_layers = target_layers or getattr(cfg, "target_layers", None)
-        self.compressed_layers: List[str] = []
+        self.max_error = float(getattr(cfg, "max_error", max_error))
+        self.fallback_to_original = bool(getattr(cfg, "fallback_to_original", fallback_to_original))
+        self.compressed_layers: List[Dict[str, Any]] = []
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        if isinstance(module, NMFLinear):
+            return False
+        from framework.utils.compat import should_compress_linear
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_layers is None:
+            return True
+        return any(t in name for t in self.target_layers)
 
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress model linear layers via NMF."""
@@ -201,23 +240,36 @@ class NMFCompressor(BaseCompressor):
             self.model = model
             self._original_params = self._count_params(self.model)
 
+        from framework.core.model_utils import replace_module
+
         self.compressed_layers = []
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and not isinstance(module, NMFLinear):
-                if self.target_layers and not any(t in name for t in self.target_layers):
-                    continue
-
-                max_rank = min(module.in_features, module.out_features)
+            if self._is_target_module(name, module):
+                raw_w = module.weight.data
+                cls_name = module.__class__.__name__
+                is_conv1d = "conv1d" in cls_name.lower() or (
+                    raw_w.ndim == 2
+                    and hasattr(module, "in_features")
+                    and module.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
+                W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
+                max_rank = min(W_orig.shape[0], W_orig.shape[1])
                 r = min(self.rank, max_rank)
-                if r >= max_rank and max_rank > 4:
-                    continue
 
                 nmf_layer = NMFLinear.from_linear(module, rank=r, max_iter=self.max_iter)
-                parent = self._get_parent_module(name)
-                if parent is not None:
-                    child_name = name.split(".")[-1]
-                    setattr(parent, child_name, nmf_layer)
-                    self.compressed_layers.append(name)
+                W_rec = nmf_layer.weight.float()
+                err = (torch.norm(W_orig - W_rec, p="fro") / (torch.norm(W_orig, p="fro") + 1e-8)).item()
+
+                if self.fallback_to_original and err > self.max_error:
+                    continue
+
+                replace_module(self.model, name, nmf_layer)
+                self.compressed_layers.append({
+                    "name": name,
+                    "rank": nmf_layer.rank,
+                    "relative_error": float(err),
+                })
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -226,25 +278,18 @@ class NMFCompressor(BaseCompressor):
                 "compressed_layer_count": len(self.compressed_layers),
                 "nmf_rank": self.rank,
                 "max_iter": self.max_iter,
+                "compressed_layers": self.compressed_layers,
             }
         )
         return self.model, stats
 
-    def compress_linear(self, linear: nn.Linear) -> NMFLinear:
+    def compress_linear(self, linear: nn.Module) -> NMFLinear:
         """Compress a single linear layer into NMFLinear."""
         return NMFLinear.from_linear(linear, rank=self.rank, max_iter=self.max_iter)
 
-    def _get_parent_module(self, full_name: str) -> Optional[nn.Module]:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part, None)
-            if parent is None:
-                return None
-        return parent
-
 
 @COMPRESSOR_REGISTRY.register("nmf")
+@COMPRESSOR_REGISTRY.register("nmf_compressor")
 def nmf_factory(
     model: nn.Module,
     comp_config: Optional[Any] = None,
@@ -257,3 +302,4 @@ def nmf_factory(
     compressor = NMFCompressor(model, rank=effective_rank, max_iter=max_iter, cfg=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
