@@ -168,7 +168,7 @@ class CURMoECompressor(BaseCompressor):
                 if isinstance(experts_container, (nn.ModuleList, list)):
                     for exp_idx, expert in enumerate(experts_container):
                         for child_name, child_mod in list(expert.named_children()):
-                            child_full_name = f"{name}.experts.{exp_idx}.{child_name}"
+                            child_full_name = f"{name}.experts.{exp_idx}.{child_name}" if name else f"experts.{exp_idx}.{child_name}"
                             is_linear_like = (
                                 isinstance(child_mod, nn.Linear)
                                 or "conv1d" in child_mod.__class__.__name__.lower()
