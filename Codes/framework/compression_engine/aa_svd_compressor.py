@@ -98,8 +98,8 @@ class SVDLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
-            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device))
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=dtype, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=dtype, device=device))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
@@ -143,7 +143,7 @@ class SVDLinear(nn.Module):
         if self.bias is not None:
             out = out + self.bias
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_delta = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
+            lora_delta = F.linear(F.linear(x.to(self.lora_A.dtype), self.lora_A), self.lora_B) * self.scaling
             out = out + lora_delta.to(out.dtype)
         return out
 
@@ -154,15 +154,6 @@ class SVDLinear(nn.Module):
             self.V.data.zero_()
             self.U.data[:, :r].copy_(U_factor[:, :r].to(device=self.U.device, dtype=self.U.dtype))
             self.V.data[:r, :].copy_(V_factor[:r, :].to(device=self.V.device, dtype=self.V.dtype))
-
-    def __iter__(self):
-        """Allow tuple unpacking: svd_layer, err, r = compressor.compress_linear(...)."""
-        yield self
-        yield getattr(self, "reconstruction_error", 0.0)
-        yield getattr(self, "rank", 0)
-
-    def __getitem__(self, idx: int) -> Any:
-        return (self, getattr(self, "reconstruction_error", 0.0), getattr(self, "rank", 0))[idx]
 
 
 @COMPRESSOR_REGISTRY.register("aasvd")
@@ -245,6 +236,7 @@ class AASVDCompressor(BaseCompressor):
         layer: nn.Module,
         rank: Optional[int] = None,
         cov: Optional[torch.Tensor] = None,
+        cov_factors: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
     ) -> Tuple[Optional[SVDLinear], float, int]:
         """
         Factored linear compression implementing activation-aware subspace projection
@@ -272,24 +264,41 @@ class AASVDCompressor(BaseCompressor):
         r = min(r, max_allowed_rank)
         W_norm = torch.norm(W, p="fro").item()
 
-        if cov is not None and cov.shape == (in_feat, in_feat):
+        # Fix 4 & 5: Standard AASVD formulation with symmetric covariance square root
+        cov_sqrt: Optional[torch.Tensor] = None
+        cov_inv_sqrt: Optional[torch.Tensor] = None
+
+        if cov_factors is not None:
+            cov_sqrt, cov_inv_sqrt = cov_factors
+        elif cov is not None and cov.shape == (in_feat, in_feat):
             try:
                 cov_fp32 = cov.to(device=layer.weight.device, dtype=torch.float32)
-                _, _, Vh_act = torch.linalg.svd(cov_fp32, full_matrices=False)
-                anchor = Vh_act[:r, :]  # [r, in_feat]
-                W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))
-            except Exception:
-                W_proj = W
+                cov_sym = 0.5 * (cov_fp32 + cov_fp32.T)
+                eigvals, eigvecs = torch.linalg.eigh(cov_sym)
+                eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
+                eigvals_reg = eigvals.clamp(min=eps)
+                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_reg)) @ eigvecs.T
+                cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
+            except Exception as e:
+                logger.debug("Failed computing covariance square roots: %s", e)
+                cov_sqrt, cov_inv_sqrt = None, None
+
+        if cov_sqrt is not None and cov_inv_sqrt is not None:
+            W_weighted = torch.matmul(W, cov_sqrt)
         else:
-            W_proj = W
+            W_weighted = W
 
         try:
-            W_proj_dev = W_proj.to(device=layer.weight.device, dtype=torch.float32)
-            U, S, Vt = torch.linalg.svd(W_proj_dev, full_matrices=False)
+            W_weighted_dev = W_weighted.to(device=layer.weight.device, dtype=torch.float32)
+            U, S, Vt = torch.linalg.svd(W_weighted_dev, full_matrices=False)
 
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_r = (U[:, :r] * sqrt_S.unsqueeze(0))
             V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :])
+
+            # Unweight factors via C_X^{-1/2} to preserve original W space
+            if cov_inv_sqrt is not None:
+                V_r = torch.matmul(V_r, cov_inv_sqrt)
 
             W_recon = torch.matmul(U_r, V_r)
             err = float(torch.norm(W - W_recon, p="fro").item() / max(W_norm, 1e-12))
@@ -301,6 +310,8 @@ class AASVDCompressor(BaseCompressor):
                 bias=layer.bias is not None,
                 dtype=layer.weight.dtype,
                 device=layer.weight.device,
+                lora_r=getattr(self, "lora_r", 0),
+                lora_alpha=getattr(self, "lora_alpha", 1.0),
             )
             svd_layer.set_low_rank_factors(
                 U_r.to(device=layer.weight.device, dtype=layer.weight.dtype),
@@ -311,10 +322,12 @@ class AASVDCompressor(BaseCompressor):
 
             svd_layer.reconstruction_error = err
             svd_layer.rank = r
-            return svd_layer
+            # Fix 1: Explicit tuple return
+            return svd_layer, err, r
         except Exception as e:
+            # Fix 2: Return (None, float('inf'), 0) on failure
             logger.warning("AASVD factorization failed on linear: %s", e)
-            return None
+            return None, float("inf"), 0
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes streaming covariance estimation over calibration batches and factorizes target layers."""
@@ -326,7 +339,9 @@ class AASVDCompressor(BaseCompressor):
 
         covariances: Dict[str, torch.Tensor] = {}
 
-        if self.tokenizer is not None:
+        if self.tokenizer is None:
+            logger.info("No tokenizer provided for AASVD; proceeding with standard unweighted SVD.")
+        else:
             hooks = []
 
             def make_hook(name: str):
@@ -346,7 +361,13 @@ class AASVDCompressor(BaseCompressor):
                         in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
                         x_fp32 = x.float()
                         x_flat = x_fp32.reshape(-1, in_f)
-                        batch_cov = torch.matmul(x_flat.T, x_flat) / max(1, x_flat.size(0))
+                        # Filter out padding / zero tokens
+                        mask = x_flat.abs().sum(dim=-1) > 1e-5
+                        if mask.sum() == 0:
+                            return
+                        x_active = x_flat[mask]
+                        # Move covariance to CPU to prevent VRAM accumulation
+                        batch_cov = (torch.matmul(x_active.T, x_active) / max(1, x_active.size(0))).cpu()
 
                     if name not in covariances:
                         covariances[name] = batch_cov
@@ -376,27 +397,63 @@ class AASVDCompressor(BaseCompressor):
             for h in hooks:
                 h.remove()
 
+        # Cache covariance square roots across layers
+        cov_factor_cache: Dict[str, Tuple[torch.Tensor, torch.Tensor]] = {}
+        for name, cov in covariances.items():
+            try:
+                cov_fp32 = cov.float()
+                cov_sym = 0.5 * (cov_fp32 + cov_fp32.T)
+                eigvals, eigvecs = torch.linalg.eigh(cov_sym)
+                eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
+                eigvals_reg = eigvals.clamp(min=eps)
+                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_reg)) @ eigvecs.T
+                cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
+                cov_factor_cache[name] = (cov_sqrt, cov_inv_sqrt)
+            except Exception as e:
+                logger.debug("Failed precomputing covariance factors for %s: %s", name, e)
+
         for name, module in list(self.model.named_modules()):
             if self._is_target_module(name, module):
-                cov = covariances.get(name, None)
-                svd_layer, err, r = self.compress_linear(module, rank=self.rank, cov=cov)
+                cov_factors = cov_factor_cache.get(name, None)
+                cov = covariances.get(name, None) if cov_factors is None else None
+                svd_layer, err, r = self.compress_linear(
+                    module, rank=self.rank, cov=cov, cov_factors=cov_factors
+                )
                 self.layer_errors[name] = err
                 self.layer_ranks[name] = r
 
                 if svd_layer is None or err > self.max_error:
-                    logger.warning(
-                        "AASVD reconstruction error %.4f on %s exceeded threshold %.4f.",
-                        err,
-                        name,
-                        self.max_error,
-                    )
                     if self.fallback_to_original:
-                        logger.info("Skipping AASVD compression for %s (fallback to original).", name)
+                        logger.warning(
+                            "AASVD reconstruction error %.4f on %s exceeded threshold %.4f. Skipping compression (fallback to original).",
+                            err,
+                            name,
+                            self.max_error,
+                        )
                         self.fallback_layers.append(name)
                         continue
+                    else:
+                        logger.warning(
+                            "AASVD reconstruction error %.4f on %s exceeded threshold %.4f, but fallback_to_original is False! Compressing anyway.",
+                            err,
+                            name,
+                            self.max_error,
+                        )
+                        if svd_layer is None:
+                            logger.error("AASVD factorization failed and returned None for %s, skipping replacement.", name)
+                            self.fallback_layers.append(name)
+                            continue
 
                 replace_module(self.model, name, svd_layer)
                 self.compressed_layers.append(name)
+
+        # Clear covariances and factor cache to immediately free memory
+        covariances.clear()
+        cov_factor_cache.clear()
+        del covariances
+        del cov_factor_cache
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (

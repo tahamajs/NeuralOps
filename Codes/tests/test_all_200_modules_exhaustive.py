@@ -176,7 +176,8 @@ class TestAllCompressorsExhaustive:
                     compressed = res[0] if isinstance(res, tuple) else res
                     break
                 elif hasattr(compressor, "compress_linear"):
-                    compressed = compressor.compress_linear(linear)
+                    res = compressor.compress_linear(linear)
+                    compressed = res[0] if isinstance(res, tuple) else res
                     break
                 elif isinstance(compressor, nn.Module):
                     compressed = compressor

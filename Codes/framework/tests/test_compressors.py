@@ -77,7 +77,8 @@ class TestCompressionEngines(unittest.TestCase):
         """Test AASVD compressor factorization, parameter reduction, and forward execution."""
         rank = 16
         aasvd = AASVDCompressor(nn.Sequential(self.base_layer), rank=rank)
-        svd_layer = aasvd.compress_linear(self.base_layer, rank=rank)
+        svd_res = aasvd.compress_linear(self.base_layer, rank=rank)
+        svd_layer = svd_res[0] if isinstance(svd_res, tuple) else svd_res
 
         self.assertIsInstance(svd_layer, SVDLinear)
         self.assertEqual(svd_layer.rank, rank)
@@ -196,7 +197,8 @@ class TestCompressorGuardsAndPrecision(unittest.TestCase):
         """Verify SVD compression forward remains finite in both fp32 and fp16."""
         layer = nn.Linear(32, 32)
         aasvd = AASVDCompressor(nn.Sequential(layer), rank=8)
-        compressed = aasvd.compress_linear(layer, rank=8)
+        compressed_res = aasvd.compress_linear(layer, rank=8)
+        compressed = compressed_res[0] if isinstance(compressed_res, tuple) else compressed_res
 
         # FP32
         x_32 = torch.randn(2, 4, 32, dtype=torch.float32)
@@ -234,7 +236,8 @@ class TestCompressorGuardsAndPrecision(unittest.TestCase):
 
         # Factorize base_layer directly
         aasvd = AASVDCompressor(nn.Sequential(base), rank=8)
-        svd_layer = aasvd.compress_linear(lora.base_layer, rank=8)
+        svd_res = aasvd.compress_linear(lora.base_layer, rank=8)
+        svd_layer = svd_res[0] if isinstance(svd_res, tuple) else svd_res
         lora.base_layer = svd_layer
 
         self.assertFalse(lora.merged)

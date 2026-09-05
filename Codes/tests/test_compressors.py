@@ -77,7 +77,8 @@ class TestCompressionEngines(unittest.TestCase):
         """Test AASVD compressor factorization, parameter reduction, and forward execution."""
         rank = 16
         aasvd = AASVDCompressor(nn.Sequential(self.base_layer), rank=rank)
-        svd_layer = aasvd.compress_linear(self.base_layer, rank=rank)
+        svd_res = aasvd.compress_linear(self.base_layer, rank=rank)
+        svd_layer = svd_res[0] if isinstance(svd_res, tuple) else svd_res
 
         self.assertIsInstance(svd_layer, SVDLinear)
         self.assertEqual(svd_layer.rank, rank)
