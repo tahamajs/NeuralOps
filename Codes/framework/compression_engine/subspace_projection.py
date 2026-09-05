@@ -84,17 +84,33 @@ class SubspaceLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: nn.Linear,
+        linear: nn.Module,
         rank: int = 64,
         method: str = "svd",
     ) -> "SubspaceLinear":
         """
-        Project linear layer weight matrix onto top-rank subspace.
+        Project linear or Conv1D layer weight matrix onto top-rank subspace.
         """
-        W = linear.weight.data
-        bias = linear.bias.data if linear.bias is not None else None
-        out_f, in_f = W.shape
-        r = max(1, min(rank, out_f, in_f))
+        raw_w = linear.weight.data
+        cls_name = linear.__class__.__name__
+        is_conv1d = "conv1d" in cls_name.lower() or (
+            raw_w.ndim == 2
+            and hasattr(linear, "in_features")
+            and linear.in_features == raw_w.shape[0]
+            and raw_w.shape[0] < raw_w.shape[1]
+        )
+
+        if is_conv1d:
+            W = raw_w.t().contiguous()
+            out_f, in_f = W.shape
+        else:
+            W = raw_w
+            out_f, in_f = W.shape
+
+        bias = linear.bias.data if getattr(linear, "bias", None) is not None else None
+        max_r = min(out_f, in_f)
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1) if (in_f * out_f > 16) else max_r
+        r = max(1, min(rank, max_r, param_cap))
 
         subspace_layer = cls(
             in_features=in_f,
@@ -132,6 +148,8 @@ class SubspaceProjectionCompressor(BaseCompressor):
         method: Subspace decomposition algorithm ('svd', 'randomized', 'pca').
         cfg: Optional configuration object.
         target_layers: Optional layer name filter.
+        max_error: Maximum allowed relative Frobenius error (default 0.35).
+        fallback_to_original: If True, keep original layer on high error.
     """
 
     def __init__(
@@ -141,6 +159,8 @@ class SubspaceProjectionCompressor(BaseCompressor):
         method: str = "svd",
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
+        max_error: float = 0.35,
+        fallback_to_original: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="subspace_projection", **kwargs)
@@ -148,7 +168,24 @@ class SubspaceProjectionCompressor(BaseCompressor):
         self.method = method or getattr(cfg, "subspace_method", "svd")
         self.cfg = cfg
         self.target_layers = target_layers or getattr(cfg, "target_layers", None)
-        self.compressed_layers: List[str] = []
+        self.max_error = float(getattr(cfg, "max_error", max_error))
+        self.fallback_to_original = bool(getattr(cfg, "fallback_to_original", fallback_to_original))
+        self.compressed_layers: List[Dict[str, Any]] = []
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        if isinstance(module, SubspaceLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_layers is None:
+            return True
+        return any(t in name for t in self.target_layers)
 
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress linear layers via subspace projection."""
@@ -156,25 +193,36 @@ class SubspaceProjectionCompressor(BaseCompressor):
             self.model = model
             self._original_params = self._count_params(self.model)
 
+        from framework.core.model_utils import replace_module
+
         self.compressed_layers = []
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and not isinstance(module, SubspaceLinear):
-                if not should_compress_linear(self.model, name):
-                    continue
-                if self.target_layers and not any(t in name for t in self.target_layers):
-                    continue
-
-                max_rank = min(module.in_features, module.out_features)
+            if self._is_target_module(name, module):
+                raw_w = module.weight.data
+                cls_name = module.__class__.__name__
+                is_conv1d = "conv1d" in cls_name.lower() or (
+                    raw_w.ndim == 2
+                    and hasattr(module, "in_features")
+                    and module.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
+                W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
+                max_rank = min(W_orig.shape[0], W_orig.shape[1])
                 r = min(self.rank, max_rank)
-                if r >= max_rank and max_rank > 4:
-                    continue
 
                 new_layer = SubspaceLinear.from_linear(module, rank=r, method=self.method)
-                parent = self._get_parent_module(name)
-                if parent is not None:
-                    child_name = name.split(".")[-1]
-                    setattr(parent, child_name, new_layer)
-                    self.compressed_layers.append(name)
+                W_rec = new_layer.weight.float()
+                err = (torch.norm(W_orig - W_rec, p="fro") / (torch.norm(W_orig, p="fro") + 1e-8)).item()
+
+                if self.fallback_to_original and err > self.max_error:
+                    continue
+
+                replace_module(self.model, name, new_layer)
+                self.compressed_layers.append({
+                    "name": name,
+                    "rank": new_layer.rank,
+                    "relative_error": float(err),
+                })
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -183,25 +231,18 @@ class SubspaceProjectionCompressor(BaseCompressor):
                 "compressed_layer_count": len(self.compressed_layers),
                 "subspace_rank": self.rank,
                 "subspace_method": self.method,
+                "compressed_layers": self.compressed_layers,
             }
         )
         return self.model, stats
 
-    def compress_linear(self, linear: nn.Linear) -> SubspaceLinear:
+    def compress_linear(self, linear: nn.Module) -> SubspaceLinear:
         """Compress a single linear layer into SubspaceLinear."""
         return SubspaceLinear.from_linear(linear, rank=self.rank, method=self.method)
 
-    def _get_parent_module(self, full_name: str) -> Optional[nn.Module]:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part, None)
-            if parent is None:
-                return None
-        return parent
-
 
 @COMPRESSOR_REGISTRY.register("subspace_projection")
+@COMPRESSOR_REGISTRY.register("subspace_projection_compressor")
 def subspace_projection_factory(
     model: nn.Module,
     comp_config: Optional[Any] = None,
@@ -214,3 +255,4 @@ def subspace_projection_factory(
     compressor = SubspaceProjectionCompressor(model, rank=effective_rank, method=method, cfg=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

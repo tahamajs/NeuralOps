@@ -77,6 +77,9 @@ class NLISoftmax(nn.Module):
         return nli_softmax(x, dim=self.dim)
 
 
+from framework.core.model_utils import replace_module
+
+
 class NLISoftmaxCompressor(BaseCompressor):
     """
     Compressor that replaces standard softmax layers with quantization-friendly NLI softmax.
@@ -84,30 +87,30 @@ class NLISoftmaxCompressor(BaseCompressor):
 
     def __init__(self, model: nn.Module, **kwargs: Any) -> None:
         super().__init__(model, name="nli_softmax", **kwargs)
-
-    def _replace_module(self, full_name: str, new_module: nn.Module) -> None:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part)
-        setattr(parent, parts[-1], new_module)
+        self.replaced_layers = []
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Replace nn.Softmax modules with NLISoftmax."""
-        replaced = 0
+        self.replaced_layers = []
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Softmax):
-                self._replace_module(name, NLISoftmax(dim=module.dim))
-                replaced += 1
+                dim = getattr(module, "dim", -1)
+                new_mod = NLISoftmax(dim=dim)
+                replace_module(self.model, name, new_mod)
+                self.replaced_layers.append(name)
 
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        stats["softmax_modules_replaced"] = replaced
+        stats["softmax_modules_replaced"] = len(self.replaced_layers)
+        stats["replaced_layers"] = self.replaced_layers
         return self.model, stats
 
 
 @COMPRESSOR_REGISTRY.register("nli_softmax")
+@COMPRESSOR_REGISTRY.register("nli_softmax_compressor")
 def nli_softmax_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """NLI Softmax compressor factory function."""
     compressor = NLISoftmaxCompressor(model, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

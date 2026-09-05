@@ -15,13 +15,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
-import numpy as np
 import torch
 import torch.nn as nn
 
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.pruning_utils import get_calibration_tensors
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 class SliceGPTPCACompressor(BaseCompressor):
     """
     SliceGPT PCA-based compressor that performs activation-aware principal coordinate
-    projection and dimension pruning on Linear layers.
+    projection and dimension pruning on Linear and Conv1D layers.
     """
 
     def __init__(
@@ -39,17 +39,43 @@ class SliceGPTPCACompressor(BaseCompressor):
         sparsity: float = 0.3,
         tokenizer: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
+        max_error: float = 0.5,
+        fallback_to_original: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="slicegpt_pca", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            sparsity = getattr(cfg, "slicegpt_pca_sparsity", getattr(cfg, "sparsity", sparsity))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
         self.calibration_loader = calibration_loader
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_texts = calibration_texts
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
+        self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
 
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
     def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
-        """Capture activations across linear layers using forward hooks."""
+        """Capture activations across target linear layers using forward hooks."""
         self.model.eval()
         activations: Dict[str, List[torch.Tensor]] = {}
         hooks = []
@@ -64,7 +90,7 @@ class SliceGPTPCACompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -99,16 +125,30 @@ class SliceGPTPCACompressor(BaseCompressor):
         """
         Compresses the model using PCA-based principal subspace projection and slicing.
         """
+        self.layer_errors = {}
         activations_map = self._collect_layer_activations()
         sliced_layers_count = 0
         pruned_features_count = 0
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                d_out, d_in = module.weight.shape
-                device = module.weight.device
-                dtype = module.weight.dtype
-                W = module.weight.data.float()
+            if self._is_target_module(name, module):
+                raw_w = module.weight.data
+                cls_name = module.__class__.__name__
+                is_conv1d = "conv1d" in cls_name.lower() or (
+                    raw_w.ndim == 2
+                    and hasattr(module, "in_features")
+                    and module.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
+                device = raw_w.device
+                dtype = raw_w.dtype
+
+                if is_conv1d:
+                    W = raw_w.t().float()
+                    d_out, d_in = W.shape
+                else:
+                    W = raw_w.float()
+                    d_out, d_in = W.shape
 
                 act = activations_map.get(name, None)
                 if act is not None and act.numel() > 0:
@@ -149,11 +189,29 @@ class SliceGPTPCACompressor(BaseCompressor):
                 # Slice / zero out trailing PCA components
                 if keep < d_in:
                     W_pca[:, keep:] = 0.0
-                    pruned_features_count += (d_in - keep)
 
                 # Rotate back to original coordinate basis
                 W_reconstructed = torch.matmul(W_pca, V.T)
-                module.weight.data = W_reconstructed.to(dtype=dtype, device=device)
+
+                # Relative Frobenius error check
+                norm_orig = torch.norm(W, p="fro")
+                rel_err = (torch.norm(W - W_reconstructed, p="fro") / (norm_orig + 1e-8)).item()
+                self.layer_errors[name] = rel_err
+
+                if self.fallback_to_original and rel_err > self.max_error:
+                    logger.warning(
+                        "SliceGPT PCA reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                        rel_err,
+                        name,
+                        self.max_error,
+                    )
+                    continue
+
+                if keep < d_in:
+                    pruned_features_count += (d_in - keep)
+
+                final_w = W_reconstructed.t() if is_conv1d else W_reconstructed
+                module.weight.data = final_w.to(dtype=dtype, device=device)
                 sliced_layers_count += 1
 
         self._compressed_params = self._count_params(self.model)
@@ -162,6 +220,7 @@ class SliceGPTPCACompressor(BaseCompressor):
             "sliced_layers": sliced_layers_count,
             "pruned_features": pruned_features_count,
             "sparsity_target": self.sparsity,
+            "layer_errors": self.layer_errors,
             "method": "slicegpt_pca",
         })
         self.stats = stats
@@ -185,8 +244,8 @@ def slicegpt_pca_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> 
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+
+__all__ = [
+    "SliceGPTPCACompressor",
+    "slicegpt_pca_factory",
+]

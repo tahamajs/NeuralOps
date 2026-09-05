@@ -46,7 +46,7 @@ class LowRankLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.rank = max(1, min(rank, min(in_features, out_features)))
+        self.rank = max(1, min(rank, in_features, out_features))
 
         # V: [in_features, rank] -> maps x to bottleneck
         # U: [out_features, rank] -> maps bottleneck to output
@@ -78,7 +78,7 @@ class LowRankLinear(nn.Module):
 class LowRankCompressor(BaseCompressor):
     """
     SoKA Low-Rank Linear Compressor.
-    Replaces dense nn.Linear layers with factorized LowRankLinear layers.
+    Replaces dense nn.Linear and Conv1D layers with factorized LowRankLinear layers.
     """
 
     def __init__(
@@ -86,43 +86,91 @@ class LowRankCompressor(BaseCompressor):
         model: nn.Module,
         rank: int = 8,
         energy_threshold: Optional[float] = None,
+        max_error: float = 0.5,
+        fallback_to_original: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="soka", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            rank = getattr(cfg, "soka_rank", getattr(cfg, "rank", rank))
+            energy_threshold = getattr(cfg, "soka_energy", getattr(cfg, "energy_threshold", energy_threshold))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
         self.rank = max(1, int(rank))
         self.energy_threshold = energy_threshold
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
         self.compressed_layers: List[Dict[str, Any]] = []
+        self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
 
-    def _select_rank(self, S: torch.Tensor) -> int:
-        """Determines rank dynamically based on singular energy or fixed target."""
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        if isinstance(module, LowRankLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
+    def _select_rank(self, S: torch.Tensor, in_f: int, out_f: int) -> int:
+        """Determines rank dynamically based on singular energy or fixed target, capped for true reduction."""
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        max_r = min(len(S), param_cap)
+
         if self.energy_threshold is None:
-            return min(self.rank, len(S))
+            return max(1, min(self.rank, max_r))
         total_energy = torch.sum(S ** 2)
         if total_energy <= 0:
-            return min(self.rank, len(S))
+            return max(1, min(self.rank, max_r))
         cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
         idx = torch.where(cum_energy >= self.energy_threshold)[0]
         r = idx[0].item() + 1 if len(idx) > 0 else len(S)
-        return max(1, min(r, len(S)))
+        return max(1, min(r, max_r))
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Replaces all Linear modules with LowRankLinear."""
-        linear_layers: List[Tuple[str, nn.Linear]] = []
+        """Replaces target Linear and Conv1D modules with LowRankLinear."""
+        self.compressed_layers = []
+        self.layer_errors = {}
+
+        linear_layers: List[Tuple[str, nn.Module]] = []
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
+            if self._is_target_module(name, module):
                 linear_layers.append((name, module))
 
+        if not linear_layers:
+            logger.warning("SoKA: No compressible linear layers found.")
+            return self.model, self.get_compression_stats()
+
         for name, module in linear_layers:
-            W = module.weight.data.clone().float()
-            device = module.weight.device
-            dtype = module.weight.dtype
+            raw_w = module.weight.data
+            cls_name = module.__class__.__name__
+            is_conv1d = "conv1d" in cls_name.lower() or (
+                raw_w.ndim == 2
+                and hasattr(module, "in_features")
+                and module.in_features == raw_w.shape[0]
+                and raw_w.shape[0] < raw_w.shape[1]
+            )
+
+            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            device = raw_w.device
+            dtype = raw_w.dtype
             d_out, d_in = W.shape
 
             try:
                 U, S, Vh = torch.linalg.svd(W, full_matrices=False)
-                r = self._select_rank(S)
-                sqrt_S = torch.sqrt(S[:r])
+                r = self._select_rank(S, d_in, d_out)
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
 
                 new_layer = LowRankLinear(
                     in_features=d_in,
@@ -141,6 +189,21 @@ class LowRankCompressor(BaseCompressor):
                 if module.bias is not None:
                     new_layer.bias.data.copy_(module.bias.data)
 
+                # Frobenius reconstruction error check
+                W_rec = new_layer.weight.float()
+                norm_orig = torch.norm(W, p="fro")
+                rel_err = (torch.norm(W - W_rec, p="fro") / (norm_orig + 1e-8)).item()
+                self.layer_errors[name] = rel_err
+
+                if self.fallback_to_original and rel_err > self.max_error:
+                    logger.warning(
+                        "SoKA reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                        rel_err,
+                        name,
+                        self.max_error,
+                    )
+                    continue
+
                 if name == "":
                     self.model = new_layer
                 else:
@@ -149,6 +212,7 @@ class LowRankCompressor(BaseCompressor):
                     "name": name,
                     "original_shape": (d_out, d_in),
                     "rank": r,
+                    "error": rel_err,
                 })
             except Exception as e:
                 logger.debug("SVD decomposition error in %s: %s", name, e)
@@ -160,6 +224,7 @@ class LowRankCompressor(BaseCompressor):
             "method": "soka_low_rank_svd",
             "fixed_rank": self.rank,
             "energy_threshold": self.energy_threshold,
+            "layer_errors": self.layer_errors,
         })
         self.stats = stats
         return self.model, stats
@@ -180,8 +245,10 @@ def soka_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+
+__all__ = [
+    "LowRankLinear",
+    "LowRankCompressor",
+    "SoKACompressor",
+    "soka_factory",
+]

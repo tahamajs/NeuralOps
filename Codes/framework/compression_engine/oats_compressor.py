@@ -49,9 +49,21 @@ class OATSCompressor(BaseCompressor):
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         structured_24: bool = True,
+        max_error: float = 0.35,
+        fallback_to_original: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="oats", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            sparsity = getattr(cfg, "oats_sparsity", getattr(cfg, "sparsity", sparsity))
+            rank_ratio = getattr(cfg, "oats_rank_ratio", getattr(cfg, "rank_ratio", rank_ratio))
+            num_iters = getattr(cfg, "oats_num_iters", getattr(cfg, "num_iters", num_iters))
+            structured_24 = getattr(cfg, "oats_structured_24", getattr(cfg, "structured_24", structured_24))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.rank_ratio = max(0.01, min(float(rank_ratio), 0.9))
@@ -59,15 +71,33 @@ class OATSCompressor(BaseCompressor):
         self.structured_24 = structured_24
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
         self.target_device = (
             torch.device(device)
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
+        self.compressed_layers: List[Dict[str, Any]] = []
         self.stats: Dict[str, Any] = {}
 
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        from framework.utils.compat import should_compress_linear
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
     def _collect_activations(self) -> Dict[str, torch.Tensor]:
-        """Collect input activations across all nn.Linear modules."""
+        """Collect input activations across all compressible linear/conv1d modules."""
         self.model.eval()
         activations: Dict[str, List[torch.Tensor]] = {}
         hooks = []
@@ -82,7 +112,7 @@ class OATSCompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -188,34 +218,56 @@ class OATSCompressor(BaseCompressor):
         return W_comp
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes OATS decomposition across all Linear modules."""
+        """Executes OATS decomposition across compressible Linear and Conv1D modules."""
         activations_map = self._collect_activations()
-        decomposed_layers_count = 0
+        self.compressed_layers = []
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                W = module.weight.data.clone().float()
-                device = W.device
-                dtype = module.weight.dtype
+            if self._is_target_module(name, module):
+                raw_w = module.weight.data
+                cls_name = module.__class__.__name__
+                is_conv1d = "conv1d" in cls_name.lower() or (
+                    raw_w.ndim == 2
+                    and hasattr(module, "in_features")
+                    and module.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
+
+                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                device = raw_w.device
+                dtype = raw_w.dtype
 
                 act = activations_map.get(name, None)
                 W_comp = self._oats_decompose(W, act)
 
-                module.weight.data = W_comp.to(dtype=dtype, device=device)
-                decomposed_layers_count += 1
+                err = (torch.norm(W - W_comp, p="fro") / (torch.norm(W, p="fro") + 1e-8)).item()
+                if self.fallback_to_original and err > self.max_error:
+                    continue
+
+                if is_conv1d:
+                    module.weight.data = W_comp.t().contiguous().to(dtype=dtype, device=device)
+                else:
+                    module.weight.data = W_comp.contiguous().to(dtype=dtype, device=device)
+
+                self.compressed_layers.append({
+                    "name": name,
+                    "relative_error": float(err),
+                })
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats.update({
-            "decomposed_layers": decomposed_layers_count,
+            "decomposed_layers": len(self.compressed_layers),
             "sparsity_target": self.sparsity,
             "rank_ratio": self.rank_ratio,
             "structured_24": self.structured_24,
             "num_iters": self.num_iters,
             "method": "oats_outlier_decomposition",
+            "compressed_layers": self.compressed_layers,
         })
         self.stats = stats
         return self.model, stats
+
 
 
 @COMPRESSOR_REGISTRY.register("oats")

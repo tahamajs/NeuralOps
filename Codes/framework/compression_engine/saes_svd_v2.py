@@ -6,7 +6,7 @@ Registered as 'saes_svd_v2' and 'saes'.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -15,6 +15,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,6 @@ logger = logging.getLogger(__name__)
 class SAESSVDCompressorV2(BaseCompressor):
     """Spectrum-Aware Error Suppression SVD (SAES-SVD v2)."""
 
-
     def __init__(
         self,
         model: nn.Module,
@@ -32,6 +32,8 @@ class SAESSVDCompressorV2(BaseCompressor):
         rank_ratio: float = 0.7,
         correcting_steps: int = 3,
         target_modules: Optional[list[str]] = None,
+        max_error: float = 0.5,
+        fallback_to_original: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="saes_svd_v2", **kwargs)
@@ -42,6 +44,8 @@ class SAESSVDCompressorV2(BaseCompressor):
             correcting_steps = getattr(
                 cfg, "saes_correcting_steps", getattr(cfg, "correcting_steps", correcting_steps)
             )
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -50,11 +54,21 @@ class SAESSVDCompressorV2(BaseCompressor):
         self.rank_ratio = float(rank_ratio)
         self.correcting_steps = int(correcting_steps)
         self.target_modules = target_modules
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.layer_errors: Dict[str, float] = {}
+        self.replaced_layers: List[Dict[str, Any]] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if not isinstance(module, nn.Linear):
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
             return False
         if isinstance(module, SVDLinear):
+            return False
+        if not should_compress_linear(self.model, name):
             return False
         if self.target_modules is None:
             return True
@@ -62,25 +76,47 @@ class SAESSVDCompressorV2(BaseCompressor):
 
     def compress_linear(
         self,
-        layer: nn.Linear,
+        layer: nn.Module,
         rank: Optional[int] = None,
-    ) -> SVDLinear:
-        """Decompose a single linear layer with spectrum-aware error suppression."""
-        out_f = layer.out_features
-        in_f = layer.in_features
+    ) -> Optional[SVDLinear]:
+        """Decompose a single linear or Conv1D layer with spectrum-aware error suppression."""
+        raw_w = layer.weight.data
+        cls_name = layer.__class__.__name__
+        is_conv1d = "conv1d" in cls_name.lower() or (
+            raw_w.ndim == 2
+            and hasattr(layer, "in_features")
+            and layer.in_features == raw_w.shape[0]
+            and raw_w.shape[0] < raw_w.shape[1]
+        )
+
+        if is_conv1d:
+            W = raw_w.t().float()
+            out_f = W.shape[0]
+            in_f = W.shape[1]
+        else:
+            W = raw_w.float()
+            out_f = getattr(layer, "out_features", W.shape[0])
+            in_f = getattr(layer, "in_features", W.shape[1])
+
         max_r = min(out_f, in_f)
+        # Cap rank to guarantee parameter reduction
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        effective_max_r = min(max_r, param_cap)
 
         if rank is not None:
-            r = max(1, min(rank, max_r))
+            r = max(1, min(rank, effective_max_r))
         else:
-            r = max(1, min(int(round(max_r * self.rank_ratio)), max_r))
+            r = max(1, min(int(round(max_r * self.rank_ratio)), effective_max_r))
 
         device = layer.weight.device
         dtype = layer.weight.dtype
 
         # Compute full SVD in FP32
-        W = layer.weight.data.float()
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        except Exception as e:
+            logger.warning("SAES-SVD SVD failure: %s", e)
+            return None
 
         # Initial symmetric square-root singular value allocation
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
@@ -88,16 +124,29 @@ class SAESSVDCompressorV2(BaseCompressor):
         B = sqrt_S.unsqueeze(1) * Vt[:r, :]     # [r, in_features]
 
         # Iterative residual error suppression
-        eps_eye = 1e-6 * torch.eye(r, device=device, dtype=torch.float32)
+        eps_eye = 1e-6 * torch.eye(r, device=W.device, dtype=torch.float32)
         for _ in range(self.correcting_steps):
             E = W - A @ B
             # Update A towards residual gradient
             BBt = B @ B.t() + eps_eye
-            A = A + E @ B.t() @ torch.linalg.inv(BBt)
+            A = A + E @ B.t() @ torch.linalg.pinv(BBt)
 
             # Update B towards residual gradient
             AtA = A.t() @ A + eps_eye
-            B = B + torch.linalg.inv(AtA) @ A.t() @ (W - A @ B)
+            B = B + torch.linalg.pinv(AtA) @ A.t() @ (W - A @ B)
+
+        # Compute relative Frobenius reconstruction error
+        W_rec = A @ B
+        norm_orig = torch.norm(W, p="fro")
+        rel_err = (torch.norm(W - W_rec, p="fro") / (norm_orig + 1e-8)).item()
+
+        if self.fallback_to_original and rel_err > self.max_error:
+            logger.warning(
+                "SAES-SVD reconstruction error %.4f exceeded threshold %.4f. Keeping original.",
+                rel_err,
+                self.max_error,
+            )
+            return None
 
         svd_layer = SVDLinear(
             in_features=in_f,
@@ -108,16 +157,21 @@ class SAESSVDCompressorV2(BaseCompressor):
             device=device,
         )
         svd_layer.set_low_rank_factors(
-            U_factor=A.to(dtype=dtype),
-            V_factor=B.to(dtype=dtype),
+            U_factor=A.to(dtype=dtype, device=device),
+            V_factor=B.to(dtype=dtype, device=device),
         )
         if layer.bias is not None:
             svd_layer.bias.data.copy_(layer.bias.data)
 
+        # Store error on module for inspection
+        svd_layer.reconstruction_error = rel_err
         return svd_layer
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all linear layers in the model."""
+        self.layer_errors = {}
+        self.replaced_layers = []
+
         target_layers = [
             (name, mod)
             for name, mod in self.model.named_modules()
@@ -130,9 +184,16 @@ class SAESSVDCompressorV2(BaseCompressor):
 
         for name, module in target_layers:
             svd_layer = self.compress_linear(module, rank=self.rank)
-            replace_module(self.model, name, svd_layer)
+            if svd_layer is not None:
+                err = getattr(svd_layer, "reconstruction_error", 0.0)
+                self.layer_errors[name] = err
+                self.replaced_layers.append({"name": name, "rank": svd_layer.rank, "error": err})
+                replace_module(self.model, name, svd_layer)
 
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        stats["layer_errors"] = self.layer_errors
+        stats["compressed_layers"] = len(self.replaced_layers)
         return self.model, stats
 
 
@@ -158,4 +219,3 @@ __all__ = [
     "saes_svd_factory",
     "saes_svd_compressor_factory",
 ]
-
