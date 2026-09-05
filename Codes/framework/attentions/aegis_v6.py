@@ -4,20 +4,64 @@ AEGIS-Attention V6: Unified Hybrid Transformer Attention Module.
 Combines SVD low-rank factorized projections with LoRA adapters,
 sliding window attention, global linear kernel attention with adaptive spectral gating,
 and context fusion initialized to prioritize high-fidelity local attention.
+Hardened for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
 
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-
-
 from framework.core.attention_utils import repeat_kv
+
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim <= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+
+    return q, k
 
 
 @dataclass
@@ -43,6 +87,7 @@ class AegisConfigV3:
     kernel_use_float64: bool = False
     kernel_seed: Optional[int] = None
     fusion_gate_bias: float = 1.8
+    is_decoder: bool = False
 
     def __init__(self, **kwargs):
         self.hidden_size = kwargs.get("hidden_size")
@@ -68,6 +113,7 @@ class AegisConfigV3:
         self.kernel_use_float64 = kwargs.get("kernel_use_float64", False)
         self.kernel_seed = kwargs.get("kernel_seed", None)
         self.fusion_gate_bias = kwargs.get("fusion_gate_bias", 1.8)
+        self.is_decoder = kwargs.get("is_decoder", False)
 
     def __post_init__(self):
         if self.num_heads is not None:
@@ -81,7 +127,8 @@ class AegisConfigV3:
 class FactorisedLowRankProjection(nn.Module):
     r"""
     Low-rank SVD projection with LoRA update branch:
-    $$y = x (V \Sigma U^T) + x (B^T A^T) + b$$
+    88291y = x (V \Sigma U^T) + x (B^T A^T) + b88291
+    Base SVD weights are frozen; LoRA parameters A and B are trainable.
     """
 
     def __init__(
@@ -96,42 +143,79 @@ class FactorisedLowRankProjection(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.svd_rank = min(svd_rank, in_features, out_features)
+        self.lora_rank = lora_rank
+
+        device = pretrained_weight.device if pretrained_weight is not None else torch.device("cpu")
+        dtype = pretrained_weight.dtype if pretrained_weight is not None else torch.float32
+
+        self.register_buffer("U", torch.zeros(out_features, self.svd_rank, device=device, dtype=dtype))
+        self.S = nn.Parameter(torch.ones(self.svd_rank, device=device, dtype=dtype), requires_grad=False)
+        self.register_buffer("V", torch.zeros(in_features, self.svd_rank, device=device, dtype=dtype))
+        
+        if lora_rank > 0:
+            self.A = nn.Parameter(torch.zeros(out_features, lora_rank, device=device, dtype=dtype))
+            self.B = nn.Parameter(torch.zeros(lora_rank, in_features, device=device, dtype=dtype))
+            nn.init.kaiming_uniform_(self.B, a=math.sqrt(5))
+            nn.init.zeros_(self.A)
+        else:
+            self.register_parameter("A", None)
+            self.register_parameter("B", None)
+
+        self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype), requires_grad=False)
 
         if pretrained_weight is not None:
-            device = pretrained_weight.device
-            dtype = pretrained_weight.dtype
-            W = pretrained_weight.detach().float()
+            self.decompose_from_weight(pretrained_weight, pretrained_bias)
+
+    def decompose_from_weight(
+        self,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+    ) -> None:
+        with torch.no_grad():
+            W = weight.float()
+            if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
+                rep = self.out_features // W.shape[0]
+                W = W.repeat(rep, 1)
+                if bias is not None:
+                    bias = bias.repeat(rep)
+            elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
+                rep = W.shape[0] // self.out_features
+                W = W.view(self.out_features, rep, -1).mean(dim=1)
+                if bias is not None:
+                    bias = bias.view(self.out_features, rep).mean(dim=1)
+            elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
+                padded = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
+                padded[:min(self.out_features, W.shape[0]), :min(self.in_features, W.shape[1])] = W[:min(self.out_features, W.shape[0]), :min(self.in_features, W.shape[1])]
+                W = padded
+
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             S = torch.clamp(S, min=1e-6)
-            effective_rank = min(svd_rank, U.size(1), Vt.size(0))
-            U_init = U[:, :effective_rank].to(device=device, dtype=dtype)
-            S_init = S[:effective_rank].to(device=device, dtype=dtype)
-            V_init = Vt[:effective_rank, :].t().to(device=device, dtype=dtype)
-        else:
-            device = torch.device("cpu")
-            dtype = torch.float32
-            effective_rank = min(svd_rank, in_features, out_features)
-            U_init = torch.randn(out_features, effective_rank, device=device, dtype=dtype) * 0.02
-            S_init = torch.ones(effective_rank, device=device, dtype=dtype)
-            V_init = torch.randn(in_features, effective_rank, device=device, dtype=dtype) * 0.02
+            r = min(self.svd_rank, U.size(1), Vt.size(0))
+            self.U.zero_()
+            self.V.zero_()
+            self.S.data.zero_()
+            self.U[:, :r].copy_(U[:, :r].to(self.U.dtype))
+            self.S.data[:r].copy_(S[:r].to(self.S.dtype))
+            self.V[:, :r].copy_(Vt[:r, :].t().to(self.V.dtype))
+            if bias is not None and self.bias is not None:
+                self.bias.data[:min(len(self.bias), len(bias))].copy_(bias[:min(len(self.bias), len(bias))].to(self.bias.dtype))
+            self.freeze_base_weights()
 
-        self.register_buffer("U", U_init)
-        self.S = nn.Parameter(S_init)
-        self.register_buffer("V", V_init)
-        self.A = nn.Parameter(torch.zeros(out_features, lora_rank, device=device, dtype=dtype))
-        self.B = nn.Parameter(torch.zeros(lora_rank, in_features, device=device, dtype=dtype))
-        nn.init.normal_(self.B, std=0.02)
-        if pretrained_bias is not None:
-            self.bias = nn.Parameter(pretrained_bias.detach().to(device=device, dtype=dtype))
-        else:
-            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
+    def freeze_base_weights(self) -> None:
+        self.S.requires_grad = False
+        self.bias.requires_grad = False
+        if self.lora_rank > 0 and self.A is not None and self.B is not None:
+            self.A.requires_grad = True
+            self.B.requires_grad = True
 
     @property
     def weight(self) -> torch.Tensor:
-        """Reconstructed effective weight matrix (out_features, in_features)."""
         svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t()
-        lora_w = self.A.float() @ self.B.float()
-        return (svd_w + lora_w).to(self.A.dtype)
+        if self.lora_rank > 0 and self.A is not None and self.B is not None:
+            lora_w = self.A.float() @ self.B.float()
+            return (svd_w + lora_w).to(self.A.dtype)
+        return svd_w.to(self.U.dtype)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
@@ -139,9 +223,12 @@ class FactorisedLowRankProjection(nn.Module):
         xV = torch.matmul(x_f, self.V.float())
         xV_S = xV * self.S.float().unsqueeze(0).unsqueeze(0)
         out_svd = torch.matmul(xV_S, self.U.float().t())
-        xB = torch.matmul(x_f, self.B.float().t())
-        out_lora = torch.matmul(xB, self.A.float().t())
-        out = (out_svd + out_lora + self.bias.float()).to(orig_dtype)
+        if self.lora_rank > 0 and self.A is not None and self.B is not None:
+            xB = torch.matmul(x_f, self.B.float().t())
+            out_lora = torch.matmul(xB, self.A.float().t())
+            out = (out_svd + out_lora + self.bias.float()).to(orig_dtype)
+        else:
+            out = (out_svd + self.bias.float()).to(orig_dtype)
         return out
 
 
@@ -241,14 +328,18 @@ class ContextFusionGate(nn.Module):
         return torch.sigmoid(logits)
 
 
-@ATTENTION_REGISTRY.register("aegis_v6")
-@ATTENTION_REGISTRY.register("aegis_v6_attn")
+@ATTENTION_REGISTRY.register("aegis_v6", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v6_attn", supports_causal=True, supports_gqa=True)
 class AegisAttentionV3(BaseAttention):
+    supports_causal: bool = True
+    supports_gqa: bool = True
+
     def __init__(
         self,
         config: Optional[Any] = None,
         pretrained_qkv: Optional[Dict[str, torch.Tensor]] = None,
         pretrained_attn: Optional[nn.Module] = None,
+        is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ):
         if not isinstance(config, AegisConfigV3):
@@ -259,21 +350,28 @@ class AegisAttentionV3(BaseAttention):
                         h_size = obj.dense.out_features
                         break
             if h_size is None:
-                h_size = kwargs.get("hidden_size")
+                h_size = kwargs.get("hidden_size", 768)
 
             n_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", None))))
             if n_heads is None:
-                n_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads"))
+                n_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
 
             h_dim = getattr(config, "head_dim", getattr(config, "d_kv", None))
             if h_dim is None and h_size is not None and n_heads is not None:
                 h_dim = h_size // max(1, n_heads)
             elif h_dim is None:
-                h_dim = kwargs.get("head_dim")
+                h_dim = kwargs.get("head_dim", 64)
 
             n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
             if n_kv_heads is None:
                 n_kv_heads = kwargs.get("num_key_value_heads", n_heads)
+
+            dec = is_decoder if is_decoder is not None else (
+                getattr(config, "is_decoder", False)
+                or getattr(config, "causal", False)
+                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                if config else False
+            )
 
             config = AegisConfigV3(
                 hidden_size=h_size,
@@ -285,41 +383,33 @@ class AegisAttentionV3(BaseAttention):
                 low_rank_update=getattr(config, "low_rank_update", kwargs.get("low_rank_update", 16)),
                 kernel_feature_dim=getattr(config, "kernel_feature_dim", kwargs.get("kernel_feature_dim", 128)),
                 dropout=getattr(config, "dropout", kwargs.get("dropout", 0.1)),
+                is_decoder=dec,
             )
         super().__init__(config)
         self.cfg: AegisConfigV3 = config
         self.hidden_size: int = config.hidden_size
         self.h: int = config.num_heads
+        self.num_heads: int = config.num_heads
         self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.h)
         self.kv_repeat: int = max(1, self.h // max(1, self.num_kv_heads))
         self.d: int = config.head_dim
+        self.head_dim: int = self.d
         self.all_head_size: int = self.h * self.d
         self.all_kv_head_size: int = self.num_kv_heads * self.d
         self.supports_gqa: bool = True
         self.window: int = config.window_size
+        self.is_decoder: bool = getattr(config, "is_decoder", False)
+        self.is_nested_encoder: bool = False
 
-        if pretrained_attn is not None and pretrained_qkv is None:
-            pretrained_qkv = self.init_from_pretrained(pretrained_attn)
-
-        Qp = pretrained_qkv.get("q") if pretrained_qkv else None
-        Kp = pretrained_qkv.get("k") if pretrained_qkv else None
-        Vp = pretrained_qkv.get("v") if pretrained_qkv else None
-        Op = pretrained_qkv.get("o") if pretrained_qkv else None
-
-        Qp_b = pretrained_qkv.get("q_b") if pretrained_qkv else None
-        Kp_b = pretrained_qkv.get("k_b") if pretrained_qkv else None
-        Vp_b = pretrained_qkv.get("v_b") if pretrained_qkv else None
-        Op_b = pretrained_qkv.get("o_b") if pretrained_qkv else None
-
-        self.q_proj = FactorisedLowRankProjection(self.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update, Qp, Qp_b)
-        self.k_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update, Kp, Kp_b)
-        self.v_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update, Vp, Vp_b)
-        self.out_proj = FactorisedLowRankProjection(self.all_head_size, self.hidden_size, config.svd_rank, config.low_rank_update, Op, Op_b)
+        self.q_proj = FactorisedLowRankProjection(self.hidden_size, self.all_head_size, config.svd_rank, config.low_rank_update)
+        self.k_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
+        self.v_proj = FactorisedLowRankProjection(self.hidden_size, self.all_kv_head_size, config.svd_rank, config.low_rank_update)
+        self.out_proj = FactorisedLowRankProjection(self.all_head_size, self.hidden_size, config.svd_rank, config.low_rank_update)
 
         self.pre_norm = config.use_pre_norm
         if self.pre_norm:
-            self.q_norm = nn.LayerNorm(self.d, eps=1e-5)
-            self.k_norm = nn.LayerNorm(self.d, eps=1e-5)
+            self.q_norm = nn.LayerNorm(self.d)
+            self.k_norm = nn.LayerNorm(self.d)
 
         kernel_cfg = KernelFeatureConfig(
             head_dim=self.d,
@@ -335,47 +425,138 @@ class AegisAttentionV3(BaseAttention):
         self.gates = GatingModule(config.hidden_size, self.h, self.d, config.use_query_gate, config.use_input_gate)
         self.fusion = ContextFusionGate(config.hidden_size, self.h, self.d, init_bias=config.fusion_gate_bias)
 
-    @classmethod
-    def from_distilbert_pretrained(
-        cls, old_attn: nn.Module, model_config: Optional[Any] = None, **kwargs: Any
-    ) -> "AegisAttentionV3":
-        pretrained_dict = cls.init_from_pretrained(old_attn)
-        if model_config is None:
-            class DummyConfig:
-                pass
-            model_config = DummyConfig()
-            model_config.hidden_size = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(old_attn, "n_heads", getattr(old_attn, "num_attention_heads", 4))
-        return cls(config=model_config, pretrained_qkv=pretrained_dict, **kwargs)
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    @property
+    def query(self) -> FactorisedLowRankProjection:
+        return self.q_proj
+
+    @property
+    def key(self) -> FactorisedLowRankProjection:
+        return self.k_proj
+
+    @property
+    def value(self) -> FactorisedLowRankProjection:
+        return self.v_proj
 
     def copy_weights(self, old_attn: Any) -> None:
-        """Transfer and SVD-decompose pretrained weights into Low-Rank factorized projections."""
-        pretrained_dict = self.init_from_pretrained(old_attn)
-        if pretrained_dict:
-            proj_map = {
-                "q_proj": ("q", "q_b"),
-                "k_proj": ("k", "k_b"),
-                "v_proj": ("v", "v_b"),
-                "out_proj": ("o", "o_b"),
-            }
-            for layer_name, (w_key, b_key) in proj_map.items():
-                layer = getattr(self, layer_name, None)
-                w = pretrained_dict.get(w_key)
-                b = pretrained_dict.get(b_key)
-                if layer is not None and w is not None:
-                    with torch.no_grad():
-                        W = w.detach().float()
-                        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                        S = torch.clamp(S, min=1e-6)
-                        r = min(layer.svd_rank, U.size(1), Vt.size(0))
-                        layer.U.data.zero_()
-                        layer.V.data.zero_()
-                        layer.S.data.zero_()
-                        layer.U.data[:, :r] = U[:, :r].to(device=layer.U.device, dtype=layer.U.dtype)
-                        layer.S.data[:r] = S[:r].to(device=layer.S.device, dtype=layer.S.dtype)
-                        layer.V.data[:, :r] = Vt[:r, :].t().to(device=layer.V.device, dtype=layer.V.dtype)
-                        if b is not None and layer.bias is not None:
-                            layer.bias.data.copy_(b.to(device=layer.bias.device, dtype=layer.bias.dtype))
+        from framework.core.adapters import UniversalAdapter
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        # 1. UniversalAdapter extraction
+        for proj in ["q", "k", "v", "o"]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+                if w is not None:
+                    extracted[proj] = (w, b)
+            except Exception:
+                pass
+
+        # 2. GPT-2 Fused c_attn Conv1D handling
+        if hasattr(old_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            weight = old_attn.c_attn.weight.data
+            bias = getattr(old_attn.c_attn, "bias", None)
+            bias_data = bias.data if bias is not None else None
+            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+                weight = weight.t()
+            split_size = weight.shape[0] // 3
+            q_w = weight[:split_size, :]
+            k_w = weight[split_size : 2 * split_size, :]
+            v_w = weight[2 * split_size :, :]
+            q_b = bias_data[:split_size] if bias_data is not None else None
+            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+            v_b = bias_data[2 * split_size :] if bias_data is not None else None
+            extracted["q"] = (q_w, q_b)
+            extracted["k"] = (k_w, k_b)
+            extracted["v"] = (v_w, v_b)
+
+        if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
+            w_o = old_attn.c_proj.weight.data
+            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+                w_o = w_o.t()
+            b_o = getattr(old_attn.c_proj, "bias", None)
+            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+
+        # 3. RoBERTa / BERT Nested Encoder handling
+        if hasattr(old_attn, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            s = getattr(old_attn, "self")
+            if hasattr(s, "query"):
+                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+            if hasattr(s, "key"):
+                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+            if hasattr(s, "value"):
+                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+
+        if hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense") and extracted["o"][0] is None:
+            dense = old_attn.output.dense
+            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
+
+        # 4. Modern Decoders & DistilBERT
+        named_map = {
+            "q": ["q_proj", "q_lin", "query"],
+            "k": ["k_proj", "k_lin", "key"],
+            "v": ["v_proj", "v_lin", "value"],
+            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+        }
+        for proj, names in named_map.items():
+            if extracted[proj][0] is None:
+                for name in names:
+                    if hasattr(old_attn, name):
+                        layer = getattr(old_attn, name)
+                        if hasattr(layer, "weight"):
+                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            break
+
+        cls_name = old_attn.__class__.__name__
+        has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        self.is_nested_encoder = (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            or (cls_name.endswith("SelfAttention") and not has_out_proj)
+        ) and not has_out_proj
+
+        missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
+        if not self.is_nested_encoder and extracted["o"][0] is None:
+            missing.append("o")
+        if missing:
+            raise RuntimeError(f"AegisAttentionV6 missing required weights for projections: {missing}")
+
+        for proj_key in ["q", "k", "v"]:
+            w = extracted[proj_key][0]
+            if w is not None:
+                norm = torch.linalg.norm(w.float())
+                if norm < 1e-4:
+                    raise RuntimeError(f"AegisAttentionV6 extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+
+        if extracted["o"][0] is not None:
+            norm_o = torch.linalg.norm(extracted["o"][0].float())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"AegisAttentionV6 extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+
+        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t()
+            return w
+
+        with torch.no_grad():
+            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+                w, b = extracted[proj_key]
+                if w is not None:
+                    in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
+                    w_oriented = _orient(w, in_dim)
+                    target.decompose_from_weight(w_oriented, b)
+                elif proj_key == "o" and self.is_nested_encoder:
+                    eye_w = torch.eye(self.hidden_size, self.all_head_size, device=self.out_proj.U.device, dtype=self.out_proj.U.dtype)
+                    target.decompose_from_weight(eye_w, None)
+
+        if hasattr(old_attn, "is_decoder"):
+            self.is_decoder = bool(old_attn.is_decoder)
 
     def _reshape(self, x: torch.Tensor, num_heads: int) -> torch.Tensor:
         B, N, _ = x.shape
@@ -397,24 +578,35 @@ class AegisAttentionV3(BaseAttention):
 
     def _sliding_window_attention(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor, pad_mask_binary: torch.Tensor) -> torch.Tensor:
         B, h, N, d = Q.shape
+        N_k = K.shape[2]
         W = self.window
         scale = d**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
-        idx = torch.arange(N, device=Q.device)
-        dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
+        idx_q = torch.arange(N, device=Q.device).unsqueeze(1)
+        idx_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
+        dist = (idx_q - idx_k).abs()
         band = (dist <= W).unsqueeze(0).unsqueeze(0)
-        mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
-        scores = scores.masked_fill(~band, mask_val)
-        pad_mask = (1.0 - pad_mask_binary) * mask_val
-        scores = scores + pad_mask
 
-        attn = F.softmax(scores, dim=-1)
-        attn = torch.nan_to_num(attn, nan=0.0)
+        if self.is_decoder and N > 1:
+            causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
+            band = band & causal
+
+        mask_val = -10000.0
+        scores = scores.masked_fill(~band, mask_val)
+        if pad_mask_binary is not None:
+            pad_mask = (1.0 - pad_mask_binary) * mask_val
+            scores = scores + pad_mask
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn = F.softmax(scores.float(), dim=-1).to(Q.dtype)
         attn = F.dropout(attn, p=self.cfg.dropout, training=self.training)
         return torch.matmul(attn, V)
 
     def _global_linear_attention(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor, pad_mask_binary: torch.Tensor, q_gate: Optional[torch.Tensor], in_gate: Optional[torch.Tensor]) -> torch.Tensor:
+        if self.is_decoder:
+            return self._sliding_window_attention(Q, K, V, pad_mask_binary)
+
         B, h, N, d = Q.shape
         pad = pad_mask_binary
         Qk = self.q_norm(Q) if self.pre_norm else Q
@@ -437,7 +629,7 @@ class AegisAttentionV3(BaseAttention):
         den = torch.matmul(Q_feat, Z.transpose(-2, -1)).clamp(min=1e-5)
         out = num / den
         out = out * pad.transpose(-2, -1)
-        return out
+        return torch.nan_to_num(out, nan=0.0)
 
     def forward(
         self,
@@ -450,17 +642,31 @@ class AegisAttentionV3(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
-        pad_mask_binary = self._convert_mask_to_binary(
-            attention_mask, B, N, hidden_states.device, hidden_states.dtype
-        )
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        N_kv = kv_input.shape[1]
+
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        pad_mask_binary = self._convert_mask_to_binary(eff_mask, B, N_kv, device, dtype)
 
         Q = self._reshape(self.q_proj(hidden_states), self.h)
-        K = self._reshape(self.k_proj(hidden_states), self.num_kv_heads)
-        V = self._reshape(self.v_proj(hidden_states), self.num_kv_heads)
+        K = self._reshape(self.k_proj(kv_input), self.num_kv_heads)
+        V = self._reshape(self.v_proj(kv_input), self.num_kv_heads)
+
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
@@ -472,41 +678,28 @@ class AegisAttentionV3(BaseAttention):
 
         fuse_gate = self.fusion(hidden_states, local_out, global_out)
         fused = fuse_gate * local_out + (1.0 - fuse_gate) * global_out
+
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(1)
+            fused = fused * head_mask
+
         fused = fused.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        out = self.out_proj(fused)
+        fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        if self.is_nested_encoder:
+            out = fused
+        else:
+            out = self.out_proj(fused)
+
         return out, None
 
     def get_ortho_loss(self) -> torch.Tensor:
-        return torch.tensor(0.0, device=self.out_proj.A.device)
-
-    @staticmethod
-    def init_from_pretrained(layer: nn.Module) -> Dict[str, torch.Tensor]:
-        def _get_proj(p_name: str):
-            for obj in [layer, getattr(layer, "self", None), getattr(layer, "output", None)]:
-                if obj is not None:
-                    for attr in [p_name, f"{p_name}_proj", f"{p_name}_lin", "query" if p_name == "q" else ("key" if p_name == "k" else ("value" if p_name == "v" else "dense")), "out_proj" if p_name == "o" else None]:
-                        if attr and hasattr(obj, attr):
-                            mod = getattr(obj, attr)
-                            if hasattr(mod, "weight") and isinstance(mod.weight, torch.Tensor):
-                                return mod.weight.data.clone().detach(), (mod.bias.data.clone().detach() if mod.bias is not None else None)
-            return None, None
-
-        qw, qb = _get_proj("q")
-        kw, kb = _get_proj("k")
-        vw, vb = _get_proj("v")
-        ow, ob = _get_proj("o")
-        if qw is not None:
-            tc_heads = getattr(getattr(layer, "config", None), "num_attention_heads", 8)
-            h_dim = getattr(getattr(layer, "config", None), "head_dim", 256)
-            expected_q = tc_heads * h_dim
-            if qw.shape[0] == expected_q * 2:
-                qw = qw.view(tc_heads, 2, h_dim, -1)[:, 0, :, :].reshape(expected_q, -1).contiguous()
-                if qb is not None:
-                    qb = qb.view(tc_heads, 2, h_dim)[:, 0, :].reshape(expected_q).contiguous()
-        return {
-            "q": qw, "k": kw, "v": vw, "o": ow,
-            "q_b": qb, "k_b": kb, "v_b": vb, "o_b": ob,
-        }
+        return torch.tensor(0.0, device=self.out_proj.bias.device)
 
 
 @ATTENTION_REGISTRY.register("aegis_v6_inject")
@@ -542,13 +735,21 @@ def inject_aegis_v6(
         dropout=getattr(comp_config, "dropout", 0.1),
         fusion_gate_bias=getattr(comp_config, "fusion_gate_bias", 1.8),
     )
-    if model_config is None and old_attn is not None:
-        new_attn = AegisAttentionV3.from_distilbert_pretrained(old_attn, config=cfg)
-    else:
-        new_attn = AegisAttentionV3(config=cfg, pretrained_attn=old_attn)
+    new_attn = AegisAttentionV3(config=cfg)
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    if src_attn is not None:
+        try:
+            new_attn.copy_weights(src_attn)
+        except Exception:
+            pass
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
 
     if hasattr(layer, "attention"):
         layer.attention = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
     return new_attn
 
 
