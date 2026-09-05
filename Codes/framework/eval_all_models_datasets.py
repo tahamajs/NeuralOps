@@ -346,6 +346,22 @@ def build_model_instance(
             num_labels=num_labels,
         )
         model = DistilBertForSequenceClassification(cfg)
+    elif family in ("qwen", "qwen2", "qwen3.5", "qwen3_5"):
+        from transformers import Qwen2Config, Qwen2ForSequenceClassification
+        kv_heads = max(1, num_heads // 2)
+        cfg = Qwen2Config(
+            vocab_size=vocab_size if vocab_size != 30522 else 1000,
+            hidden_size=hidden_size,
+            intermediate_size=hidden_size * 2,
+            num_hidden_layers=num_layers,
+            num_attention_heads=num_heads,
+            num_key_value_heads=kv_heads,
+            head_dim=hidden_size // num_heads,
+            num_labels=num_labels,
+            max_position_embeddings=512,
+            pad_token_id=0,
+        )
+        model = Qwen2ForSequenceClassification(cfg)
     else:
         raise ValueError(f"Unsupported model family: {model_family}")
 

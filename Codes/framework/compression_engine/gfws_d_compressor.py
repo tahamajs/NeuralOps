@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.core.base import BaseCompressor
