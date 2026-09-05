@@ -140,6 +140,7 @@ class LoRALinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("rala")
 @ATTENTION_REGISTRY.register("rala_attention")
+@ATTENTION_REGISTRY.register("rala_linear_attention")
 class RALALinearAttention(BaseAttention):
     def __init__(
         self,
@@ -314,8 +315,9 @@ class RALALinearAttention(BaseAttention):
                         if target_mod.bias is not None:
                             nn.init.zeros_(target_mod.bias)
                         continue
-                    else:
-                        raise RuntimeError(f"Missing required weights for {proj_key}")
+                src_norm = torch.linalg.norm(w.float()).item()
+                if src_norm < 1e-4:
+                    raise RuntimeError(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -396,25 +398,51 @@ class RALALinearAttention(BaseAttention):
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
         if is_causal:
-            # Causal prefix scan
-            kv_outer = k_prime.unsqueeze(-1) * v_masked.unsqueeze(-2)  # (B, H, N, d, d)
-            cum_kv = torch.cumsum(kv_outer.float(), dim=2).to(q.dtype)
-            num = (q_prime.unsqueeze(-2) @ cum_kv).squeeze(-2)  # (B, H, N, d)
-
+            # True linear-time recurrence via chunked scan (O(chunk_size * d^2) memory, no O(N * d^2) allocation)
             cum_k = torch.cumsum(k_prime.float(), dim=2).to(q.dtype)
             denom = (q_prime * cum_k).sum(dim=-1, keepdim=True).clamp(min=1e-5)
-            lin_out = num / denom
+
+            chunk_size = min(64, seq_len)
+            num_chunks = (seq_len + chunk_size - 1) // chunk_size
+            S = torch.zeros(
+                batch_size,
+                self.num_heads,
+                self.head_dim,
+                self.head_dim,
+                dtype=q.dtype,
+                device=hidden_states.device,
+            )
+            num_list = []
+
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, seq_len)
+                L = end - start
+                q_c = q_prime[:, :, start:end]
+                k_c = k_prime[:, :, start:end]
+                v_c = v_masked[:, :, start:end]
+
+                causal_mask = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=q.dtype))
+                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+                intra_out = torch.matmul(intra_attn, v_c)
+                inter_out = torch.matmul(q_c, S)
+
+                num_list.append(intra_out + inter_out)
+                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+
+            num = torch.cat(num_list, dim=2)
+            lin_out = torch.nan_to_num(num / denom)
 
             rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)
-            aug_out = torch.einsum("b h n d, h d e -> b h n e", q_prime, rank_mat) / denom
+            aug_out = torch.nan_to_num(torch.einsum("b h n d, h d e -> b h n e", q_prime, rank_mat) / denom)
         else:
             kv = torch.einsum("b h n d, b h n e -> b h d e", k_prime, v_masked)
             z = k_prime.sum(dim=2)  # (B, H, d)
             denom = (torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1) + 1e-5)
-            lin_out = torch.einsum("b h n d, b h d e -> b h n e", q_prime, kv) / denom
+            lin_out = torch.nan_to_num(torch.einsum("b h n d, b h d e -> b h n e", q_prime, kv) / denom)
 
             rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)
-            aug_out = torch.einsum("b h n d, h d e -> b h n e", q_prime, rank_mat) / denom
+            aug_out = torch.nan_to_num(torch.einsum("b h n d, h d e -> b h n e", q_prime, rank_mat) / denom)
 
         out = (lin_out + self.alpha * aug_out) * mask_4d
 
@@ -436,12 +464,51 @@ class RALALinearAttention(BaseAttention):
         return output, None
 
 
+@ATTENTION_REGISTRY.register("rala_inject")
+@ATTENTION_REGISTRY.register("inject_rala")
 def inject_rala(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> Optional[RALALinearAttention]:
+    """Single-layer injection function matching framework convention.
+
+    Creates and returns a new RALALinearAttention module initialized from old_attn.
+    The framework assigns the returned module to layer.attention / layer.self.
+    """
+    if old_attn is None and layer is not None:
+        for attr in ["attention", "self", "attn", "self_attn"]:
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if hasattr(cand, "query") or hasattr(cand, "q_proj") or hasattr(cand, "q_lin") or hasattr(cand, "c_attn"):
+                    old_attn = cand
+                    break
+
+    if old_attn is None:
+        return None
+
+    try:
+        new_attn = RALALinearAttention(
+            config=model_config,
+            pretrained_attn=old_attn,
+            comp_config=comp_config,
+            **kwargs,
+        )
+        return new_attn
+    except Exception:
+        return None
+
+
+def inject_rala_model(
     model: nn.Module,
     target_layer_idx: Optional[int] = None,
     **kwargs: Any,
 ) -> Optional[nn.Module]:
-    """Safely replace attention in model with RALALinearAttention."""
+    """Safely replace attention modules in an entire model with RALALinearAttention."""
     try:
         replaced = 0
         for name, module in model.named_modules():
@@ -466,3 +533,4 @@ def inject_rala(
         return model if replaced > 0 else None
     except Exception:
         return None
+
