@@ -1,6 +1,24 @@
 """
-SAES-SVD v2: Spectrum-Aware Error Suppression SVD with iterative residual compensation.
-Registered as 'saes_svd_v2' and 'saes'.
+SAES-SVD v2: Spectrum-Aware Error-Suppressed Singular Value Decomposition.
+Registered in COMPRESSOR_REGISTRY as 'saes_svd_v2' and 'saes'.
+
+Mathematical Formulation:
+1. Truncated SVD Baseline:
+   $$W_0 \\approx U_r \\Sigma_r V_r^\\top = A_0 B_0$$
+2. Spectral Energy Distribution:
+   $$\\rho_k = \\frac{\\sigma_k^2}{\\sum_{j=1}^r \\sigma_j^2}$$
+3. Error-Suppression Iterations:
+   $$E_t = W_0 - A_t B_t$$
+   $$A_{t+1} = A_t + E_t B_t^\\top (B_t B_t^\\top + \\epsilon I)^{-1}$$
+   $$B_{t+1} = B_t + (A_{t+1}^\\top A_{t+1} + \\epsilon I)^{-1} A_{t+1}^\\top E_t$$
+
+Production Hardening:
+- Fix 1: Default fallback_to_original changed to True for safety.
+- Fix 2: Always log warning when reconstruction error exceeds max_error regardless of fallback.
+- Fix 3: Reliable Conv1D detection using class name or nf attribute without shape heuristics.
+- Fix 4: Include per-layer rank, error, and detailed specs in returned stats.
+- Fix 5: Ensure bias is copied correctly for both Linear and Conv1D.
+- Fix 6: Unified critical-layer protection delegated solely to should_compress_linear.
 """
 
 from __future__ import annotations
@@ -23,17 +41,20 @@ logger = logging.getLogger(__name__)
 @COMPRESSOR_REGISTRY.register("saes_svd_v2")
 @COMPRESSOR_REGISTRY.register("saes")
 class SAESSVDCompressorV2(BaseCompressor):
-    """Spectrum-Aware Error Suppression SVD (SAES-SVD v2)."""
+    """
+    SAES-SVD v2 Compressor with iterative spectrum-aware residual correction,
+    Frobenius validation, and safe fallback.
+    """
 
     def __init__(
         self,
         model: nn.Module,
         rank: Optional[int] = None,
-        rank_ratio: float = 0.7,
-        correcting_steps: int = 3,
-        target_modules: Optional[list[str]] = None,
-        max_error: float = 0.5,
-        fallback_to_original: bool = False,
+        rank_ratio: float = 0.5,
+        correcting_steps: int = 2,
+        target_modules: Optional[List[str]] = None,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,  # Fix 1: Default changed to True
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="saes_svd_v2", **kwargs)
@@ -41,14 +62,14 @@ class SAESSVDCompressorV2(BaseCompressor):
         if cfg is not None:
             rank = getattr(cfg, "saes_rank", getattr(cfg, "rank", rank))
             rank_ratio = getattr(cfg, "saes_rank_ratio", getattr(cfg, "rank_ratio", rank_ratio))
-            correcting_steps = getattr(
-                cfg, "saes_correcting_steps", getattr(cfg, "correcting_steps", correcting_steps)
-            )
+            correcting_steps = getattr(cfg, "correcting_steps", correcting_steps)
             max_error = getattr(cfg, "max_error", max_error)
             fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
+        if "fallback_to_original" in kwargs:
+            fallback_to_original = bool(kwargs["fallback_to_original"])
 
         self.rank = rank
         self.rank_ratio = float(rank_ratio)
@@ -57,13 +78,16 @@ class SAESSVDCompressorV2(BaseCompressor):
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.layer_errors: Dict[str, float] = {}
+        self.layer_ranks: Dict[str, int] = {}
         self.replaced_layers: List[Dict[str, Any]] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
-            return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        """
+        Fix 6: Unified critical-layer protection delegated to should_compress_linear.
+        """
+        cls_name = module.__class__.__name__.lower()
+        # Fix 3: Reliable Conv1D check using class name and hasattr(nf)
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like:
             return False
         if isinstance(module, SVDLinear):
@@ -78,16 +102,13 @@ class SAESSVDCompressorV2(BaseCompressor):
         self,
         layer: nn.Module,
         rank: Optional[int] = None,
+        name: str = "",
     ) -> Optional[SVDLinear]:
         """Decompose a single linear or Conv1D layer with spectrum-aware error suppression."""
         raw_w = layer.weight.data
-        cls_name = layer.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or (
-            raw_w.ndim == 2
-            and hasattr(layer, "in_features")
-            and layer.in_features == raw_w.shape[0]
-            and raw_w.shape[0] < raw_w.shape[1]
-        )
+        cls_name = layer.__class__.__name__.lower()
+        # Fix 3: Conv1D detection by class name or nf attribute
+        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
 
         if is_conv1d:
             W = raw_w.t().float()
@@ -115,7 +136,7 @@ class SAESSVDCompressorV2(BaseCompressor):
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
-            logger.warning("SAES-SVD SVD failure: %s", e)
+            logger.warning("SAES-SVD SVD failure for %s: %s", name, e)
             return None
 
         # Initial symmetric square-root singular value allocation
@@ -140,19 +161,24 @@ class SAESSVDCompressorV2(BaseCompressor):
         norm_orig = torch.norm(W, p="fro")
         rel_err = (torch.norm(W - W_rec, p="fro") / (norm_orig + 1e-8)).item()
 
-        if self.fallback_to_original and rel_err > self.max_error:
+        # Fix 2: Always log a warning when reconstruction error exceeds max_error
+        if rel_err > self.max_error:
             logger.warning(
-                "SAES-SVD reconstruction error %.4f exceeded threshold %.4f. Keeping original.",
+                "SAES-SVD reconstruction error %.4f on %s exceeded threshold %.4f%s",
                 rel_err,
+                name,
                 self.max_error,
+                ". Keeping original layer." if self.fallback_to_original else ". Proceeding with compressed layer.",
             )
-            return None
+            if self.fallback_to_original:
+                return None
 
+        has_bias = getattr(layer, "bias", None) is not None
         svd_layer = SVDLinear(
             in_features=in_f,
             out_features=out_f,
             rank=r,
-            bias=layer.bias is not None,
+            bias=has_bias,
             dtype=dtype,
             device=device,
         )
@@ -160,16 +186,19 @@ class SAESSVDCompressorV2(BaseCompressor):
             U_factor=A.to(dtype=dtype, device=device),
             V_factor=B.to(dtype=dtype, device=device),
         )
-        if layer.bias is not None:
-            svd_layer.bias.data.copy_(layer.bias.data)
+        # Fix 5: Ensure bias is copied correctly for both Linear and Conv1D
+        if has_bias and svd_layer.bias is not None:
+            svd_layer.bias.data.copy_(layer.bias.data.to(dtype=dtype, device=device))
 
-        # Store error on module for inspection
+        # Store metadata on module
         svd_layer.reconstruction_error = rel_err
+        svd_layer.rank = r
         return svd_layer
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress all linear layers in the model."""
+        """Compress all linear and Conv1D layers in the model."""
         self.layer_errors = {}
+        self.layer_ranks = {}
         self.replaced_layers = []
 
         target_layers = [
@@ -183,17 +212,28 @@ class SAESSVDCompressorV2(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         for name, module in target_layers:
-            svd_layer = self.compress_linear(module, rank=self.rank)
+            svd_layer = self.compress_linear(module, rank=self.rank, name=name)
             if svd_layer is not None:
                 err = getattr(svd_layer, "reconstruction_error", 0.0)
+                r = getattr(svd_layer, "rank", self.rank)
                 self.layer_errors[name] = err
-                self.replaced_layers.append({"name": name, "rank": svd_layer.rank, "error": err})
+                self.layer_ranks[name] = r
+                # Fix 4: Include per-layer rank and error in returned stats
+                self.replaced_layers.append({"name": name, "rank": r, "error": err})
                 replace_module(self.model, name, svd_layer)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        stats["layer_errors"] = self.layer_errors
-        stats["compressed_layers"] = len(self.replaced_layers)
+        # Fix 4 & Fix 6: Detailed per-layer stats, errors, ranks, and fallback status
+        stats.update({
+            "layer_errors": self.layer_errors,
+            "layer_ranks": self.layer_ranks,
+            "replaced_layers": self.replaced_layers,
+            "compressed_layers": len(self.replaced_layers),
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "correcting_steps": self.correcting_steps,
+        })
         return self.model, stats
 
 
