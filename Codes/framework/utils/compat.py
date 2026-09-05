@@ -7,6 +7,7 @@ import torch.nn as nn
 
 from .model_family import ModelAdapter, detect_family
 from .qwen_compat import QwenIncompatibleError
+from framework.core.model_utils import replace_module
 
 
 def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
