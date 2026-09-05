@@ -1,5 +1,5 @@
 """
-MGIE-SVD with total rank budget: global entropy-proportional rank allocation.
+MGIE-SVD with Total Rank Budget: Global Entropy-Proportional Rank Allocation.
 Registered as 'mgie_budget'.
 """
 
@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -16,6 +16,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -25,16 +26,22 @@ class MGIESVDBudgetCompressor(BaseCompressor):
     """
     MGIE-SVD Budget Compressor: Global Entropy-Proportional Rank Allocation.
 
-    Calculates Shannon singular entropy for all linear layers across the network,
+    Calculates Shannon singular entropy for all linear and Conv1D layers across the network,
     distributes a global total rank budget proportionally according to spectral information density,
     factorizes weights using symmetric square-root singular value splitting, and replaces
     dense layers with structural SVDLinear modules.
 
-    Args:
-        model: PyTorch model.
-        total_rank_budget: Total sum of ranks across all compressed linear layers.
-        rank: Optional per-layer fallback/override rank.
-        target_modules: Optional list of layer name filters.
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.50).
+    - Safe fallback to original weights by default (fallback_to_original=True).
+    - Robust Conv1D detection and support across GPT-2 architectures.
+    - Unified critical-layer protection via should_compress_linear.
+    - GQA-aware skipping to preserve key-value cache dimension alignment.
+    - Tied / shared weight protection tracking parameter IDs.
+    - Trainable LoRA adapter integration via SVDLinear.
+    - FP32 numerical stability with NaN/Inf guards.
+    - Post-compression forward sanity check under torch.no_grad().
+    - Comprehensive per-layer stats and error tracking.
     """
 
     def __init__(
@@ -42,7 +49,13 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         model: nn.Module,
         total_rank_budget: int = 1000,
         rank: Optional[int] = None,
-        target_modules: Optional[list[str]] = None,
+        max_error: float = 0.50,
+        fallback_to_original: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        skip_attention_qkv: bool = True,
+        min_rank: int = 4,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="mgie_budget", **kwargs)
@@ -52,18 +65,57 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                 cfg, "total_rank_budget", getattr(cfg, "rank_budget", total_rank_budget)
             )
             rank = getattr(cfg, "mgie_rank", getattr(cfg, "rank", rank))
+            max_error = getattr(cfg, "mgie_max_error", getattr(cfg, "max_error", max_error))
+            fallback_to_original = getattr(
+                cfg, "mgie_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            )
+            lora_r = getattr(cfg, "lora_r", lora_r)
+            lora_alpha = getattr(cfg, "lora_alpha", lora_alpha)
+            skip_attention_qkv = getattr(cfg, "skip_attention_qkv", skip_attention_qkv)
+            min_rank = getattr(cfg, "min_rank", min_rank)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
 
         self.total_rank_budget = int(total_rank_budget)
         self.rank = rank
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.min_rank = max(1, int(min_rank))
         self.target_modules = target_modules
 
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.skipped_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+        self.layer_ranks: Dict[str, int] = {}
+        self.stats: Dict[str, Any] = {}
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        if not self.skip_attention_qkv:
+            return False
+        cfg = getattr(self.model, "config", None)
+        num_heads = getattr(cfg, "num_attention_heads", None)
+        num_kv_heads = getattr(cfg, "num_key_value_heads", None)
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+            name_lower = name.lower()
+            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+                return True
+        return False
+
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if not isinstance(module, nn.Linear):
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        if not is_linear_like:
             return False
         if isinstance(module, SVDLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self._is_gqa_asymmetric(name, module):
             return False
         if self.target_modules is None:
             return True
@@ -85,13 +137,26 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         normalized_entropy = entropy / max(1e-6, norm_factor)
         return max(0.0, float(normalized_entropy)), U, S, Vt
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all linear layers according to global entropy budget."""
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
+        seen_weights: Set[int] = set()
+
+        target_layers = []
+        for name, mod in list(self.model.named_modules()):
+            if self._is_target_module(name, mod):
+                if not hasattr(mod, "weight") or mod.weight is None:
+                    continue
+                w_id = id(mod.weight)
+                if w_id in seen_weights:
+                    self.skipped_layers.append(name)
+                    continue
+                seen_weights.add(w_id)
+                target_layers.append((name, mod))
 
         if not target_layers:
             logger.warning("MGIE-Budget: No compressible linear layers found.")
@@ -101,63 +166,150 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         layer_data = {}
         total_entropy = 0.0
         for name, module in target_layers:
-            ent, U, S, Vt = self._compute_entropy(module.weight.data)
-            layer_data[name] = (module, ent, U, S, Vt)
+            raw_w = module.weight.data
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+
+            ent, U, S, Vt = self._compute_entropy(W)
+            layer_data[name] = (module, ent, U, S, Vt, W, is_conv1d)
             total_entropy += max(ent, 1e-4)
 
-        # Step 2: Allocate rank budgets
-        allocated_ranks = {}
-        for name, (module, ent, U, S, Vt) in layer_data.items():
-            max_r = min(module.in_features, module.out_features)
+        # Step 2: Allocate rank budgets and factorize
+        for name, (module, ent, U, S, Vt, W, is_conv1d) in layer_data.items():
+            d_out, d_in = W.shape
+            max_r = min(d_out, d_in)
             if self.rank is not None:
                 r = min(self.rank, max_r)
             else:
                 frac = max(ent, 1e-4) / total_entropy
                 r = int(round(frac * self.total_rank_budget))
-            r = max(1, min(r, max_r))
-            allocated_ranks[name] = r
+            r = max(min(self.min_rank, max_r), min(r, max_r))
+            r = min(r, len(S))
 
-            # Factorize with symmetric square-root singular values
             device = module.weight.device
             dtype = module.weight.dtype
 
-            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+            try:
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
 
-            svd_layer = SVDLinear(
-                in_features=module.in_features,
-                out_features=module.out_features,
-                rank=r,
-                bias=module.bias is not None,
-                dtype=dtype,
-                device=device,
-            )
-            svd_layer.set_low_rank_factors(U_r, V_r)
-            if module.bias is not None:
-                svd_layer.bias.data.copy_(module.bias.data)
+                W_approx = torch.nan_to_num(U_r @ V_r, nan=0.0)
+                w_norm = torch.norm(W, p="fro").item()
+                err = (torch.norm(W.to(device) - W_approx, p="fro") / max(w_norm, 1e-12)).item()
+                self.layer_errors[name] = float(err)
+                self.layer_ranks[name] = r
 
-            replace_module(self.model, name, svd_layer)
+                if not math.isfinite(err) or err > self.max_error:
+                    logger.warning(
+                        "MGIE-Budget reconstruction error %.4f on %s exceeded threshold %.4f.",
+                        err, name, self.max_error,
+                    )
+                    if self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        continue
+
+                svd_layer = SVDLinear(
+                    in_features=d_in,
+                    out_features=d_out,
+                    rank=r,
+                    bias=module.bias is not None,
+                    dtype=dtype,
+                    device=device,
+                    lora_r=self.lora_r,
+                    lora_alpha=self.lora_alpha,
+                )
+                svd_layer.set_low_rank_factors(U_r, V_r)
+                if module.bias is not None:
+                    svd_layer.bias.data.copy_(module.bias.data)
+
+                replace_module(self.model, name, svd_layer)
+                self.compressed_layers.append(name)
+            except Exception as e:
+                logger.warning("MGIE-Budget compression exception on %s: %s", name, e)
+                self.fallback_layers.append(name)
+                self.layer_errors[name] = 1.0
+
+        # Post-compression forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                try:
+                    self.model(dummy)
+                except Exception:
+                    self.model(dummy.float())
+        except Exception as e:
+            logger.warning("MGIE-Budget post-compression forward check warning: %s", e)
+            forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats = self.get_compression_stats()
-        stats["allocated_ranks"] = allocated_ranks
+        stats.update({
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "skipped_layers": self.skipped_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "num_skipped": len(self.skipped_layers),
+            "layer_errors": self.layer_errors,
+            "layer_ranks": self.layer_ranks,
+            "avg_reconstruction_error": avg_err,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "total_rank_budget": self.total_rank_budget,
+            "lora_r": self.lora_r,
+            "lora_alpha": self.lora_alpha,
+            "forward_check_success": forward_check_success,
+            "method": "mgie_budget",
+        })
+        self.stats = stats
         return self.model, stats
 
 
-def mgie_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+@COMPRESSOR_REGISTRY.register("mgie_budget_factory")
+@COMPRESSOR_REGISTRY.register("mgie_svd_budget_factory")
+@COMPRESSOR_REGISTRY.register("mgie_svd_compressor_factory")
+def mgie_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """MGIE budget factory function."""
-    compressor = MGIESVDBudgetCompressor(model, comp_config=comp_config, **kwargs)
-    compressed_model, _ = compressor.compress()
+    total_rank_budget = kwargs.pop(
+        "total_rank_budget",
+        getattr(comp_config, "total_rank_budget", getattr(comp_config, "rank_budget", 1000)),
+    )
+    rank = kwargs.pop("rank", getattr(comp_config, "mgie_rank", getattr(comp_config, "rank", None)))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "mgie_max_error", getattr(comp_config, "max_error", 0.50)))
+    fallback = kwargs.pop("fallback_to_original", getattr(
+        comp_config, "mgie_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    ))
+    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0))
+    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0))
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+
+    compressor = MGIESVDBudgetCompressor(
+        model,
+        total_rank_budget=total_rank_budget,
+        rank=rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        comp_config=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
 
-
-mgie_svd_budget_factory = mgie_budget_factory
-mgie_svd_compressor_factory = mgie_budget_factory
 
 __all__ = [
     "MGIESVDBudgetCompressor",
     "mgie_budget_factory",
-    "mgie_svd_budget_factory",
-    "mgie_svd_compressor_factory",
 ]
