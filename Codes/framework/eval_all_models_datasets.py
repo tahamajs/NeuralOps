@@ -530,13 +530,17 @@ def apply_module_to_model(
 
             # Strategy 1: Instantiate with model passed to constructor
             candidate = None
+            tok = getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
             try:
-                candidate = comp_cls(model, rank=rank)
+                candidate = comp_cls(model, rank=rank, tokenizer=tok)
             except (TypeError, ValueError):
                 try:
-                    candidate = comp_cls(model)
+                    candidate = comp_cls(model, rank=rank)
                 except (TypeError, ValueError):
-                    candidate = None
+                    try:
+                        candidate = comp_cls(model)
+                    except (TypeError, ValueError):
+                        candidate = None
 
             if candidate is not None:
                 if isinstance(candidate, nn.Module) and not hasattr(candidate, "compress"):
