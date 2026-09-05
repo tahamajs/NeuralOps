@@ -19,13 +19,13 @@ from framework.utils.compat import should_compress_linear
 
 class GreCoDeCLinear(nn.Module):
     """
-    Greedy Coordinate Descent Factorized Linear Layer.
+    Greedy Coordinate Descent Factorized Linear Layer with optional LoRA adapter.
     W ≈ U @ V
     - U in R^{out_features x rank}
     - V in R^{rank x in_features}
 
     Forward pass:
-    y = ((x @ V^T) @ U^T) + bias
+    y = ((x @ V^T) @ U^T) + bias + (x @ lora_A^T @ lora_B^T) * (alpha / r)
     """
 
     def __init__(
@@ -34,6 +34,8 @@ class GreCoDeCLinear(nn.Module):
         out_features: int,
         rank: int = 16,
         bias: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
     ) -> None:
@@ -41,18 +43,30 @@ class GreCoDeCLinear(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (lora_alpha / lora_r) if lora_r > 0 else 1.0
 
-        self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-        self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        requires_grad = not (self.lora_r > 0)
+        self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device), requires_grad=requires_grad)
+        self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device), requires_grad=requires_grad)
 
         bound = 1.0 / math.sqrt(max(1, in_features))
         nn.init.uniform_(self.U, -bound, bound)
         nn.init.uniform_(self.V, -bound, bound)
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device), requires_grad=requires_grad)
         else:
             self.register_parameter("bias", None)
+
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
 
     @property
     def weight(self) -> torch.Tensor:
@@ -62,13 +76,18 @@ class GreCoDeCLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Sub-quadratic forward execution.
-        y = ((x @ V^T) @ U^T) + bias
+        y = ((x @ V^T) @ U^T) + bias + LoRA
         """
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
         x_v = F.linear(x_flat, self.V)
         out = F.linear(x_v, self.U, self.bias)
+
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            out = out + self.scaling * F.linear(
+                F.linear(x_flat.float(), self.lora_A), self.lora_B
+            ).to(out.dtype)
 
         return out.view(*orig_shape[:-1], self.out_features)
 
@@ -79,16 +98,27 @@ class GreCoDeCLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: nn.Linear,
+        linear: Union[nn.Linear, Any],
         rank: int = 16,
         max_iter: int = 15,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> "GreCoDeCLinear":
         """
         Decompose linear layer weight matrix via Greedy Coordinate Descent (GreCoDeC)
-        with 15 ALS iterations and Gram-Schmidt re-orthogonalization, with SVD fallback.
+        with ALS iterations and Gram-Schmidt re-orthogonalization, with SVD fallback.
+        Supports nn.Linear and Conv1D.
         """
-        W = linear.weight.data
-        bias = linear.bias.data if linear.bias is not None else None
+        cls_name = linear.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
+        raw_w = linear.weight.data
+
+        if is_conv1d:
+            W = raw_w.t().float()
+        else:
+            W = raw_w.float()
+
+        bias = linear.bias.data if getattr(linear, "bias", None) is not None and linear.bias is not None else None
         out_f, in_f = W.shape
         r = max(1, min(rank, out_f, in_f))
 
@@ -97,13 +127,15 @@ class GreCoDeCLinear(nn.Module):
             out_features=out_f,
             rank=r,
             bias=bias is not None,
-            dtype=W.dtype,
-            device=W.device,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            dtype=raw_w.dtype,
+            device=raw_w.device,
         )
 
-        R = W.float().clone()
-        U_factors = torch.zeros(out_f, r, dtype=torch.float32, device=W.device)
-        V_factors = torch.zeros(r, in_f, dtype=torch.float32, device=W.device)
+        R = W.clone()
+        U_factors = torch.zeros(out_f, r, dtype=torch.float32, device=raw_w.device)
+        V_factors = torch.zeros(r, in_f, dtype=torch.float32, device=raw_w.device)
 
         success = True
         try:
@@ -116,7 +148,7 @@ class GreCoDeCLinear(nn.Module):
                 v_k = (v_k / v_norm).unsqueeze(1)  # (in_f, 1)
 
                 # 2. ALS coordinate descent with Gram-Schmidt re-orthogonalization
-                u_k = torch.zeros(out_f, 1, dtype=torch.float32, device=W.device)
+                u_k = torch.zeros(out_f, 1, dtype=torch.float32, device=raw_w.device)
                 for _ in range(max(1, max_iter)):
                     # u = R @ v / ||v||^2
                     v_sq = (v_k ** 2).sum().clamp_min(1e-10)
@@ -154,13 +186,13 @@ class GreCoDeCLinear(nn.Module):
 
         if not success or torch.isnan(U_factors).any() or torch.isnan(V_factors).any():
             # Robust SVD fallback to guarantee orthogonal singular components
-            U_svd, S_svd, Vh_svd = torch.linalg.svd(W.float(), full_matrices=False)
+            U_svd, S_svd, Vh_svd = torch.linalg.svd(W, full_matrices=False)
             sqrt_S = torch.sqrt(torch.clamp(S_svd[:r], min=1e-12))
             U_factors = U_svd[:, :r] * sqrt_S.unsqueeze(0)
             V_factors = sqrt_S.unsqueeze(1) * Vh_svd[:r, :]
 
-        grecodec_layer.U.data.copy_(U_factors.to(dtype=W.dtype))
-        grecodec_layer.V.data.copy_(V_factors.to(dtype=W.dtype))
+        grecodec_layer.U.data.copy_(U_factors.to(dtype=raw_w.dtype))
+        grecodec_layer.V.data.copy_(V_factors.to(dtype=raw_w.dtype))
 
         if bias is not None and grecodec_layer.bias is not None:
             grecodec_layer.bias.data.copy_(bias)
