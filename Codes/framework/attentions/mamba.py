@@ -82,37 +82,106 @@ class Mamba(BaseAttention):
         # Fine-tuning gradually shifts the balance as pres_gate becomes more positive.
         self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(-2.0))
 
-    def copy_weights(self, pretrained_attn: nn.Module) -> None:
-        """Copy pretrained Q+K weights into in_proj and out weights into out_proj.
+    def copy_weights(self, pretrained_attn: Any) -> None:
+        from framework.core.adapters import UniversalAdapter
 
-        Mamba's in_proj maps D→2D. We initialise the first D rows from the Q-projection
-        (content-selection branch) and the second D rows from the K-projection (gate branch),
-        which gives a warm-started gating mechanism closely related to the original attention.
-        """
+        extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
+        for proj in ["q", "k", "v", "o"]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(pretrained_attn, proj)
+                if w is not None:
+                    extracted[proj] = (w, b)
+            except Exception:
+                pass
+
+        if hasattr(pretrained_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None):
+            weight = pretrained_attn.c_attn.weight.data
+            bias = getattr(pretrained_attn.c_attn, "bias", None)
+            bias_data = bias.data if bias is not None else None
+            if weight.dim() == 2 and weight.shape[1] == 3 * self.d_model:
+                weight = weight.t()
+            split_size = weight.shape[0] // 3
+            extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
+            extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
+
+        if hasattr(pretrained_attn, "c_proj") and extracted["o"][0] is None:
+            w_o = pretrained_attn.c_proj.weight.data
+            if w_o.dim() == 2 and w_o.shape[0] != self.d_model and w_o.shape[1] == self.d_model:
+                w_o = w_o.t()
+            b_o = getattr(pretrained_attn.c_proj, "bias", None)
+            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+
+        if hasattr(pretrained_attn, "self") and (extracted["q"][0] is None or extracted["k"][0] is None):
+            s = getattr(pretrained_attn, "self")
+            if hasattr(s, "query"):
+                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+            if hasattr(s, "key"):
+                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+
+        if hasattr(pretrained_attn, "output") and hasattr(getattr(pretrained_attn, "output"), "dense") and extracted["o"][0] is None:
+            dense = pretrained_attn.output.dense
+            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
+
+        named_map = {
+            "q": ["q_proj", "q_lin", "query"],
+            "k": ["k_proj", "k_lin", "key"],
+            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+        }
+        for proj, names in named_map.items():
+            if extracted[proj][0] is None:
+                for name in names:
+                    if hasattr(pretrained_attn, name):
+                        layer = getattr(pretrained_attn, name)
+                        if hasattr(layer, "weight"):
+                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            break
+
+        cls_name = pretrained_attn.__class__.__name__
+        has_out_proj = any(hasattr(pretrained_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        self.is_nested_encoder = (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            or (cls_name.endswith("SelfAttention") and not has_out_proj)
+        ) and not has_out_proj
+
+        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t()
+            return w
+
+        D = self.d_model
         with torch.no_grad():
-            q_src = getattr(pretrained_attn, "q_lin",
-                    getattr(pretrained_attn, "query",
-                    getattr(pretrained_attn, "q_proj", None)))
-            k_src = getattr(pretrained_attn, "k_lin",
-                    getattr(pretrained_attn, "key",
-                    getattr(pretrained_attn, "k_proj", None)))
-            o_src = getattr(pretrained_attn, "out_lin",
-                    getattr(pretrained_attn, "dense",
-                    getattr(pretrained_attn, "out_proj",
-                    getattr(pretrained_attn, "o_proj", None))))
-            D = self.d_model
-            if q_src is not None and hasattr(q_src, "weight"):
-                self.in_proj.weight.data[:D, :].copy_(q_src.weight.data)
-                if q_src.bias is not None and self.in_proj.bias is not None:
-                    self.in_proj.bias.data[:D].copy_(q_src.bias.data)
-            if k_src is not None and hasattr(k_src, "weight"):
-                self.in_proj.weight.data[D:, :].copy_(k_src.weight.data)
-                if k_src.bias is not None and self.in_proj.bias is not None:
-                    self.in_proj.bias.data[D:].copy_(k_src.bias.data)
-            if o_src is not None and hasattr(o_src, "weight"):
-                self.out_proj.weight.data.copy_(o_src.weight.data)
-                if o_src.bias is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.data.copy_(o_src.bias.data)
+            w_q, b_q = extracted["q"]
+            if w_q is not None:
+                w_q = _orient(w_q, D)
+                if w_q.shape[0] < D and D % w_q.shape[0] == 0:
+                    rep = D // w_q.shape[0]
+                    w_q = w_q.repeat(rep, 1)
+                    if b_q is not None: b_q = b_q.repeat(rep)
+                self.in_proj.weight.data[:D, :].copy_(w_q[:D, :min(D, w_q.shape[1])])
+                if b_q is not None and self.in_proj.bias is not None:
+                    self.in_proj.bias.data[:D].copy_(b_q[:D])
+
+            w_k, b_k = extracted["k"]
+            if w_k is not None:
+                w_k = _orient(w_k, D)
+                if w_k.shape[0] < D and D % w_k.shape[0] == 0:
+                    rep = D // w_k.shape[0]
+                    w_k = w_k.repeat(rep, 1)
+                    if b_k is not None: b_k = b_k.repeat(rep)
+                self.in_proj.weight.data[D:, :].copy_(w_k[:D, :min(D, w_k.shape[1])])
+                if b_k is not None and self.in_proj.bias is not None:
+                    self.in_proj.bias.data[D:].copy_(b_k[:D])
+
+            w_o, b_o = extracted["o"]
+            if w_o is not None:
+                w_o = _orient(w_o, D)
+                self.out_proj.weight.data.copy_(w_o[:D, :min(D, w_o.shape[1])])
+                if b_o is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.data.copy_(b_o[:D])
+            elif self.is_nested_encoder:
+                self.out_proj.weight.data.copy_(torch.eye(D))
+                if self.out_proj.bias is not None:
+                    self.out_proj.bias.data.zero_()
 
     def forward(
         self,

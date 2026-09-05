@@ -81,7 +81,52 @@ def simulate_paged_delta_kv(K: torch.Tensor, V: torch.Tensor, rank: int) -> Tupl
     return K_hat, V_hat
 
 
-@ATTENTION_REGISTRY.register("moe_deltakv_paged")
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim <= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+
+    return q, k
+
+@ATTENTION_REGISTRY.register("moe_deltakv_paged", supports_causal=True, supports_gqa=True)
 class MoEDeltaKVPagedAttention(nn.Module):
     r"""
     MoE-DeltaKV-Paged Hybrid Attention Module.
@@ -98,7 +143,9 @@ class MoEDeltaKVPagedAttention(nn.Module):
         self.page_size = getattr(config, "page_size", kwargs.get("page_size", 64))
         self.k_experts = getattr(config, "k_experts", kwargs.get("k_experts", 4))
         self.svd_rank = getattr(config, "svd_rank", kwargs.get("svd_rank", 16))
-        self.is_causal = getattr(config, "is_causal", kwargs.get("is_causal", False))
+        self.is_causal = getattr(config, "is_causal", getattr(config, "is_decoder", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+        self.is_decoder = bool(self.is_causal)
+        self.is_nested_encoder = False
 
         self.query = nn.Linear(self.hidden_size, self.all_head_size)
         self.key = nn.Linear(self.hidden_size, self.all_head_size)
@@ -125,32 +172,122 @@ class MoEDeltaKVPagedAttention(nn.Module):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+    def copy_weights(self, pretrained_attn: Any) -> None:
+        from framework.core.adapters import UniversalAdapter
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)
+        }
+        for proj in ["q", "k", "v", "o"]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(pretrained_attn, proj)
+                if w is not None:
+                    extracted[proj] = (w, b)
+            except Exception:
+                pass
+
+        if hasattr(pretrained_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            weight = pretrained_attn.c_attn.weight.data
+            bias = getattr(pretrained_attn.c_attn, "bias", None)
+            bias_data = bias.data if bias is not None else None
+            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+                weight = weight.t()
+            split_size = weight.shape[0] // 3
+            extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
+            extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
+            extracted["v"] = (weight[2 * split_size :, :], bias_data[2 * split_size :] if bias_data is not None else None)
+
+        if hasattr(pretrained_attn, "c_proj") and extracted["o"][0] is None:
+            w_o = pretrained_attn.c_proj.weight.data
+            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+                w_o = w_o.t()
+            b_o = getattr(pretrained_attn.c_proj, "bias", None)
+            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+
+        if hasattr(pretrained_attn, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            s = getattr(pretrained_attn, "self")
+            if hasattr(s, "query"):
+                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+            if hasattr(s, "key"):
+                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+            if hasattr(s, "value"):
+                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+
+        if hasattr(pretrained_attn, "output") and hasattr(getattr(pretrained_attn, "output"), "dense") and extracted["o"][0] is None:
+            dense = pretrained_attn.output.dense
+            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
+
+        named_map = {
+            "q": ["q_proj", "q_lin", "query"],
+            "k": ["k_proj", "k_lin", "key"],
+            "v": ["v_proj", "v_lin", "value"],
+            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+        }
+        for proj, names in named_map.items():
+            if extracted[proj][0] is None:
+                for name in names:
+                    if hasattr(pretrained_attn, name):
+                        layer = getattr(pretrained_attn, name)
+                        if hasattr(layer, "weight"):
+                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            break
+
+        cls_name = pretrained_attn.__class__.__name__
+        has_out_proj = any(hasattr(pretrained_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        self.is_nested_encoder = (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            or (cls_name.endswith("SelfAttention") and not has_out_proj)
+        ) and not has_out_proj
+
+        missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
+        if not self.is_nested_encoder and extracted["o"][0] is None:
+            missing.append("o")
+        if missing:
+            raise RuntimeError(f"MoEDeltaKVPagedAttention missing required weights for projections: {missing}")
+
+        for proj_key in ["q", "k", "v"]:
+            w = extracted[proj_key][0]
+            if w is not None:
+                norm = torch.linalg.norm(w.float())
+                if norm < 1e-4:
+                    raise RuntimeError(f"MoEDeltaKVPagedAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+
+        if extracted["o"][0] is not None:
+            norm_o = torch.linalg.norm(extracted["o"][0].float())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"MoEDeltaKVPagedAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+
+        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t()
+            return w
+
         with torch.no_grad():
-            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
-            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
-            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
-            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+            for proj_key, target in [("q", self.query), ("k", self.key), ("v", self.value)]:
+                w, b = extracted[proj_key]
+                w = _orient(w, self.hidden_size)
+                if w.shape[0] < self.all_head_size and self.all_head_size % w.shape[0] == 0:
+                    rep = self.all_head_size // w.shape[0]
+                    w = w.repeat(rep, 1)
+                    if b is not None: b = b.repeat(rep)
+                target.weight.data.copy_(w[:self.all_head_size, :min(self.hidden_size, w.shape[1])])
+                if b is not None and target.bias is not None:
+                    target.bias.data.copy_(b[:self.all_head_size])
 
-            if q_src is not None and hasattr(q_src, "weight"):
-                self.query.weight.copy_(q_src.weight)
-                if q_src.bias is not None and self.query.bias is not None:
-                    self.query.bias.copy_(q_src.bias)
+            w_o, b_o = extracted["o"]
+            if w_o is not None:
+                w_o = _orient(w_o, self.all_head_size)
+                self.out_proj.weight.data.copy_(w_o[:self.hidden_size, :min(self.all_head_size, w_o.shape[1])])
+                if b_o is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.data.copy_(b_o[:self.hidden_size])
+            elif self.is_nested_encoder:
+                self.out_proj.weight.data.copy_(torch.eye(self.hidden_size, self.all_head_size))
+                if self.out_proj.bias is not None:
+                    self.out_proj.bias.data.zero_()
 
-            if k_src is not None and hasattr(k_src, "weight"):
-                self.key.weight.copy_(k_src.weight)
-                if k_src.bias is not None and self.key.bias is not None:
-                    self.key.bias.copy_(k_src.bias)
-
-            if v_src is not None and hasattr(v_src, "weight"):
-                self.value.weight.copy_(v_src.weight)
-                if v_src.bias is not None and self.value.bias is not None:
-                    self.value.bias.copy_(v_src.bias)
-
-            if out_src is not None and hasattr(out_src, "weight"):
-                self.out_proj.weight.copy_(out_src.weight)
-                if out_src.bias is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(out_src.bias)
+        if hasattr(pretrained_attn, "is_decoder"):
+            self.is_decoder = bool(pretrained_attn.is_decoder)
+            self.is_causal = self.is_decoder
 
     def forward(
         self,
@@ -163,6 +300,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
@@ -172,6 +310,12 @@ class MoEDeltaKVPagedAttention(nn.Module):
         q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
         k = self.key(hidden_states).view(B, N, H, d).transpose(1, 2)
         v = self.value(hidden_states).view(B, N, H, d).transpose(1, 2)
+
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and encoder_hidden_states is None:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
         # Delta-KV compression with STE
         k_hat, v_hat = simulate_paged_delta_kv(k, v, self.svd_rank)
@@ -213,9 +357,17 @@ class MoEDeltaKVPagedAttention(nn.Module):
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
             if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(1)
                 attn = attn * head_mask
             out = torch.matmul(attn, v_hat).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
             self.aux_loss = torch.tensor(0.0, device=q.device)
+            if self.is_nested_encoder:
+                return out, (attn if output_attentions else None)
             return self.out_proj(out), (attn if output_attentions else None)
 
         # Block Paging
@@ -274,6 +426,9 @@ class MoEDeltaKVPagedAttention(nn.Module):
         context = (context_per_expert * g_j_exp).sum(dim=3)
 
         context = context.view(B, H, padded_N, d).transpose(1, 2).contiguous().view(B, padded_N, self.all_head_size)
-        out = self.out_proj(context[:, :N, :])
+        if self.is_nested_encoder:
+            out = context[:, :N, :]
+        else:
+            out = self.out_proj(context[:, :N, :])
 
         return out, None
