@@ -159,6 +159,7 @@ class LoRALinear(nn.Module):
         return out
 
 
+@ATTENTION_REGISTRY.register("fms", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("factorised_matrix_state", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class FactorisedMatrixState(BaseAttention):
     r"""Bidirectional & Causal Factorised Matrix State Recurrent Linear Attention."""
@@ -576,6 +577,7 @@ class FactorisedMatrixState(BaseAttention):
         return out, None
 
 
+@ATTENTION_REGISTRY.register("fms_inject")
 @ATTENTION_REGISTRY.register("factorised_matrix_state_inject")
 def inject_factorised_matrix_state(
     layer: nn.Module,
