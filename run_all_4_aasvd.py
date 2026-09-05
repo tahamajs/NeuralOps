@@ -6,10 +6,9 @@ import json
 import pandas as pd
 from pathlib import Path
 
-# Enforce completely offline dataset and model resolution
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_DATASETS_OFFLINE"] = "1"
+# Ensure online access for automated Hugging Face uploads
+os.environ.pop("HF_HUB_OFFLINE", None)
+os.environ.pop("TRANSFORMERS_OFFLINE", None)
 
 # Switch to project directory if on Windows GPU server
 if os.path.exists(r"D:\svd_project"):
