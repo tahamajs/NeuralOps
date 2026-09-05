@@ -6,6 +6,7 @@ Registered as 'svd_linear' and 'svd_linear_compressor'.
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -25,6 +26,7 @@ class SVDLinearLayer(nn.Module):
     """
     Replace a linear layer with factorized U @ V, keeping top-`rank` components.
     Optionally dispatches fused in-SRAM kernel to eliminate memory roundtrips.
+    Includes optional trainable LoRA adapters (lora_A, lora_B).
     """
 
     def __init__(
@@ -34,16 +36,13 @@ class SVDLinearLayer(nn.Module):
         use_fused_kernel: bool = False,
         use_rms_norm: bool = False,
         eps: float = 1e-6,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
         raw_w = linear_layer.weight.data
-        cls_name = linear_layer.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or (
-            raw_w.ndim == 2
-            and hasattr(linear_layer, "in_features")
-            and linear_layer.in_features == raw_w.shape[0]
-            and raw_w.shape[0] < raw_w.shape[1]
-        )
+        cls_name = linear_layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(linear_layer, "nf")
 
         if is_conv1d:
             W = raw_w.t().float()
@@ -54,11 +53,15 @@ class SVDLinearLayer(nn.Module):
             self.out_features = getattr(linear_layer, "out_features", W.shape[0])
             self.in_features = getattr(linear_layer, "in_features", W.shape[1])
 
+        self.nf = self.out_features  # Conv1D compatibility
         param_cap = max(1, (self.in_features * self.out_features) // (self.in_features + self.out_features) - 1)
         self.rank: int = max(1, min(rank, self.in_features, self.out_features, param_cap))
         self.use_fused_kernel: bool = use_fused_kernel
         self.use_rms_norm: bool = use_rms_norm
         self.eps: float = eps
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
         device = linear_layer.weight.device
         dtype = linear_layer.weight.dtype
@@ -69,8 +72,9 @@ class SVDLinearLayer(nn.Module):
             U_weighted = (U[:, : self.rank] * sqrt_s.unsqueeze(0)).to(device=device, dtype=dtype)
             V_weighted = (sqrt_s.unsqueeze(1) * Vh[: self.rank, :]).to(device=device, dtype=dtype)
 
-        self.U = nn.Parameter(U_weighted)
-        self.V = nn.Parameter(V_weighted)
+        requires_grad = not (self.lora_r > 0)
+        self.U = nn.Parameter(U_weighted, requires_grad=requires_grad)
+        self.V = nn.Parameter(V_weighted, requires_grad=requires_grad)
 
         if use_rms_norm:
             self.norm_weight = nn.Parameter(torch.ones(self.rank, dtype=dtype, device=device))
@@ -78,9 +82,21 @@ class SVDLinearLayer(nn.Module):
             self.register_parameter("norm_weight", None)
 
         if linear_layer.bias is not None:
-            self.bias = nn.Parameter(linear_layer.bias.data.clone())
+            self.bias = nn.Parameter(linear_layer.bias.data.clone(), requires_grad=requires_grad)
         else:
             self.register_parameter("bias", None)
+
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, self.in_features), dtype=torch.float32, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((self.out_features, self.lora_r), dtype=torch.float32, device=device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
 
         # Frobenius reconstruction error
         W_rec = torch.matmul(U_weighted.float(), V_weighted.float())
@@ -93,8 +109,8 @@ class SVDLinearLayer(nn.Module):
         return torch.matmul(self.U, self.V)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass with optional fused kernel acceleration."""
-        if self.use_fused_kernel:
+        """Forward pass with optional fused kernel acceleration and LoRA branch."""
+        if self.use_fused_kernel and self.lora_r <= 0:
             return fused_svd_linear(
                 x=x,
                 V=self.V,
@@ -107,6 +123,13 @@ class SVDLinearLayer(nn.Module):
 
         latent = F.linear(x, self.V)
         out = F.linear(latent, self.U, self.bias)
+
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            orig_shape = x.shape
+            x_flat = x.reshape(-1, self.in_features)
+            lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
+            out = out + (self.scaling * lora_out).reshape(*orig_shape[:-1], self.out_features).to(out.dtype)
+
         return out
 
 
@@ -119,48 +142,83 @@ class SVDLinearCompressor(BaseCompressor):
         self,
         model: nn.Module,
         rank: int = 64,
-        max_error: float = 0.5,
-        fallback_to_original: bool = False,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        protect_critical: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        skip_attention_qkv: bool = True,
         target_modules: Optional[List[str]] = None,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="svd_linear", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            rank = getattr(cfg, "svd_rank", getattr(cfg, "rank", rank))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+        conf = cfg or kwargs.get("comp_config", None)
+        if conf is not None:
+            rank = getattr(conf, "svd_rank", getattr(conf, "rank", rank))
+            max_error = getattr(conf, "max_error", max_error)
+            fallback_to_original = getattr(conf, "fallback_to_original", fallback_to_original)
+            protect_critical = getattr(conf, "protect_critical", protect_critical)
+            lora_r = getattr(conf, "lora_r", getattr(conf, "lora_rank", lora_r))
+            lora_alpha = getattr(conf, "lora_alpha", lora_alpha)
+            skip_attention_qkv = getattr(conf, "skip_attention_qkv", skip_attention_qkv)
 
         self.rank = int(rank)
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
+        self.protect_critical = bool(protect_critical)
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.skip_attention_qkv = bool(skip_attention_qkv)
         self.target_modules = target_modules
         self.layer_errors: Dict[str, float] = {}
         self.replaced_layers: List[Dict[str, Any]] = []
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.skipped_layers: List[str] = []
+        self.stats: Dict[str, Any] = {}
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        if not self.skip_attention_qkv:
+            return False
+        cfg = getattr(self.model, "config", None)
+        num_heads = getattr(cfg, "num_attention_heads", None)
+        num_kv_heads = getattr(cfg, "num_key_value_heads", None)
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+            name_lower = name.lower()
+            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+                return True
+        return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+        if self.protect_critical and any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor"]):
             return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like:
             return False
         if isinstance(module, SVDLinearLayer):
             return False
         if not should_compress_linear(self.model, name):
             return False
-        if self.target_modules is None:
-            return True
-        return any(t in name for t in self.target_modules)
+        if self._is_gqa_asymmetric(name, module):
+            return False
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress linear layers with SVD factorization."""
         self.layer_errors = {}
         self.replaced_layers = []
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        seen_weights: set[int] = set()
 
         target_layers = [
             (name, mod)
-            for name, mod in self.model.named_modules()
+            for name, mod in list(self.model.named_modules())
             if self._is_target_module(name, mod)
         ]
 
@@ -169,37 +227,110 @@ class SVDLinearCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         for name, module in target_layers:
+            if not hasattr(module, "weight") or module.weight is None:
+                continue
+            w_id = id(module.weight)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+
             try:
-                new_layer = SVDLinearLayer(module, rank=self.rank)
+                new_layer = SVDLinearLayer(
+                    module,
+                    rank=self.rank,
+                    lora_r=self.lora_r,
+                    lora_alpha=self.lora_alpha,
+                )
                 err = new_layer.reconstruction_error
                 self.layer_errors[name] = err
 
-                if self.fallback_to_original and err > self.max_error:
+                if err > self.max_error:
                     logger.warning(
-                        "SVDLinear reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                        "SVDLinear reconstruction error %.4f on %s exceeded threshold %.4f.",
                         err,
                         name,
                         self.max_error,
                     )
-                    continue
+                    if self.fallback_to_original:
+                        logger.info("Skipping SVDLinear compression for %s (fallback to original).", name)
+                        self.fallback_layers.append(name)
+                        continue
 
                 self.replaced_layers.append({"name": name, "rank": new_layer.rank, "error": err})
+                self.compressed_layers.append(name)
                 replace_module(self.model, name, new_layer)
             except Exception as e:
                 logger.warning("Failed to compress %s with SVDLinear: %s", name, e)
+                self.fallback_layers.append(name)
+
+        # Post-compression forward sanity check
+        forward_check_success = False
+        try:
+            self.model.eval()
+            with torch.no_grad():
+                d = next(self.model.parameters()).device
+                dummy = torch.randint(0, 100, (1, 16), device=d)
+                self.model(dummy)
+            forward_check_success = True
+        except Exception as e:
+            logger.debug("SVDLinear post-compression forward sanity check exception: %s", e)
 
         self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats = self.get_compression_stats()
-        stats["layer_errors"] = self.layer_errors
-        stats["compressed_layers"] = len(self.replaced_layers)
+        stats.update({
+            "layer_errors": self.layer_errors,
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "skipped_layers": self.skipped_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "num_skipped": len(self.skipped_layers),
+            "avg_reconstruction_error": avg_err,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "lora_r": self.lora_r,
+            "lora_alpha": self.lora_alpha,
+            "forward_check_success": forward_check_success,
+            "method": "svd_linear_factorization",
+        })
+        self.stats = stats
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register("svd_linear_factory")
+@COMPRESSOR_REGISTRY.register("svd_linear_compressor_factory")
 def svd_linear_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """SVD Linear compressor factory."""
-    rank = kwargs.pop("rank", getattr(comp_config, "rank", 64) if comp_config is not None else 64)
-    compressor = SVDLinearCompressor(model, rank=rank, **kwargs)
-    compressed_model, _ = compressor.compress()
+    return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    rank = kwargs.pop("rank", getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 64)) if comp_config is not None else 64)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config is not None else 0.20)
+    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config is not None else True)
+    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", getattr(comp_config, "lora_rank", 0)) if comp_config is not None else 0)
+    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config is not None else 1.0)
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", getattr(comp_config, "skip_attention_qkv", True) if comp_config is not None else True)
+    protect_critical = kwargs.pop("protect_critical", getattr(comp_config, "protect_critical", True) if comp_config is not None else True)
+
+    compressor = SVDLinearCompressor(
+        model,
+        rank=rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        skip_attention_qkv=skip_attention_qkv,
+        protect_critical=protect_critical,
+        comp_config=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_tuple:
+        return compressed_model, stats
     return compressed_model
 
 
