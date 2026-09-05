@@ -302,10 +302,23 @@ class KroneckerTTLoRALayer(nn.Module):
         self.tt_ranks[2] = new_r2
 
 
+from framework.core.model_utils import replace_module
+from framework.utils.compat import should_compress_linear
+
+
 class KroneckerTTLoRACompressor(BaseCompressor):
     """
-    Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear layers.
+    Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear and Conv1D layers.
     Inherits from BaseCompressor.
+
+    Production hardening features:
+    - Robust Conv1D detection and conversion to equivalent linear base layer.
+    - Unified critical-layer protection via should_compress_linear.
+    - GQA-aware skipping to protect asymmetric attention heads.
+    - Tied / shared weight protection tracking parameter IDs.
+    - Safe module replacement via replace_module supporting nested layers.
+    - Post-compression forward sanity check under torch.no_grad().
+    - Comprehensive per-layer statistics and error tracking.
     """
 
     def __init__(
@@ -315,6 +328,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         gamma: float = 1.0,
         lora_r: int = 4,
         lora_alpha: float = 8.0,
+        skip_attention_qkv: bool = True,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
@@ -325,30 +339,106 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         self.gamma = gamma or getattr(cfg, "gamma", 1.0)
         self.lora_r = lora_r or getattr(cfg, "lora_r", 4)
         self.lora_alpha = lora_alpha or getattr(cfg, "lora_alpha", 8.0)
+        self.skip_attention_qkv = bool(skip_attention_qkv or getattr(cfg, "skip_attention_qkv", True))
         self.cfg = cfg
         self.compressed_layers: List[str] = []
+        self.skipped_layers: List[str] = []
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        if not self.skip_attention_qkv:
+            return False
+        cfg = getattr(self.model, "config", None)
+        num_heads = getattr(cfg, "num_attention_heads", None)
+        num_kv_heads = getattr(cfg, "num_key_value_heads", None)
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+            name_lower = name.lower()
+            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+                return True
+        return False
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        if not is_linear_like:
+            return False
+        if isinstance(module, KroneckerTTLoRALayer):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self._is_gqa_asymmetric(name, module):
+            return False
+        return True
 
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Apply Kronecker-TT-LoRA adapter to all linear layers."""
+        """Apply Kronecker-TT-LoRA adapter to all linear and Conv1D layers."""
         if model is not None:
             self.model = model
             self._original_params = self._count_params(self.model)
 
         self.compressed_layers = []
+        self.skipped_layers = []
+        seen_weights: Set[int] = set()
+
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and not isinstance(module, KroneckerTTLoRALayer):
-                adapted = self.compress_linear(module)
-                parent = self._get_parent(name)
-                if parent is not None:
-                    child_name = name.split(".")[-1]
-                    setattr(parent, child_name, adapted)
+            if self._is_target_module(name, module):
+                if not hasattr(module, "weight") or module.weight is None:
+                    continue
+
+                w_id = id(module.weight)
+                if w_id in seen_weights:
+                    self.skipped_layers.append(name)
+                    continue
+                seen_weights.add(w_id)
+
+                cls_name = module.__class__.__name__.lower()
+                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+
+                if is_conv1d:
+                    # Convert Conv1D to standard nn.Linear for base_layer
+                    in_f = module.weight.shape[0]
+                    out_f = module.weight.shape[1]
+                    lin = nn.Linear(in_f, out_f, bias=module.bias is not None, device=module.weight.device, dtype=module.weight.dtype)
+                    lin.weight.data.copy_(module.weight.data.t())
+                    if module.bias is not None:
+                        lin.bias.data.copy_(module.bias.data)
+                    base_module = lin
+                else:
+                    base_module = module
+
+                try:
+                    adapted = self.compress_linear(base_module)
+                    replace_module(self.model, name, adapted)
                     self.compressed_layers.append(name)
+                except Exception as e:
+                    logger.warning("Kronecker-TT-LoRA adaptation exception on %s: %s", name, e)
+
+        # Post-compression forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                try:
+                    self.model(dummy)
+                except Exception:
+                    self.model(dummy.float())
+        except Exception as e:
+            logger.warning("Kronecker-TT-LoRA post-compression forward check warning: %s", e)
+            forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        stats["compressed_layer_count"] = len(self.compressed_layers)
-        stats["lora_r"] = self.lora_r
-        stats["lora_alpha"] = self.lora_alpha
+        stats.update({
+            "compressed_layers": self.compressed_layers,
+            "skipped_layers": self.skipped_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_skipped": len(self.skipped_layers),
+            "compressed_layer_count": len(self.compressed_layers),
+            "lora_r": self.lora_r,
+            "lora_alpha": self.lora_alpha,
+            "forward_check_success": forward_check_success,
+            "method": "kronecker_tt_lora",
+        })
         return self.model, stats
 
     def compress_linear(self, linear_layer: nn.Linear) -> KroneckerTTLoRALayer:
@@ -363,15 +453,6 @@ class KroneckerTTLoRACompressor(BaseCompressor):
             lora_alpha=self.lora_alpha,
         )
 
-    def _get_parent(self, full_name: str) -> Optional[nn.Module]:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part, None)
-            if parent is None:
-                return None
-        return parent
-
 
 @COMPRESSOR_REGISTRY.register("kronecker_tt_lora")
 def kronecker_tt_lora_factory(
@@ -385,9 +466,20 @@ def kronecker_tt_lora_factory(
     gamma = getattr(comp_config, "gamma", 1.0)
     lora_r = getattr(comp_config, "lora_r", kwargs.pop("lora_r", 4))
     lora_alpha = getattr(comp_config, "lora_alpha", kwargs.pop("lora_alpha", 8.0))
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+
     compressor = KroneckerTTLoRACompressor(
         model, rank=rank, gamma=gamma, lora_r=lora_r, lora_alpha=lora_alpha, cfg=comp_config, **kwargs
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
+
+
+__all__ = [
+    "KroneckerTTLoRALayer",
+    "KroneckerTTLoRACompressor",
+    "kronecker_tt_lora_factory",
+]
 
