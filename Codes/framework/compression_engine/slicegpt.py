@@ -33,6 +33,8 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("slicegpt")
+@COMPRESSOR_REGISTRY.register("slicegpt_compressor")
 class SliceGPTCompressor(BaseCompressor):
     """
     SliceGPT Compression Strategy: Projects activations onto principal components via orthogonal
@@ -257,18 +259,22 @@ class SliceGPTCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("slicegpt")
+@COMPRESSOR_REGISTRY.register("slicegpt_factory")
 def slicegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for SliceGPT compressor."""
-    sparsity = getattr(comp_config, "slicegpt_sparsity", getattr(comp_config, "sparsity", 0.25)) if comp_config else kwargs.get("sparsity", 0.25)
-    non_uniform = getattr(comp_config, "non_uniform", False) if comp_config else kwargs.get("non_uniform", False)
-    tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
+    sparsity = kwargs.pop("sparsity", getattr(comp_config, "slicegpt_sparsity", getattr(comp_config, "sparsity", 0.25)) if comp_config else 0.25)
+    non_uniform = kwargs.pop("non_uniform", getattr(comp_config, "non_uniform", False) if comp_config else False)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config else 0.20)
+    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
+    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else None))
 
     compressor = SliceGPTCompressor(
         model,
         tokenizer=tokenizer,
         sparsity=sparsity,
         non_uniform=non_uniform,
+        max_error=max_error,
+        fallback_to_original=fallback,
         comp_config=comp_config,
         **kwargs,
     )
