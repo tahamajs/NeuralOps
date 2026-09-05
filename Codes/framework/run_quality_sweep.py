@@ -677,6 +677,14 @@ def main():
                     help="Maximum reconstruction error threshold for AASVD before fallback")
     ap.add_argument("--aasvd_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict AASVD compression to attention layers only")
+    ap.add_argument("--defer_export", action="store_true", default=False,
+                    help="Defer Hugging Face upload and Git commit to orchestrator script")
+    ap.add_argument("--adaptive_ranks_max_error", type=float, default=0.85,
+                    help="Maximum relative Frobenius reconstruction error threshold for AdaptiveRanks")
+    ap.add_argument("--adaptive_ranks_energy_threshold", type=float, default=0.92,
+                    help="Energy retention threshold for AdaptiveRanks")
+    ap.add_argument("--adaptive_ranks_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict AdaptiveRanks compression to attention projections only")
 
     
     # Pre-parse to check if a config file is provided
@@ -1088,6 +1096,15 @@ def main():
                             setattr(model.config, "aasvd_max_error", args.aasvd_max_error)
                         if getattr(args, "aasvd_target_attention_only", None) is not None:
                             setattr(model.config, "aasvd_target_attention_only", args.aasvd_target_attention_only)
+                        if getattr(args, "adaptive_ranks_max_error", None) is not None:
+                            setattr(model.config, "adaptive_ranks_max_error", args.adaptive_ranks_max_error)
+                            setattr(model.config, "max_error", args.adaptive_ranks_max_error)
+                        if getattr(args, "adaptive_ranks_energy_threshold", None) is not None:
+                            setattr(model.config, "adaptive_ranks_energy_threshold", args.adaptive_ranks_energy_threshold)
+                            setattr(model.config, "energy_threshold", args.adaptive_ranks_energy_threshold)
+                        if getattr(args, "adaptive_ranks_target_attention_only", None) is not None:
+                            setattr(model.config, "adaptive_ranks_target_attention_only", args.adaptive_ranks_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.adaptive_ranks_target_attention_only)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
@@ -1395,27 +1412,29 @@ def main():
                 import shutil
                 shutil.rmtree(weights_dir, ignore_errors=True)
         else:
-            # Automated export to Hugging Face and GitHub for successful runs
-            try:
-                from Codes.framework.utils.hf_git_exporter import handle_benchmark_run_export
-                handle_benchmark_run_export(
-                    model=None,
-                    tokenizer=tokenizer,
-                    model_name=Path(args.model).name,
-                    module_name=name,
-                    dataset_name=args.dataset,
-                    perf_metrics=perf_metrics,
-                    comp_metrics=comp_metrics,
-                    status=status,
-                    pass_threshold_pct=float(pass_threshold_pct),
-                    baseline_acc=base_benchmark_acc if name != "full" else None,
-                    config_dict=vars(args) if hasattr(args, "__dict__") else {},
-                    out_dir=out,
-                    allow_pass_low=False,
-                    export_dir=hf_export_dir if hf_export_dir.exists() else None,
-                )
-            except Exception as export_exc:
-                LOG.warning("Automated export exception for %s: %s", name, export_exc)
+            if getattr(args, "defer_export", False):
+                LOG.info("[Export Deferred] Checkpoint preserved in %s. Automated export will be handled post-sweep by orchestrator.", weights_dir)
+            else:
+                try:
+                    from Codes.framework.utils.hf_git_exporter import handle_benchmark_run_export
+                    handle_benchmark_run_export(
+                        model=None,
+                        tokenizer=tokenizer,
+                        model_name=Path(args.model).name,
+                        module_name=name,
+                        dataset_name=args.dataset,
+                        perf_metrics=perf_metrics,
+                        comp_metrics=comp_metrics,
+                        status=status,
+                        pass_threshold_pct=float(pass_threshold_pct),
+                        baseline_acc=base_benchmark_acc if name != "full" else None,
+                        config_dict=vars(args) if hasattr(args, "__dict__") else {},
+                        out_dir=out,
+                        allow_pass_low=False,
+                        export_dir=hf_export_dir if hf_export_dir.exists() else None,
+                    )
+                except Exception as export_exc:
+                    LOG.warning("Automated export exception for %s: %s", name, export_exc)
 
         del model; gc.collect(); torch.cuda.empty_cache()
 

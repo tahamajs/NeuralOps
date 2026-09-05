@@ -82,13 +82,15 @@ class AdaptiveRanksCompressor(BaseCompressor):
     ) -> None:
         super().__init__(model, name="adaptive_ranks", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is None and hasattr(model, "config") and model.config is not None:
+            cfg = model.config
         if cfg is not None:
-            energy_threshold = _cfg_get(cfg, "energy_threshold", energy_threshold)
+            energy_threshold = _cfg_get(cfg, "energy_threshold", _cfg_get(cfg, "adaptive_ranks_energy_threshold", _cfg_get(cfg, "asvd_energy_threshold", energy_threshold)))
             min_rank = _cfg_get(cfg, "min_rank", _cfg_get(cfg, "rank", min_rank))
-            max_error = _cfg_get(cfg, "max_error", max_error)
+            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "adaptive_ranks_max_error", _cfg_get(cfg, "aasvd_max_error", max_error)))
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             protect_critical = _cfg_get(cfg, "protect_critical", protect_critical)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", _cfg_get(cfg, "adaptive_ranks_target_attention_only", _cfg_get(cfg, "aasvd_target_attention_only", target_attention_only)))
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             min_rank = kwargs["rank"]
