@@ -1,14 +1,19 @@
-"""KMeans-based weight clustering quantizer with STE. Registered as 'kmeans'."""
+"""KMeans-based weight clustering quantizer with STE. Registered as 'kmeans' and 'kmeans_quantize'."""
 from __future__ import annotations
 
+import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
+
+logger = logging.getLogger(__name__)
 
 
 class KMeansSTEFunction(torch.autograd.Function):
@@ -124,17 +129,28 @@ def fast_kmeans_1d(
 class KMeansLinear(nn.Module):
     """Linear layer with weights represented by k-means centroids and discrete index table."""
 
-    def __init__(self, linear: nn.Linear, n_clusters: int = 256):
+    def __init__(self, linear: Union[nn.Linear, Any], n_clusters: int = 256):
         super().__init__()
-        self.in_features = linear.in_features
-        self.out_features = linear.out_features
+        raw_w = linear.weight.data
+        cls_name = linear.__class__.__name__
+        is_conv1d = "conv1d" in cls_name.lower() or hasattr(linear, "nf")
+
+        if is_conv1d:
+            W = raw_w.t().contiguous()
+            self.in_features = W.shape[1]
+            self.out_features = W.shape[0]
+        else:
+            W = raw_w.contiguous()
+            self.in_features = getattr(linear, "in_features", W.shape[1])
+            self.out_features = getattr(linear, "out_features", W.shape[0])
+
         self.n_clusters = n_clusters
 
-        centroids, indices = fast_kmeans_1d(linear.weight.data, n_clusters=n_clusters)
-        self.centroids = nn.Parameter(centroids.to(dtype=linear.weight.dtype))
+        centroids, indices = fast_kmeans_1d(W, n_clusters=n_clusters)
+        self.centroids = nn.Parameter(centroids.to(dtype=W.dtype))
         self.register_buffer("indices", indices)
 
-        if linear.bias is not None:
+        if getattr(linear, "bias", None) is not None and linear.bias is not None:
             self.bias = nn.Parameter(linear.bias.data.clone())
         else:
             self.register_parameter("bias", None)
@@ -152,6 +168,10 @@ class KMeansLinear(nn.Module):
             centroids, indices = fast_kmeans_1d(value.data, n_clusters=self.n_clusters)
             self.centroids = nn.Parameter(centroids.to(dtype=value.dtype, device=value.device))
             self.register_buffer("indices", indices.to(device=value.device))
+
+    def get_weight(self) -> torch.Tensor:
+        """Materialize full reconstructed weight matrix."""
+        return self.centroids[self.indices]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.training:
@@ -172,6 +192,9 @@ class KMeansLinear(nn.Module):
         return f"in_features={self.in_features}, out_features={self.out_features}, n_clusters={self.n_clusters}"
 
 
+@COMPRESSOR_REGISTRY.register("kmeans")
+@COMPRESSOR_REGISTRY.register("kmeans_quantize")
+@COMPRESSOR_REGISTRY.register("kmeans_compressor")
 class KMeansCompressor(BaseCompressor):
     """
     KMeansCompressor: Vector quantization via scalar k-means clustering of weight parameters.
@@ -180,49 +203,119 @@ class KMeansCompressor(BaseCompressor):
         model: PyTorch model.
         n_clusters: Number of centroid codebook entries (default 256 -> 8 bits, 16 -> 4 bits).
         bits: Optional bitwidth constraint (e.g. 4 or 8) which sets n_clusters = 2**bits.
+        max_error: Maximum allowed relative Frobenius error (default 0.20).
+        fallback_to_original: If True, keep original layer on error excess (default True).
+        cfg: Optional configuration object.
     """
 
     def __init__(
         self,
-        model: nn.Module,
+        model: Optional[nn.Module] = None,
         n_clusters: int = 256,
         bits: Optional[int] = None,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model, name="kmeans", **kwargs)
+        super().__init__(model if model is not None else nn.Identity(), name="kmeans", **kwargs)
         if bits is not None:
             self.n_clusters = 2 ** int(bits)
         else:
-            self.n_clusters = int(n_clusters)
+            self.n_clusters = int(n_clusters or getattr(cfg, "kmeans_clusters", 256))
         self.bits = math.ceil(math.log2(max(self.n_clusters, 2)))
+        self.max_error = float(max_error if max_error is not None else getattr(cfg, "max_error", 0.20))
+        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else getattr(cfg, "fallback_to_original", True))
+        self.cfg = cfg
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
 
-    def _replace_module(self, full_name: str, new_module: nn.Module) -> None:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part)
-        setattr(parent, parts[-1], new_module)
+    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Replace eligible nn.Linear and Conv1D modules with KMeansLinear layers."""
+        if model is not None:
+            self.model = model
+            self._original_params = self._count_params(self.model)
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Replace all nn.Linear modules with KMeansLinear layers."""
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear):
-                new_layer = KMeansLinear(module, self.n_clusters)
-                self._replace_module(name, new_layer)
+            cls_name = module.__class__.__name__
+            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower() or hasattr(module, "nf")
+            if not is_linear_like or isinstance(module, KMeansLinear):
+                continue
 
+            name_lower = name.lower()
+            if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "score", "pooler", "embedding"]):
+                continue
+            if not should_compress_linear(self.model, name):
+                continue
+
+            is_conv1d = "conv1d" in cls_name.lower() or hasattr(module, "nf")
+            orig_w = module.weight.data.t().float() if is_conv1d else module.weight.data.float()
+            norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
+
+            try:
+                new_layer = KMeansLinear(module, self.n_clusters)
+                recon_w = new_layer.get_weight().float()
+                err = (torch.norm(orig_w - recon_w, p="fro") / norm_orig).item()
+            except Exception as ex:
+                logger.warning("KMeansCompressor: Error compressing %s: %s", name, ex)
+                if self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    continue
+                raise
+
+            if err > self.max_error:
+                logger.warning("KMeansCompressor: Layer %s error %.4f exceeded max_error %.4f", name, err, self.max_error)
+                if self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    continue
+
+            replace_module(self.model, name, new_layer)
+            self.compressed_layers.append(name)
+            self.layer_errors[name] = float(err)
+
+        self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        stats["n_clusters"] = self.n_clusters
-        stats["effective_bits_per_weight"] = self.bits
-        stats["theoretical_vram_saving"] = f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16"
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "layer_errors": self.layer_errors,
+                "avg_reconstruction_error": avg_err,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "n_clusters": self.n_clusters,
+                "effective_bits_per_weight": self.bits,
+                "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
+            }
+        )
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("kmeans")
-@COMPRESSOR_REGISTRY.register("kmeans_quantize")
+@COMPRESSOR_REGISTRY.register("kmeans_factory")
+@COMPRESSOR_REGISTRY.register("kmeans_quantize_factory")
 def kmeans_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """KMeans compressor factory function."""
     n_clusters = kwargs.pop("n_clusters", getattr(comp_config, "kmeans_clusters", 256) if comp_config is not None else 256)
     bits = kwargs.pop("bits", getattr(comp_config, "kmeans_bits", None) if comp_config is not None else None)
-    compressor = KMeansCompressor(model, n_clusters=n_clusters, bits=bits, **kwargs)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config is not None else 0.20)
+    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config is not None else True)
+
+    compressor = KMeansCompressor(
+        model,
+        n_clusters=n_clusters,
+        bits=bits,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
