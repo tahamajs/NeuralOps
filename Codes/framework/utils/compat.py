@@ -117,7 +117,12 @@ def get_dynamic_compression_rank(
         if hasattr(comp_config, "rank") and getattr(comp_config, "rank") is not None:
             return int(getattr(comp_config, "rank"))
 
-    fam = detect_family(model_or_family) if model_or_family is not None else "unknown"
+    if isinstance(model_or_family, str):
+        fam = model_or_family
+    elif model_or_family is not None:
+        fam = detect_family(model_or_family)
+    else:
+        fam = "unknown"
     if fam == "qwen3_5":
         target = min(in_features, out_features) // 4
         return max(128, min(256, target))
@@ -130,26 +135,56 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     
     Returns LoRA adapter parameters, classification head parameters,
     and all parameters of injected attention/adapter/compressor modules.
+    Ensures that fallback and uncompressed original linear/Conv1D layers remain strictly frozen.
     """
+    svd_modules = [m for m in model.modules() if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer")]
+    has_svd = len(svd_modules) > 0
+    svd_param_ids = {id(p) for m in svd_modules for p in m.parameters()}
+    has_lora = any(any(t in n.lower() for t in (".lora_", ".lora_a", ".lora_b")) for n, _ in model.named_parameters())
+
     trainable_params = []
     for name, param in model.named_parameters():
         n_low = name.lower()
         layer_prefix = name.rsplit(".", 1)[0]
         layer_has_lora = any(k.startswith(layer_prefix) and any(t in k.lower() for t in (".lora_", ".lora_a", ".lora_b")) for k, _ in model.named_parameters())
+
+        # 1. LoRA adapter parameters are always trainable
+        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt")):
+            trainable_params.append(param)
+            continue
+
+        # 2. Classification / sequence classification heads are always trainable
+        if any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
+            trainable_params.append(param)
+            continue
+
+        # If this layer has LoRA adapters, its base weight/bias and base factors remain frozen
         if layer_has_lora and (any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v", ".bias")) or ".base_layer." in n_low or ".lin1." in n_low or ".lin2." in n_low):
             continue
 
-        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt")):
+        # 3. If model contains factorized SVDLinear modules:
+        # Only compressed SVDLinear parameters (U, V, bias) are trainable;
+        # Fallback original layers (Conv1D.weight, Linear.weight, etc.) remain strictly frozen.
+        if has_svd:
+            if id(param) in svd_param_ids:
+                trainable_params.append(param)
+            continue
+
+        # 4. If model is configured in LoRA mode without SVDLinear:
+        # Only LoRA parameters and heads are trainable; backbone/factor weights remain frozen.
+        if has_lora:
+            continue
+
+        # 5. Non-LoRA, non-SVD models (custom attention replacements, SSM, CUR, etc.):
+        if any(tag in n_low for tag in (".inner.", "swa_mamba", "kernel_linear", ".u", ".v")):
             trainable_params.append(param)
-        elif any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
-            trainable_params.append(param)
-        elif not layer_has_lora and any(tag in n_low for tag in (".inner.", "attention.", "self_attn.", ".attn.", "swa_mamba", "kernel_linear", ".u", ".v")):
-            trainable_params.append(param)
-        elif not layer_has_lora and any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
+        elif any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
                                           ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
                                           ".comp_", ".svd_", ".cur_", ".salr", ".direct_svd", ".sparse_proj",
                                           ".cores", ".centroids", ".weight_table", ".alpha", ".gate",
                                           ".proj_k", ".proj_v")):
+            trainable_params.append(param)
+        elif not (n_low.endswith(".weight") or n_low.endswith(".bias")) and any(tag in n_low for tag in ("attention.", "self_attn.", ".attn.")):
             trainable_params.append(param)
 
     for name, param in model.named_parameters():
