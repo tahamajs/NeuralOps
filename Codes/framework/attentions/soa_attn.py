@@ -1,85 +1,381 @@
 r"""
 Shared Orthogonal Attention (SOA) with Per-Projection Latent Bottlenecks.
-
-Factorizes dense Q, K, and V linear projections into low-rank bottleneck pairs
-initialized via truncated SVD from pretrained transformer weights.
+Hardened for production use across diverse transformer architectures:
+- DistilBERT (Flat MHA)
+- RoBERTa / BERT (Nested Encoder Self-Attention)
+- GPT-2 (Causal Decoder with Conv1D)
+- Qwen / LLaMA (GQA with Rotary Position Embeddings)
 """
 
-from typing import Any, Optional, Tuple
+import logging
+import math
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
+
+from framework.core.adapters import UniversalAdapter
+from framework.core.attention_mask import apply_attention_mask
+from framework.core.base import BaseAttention
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
+logger = logging.getLogger(__name__)
 
-@ATTENTION_REGISTRY.register("soa_module")
-@ATTENTION_REGISTRY.register("soa_attn")
-class SOAAttention(nn.Module):
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    """Rotates half the hidden dimensions of the input tensor."""
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+    unsqueeze_dim: int = 1,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
+    rotary_dim = cos.shape[-1]
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+
+    while cos.dim() < q_rot.dim():
+        cos = cos.unsqueeze(unsqueeze_dim)
+        sin = sin.unsqueeze(unsqueeze_dim)
+
+    q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
+    k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+
+    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
+    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
+    return q, k
+
+
+class LoRALinear(nn.Module):
+    """Linear projection with frozen base weights and trainable LoRA adapters."""
+
     def __init__(
         self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_base: bool = True,
+    ):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.scaling = lora_alpha / max(1, lora_rank)
+
+        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter("bias", None)
+
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
+            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        if freeze_base:
+            self.weight.requires_grad = False
+            if self.bias is not None:
+                self.bias.requires_grad = False
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out
+        return out
+
+
+@ATTENTION_REGISTRY.register("soa_module", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("soa_attn")
+class SOAAttention(BaseAttention):
+    r"""Shared Orthogonal Attention (SOA) with Per-Projection Latent Bottlenecks.
+
+    Factorizes dense Q, K, and V linear projections into low-rank bottleneck pairs
+    initialized via truncated SVD from pretrained transformer weights.
+    """
+
+    supports_gqa: bool = True
+
+    def __init__(
+        self,
+        config: Optional[Any] = None,
         model_config: Optional[Any] = None,
+        rank: Optional[int] = None,
         k_rank: int = 64,
         dropout: float = 0.1,
         pretrained_attn: Optional[Any] = None,
+        old_attn: Optional[Any] = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
-        if model_config is None and pretrained_attn is not None:
-            class DummyConfig:
-                pass
-            model_config = DummyConfig()
-            model_config.hidden_size = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None)).out_features
-            model_config.num_attention_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 4))
+        cfg = config or model_config
+        src_attn = pretrained_attn or old_attn
+        super().__init__(cfg, rank)
 
-        self.hidden_size: int = getattr(model_config, "hidden_size", 768) if model_config is not None else 768
-        self.num_heads: int = getattr(model_config, "num_attention_heads", 4) if model_config is not None else 12
-        self.head_dim: int = self.hidden_size // max(1, self.num_heads)
-        self.k_rank: int = k_rank
+        # 1. Architecture detection & dimensions
+        self.hidden_size: int = getattr(
+            cfg, "hidden_size", getattr(cfg, "dim", kwargs.get("hidden_size", 768))
+        ) if cfg is not None else kwargs.get("hidden_size", 768)
 
-        self.q_down = nn.Linear(self.hidden_size, k_rank, bias=False)
-        self.k_down = nn.Linear(self.hidden_size, k_rank, bias=False)
-        self.v_down = nn.Linear(self.hidden_size, k_rank, bias=False)
+        self.num_heads: int = getattr(
+            cfg,
+            "num_attention_heads",
+            getattr(cfg, "n_heads", getattr(cfg, "num_heads", kwargs.get("num_attention_heads", 12))),
+        ) if cfg is not None else kwargs.get("num_attention_heads", 12)
 
-        self.q_up = nn.Linear(k_rank, self.hidden_size, bias=False)
-        self.k_up = nn.Linear(k_rank, self.hidden_size, bias=False)
-        self.v_up = nn.Linear(k_rank, self.hidden_size, bias=False)
+        self.head_dim: int = getattr(
+            cfg, "head_dim", kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
+        ) if cfg is not None else self.hidden_size // max(1, self.num_heads)
 
-        self.out_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
-        self.dropout = nn.Dropout(dropout)
+        cfg_kv = (
+            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None))
+            if cfg is not None
+            else None
+        )
+        self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
+        self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        if pretrained_attn is not None:
-            self._init_from_pretrained(pretrained_attn)
+        self.q_head_size: int = self.num_heads * self.head_dim
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-    def _init_from_pretrained(self, pretrained_attn: Any) -> None:
-        q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
-        k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
-        v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
-        out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
+        self.k_rank: int = rank or k_rank
+        self.lora_rank: int = lora_rank
+        self.lora_alpha: float = lora_alpha
 
+        # Decoder / Causal flag
+        if is_decoder is not None:
+            self.is_decoder: bool = is_decoder
+        elif cfg is not None:
+            self.is_decoder = bool(getattr(cfg, "is_decoder", False))
+        else:
+            self.is_decoder = False
+
+        self.is_nested_encoder: bool = False
+
+        # 2. Factorized SVD linear projections for Q, K, V
+        self.q_down = nn.Linear(self.hidden_size, self.k_rank, bias=False)
+        self.q_up = nn.Linear(self.k_rank, self.q_head_size, bias=True)
+
+        self.k_down = nn.Linear(self.hidden_size, self.k_rank, bias=False)
+        self.k_up = nn.Linear(self.k_rank, self.kv_head_size, bias=True)
+
+        self.v_down = nn.Linear(self.hidden_size, self.k_rank, bias=False)
+        self.v_up = nn.Linear(self.k_rank, self.kv_head_size, bias=True)
+
+        # Output projection with trainable LoRA adapter
+        self.out_proj = LoRALinear(
+            self.q_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+
+        dropout_p = (
+            getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout))
+            if cfg is not None
+            else dropout
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        # 3. Pretrained weight transfer
+        if src_attn is not None:
+            self.copy_weights(src_attn)
+
+    def copy_weights(self, old_attn: nn.Module) -> None:
+        """Robust weight extraction and SVD factorization across all architectures."""
         with torch.no_grad():
-            for orig, down, up in [
-                (q_src, self.q_down, self.q_up),
-                (k_src, self.k_down, self.k_up),
-                (v_src, self.v_down, self.v_up),
-            ]:
-                if orig is None:
-                    continue
-                W = orig.weight.data.float()
-                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                S = S.clamp(min=1e-6)
+            w_q, b_q = None, None
+            w_k, b_k = None, None
+            w_v, b_v = None, None
+            w_o, b_o = None, None
+
+            # Check nested encoder container
+            src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
+            if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+                hasattr(old_attn, "query")
+                and not hasattr(old_attn, "dense")
+                and not hasattr(old_attn, "out_proj")
+            ):
+                self.is_nested_encoder = True
+
+            if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
+                self.is_nested_encoder = True
+                src = old_attn.self
+                if hasattr(old_attn.output, "dense"):
+                    w_o = old_attn.output.dense.weight
+                    b_o = old_attn.output.dense.bias
+            else:
+                src = old_attn
+
+            # Pattern 1: GPT-2 Fused c_attn
+            if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
+                c_attn_w = src.c_attn.weight.detach()
+                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+                    c_attn_w = c_attn_w.t()
+
+                q_dim = self.q_head_size
+                k_dim = self.kv_head_size
+                v_dim = self.kv_head_size
+
+                w_q = c_attn_w[:q_dim, :]
+                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+
+                if c_attn_b is not None:
+                    b_q = c_attn_b[:q_dim]
+                    b_k = c_attn_b[q_dim : q_dim + k_dim]
+                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+
+                out_w = src.c_proj.weight.detach()
+                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                    out_w = out_w.t()
+                w_o = out_w
+                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
+
+            # Pattern 2: RoBERTa / BERT separate query, key, value
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
+                w_q = src.query.weight.detach()
+                b_q = src.query.bias.detach() if src.query.bias is not None else None
+                w_k = src.key.weight.detach()
+                b_k = src.key.bias.detach() if src.key.bias is not None else None
+                w_v = src.value.weight.detach()
+                b_v = src.value.bias.detach() if src.value.bias is not None else None
+
+                if w_o is None:
+                    for attr in ("dense", "out_proj", "o_proj"):
+                        if hasattr(src, attr):
+                            proj = getattr(src, attr)
+                            w_o = proj.weight.detach()
+                            b_o = proj.bias.detach() if proj.bias is not None else None
+                            break
+
+            # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+                w_q = src.q_proj.weight.detach()
+                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
+                w_k = src.k_proj.weight.detach()
+                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
+                w_v = src.v_proj.weight.detach()
+                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+
+                if hasattr(src, "o_proj"):
+                    w_o = src.o_proj.weight.detach()
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+
+            # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
+                w_q = src.q_lin.weight.detach()
+                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
+                w_k = src.k_lin.weight.detach()
+                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
+                w_v = src.v_lin.weight.detach()
+                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+
+                if hasattr(src, "out_lin"):
+                    w_o = src.out_lin.weight.detach()
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+
+            # Pattern 5: UniversalAdapter fallback
+            if w_q is None or w_k is None or w_v is None:
+                try:
+                    adapter = UniversalAdapter()
+                    w_q, b_q = adapter.get_weight_bias(src, "q")
+                    w_k, b_k = adapter.get_weight_bias(src, "k")
+                    w_v, b_v = adapter.get_weight_bias(src, "v")
+                    if w_o is None:
+                        w_o, b_o = adapter.get_weight_bias(src, "o")
+                except Exception as e:
+                    logger.debug("UniversalAdapter fallback failed: %s", e)
+
+            # Strict validation
+            missing = []
+            if w_q is None:
+                missing.append("Q projection")
+            if w_k is None:
+                missing.append("K projection")
+            if w_v is None:
+                missing.append("V projection")
+            if w_o is None and not self.is_nested_encoder:
+                missing.append("Out projection")
+
+            if missing:
+                raise RuntimeError(
+                    f"SOAAttention: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
+                )
+
+            # SVD Factorization helper
+            def _factorize_svd(W: torch.Tensor, down: nn.Linear, up: nn.Linear, bias: Optional[torch.Tensor]) -> None:
+                W_f = W.float()
+                U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
                 S = S.clamp(min=1e-6)
                 r = min(self.k_rank, U.size(1), Vt.size(0))
-                down.weight.data.zero_()
-                up.weight.data.zero_()
-                down.weight.data[:r, :] = Vt[:r, :].to(down.weight.dtype)
-                up.weight.data[:, :r] = (U[:, :r] * S[:r]).to(up.weight.dtype)
 
-            if out_src is not None:
-                self.out_proj.weight.data.copy_(out_src.weight.data)
-                if out_src.bias is not None:
-                    self.out_proj.bias.data.copy_(out_src.bias.data)
+                down.weight.zero_()
+                up.weight.zero_()
+                down.weight[:r, :].copy_(Vt[:r, :].to(down.weight.dtype))
+                up.weight[:, :r].copy_((U[:, :r] * S[:r]).to(up.weight.dtype))
+
+                if bias is not None and up.bias is not None:
+                    up.bias.copy_(bias.to(up.bias.dtype))
+                elif up.bias is not None:
+                    up.bias.zero_()
+
+                # Frobenius check
+                rec = up.weight @ down.weight
+                f_norm = float(torch.linalg.norm(rec))
+                if f_norm < 1e-4:
+                    raise RuntimeError(f"SOAAttention: SVD reconstructed weight norm is near zero: {f_norm}")
+
+            _factorize_svd(w_q, self.q_down, self.q_up, b_q)
+            _factorize_svd(w_k, self.k_down, self.k_up, b_k)
+            _factorize_svd(w_v, self.v_down, self.v_up, b_v)
+
+            if w_o is not None:
+                self.out_proj.weight.copy_(w_o.to(self.out_proj.weight.dtype))
+                if b_o is not None and self.out_proj.bias is not None:
+                    self.out_proj.bias.copy_(b_o.to(self.out_proj.bias.dtype))
+                f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
+                if f_norm_o < 1e-4:
+                    raise RuntimeError(f"SOAAttention: Out projection norm is near zero: {f_norm_o}")
+
+            # Freeze base weights
+            for p in [self.q_down.weight, self.q_up.weight, self.k_down.weight, self.k_up.weight, self.v_down.weight, self.v_up.weight]:
+                p.requires_grad = False
+            if self.q_up.bias is not None:
+                self.q_up.bias.requires_grad = False
+            if self.k_up.bias is not None:
+                self.k_up.bias.requires_grad = False
+            if self.v_up.bias is not None:
+                self.v_up.bias.requires_grad = False
 
     @classmethod
     def from_distilbert_pretrained(
@@ -100,9 +396,10 @@ class SOAAttention(nn.Module):
         return_dict: Optional[bool] = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
         B, N, _ = hidden_states.shape
 
+        # Factorized projections
         z_q = self.q_down(hidden_states)
         z_k = self.k_down(hidden_states)
         z_v = self.v_down(hidden_states)
@@ -112,35 +409,66 @@ class SOAAttention(nn.Module):
         v = self.v_up(z_v)
 
         H = self.num_heads
+        H_kv = self.num_kv_heads
         D = self.head_dim
+
         q = q.view(B, N, H, D).transpose(1, 2)
-        k = k.view(B, N, H, D).transpose(1, 2)
-        v = v.view(B, N, H, D).transpose(1, 2)
+        k = k.view(B, N, H_kv, D).transpose(1, 2)
+        v = v.view(B, N, H_kv, D).transpose(1, 2)
 
-        scale = D**-0.5
-        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+        # Partial Rotary Position Embeddings (RoPE)
+        pos_emb = kwargs.get("position_embeddings", None)
+        if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
+            cos, sin = pos_emb
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
+        # Grouped-Query Attention expansion
+        if H_kv != H:
+            k = repeat_kv(k, self.num_key_value_groups)
+            v = repeat_kv(v, self.num_key_value_groups)
+
+        scale = 1.0 / math.sqrt(D)
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+
+        # Causal mask for decoders
+        if self.is_decoder and N > 1:
+            causal_mask = torch.triu(
+                torch.full((N, N), float("-inf"), device=scores.device, dtype=scores.dtype),
+                diagonal=1,
+            )
+            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+
+        # Standard Attention Mask
         mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
         if mask is not None:
             if mask.dim() == 2:
                 mask_t = mask[:, None, None, :].to(scores.dtype)
                 scores = scores + (1.0 - mask_t) * -10000.0
             elif mask.dim() == 3:
-                scores = scores + mask.unsqueeze(1)
+                scores = scores + mask.unsqueeze(1).to(scores.dtype)
             elif mask.dim() == 4:
                 scores = scores + mask.to(scores.dtype)
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-        attn_weights = self.dropout(attn_weights)
+        attn_weights = self.dropout(attn_weights.to(v.dtype))
+
         if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
             attn_weights = attn_weights * head_mask
 
         context = torch.matmul(attn_weights, v)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
-        output = self.out_proj(context)
 
-        return output, attn_weights if output_attentions else None
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = self.out_proj(context)
+
+        return (output, attn_weights if output_attentions else None)
 
 
 def inject_soa_attn(
@@ -151,15 +479,36 @@ def inject_soa_attn(
     total_layers: int = 12,
     old_attn: Any = None,
     **kwargs: Any,
-) -> SOAAttention:
-    if model_config is None and hasattr(layer, "attention"):
-        old_attn = layer.attention
-    k_rank = getattr(comp_config, "soa_rank", 64)
-    dropout = getattr(comp_config, "dropout", 0.1)
-    if model_config is None and old_attn is not None:
-        new_attn = SOAAttention.from_distilbert_pretrained(old_attn, k_rank=k_rank, dropout=dropout)
-    else:
-        new_attn = SOAAttention(model_config=model_config, k_rank=k_rank, dropout=dropout, pretrained_attn=old_attn)
-    if hasattr(layer, "attention"):
-        layer.attention = new_attn
-    return new_attn
+) -> Optional[SOAAttention]:
+    """Safely replace attention module with hardened SOAAttention."""
+    try:
+        src = old_attn
+        if src is None:
+            for attr in ("attention", "self_attn", "attn"):
+                if hasattr(layer, attr):
+                    src = getattr(layer, attr)
+                    break
+
+        if src is None:
+            return None
+
+        k_rank = getattr(comp_config, "soa_rank", getattr(comp_config, "rank", 64))
+        dropout = getattr(comp_config, "dropout", 0.1)
+
+        new_attn = SOAAttention(
+            config=model_config,
+            k_rank=k_rank,
+            dropout=dropout,
+            pretrained_attn=src,
+            **kwargs,
+        )
+
+        for attr in ("attention", "self_attn", "attn"):
+            if hasattr(layer, attr):
+                setattr(layer, attr, new_attn)
+                return new_attn
+
+        return new_attn
+    except Exception as e:
+        logger.error("inject_soa_attn failed at layer %d: %s", layer_idx, e)
+        return None
