@@ -166,7 +166,7 @@ class TTLinearLayer(nn.Module):
         return res.view(self.out_features, self.in_features)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass with TT weight contraction."""
+        """Forward pass with TT weight contraction and optional LoRA adapter."""
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
@@ -182,11 +182,15 @@ class TTLinearLayer(nn.Module):
             W_tensor = torch.tensordot(c0, c1, dims=([-1], [0]))
             W = W_tensor.permute(1, 3, 0, 2).contiguous().view(self.out_features, self.in_features)
             out = F.linear(x_flat, W, self.bias)
-            return out.view(*orig_shape[:-1], self.out_features)
         else:
             W = self.materialize_weight()
             out = F.linear(x_flat, W, self.bias)
-            return out.view(*orig_shape[:-1], self.out_features)
+
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_delta = self.scaling * F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B).to(out.dtype)
+            out = out + lora_delta
+
+        return out.view(*orig_shape[:-1], self.out_features)
 
     @classmethod
     def from_linear(
@@ -197,23 +201,20 @@ class TTLinearLayer(nn.Module):
         max_error: float = 0.20,
         max_retries: int = 3,
         fallback_to_svd: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> "TTLinearLayer":
         """
         Decompose a pretrained nn.Linear or Conv1D layer into TT-cores using TT-SVD.
         Production-hardened with FP32 stability, Conv1D support, adaptive rank retry,
-        and relative Frobenius error validation.
+        relative Frobenius error validation, and trainable LoRA adapters.
         """
         raw_w = linear_layer.weight.data
         orig_dtype = raw_w.dtype
         orig_device = raw_w.device
 
-        cls_name = linear_layer.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or (
-            raw_w.ndim == 2
-            and hasattr(linear_layer, "in_features")
-            and linear_layer.in_features == raw_w.shape[0]
-            and raw_w.shape[0] < raw_w.shape[1]
-        )
+        cls_name = linear_layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(linear_layer, "nf")
 
         if is_conv1d:
             W = raw_w.t().float().contiguous()
@@ -256,6 +257,8 @@ class TTLinearLayer(nn.Module):
                     shape=(p_dims, q_dims),
                     dtype=orig_dtype,
                     device=orig_device,
+                    lora_r=lora_r,
+                    lora_alpha=lora_alpha,
                 )
 
                 # Sequential TT-SVD in FP32
@@ -328,6 +331,8 @@ class TTLinearLayer(nn.Module):
                 shape=(p_dims, q_dims),
                 dtype=orig_dtype,
                 device=orig_device,
+                lora_r=lora_r,
+                lora_alpha=lora_alpha,
             )
             if bias is not None and best_layer.bias is not None:
                 best_layer.bias.data.copy_(bias.to(dtype=orig_dtype, device=orig_device))
