@@ -208,6 +208,59 @@ class SmartWeightedEnsemble:
         else:
             raise ValueError(f"Unknown ensemble method: {method}")
 
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        task_id: int = 0,
+        attention_mask: Optional[torch.Tensor] = None,
+        method: str = "hybrid",
+        model_task_ids: Optional[List[int]] = None,
+        **kwargs: Any,
+    ) -> torch.Tensor:
+        """Forward pass querying each model and combining logits."""
+        all_logits = []
+        for model in self.models:
+            out = model(input_ids=input_ids, **kwargs)
+            if hasattr(out, "logits"):
+                logits = out.logits
+            elif isinstance(out, (tuple, list)):
+                logits = out[0]
+            else:
+                logits = out
+            all_logits.append(logits)
+        stacked = torch.stack(all_logits, dim=0)
+
+        if method == "simple_average":
+            return self.combine_logits(task_id, stacked, method="simple_average")
+        elif method == "weighted":
+            return self.combine_logits(task_id, stacked, method="weighted")
+        elif method == "task_aware_attention":
+            t_ids = model_task_ids if model_task_ids is not None else [i % self.num_tasks for i in range(self.num_models)]
+            return self.attention(task_id, stacked, t_ids)
+        elif method == "hybrid":
+            if model_task_ids is not None:
+                attn_w = self.attention(task_id, stacked, model_task_ids)
+                if attention_mask is not None:
+                    dyn_w = self._get_dynamic_weights(task_id, input_ids, attention_mask)
+                    dyn_w_out = (stacked * dyn_w.view(-1, 1, 1)).sum(dim=0)
+                    return 0.6 * attn_w + 0.4 * dyn_w_out
+                return attn_w
+            return self.combine_logits(task_id, stacked, input_ids=input_ids, attention_mask=attention_mask, method="hybrid")
+        else:
+            return self.combine_logits(task_id, stacked, input_ids=input_ids, attention_mask=attention_mask, method=method)
+
+    def forward_simple_average(self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None, **kwargs: Any) -> torch.Tensor:
+        return self.forward(input_ids, task_id=0, attention_mask=attention_mask, method="simple_average", **kwargs)
+
+    def forward_task_attention(self, task_id: int, model_task_ids: List[int], input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None, **kwargs: Any) -> torch.Tensor:
+        return self.forward(input_ids, task_id=task_id, attention_mask=attention_mask, method="task_aware_attention", model_task_ids=model_task_ids, **kwargs)
+
+    def forward_hybrid(self, task_id: int, model_task_ids: List[int], input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None, **kwargs: Any) -> torch.Tensor:
+        return self.forward(input_ids, task_id=task_id, attention_mask=attention_mask, method="hybrid", model_task_ids=model_task_ids, **kwargs)
+
+    def __call__(self, *args: Any, **kwargs: Any) -> torch.Tensor:
+        return self.forward(*args, **kwargs)
+
 
 def run_smart_ensemble(config: dict, dataset_path: str):
     """Command-line entry point for running smart ensemble."""

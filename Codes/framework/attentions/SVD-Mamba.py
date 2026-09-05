@@ -410,10 +410,8 @@ class SVDMamba(BaseAttention):
         global_mix = self.global_out(global_scores)
         y = y + global_mix
 
-        if self.is_nested_encoder:
-            out = y
-        else:
-            out = self.out_proj(y)
+        # out_proj maps inner_dim (expand * d_model) back to d_model
+        out = self.out_proj(y)
 
         # Masking
         if attention_mask is not None:
