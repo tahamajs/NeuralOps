@@ -598,12 +598,21 @@ class AegisSpectronFP8Attention(BaseAttention):
             extracted_weights[proj] = (w, b)
 
         cls_name = old_attn.__class__.__name__
-        has_out_proj = any(
-            hasattr(old_attn, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
-        )
-        if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+        
+        # 1. Hardcoded explicit check for known nested encoders (immune to dummy monkey-patching)
+        if (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention"]
+            or "RobertaSelfAttention" in str(type(old_attn))
+            or "BertSelfAttention" in str(type(old_attn))
+        ):
             self.is_nested_encoder = True
+        else:
+            # 2. Dynamic fallback for other architectures
+            has_out_proj = any(
+                hasattr(old_attn, attr)
+                for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
+            )
+            self.is_nested_encoder = cls_name.endswith("SelfAttention") and not has_out_proj
 
         # Strict check for essential missing weights
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
@@ -617,10 +626,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             if w is not None:
                 self._svd_init(w, b, target)
 
-        w_o, b_o = extracted_weights["o"]
-        if w_o is not None:
-            self._svd_init(w_o, b_o, self.out_proj)
-        elif self.is_nested_encoder:
+        if self.is_nested_encoder:
             with torch.no_grad():
                 self.out_proj.lin1.weight.data.zero_()
                 self.out_proj.lin2.weight.data.zero_()
@@ -631,6 +637,9 @@ class AegisSpectronFP8Attention(BaseAttention):
                     self.out_proj.lin2.bias.data.zero_()
                 self.out_proj.lin1.weight.requires_grad = False
                 self.out_proj.lin2.weight.requires_grad = False
+        elif extracted_weights["o"][0] is not None:
+            w_o, b_o = extracted_weights["o"]
+            self._svd_init(w_o, b_o, self.out_proj)
 
         if extracted_weights["q"][0] is not None:
             with torch.no_grad():
