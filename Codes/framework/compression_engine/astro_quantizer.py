@@ -126,20 +126,33 @@ class AstroLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: nn.Linear,
+        linear: nn.Module,
         bits: int = 8,
         symmetric: bool = True,
         per_channel: bool = False,
     ) -> AstroLinear:
+        cls_name = linear.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
+        raw_w = linear.weight.data
+
+        if is_conv1d:
+            in_f = raw_w.shape[0]
+            out_f = raw_w.shape[1]
+            w_data = raw_w.t()
+        else:
+            out_f = raw_w.shape[0]
+            in_f = raw_w.shape[1]
+            w_data = raw_w
+
         layer = cls(
-            linear.in_features,
-            linear.out_features,
+            in_f,
+            out_f,
             bias=linear.bias is not None,
             bits=bits,
             symmetric=symmetric,
             per_channel=per_channel,
         )
-        layer.weight.data.copy_(linear.weight.data)
+        layer.weight.data.copy_(w_data)
         if linear.bias is not None:
             layer.bias.data.copy_(linear.bias.data)
         return layer
@@ -168,16 +181,25 @@ class AstroLinear(nn.Module):
         )
 
 
+import logging
+logger = logging.getLogger(__name__)
+from framework.core.model_utils import replace_module
+from framework.utils.compat import should_compress_linear
+
+
+@COMPRESSOR_REGISTRY.register("astro")
+@COMPRESSOR_REGISTRY.register("astro_quantizer")
 class AstroQuantizer(BaseCompressor):
     """
     AstroQuantizer: Uniform min-max / symmetric quantization engine for linear weights and biases.
 
-    Args:
-        model: PyTorch model.
-        bits: Bit-width for quantization (e.g. 4 or 8). Default 8.
-        symmetric: Whether to use symmetric quantization around 0. Default True.
-        per_channel: Whether to use per-channel scale factors. Default False.
-        use_ste: Whether to substitute nn.Linear with AstroLinear for QAT with STE. Default False.
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.20).
+    - Safe fallback to original weights by default (fallback_to_original=True).
+    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+    - Full FP32 quantization calculation with NaN/Inf guards.
+    - Unified critical-layer protection via should_compress_linear and protect_critical.
+    - Comprehensive per-layer statistics and error tracking.
     """
 
     def __init__(
@@ -187,25 +209,94 @@ class AstroQuantizer(BaseCompressor):
         symmetric: bool = True,
         per_channel: bool = False,
         use_ste: bool = False,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        protect_critical: bool = True,
+        target_modules: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="astro", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            bits = getattr(cfg, "astro_bits", getattr(cfg, "bits", bits))
+            symmetric = getattr(cfg, "astro_symmetric", getattr(cfg, "symmetric", symmetric))
+            per_channel = getattr(cfg, "astro_per_channel", getattr(cfg, "per_channel", per_channel))
+            use_ste = getattr(cfg, "astro_use_ste", getattr(cfg, "use_ste", use_ste))
+            max_error = getattr(cfg, "astro_max_error", getattr(cfg, "max_error", max_error))
+            fallback_to_original = getattr(
+                cfg, "astro_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            )
+            protect_critical = getattr(cfg, "protect_critical", protect_critical)
+
         self.bits = int(bits)
         self.symmetric = bool(symmetric)
         self.per_channel = bool(per_channel)
         self.use_ste = bool(use_ste)
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.protect_critical = bool(protect_critical)
+        self.target_modules = target_modules
 
-    def _replace_module(self, full_name: str, new_module: nn.Module) -> None:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part)
-        setattr(parent, parts[-1], new_module)
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: Dict[str, float] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if isinstance(module, AstroLinear):
+            return False
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        if not is_linear_like:
+            return False
+
+        if self.protect_critical:
+            name_lower = name.lower()
+            if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor"]):
+                return False
+
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Quantize all linear layers in the model and return (compressed_model, stats)."""
+        """Quantize all target linear/Conv1D layers in the model and return (compressed_model, stats)."""
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear):
+            if self._is_target_module(name, module):
+                cls_name = module.__class__.__name__.lower()
+                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                raw_w = module.weight.data
+
+                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                W_quant = quantize_dequantize_tensor(
+                    W,
+                    bits=self.bits,
+                    symmetric=self.symmetric,
+                    per_channel=self.per_channel,
+                    use_ste=False,
+                )
+
+                w_norm = torch.norm(W, p="fro").item()
+                err = float(torch.norm(W - W_quant, p="fro").item() / max(w_norm, 1e-12))
+                self.layer_errors[name] = err
+
+                if err > self.max_error:
+                    logger.warning(
+                        "AstroQuantizer error %.4f on %s exceeded threshold %.4f.",
+                        err,
+                        name,
+                        self.max_error,
+                    )
+                    if self.fallback_to_original:
+                        logger.info("Skipping AstroQuantizer for %s (fallback to original).", name)
+                        self.fallback_layers.append(name)
+                        continue
+
                 if self.use_ste:
                     astro_layer = AstroLinear.from_linear(
                         module,
@@ -213,40 +304,61 @@ class AstroQuantizer(BaseCompressor):
                         symmetric=self.symmetric,
                         per_channel=self.per_channel,
                     )
-                    self._replace_module(name, astro_layer)
+                    replace_module(self.model, name, astro_layer)
                 else:
-                    module.weight.data = quantize_dequantize_tensor(
-                        module.weight.data,
-                        bits=self.bits,
-                        symmetric=self.symmetric,
-                        per_channel=self.per_channel,
-                        use_ste=False,
-                    )
+                    if is_conv1d:
+                        module.weight.data.copy_(W_quant.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
+                    else:
+                        module.weight.data.copy_(W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
+
                     if module.bias is not None:
-                        module.bias.data = quantize_dequantize_tensor(
-                            module.bias.data,
+                        b_quant = quantize_dequantize_tensor(
+                            module.bias.data.float(),
                             bits=self.bits,
                             symmetric=self.symmetric,
                             per_channel=False,
                             use_ste=False,
                         )
+                        module.bias.data.copy_(b_quant.to(dtype=module.bias.dtype, device=module.bias.device))
 
+                self.compressed_layers.append(name)
+
+        self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats = self.get_compression_stats()
-        stats["quantization_bits"] = self.bits
-        stats["symmetric"] = self.symmetric
-        stats["per_channel"] = self.per_channel
-        stats["theoretical_vram_saving"] = f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16"
+        stats.update({
+            "quantization_bits": self.bits,
+            "symmetric": self.symmetric,
+            "per_channel": self.per_channel,
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "layer_errors": self.layer_errors,
+            "avg_reconstruction_error": avg_err,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
+        })
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("astro")
-@COMPRESSOR_REGISTRY.register("astro_quantizer")
+@COMPRESSOR_REGISTRY.register("astro_factory")
+@COMPRESSOR_REGISTRY.register("astro_quantizer_factory")
 def astro_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Astro compressor factory function."""
-    bits = kwargs.pop("bits", getattr(comp_config, "astro_bits", 8) if comp_config is not None else 8)
-    symmetric = kwargs.pop("symmetric", getattr(comp_config, "astro_symmetric", True) if comp_config is not None else True)
-    per_channel = kwargs.pop("per_channel", getattr(comp_config, "astro_per_channel", False) if comp_config is not None else False)
-    use_ste = kwargs.pop("use_ste", getattr(comp_config, "astro_use_ste", False) if comp_config is not None else False)
+    bits = kwargs.pop("bits", getattr(comp_config, "astro_bits", getattr(comp_config, "bits", 8)))
+    symmetric = kwargs.pop("symmetric", getattr(comp_config, "astro_symmetric", getattr(comp_config, "symmetric", True)))
+    per_channel = kwargs.pop("per_channel", getattr(comp_config, "astro_per_channel", getattr(comp_config, "per_channel", False)))
+    use_ste = kwargs.pop("use_ste", getattr(comp_config, "astro_use_ste", getattr(comp_config, "use_ste", False)))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "astro_max_error", getattr(comp_config, "max_error", 0.20)))
+    fallback = kwargs.pop("fallback_to_original", getattr(
+        comp_config, "astro_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    ))
 
     compressor = AstroQuantizer(
         model,
@@ -254,7 +366,19 @@ def astro_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         symmetric=symmetric,
         per_channel=per_channel,
         use_ste=use_ste,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+__all__ = [
+    "STEFakeQuantize",
+    "quantize_dequantize_tensor",
+    "AstroLinear",
+    "AstroQuantizer",
+    "astro_factory",
+]

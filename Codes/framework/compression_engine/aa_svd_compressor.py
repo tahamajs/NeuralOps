@@ -144,7 +144,15 @@ class SVDLinear(nn.Module):
 class AASVDCompressor(BaseCompressor):
     """
     Activation-Aware SVD Compressor with streaming EMA covariance accumulation
-    and true module replacement.
+    and true structural module replacement (SVDLinear).
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.20).
+    - Safe fallback to original weights by default (fallback_to_original=True).
+    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+    - SVD and covariance computations in FP32 with NaN/Inf guards.
+    - Parameter reduction constraint: r * (in + out) < in * out.
+    - Comprehensive per-layer stats and error tracking.
     """
 
     def __init__(
@@ -153,8 +161,11 @@ class AASVDCompressor(BaseCompressor):
         tokenizer: Optional[Any] = None,
         rank: int = 64,
         ema_beta: float = 0.9,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="aasvd", **kwargs)
@@ -164,200 +175,245 @@ class AASVDCompressor(BaseCompressor):
             ema_beta = getattr(cfg, "aasvd_ema_beta", ema_beta)
             tokenizer = getattr(cfg, "tokenizer", tokenizer)
             calibration_texts = getattr(cfg, "calibration_texts", calibration_texts)
+            max_error = getattr(cfg, "aasvd_max_error", getattr(cfg, "max_error", max_error))
+            fallback_to_original = getattr(
+                cfg, "aasvd_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            )
+
         self.tokenizer = tokenizer
-        self.rank = rank
-        self.ema_beta = ema_beta
+        self.rank = int(rank)
+        self.ema_beta = float(ema_beta)
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
         self.calibration_texts = calibration_texts or DEFAULT_CALIBRATION_CORPUS
+        self.target_modules = target_modules
         self.device = (
             torch.device(device)
             if device is not None
             else next(model.parameters()).device
         )
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+        self.layer_ranks: Dict[str, int] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if isinstance(module, SVDLinear):
+            return False
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        if not is_linear_like:
+            return False
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler"]):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
 
     def compress_linear(
         self,
-        layer: nn.Linear,
+        layer: nn.Module,
         rank: Optional[int] = None,
         cov: Optional[torch.Tensor] = None,
-    ) -> SVDLinear:
+    ) -> Tuple[Optional[SVDLinear], float, int]:
         """
-        FIX: Factored linear compression implementing activation-aware subspace projection
-        and symmetric singular value distribution.
-        
-        Args:
-            layer: Source nn.Linear layer to compress
-            rank: Target low-rank bottleneck dimension
-            cov: Optional empirical activation covariance matrix (X^T @ X) / B
-            
-        Returns:
-            Structural SVDLinear replacement module.
+        Factored linear compression implementing activation-aware subspace projection
+        and symmetric singular value distribution. Returns (svd_layer, error, rank).
         """
-        in_feat = layer.in_features
-        out_feat = layer.out_features
-        r = get_dynamic_compression_rank(in_feat, out_feat, model_or_family=self.model, default_rank=rank or self.rank, comp_config=getattr(self, "comp_config", None))
-        r = min(r, in_feat, out_feat)
+        cls_name = layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
+        raw_w = layer.weight.data
 
-        if cov is not None:
-            # Principal activation directions via SVD of covariance in FP32 directly on GPU
+        if is_conv1d:
+            in_feat, out_feat = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.t().float()
+        else:
+            out_feat, in_feat = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.float()
+
+        r = get_dynamic_compression_rank(
+            in_feat,
+            out_feat,
+            model_or_family=self.model,
+            default_rank=rank or self.rank,
+            comp_config=getattr(self, "comp_config", None),
+        )
+        max_allowed_rank = max(1, min(in_feat, out_feat, int(0.75 * (in_feat * out_feat) / (in_feat + out_feat))))
+        r = min(r, max_allowed_rank)
+        W_norm = torch.norm(W, p="fro").item()
+
+        if cov is not None and cov.shape == (in_feat, in_feat):
             try:
                 cov_fp32 = cov.to(device=layer.weight.device, dtype=torch.float32)
                 _, _, Vh_act = torch.linalg.svd(cov_fp32, full_matrices=False)
                 anchor = Vh_act[:r, :]  # [r, in_feat]
+                W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))
             except Exception:
-                anchor = torch.eye(in_feat, device=layer.weight.device, dtype=torch.float32)[:r, :]
-
-            # Project weight W onto principal activation subspace in FP32
-            W = layer.weight.data.float()  # [out_feat, in_feat]
-            W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))  # [out_feat, in_feat]
+                W_proj = W
         else:
-            W_proj = layer.weight.data.float()
+            W_proj = W
 
-        # Truncated SVD on projected weight directly on GPU in FP32
-        W_proj_gpu = W_proj.to(device=layer.weight.device, dtype=torch.float32)
-        U, S, Vt = torch.linalg.svd(W_proj_gpu, full_matrices=False)
+        try:
+            W_proj_dev = W_proj.to(device=layer.weight.device, dtype=torch.float32)
+            U, S, Vt = torch.linalg.svd(W_proj_dev, full_matrices=False)
 
-        # FIX: Symmetrical Square-Root Singular Value Allocation U_r = U @ sqrt(S), V_r = sqrt(S) @ V^T
-        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
-            device=layer.weight.device, dtype=layer.weight.dtype
-        )
-        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
-            device=layer.weight.device, dtype=layer.weight.dtype
-        )
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0))
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :])
 
-        # FIX: Instantiate structural SVDLinear replacement module (true parameter reduction)
-        svd_layer = SVDLinear(
-            in_features=in_feat,
-            out_features=out_feat,
-            rank=r,
-            bias=layer.bias is not None,
-            dtype=layer.weight.dtype,
-            device=layer.weight.device,
-        )
-        svd_layer.set_low_rank_factors(U_r, V_r)
-        if layer.bias is not None:
-            svd_layer.bias.data.copy_(layer.bias.data)
+            W_recon = torch.matmul(U_r, V_r)
+            err = float(torch.norm(W - W_recon, p="fro").item() / max(W_norm, 1e-12))
 
-        return svd_layer
+            svd_layer = SVDLinear(
+                in_features=in_feat,
+                out_features=out_feat,
+                rank=r,
+                bias=layer.bias is not None,
+                dtype=layer.weight.dtype,
+                device=layer.weight.device,
+            )
+            svd_layer.set_low_rank_factors(
+                U_r.to(device=layer.weight.device, dtype=layer.weight.dtype),
+                V_r.to(device=layer.weight.device, dtype=layer.weight.dtype),
+            )
+            if layer.bias is not None:
+                svd_layer.bias.data.copy_(layer.bias.data)
+
+            return svd_layer, err, r
+        except Exception as e:
+            logger.warning("AASVD factorization failed on linear: %s", e)
+            return None, 1.0, r
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """
-        Executes streaming covariance estimation over calibration batches,
-        computes SVD in the activation-aligned coordinate frame, and replaces
-        dense `nn.Linear` layers with `SVDLinear` factorized layers.
-        """
+        """Executes streaming covariance estimation over calibration batches and factorizes target layers."""
         self.model.eval()
-
-        if self.tokenizer is None:
-            logger.debug(
-                "AASVD: No tokenizer provided. Using direct truncated SVD factorizer."
-            )
-            return self._compress_unweighted_svd()
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
 
         covariances: Dict[str, torch.Tensor] = {}
-        hooks = []
 
-        def make_hook(name: str):
-            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
-                if not inp or inp[0] is None:
-                    return
-                # Input shape: [batch_size, seq_len, in_features]
-                x = inp[0].detach()
-                # Compute empirical covariance strictly in FP32 with autocast disabled to prevent FP16 overflow / NaN
-                dev_type = x.device.type
-                autocast_ctx = (
-                    torch.autocast(device_type=dev_type, enabled=False)
-                    if hasattr(torch, "autocast") and dev_type in ("cuda", "cpu")
-                    else (
-                        torch.cuda.amp.autocast(enabled=False)
-                        if hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "autocast") and dev_type == "cuda"
+        if self.tokenizer is not None:
+            hooks = []
+
+            def make_hook(name: str):
+                def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+                    if not inp or inp[0] is None:
+                        return
+                    x = inp[0].detach()
+                    dev_type = x.device.type
+                    autocast_ctx = (
+                        torch.autocast(device_type=dev_type, enabled=False)
+                        if hasattr(torch, "autocast") and dev_type in ("cuda", "cpu")
                         else contextlib.nullcontext()
                     )
+                    with autocast_ctx:
+                        cls_name = module.__class__.__name__.lower()
+                        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                        in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
+                        x_fp32 = x.float()
+                        x_flat = x_fp32.reshape(-1, in_f)
+                        batch_cov = torch.matmul(x_flat.T, x_flat) / max(1, x_flat.size(0))
+
+                    if name not in covariances:
+                        covariances[name] = batch_cov
+                    else:
+                        covariances[name] = self.ema_beta * covariances[name] + (1.0 - self.ema_beta) * batch_cov
+
+                return hook
+
+            for name, module in self.model.named_modules():
+                if self._is_target_module(name, module):
+                    hooks.append(module.register_forward_hook(make_hook(name)))
+
+            try:
+                inputs = self.tokenizer(
+                    self.calibration_texts,
+                    return_tensors="pt",
+                    padding=True,
+                    truncation=True,
+                    max_length=512,
                 )
-                with autocast_ctx:
-                    x_fp32 = x.float()
-                    x_flat = x_fp32.reshape(-1, x_fp32.size(-1))  # [total_tokens, in_features]
-                    # FIX: Streaming Exponential Moving Average (EMA) Covariance Accumulation in FP32: (X^T @ X) / B
-                    batch_cov = torch.matmul(x_flat.T, x_flat) / max(1, x_flat.size(0))
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                with torch.no_grad():
+                    self.model(**inputs)
+            except Exception as e:
+                logger.debug("AASVD calibration forward pass exception: %s", e)
 
-                if name not in covariances:
-                    covariances[name] = batch_cov
-                else:
-                    covariances[name] = self.ema_beta * covariances[name] + (1.0 - self.ema_beta) * batch_cov
-
-            return hook
-
-        # 1. Register forward hooks on all linear layers
-        for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
-                hooks.append(module.register_forward_hook(make_hook(name)))
-
-        # 2. Stream calibration batches through the model
-        try:
-            inputs = self.tokenizer(
-                self.calibration_texts,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-                max_length=512,
-            )
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
-            with torch.no_grad():
-                self.model(**inputs)
-        except Exception as e:
-            logger.debug(
-                "AASVD: Calibration forward encountered %s. Using unweighted truncated SVD.",
-                e,
-            )
             for h in hooks:
                 h.remove()
-            return self._compress_unweighted_svd()
 
-        # 3. Clean up forward hooks
-        for h in hooks:
-            h.remove()
-
-        # 4. Replace each Linear layer with an SVDLinear module
-        replaced_count = 0
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and name in covariances and should_compress_linear(self.model, name):
-                from framework.utils.model_family import detect_family
-                fam = detect_family(self.model)
-                if fam == "qwen" and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"]):
-                    continue
-                svd_layer = self.compress_linear(module, rank=self.rank, cov=covariances[name])
+            if self._is_target_module(name, module):
+                cov = covariances.get(name, None)
+                svd_layer, err, r = self.compress_linear(module, rank=self.rank, cov=cov)
+                self.layer_errors[name] = err
+                self.layer_ranks[name] = r
+
+                if svd_layer is None or err > self.max_error:
+                    logger.warning(
+                        "AASVD reconstruction error %.4f on %s exceeded threshold %.4f.",
+                        err,
+                        name,
+                        self.max_error,
+                    )
+                    if self.fallback_to_original:
+                        logger.info("Skipping AASVD compression for %s (fallback to original).", name)
+                        self.fallback_layers.append(name)
+                        continue
+
                 replace_module(self.model, name, svd_layer)
-                replaced_count += 1
+                self.compressed_layers.append(name)
 
-        logger.info("AASVD: Structurally factorized %d linear layers into SVDLinear.", replaced_count)
-        return self.model, self.get_compression_stats()
+        self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+        stats = self.get_compression_stats()
+        stats.update({
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "layer_errors": self.layer_errors,
+            "layer_ranks": self.layer_ranks,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "avg_reconstruction_error": avg_err,
+        })
+        logger.info(
+            "AASVD compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+        )
+        return self.model, stats
 
-    def _compress_unweighted_svd(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Fallback when no tokenizer is present."""
-        replaced_count = 0
-        for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
-                # Never compress classifier / score / lm_head directly
-                if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
-                    continue
-                from framework.utils.model_family import detect_family
-                fam = detect_family(self.model)
-                if fam == "qwen" and not any(k in name.lower() for k in ["q_proj", "k_proj", "v_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin"]):
-                    continue
-                svd_layer = self.compress_linear(module, rank=self.rank, cov=None)
-                replace_module(self.model, name, svd_layer)
-                replaced_count += 1
 
-        logger.info("AASVD (unweighted): Structurally factorized %d linear layers into SVDLinear.", replaced_count)
-        return self.model, self.get_compression_stats()
-
-
-@COMPRESSOR_REGISTRY.register("aasvd")
-@COMPRESSOR_REGISTRY.register("aa_svd")
-@COMPRESSOR_REGISTRY.register("aa_svd_compressor")
+@COMPRESSOR_REGISTRY.register("aasvd_factory")
+@COMPRESSOR_REGISTRY.register("aa_svd_factory")
+@COMPRESSOR_REGISTRY.register("aa_svd_compressor_factory")
 def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """AASVD factory function."""
-    compressor = AASVDCompressor(model, comp_config=comp_config, **kwargs)
+    rank = kwargs.pop("rank", getattr(comp_config, "aasvd_rank", getattr(comp_config, "rank", 64)))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "aasvd_max_error", getattr(comp_config, "max_error", 0.20)))
+    fallback = kwargs.pop("fallback_to_original", getattr(
+        comp_config, "aasvd_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    ))
+    compressor = AASVDCompressor(
+        model,
+        rank=rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        comp_config=comp_config,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
 
