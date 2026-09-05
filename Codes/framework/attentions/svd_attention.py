@@ -355,42 +355,37 @@ class SVDLinearAttention(BaseAttention):
             if b_q is not None and self.query.bias is not None:
                 self.query.bias.copy_(b_q)
 
-            # Copy K & V with GQA pooling if needed
-            if w_k.shape[0] == self.kv_head_size:
-                self.key.weight.copy_(w_k)
-                if b_k is not None and self.key.bias is not None:
-                    self.key.bias.copy_(b_k)
-            else:
-                rep = w_k.shape[0] // self.kv_head_size
-                w_k_pooled = (
-                    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
-                    .mean(dim=1)
-                    .view(self.kv_head_size, -1)
-                )
-                self.key.weight.copy_(w_k_pooled)
-                if b_k is not None and self.key.bias is not None:
-                    b_k_pooled = (
-                        b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+            # Copy K & V with GQA pooling/repetition if needed
+            def _copy_kv(target_proj, w, b):
+                if w.shape[0] == self.kv_head_size:
+                    target_proj.weight.copy_(w)
+                    if b is not None and target_proj.bias is not None:
+                        target_proj.bias.copy_(b)
+                elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
+                    rep = w.shape[0] // self.kv_head_size
+                    w_pooled = (
+                        w.view(self.num_kv_heads, rep, self.head_dim, -1)
+                        .mean(dim=1)
+                        .view(self.kv_head_size, -1)
                     )
-                    self.key.bias.copy_(b_k_pooled)
+                    target_proj.weight.copy_(w_pooled)
+                    if b is not None and target_proj.bias is not None:
+                        b_pooled = b.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                        target_proj.bias.copy_(b_pooled)
+                elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
+                    rep = self.kv_head_size // w.shape[0]
+                    target_proj.weight.copy_(w.repeat(rep, 1))
+                    if b is not None and target_proj.bias is not None:
+                        target_proj.bias.copy_(b.repeat(rep))
+                else:
+                    target_proj.weight.data[:min(self.kv_head_size, w.shape[0]), :min(self.hidden_size, w.shape[1])].copy_(
+                        w[:min(self.kv_head_size, w.shape[0]), :min(self.hidden_size, w.shape[1])]
+                    )
+                    if b is not None and target_proj.bias is not None:
+                        target_proj.bias.data[:min(len(target_proj.bias), len(b))].copy_(b[:min(len(target_proj.bias), len(b))])
 
-            if w_v.shape[0] == self.kv_head_size:
-                self.value.weight.copy_(w_v)
-                if b_v is not None and self.value.bias is not None:
-                    self.value.bias.copy_(b_v)
-            else:
-                rep = w_v.shape[0] // self.kv_head_size
-                w_v_pooled = (
-                    w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
-                    .mean(dim=1)
-                    .view(self.kv_head_size, -1)
-                )
-                self.value.weight.copy_(w_v_pooled)
-                if b_v is not None and self.value.bias is not None:
-                    b_v_pooled = (
-                        b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                    )
-                    self.value.bias.copy_(b_v_pooled)
+            _copy_kv(self.key, w_k, b_k)
+            _copy_kv(self.value, w_v, b_v)
 
             # Copy Out projection if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
