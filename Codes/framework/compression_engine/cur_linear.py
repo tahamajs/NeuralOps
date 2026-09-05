@@ -92,14 +92,20 @@ class CURLinear(nn.Module):
         rank: int = 64,
         bias: bool = True,
         method: str = "leverage",
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_skeletons: bool = False,
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.rank = min(rank, in_features, out_features)
+        self.rank = max(1, min(rank, in_features, out_features))
         self.method = method
+        self.lora_r = max(0, int(lora_r))
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / max(1, self.lora_r)) if self.lora_r > 0 else 1.0
 
         # C: (out_features, rank), U: (rank, rank), R: (rank, in_features)
         self.C = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
@@ -111,15 +117,31 @@ class CURLinear(nn.Module):
         nn.init.eye_(self.U)
         nn.init.uniform_(self.R, -bound, bound)
 
+        if freeze_skeletons:
+            self.C.requires_grad = False
+            self.R.requires_grad = False
+
         if bias:
             self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_r, in_features, dtype=dtype, device=device))
+            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_r, dtype=dtype, device=device))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix for compatibility."""
-        return torch.matmul(torch.matmul(self.C, self.U), self.R)
+        W_core = torch.matmul(torch.matmul(self.C, self.U), self.R)
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            W_core = W_core + (torch.matmul(self.lora_B, self.lora_A) * self.scaling)
+        return W_core
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -138,25 +160,40 @@ class CURLinear(nn.Module):
         # out = x_ru @ C^T + bias: (K, out_features)
         out = F.linear(x_ru, self.C, self.bias)
 
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out
+
         return out.view(*orig_shape[:-1], self.out_features)
 
     def get_weight(self) -> torch.Tensor:
         """Materialize reconstructed weight matrix W = C @ U @ R."""
-        return torch.matmul(torch.matmul(self.C, self.U), self.R)
+        return self.weight
 
     @classmethod
     def from_linear(
         cls,
-        linear: nn.Linear,
+        linear: Union[nn.Linear, Any],
         rank: int = 64,
         method: str = "leverage",
         deterministic: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_skeletons: bool = False,
     ) -> "CURLinear":
         """
-        Construct CURLinear from existing nn.Linear using leverage scores or energy sampling.
+        Construct CURLinear from existing nn.Linear or Conv1D using leverage scores or energy sampling.
         """
-        W = linear.weight.data  # (out_features, in_features)
-        bias = linear.bias.data if linear.bias is not None else None
+        raw_w = linear.weight.data
+        bias = linear.bias.data if getattr(linear, "bias", None) is not None else None
+        cls_name = linear.__class__.__name__
+
+        is_conv1d = "conv1d" in cls_name.lower() or hasattr(linear, "nf")
+        if is_conv1d:
+            W = raw_w.t().contiguous()
+        else:
+            W = raw_w.contiguous()
+
         out_features, in_features = W.shape
         r = max(1, min(rank, out_features, in_features))
 
@@ -166,6 +203,9 @@ class CURLinear(nn.Module):
             rank=r,
             bias=bias is not None,
             method=method,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            freeze_skeletons=freeze_skeletons,
             dtype=W.dtype,
             device=W.device,
         )

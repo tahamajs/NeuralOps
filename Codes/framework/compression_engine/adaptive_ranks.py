@@ -1,4 +1,4 @@
-"""
+r"""
 Adaptive Ranks SVD Compressor: dynamic rank selection per layer based on singular value energy spectra.
 
 Dynamic cumulative singular value energy thresholding:
