@@ -125,17 +125,42 @@ class UniversalAdapter:
                 elif proj == 'v':
                     return w[q_dim + k_dim:q_dim + k_dim + v_dim, :], (b[q_dim + k_dim:q_dim + k_dim + v_dim] if b is not None else None)
 
+        # 4c. PyTorch nn.MultiheadAttention in_proj_weight / separate proj_weight
+        for obj in (target, old_attn):
+            if proj in ('q', 'k', 'v') and hasattr(obj, 'in_proj_weight') and obj.in_proj_weight is not None:
+                w = obj.in_proj_weight.data if hasattr(obj.in_proj_weight, "data") else obj.in_proj_weight
+                b = getattr(obj, "in_proj_bias", None)
+                b = b.data if (b is not None and hasattr(b, "data")) else b
+                split_w = w.size(0) // 3
+                split_b = b.size(0) // 3 if b is not None else 0
+                if proj == 'q':
+                    return w[:split_w, :].clone(), (b[:split_b].clone() if b is not None else None)
+                elif proj == 'k':
+                    return w[split_w:2*split_w, :].clone(), (b[split_b:2*split_b].clone() if b is not None else None)
+                elif proj == 'v':
+                    return w[2*split_w:, :].clone(), (b[2*split_b:].clone() if b is not None else None)
+
+            if proj in ('q', 'k', 'v'):
+                attr_w = f"{proj}_proj_weight"
+                if hasattr(obj, attr_w) and getattr(obj, attr_w) is not None:
+                    w = getattr(obj, attr_w)
+                    w = w.data if hasattr(w, "data") else w
+                    b = getattr(obj, f"{proj}_proj_bias", None)
+                    b = b.data if (b is not None and hasattr(b, "data")) else b
+                    return w.clone(), (b.clone() if b is not None else None)
+
         # 5. Positional fallback: scan all Linear children of target in declaration order.
-        #    q=first, k=second, v=third (the typical pattern for BERT/RoBERTa variants).
+        #    Only valid if at least 3 children exist (the typical pattern for BERT/RoBERTa variants).
         ordered_proj_map = {"q": 0, "k": 1, "v": 2}
         if proj in ordered_proj_map:
             children_with_weight = [
                 (n, m) for n, m in target.named_children()
                 if _extract(m) is not None
             ]
-            idx = ordered_proj_map[proj]
-            if idx < len(children_with_weight):
-                return _extract(children_with_weight[idx][1])
+            if len(children_with_weight) >= 3:
+                idx = ordered_proj_map[proj]
+                if idx < len(children_with_weight):
+                    return _extract(children_with_weight[idx][1])
 
         # 6. Fallback for 'o' projection when replacing leaf self-attention without local out_proj
         # (e.g. RoBERTa/BERT RobertaSelfAttention where output.dense resides in the parent container).
