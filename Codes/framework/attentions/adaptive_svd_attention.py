@@ -356,6 +356,19 @@ class AdaptiveSVDAttention(BaseAttention):
                 elif hasattr(src, "value") and proj == "v":
                     w = src.value.weight
                     b = getattr(src.value, "bias", None)
+                # DistilBERT manual fallback
+                elif hasattr(src, "q_lin") and proj == "q":
+                    w = src.q_lin.weight
+                    b = getattr(src.q_lin, "bias", None)
+                elif hasattr(src, "k_lin") and proj == "k":
+                    w = src.k_lin.weight
+                    b = getattr(src.k_lin, "bias", None)
+                elif hasattr(src, "v_lin") and proj == "v":
+                    w = src.v_lin.weight
+                    b = getattr(src.v_lin, "bias", None)
+                elif hasattr(src, "out_lin") and proj == "o":
+                    w = src.out_lin.weight
+                    b = getattr(src.out_lin, "bias", None)
                 elif hasattr(src, f"{proj}_proj"):
                     mod = getattr(src, f"{proj}_proj")
                     w = mod.weight
@@ -365,28 +378,49 @@ class AdaptiveSVDAttention(BaseAttention):
             if w is None:
                 extracted_all = False
 
+        cls_name = src.__class__.__name__
+        has_out_proj = any(
+            hasattr(src, attr)
+            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+        )
+        is_nested_encoder = (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            or (cls_name.endswith("SelfAttention") and not has_out_proj)
+        ) and not has_out_proj
+
         if not extracted_all:
-            # Check if this is a nested encoder which only has q, k, v (o is outside)
-            cls_name = src.__class__.__name__
-            has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-            is_nested_encoder = (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj
-            
             # If it's a nested encoder, it's okay to miss 'o'
             if is_nested_encoder and extracted_weights["q"][0] is not None and extracted_weights["k"][0] is not None and extracted_weights["v"][0] is not None:
                 extracted_all = True
-                
+
         if not extracted_all:
             raise RuntimeError(f"Could not extract all required weights for AdaptiveSVDAttention. Missing: {[p for p, (w, _) in extracted_weights.items() if w is None]}")
+
+        # Frobenius norm validation
+        for proj_key in ["q", "k", "v"]:
+            w = extracted_weights[proj_key][0]
+            if w is not None:
+                norm = torch.linalg.norm(w.float())
+                if norm < 1e-4:
+                    raise RuntimeError(f"AdaptiveSVDAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+
+        if extracted_weights["o"][0] is not None:
+            norm_o = torch.linalg.norm(extracted_weights["o"][0].float())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"AdaptiveSVDAttention extracted weight for o has near-zero Frobenius norm ({norm_o.item():.6f})")
 
         for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
             w, b = extracted_weights[proj]
             if w is not None:
                 self._init_svd_part(target, w, b)
-                # Sanity check: ensure reconstructed weight isn't garbage
-                reconstructed = (target.U @ target.V).detach()
-                error = (torch.norm(w.to(reconstructed.device).float() - reconstructed.float()) / (torch.norm(w.float()) + 1e-8)).item()
-                if error > 0.05:
-                    print(f"CRITICAL WARNING: High SVD reconstruction error ({error:.2f}) for {proj} exceeds 5% threshold.")
+                target.U.requires_grad = False
+                target.V.requires_grad = False
+                if target.bias is not None:
+                    target.bias.requires_grad = False
+                if getattr(target, "lora_A", None) is not None:
+                    target.lora_A.requires_grad = True
+                if getattr(target, "lora_B", None) is not None:
+                    target.lora_B.requires_grad = True
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
@@ -396,19 +430,7 @@ class AdaptiveSVDAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-        # Safely detect if this module is replacing an inner encoder self-attention (BERT/RoBERTa)
-        # where the outer layer already applies output.dense (avoiding double output projection).
-        # We verify the absence of own output projections so we never misflag DistilBERT (out_lin),
-        # GPT-2 (c_proj), LLaMA/Qwen (o_proj), or T5 (o).
-        cls_name = src.__class__.__name__
-        has_out_proj = any(
-            hasattr(src, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
-        )
-        if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
-            self.is_nested_encoder = True
-        else:
-            self.is_nested_encoder = False
+        self.is_nested_encoder = is_nested_encoder
 
     def forward(
         self,
