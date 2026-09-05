@@ -237,8 +237,10 @@ class ASVDLinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("asvd")
-@ATTENTION_REGISTRY.register("asvd_attention")
+@ATTENTION_REGISTRY.register("asvd", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("asvd_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_svd", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_svd_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class ASVDAttention(nn.Module):
     r"""Hardened ASVD Attention with Factored Low-Rank Matrix Decomposition, GQA, RoPE, and LoRA.
 
@@ -623,6 +625,8 @@ class ASVDAttention(nn.Module):
 
 @ATTENTION_REGISTRY.register("asvd_fn")
 @ATTENTION_REGISTRY.register("asvd_inject")
+@ATTENTION_REGISTRY.register("adaptive_svd_fn")
+@ATTENTION_REGISTRY.register("adaptive_svd_inject")
 def inject_asvd(
     layer: Any = None,
     config: Any = None,
