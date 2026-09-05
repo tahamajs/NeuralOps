@@ -1435,7 +1435,7 @@ def main():
             "Module": m_name,
             "Status": r.get("status", "N/A"),
             "Accuracy": f"{acc_val:.2f}%",
-            "Δ Acc": f"{delta_acc:+.2f}%" if m_name != "full" else "0.00% (base)",
+            "Delta Acc": f"{delta_acc:+.2f}%" if m_name != "full" else "0.00% (base)",
             "F1": f1_str,
             "Compressed Layers": r.get("num_compressed_layers", "0"),
             "Compression Rate": comp_rate_str,
