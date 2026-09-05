@@ -275,7 +275,7 @@ class ASVDAttention(nn.Module):
             "asvd_rank",
             rank if rank is not None else getattr(config, "rank", 32),
         )
-        self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 16))
+        self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 32))
         self.freeze_base: bool = getattr(config, "freeze_base", kwargs.get("freeze_base", self.lora_rank > 0))
         self.energy_threshold: float = getattr(config, "asvd_energy_threshold", kwargs.get("energy_threshold", 0.95))
         self.error_threshold: Optional[float] = getattr(config, "asvd_error_threshold", kwargs.get("error_threshold", 0.20))

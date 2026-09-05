@@ -400,6 +400,14 @@ def main():
                     help="Fresh clean sweep: do not resume or skip any modules")
     ap.add_argument("--rank", type=int, default=None,
                     help="SVD/projection rank for attention modules")
+    ap.add_argument("--lora_rank", type=int, default=32,
+                    help="LoRA rank for attention adapters")
+    ap.add_argument("--asvd_dynamic_rank", action="store_true", default=True,
+                    help="Enable dynamic rank selection for ASVD")
+    ap.add_argument("--asvd_energy_threshold", type=float, default=0.95,
+                    help="Energy threshold for ASVD dynamic rank")
+    ap.add_argument("--asvd_error_threshold", type=float, default=0.20,
+                    help="Error threshold for ASVD dynamic rank")
 
     
     # Pre-parse to check if a config file is provided
@@ -765,9 +773,13 @@ def main():
             "swift_svd_act": 400, "tt": 400, "svd_quant": 400,
             "svd_projection": 400,
             "aegis_spectron_fp8": 1500,
+            "asvd": 1500,
+            "asvd_attention": 1500,
         }
-        base_timeout = 600
+        base_timeout = args.timeout if getattr(args, "timeout", None) else 600
         effective_timeout = max(base_timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, base_timeout))
+        if family in ("qwen", "qwen3_5") or name in ("asvd", "asvd_attention"):
+            effective_timeout = max(effective_timeout, 1500)
 
         # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
         _OOM_MODULE_BATCH_OVERRIDES = {
@@ -782,6 +794,15 @@ def main():
             def _run_candidate_pipeline():
                 nonlocal model, injected, path_name, had_nan
                 if name != "full":
+                    if hasattr(model, "config") and model.config is not None:
+                        if getattr(args, "lora_rank", None) is not None:
+                            setattr(model.config, "lora_rank", args.lora_rank)
+                        if getattr(args, "asvd_dynamic_rank", None) is not None:
+                            setattr(model.config, "asvd_dynamic_rank", args.asvd_dynamic_rank)
+                        if getattr(args, "asvd_energy_threshold", None) is not None:
+                            setattr(model.config, "asvd_energy_threshold", args.asvd_energy_threshold)
+                        if getattr(args, "asvd_error_threshold", None) is not None:
+                            setattr(model.config, "asvd_error_threshold", args.asvd_error_threshold)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
@@ -809,12 +830,12 @@ def main():
                             "hamming", "spectron", "span_expanded", "gfws", "hla", "oha", "kda",
                             "aegis_hybrid", "aegis_spectron_fp8",
                         }
-                        if name in FROM_SCRATCH_MODULES:
+                        if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
                             rec_steps = max(args.recovery_steps, 50)
                             rec_lr = args.learning_rate if args.learning_rate else 2e-4
                         else:
                             rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
-                            rec_lr = 5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4
+                            rec_lr = args.learning_rate if args.learning_rate else (5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4)
                         LOG.info("Running %d recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
                         for m in model.modules():
                             if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
