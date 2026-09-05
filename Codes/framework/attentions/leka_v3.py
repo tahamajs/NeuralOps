@@ -251,20 +251,33 @@ class LEKAV3Attention(BaseAttention):
         f1 = torch.matmul(x, proj1)
         return torch.cat([torch.cos(f1), torch.sin(f1)], dim=-1) / math.sqrt(self.feature_dim)
 
+    def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
+        new_x_shape = x.size()[:-1] + (self.num_heads, self.head_dim)
+        x = x.view(new_x_shape)
+        return x.permute(0, 2, 1, 3)
+
     def select_landmarks(
-        self, K_features: torch.Tensor, V: torch.Tensor, valid_mask: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self,
+        K_features: torch.Tensor,
+        V: torch.Tensor,
+        valid_mask: Optional[torch.Tensor] = None,
+        return_indices: bool = False,
+    ) -> Union[Tuple[torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         B, H, N, feat_dim = K_features.shape
         L = min(self.num_landmarks, N)
         scores = self.landmark_scorer(V).squeeze(-1)  # (B, H, N)
-        pad = (~valid_mask).unsqueeze(1)  # [B, 1, N] bool
-        scores = scores.masked_fill(pad.bool(), -1e4)
+        if valid_mask is not None:
+            pad = (~valid_mask).unsqueeze(1)  # [B, 1, N] bool
+            scores = scores.masked_fill(pad.bool(), -1e4)
         scores[:, :, 0] = 1e4  # Anchor index 0
         _, idx = scores.topk(L, dim=-1)
+        idx[:, :, 0] = 0
 
         K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
         V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
-        return K_land, V_land, idx
+        if return_indices:
+            return K_land, V_land, idx
+        return K_land, V_land
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -436,7 +449,7 @@ class LEKAV3Attention(BaseAttention):
         Q_features = self.kernel_feature_map(q)
         K_features = self.kernel_feature_map(k)
 
-        K_land, V_land, land_idx = self.select_landmarks(K_features, v, valid_mask)
+        K_land, V_land, land_idx = self.select_landmarks(K_features, v, valid_mask, return_indices=True)
 
         W = self.W_corr.unsqueeze(0).expand(B, -1, -1, -1)
         V_land_adj = torch.einsum("bhld,bhde->bhle", V_land, W)

@@ -120,6 +120,16 @@ class AdaptiveSVDLinear(nn.Module):
                 nn.init.zeros_(self.lora_A)
 
     @property
+    def A(self) -> Optional[nn.Parameter]:
+        """Alias for lora_A."""
+        return self.lora_A
+
+    @property
+    def B(self) -> Optional[nn.Parameter]:
+        """Alias for lora_B."""
+        return self.lora_B
+
+    @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix for compatibility."""
         W = torch.matmul(self.U, self.V)

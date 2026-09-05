@@ -270,7 +270,7 @@ def local_window_attention(
     if token_valid is not None:
         scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), mask_val)
     scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-    attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
+    attn = softpick(scores, dim=-1, temperature=softpick_temperature)
     return torch.matmul(attn, V)
 
 
