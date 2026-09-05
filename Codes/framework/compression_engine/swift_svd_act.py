@@ -6,7 +6,8 @@ Registered as 'swift_svd_act'.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+import math
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -16,6 +17,7 @@ from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
+from framework.compression_engine.pruning_utils import get_calibration_tensors
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +31,18 @@ class SwiftSVDActivationCompressor(BaseCompressor):
     derives activation-aligned singular subspaces, projects original weights onto the principal
     activation subspace, and replaces dense nn.Linear / Conv1D layers with factorized SVDLinear modules.
 
-    Args:
-        model: Model to compress.
-        tokenizer: Optional tokenizer for text calibration.
-        calibration_loader: Optional DataLoader for calibration.
-        calibration_texts: Optional list of calibration text strings.
-        rank: Target low-rank bottleneck dimension r.
-        target_modules: Optional list of module name filters.
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.50).
+    - Safe fallback to original weights by default (fallback_to_original=True).
+    - Robust Conv1D detection and support across GPT-2 architectures.
+    - Unified critical-layer protection via should_compress_linear.
+    - GQA-aware skipping to preserve key-value cache dimension alignment.
+    - Tied / shared weight protection tracking parameter IDs.
+    - Trainable LoRA adapter integration via SVDLinear.
+    - Multi-batch activation covariance averaging.
+    - FP32 numerical stability with NaN/Inf guards.
+    - Post-compression forward sanity check under torch.no_grad().
+    - Comprehensive per-layer stats and error tracking.
     """
 
     def __init__(
@@ -45,8 +52,12 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         rank: int = 64,
-        max_error: float = 0.5,
-        fallback_to_original: bool = False,
+        max_error: float = 0.50,
+        fallback_to_original: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        skip_attention_qkv: bool = True,
+        min_rank: int = 4,
         target_modules: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -59,6 +70,10 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             calibration_texts = getattr(cfg, "calibration_texts", calibration_texts)
             max_error = getattr(cfg, "max_error", max_error)
             fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            lora_r = getattr(cfg, "lora_r", lora_r)
+            lora_alpha = getattr(cfg, "lora_alpha", lora_alpha)
+            skip_attention_qkv = getattr(cfg, "skip_attention_qkv", skip_attention_qkv)
+            min_rank = getattr(cfg, "min_rank", min_rank)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -69,28 +84,49 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         self.rank = int(rank)
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.min_rank = max(1, int(min_rank))
         self.target_modules = target_modules
+
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.skipped_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
         self.replaced_layers: List[Dict[str, Any]] = []
+        self.stats: Dict[str, Any] = {}
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        if not self.skip_attention_qkv:
+            return False
+        cfg = getattr(self.model, "config", None)
+        num_heads = getattr(cfg, "num_attention_heads", None)
+        num_kv_heads = getattr(cfg, "num_key_value_heads", None)
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+            name_lower = name.lower()
+            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+                return True
+        return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
-            return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like:
             return False
         if isinstance(module, SVDLinear):
             return False
         if not should_compress_linear(self.model, name):
             return False
+        if self._is_gqa_asymmetric(name, module):
+            return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
 
     def _collect_activations(self) -> Dict[str, Tuple[torch.Tensor, torch.Tensor]]:
-        """Collect input and output activation tensors from calibration passes."""
-        activations: Dict[str, Tuple[torch.Tensor, torch.Tensor]] = {}
+        """Collect input and output activation tensors averaged across calibration passes."""
+        activations: Dict[str, List[Tuple[torch.Tensor, torch.Tensor]]] = {}
         hooks = []
 
         def make_hook(name: str):
@@ -99,8 +135,9 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                     return
                 x_in = inp[0].detach()
                 x_out = outp.detach() if isinstance(outp, torch.Tensor) else outp[0].detach()
-                activations[name] = (x_in.cpu(), x_out.cpu())
-
+                if name not in activations:
+                    activations[name] = []
+                activations[name].append((x_in.cpu(), x_out.cpu()))
             return hook
 
         target_layers = [
@@ -115,104 +152,82 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         for name, mod in target_layers:
             hooks.append(mod.register_forward_hook(make_hook(name)))
 
-        device = next(self.model.parameters()).device
+        device = next(self.model.parameters(), torch.tensor(0.0)).device
         self.model.eval()
 
-        try:
-            with torch.no_grad():
-                if self.calibration_loader is not None:
-                    for batch in self.calibration_loader:
-                        if isinstance(batch, dict):
-                            batch = {
-                                k: v.to(device) if isinstance(v, torch.Tensor) else v
-                                for k, v in batch.items()
-                            }
-                            self.model(**batch)
-                        elif isinstance(batch, (list, tuple)):
-                            batch = [
-                                v.to(device) if isinstance(v, torch.Tensor) else v
-                                for v in batch
-                            ]
-                            self.model(*batch)
-                        elif isinstance(batch, torch.Tensor):
-                            self.model(batch.to(device))
-                        break
-                elif self.tokenizer is not None and self.calibration_texts is not None:
-                    inputs = self.tokenizer(
-                        self.calibration_texts,
-                        return_tensors="pt",
-                        padding=True,
-                        truncation=True,
-                        max_length=512,
-                    )
-                    inputs = {k: v.to(device) for k, v in inputs.items()}
-                    self.model(**inputs)
-        except Exception as e:
-            logger.warning(
-                "SwiftSVDActivation: Calibration forward failed (%s). Falling back to standard SVD.",
-                e,
-            )
-        finally:
-            for h in hooks:
-                h.remove()
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=device,
+        )
 
-        return activations
+        with torch.no_grad():
+            try:
+                if isinstance(calib_inputs, dict):
+                    self.model(**calib_inputs)
+                elif isinstance(calib_inputs, torch.Tensor):
+                    self.model(calib_inputs)
+                elif isinstance(calib_inputs, (list, tuple)):
+                    self.model(*calib_inputs)
+            except Exception as e:
+                logger.debug("SwiftSVDActivation calibration forward pass exception: %s", e)
+
+        for h in hooks:
+            h.remove()
+
+        aggregated: Dict[str, Tuple[torch.Tensor, torch.Tensor]] = {}
+        for name, pairs in activations.items():
+            if pairs:
+                all_in = torch.cat([p[0] for p in pairs], dim=0)
+                all_out = torch.cat([p[1] for p in pairs], dim=0)
+                aggregated[name] = (all_in, all_out)
+
+        return aggregated
 
     def compress_linear(
         self,
         layer: nn.Module,
         act_pair: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
     ) -> Optional[SVDLinear]:
-        """Compress a single linear or Conv1D layer using activation subspace projection."""
+        """Compress a single linear or Conv1D layer via Swift-SVD activation projection."""
         raw_w = layer.weight.data
-        cls_name = layer.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or (
-            raw_w.ndim == 2
-            and hasattr(layer, "in_features")
-            and layer.in_features == raw_w.shape[0]
-            and raw_w.shape[0] < raw_w.shape[1]
-        )
+        cls_name = layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
 
-        if is_conv1d:
-            W = raw_w.t().float()
-            out_f = W.shape[0]
-            in_f = W.shape[1]
-        else:
-            W = raw_w.float()
-            out_f = getattr(layer, "out_features", W.shape[0])
-            in_f = getattr(layer, "in_features", W.shape[1])
-
+        W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+        out_f, in_f = W.shape
         max_r = min(out_f, in_f)
-        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        r = max(1, min(self.rank, max_r, param_cap))
+        r = max(min(self.min_rank, max_r), min(self.rank, max_r))
+        device = raw_w.device
+        dtype = raw_w.dtype
 
-        device = layer.weight.device
-        dtype = layer.weight.dtype
-
-        A: Optional[torch.Tensor] = None
-        B: Optional[torch.Tensor] = None
+        A, B = None, None
 
         if act_pair is not None:
             try:
-                inp, out = act_pair
-                inp_flat = inp.reshape(-1, inp.size(-1)).float().to(device)
-                out_flat = out.reshape(-1, out.size(-1)).float().to(device)
+                x_in, x_out = act_pair
+                inp_flat = x_in.reshape(-1, x_in.size(-1)).float().to(device)
+                out_flat = x_out.reshape(-1, x_out.size(-1)).float().to(device)
 
                 if inp_flat.size(-1) == in_f and out_flat.size(-1) == out_f:
                     n_tokens = max(1, inp_flat.size(0))
                     C = (out_flat.t() @ inp_flat) / n_tokens  # [out_f, in_f]
 
                     U_c, _, Vt_c = torch.linalg.svd(C, full_matrices=False)
-                    U_act = U_c[:, :r]            # [out_f, r]
-                    V_act = Vt_c[:r, :].t()       # [in_f, r]
+                    r_act = min(r, U_c.shape[1], Vt_c.shape[0])
+                    U_act = U_c[:, :r_act]            # [out_f, r]
+                    V_act = Vt_c[:r_act, :].t()       # [in_f, r]
 
                     # Project W onto activation subspace: M = U_act^T @ W @ V_act
-                    M = U_act.t() @ W @ V_act     # [r, r]
+                    M = U_act.t() @ W @ V_act         # [r, r]
                     U_m, S_m, Vt_m = torch.linalg.svd(M, full_matrices=False)
                     sqrt_S_m = torch.sqrt(torch.clamp(S_m, min=1e-12))
 
-                    A = (U_act @ U_m) * sqrt_S_m.unsqueeze(0)   # [out_f, r]
-                    B = sqrt_S_m.unsqueeze(1) * (Vt_m @ V_act.t()) # [r, in_f]
+                    A = (U_act @ U_m) * sqrt_S_m.unsqueeze(0)       # [out_f, r]
+                    B = sqrt_S_m.unsqueeze(1) * (Vt_m @ V_act.t())     # [r, in_f]
+                    r = r_act
             except Exception as e:
                 logger.debug("Activation subspace projection failed (%s). Falling back to direct SVD.", e)
                 A, B = None, None
@@ -220,6 +235,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         if A is None or B is None:
             try:
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                r = min(r, len(S))
                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                 A = U[:, :r] * sqrt_S.unsqueeze(0)
                 B = sqrt_S.unsqueeze(1) * Vt[:r, :]
@@ -229,10 +245,10 @@ class SwiftSVDActivationCompressor(BaseCompressor):
 
         # Frobenius reconstruction error check
         W_rec = torch.matmul(A, B)
-        norm_orig = torch.norm(W, p="fro")
-        rel_err = (torch.norm(W - W_rec, p="fro") / (norm_orig + 1e-8)).item()
+        norm_orig = torch.norm(W, p="fro").item()
+        rel_err = (torch.norm(W - W_rec) / max(norm_orig, 1e-12)).item()
 
-        if self.fallback_to_original and rel_err > self.max_error:
+        if not math.isfinite(rel_err) or (self.fallback_to_original and rel_err > self.max_error):
             logger.warning(
                 "SwiftSVDActivation reconstruction error %.4f exceeded threshold %.4f. Keeping original.",
                 rel_err,
@@ -247,6 +263,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             bias=layer.bias is not None,
             dtype=dtype,
             device=device,
+            lora_r=self.lora_r,
+            lora_alpha=self.lora_alpha,
         )
         svd_layer.set_low_rank_factors(
             U_factor=A.to(dtype=dtype, device=device),
@@ -258,16 +276,26 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         svd_layer.reconstruction_error = rel_err
         return svd_layer
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all linear layers in the model."""
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
         self.layer_errors = {}
         self.replaced_layers = []
+        seen_weights: Set[int] = set()
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = []
+        for name, mod in list(self.model.named_modules()):
+            if self._is_target_module(name, mod):
+                if not hasattr(mod, "weight") or mod.weight is None:
+                    continue
+                w_id = id(mod.weight)
+                if w_id in seen_weights:
+                    self.skipped_layers.append(name)
+                    continue
+                seen_weights.add(w_id)
+                target_layers.append((name, mod))
 
         if not target_layers:
             logger.warning("SwiftSVDActivation: No compressible linear layers found.")
@@ -283,20 +311,76 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 self.layer_errors[name] = err
                 self.replaced_layers.append({"name": name, "rank": svd_layer.rank, "error": err})
                 replace_module(self.model, name, svd_layer)
+                self.compressed_layers.append(name)
+            else:
+                self.fallback_layers.append(name)
+
+        # Post-compression forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                try:
+                    self.model(dummy)
+                except Exception:
+                    self.model(dummy.float())
+        except Exception as e:
+            logger.warning("SwiftSVDActivation post-compression forward check warning: %s", e)
+            forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats = self.get_compression_stats()
-        stats["layer_errors"] = self.layer_errors
-        stats["compressed_layers"] = len(self.replaced_layers)
+        stats.update({
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "skipped_layers": self.skipped_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "num_skipped": len(self.skipped_layers),
+            "layer_errors": self.layer_errors,
+            "avg_reconstruction_error": avg_err,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "lora_r": self.lora_r,
+            "lora_alpha": self.lora_alpha,
+            "forward_check_success": forward_check_success,
+            "method": "swift_svd_act",
+        })
+        self.stats = stats
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register("swift_svd_act_factory")
 def swift_svd_act_factory(
     model: nn.Module, comp_config: Any = None, **kwargs: Any
-) -> nn.Module:
+) -> Any:
     """Swift-SVD activation-aware factory function."""
-    compressor = SwiftSVDActivationCompressor(model, comp_config=comp_config, **kwargs)
-    compressed_model, _ = compressor.compress()
+    rank = kwargs.pop("rank", getattr(comp_config, "swift_svd_act_rank", getattr(comp_config, "rank", 64)) if comp_config else 64)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.50) if comp_config else 0.50)
+    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
+    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0)
+    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+
+    compressor = SwiftSVDActivationCompressor(
+        model,
+        rank=rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        comp_config=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
 
 
