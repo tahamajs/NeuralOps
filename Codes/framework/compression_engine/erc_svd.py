@@ -184,7 +184,7 @@ class ERCCompressor(BaseCompressor):
 
         if best_svd_layer is not None:
             best_svd_layer.reconstruction_error = best_err
-            return best_svd_layer
+            return best_svd_layer, best_err, chosen_r
         return None, best_err, chosen_r
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
