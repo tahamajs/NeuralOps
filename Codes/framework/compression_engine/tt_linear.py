@@ -70,11 +70,17 @@ class TTLinearLayer(nn.Module):
         shape: Optional[Tuple[Tuple[int, ...], Tuple[int, ...]]] = None,
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.nf = out_features  # Conv1D compatibility
         self.tt_rank = tt_rank
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
         if shape is None:
             self.p_dims, self.q_dims = factorize_dimension_pair(in_features, out_features, num_factors=2)
@@ -90,13 +96,15 @@ class TTLinearLayer(nn.Module):
         self.cores = nn.ParameterList()
 
         # Build TT-cores: G_k of shape (r_{k-1}, p_k, q_k, r_k)
+        requires_grad = not (self.lora_r > 0)
         r_left = 1
         for i in range(self.d - 1):
             p_i = self.p_dims[i]
             q_i = self.q_dims[i]
             r_right = min(tt_rank, max(1, p_i * q_i * r_left))
             core = nn.Parameter(
-                torch.empty(r_left, p_i, q_i, r_right, dtype=dtype, device=device)
+                torch.empty(r_left, p_i, q_i, r_right, dtype=dtype, device=device),
+                requires_grad=requires_grad,
             )
             bound = 1.0 / math.sqrt(max(1, r_left * p_i))
             nn.init.uniform_(core, -bound, bound)
@@ -106,16 +114,32 @@ class TTLinearLayer(nn.Module):
         p_last = self.p_dims[-1]
         q_last = self.q_dims[-1]
         core_last = nn.Parameter(
-            torch.empty(r_left, p_last, q_last, 1, dtype=dtype, device=device)
+            torch.empty(r_left, p_last, q_last, 1, dtype=dtype, device=device),
+            requires_grad=requires_grad,
         )
         bound = 1.0 / math.sqrt(max(1, r_left * p_last))
         nn.init.uniform_(core_last, -bound, bound)
         self.cores.append(core_last)
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, dtype=dtype, device=device),
+                requires_grad=requires_grad,
+            )
         else:
             self.register_parameter("bias", None)
+
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
 
     @property
     def weight(self) -> torch.Tensor:
