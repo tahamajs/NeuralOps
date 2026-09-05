@@ -253,7 +253,8 @@ print("  [PASS] DobiSVDLinearLayer & DobiSVDCompressor forward/backward/gating",
 print("\n--- 9. erc_svd.py ---", flush=True)
 allowed_eps = 0.10
 erc_comp = ERCCompressor(SimpleModel(128), allowed_error=allowed_eps)
-erc_svd_layer = erc_comp.compress_linear(dense)
+erc_res = erc_comp.compress_linear(dense)
+erc_svd_layer = erc_res[0] if isinstance(erc_res, tuple) else erc_res
 W_orig = dense.weight.data.float()
 W_app = (erc_svd_layer.U @ erc_svd_layer.V).float()
 frob_err = (torch.norm(W_orig - W_app, p='fro') / torch.norm(W_orig, p='fro')).item()
