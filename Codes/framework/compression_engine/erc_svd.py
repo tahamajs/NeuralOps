@@ -112,9 +112,8 @@ class ERCCompressor(BaseCompressor):
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()      # [out_features, in_features]
 
-        # Enforce parameter reduction bound: r * (in_f + out_f) < in_f * out_f
-        max_param_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        max_r = max(1, min(in_f - 1, out_f - 1, max_param_r))
+        # Mathematical upper bound on rank is min(in_features, out_features)
+        max_r = min(in_f, out_f)
 
         device = raw_w.device
         dtype = raw_w.dtype
@@ -183,7 +182,10 @@ class ERCCompressor(BaseCompressor):
                     break
                 current_r = next_r
 
-        return best_svd_layer, best_err, chosen_r
+        if best_svd_layer is not None:
+            best_svd_layer.reconstruction_error = best_err
+            return best_svd_layer
+        return None, best_err, chosen_r
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all target linear and Conv1D layers across the model."""

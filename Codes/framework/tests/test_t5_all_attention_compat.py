@@ -37,7 +37,7 @@ def test_forward_pass_finite_and_shape(t5_base_model, module_name):
     model = copy.deepcopy(t5_base_model)
     model = replace_attention(model, module_name)
     
-    input_ids = torch.randint(0, 1000, (2, 16))
+    input_ids = torch.randint(2, 1000, (2, 16))
     input_ids[:, -1] = 1  # EOS
     
     with torch.no_grad():
@@ -91,7 +91,7 @@ def test_fp16_numerical_stability(t5_base_model, module_name):
     model = replace_attention(model, module_name)
     model = model.half()
     
-    input_ids = torch.randint(0, 1000, (2, 16))
+    input_ids = torch.randint(2, 1000, (2, 16))
     input_ids[:, -1] = 1
     
     with torch.no_grad():
