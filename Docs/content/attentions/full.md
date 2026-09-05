@@ -86,6 +86,7 @@ print("Logits shape:", outputs.logits.shape)
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **gpt2** | sst2 | `PASS` | N/A | **81.31%** | N/A | 0.8372 | 1.00x | 0 | N/A | 2026-09-06 |
+| **distilbert-sst2** | sst2 | `PASS` | N/A | **90.48%** | N/A | 0.9077 | 1.00x | 0 | N/A | 2026-09-06 |
 
 
 > [!NOTE]
