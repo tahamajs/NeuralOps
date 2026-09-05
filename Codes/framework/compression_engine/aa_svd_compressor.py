@@ -421,8 +421,8 @@ class AASVDCompressor(BaseCompressor):
         cov_factor_cache: Dict[str, Tuple[torch.Tensor, torch.Tensor]] = {}
         for name, cov in covariances.items():
             try:
-                cov_fp32 = cov.float()
-                cov_sym = 0.5 * (cov_fp32 + cov_fp32.T)
+                cov_dev = cov.to(device=self.device, dtype=torch.float32)
+                cov_sym = 0.5 * (cov_dev + cov_dev.T)
                 eigvals, eigvecs = torch.linalg.eigh(cov_sym)
                 eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
                 eigvals_reg = eigvals.clamp(min=eps)
