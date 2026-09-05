@@ -41,6 +41,8 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("mamba_shedder")
+@COMPRESSOR_REGISTRY.register("mamba_shedder_compressor")
 class MambaShedderCompressor(BaseCompressor):
     """
     Mamba-Shedder Compressor: Sensitivity-based channel pruning and layer shedding.
@@ -62,6 +64,11 @@ class MambaShedderCompressor(BaseCompressor):
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
+        kwargs.pop("max_error", None)
+        kwargs.pop("fallback_to_original", None)
+        kwargs.pop("sparsity", None)
+        kwargs.pop("shed_layers", None)
+        kwargs.pop("structured_24", None)
         super().__init__(model, name="mamba_shedder", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
@@ -367,16 +374,15 @@ class MambaShedderCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("mamba_shedder")
-@COMPRESSOR_REGISTRY.register("mamba_shedder_compressor")
+@COMPRESSOR_REGISTRY.register("mamba_shedder_factory")
 def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for Mamba-Shedder compressor."""
-    sparsity = getattr(comp_config, "mamba_shedder_sparsity", getattr(comp_config, "sparsity", 0.2)) if comp_config else kwargs.get("sparsity", 0.2)
-    shed_layers = getattr(comp_config, "mamba_shedder_shed_layers", getattr(comp_config, "shed_layers", 0)) if comp_config else kwargs.get("shed_layers", 0)
-    structured_24 = getattr(comp_config, "mamba_shedder_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else kwargs.get("structured_24", False)
-    max_error = getattr(comp_config, "max_error", 0.20) if comp_config else kwargs.get("max_error", 0.20)
-    fallback_to_original = getattr(comp_config, "fallback_to_original", True) if comp_config else kwargs.get("fallback_to_original", True)
-    tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
+    sparsity = kwargs.pop("sparsity", getattr(comp_config, "mamba_shedder_sparsity", getattr(comp_config, "sparsity", 0.2)) if comp_config else 0.2)
+    shed_layers = kwargs.pop("shed_layers", getattr(comp_config, "mamba_shedder_shed_layers", getattr(comp_config, "shed_layers", 0)) if comp_config else 0)
+    structured_24 = kwargs.pop("structured_24", getattr(comp_config, "mamba_shedder_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else False)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config else 0.20)
+    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
+    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else None))
 
     compressor = MambaShedderCompressor(
         model,
@@ -385,7 +391,7 @@ def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) ->
         shed_layers=shed_layers,
         structured_24=structured_24,
         max_error=max_error,
-        fallback_to_original=fallback_to_original,
+        fallback_to_original=fallback,
         comp_config=comp_config,
         **kwargs,
     )

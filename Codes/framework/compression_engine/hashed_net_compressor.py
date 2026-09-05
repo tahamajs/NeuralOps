@@ -296,7 +296,7 @@ class HashedNetCompressor(BaseCompressor):
         return hashed, err
 
 
-@COMPRESSOR_REGISTRY.register("hashed_net")
+@COMPRESSOR_REGISTRY.register("hashed_net_factory")
 def hashed_net_factory(
     model: nn.Module,
     comp_config: Optional[Any] = None,
@@ -304,6 +304,7 @@ def hashed_net_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for HashedNet compressor."""
+    rank = kwargs.pop("rank", rank)
     compressor = HashedNetCompressor(
         model,
         rank=rank,

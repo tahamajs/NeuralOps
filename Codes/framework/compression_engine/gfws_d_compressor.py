@@ -16,6 +16,8 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("gfws")
+@COMPRESSOR_REGISTRY.register("gfws_d")
 class GFWSCompressor(BaseCompressor):
     """
     Generalized Fisher / Covariance-Weighted SVD Compressor.
@@ -302,16 +304,16 @@ class GFWSCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("gfws")
-@COMPRESSOR_REGISTRY.register("gfws_d")
+@COMPRESSOR_REGISTRY.register("gfws_factory")
+@COMPRESSOR_REGISTRY.register("gfws_d_factory")
 def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """GFWS factory."""
-    rank = getattr(comp_config, "gfws_rank", getattr(comp_config, "rank", kwargs.get("rank", 64)))
-    damping = getattr(comp_config, "gfws_damping", getattr(comp_config, "damping", kwargs.get("damping", 0.01)))
-    max_error = getattr(comp_config, "gfws_max_error", getattr(comp_config, "max_error", kwargs.get("max_error", 0.20)))
-    fallback = getattr(
-        comp_config, "gfws_fallback_to_original", getattr(comp_config, "fallback_to_original", kwargs.get("fallback_to_original", True))
-    )
+    rank = kwargs.pop("rank", getattr(comp_config, "gfws_rank", getattr(comp_config, "rank", 64)))
+    damping = kwargs.pop("damping", getattr(comp_config, "gfws_damping", getattr(comp_config, "damping", 0.01)))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "gfws_max_error", getattr(comp_config, "max_error", 0.20)))
+    fallback = kwargs.pop("fallback_to_original", getattr(
+        comp_config, "gfws_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    ))
     compressor = GFWSCompressor(
         model,
         rank=rank,
