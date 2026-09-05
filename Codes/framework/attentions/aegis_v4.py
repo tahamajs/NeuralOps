@@ -255,7 +255,7 @@ def local_window_attention(
 ) -> torch.Tensor:
     B, H, N, D = Q.shape
     N_k = K.shape[2]
-    scale = (D**-0.5) / temperature
+    scale = (D**-0.5) / max(1e-4, float(softpick_temperature))
     idx_q = torch.arange(N, device=Q.device).unsqueeze(1)
     idx_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
     dist = (idx_q - idx_k).abs()
