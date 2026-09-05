@@ -55,10 +55,16 @@ class KroneckerLinear(nn.Module):
         n2: Optional[int] = None,
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.nf = out_features  # Conv1D compatibility
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
         # Determine factor dimensions
         if m1 is not None and m2 is not None and n1 is not None and n2 is not None:
@@ -80,10 +86,11 @@ class KroneckerLinear(nn.Module):
             and (self.m1 > 1 or out_features <= 3)
         )
 
+        requires_grad = not (self.lora_r > 0)
         if self.can_decompose:
             # A: (m1, n1), B: (m2, n2)
-            self.A = nn.Parameter(torch.empty(self.m1, self.n1, dtype=dtype, device=device))
-            self.B = nn.Parameter(torch.empty(self.m2, self.n2, dtype=dtype, device=device))
+            self.A = nn.Parameter(torch.empty(self.m1, self.n1, dtype=dtype, device=device), requires_grad=requires_grad)
+            self.B = nn.Parameter(torch.empty(self.m2, self.n2, dtype=dtype, device=device), requires_grad=requires_grad)
 
             fan_in = in_features
             bound = 1.0 / math.sqrt(fan_in) if fan_in > 0 else 1.0
@@ -91,7 +98,7 @@ class KroneckerLinear(nn.Module):
             nn.init.uniform_(self.B, -bound, bound)
 
             if bias:
-                self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+                self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device), requires_grad=requires_grad)
                 nn.init.uniform_(self.bias, -bound, bound)
             else:
                 self.register_parameter("bias", None)
@@ -99,19 +106,31 @@ class KroneckerLinear(nn.Module):
             # Low-rank SVD fallback for prime or non-factorable dimensions
             effective_rank = rank or max(1, min(in_features, out_features) // 4)
             self.rank = min(effective_rank, min(in_features, out_features))
-            self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-            self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+            self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device), requires_grad=requires_grad)
+            self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device), requires_grad=requires_grad)
             nn.init.xavier_uniform_(self.U)
             nn.init.xavier_uniform_(self.V)
 
             if bias:
-                self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+                self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device), requires_grad=requires_grad)
             else:
                 self.register_parameter("bias", None)
 
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Fast forward pass using efficient tensor contractions.
+        Fast forward pass using efficient tensor contractions with optional LoRA adapter.
         """
         if self.can_decompose:
             orig_shape = x.shape
@@ -119,7 +138,6 @@ class KroneckerLinear(nn.Module):
             K = x_flat.size(0)
 
             # Step 1: contract with B over n2 dimension
-            # x_flat viewed as (K * n1, n2) @ B^T (n2, m2) -> (K * n1, m2)
             x_b = torch.matmul(x_flat.reshape(K * self.n1, self.n2), self.B.t())  # (K * n1, m2)
 
             # Step 2: transpose to (K, m2, n1) -> (K * m2, n1) @ A^T (n1, m1) -> (K * m2, m1)
@@ -132,11 +150,17 @@ class KroneckerLinear(nn.Module):
             if self.bias is not None:
                 out = out + self.bias
 
-            return out.reshape(*orig_shape[:-1], self.out_features)
+            out = out.reshape(*orig_shape[:-1], self.out_features)
         else:
             # Low-rank SVD fallback: y = (x @ V^T) @ U^T + bias
             out = F.linear(F.linear(x, self.V), self.U, self.bias)
-            return out
+
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            out = out + self.scaling * F.linear(
+                F.linear(x.float(), self.lora_A), self.lora_B
+            ).to(out.dtype)
+
+        return out
 
     @property
     def weight(self) -> torch.Tensor:
