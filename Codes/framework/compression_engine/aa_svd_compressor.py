@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -74,21 +75,35 @@ class SVDLinear(nn.Module):
         use_fused_kernel: bool = False,
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
         self.use_fused_kernel = use_fused_kernel
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        # Factorized low-rank parameter tensors
-        self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device))
-        self.U = nn.Parameter(torch.empty(out_features, rank, dtype=dtype, device=device))
+        # Factorized low-rank parameter tensors (frozen if LoRA enabled)
+        requires_grad = not (self.lora_r > 0)
+        self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device), requires_grad=requires_grad)
+        self.U = nn.Parameter(torch.empty(out_features, rank, dtype=dtype, device=device), requires_grad=requires_grad)
 
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device), requires_grad=requires_grad)
         else:
             self.register_parameter("bias", None)
+
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
 
         self.reset_parameters()
 
@@ -117,7 +132,7 @@ class SVDLinear(nn.Module):
                 nn.init.zeros_(self.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.use_fused_kernel:
+        if self.use_fused_kernel and (self.lora_r == 0 or self.lora_A is None):
             # RESEARCH FIX: Accelerated fused kernel dispatch
             from framework.attentions.fused_svd_kernel import fused_svd_linear
             return fused_svd_linear(x=x, V=self.V, U=self.U, bias=self.bias, use_rms_norm=False)
@@ -127,6 +142,9 @@ class SVDLinear(nn.Module):
         out = F.linear(latent, self.U)  # [..., out_features]
         if self.bias is not None:
             out = out + self.bias
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_delta = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_delta.to(out.dtype)
         return out
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
