@@ -1,4 +1,4 @@
-"""
+r"""
 ProxSparse: Proximal Gradient Regularized Structured & Semi-Structured Sparsity.
 Registered in COMPRESSOR_REGISTRY as 'proxsparse', 'proxsparse_pruner', 'proxsparse_compressor',
 'proxsparse_factory', 'proxsparse_pruner_factory', and 'proxsparse_compressor_factory'.
