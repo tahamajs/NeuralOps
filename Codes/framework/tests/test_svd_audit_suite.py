@@ -280,7 +280,7 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
     # =========================================================================
     def test_asvd_attention_forward_backward(self):
         """Audit ASVDAttention with explicit singular value vector S."""
-        attn = ASVDAttention(self.config, rank=64)
+        attn = ASVDAttention(self.config, rank=64, lora_rank=0)
         mock_mha = MockMHA(self.hidden_size, self.num_heads)
         attn.copy_weights(mock_mha)
 
