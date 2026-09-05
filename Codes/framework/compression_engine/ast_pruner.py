@@ -35,6 +35,92 @@ from framework.compression_engine.pruning_utils import (
 logger = logging.getLogger(__name__)
 
 
+class ASTPrunedLoRALinear(nn.Module):
+    """
+    Linear layer containing AST 2:4 semi-structured pruned base weights (frozen)
+    with optional trainable LoRA adapters (lora_A, lora_B).
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.nf = out_features  # Conv1D compatibility
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
+
+        target_device = device if device is not None else weight.device
+        target_dtype = dtype if dtype is not None else weight.dtype
+
+        self.weight = nn.Parameter(
+            weight.to(device=target_device, dtype=target_dtype),
+            requires_grad=False,
+        )
+        if bias is not None:
+            self.bias = nn.Parameter(
+                bias.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=target_device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=target_device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Module,
+        weight: torch.Tensor,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -> ASTPrunedLoRALinear:
+        bias = linear.bias.detach() if hasattr(linear, "bias") and linear.bias is not None else None
+        in_features = getattr(linear, "in_features", weight.shape[1])
+        out_features = getattr(linear, "out_features", weight.shape[0])
+        return cls(
+            in_features=in_features,
+            out_features=out_features,
+            weight=weight,
+            bias=bias,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            device=weight.device,
+            dtype=weight.dtype,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+        out = F.linear(x_flat, self.weight, self.bias)
+
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
+            out = out + (self.scaling * lora_out).to(out.dtype)
+
+        return out.reshape(*orig_shape[:-1], self.out_features)
+
+
 @COMPRESSOR_REGISTRY.register("ast_pruner")
 @COMPRESSOR_REGISTRY.register("ast")
 class ASTPruner(BaseCompressor):
@@ -48,6 +134,7 @@ class ASTPruner(BaseCompressor):
     - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
     - SVD, PCA, and Fisher gradient computations in FP32 with NaN/Inf guards.
     - Unified critical-layer protection via should_compress_linear and protect_critical.
+    - Optional trainable LoRA adapters via ASTPrunedLoRALinear.
     - Comprehensive per-layer statistics and error tracking.
     """
 
@@ -63,27 +150,34 @@ class ASTPruner(BaseCompressor):
         max_error: float = 0.20,
         fallback_to_original: bool = True,
         protect_critical: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        skip_attention_qkv: bool = True,
         target_modules: Optional[List[str]] = None,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="ast_pruner", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            block_size = getattr(cfg, "ast_block_size", getattr(cfg, "block_size", block_size))
-            n_keep = getattr(cfg, "ast_n_keep", getattr(cfg, "n_keep", n_keep))
-            dim = getattr(cfg, "ast_dim", getattr(cfg, "dim", dim))
-            use_pca = getattr(cfg, "ast_use_pca", getattr(cfg, "use_pca", use_pca))
-            use_fisher = getattr(cfg, "ast_use_fisher", getattr(cfg, "use_fisher", use_fisher))
-            recalibrate_ln = getattr(cfg, "ast_recalibrate_ln", getattr(cfg, "recalibrate_ln", recalibrate_ln))
-            max_error = getattr(cfg, "ast_max_error", getattr(cfg, "max_error", max_error))
+        conf = cfg or kwargs.get("comp_config", None)
+        if conf is not None:
+            block_size = getattr(conf, "ast_block_size", getattr(conf, "block_size", block_size))
+            n_keep = getattr(conf, "ast_n_keep", getattr(conf, "n_keep", n_keep))
+            dim = getattr(conf, "ast_dim", getattr(conf, "dim", dim))
+            use_pca = getattr(conf, "ast_use_pca", getattr(conf, "use_pca", use_pca))
+            use_fisher = getattr(conf, "ast_use_fisher", getattr(conf, "use_fisher", use_fisher))
+            recalibrate_ln = getattr(conf, "ast_recalibrate_ln", getattr(conf, "recalibrate_ln", recalibrate_ln))
+            max_error = getattr(conf, "ast_max_error", getattr(conf, "max_error", max_error))
             fallback_to_original = getattr(
-                cfg, "ast_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+                conf, "ast_fallback_to_original", getattr(conf, "fallback_to_original", fallback_to_original)
             )
-            protect_critical = getattr(cfg, "protect_critical", protect_critical)
+            protect_critical = getattr(conf, "protect_critical", protect_critical)
+            lora_r = getattr(conf, "lora_r", getattr(conf, "lora_rank", lora_r))
+            lora_alpha = getattr(conf, "lora_alpha", lora_alpha)
+            skip_attention_qkv = getattr(conf, "skip_attention_qkv", skip_attention_qkv)
 
         self.block_size = max(2, int(block_size))
         self.n_keep = max(1, min(int(n_keep), self.block_size - 1))
@@ -94,6 +188,9 @@ class ASTPruner(BaseCompressor):
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.protect_critical = bool(protect_critical)
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.skip_attention_qkv = bool(skip_attention_qkv)
         self.target_modules = target_modules
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -105,13 +202,26 @@ class ASTPruner(BaseCompressor):
         )
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
+        self.skipped_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        if not self.skip_attention_qkv:
+            return False
+        cfg = getattr(self.model, "config", None)
+        num_heads = getattr(cfg, "num_attention_heads", None)
+        num_kv_heads = getattr(cfg, "num_key_value_heads", None)
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+            name_lower = name.lower()
+            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+                return True
+        return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         cls_name = module.__class__.__name__.lower()
         is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-        if not is_linear_like:
+        if not is_linear_like or isinstance(module, ASTPrunedLoRALinear):
             return False
 
         if self.protect_critical:
@@ -121,6 +231,8 @@ class ASTPruner(BaseCompressor):
 
         from framework.utils.compat import should_compress_linear
         if not should_compress_linear(self.model, name):
+            return False
+        if self._is_gqa_asymmetric(name, module):
             return False
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
