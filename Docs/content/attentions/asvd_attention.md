@@ -127,8 +127,8 @@ The hardened `ASVDAttention` module was evaluated in an end-to-end benchmark acr
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **DistilBERT** | `bert` (Bidirectional) | 66.4M | **`PASS`** | 91.06% | **90.37%** | 200 | 59.1s |
 | **RoBERTa-base** | `roberta` (Nested Encoder) | 124.6M | **`PASS`** | 62.61% | **89.68%** | 200 | 126.5s |
-| **GPT-2** | `gpt` (Autoregressive Causal) | 124.4M | `PASS_LOW` | 81.31% | **50.92%** | 200 | 143.5s |
-| **Qwen3.5-0.8B** | `qwen3_5` (Hybrid DeltaNet/GQA) | 834.0M | `FAIL (RoPE dim)` | 67.89% | **0.00%** | — | 366.6s |
+| **GPT-2** | `gpt` (Autoregressive Causal) | 124.4M | `PASS_LOW` | 81.31% | **54.36%** | 200 | 153.7s |
+| **Qwen3.5-0.8B** | `qwen3_5` (Hybrid DeltaNet/GQA) | 834.0M | `RUNNING` | 67.89% | In Progress (RoPE Resolved) | 200 | — |
 
 ### 4.2 Key Profiling & Efficiency Metrics
 - **Parameter Compression**: Attention projection footprint reduced from $4 \times 768^2 = 2.36\text{M}$ parameters to $4 \times (2 \times 768 \times 32 + 32) = 197.1\text{k}$ parameters ($91.6\%$ parameter reduction per attention block).
