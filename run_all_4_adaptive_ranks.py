@@ -116,7 +116,7 @@ for m in models:
         cmd.extend(["--parent_checkpoint", m["parent_checkpoint"]])
 
     t0 = time.time()
-    res = subprocess.run(" ".join(cmd), shell=True)
+    res = subprocess.run(cmd)
     elapsed = time.time() - t0
 
     # Collect result metrics
