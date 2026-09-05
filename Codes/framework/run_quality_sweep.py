@@ -294,6 +294,12 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
         LOG.info("Configured Muon optimizer for 2D matrix params (lr=%.1e) + AdamW for 1D params (lr=%.1e)", muon_lr, adam_lr_val)
     else:
         opt = torch.optim.AdamW(trainable, lr=lr, weight_decay=weight_decay)
+    warmup_steps = min(20, max(1, steps // 10))
+    def lr_lambda(current_step: int):
+        if current_step < warmup_steps:
+            return float(current_step + 1) / float(max(1, warmup_steps))
+        return 1.0
+    scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)
     scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
     model.train()
     curr_batch_size = batch_size
@@ -340,6 +346,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
                 pass
             scaler.step(opt)
             scaler.update()
+            scheduler.step()
             if (step + 1) % 5 == 0 or step == steps - 1 or step == 0:
                 LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d, micro_bs=%d)", step + 1, steps, step_loss, total_n, micro_bs)
             step += 1
@@ -832,7 +839,10 @@ def main():
                         }
                         if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
                             rec_steps = max(args.recovery_steps, 50)
-                            rec_lr = args.learning_rate if args.learning_rate else 2e-4
+                            if name in ("asvd", "asvd_attention") and family == "gpt":
+                                rec_lr = args.learning_rate if args.learning_rate != 2e-4 else 1e-4
+                            else:
+                                rec_lr = args.learning_rate if args.learning_rate else 2e-4
                         else:
                             rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
                             rec_lr = args.learning_rate if args.learning_rate else (5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4)
