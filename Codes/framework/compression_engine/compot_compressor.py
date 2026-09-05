@@ -82,6 +82,15 @@ class COMPOTLinear(nn.Module):
         """Materialize full weight matrix W = B @ A."""
         return torch.matmul(self.B, self.A)
 
+    def __iter__(self):
+        """Allow tuple unpacking: compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(...)."""
+        yield self
+        yield getattr(self, "reconstruction_error", 0.0)
+        yield getattr(self, "used_activations", False)
+
+    def __getitem__(self, idx: int) -> Any:
+        return (self, getattr(self, "reconstruction_error", 0.0), getattr(self, "used_activations", False))[idx]
+
     @classmethod
     def from_linear_and_activations(
         cls,
@@ -168,9 +177,9 @@ class COMPOTLinear(nn.Module):
         if norm_orig < 1e-12:
             rel_err = 0.0
         else:
-            rel_err = float(torch.norm(W_float - W_recon, p="fro").item() / norm_orig)
-
-        return compot_layer, rel_err, used_act
+        compot_layer.reconstruction_error = rel_err
+        compot_layer.used_activations = used_act
+        return compot_layer
 
 
 @COMPRESSOR_REGISTRY.register("compot")
