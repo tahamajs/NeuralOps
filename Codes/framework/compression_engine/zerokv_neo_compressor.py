@@ -355,7 +355,9 @@ class ZeroKVNeoCompressor(BaseCompressor):
         return any(kw in name.lower() for kw in attn_keywords)
 
 
-@COMPRESSOR_REGISTRY.register("zerokv_neo")
+@COMPRESSOR_REGISTRY.register("zerokv_neo_factory")
+@COMPRESSOR_REGISTRY.register("zerokv_factory")
+@COMPRESSOR_REGISTRY.register("zerokv_neo_compressor_factory")
 def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """ZeroKV-Neo compressor factory function."""
     keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "zerokv_keep_ratio", getattr(comp_config, "keep_ratio", 0.3)) if comp_config else 0.3)
