@@ -97,10 +97,16 @@ def run_single_compressor_test(name: str, device: torch.device = torch.device("c
 
             if compressor is not None:
                 if hasattr(compressor, "compress"):
-                    res = compressor.compress(orig_model)
+                    try:
+                        res = compressor.compress(orig_model)
+                    except TypeError:
+                        res = compressor.compress()
                     compressed_model = res[0] if isinstance(res, tuple) else res
                 elif callable(compressor) and not isinstance(compressor, nn.Module):
-                    res = compressor(orig_model)
+                    try:
+                        res = compressor(orig_model)
+                    except TypeError:
+                        res = compressor()
                     compressed_model = res[0] if isinstance(res, tuple) else res
                 elif isinstance(compressor, nn.Module):
                     compressed_model = compressor
