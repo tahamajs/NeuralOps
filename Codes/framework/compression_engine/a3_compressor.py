@@ -253,26 +253,43 @@ class A3Compressor(BaseCompressor):
             if isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf"):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
-        calib_inputs = get_calibration_tensors(
-            self.model,
-            tokenizer=self.tokenizer,
-            calibration_loader=self.calibration_loader,
-            calibration_texts=self.calibration_texts,
-            device=self.target_device,
-        )
-
-        if calib_inputs is not None:
+        if self.calibration_loader is not None:
             self.model.eval()
             with torch.no_grad():
-                try:
-                    if isinstance(calib_inputs, dict):
-                        self.model(**calib_inputs)
-                    elif isinstance(calib_inputs, torch.Tensor):
-                        self.model(calib_inputs)
-                    elif isinstance(calib_inputs, (list, tuple)):
-                        self.model(*calib_inputs)
-                except Exception as e:
-                    logger.debug("A3 calibration forward pass notice: %s", e)
+                for batch in self.calibration_loader:
+                    try:
+                        if isinstance(batch, dict):
+                            self.model(**{k: v.to(self.target_device) if hasattr(v, "to") else v for k, v in batch.items()})
+                        elif isinstance(batch, torch.Tensor):
+                            self.model(batch.to(self.target_device))
+                        elif isinstance(batch, (list, tuple)):
+                            try:
+                                self.model(*[b.to(self.target_device) if hasattr(b, "to") else b for b in batch])
+                            except Exception:
+                                self.model(batch[0].to(self.target_device))
+                    except Exception as e:
+                        logger.debug("A3 calibration loader forward pass exception: %s", e)
+        else:
+            calib_inputs = get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=None,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+
+            if calib_inputs is not None:
+                self.model.eval()
+                with torch.no_grad():
+                    try:
+                        if isinstance(calib_inputs, dict):
+                            self.model(**calib_inputs)
+                        elif isinstance(calib_inputs, torch.Tensor):
+                            self.model(calib_inputs)
+                        elif isinstance(calib_inputs, (list, tuple)):
+                            self.model(*calib_inputs)
+                    except Exception as e:
+                        logger.debug("A3 calibration forward pass notice: %s", e)
 
         for h in hooks:
             h.remove()
@@ -285,7 +302,11 @@ class A3Compressor(BaseCompressor):
             # Activation energy (second moment proxy for Fisher): E[x^2]
             fisher_info[name] = fisher_running[name] / n
 
+        self.activations_cleared = True
         return cov_map, fisher_info
+
+    # Backward-compatibility alias
+    _collect_activations_and_energy = _collect_activations_and_fisher
 
     def compress_linear(
         self,
@@ -294,6 +315,8 @@ class A3Compressor(BaseCompressor):
         cov: Optional[torch.Tensor] = None,
         fisher: Optional[torch.Tensor] = None,
         rank: Optional[int] = None,
+        activation_energy: Optional[torch.Tensor] = None,
+        **kwargs: Any,
     ) -> Tuple[Optional[A3FactorizedLinear], float, int]:
         """
         Compresses an nn.Linear or Conv1D module into A3FactorizedLinear using
@@ -302,6 +325,8 @@ class A3Compressor(BaseCompressor):
         Returns:
             Tuple of (factorized_layer_or_None, rel_frobenius_error, final_rank)
         """
+        if fisher is None and activation_energy is not None:
+            fisher = activation_energy
         cls_name = module.__class__.__name__.lower()
         # Fix 7: Robust Conv1D detection
         is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
