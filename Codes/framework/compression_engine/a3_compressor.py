@@ -5,11 +5,15 @@ Registered in COMPRESSOR_REGISTRY as 'a3' and 'a3_compressor'.
 Mathematical Formulation:
 1. Activation Covariance & Empirical Fisher Information:
    $$C_X = \\frac{1}{N} X^\\top X, \\quad F = \\mathbb{E}_{x \\sim \\mathcal{D}}[g \\odot g]$$
-2. Subspace Projection & Fisher-Weighted SVD:
-   $$W_{\\text{proj}} = W V_{\\text{act}} V_{\\text{act}}^\\top \\quad \\text{or} \\quad W_{\\text{weighted}} = W \\operatorname{diag}(\\sqrt{F + \\epsilon})$$
-   $$W = U \\Sigma V^\\top \\approx U_r \\Sigma_r V_r^\\top$$
-3. Symmetric Singular Value Allocation:
-   $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = \\sqrt{\\Sigma_r} V_{:r, :}^\\top$$
+   Proxy when gradient is omitted: activation second moment (energy) $F \\approx \\frac{1}{N} \\sum x^2$.
+2. Activation / Fisher Weighted SVD:
+   $$W_{\\text{weighted}} = W \\operatorname{diag}(\\sqrt{F + \\epsilon})$$
+   $$W_{\\text{weighted}} = U \\Sigma V^\\top \\approx U_r \\Sigma_r V_r^\\top$$
+   Unweighted low-rank factors:
+   $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = \\sqrt{\\Sigma_r} V_{:r, :}^\\top \\operatorname{diag}(1 / \\sqrt{F + \\epsilon})$$
+3. Reconstruction Validation:
+   $$\\text{rel\\_error} = \\frac{\\|W - U_r V_r\\|_F}{\\|W\\|_F + 10^{-8}} \\le \\tau$$
+   If relative error exceeds threshold $\\tau$ (default 0.20), the rank is increased adaptively or compression skipped.
 4. Structural Module Replacement:
    $$y = (x V_r^\\top) U_r^\\top + b$$
 5. LayerNorm Recalibration:
@@ -103,29 +107,41 @@ class A3FactorizedLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: nn.Linear,
+        linear: nn.Module,
         rank: int,
         U_factor: Optional[torch.Tensor] = None,
         V_factor: Optional[torch.Tensor] = None,
     ) -> A3FactorizedLinear:
+        in_f = getattr(linear, "in_features", None)
+        out_f = getattr(linear, "out_features", None)
+        if in_f is None or out_f is None:
+            w = getattr(linear, "weight", None)
+            if w is not None and w.ndim == 2:
+                # For Conv1D, weight is often (in_features, out_features)
+                in_f, out_f = w.shape[0], w.shape[1]
+            else:
+                raise ValueError(f"Cannot determine in/out features for {type(linear)}")
+
         layer = cls(
-            in_features=linear.in_features,
-            out_features=linear.out_features,
+            in_features=in_f,
+            out_features=out_f,
             rank=rank,
-            bias=linear.bias is not None,
+            bias=getattr(linear, "bias", None) is not None,
             dtype=linear.weight.dtype,
             device=linear.weight.device,
         )
         if U_factor is not None and V_factor is not None:
-            layer.U.data.copy_(U_factor); layer.V.data.copy_(V_factor)
-        if linear.bias is not None:
-            layer.bias.data.copy_(linear.bias.data)
+            layer.U.data.copy_(U_factor.to(device=layer.U.device, dtype=layer.U.dtype))
+            layer.V.data.copy_(V_factor.to(device=layer.V.device, dtype=layer.V.dtype))
+        if getattr(linear, "bias", None) is not None:
+            layer.bias.data.copy_(linear.bias.data.to(device=layer.bias.device, dtype=layer.bias.dtype))
         return layer
 
 
 class A3Compressor(BaseCompressor):
     """
-    A3 Compressor: Activation-Aware SVD with Fisher weighting and LayerNorm recalibration.
+    A3 Compressor: Activation-Aware SVD with Fisher weighting, LayerNorm recalibration,
+    and relative reconstruction error validation.
     """
 
     def __init__(
@@ -135,6 +151,8 @@ class A3Compressor(BaseCompressor):
         use_fisher: bool = True,
         recalibrate_ln: bool = True,
         target_attention_only: bool = False,
+        max_error: float = 0.20,
+        max_retries: int = 3,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
@@ -146,6 +164,8 @@ class A3Compressor(BaseCompressor):
         self.use_fisher = use_fisher
         self.recalibrate_ln = recalibrate_ln
         self.target_attention_only = target_attention_only
+        self.max_error = float(max_error)
+        self.max_retries = max(0, int(max_retries))
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
@@ -157,7 +177,13 @@ class A3Compressor(BaseCompressor):
         self.stats: Dict[str, Any] = {}
 
     def _collect_activations_and_fisher(self) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
-        """Collects activation covariance and empirical Fisher information via calibration forward pass."""
+        """
+        Collects activation covariance and empirical Fisher proxy (activation energy)
+        via calibration forward pass.
+        """
+        if not self.use_fisher and not self.recalibrate_ln:
+            return {}, {}
+
         self.model.eval()
         activations: Dict[str, List[torch.Tensor]] = {}
         fisher_info: Dict[str, torch.Tensor] = {}
@@ -173,7 +199,9 @@ class A3Compressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            # Hook linear layers and Conv1D modules
+            cls_name = module.__class__.__name__
+            if isinstance(module, nn.Linear) or cls_name == "Conv1D":
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -193,7 +221,7 @@ class A3Compressor(BaseCompressor):
                 elif isinstance(calib_inputs, (list, tuple)):
                     self.model(*calib_inputs)
             except Exception as e:
-                logger.debug("A3 calibration forward pass exception: %s", e)
+                logger.debug("A3 calibration forward pass notice: %s", e)
 
         for h in hooks:
             h.remove()
@@ -201,89 +229,242 @@ class A3Compressor(BaseCompressor):
         cov_map: Dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
             if act_list:
-                act_concat = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0).float()
-                N, D = act_concat.shape
-                cov = torch.matmul(act_concat.T, act_concat) / max(N, 1)
-                cov_map[name] = cov
-                # Fisher information proxy from activation variance / second moment
-                fisher_info[name] = torch.mean(act_concat.pow(2), dim=0)
+                try:
+                    act_concat = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0).float()
+                    N, D = act_concat.shape
+                    cov = torch.matmul(act_concat.T, act_concat) / max(N, 1)
+                    cov_map[name] = cov
+                    # Note: When full backward loss is not passed, activation energy (second moment)
+                    # serves as the standard empirical Fisher diagonal proxy: F ≈ E[x^2].
+                    fisher_info[name] = torch.mean(act_concat.pow(2), dim=0)
+                except Exception as e:
+                    logger.debug("Failed to compute covariance/Fisher for %s: %s", name, e)
 
         return cov_map, fisher_info
 
     def compress_linear(
         self,
-        module: nn.Linear,
+        module: nn.Module,
+        name: str = "",
         cov: Optional[torch.Tensor] = None,
         fisher: Optional[torch.Tensor] = None,
-    ) -> A3FactorizedLinear:
-        """Compresses a single nn.Linear into A3FactorizedLinear using activation/Fisher-weighted SVD."""
-        in_f = module.in_features
-        out_f = module.out_features
+    ) -> Tuple[Optional[A3FactorizedLinear], float, int]:
+        """
+        Compresses an nn.Linear or Conv1D module into A3FactorizedLinear using
+        activation/Fisher-weighted SVD with reconstruction error validation.
+
+        Returns:
+            Tuple of (factorized_layer_or_None, rel_frobenius_error, final_rank)
+        """
+        cls_name = module.__class__.__name__
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or "conv1d" in cls_name.lower()
+            or (hasattr(module, "weight") and hasattr(module.weight, "ndim") and module.weight.ndim == 2 and not isinstance(module, (nn.Embedding, nn.LayerNorm, nn.RMSNorm)))
+        )
+        if not is_linear_like:
+            logger.warning("Unsupported layer type %s for A3 compression; skipping %s", cls_name, name)
+            return None, 0.0, 0
+
+        # Extract weights and orient as [out_features, in_features]
         device = module.weight.device
         dtype = module.weight.dtype
-        W = module.weight.data.float()
-        r = get_dynamic_compression_rank(in_f, out_f, model_or_family=self.model, default_rank=self.rank, comp_config=getattr(self, "config", None))
-        r = min(r, in_f, out_f)
+        raw_w = module.weight.data.float()
 
-        # Perform direct SVD on W
-        try:
-            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        except Exception:
-            U, S, Vt = torch.linalg.svd(W.cpu(), full_matrices=False)
-            U, S, Vt = U.to(device), S.to(device), Vt.to(device)
+        if "conv1d" in cls_name.lower() or (raw_w.ndim == 2 and raw_w.shape[0] < raw_w.shape[1] and getattr(module, "in_features", None) == raw_w.shape[0]):
+            W = raw_w.t()
+            in_f = W.shape[1]
+            out_f = W.shape[0]
+        else:
+            W = raw_w
+            out_f, in_f = W.shape[0], W.shape[1]
 
-        # Symmetrical square-root singular value allocation
-        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+        # Determine initial compression rank safely
+        r = get_dynamic_compression_rank(
+            in_f,
+            out_f,
+            model_or_family=self.model,
+            default_rank=self.rank,
+            comp_config=getattr(self, "config", None),
+        )
+        r = max(1, min(int(r), in_f, out_f))
 
-        factorized_layer = A3FactorizedLinear.from_linear(module, rank=r, U_factor=U_r, V_factor=V_r)
-        return factorized_layer
+        # 1. Compute diagonal weighting factor s (input dimension)
+        scale = None
+        if self.use_fisher and fisher is not None:
+            f = fisher.float()
+            if f.ndim == 1 and f.shape[0] == in_f:
+                scale = torch.sqrt(f.clamp(min=1e-8) + 1e-6)
+        elif cov is not None:
+            diag_c = torch.diag(cov).float()
+            if diag_c.ndim == 1 and diag_c.shape[0] == in_f:
+                scale = torch.sqrt(diag_c.clamp(min=1e-8) + 1e-6)
+
+        if scale is not None:
+            # Normalize scale to unit RMS to prevent extreme condition numbers
+            rms = torch.norm(scale) / math.sqrt(in_f) + 1e-8
+            scale = (scale / rms).clamp(min=1e-3, max=1e3).to(W.device)
+            W_w = W * scale.unsqueeze(0)
+        else:
+            logger.debug("No calibration data available for %s; falling back to unweighted SVD.", name)
+            W_w = W
+
+        # 2. SVD and progressive rank validation
+        current_r = r
+        best_layer_factors = None
+        best_err = float("inf")
+        best_r = current_r
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                U, S, Vt = torch.linalg.svd(W_w, full_matrices=False)
+            except Exception:
+                U, S, Vt = torch.linalg.svd(W_w.cpu(), full_matrices=False)
+                U, S, Vt = U.to(W.device), S.to(W.device), Vt.to(W.device)
+
+            sqrt_S = torch.sqrt(torch.clamp(S[:current_r], min=1e-12))
+            U_r = U[:, :current_r] * sqrt_S.unsqueeze(0)
+            V_r = sqrt_S.unsqueeze(1) * Vt[:current_r, :]
+
+            # Unweight factors to preserve original W space
+            if scale is not None:
+                V_r = V_r / scale.unsqueeze(0)
+
+            # Compute relative Frobenius reconstruction error
+            W_rec = torch.matmul(U_r, V_r)
+            norm_orig = torch.linalg.norm(W).item()
+            rel_err = (torch.linalg.norm(W - W_rec).item()) / (norm_orig + 1e-8)
+
+            if rel_err < best_err:
+                best_err = rel_err
+                best_layer_factors = (U_r, V_r)
+                best_r = current_r
+
+            # If error is acceptable or rank has reached matrix rank, finish
+            if rel_err <= self.max_error or current_r >= min(in_f, out_f):
+                break
+
+            # Incrementally increase rank for next retry towards min(in_f, out_f)
+            remaining = max(1, self.max_retries - attempt)
+            step = max(8, (min(in_f, out_f) - current_r) // remaining)
+            current_r = min(current_r + step, min(in_f, out_f))
+
+        # 3. Validation threshold check
+        if best_err > self.max_error:
+            logger.warning(
+                "A3 compression for %s exceeded max_error (%0.3f > %0.3f) at rank %d.",
+                name,
+                best_err,
+                self.max_error,
+                best_r,
+            )
+            if getattr(self, "fallback_to_original", False):
+                return None, best_err, best_r
+
+        # 4. Construct factorized layer
+        U_final, V_final = best_layer_factors
+        factorized_layer = A3FactorizedLinear(
+            in_features=in_f,
+            out_features=out_f,
+            rank=best_r,
+            bias=module.bias is not None,
+            dtype=dtype,
+            device=device,
+        )
+        factorized_layer.U.data.copy_(U_final.to(dtype=dtype, device=device))
+        factorized_layer.V.data.copy_(V_final.to(dtype=dtype, device=device))
+        if module.bias is not None:
+            factorized_layer.bias.data.copy_(module.bias.data.to(dtype=dtype, device=device))
+
+        return factorized_layer, best_err, best_r
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes A3 factorized compression with activation-aware weighting and LayerNorm recalibration."""
+        """
+        Executes A3 factorized compression with activation-aware weighting,
+        reconstruction validation, and LayerNorm recalibration.
+        """
         cov_map, fisher_map = self._collect_activations_and_fisher()
         factorized_count = 0
+        skipped_count = 0
+        layer_stats: Dict[str, Any] = {}
+        total_err = 0.0
 
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear):
-                # Never compress the classification head / pre_classifier directly to preserve logits
-                if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
-                    continue
-                if not should_compress_linear(self.model, name):
-                    continue
-                if self.target_attention_only and not any(
-                    k in name.lower()
-                    for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value"]
-                ):
-                    continue
+            cls_name = module.__class__.__name__
+            is_linear_like = (
+                isinstance(module, nn.Linear)
+                or "conv1d" in cls_name.lower()
+                or (hasattr(module, "weight") and hasattr(module.weight, "ndim") and module.weight.ndim == 2 and not isinstance(module, (nn.Embedding, nn.LayerNorm, nn.RMSNorm)))
+            )
+            if not is_linear_like:
+                continue
 
-                cov = cov_map.get(name, None)
-                fisher = fisher_map.get(name, None)
-                factorized_layer = self.compress_linear(module, cov=cov, fisher=fisher)
+            # Never compress classification heads or pre-classifiers
+            if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
+                continue
+            if not should_compress_linear(self.model, name):
+                continue
+            if self.target_attention_only and not any(
+                k in name.lower()
+                for k in [
+                    "attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj",
+                    "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value", "c_attn", "c_proj"
+                ]
+            ):
+                continue
+
+            cov = cov_map.get(name, None)
+            fisher = fisher_map.get(name, None)
+
+            factorized_layer, rel_err, chosen_rank = self.compress_linear(
+                module, name=name, cov=cov, fisher=fisher
+            )
+
+            if factorized_layer is not None:
                 replace_module(self.model, name, factorized_layer)
                 factorized_count += 1
+                total_err += rel_err
+                layer_stats[name] = {
+                    "rank": chosen_rank,
+                    "rel_error": rel_err,
+                    "weighted": bool(fisher is not None or cov is not None),
+                }
+            else:
+                skipped_count += 1
 
-        # LayerNorm Recalibration - only execute if valid calibration texts/tokenizer/loader are present
-        if self.recalibrate_ln and (self.calibration_loader is not None or self.calibration_texts is not None or self.tokenizer is not None):
-            try:
-                recalibrate_layernorms(
-                    self.model,
-                    tokenizer=self.tokenizer,
-                    calibration_loader=self.calibration_loader,
-                    calibration_texts=self.calibration_texts,
-                    device=self.target_device,
-                )
-            except Exception as e:
-                logger.debug("LayerNorm recalibration skipped: %s", e)
+        # LayerNorm Recalibration - only execute if calibration data & tokenizer are present
+        if self.recalibrate_ln:
+            has_calib_data = (
+                self.calibration_loader is not None
+                or self.calibration_texts is not None
+                or self.tokenizer is not None
+            )
+            if has_calib_data:
+                try:
+                    recalibrate_layernorms(
+                        self.model,
+                        tokenizer=self.tokenizer,
+                        calibration_loader=self.calibration_loader,
+                        calibration_texts=self.calibration_texts,
+                        device=self.target_device,
+                    )
+                except Exception as e:
+                    logger.warning("LayerNorm recalibration notice: %s", e)
+            else:
+                logger.info("LayerNorm recalibration skipped: no calibration inputs provided.")
 
         self._compressed_params = self._count_params(self.model)
+        avg_err = (total_err / factorized_count) if factorized_count > 0 else 0.0
+
         stats = self.get_compression_stats()
         stats.update({
             "factorized_layers": factorized_count,
+            "skipped_layers": skipped_count,
             "rank": self.rank,
             "use_fisher": self.use_fisher,
             "recalibrate_ln": self.recalibrate_ln,
+            "avg_reconstruction_error": avg_err,
+            "layer_stats": layer_stats,
             "method": "a3_activation_aware_factorized_svd",
         })
         self.stats = stats
@@ -301,10 +482,29 @@ def a3_compressor_factory(
     **kwargs: Any,
 ) -> nn.Module:
     """A3 compressor factory function."""
-    r = getattr(comp_config, "a3_rank", getattr(comp_config, "rank", rank)) if comp_config is not None else kwargs.get("rank", rank)
-    u_fish = getattr(comp_config, "a3_use_fisher", use_fisher) if comp_config is not None else kwargs.get("use_fisher", use_fisher)
-    recal_ln = getattr(comp_config, "a3_recalibrate_ln", recalibrate_ln) if comp_config is not None else kwargs.get("recalibrate_ln", recalibrate_ln)
-    target_attn = getattr(comp_config, "a3_attention_only", kwargs.get("target_attention_only", False))
+    # Robust configuration extraction
+    if comp_config is not None:
+        if isinstance(comp_config, dict):
+            r = comp_config.get("a3_rank", comp_config.get("rank", rank))
+            u_fish = comp_config.get("a3_use_fisher", comp_config.get("use_fisher", use_fisher))
+            recal_ln = comp_config.get("a3_recalibrate_ln", comp_config.get("recalibrate_ln", recalibrate_ln))
+            target_attn = comp_config.get("a3_attention_only", comp_config.get("target_attention_only", False))
+            max_err = comp_config.get("max_error", kwargs.get("max_error", 0.20))
+        else:
+            r = getattr(comp_config, "a3_rank", getattr(comp_config, "rank", rank))
+            u_fish = getattr(comp_config, "a3_use_fisher", getattr(comp_config, "use_fisher", use_fisher))
+            recal_ln = getattr(comp_config, "a3_recalibrate_ln", getattr(comp_config, "recalibrate_ln", recalibrate_ln))
+            target_attn = getattr(comp_config, "a3_attention_only", getattr(comp_config, "target_attention_only", False))
+            max_err = getattr(comp_config, "max_error", kwargs.get("max_error", 0.20))
+    else:
+        r = kwargs.get("rank", rank)
+        u_fish = kwargs.get("use_fisher", use_fisher)
+        recal_ln = kwargs.get("recalibrate_ln", recalibrate_ln)
+        target_attn = kwargs.get("target_attention_only", False)
+        max_err = kwargs.get("max_error", 0.20)
+
+    # Validate and clamp rank
+    r = max(1, int(r))
 
     compressor = A3Compressor(
         model,
@@ -312,9 +512,11 @@ def a3_compressor_factory(
         use_fisher=u_fish,
         recalibrate_ln=recal_ln,
         target_attention_only=target_attn,
+        max_error=max_err,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
 
 __all__ = ["A3FactorizedLinear", "A3Compressor", "a3_compressor_factory"]
