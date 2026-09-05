@@ -154,6 +154,13 @@ class RALALinearAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None)
 
         self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        if (config is None or not hasattr(config, "hidden_size")) and "hidden_size" not in kwargs and pretrained_attn is not None:
+            for cand in ["q_lin", "query", "q_proj", "c_attn"]:
+                mod = getattr(pretrained_attn, cand, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    w = mod.weight
+                    self.hidden_size = w.shape[1] if w.ndim == 2 else self.hidden_size
+                    break
         self.dim = self.hidden_size
         self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads = getattr(
@@ -323,7 +330,7 @@ class RALALinearAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t())
-                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0 and w.shape[1] == target_mod.weight.shape[1]:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
