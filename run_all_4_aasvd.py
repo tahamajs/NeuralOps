@@ -236,7 +236,7 @@ for m in models:
         "Exit Code": res.returncode,
         "Baseline Acc": f"{baseline_acc:.2f}%" if baseline_acc is not None else "N/A",
         "AASVD Acc": f"{acc:.2f}%" if acc is not None else "N/A",
-        "Δ Acc": delta_acc_str,
+        "Delta Acc": delta_acc_str,
         "F1": f1_str,
         "Status": status,
         "Compressed Layers": num_compressed_layers,
