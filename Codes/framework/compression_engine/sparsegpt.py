@@ -56,9 +56,19 @@ class SparseGPTCompressor(BaseCompressor):
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
         structured_24: bool = False,
+        max_error: float = 0.5,
+        fallback_to_original: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="sparsegpt", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            sparsity = getattr(cfg, "sparsegpt_sparsity", getattr(cfg, "sparsity", sparsity))
+            structured_24 = getattr(cfg, "sparsegpt_structured_24", getattr(cfg, "structured_24", structured_24))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.prunen = prunen
@@ -73,7 +83,24 @@ class SparseGPTCompressor(BaseCompressor):
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
+        self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
 
     def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
         """Capture layer inputs via forward hooks."""
@@ -91,7 +118,7 @@ class SparseGPTCompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -125,11 +152,21 @@ class SparseGPTCompressor(BaseCompressor):
 
     def _compress_linear_module(
         self,
-        module: nn.Linear,
+        name: str,
+        module: nn.Module,
         activations: Optional[torch.Tensor],
-    ) -> None:
-        """Executes second-order SparseGPT pruning on a single Linear layer."""
-        W = module.weight.data.clone().float()
+    ) -> bool:
+        """Executes second-order SparseGPT pruning on a single Linear or Conv1D layer."""
+        raw_w = module.weight.data
+        cls_name = module.__class__.__name__
+        is_conv1d = "conv1d" in cls_name.lower() or (
+            raw_w.ndim == 2
+            and hasattr(module, "in_features")
+            and module.in_features == raw_w.shape[0]
+            and raw_w.shape[0] < raw_w.shape[1]
+        )
+
+        W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
         d_out, d_in = W.shape
         device = W.device
 
@@ -164,20 +201,12 @@ class SparseGPTCompressor(BaseCompressor):
                 diag_inv = max(H_inv_block[j, j].item(), 1e-8)
 
                 if self.structured_24:
-                    # 2:4 structured pattern per group of 4
-                    col_idx = i1 + j
-                    group_start = (col_idx // 4) * 4
-                    if group_start + 4 <= d_in:
-                        # Evaluated as part of 2:4 mask
-                        saliency_col = (w_col ** 2) / (2.0 * diag_inv)
-                    else:
-                        saliency_col = torch.abs(w_col)
+                    saliency_col = (w_col ** 2) / (2.0 * diag_inv)
                 else:
                     saliency_col = (w_col ** 2) / (2.0 * diag_inv)
 
                 # Prune column elements
                 if self.structured_24 and ((i1 + j + 1) % 4 == 0 or (i1 + j + 1 == d_in)):
-                    # Every 4th column, apply 2:4 block pattern across the 4-column slice
                     start_c = max(0, j - 3)
                     sub_w = W_block[:, start_c : j + 1]
                     sub_pruned, _ = apply_24_structured_mask(sub_w, saliency=torch.abs(sub_w), dim=1)
@@ -211,18 +240,35 @@ class SparseGPTCompressor(BaseCompressor):
         if self.structured_24:
             W_pruned, _ = apply_24_structured_mask(W_pruned, saliency=compute_hessian_saliency(W_pruned, H_inv), dim=1)
 
-        module.weight.data = W_pruned.to(dtype=module.weight.dtype, device=module.weight.device)
+        # Relative Frobenius error check
+        norm_orig = torch.norm(W, p="fro")
+        rel_err = (torch.norm(W - W_pruned, p="fro") / (norm_orig + 1e-8)).item()
+        self.layer_errors[name] = rel_err
+
+        if self.fallback_to_original and rel_err > self.max_error:
+            logger.warning(
+                "SparseGPT reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                rel_err,
+                name,
+                self.max_error,
+            )
+            return False
+
+        final_w = W_pruned.t() if is_conv1d else W_pruned
+        module.weight.data = final_w.to(dtype=module.weight.dtype, device=module.weight.device)
+        return True
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes SparseGPT compression across all linear layers."""
+        """Executes SparseGPT compression across all target linear layers."""
+        self.layer_errors = {}
         activations_map = self._collect_layer_activations()
         pruned_layers_count = 0
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and should_compress_linear(self.model, name):
+            if self._is_target_module(name, module):
                 act = activations_map.get(name, None)
-                self._compress_linear_module(module, act)
-                pruned_layers_count += 1
+                if self._compress_linear_module(name, module, act):
+                    pruned_layers_count += 1
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -230,6 +276,7 @@ class SparseGPTCompressor(BaseCompressor):
             "pruned_layers": pruned_layers_count,
             "sparsity_target": self.sparsity,
             "structured_24": self.structured_24,
+            "layer_errors": self.layer_errors,
             "method": "sparsegpt_second_order",
         })
         self.stats = stats
@@ -253,8 +300,8 @@ def sparsegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+
+__all__ = [
+    "SparseGPTCompressor",
+    "sparsegpt_factory",
+]

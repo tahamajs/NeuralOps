@@ -41,20 +41,48 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         tokenizer: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
+        max_error: float = 0.35,
+        fallback_to_original: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="optimal_subspace_projection", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            rank_ratio = getattr(cfg, "optimal_subspace_rank_ratio", getattr(cfg, "rank_ratio", rank_ratio))
+            power_iters = getattr(cfg, "optimal_subspace_power_iters", getattr(cfg, "power_iters", power_iters))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
         self.calibration_loader = calibration_loader
         self.rank_ratio = max(0.01, min(float(rank_ratio), 1.0))
         self.power_iters = max(0, int(power_iters))
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_texts = calibration_texts
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
         self.target_device = (
             torch.device(device)
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
+        self.compressed_layers: List[Dict[str, Any]] = []
         self.stats: Dict[str, Any] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(skip in name.lower() for skip in ["embeddings", "classifier", "lm_head", "score", "pooler"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        from framework.utils.compat import should_compress_linear
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress the target model using optimal subspace projection."""
@@ -73,9 +101,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                     act_covs[mod_id] += cov.cpu()
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and not any(
-                skip in name.lower() for skip in ["embeddings", "classifier", "lm_head"]
-            ):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(hook_fn))
 
         calib_inputs = get_calibration_tensors(
@@ -100,15 +126,22 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        compressed_layers_count = 0
+        self.compressed_layers = []
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and not any(
-                skip in name.lower() for skip in ["embeddings", "classifier", "lm_head"]
-            ):
-                W = module.weight.data.clone().float()
+            if self._is_target_module(name, module):
+                raw_w = module.weight.data
+                cls_name = module.__class__.__name__
+                is_conv1d = "conv1d" in cls_name.lower() or (
+                    raw_w.ndim == 2
+                    and hasattr(module, "in_features")
+                    and module.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
+
+                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
                 d_out, d_in = W.shape
-                device = W.device
-                dtype = module.weight.dtype
+                device = raw_w.device
+                dtype = raw_w.dtype
 
                 C = act_covs.get(id(module), None)
                 if C is not None and C.shape[-1] == d_in:
@@ -145,21 +178,36 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                     new_V = torch.matmul(Vt_r, L_inv.T)
                     new_weight = torch.matmul(new_U * S_r.unsqueeze(0), new_V)
                     new_weight = torch.nan_to_num(new_weight, nan=0.0)
-                    module.weight.data = new_weight.to(dtype=dtype, device=device)
-                    compressed_layers_count += 1
+
+                    err = (torch.norm(W - new_weight, p="fro") / (torch.norm(W, p="fro") + 1e-8)).item()
+                    if self.fallback_to_original and err > self.max_error:
+                        continue
+
+                    if is_conv1d:
+                        module.weight.data = new_weight.t().contiguous().to(dtype=dtype, device=device)
+                    else:
+                        module.weight.data = new_weight.contiguous().to(dtype=dtype, device=device)
+
+                    self.compressed_layers.append({
+                        "name": name,
+                        "relative_error": float(err),
+                        "rank": r,
+                    })
                 except Exception as e:
                     logger.debug("Subspace projection SVD exception in %s: %s", name, e)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats.update({
-            "compressed_layers": compressed_layers_count,
+            "compressed_layers": len(self.compressed_layers),
             "rank_ratio": self.rank_ratio,
             "power_iters": self.power_iters,
             "method": "optimal_subspace_projection",
+            "layers": self.compressed_layers,
         })
         self.stats = stats
         return self.model, stats
+
 
 
 # Alias

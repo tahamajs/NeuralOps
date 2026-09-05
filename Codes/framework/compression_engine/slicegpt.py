@@ -27,6 +27,7 @@ from framework.compression_engine.pruning_utils import (
     DEFAULT_CALIB_TEXTS,
     get_calibration_tensors,
 )
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +49,19 @@ class SliceGPTCompressor(BaseCompressor):
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
+        max_error: float = 0.5,
+        fallback_to_original: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="slicegpt", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            sparsity = getattr(cfg, "slicegpt_sparsity", getattr(cfg, "sparsity", sparsity))
+            non_uniform = getattr(cfg, "non_uniform", non_uniform)
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.non_uniform = non_uniform
@@ -61,10 +72,27 @@ class SliceGPTCompressor(BaseCompressor):
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
+        self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
 
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
     def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
-        """Collect input activations across all nn.Linear layers."""
+        """Collect input activations across target linear layers."""
         self.model.eval()
         activations: Dict[str, List[torch.Tensor]] = {}
         hooks = []
@@ -79,7 +107,7 @@ class SliceGPTCompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -154,21 +182,35 @@ class SliceGPTCompressor(BaseCompressor):
         Returns:
             Tuple[nn.Module, Dict[str, Any]]: Compressed model and comprehensive stats.
         """
+        self.layer_errors = {}
         activations_map = self._collect_layer_activations()
         sliced_layers_count = 0
         total_channels_pruned = 0
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                d_out, d_in = module.weight.shape
-                device = module.weight.device
-                dtype = module.weight.dtype
+            if self._is_target_module(name, module):
+                raw_w = module.weight.data
+                cls_name = module.__class__.__name__
+                is_conv1d = "conv1d" in cls_name.lower() or (
+                    raw_w.ndim == 2
+                    and hasattr(module, "in_features")
+                    and module.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
+                device = raw_w.device
+                dtype = raw_w.dtype
+
+                if is_conv1d:
+                    W = raw_w.t().float()
+                    d_out, d_in = W.shape
+                else:
+                    W = raw_w.float()
+                    d_out, d_in = W.shape
 
                 # Get activations for this module
                 act = activations_map.get(name, None)
                 Q, eigvals = self._compute_orthogonal_rotation(act, d_in, device=device)
                 Q = Q.to(device=device, dtype=torch.float32)
-                W = module.weight.data.float()
 
                 # Rotate weight: W_tilde = W @ Q
                 W_tilde = torch.matmul(W, Q)
@@ -186,27 +228,42 @@ class SliceGPTCompressor(BaseCompressor):
                     r = max(1, int(d_in * (1.0 - self.sparsity)))
 
                 # Create projection slicing operator P_r keeping top-r principal channels
-                # Zero out least variance rotated channels: r to d_in
                 W_sliced_rot = W_tilde.clone()
                 if r < d_in:
                     W_sliced_rot[:, r:] = 0.0
-                    total_channels_pruned += (d_in - r)
 
                 # Rotate back to original coordinate basis: W_pruned = W_sliced_rot @ Q^T
                 W_pruned = torch.matmul(W_sliced_rot, Q.T)
 
-                # Assign pruned weights preserving dtype and device
-                module.weight.data = W_pruned.to(dtype=dtype, device=device)
+                # Frobenius reconstruction error check
+                norm_orig = torch.norm(W, p="fro")
+                rel_err = (torch.norm(W - W_pruned, p="fro") / (norm_orig + 1e-8)).item()
+                self.layer_errors[name] = rel_err
+
+                if self.fallback_to_original and rel_err > self.max_error:
+                    logger.warning(
+                        "SliceGPT reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                        rel_err,
+                        name,
+                        self.max_error,
+                    )
+                    continue
+
+                if r < d_in:
+                    total_channels_pruned += (d_in - r)
+
+                final_w = W_pruned.t() if is_conv1d else W_pruned
+                module.weight.data = final_w.to(dtype=dtype, device=device)
                 sliced_layers_count += 1
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats.update({
             "sliced_layers": sliced_layers_count,
-            "pruned_channels": total_channels_pruned,
+            "total_channels_pruned": total_channels_pruned,
             "sparsity_target": self.sparsity,
-            "non_uniform": self.non_uniform,
-            "method": "orthogonal_slicegpt",
+            "layer_errors": self.layer_errors,
+            "method": "slicegpt_orthogonal_projection",
         })
         self.stats = stats
         return self.model, stats
@@ -217,7 +274,7 @@ def slicegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for SliceGPT compressor."""
     sparsity = getattr(comp_config, "slicegpt_sparsity", getattr(comp_config, "sparsity", 0.25)) if comp_config else kwargs.get("sparsity", 0.25)
     non_uniform = getattr(comp_config, "slicegpt_non_uniform", getattr(comp_config, "non_uniform", True)) if comp_config else kwargs.get("non_uniform", True)
-    tokenizer = getattr(model, "tokenizer", None) or getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None)
+    tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
 
     compressor = SliceGPTCompressor(
         model,
@@ -229,8 +286,8 @@ def slicegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+
+__all__ = [
+    "SliceGPTCompressor",
+    "slicegpt_factory",
+]

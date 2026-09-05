@@ -44,15 +44,45 @@ class ProxSparsePruner(BaseCompressor):
         steps: int = 5,
         structured_24: bool = False,
         block_size: Tuple[int, int] = (4, 4),
+        max_error: float = 0.50,
+        fallback_to_original: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="proxsparse", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            sparsity = getattr(cfg, "proxsparse_sparsity", getattr(cfg, "sparsity", sparsity))
+            lambda_prox = getattr(cfg, "proxsparse_lambda", getattr(cfg, "lambda_prox", lambda_prox))
+            steps = getattr(cfg, "proxsparse_steps", getattr(cfg, "steps", steps))
+            structured_24 = getattr(cfg, "proxsparse_structured_24", getattr(cfg, "structured_24", structured_24))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.lambda_prox = lambda_prox
         self.steps = max(1, int(steps))
         self.structured_24 = structured_24
         self.block_size = block_size
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
+        self.compressed_layers: List[Dict[str, Any]] = []
         self.stats: Dict[str, Any] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        from framework.utils.compat import should_compress_linear
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
 
     def _soft_threshold(self, tensor: torch.Tensor, threshold: float) -> torch.Tensor:
         r"""Soft-thresholding operator prox_{\lambda ||.||_1}."""
@@ -74,14 +104,23 @@ class ProxSparsePruner(BaseCompressor):
             return tensor * mask
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes proximal gradient sparsity iterations across all Linear modules."""
-        pruned_layers_count = 0
+        """Executes proximal gradient sparsity iterations across all compressible modules."""
+        self.compressed_layers = []
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                W = module.weight.data.clone().float()
-                device = W.device
-                dtype = module.weight.dtype
+            if self._is_target_module(name, module):
+                raw_w = module.weight.data
+                cls_name = module.__class__.__name__
+                is_conv1d = "conv1d" in cls_name.lower() or (
+                    raw_w.ndim == 2
+                    and hasattr(module, "in_features")
+                    and module.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
+
+                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                device = raw_w.device
+                dtype = raw_w.dtype
 
                 W_curr = W.clone()
                 for _ in range(self.steps):
@@ -94,18 +133,31 @@ class ProxSparsePruner(BaseCompressor):
 
                 # Final projection
                 W_final = self._project_sparse(W_curr)
-                module.weight.data = W_final.to(dtype=dtype, device=device)
-                pruned_layers_count += 1
+
+                err = (torch.norm(W - W_final, p="fro") / (torch.norm(W, p="fro") + 1e-8)).item()
+                if self.fallback_to_original and err > self.max_error:
+                    continue
+
+                if is_conv1d:
+                    module.weight.data = W_final.t().contiguous().to(dtype=dtype, device=device)
+                else:
+                    module.weight.data = W_final.contiguous().to(dtype=dtype, device=device)
+
+                self.compressed_layers.append({
+                    "name": name,
+                    "relative_error": float(err),
+                })
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats.update({
-            "pruned_layers": pruned_layers_count,
+            "pruned_layers": len(self.compressed_layers),
             "sparsity_target": self.sparsity,
             "lambda_prox": self.lambda_prox,
             "structured_24": self.structured_24,
             "steps": self.steps,
             "method": "proxsparse_regularized",
+            "compressed_layers": self.compressed_layers,
         })
         self.stats = stats
         return self.model, stats

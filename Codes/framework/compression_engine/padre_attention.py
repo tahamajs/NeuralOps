@@ -1,107 +1,539 @@
 """
-PADRe – Polynomial Attention with Dropout Regularization.
+PADRe: Polynomial Attention with Dropout Regularization.
 Replaces softmax with a stable polynomial approximation, enabling faster
-inference and potential for linear‑time attention via kernelisation.
+inference and kernelized attention across diverse transformer architectures.
+
+Production-Hardened with:
+- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
+- Frobenius norm validation (>= 1e-4)
+- Grouped-Query Attention (GQA) with repeat_kv
+- Rotary Position Embedding (RoPE) support
+- Numerical stability centering and causal lower-triangular masking for decoders
+- Nested encoder detection and output bypass
+- Trainable LoRA adapters with frozen base weights
+- Safe 4D head mask handling
+- Framework registration and single-layer injection helper
 """
-from typing import Any
+from __future__ import annotations
+
+import logging
+import math
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
+from framework.core.gqa_utils import repeat_kv
+from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim < head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
+        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+        k = torch.cat([k_rot_embed, k_pass], dim=-1)
+    else:
+        q = (q * cos) + (_rotate_half(q) * sin)
+        k = (k * cos) + (_rotate_half(k) * sin)
+
+    return q, k
+
+
+class LoRALinear(nn.Module):
+    """Linear layer augmented with optional trainable low-rank adaptation."""
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -> None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank > 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank > 0:
+            if self.lora_A is not None:
+                self.lora_A.requires_grad = True
+            if self.lora_B is not None:
+                self.lora_B.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out
+        return out
+
+
+@ATTENTION_REGISTRY.register("padre")
+@ATTENTION_REGISTRY.register("padre_attention")
 class PADReAttention(BaseAttention):
     """
     Polynomial Attention with Dropout Regularization (PADRe).
-
-    Args:
-        config: model configuration (HuggingFace style)
-        order: degree of the polynomial kernel (higher = closer to softmax)
-        temperature: scaling factor applied before polynomial
+    Replaces softmax with centered, numerically stable polynomial kernel (1 + S/order)^order.
     """
 
-    def __init__(self, config, order: int = 2, temperature: float = 1.0, **kwargs):
-        super().__init__(config, rank=order)  # rank used for order tracking
-        self.num_heads = config.num_attention_heads
-        self.head_dim = config.hidden_size // self.num_heads
+    def __init__(
+        self,
+        config: Optional[Any] = None,
+        order: int = 2,
+        temperature: float = 1.0,
+        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config, rank=order)
+        self.config = config
+        comp_config = getattr(config, "compression_config", None)
+
+        self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        if (config is None or not hasattr(config, "hidden_size")) and "hidden_size" not in kwargs and pretrained_attn is not None:
+            for cand in ["q_lin", "query", "q_proj", "c_attn"]:
+                mod = getattr(pretrained_attn, cand, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    w = mod.weight
+                    self.hidden_size = w.shape[1] if w.ndim == 2 else self.hidden_size
+                    break
+
+        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_kv_heads = getattr(
+            config,
+            "num_key_value_heads",
+            kwargs.get("num_key_value_heads", self.num_heads),
+        )
+        self.head_dim = getattr(
+            config,
+            "head_dim",
+            kwargs.get("head_dim", self.hidden_size // self.num_heads),
+        )
         self.all_head_size = self.num_heads * self.head_dim
-        self.order = order
-        self.temperature = temperature
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.query = nn.Linear(config.hidden_size, self.all_head_size)
-        self.key = nn.Linear(config.hidden_size, self.all_head_size)
-        self.value = nn.Linear(config.hidden_size, self.all_head_size)
-        self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.order = getattr(comp_config, "padre_order", getattr(config, "padre_order", kwargs.get("order", order)))
+        self.temperature = getattr(comp_config, "padre_temperature", getattr(config, "padre_temperature", kwargs.get("temperature", temperature)))
 
-    def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
-        """Reshape to (batch, heads, seq_len, head_dim)."""
-        x = x.view(batch_size, -1, self.num_heads, self.head_dim)
-        return x.permute(0, 2, 1, 3)
+        # Causal decoder detection
+        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
+        model_type = getattr(config, "model_type", "").lower() if config else ""
+        if model_type in ["gpt2", "qwen", "qwen2", "llama", "mistral", "gemma"]:
+            is_dec = True
+        if kwargs.get("is_causal", False):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = bool(is_dec)
+        self.is_nested_encoder = False
+
+        # LoRA config
+        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
+        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        self.freeze_base = (self.lora_rank > 0)
+
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+
+        # Aliases
+        self.query = self.q_proj
+        self.key = self.k_proj
+        self.value = self.v_proj
+
+        dropout_p = getattr(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1)) if config else 0.1
+        self.dropout = nn.Dropout(dropout_p)
+
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        if source_attn is not None:
+            self.copy_weights(source_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        """
+        Robust weight copying across GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, and DistilBERT.
+        Validates Frobenius norm >= 1e-4.
+        """
+        if src is None:
+            return
+
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        is_nested = False
+        if (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            is_nested = True
+        elif (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+        ) and not has_out_lin:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        # 1. GPT-2 fused c_attn
+        if hasattr(src, "c_attn") and src.c_attn is not None:
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                    c_w = c_w.t()
+                split_size = c_w.size(0) // 3
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+
+            if hasattr(src, "c_proj") and src.c_proj is not None:
+                c_proj_mod = src.c_proj
+                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                        o_w = o_w.t()
+                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+
+        # 2. RoBERTa nested encoder
+        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+            s = getattr(src, "self")
+            for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
+                mod = getattr(s, sub_name, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                out_mod = src.output.dense
+                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+
+        # 3. Flat modules (DistilBERT, Qwen, LLaMA)
+        else:
+            proj_candidates = {
+                "q": ["q_lin", "q_proj", "query"],
+                "k": ["k_lin", "k_proj", "key"],
+                "v": ["v_lin", "v_proj", "value"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+            }
+            for proj_key, names in proj_candidates.items():
+                for name in names:
+                    if hasattr(src, name):
+                        mod = getattr(src, name)
+                        if mod is not None and hasattr(mod, "weight"):
+                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            break
+
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing:
+            try:
+                from framework.core.adapters import UniversalAdapter
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception:
+                pass
+
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing_after:
+            raise RuntimeError(
+                f"PADReAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+            )
+
+        target_map = {
+            "q": self.q_proj,
+            "k": self.k_proj,
+            "v": self.v_proj,
+            "o": self.out_proj,
+        }
+
+        with torch.no_grad():
+            for proj_key, target_mod in target_map.items():
+                w, b = extracted[proj_key]
+                if w is None:
+                    if proj_key == "o" and self.is_nested_encoder:
+                        nn.init.eye_(target_mod.weight)
+                        if target_mod.bias is not None:
+                            nn.init.zeros_(target_mod.bias)
+                        continue
+
+                src_norm = torch.linalg.norm(w.float()).item()
+                if src_norm < 1e-4:
+                    raise RuntimeError(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
+
+                if w.shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w)
+                elif w.t().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t())
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0 and w.shape[1] == target_mod.weight.shape[1]:
+                    repeats = target_mod.weight.shape[0] // w.shape[0]
+                    target_mod.weight.copy_(w.repeat(repeats, 1))
+                else:
+                    min_0 = min(target_mod.weight.shape[0], w.shape[0])
+                    min_1 = min(target_mod.weight.shape[1], w.shape[1])
+                    target_mod.weight.zero_()
+                    target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+
+                if b is not None and target_mod.bias is not None:
+                    if b.shape == target_mod.bias.shape:
+                        target_mod.bias.copy_(b)
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
+                        repeats = target_mod.bias.shape[0] // b.shape[0]
+                        target_mod.bias.copy_(b.repeat(repeats))
+                    else:
+                        min_b = min(target_mod.bias.shape[0], b.shape[0])
+                        target_mod.bias.zero_()
+                        target_mod.bias[:min_b].copy_(b[:min_b])
+                elif target_mod.bias is not None:
+                    nn.init.zeros_(target_mod.bias)
+
+                fnorm = torch.linalg.norm(target_mod.weight.float()).item()
+                if fnorm < 1e-4:
+                    raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+
+        if self.freeze_base:
+            for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
+                mod.freeze_base_weights()
+
+        return True
 
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: torch.Tensor = None,
-        head_mask: torch.Tensor = None,
-        output_attentions: bool = False,
-        **kwargs,
-    ) -> Any:
-        """Forward pass."""
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        output_hidden_states: Optional[bool] = False,
+        return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """
+        Forward pass with polynomial attention:
+        1. Linear projection to Q, K, V
+        2. Optional RoPE embedding
+        3. GQA head expansion
+        4. Scaled polynomial scoring with max-centering for stability
+        5. Causal and padding masking
+        6. Context readout and projection
+        """
         B, N, _ = hidden_states.shape
-        Q = self._reshape(self.query(hidden_states), B)  # (B, H, N, D)
-        K = self._reshape(self.key(hidden_states), B)
-        V = self._reshape(self.value(hidden_states), B)
 
-        scale = 1.0 / (self.head_dim**0.5)
-        # raw scores
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # (B, H, N, N)
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
 
-        # Apply temperature and re‑center for numerical stability
-        scores = scores / self.temperature
-        scores = scores - scores.max(dim=-1, keepdim=True).values
+        # Apply RoPE if provided
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # Polynomial kernel: (1 + S/order)^order, clamped to avoid overflow
-        base = 1 + scores / self.order
-        # For numerical safety, avoid negative base
-        base = torch.clamp(base, min=0.0)
+        # GQA head expansion
+        if self.num_heads != self.num_kv_heads:
+            k = repeat_kv(k, self.num_heads // self.num_kv_heads)
+            v = repeat_kv(v, self.num_heads // self.num_kv_heads)
+
+        # Raw scores: (B, H, N, N)
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+
+        # Determine invalid mask for padding and causal
+        invalid_mask = torch.zeros(B, 1, N, N, device=scores.device, dtype=torch.bool)
+        if attention_mask is not None:
+            valid_tok = get_token_valid_mask(attention_mask, B, N, scores.device)  # (B, N) bool
+            invalid_pad = ~valid_tok.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N)
+            invalid_mask = invalid_mask | invalid_pad
+
+        if self.is_decoder:
+            causal_mask = torch.tril(torch.ones(N, N, device=scores.device, dtype=torch.bool))
+            invalid_causal = ~causal_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, N, N)
+            invalid_mask = invalid_mask | invalid_causal
+
+        # Apply temperature and re-center over valid scores for numerical stability
+        masked_for_max = scores.masked_fill(invalid_mask, -1e9)
+        max_scores = masked_for_max.max(dim=-1, keepdim=True).values
+        # If all keys are masked, avoid -1e9 producing NaN
+        max_scores = torch.where(max_scores <= -1e8, torch.zeros_like(max_scores), max_scores)
+
+        scores_centered = (scores - max_scores) / max(self.temperature, 1e-6)
+
+        # Polynomial kernel: (1 + S/order)^order, clamped to avoid negative base or overflow
+        base = torch.clamp(1.0 + (scores_centered / self.order), min=0.0)
         attn_weights = base**self.order
 
-        # Normalize to sum = 1 (like softmax)
-        attn_weights = attn_weights / (attn_weights.sum(dim=-1, keepdim=True) + 1e-8)
+        # Zero out invalid positions
+        attn_weights = attn_weights.masked_fill(invalid_mask, 0.0)
 
-        # Attention mask handling (compatible with DistilBERT's additive mask)
-        if attention_mask is not None:
-            # Convert additive mask to multiplicative
-            if attention_mask.dim() == 2:
-                attn_weights = attn_weights * attention_mask[:, None, None, :].to(
-                    attn_weights.dtype
-                )
-            elif attention_mask.dim() == 3:
-                attn_weights = attn_weights * attention_mask[:, None, :, :].to(
-                    attn_weights.dtype
-                )
-            elif attention_mask.dim() == 4:
-                if attention_mask.shape[-2] == attention_mask.shape[-1]:
-                    # Additive mask: 0 = attend, large negative = mask
-                    attn_weights = attn_weights * (
-                        attention_mask[:, 0, 0, :] > -10000.0
-                    ).unsqueeze(1).unsqueeze(2).to(attn_weights.dtype)
-                else:
-                    attn_weights = attn_weights * attention_mask.to(attn_weights.dtype)
-            attn_weights = attn_weights / (
-                attn_weights.sum(dim=-1, keepdim=True) + 1e-8
-            )
+        # Normalize across key dimension
+        denom = attn_weights.sum(dim=-1, keepdim=True) + 1e-8
+        attn_weights = attn_weights / denom
+
+        if head_mask is not None:
+            hm = head_mask.to(scores.device)
+            if hm.dim() == 1:
+                hm = hm.view(1, -1, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], 1, 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(1)
+            attn_weights = attn_weights * hm
 
         attn_weights = self.dropout(attn_weights)
 
-        context = torch.matmul(attn_weights, V)  # (B, H, N, D)
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
-        output = self.out_proj(context)
-        return (output, attn_weights) if output_attentions else (output,)
+        context = torch.matmul(attn_weights, v)
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = self.out_proj(context)
+
+        return (output, attn_weights if output_attentions else None)
 
     def get_ortho_loss(self) -> Any:
-        """Get ortho loss."""
         return torch.tensor(0.0, device=self.out_proj.weight.device)
+
+
+@ATTENTION_REGISTRY.register("padre_inject")
+def inject_padre(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> Optional[PADReAttention]:
+    """Single-layer framework injection helper for PADReAttention."""
+    try:
+        new_attn = PADReAttention(
+            config=model_config,
+            pretrained_attn=old_attn,
+            **kwargs,
+        )
+        return new_attn
+    except Exception as e:
+        logger.warning("Failed to inject PADReAttention at layer %d: %s", layer_idx, e)
+        return None
+

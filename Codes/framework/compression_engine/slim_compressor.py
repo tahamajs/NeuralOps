@@ -28,6 +28,7 @@ from framework.compression_engine.pruning_utils import (
     apply_24_structured_mask,
     apply_block_mask,
 )
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +45,43 @@ class SLiMCompressor(BaseCompressor):
         sparsity: float = 0.5,
         rank: int = 8,
         structured_24: bool = True,
+        max_error: float = 0.5,
+        fallback_to_original: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="slim", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            bits = getattr(cfg, "slim_bits", getattr(cfg, "bits", bits))
+            sparsity = getattr(cfg, "slim_sparsity", getattr(cfg, "sparsity", sparsity))
+            rank = getattr(cfg, "slim_rank", getattr(cfg, "rank", rank))
+            structured_24 = getattr(cfg, "slim_structured_24", getattr(cfg, "structured_24", structured_24))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
         self.bits = int(bits)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.rank = max(1, int(rank))
         self.structured_24 = structured_24
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_modules = target_modules
+        self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+        cls_name = module.__class__.__name__
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        if not is_linear_like:
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
 
     def _quantize(self, W: torch.Tensor) -> torch.Tensor:
         """Quantizes weight to b-bit representation."""
@@ -66,20 +96,30 @@ class SLiMCompressor(BaseCompressor):
         return W_q
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes SLiM compression pipeline across all Linear layers."""
+        """Executes SLiM compression pipeline across all Linear and Conv1D layers."""
+        self.layer_errors = {}
         pruned_layers_count = 0
         total_svd_energy = 0.0
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                W = module.weight.data.clone().float()
-                device = W.device
-                dtype = module.weight.dtype
+            if self._is_target_module(name, module):
+                raw_w = module.weight.data
+                cls_name = module.__class__.__name__
+                is_conv1d = "conv1d" in cls_name.lower() or (
+                    raw_w.ndim == 2
+                    and hasattr(module, "in_features")
+                    and module.in_features == raw_w.shape[0]
+                    and raw_w.shape[0] < raw_w.shape[1]
+                )
+                device = raw_w.device
+                dtype = raw_w.dtype
+
+                W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
 
                 # 1. Quantize
                 W_q = self._quantize(W)
 
-                # 2. Apply 2:4 structured sparsity
+                # 2. Apply 2:4 structured sparsity or magnitude sparsity
                 if self.structured_24:
                     W_sp, _ = apply_24_structured_mask(W_q, saliency=torch.abs(W_q), dim=1)
                 else:
@@ -104,7 +144,22 @@ class SLiMCompressor(BaseCompressor):
                     logger.debug("SVD residual correction exception in %s: %s", name, e)
                     W_final = W_sp
 
-                module.weight.data = W_final.to(dtype=dtype, device=device)
+                # Relative Frobenius error check
+                norm_orig = torch.norm(W, p="fro")
+                rel_err = (torch.norm(W - W_final, p="fro") / (norm_orig + 1e-8)).item()
+                self.layer_errors[name] = rel_err
+
+                if self.fallback_to_original and rel_err > self.max_error:
+                    logger.warning(
+                        "SLiM reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                        rel_err,
+                        name,
+                        self.max_error,
+                    )
+                    continue
+
+                final_w = W_final.t() if is_conv1d else W_final
+                module.weight.data = final_w.to(dtype=dtype, device=device)
                 pruned_layers_count += 1
 
         self._compressed_params = self._count_params(self.model)
@@ -115,6 +170,7 @@ class SLiMCompressor(BaseCompressor):
             "rank": self.rank,
             "structured_24": self.structured_24,
             "total_svd_energy": total_svd_energy,
+            "layer_errors": self.layer_errors,
             "method": "slim_quant_sparse_lowrank",
         })
         self.stats = stats
@@ -141,8 +197,8 @@ def slim_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+
+__all__ = [
+    "SLiMCompressor",
+    "slim_factory",
+]
