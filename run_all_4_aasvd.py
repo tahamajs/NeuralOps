@@ -78,8 +78,8 @@ models = [
             "--batch_size", "8",
             "--recovery_steps", "200",
             "--learning_rate", "2e-4",
-            "--rank", "288",
-            "--aasvd_max_error", "0.72",
+            "--rank", "432",
+            "--aasvd_max_error", "0.70",
             "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
@@ -114,13 +114,61 @@ models = [
     },
 ]
 
-if len(sys.argv) > 1:
-    selected = set(sys.argv[1:])
-    models = [m for m in models if m["name"] in selected]
+import argparse
+
+parser = argparse.ArgumentParser(description="Unified 4-Model Hardened AASVD Benchmark")
+parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
+parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,aasvd)")
+parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
+parser.add_argument("--rank", type=int, default=None, help="Compression rank override")
+parser.add_argument("--max_error", type=float, default=None, help="AASVD max reconstruction error threshold")
+parser.add_argument("--attention_only", type=str, default=None, help="Target attention layers only (true/false)")
+parser.add_argument("positional_models", nargs="*", default=None, help="Positional model names for backwards compatibility")
+
+args = parser.parse_args()
+
+selected_models = []
+if args.models:
+    for item in args.models:
+        for sub in item.split(","):
+            if sub.strip():
+                selected_models.append(sub.strip())
+elif args.positional_models:
+    for item in args.positional_models:
+        for sub in item.split(","):
+            if sub.strip():
+                selected_models.append(sub.strip())
+
+if selected_models:
+    selected_set = set(selected_models)
+    models = [m for m in models if m["name"] in selected_set]
+
+def update_cmd_arg(cmd: list[str], flag: str, new_val: str):
+    try:
+        idx = cmd.index(flag)
+        cmd[idx + 1] = str(new_val)
+    except ValueError:
+        cmd.extend([flag, str(new_val)])
+
+for m in models:
+    if args.modules is not None:
+        update_cmd_arg(m["cmd"], "--modules", args.modules)
+    if args.recovery_steps is not None:
+        update_cmd_arg(m["cmd"], "--recovery_steps", str(args.recovery_steps))
+    if args.rank is not None:
+        update_cmd_arg(m["cmd"], "--rank", str(args.rank))
+    if args.max_error is not None:
+        update_cmd_arg(m["cmd"], "--aasvd_max_error", str(args.max_error))
+    if args.attention_only is not None:
+        val = str(args.attention_only).strip().lower()
+        if val in ("1", "true", "yes"):
+            update_cmd_arg(m["cmd"], "--aasvd_target_attention_only", "true")
+        elif val in ("0", "false", "no"):
+            update_cmd_arg(m["cmd"], "--aasvd_target_attention_only", "false")
 
 print("=" * 80, flush=True)
 print("STARTING UNIFIED 4-MODEL HARDENED AASVD BENCHMARK ON GPU SERVER", flush=True)
-print("Config: modules=full,aasvd, dataset=sst2, recovery_steps=200, lr=2e-4, rank=288/384, max_error=0.50, attention_only=True, batch_size=8, precision=fp16", flush=True)
+print(f"Running models: {[m['name'] for m in models]}", flush=True)
 print("=" * 80, flush=True)
 
 final_stats = []
