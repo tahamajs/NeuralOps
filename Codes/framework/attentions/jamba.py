@@ -27,6 +27,7 @@ import torch.nn.functional as F
 
 from framework.attentions.expert_choice_moe import ExpertChoiceMoE
 from framework.attentions.simple_ssm import SimpleSSM
+from framework.attentions.svd_mamba import SVDMamba
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv

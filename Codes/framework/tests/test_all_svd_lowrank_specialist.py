@@ -14,13 +14,19 @@ codes_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 if codes_dir not in sys.path:
     sys.path.insert(0, codes_dir)
 
-dummy_attn_pkg = types.ModuleType('framework.attentions')
-dummy_attn_pkg.__path__ = [os.path.join(codes_dir, 'framework/attentions')]
-sys.modules['framework.attentions'] = dummy_attn_pkg
+try:
+    import framework.attentions as dummy_attn_pkg
+except Exception:
+    dummy_attn_pkg = types.ModuleType('framework.attentions')
+    dummy_attn_pkg.__path__ = [os.path.join(codes_dir, 'framework/attentions')]
+    sys.modules['framework.attentions'] = dummy_attn_pkg
 
-dummy_comp_pkg = types.ModuleType('framework.compression_engine')
-dummy_comp_pkg.__path__ = [os.path.join(codes_dir, 'framework/compression_engine')]
-sys.modules['framework.compression_engine'] = dummy_comp_pkg
+try:
+    import framework.compression_engine as dummy_comp_pkg
+except Exception:
+    dummy_comp_pkg = types.ModuleType('framework.compression_engine')
+    dummy_comp_pkg.__path__ = [os.path.join(codes_dir, 'framework/compression_engine')]
+    sys.modules['framework.compression_engine'] = dummy_comp_pkg
 
 def load_source(module_name, rel_path, pkg_obj):
     abs_path = os.path.join(codes_dir, rel_path)
