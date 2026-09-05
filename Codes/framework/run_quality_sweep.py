@@ -1393,29 +1393,38 @@ def main():
         LOG.info("[%d/%d] %s -> %s %.2f%% (F1: %s, Peak VRAM: %s MB)",
                  n, len(names), name, status, acc, f1_disp, vram_disp)
 
-        # Automated export to Hugging Face and GitHub for successful runs
-        try:
-            from Codes.framework.utils.hf_git_exporter import handle_benchmark_run_export
-            weights_dir = out / "checkpoints" / name
-            hf_export_dir = weights_dir / "hf_export"
-            handle_benchmark_run_export(
-                model=None,
-                tokenizer=tokenizer,
-                model_name=Path(args.model).name,
-                module_name=name,
-                dataset_name=args.dataset,
-                perf_metrics=perf_metrics,
-                comp_metrics=comp_metrics,
-                status=status,
-                pass_threshold_pct=float(pass_threshold_pct),
-                baseline_acc=base_benchmark_acc if name != "full" else None,
-                config_dict=vars(args) if hasattr(args, "__dict__") else {},
-                out_dir=out,
-                allow_pass_low=False,
-                export_dir=hf_export_dir if hf_export_dir.exists() else None,
-            )
-        except Exception as export_exc:
-            LOG.warning("Automated export exception for %s: %s", name, export_exc)
+        is_successful_run = (status == "PASS") and (acc >= pass_threshold_pct)
+        weights_dir = out / "checkpoints" / name
+        hf_export_dir = weights_dir / "hf_export"
+
+        if not is_successful_run:
+            LOG.info("[Quality Guard] Module '%s' did not pass quality criteria (status=%s, acc=%.2f%%, pass_thresh=%.2f%%). Pruning checkpoint artifacts.",
+                     name, status, acc, pass_threshold_pct)
+            if weights_dir.exists():
+                import shutil
+                shutil.rmtree(weights_dir, ignore_errors=True)
+        else:
+            # Automated export to Hugging Face and GitHub for successful runs
+            try:
+                from Codes.framework.utils.hf_git_exporter import handle_benchmark_run_export
+                handle_benchmark_run_export(
+                    model=None,
+                    tokenizer=tokenizer,
+                    model_name=Path(args.model).name,
+                    module_name=name,
+                    dataset_name=args.dataset,
+                    perf_metrics=perf_metrics,
+                    comp_metrics=comp_metrics,
+                    status=status,
+                    pass_threshold_pct=float(pass_threshold_pct),
+                    baseline_acc=base_benchmark_acc if name != "full" else None,
+                    config_dict=vars(args) if hasattr(args, "__dict__") else {},
+                    out_dir=out,
+                    allow_pass_low=False,
+                    export_dir=hf_export_dir if hf_export_dir.exists() else None,
+                )
+            except Exception as export_exc:
+                LOG.warning("Automated export exception for %s: %s", name, export_exc)
 
         del model; gc.collect(); torch.cuda.empty_cache()
 
@@ -1460,8 +1469,33 @@ def main():
     summary_df = pd.DataFrame(summary_rows)
     LOG.info("=" * 80)
     LOG.info("BENCHMARK QUALITY SWEEP SUMMARY TABLE (%s on %s)", Path(args.model).name, args.dataset)
-    LOG.info("=" * 80)
     LOG.info("\n%s", summary_df.to_string(index=False))
     LOG.info("=" * 80)
+
+    # Export a visual publication markdown report for the sweep
+    try:
+        report_file = out / "benchmark_report.md"
+        report_lines = [
+            f"# Benchmark Quality & Compression Report: {Path(args.model).name} on {args.dataset}",
+            f"- **Execution Timestamp**: `{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}`",
+            f"- **Baseline Reference Accuracy**: `{base_benchmark_acc:.2f}%`",
+            f"- **Statistical Pass Threshold**: `{pass_threshold_pct:.2f}%`",
+            "",
+            "## Empirical Comparative Profiling",
+            "",
+            "| Module | Status | Accuracy | Delta Acc | F1 Score | Compressed Layers | Comp Rate | Peak VRAM | Time (s) |",
+            "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+        ]
+        for sr in summary_rows:
+            st = sr["Status"]
+            badge = f"`{st}`" if st == "PASS" else f"**`{st}`**"
+            report_lines.append(
+                f"| **{sr['Module']}** | {badge} | **{sr['Accuracy']}** | {sr['Delta Acc']} | {sr['F1']} | {sr['Compressed Layers']} | {sr['Compression Rate']} | {sr['Peak VRAM']} | {sr['Time (s)']} |"
+            )
+        report_lines.append("")
+        report_file.write_text("\n".join(report_lines), encoding="utf-8")
+        LOG.info("Saved visual benchmark report to %s", report_file)
+    except Exception as rep_err:
+        LOG.debug("Report generation info: %s", rep_err)
 
 if __name__ == "__main__": main()
