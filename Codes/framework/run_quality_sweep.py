@@ -29,7 +29,34 @@ from framework.utils.compat import module_family_support, wrap_for_family
 import framework.attentions, framework.compression_engine
 
 LOG = logging.getLogger("QwenQualitySweep")
-FIELDS = ["module_name", "status", "accuracy_pct", "elapsed_s", "error", "path", "timestamp"]
+FIELDS = [
+    "module_name",
+    "status",
+    "accuracy_pct",
+    "f1_score",
+    "f1_macro",
+    "precision",
+    "recall",
+    "val_loss",
+    "elapsed_s",
+    "peak_vram_mb",
+    "tokens_per_sec",
+    "total_params_before",
+    "total_params_after",
+    "trainable_recovery_params",
+    "compression_rate",
+    "compression_ratio_pct",
+    "flops_reduction_pct",
+    "num_compressed_layers",
+    "num_fallback_layers",
+    "avg_reconstruction_error",
+    "weighted_reconstruction_error",
+    "num_injected_attention_layers",
+    "lora_params",
+    "error",
+    "path",
+    "timestamp",
+]
 
 
 def compute_t_test_p_value(accs1: list[float], accs2: list[float]) -> float:
@@ -144,54 +171,181 @@ def prepare_eval_batches(tokenizer, ds, name, seq_len, batch_size, device):
     return batches
 
 
-def collect_and_export_full_metrics(model, eval_batches, model_name, seq_len=128, device=None, fp16=True, out_dir="results"):
+def compute_compression_metrics(
+    model: torch.nn.Module,
+    module_name: str,
+    module_type: str,
+    total_params_before: int,
+    total_params_after: int,
+    trainable_recovery_params: int = 0,
+) -> dict:
+    """Dynamically extract comprehensive compression, efficiency, and architectural metrics."""
+    comp_stats = getattr(model, "compression_stats", {}) or {}
+
+    num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer"))
+    num_injected_attention = sum(
+        1 for m in model.modules()
+        if ("attention" in m.__class__.__name__.lower() and "universal" in m.__class__.__name__.lower())
+        or hasattr(m, "is_custom_attention")
+        or hasattr(m, "span_logits")
+    )
+    lora_params = sum(p.numel() for n, p in model.named_parameters() if "lora_" in n.lower())
+
+    is_compression = (
+        module_type == "compressor"
+        or (total_params_after != total_params_before and module_name != "full")
+        or num_svd_layers > 0
+    )
+
+    if is_compression and total_params_after > 0:
+        compression_rate = round(total_params_before / max(1, total_params_after), 4)
+        compression_ratio_pct = round((1.0 - total_params_after / max(1, total_params_before)) * 100.0, 2)
+    else:
+        compression_rate = 1.0
+        compression_ratio_pct = 0.0
+
+    num_compressed_layers = comp_stats.get("num_compressed", num_svd_layers)
+    num_fallback_layers = comp_stats.get("num_fallback", 0)
+
+    # Layer ranks and reconstruction errors
+    layer_ranks = dict(comp_stats.get("layer_ranks", {}))
+    layer_errors = dict(comp_stats.get("layer_errors", {}))
+
+    for mod_name, mod in model.named_modules():
+        if hasattr(mod, "rank") and mod_name not in layer_ranks:
+            try:
+                layer_ranks[mod_name] = int(getattr(mod, "rank"))
+            except (ValueError, TypeError):
+                pass
+        if hasattr(mod, "reconstruction_error") and mod_name not in layer_errors:
+            try:
+                err_v = float(getattr(mod, "reconstruction_error"))
+                if not math.isnan(err_v) and not math.isinf(err_v):
+                    layer_errors[mod_name] = round(err_v, 4)
+            except (ValueError, TypeError):
+                pass
+
+    avg_reconstruction_error = comp_stats.get("avg_reconstruction_error", None)
+    if avg_reconstruction_error is None and layer_errors:
+        avg_reconstruction_error = round(float(sum(layer_errors.values()) / max(1, len(layer_errors))), 4)
+
+    weighted_reconstruction_error = comp_stats.get("weighted_reconstruction_error", None)
+    if weighted_reconstruction_error is None and layer_errors:
+        total_w_err, total_w_params = 0.0, 0
+        named_mods = dict(model.named_modules())
+        for mod_name, err_val in layer_errors.items():
+            sub_mod = named_mods.get(mod_name)
+            n_params = sum(p.numel() for p in sub_mod.parameters()) if sub_mod is not None else 1
+            total_w_err += err_val * n_params
+            total_w_params += n_params
+        if total_w_params > 0:
+            weighted_reconstruction_error = round(float(total_w_err / total_w_params), 4)
+        else:
+            weighted_reconstruction_error = avg_reconstruction_error
+
+    flops_reduction_pct = comp_stats.get("flops_reduction_percent", comp_stats.get("flops_reduction_pct", None))
+    if flops_reduction_pct is None:
+        if num_svd_layers > 0:
+            orig_flops, fact_flops = 0, 0
+            for m in model.modules():
+                if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer"):
+                    in_f = getattr(m, "in_features", None)
+                    out_f = getattr(m, "out_features", None)
+                    r = getattr(m, "rank", None)
+                    if in_f and out_f and r:
+                        orig_flops += 2 * in_f * out_f
+                        fact_flops += 2 * r * (in_f + out_f)
+            if orig_flops > 0:
+                flops_reduction_pct = round((1.0 - (fact_flops / orig_flops)) * 100.0, 2)
+            else:
+                flops_reduction_pct = 0.0
+        else:
+            flops_reduction_pct = 0.0
+
+    return {
+        "module_name": module_name,
+        "module_type": module_type,
+        "total_params_before": total_params_before,
+        "total_params_after": total_params_after,
+        "trainable_recovery_params": trainable_recovery_params,
+        "compression_rate": compression_rate,
+        "compression_ratio_pct": compression_ratio_pct,
+        "flops_reduction_pct": flops_reduction_pct,
+        "num_compressed_layers": num_compressed_layers,
+        "num_fallback_layers": num_fallback_layers,
+        "num_injected_attention_layers": num_injected_attention,
+        "lora_params": lora_params,
+        "avg_reconstruction_error": avg_reconstruction_error,
+        "weighted_reconstruction_error": weighted_reconstruction_error,
+        "per_layer_reconstruction_errors": layer_errors,
+        "per_layer_ranks": layer_ranks,
+    }
+
+
+def collect_and_export_full_metrics(
+    model,
+    eval_batches,
+    model_name,
+    seq_len=128,
+    device=None,
+    fp16=True,
+    out_dir="results",
+    perf_metrics=None,
+    comp_metrics=None,
+    status="PASS",
+    elapsed_s=0.0,
+):
     """Capture, compute, and export comprehensive profiling metrics (ACL/NeurIPS standards)."""
     import json, time, os
     from pathlib import Path
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
-    metrics = {"model": model_name, "hardware": {}, "architecture": {}, "scalability": {}}
     dev = device if device is not None else next(model.parameters()).device
     device_type = "cuda" if dev.type == "cuda" else "cpu"
 
+    perf = perf_metrics or {}
+    comp = comp_metrics or {}
+
     # 1. Hardware Metrics
-    if device_type == "cuda":
-        torch.cuda.reset_peak_memory_stats(dev)
-    t0 = time.time()
-    total_tokens = 0
-    with torch.inference_mode():
-        for i, (bx, by) in enumerate(eval_batches):
-            if i >= 10:  # Sample first 10 batches for benchmark throughput profiling
-                break
-            with torch.autocast(device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
-                _ = model(**bx).logits
-            total_tokens += bx["input_ids"].numel()
-    elapsed = max(1e-4, time.time() - t0)
-    if device_type == "cuda":
-        metrics["hardware"]["peak_vram_mb"] = round(torch.cuda.max_memory_allocated(dev) / (1024 * 1024), 2)
-    else:
-        metrics["hardware"]["peak_vram_mb"] = 0.0
-    metrics["hardware"]["tokens_per_sec"] = round(total_tokens / elapsed, 2)
+    peak_vram = perf.get("peak_vram_mb")
+    tokens_sec = perf.get("tokens_per_sec")
+
+    if peak_vram is None or tokens_sec is None:
+        if device_type == "cuda":
+            torch.cuda.reset_peak_memory_stats(dev)
+        t0 = time.time()
+        total_tokens = 0
+        with torch.inference_mode():
+            for i, (bx, by) in enumerate(eval_batches):
+                if i >= 10:  # Sample first 10 batches for benchmark throughput profiling
+                    break
+                with torch.autocast(device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
+                    _ = model(**bx).logits
+                total_tokens += bx["input_ids"].numel()
+        elapsed = max(1e-4, time.time() - t0)
+        if peak_vram is None:
+            peak_vram = round(torch.cuda.max_memory_allocated(dev) / (1024 * 1024), 2) if device_type == "cuda" else 0.0
+        if tokens_sec is None:
+            tokens_sec = round(total_tokens / elapsed, 2)
 
     # 2. Span & Sparsity Metrics
     span_data = {}
     total_span, total_heads = 0.0, 0
-    for name, mod in model.named_modules():
+    for mod_name, mod in model.named_modules():
         if hasattr(mod, "span_logits"):
             max_s = getattr(mod, "max_span", seq_len)
             spans = (torch.sigmoid(mod.span_logits.detach().cpu()) * max_s).tolist()
-            span_data[name] = [round(s, 2) for s in spans]
+            span_data[mod_name] = [round(s, 2) for s in spans]
             total_span += sum(spans)
             total_heads += len(spans)
 
-    metrics["architecture"]["span_distribution"] = span_data
     if total_heads > 0:
         avg_span = total_span / total_heads
-        metrics["architecture"]["mean_span"] = round(avg_span, 2)
-        metrics["architecture"]["sparsity_ratio_percent"] = round((1.0 - (avg_span / max(1, seq_len))) * 100.0, 2)
+        mean_span = round(avg_span, 2)
+        sparsity_ratio_pct = round((1.0 - (avg_span / max(1, seq_len))) * 100.0, 2)
     else:
-        metrics["architecture"]["mean_span"] = float(seq_len)
-        metrics["architecture"]["sparsity_ratio_percent"] = 0.0
+        mean_span = float(seq_len)
+        sparsity_ratio_pct = 0.0
 
     # 3. Scalability (Dummy pass for VRAM scaling across lengths)
     scalability = {}
@@ -213,7 +367,46 @@ def collect_and_export_full_metrics(model, eval_batches, model_name, seq_len=128
             except Exception as e:
                 scalability[f"L_{test_len}_vram_mb"] = f"OOM or unsupported ({e})"
                 torch.cuda.empty_cache()
-    metrics["scalability"] = scalability
+    metrics = {
+        "model": model_name,
+        "performance": {
+            "accuracy_pct": perf.get("accuracy_pct"),
+            "f1_score": perf.get("f1_score"),
+            "f1_macro": perf.get("f1_macro"),
+            "precision": perf.get("precision"),
+            "recall": perf.get("recall"),
+            "val_loss": perf.get("val_loss"),
+            "status": status,
+            "elapsed_s": elapsed_s,
+        },
+        "efficiency": {
+            "total_params_before": comp.get("total_params_before"),
+            "total_params_after": comp.get("total_params_after"),
+            "trainable_recovery_params": comp.get("trainable_recovery_params", 0),
+            "compression_rate": comp.get("compression_rate", 1.0),
+            "compression_ratio_pct": comp.get("compression_ratio_pct", 0.0),
+            "flops_reduction_pct": comp.get("flops_reduction_pct", 0.0),
+            "num_compressed_layers": comp.get("num_compressed_layers", 0),
+            "num_fallback_layers": comp.get("num_fallback_layers", 0),
+            "num_injected_attention_layers": comp.get("num_injected_attention_layers", 0),
+            "lora_params": comp.get("lora_params", 0),
+            "avg_reconstruction_error": comp.get("avg_reconstruction_error"),
+            "weighted_reconstruction_error": comp.get("weighted_reconstruction_error"),
+            "per_layer_reconstruction_errors": comp.get("per_layer_reconstruction_errors", {}),
+            "per_layer_ranks": comp.get("per_layer_ranks", {}),
+        },
+        "hardware": {
+            "peak_vram_mb": peak_vram,
+            "tokens_per_sec": tokens_sec,
+        },
+        "architecture": {
+            "span_distribution": span_data,
+            "mean_span": mean_span,
+            "sparsity_ratio_percent": sparsity_ratio_pct,
+        },
+        "scalability": scalability,
+        "timestamp": datetime.now().isoformat(),
+    }
 
     # Export
     save_file = out_path / f"{model_name}_full_metrics.json"
@@ -223,15 +416,80 @@ def collect_and_export_full_metrics(model, eval_batches, model_name, seq_len=128
 
 
 @torch.inference_mode()
-def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True, precomputed_batches=None):
-    model.eval(); correct = total = 0
+def evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True, precomputed_batches=None):
+    """Evaluate model and return dictionary containing accuracy, F1, precision, recall, val loss, and VRAM/speed."""
+    model.eval()
+    correct = total = 0
+    total_loss = 0.0
+    num_batches = 0
+    all_preds = []
+    all_targets = []
     batches = precomputed_batches if precomputed_batches is not None else prepare_eval_batches(tokenizer, ds, name, seq_len, batch_size, device)
     device_type = "cuda" if device.type == "cuda" else "cpu"
+    loss_fn = torch.nn.CrossEntropyLoss()
+
+    if device_type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
+    t0 = time.monotonic()
+    total_tokens = 0
+
     for x, y in batches:
         with torch.autocast(device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
-            logits = model(**x).logits
-        correct += int((logits.argmax(-1) == y).sum()); total += len(y)
-    return 100.0 * correct / max(1, total)
+            outputs = model(**x)
+            logits = outputs.logits
+            if hasattr(outputs, "loss") and outputs.loss is not None:
+                loss_val = float(outputs.loss.item())
+            else:
+                loss_val = float(loss_fn(logits.view(-1, logits.size(-1)), y.to(logits.device).view(-1)).item())
+
+        preds = logits.argmax(-1).cpu()
+        targets = y.cpu()
+        correct += int((preds == targets).sum())
+        total += len(targets)
+        total_loss += loss_val
+        num_batches += 1
+        all_preds.extend(preds.tolist())
+        all_targets.extend(targets.tolist())
+        if "input_ids" in x:
+            total_tokens += x["input_ids"].numel()
+
+    eval_time = max(1e-4, time.monotonic() - t0)
+    tokens_per_sec = round(total_tokens / eval_time, 2)
+    peak_vram_mb = round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 2) if device_type == "cuda" else 0.0
+
+    acc = round(100.0 * correct / max(1, total), 2)
+    val_loss = round(total_loss / max(1, num_batches), 4)
+
+    try:
+        from sklearn.metrics import f1_score, precision_score, recall_score
+        unique_classes = set(all_targets)
+        if len(unique_classes) <= 2:
+            f1 = float(f1_score(all_targets, all_preds, average="binary", zero_division=0))
+        else:
+            f1 = float(f1_score(all_targets, all_preds, average="macro", zero_division=0))
+        f1_macro = float(f1_score(all_targets, all_preds, average="macro", zero_division=0))
+        precision = float(precision_score(all_targets, all_preds, average="macro", zero_division=0))
+        recall = float(recall_score(all_targets, all_preds, average="macro", zero_division=0))
+    except Exception as e:
+        LOG.warning("Failed computing classification metrics via sklearn: %s", e)
+        f1 = f1_macro = precision = recall = 0.0
+
+    return {
+        "accuracy_pct": acc,
+        "f1_score": round(f1, 4),
+        "f1_macro": round(f1_macro, 4),
+        "precision": round(precision, 4),
+        "recall": round(recall, 4),
+        "val_loss": val_loss,
+        "peak_vram_mb": peak_vram_mb,
+        "tokens_per_sec": tokens_per_sec,
+    }
+
+
+@torch.inference_mode()
+def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True, precomputed_batches=None):
+    res = evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=fp16, precomputed_batches=precomputed_batches)
+    return res["accuracy_pct"]
 
 
 def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16):
@@ -807,9 +1065,15 @@ def main():
         }
         effective_batch_size = _OOM_MODULE_BATCH_OVERRIDES.get(name, args.batch_size)
 
+        total_params_before = sum(p.numel() for p in base.parameters())
+        model_slug = Path(args.model).name.replace("/", "_").replace("\\", "_")
+
         try:
             def _run_candidate_pipeline():
                 nonlocal model, injected, path_name, had_nan
+                rec_steps = 0
+                trainable_recovery_params = 0
+
                 if name != "full":
                     if hasattr(model, "config") and model.config is not None:
                         if getattr(args, "lora_rank", None) is not None:
@@ -877,41 +1141,54 @@ def main():
                         from framework.utils.compat import get_recovery_params
                         trainable = get_recovery_params(model)
                         if trainable:
+                            trainable_recovery_params = sum(p.numel() for p in trainable)
                             had_nan = finetune_lora(
                                 model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
                                 args.precision == "fp16", lr=rec_lr, precomputed_batches=train_batches,
                                 optimizer_type=active_opt, muon_lr=args.muon_lr, adam_lr=args.adam_lr,
                                 weight_decay=args.weight_decay, timeout=effective_timeout,
                             )
+
+                total_params_after = sum(p.numel() for p in model.parameters())
+
                 try:
-                    eval_acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+                    perf_metrics = evaluate_comprehensive(
+                        model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device,
+                        fp16=args.precision == "fp16", precomputed_batches=eval_batches
+                    )
+                    eval_acc = perf_metrics["accuracy_pct"]
+                    comp_metrics = compute_compression_metrics(
+                        model, name, typ, total_params_before, total_params_after, trainable_recovery_params
+                    )
+
                     try:
-                        model_slug = Path(args.model).name.replace("/", "_").replace("\\", "_")
                         # 1. Comprehensive Profiling Metrics Export
                         collect_and_export_full_metrics(
                             model, eval_batches, f"{model_slug}_{name}",
                             seq_len=args.seq_len, device=device, fp16=args.precision == "fp16",
                             out_dir=str(out),
+                            perf_metrics=perf_metrics,
+                            comp_metrics=comp_metrics,
+                            status="PENDING",
+                            elapsed_s=round(time.monotonic() - t, 2),
                         )
                         # 2. Complete Weights & Adapter Checkpoint Export
                         weights_dir = out / "checkpoints" / name
                         weights_dir.mkdir(parents=True, exist_ok=True)
-                        
-                        # Save module-specific parameters (e.g. SVDLinear factors U, V, bias, span_logits, projections, compressors)
+
                         module_state = {}
                         for mod_name, mod in model.named_modules():
                             is_svd = mod.__class__.__name__ == "SVDLinear" or (hasattr(mod, "U") and hasattr(mod, "V"))
                             if is_svd or any(k in mod_name for k in [name, "span", "adapter", "compressor"]):
                                 for param_name, param in mod.named_parameters(recurse=False):
                                     module_state[f"{mod_name}.{param_name}"] = param.detach().cpu()
-                        
-                        # Save LoRA adapter weights and classification head if trained
+
                         lora_state = {
                             k: v.detach().cpu()
                             for k, v in model.state_dict().items()
                             if "lora_" in k or any(h in k for h in ["classifier.", "score.", "classification_head."])
                         }
-                        
+
                         checkpoint_payload = {
                             "module_name": name,
                             "model_name": str(args.model),
@@ -920,6 +1197,8 @@ def main():
                             "accuracy_pct": eval_acc,
                             "recovery_steps": rec_steps,
                             "timestamp": datetime.now().isoformat(),
+                            "performance_metrics": perf_metrics,
+                            "compression_metrics": comp_metrics,
                             "module_state_dict": module_state,
                             "lora_state_dict": lora_state,
                         }
@@ -927,9 +1206,24 @@ def main():
                         torch.save(checkpoint_payload, ckpt_file)
                         LOG.info("Successfully saved model weights and checkpoint to %s (module_params=%d, lora_params=%d)",
                                  ckpt_file, len(module_state), len(lora_state))
+
+                        # Export HuggingFace-compatible model artifacts for automated publishing
+                        hf_export_dir = weights_dir / "hf_export"
+                        hf_export_dir.mkdir(parents=True, exist_ok=True)
+                        try:
+                            if hasattr(model, "save_pretrained") and callable(model.save_pretrained):
+                                model.save_pretrained(hf_export_dir)
+                            else:
+                                torch.save(model.state_dict(), hf_export_dir / "pytorch_model.bin")
+                            if tokenizer is not None and hasattr(tokenizer, "save_pretrained"):
+                                tokenizer.save_pretrained(hf_export_dir)
+                            if hasattr(model, "config") and model.config is not None and hasattr(model.config, "to_json_file"):
+                                model.config.to_json_file(hf_export_dir / "config.json")
+                        except Exception as hf_save_err:
+                            LOG.debug("Optional HF model export info: %s", hf_save_err)
                     except Exception as me_err:
                         LOG.warning("Failed to collect/export full metrics or weights for %s: %s", name, me_err)
-                    return eval_acc
+                    return perf_metrics, comp_metrics
                 finally:
                     if model is not None:
                         try:
@@ -942,7 +1236,14 @@ def main():
             pool = ThreadPoolExecutor(max_workers=1)
             try:
                 future = pool.submit(_run_candidate_pipeline)
-                acc = future.result(timeout=effective_timeout)
+                pipe_res = future.result(timeout=effective_timeout)
+                if isinstance(pipe_res, tuple) and len(pipe_res) == 2:
+                    perf_metrics, comp_metrics = pipe_res
+                    acc = float(perf_metrics.get("accuracy_pct", 0.0))
+                else:
+                    acc = float(pipe_res)
+                    perf_metrics = {"accuracy_pct": acc}
+                    comp_metrics = {}
             except (TimeoutError, FuturesTimeoutError) as to_err:
                 raise TimeoutError(f"Module pipeline exceeded hard {effective_timeout}s timeout") from to_err
             finally:
@@ -961,7 +1262,8 @@ def main():
                 try:
                     torch.cuda.empty_cache()
                     safe_batch = max(8, args.batch_size // 2)
-                    acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, safe_batch, device), 2)
+                    perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, args.seq_len, safe_batch, device)
+                    acc = perf_metrics["accuracy_pct"]
                     err = f"batch_size reduced {args.batch_size}->{safe_batch} after CUDA OOM"
                     exc = None
                 except Exception as retry: exc = retry
@@ -970,11 +1272,12 @@ def main():
                 try:
                     model.float(); typ = "attention" if name in ATTENTION_REGISTRY else "compressor"
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-                    acc = round(evaluate(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, precomputed_batches=eval_batches), 2)
+                    perf_metrics = evaluate_comprehensive(model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device, precomputed_batches=eval_batches)
+                    acc = perf_metrics["accuracy_pct"]
                     err = f"fp32 retry: {exc}"
                     exc = None
                 except Exception as retry: exc = retry
-            
+
             # Check for explicit SKIP signal (e.g. inject_adaptive_svd returning None or copy_weights failing)
             if exc is not None and isinstance(exc, RuntimeError) and ("Could not extract all required weights" in str(exc) or "Could not instantiate attention class" in str(exc)):
                 status = f"SKIP_{family.upper()}_ARCHITECTURAL"
@@ -985,14 +1288,36 @@ def main():
                 err = f"{type(exc).__name__}: {exc}"
                 acc = 0.0
 
+        # Ensure metrics dictionaries are fully populated even on failure/skip
+        if "perf_metrics" not in locals() or not perf_metrics:
+            perf_metrics = {
+                "accuracy_pct": acc,
+                "f1_score": 0.0,
+                "f1_macro": 0.0,
+                "precision": 0.0,
+                "recall": 0.0,
+                "val_loss": 0.0,
+                "peak_vram_mb": 0.0,
+                "tokens_per_sec": 0.0,
+            }
+        if "comp_metrics" not in locals() or not comp_metrics:
+            comp_metrics = {
+                "total_params_before": total_params_before,
+                "total_params_after": total_params_before,
+                "trainable_recovery_params": 0,
+                "compression_rate": 1.0,
+                "compression_ratio_pct": 0.0,
+                "flops_reduction_pct": 0.0,
+                "num_compressed_layers": 0,
+                "num_fallback_layers": 0,
+                "avg_reconstruction_error": "",
+                "weighted_reconstruction_error": "",
+                "num_injected_attention_layers": 0,
+                "lora_params": 0,
+            }
 
         # -------------------------------------------------------------------------
         # STEP 0: Honest Three-Way Status Classification
-        # -------------------------------------------------------------------------
-        # 1. FAIL: Module crashed with unhandled exception during injection/train/eval
-        # 2. SKIP_<FAMILY>_*: Module timed out, has GQA/architectural mismatch, or
-        #    plateaued at/below the statistical chance threshold (majority + 3*SE)
-        # 3. PASS: Module executed cleanly and achieved accuracy meaningfully above chance
         # -------------------------------------------------------------------------
         if not status.startswith("SKIP_") and status != "FAIL":
             status = "PASS" if acc >= pass_threshold_pct else "PASS_LOW"
@@ -1002,17 +1327,128 @@ def main():
             elif acc < pass_threshold_pct:
                 err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
 
+        # Update per-module full metrics JSON with final classification status and elapsed time
+        json_path = out / f"{model_slug}_{name}_full_metrics.json"
+        if json_path.exists():
+            try:
+                with open(json_path, "r", encoding="utf-8") as jf:
+                    jdata = json.load(jf)
+                jdata["performance"]["status"] = status
+                jdata["performance"]["elapsed_s"] = round(time.monotonic() - t, 2)
+                with open(json_path, "w", encoding="utf-8") as jf:
+                    json.dump(jdata, jf, indent=4)
+            except Exception:
+                pass
 
-        row = {"module_name": name, "status": status, "accuracy_pct": acc,
-               "elapsed_s": round(time.monotonic()-t, 2), "error": err[:1000],
-               "path": path_name, "timestamp": datetime.now().isoformat()}
+        row = {
+            "module_name": name,
+            "status": status,
+            "accuracy_pct": acc,
+            "f1_score": perf_metrics.get("f1_score", 0.0),
+            "f1_macro": perf_metrics.get("f1_macro", 0.0),
+            "precision": perf_metrics.get("precision", 0.0),
+            "recall": perf_metrics.get("recall", 0.0),
+            "val_loss": perf_metrics.get("val_loss", 0.0),
+            "elapsed_s": round(time.monotonic() - t, 2),
+            "peak_vram_mb": perf_metrics.get("peak_vram_mb", 0.0),
+            "tokens_per_sec": perf_metrics.get("tokens_per_sec", 0.0),
+            "total_params_before": comp_metrics.get("total_params_before", total_params_before),
+            "total_params_after": comp_metrics.get("total_params_after", total_params_before),
+            "trainable_recovery_params": comp_metrics.get("trainable_recovery_params", 0),
+            "compression_rate": comp_metrics.get("compression_rate", 1.0),
+            "compression_ratio_pct": comp_metrics.get("compression_ratio_pct", 0.0),
+            "flops_reduction_pct": comp_metrics.get("flops_reduction_pct", 0.0),
+            "num_compressed_layers": comp_metrics.get("num_compressed_layers", 0),
+            "num_fallback_layers": comp_metrics.get("num_fallback_layers", 0),
+            "avg_reconstruction_error": comp_metrics.get("avg_reconstruction_error", ""),
+            "weighted_reconstruction_error": comp_metrics.get("weighted_reconstruction_error", ""),
+            "num_injected_attention_layers": comp_metrics.get("num_injected_attention_layers", 0),
+            "lora_params": comp_metrics.get("lora_params", 0),
+            "error": err[:1000],
+            "path": path_name,
+            "timestamp": datetime.now().isoformat(),
+        }
         summary_dict[name] = row
         with path.open("w", newline="", encoding="utf8") as f:
-            w = csv.DictWriter(f, fieldnames=FIELDS)
+            w = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
             w.writeheader()
             for m_name in summary_dict:
                 w.writerow(summary_dict[m_name])
-        LOG.info("[%d/%d] %s -> %s %.2f%%", n, len(names), name, status, acc)
+
+        f1_disp = row["f1_score"] if row.get("f1_score") not in ("", None) else "N/A"
+        vram_disp = row["peak_vram_mb"] if row.get("peak_vram_mb") not in ("", None) else "N/A"
+        LOG.info("[%d/%d] %s -> %s %.2f%% (F1: %s, Peak VRAM: %s MB)",
+                 n, len(names), name, status, acc, f1_disp, vram_disp)
+
+        # Automated export to Hugging Face and GitHub for successful runs
+        try:
+            from Codes.framework.utils.hf_git_exporter import handle_benchmark_run_export
+            weights_dir = out / "checkpoints" / name
+            hf_export_dir = weights_dir / "hf_export"
+            handle_benchmark_run_export(
+                model=None,
+                tokenizer=tokenizer,
+                model_name=Path(args.model).name,
+                module_name=name,
+                dataset_name=args.dataset,
+                perf_metrics=perf_metrics,
+                comp_metrics=comp_metrics,
+                status=status,
+                pass_threshold_pct=float(pass_threshold_pct),
+                baseline_acc=base_benchmark_acc if name != "full" else None,
+                config_dict=vars(args) if hasattr(args, "__dict__") else {},
+                out_dir=out,
+                allow_pass_low=False,
+                export_dir=hf_export_dir if hf_export_dir.exists() else None,
+            )
+        except Exception as export_exc:
+            LOG.warning("Automated export exception for %s: %s", name, export_exc)
+
         del model; gc.collect(); torch.cuda.empty_cache()
+
+    # -------------------------------------------------------------------------
+    # Final Compact Summary Table
+    # -------------------------------------------------------------------------
+    summary_rows = []
+    for m_name, r in summary_dict.items():
+        acc_val = float(r.get("accuracy_pct", 0.0))
+        delta_acc = acc_val - base_benchmark_acc if m_name != "full" else 0.0
+        f1_val = r.get("f1_score", "N/A")
+        try:
+            f1_str = f"{float(f1_val):.4f}" if f1_val not in ("", "N/A", None) else "N/A"
+        except (ValueError, TypeError):
+            f1_str = str(f1_val)
+
+        comp_rate = r.get("compression_rate", "1.00")
+        try:
+            comp_rate_str = f"{float(comp_rate):.2f}x" if comp_rate not in ("", "N/A", None) else "1.00x"
+        except (ValueError, TypeError):
+            comp_rate_str = str(comp_rate)
+
+        vram = r.get("peak_vram_mb", "N/A")
+        try:
+            vram_str = f"{float(vram):.1f} MB" if vram not in ("", "N/A", None) else "N/A"
+        except (ValueError, TypeError):
+            vram_str = str(vram)
+
+        summary_rows.append({
+            "Module": m_name,
+            "Status": r.get("status", "N/A"),
+            "Accuracy": f"{acc_val:.2f}%",
+            "Δ Acc": f"{delta_acc:+.2f}%" if m_name != "full" else "0.00% (base)",
+            "F1": f1_str,
+            "Compressed Layers": r.get("num_compressed_layers", "0"),
+            "Compression Rate": comp_rate_str,
+            "Peak VRAM": vram_str,
+            "Time (s)": f"{float(r.get('elapsed_s', 0.0)):.1f}",
+        })
+
+    import pandas as pd
+    summary_df = pd.DataFrame(summary_rows)
+    LOG.info("=" * 80)
+    LOG.info("BENCHMARK QUALITY SWEEP SUMMARY TABLE (%s on %s)", Path(args.model).name, args.dataset)
+    LOG.info("=" * 80)
+    LOG.info("\n%s", summary_df.to_string(index=False))
+    LOG.info("=" * 80)
 
 if __name__ == "__main__": main()

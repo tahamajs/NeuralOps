@@ -186,6 +186,10 @@ for m in models:
     status = "UNKNOWN" if res.returncode == 0 else f"EXIT_{res.returncode}"
     num_compressed_layers = "N/A"
     
+    f1 = None
+    comp_rate = None
+    peak_vram = None
+
     csv_path = Path(m["summary_csv"])
     if csv_path.exists():
         try:
@@ -200,28 +204,48 @@ for m in models:
                     if not row.empty:
                         acc = float(row[col].values[-1])
                         status = str(row["status"].values[-1])
+                        if "f1_score" in row.columns and not pd.isna(row["f1_score"].values[-1]):
+                            try: f1 = float(row["f1_score"].values[-1])
+                            except Exception: pass
+                        if "compression_rate" in row.columns and not pd.isna(row["compression_rate"].values[-1]):
+                            try: comp_rate = float(row["compression_rate"].values[-1])
+                            except Exception: pass
+                        if "peak_vram_mb" in row.columns and not pd.isna(row["peak_vram_mb"].values[-1]):
+                            try: peak_vram = float(row["peak_vram_mb"].values[-1])
+                            except Exception: pass
+                        if "num_compressed_layers" in row.columns and not pd.isna(row["num_compressed_layers"].values[-1]):
+                            num_compressed_layers = str(row["num_compressed_layers"].values[-1])
         except Exception as e:
             print(f"Error reading summary CSV for {m['name']}: {e}", flush=True)
 
     stats_path = Path(m.get("stats_json", ""))
-    if stats_path.exists():
+    if stats_path.exists() and num_compressed_layers == "N/A":
         try:
             with open(stats_path, "r", encoding="utf-8") as sf:
                 s_data = json.load(sf)
                 num_compressed_layers = s_data.get("num_compressed_layers", "N/A")
         except Exception as e:
             print(f"Error reading stats JSON for {m['name']}: {e}", flush=True)
-            
+
+    delta_acc_str = f"{(acc - baseline_acc):+.2f}%" if (acc is not None and baseline_acc is not None) else "N/A"
+    f1_str = f"{f1:.4f}" if f1 is not None else "N/A"
+    comp_rate_str = f"{comp_rate:.2f}x" if comp_rate is not None else "1.00x"
+    vram_str = f"{peak_vram:.1f} MB" if peak_vram is not None else "N/A"
+
     final_stats.append({
         "Model": m["name"],
         "Exit Code": res.returncode,
         "Baseline Acc": f"{baseline_acc:.2f}%" if baseline_acc is not None else "N/A",
         "AASVD Acc": f"{acc:.2f}%" if acc is not None else "N/A",
+        "Δ Acc": delta_acc_str,
+        "F1": f1_str,
         "Status": status,
         "Compressed Layers": num_compressed_layers,
+        "Comp Rate": comp_rate_str,
+        "Peak VRAM": vram_str,
         "Time (s)": f"{elapsed:.1f}",
     })
-    print(f"\n>>> FINISHED MODEL: {m['name']} in {elapsed:.1f}s (Exit: {res.returncode}, Status: {status}, Compressed Layers: {num_compressed_layers})", flush=True)
+    print(f"\n>>> FINISHED MODEL: {m['name']} in {elapsed:.1f}s (Exit: {res.returncode}, Status: {status}, Compressed Layers: {num_compressed_layers}, Comp Rate: {comp_rate_str})", flush=True)
 
 print("\n" + "=" * 80, flush=True)
 print("4-MODEL BENCHMARK RESULTS SUMMARY (AASVD on GPU)", flush=True)
