@@ -424,8 +424,10 @@ class AASVDCompressor(BaseCompressor):
                         else contextlib.nullcontext()
                     )
                     with autocast_ctx:
+                        target_mod = getattr(module, "base_layer", module)
                         cls_name = module.__class__.__name__.lower()
-                        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                        target_cls = target_mod.__class__.__name__.lower()
+                        is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
                         in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
                         x_fp32 = x.float()
                         x_flat = x_fp32.reshape(-1, in_f)
