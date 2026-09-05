@@ -242,6 +242,8 @@ class KroneckerLinear(nn.Module):
         n1: Optional[int] = None,
         m2: Optional[int] = None,
         n2: Optional[int] = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> "KroneckerLinear":
         """
         Decompose a pretrained nn.Linear or Conv1D layer into Kronecker factors A and B
@@ -275,6 +277,8 @@ class KroneckerLinear(nn.Module):
             n2=n2,
             dtype=target_dtype,
             device=target_device,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
         )
 
         W_norm = torch.norm(weight, p="fro").item()
