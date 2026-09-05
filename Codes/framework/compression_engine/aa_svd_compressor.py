@@ -155,6 +155,15 @@ class SVDLinear(nn.Module):
             self.U.data[:, :r].copy_(U_factor[:, :r].to(device=self.U.device, dtype=self.U.dtype))
             self.V.data[:r, :].copy_(V_factor[:r, :].to(device=self.V.device, dtype=self.V.dtype))
 
+    def __iter__(self):
+        """Allow tuple unpacking: svd_layer, err, r = compressor.compress_linear(...)."""
+        yield self
+        yield getattr(self, "reconstruction_error", 0.0)
+        yield getattr(self, "rank", 0)
+
+    def __getitem__(self, idx: int) -> Any:
+        return (self, getattr(self, "reconstruction_error", 0.0), getattr(self, "rank", 0))[idx]
+
 
 @COMPRESSOR_REGISTRY.register("aasvd")
 @COMPRESSOR_REGISTRY.register("aa_svd")
@@ -300,10 +309,12 @@ class AASVDCompressor(BaseCompressor):
             if layer.bias is not None:
                 svd_layer.bias.data.copy_(layer.bias.data)
 
-            return svd_layer, err, r
+            svd_layer.reconstruction_error = err
+            svd_layer.rank = r
+            return svd_layer
         except Exception as e:
             logger.warning("AASVD factorization failed on linear: %s", e)
-            return None, 1.0, r
+            return None
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes streaming covariance estimation over calibration batches and factorizes target layers."""
