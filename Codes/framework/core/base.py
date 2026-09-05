@@ -110,6 +110,13 @@ class BaseCompressor:
         self.kwargs = kwargs
         self._original_params = self._count_params(model)
 
+    def __call__(self, *args, **kwargs) -> Any:
+        """Allow compressor instance to act as a callable model forward wrapper."""
+        if not getattr(self, "_compressed_once", False):
+            self.compress()
+            self._compressed_once = True
+        return self.model(*args, **kwargs)
+
     @abstractmethod
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Return (compressed_model, statistics)."""
