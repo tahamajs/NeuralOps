@@ -111,26 +111,27 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     
     Returns LoRA adapter parameters, classification head parameters,
     and all parameters of injected attention/adapter/compressor modules to allow them
-    to adapt to the backbone representation.
     """
+    trainable_params = []
     has_lora = any(any(tag in n.lower() for tag in (".lora_", ".lora_a", ".lora_b")) for n, _ in model.named_parameters())
+
     for name, param in model.named_parameters():
         n_low = name.lower()
+        # Strictly keep base SVD factors and base projection layers frozen when LoRA is present
+        if has_lora and (any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v", ".bias")) or ".base_layer." in n_low or ".lin1." in n_low or ".lin2." in n_low):
+            continue
+
         if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt")):
             trainable_params.append(param)
         elif any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
             trainable_params.append(param)
-        elif any(tag in n_low for tag in (".inner.", "attention.", "self_attn.", ".attn.", "swa_mamba", "kernel_linear")):
-            if has_lora and (any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v")) or ".lin1." in n_low or ".lin2." in n_low):
-                continue
+        elif not has_lora and any(tag in n_low for tag in (".inner.", "attention.", "self_attn.", ".attn.", "swa_mamba", "kernel_linear")):
             trainable_params.append(param)
-        elif any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
+        elif not has_lora and any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
                                           ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
                                           ".comp_", ".svd_", ".cur_", ".salr", ".direct_svd", ".sparse_proj",
                                           ".cores", ".centroids", ".weight_table", ".alpha", ".gate",
                                           ".proj_k", ".proj_v")):
-            if has_lora and any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v")):
-                continue
             trainable_params.append(param)
 
     for name, param in model.named_parameters():
