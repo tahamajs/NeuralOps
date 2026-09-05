@@ -166,7 +166,7 @@ class A3Compressor(BaseCompressor):
         target_attention_only: bool = False,
         max_error: float = 0.20,
         max_retries: int = 3,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         normalize_scale: bool = True,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
@@ -433,16 +433,17 @@ class A3Compressor(BaseCompressor):
                 step = max(8, (min(in_f, out_f) - current_r) // remaining)
                 current_r = min(current_r + step, min(in_f, out_f))
 
-        # Fix 3: Validation threshold check - Enforce max_error Abort
+        # Fix 3: Validation threshold check - Enforce max_error Abort if fallback_to_original is True
         if best_err > self.max_error:
             logger.warning(
-                "A3 compression for %s exceeded max_error (%0.3f > %0.3f) at rank %d. Skipping layer.",
+                "A3 compression for %s exceeded max_error (%0.3f > %0.3f) at rank %d.",
                 name,
                 best_err,
                 self.max_error,
                 best_r,
             )
-            return None, best_err, best_r  # Mandatory abort
+            if self.fallback_to_original:
+                return None, best_err, best_r
 
         # Construct factorized layer with Safe Device Initialization (Fix 5)
         U_final, V_final = best_layer_factors
