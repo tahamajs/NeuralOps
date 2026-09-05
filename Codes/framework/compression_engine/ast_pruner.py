@@ -316,7 +316,7 @@ class ASTPruner(BaseCompressor):
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes AST 2:4 structured pruning with PCA rotation and empirical Fisher calibration."""
-        from framework.utils.compat import replace_module
+        from framework.core.model_utils import replace_module
 
         cov_map, fisher_map = self._collect_fisher_and_activations()
         self.compressed_layers = []
