@@ -1,24 +1,144 @@
 """
 MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).
+Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
 
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
+
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
+
 from framework.core.base import BaseAttention
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("mixattention_moska")
-# alias fasa removed
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim <= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+
+    return q, k
+
+
+class LoRALinear(nn.Module):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -> None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank > 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank > 0:
+            if self.lora_A is not None:
+                self.lora_A.requires_grad = True
+            if self.lora_B is not None:
+                self.lora_B.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out
+
+
+@ATTENTION_REGISTRY.register("mixattention_moska", supports_causal=True, supports_gqa=True)
 class MixAttentionMoSKA(BaseAttention):
     r"""
     MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).
     Prunes key-value tokens based on variance importance while strictly protecting [CLS] (index 0).
+    Hardened for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
     """
+
+    supports_causal: bool = True
+    supports_gqa: bool = True
 
     def __init__(
         self,
@@ -26,6 +146,9 @@ class MixAttentionMoSKA(BaseAttention):
         rank: Optional[int] = 64,
         fasa_keep_ratio: float = 0.5,
         pretrained_attn: Optional[nn.Module] = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -35,39 +158,209 @@ class MixAttentionMoSKA(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.fasa_keep_ratio: float = fasa_keep_ratio
 
-        self.W_q = nn.Linear(self.dim, self.all_head_size, bias=True)
-        self.W_k = nn.Linear(self.dim, self.all_head_size, bias=True)
-        self.W_v = nn.Linear(self.dim, self.all_head_size, bias=True)
-        self.out_proj = nn.Linear(self.all_head_size, self.dim, bias=True)
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None)) if config else None
+        if cfg_kv is not None:
+            self.num_kv_heads = int(cfg_kv)
+        elif kwargs.get("num_kv_heads") is not None:
+            self.num_kv_heads = int(kwargs["num_kv_heads"])
+        else:
+            self.num_kv_heads = self.num_heads
+
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_repeat: int = self.num_heads // self.num_kv_heads
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+
+        self.lora_rank: int = lora_rank
+        self.lora_alpha: float = lora_alpha
+
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            self.is_decoder = (
+                getattr(config, "is_decoder", False)
+                or getattr(config, "causal", False)
+                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                if config else False
+            )
+
+        self.is_nested_encoder: bool = False
+
+        self.W_q = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
+        self.W_k = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
+        self.W_v = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
+
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def copy_weights(self, pretrained_attn: nn.Module) -> None:
-        with torch.no_grad():
-            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
-            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
-            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
-            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+    @property
+    def query(self) -> LoRALinear:
+        return self.W_q
 
-            if q_src is not None and hasattr(q_src, "weight"):
-                self.W_q.weight.copy_(q_src.weight)
-                if q_src.bias is not None and self.W_q.bias is not None:
-                    self.W_q.bias.copy_(q_src.bias)
-            if k_src is not None and hasattr(k_src, "weight"):
-                self.W_k.weight.copy_(k_src.weight)
-                if k_src.bias is not None and self.W_k.bias is not None:
-                    self.W_k.bias.copy_(k_src.bias)
-            if v_src is not None and hasattr(v_src, "weight"):
-                self.W_v.weight.copy_(v_src.weight)
-                if v_src.bias is not None and self.W_v.bias is not None:
-                    self.W_v.bias.copy_(v_src.bias)
-            if out_src is not None and hasattr(out_src, "weight"):
-                self.out_proj.weight.copy_(out_src.weight)
-                if out_src.bias is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(out_src.bias)
+    @property
+    def key(self) -> LoRALinear:
+        return self.W_k
+
+    @property
+    def value(self) -> LoRALinear:
+        return self.W_v
+
+    def copy_weights(self, src: Any) -> None:
+        from framework.core.adapters import UniversalAdapter
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        # 1. UniversalAdapter extraction
+        for proj in ["q", "k", "v", "o"]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                if w is not None:
+                    extracted[proj] = (w, b)
+            except Exception:
+                pass
+
+        # 2. GPT-2 Fused c_attn Conv1D handling
+        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            weight = src.c_attn.weight.data
+            bias = getattr(src.c_attn, "bias", None)
+            bias_data = bias.data if bias is not None else None
+            if weight.dim() == 2 and weight.shape[1] == 3 * self.dim:
+                weight = weight.t()
+            split_size = weight.shape[0] // 3
+            q_w = weight[:split_size, :]
+            k_w = weight[split_size : 2 * split_size, :]
+            v_w = weight[2 * split_size :, :]
+            q_b = bias_data[:split_size] if bias_data is not None else None
+            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+            v_b = bias_data[2 * split_size :] if bias_data is not None else None
+            extracted["q"] = (q_w, q_b)
+            extracted["k"] = (k_w, k_b)
+            extracted["v"] = (v_w, v_b)
+
+        if hasattr(src, "c_proj") and extracted["o"][0] is None:
+            w_o = src.c_proj.weight.data
+            if w_o.dim() == 2 and w_o.shape[0] != self.dim and w_o.shape[1] == self.dim:
+                w_o = w_o.t()
+            b_o = getattr(src.c_proj, "bias", None)
+            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+
+        # 3. RoBERTa / BERT Nested Encoder handling
+        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            s = getattr(src, "self")
+            if hasattr(s, "query"):
+                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+            if hasattr(s, "key"):
+                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+            if hasattr(s, "value"):
+                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+
+        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+            dense = src.output.dense
+            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
+
+        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
+        named_map = {
+            "q": ["q_proj", "q_lin", "query"],
+            "k": ["k_proj", "k_lin", "key"],
+            "v": ["v_proj", "v_lin", "value"],
+            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+        }
+        for proj, names in named_map.items():
+            if extracted[proj][0] is None:
+                for name in names:
+                    if hasattr(src, name):
+                        layer = getattr(src, name)
+                        if hasattr(layer, "weight"):
+                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            break
+
+        # Detect nested encoder architecture
+        cls_name = src.__class__.__name__
+        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        self.is_nested_encoder = (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            or (cls_name.endswith("SelfAttention") and not has_out_proj)
+        ) and not has_out_proj
+
+        # Check required weights
+        missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
+        if not self.is_nested_encoder and extracted["o"][0] is None:
+            missing.append("o")
+        if missing:
+            raise RuntimeError(f"MixAttentionMoSKA missing required weights for projections: {missing}")
+
+        # Frobenius norm validation
+        for proj_key in ["q", "k", "v"]:
+            w = extracted[proj_key][0]
+            if w is not None:
+                norm = torch.linalg.norm(w.float())
+                if norm < 1e-4:
+                    raise RuntimeError(f"MixAttentionMoSKA extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+
+        if extracted["o"][0] is not None:
+            norm_o = torch.linalg.norm(extracted["o"][0].float())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"MixAttentionMoSKA extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+
+        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t()
+            return w
+
+        # Copy into projection modules
+        with torch.no_grad():
+            for proj_key, target in [("q", self.W_q), ("k", self.W_k), ("v", self.W_v), ("o", self.out_proj)]:
+                w, b = extracted[proj_key]
+                if w is not None:
+                    in_dim = self.all_head_size if proj_key == "o" else self.dim
+                    w_oriented = _orient(w, in_dim)
+                    target_w = target.weight
+                    out_d, in_d = target_w.shape
+                    src_out, src_in = w_oriented.shape
+
+                    if proj_key in ("k", "v"):
+                        if src_out == out_d:
+                            target_w.data.copy_(w_oriented)
+                            if b is not None and target.bias is not None:
+                                target.bias.data.copy_(b)
+                        elif src_out > out_d and src_out % out_d == 0:
+                            rep = src_out // out_d
+                            target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
+                            if b is not None and target.bias is not None:
+                                target.bias.data.copy_(b.view(out_d, rep).mean(dim=1))
+                        elif src_out < out_d and out_d % src_out == 0:
+                            rep = out_d // src_out
+                            target_w.data.copy_(w_oriented.repeat(rep, 1))
+                            if b is not None and target.bias is not None:
+                                target.bias.data.copy_(b.repeat(rep))
+                        else:
+                            target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w_oriented[:min(out_d, src_out), :min(in_d, src_in)])
+                            if b is not None and target.bias is not None:
+                                target.bias.data[:min(len(target.bias), len(b))].copy_(b[:min(len(target.bias), len(b))])
+                    else:
+                        target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w_oriented[:min(out_d, src_out), :min(in_d, src_in)])
+                        if b is not None and target.bias is not None:
+                            b_val = b.data if isinstance(b, nn.Parameter) else b
+                            target.bias.data[:min(len(target.bias), len(b_val))].copy_(b_val[:min(len(target.bias), len(b_val))])
+                elif proj_key == "o" and self.is_nested_encoder:
+                    min_d = min(target.weight.shape[0], target.weight.shape[1])
+                    target.weight.data.zero_()
+                    target.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+                    if target.bias is not None:
+                        target.bias.data.zero_()
+
+                target.freeze_base_weights()
+
+        if hasattr(src, "is_decoder"):
+            self.is_decoder = bool(src.is_decoder)
 
     def _fasa_prune(
         self, k: torch.Tensor, v: torch.Tensor, mask: Optional[torch.Tensor] = None
@@ -117,33 +410,130 @@ class MixAttentionMoSKA(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        mask = kwargs.get('mask', None)
+        mask = kwargs.get("mask", None)
         if attention_mask is None and mask is not None:
             attention_mask = mask
 
         x = hidden_states
         B, L, D = x.shape
         H = self.num_heads
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        L_kv = kv_input.shape[1]
+
         q = self.W_q(x).view(B, L, H, self.head_dim).permute(0, 2, 1, 3)
-        k = self.W_k(x).view(B, L, H, self.head_dim).permute(0, 2, 1, 3)
-        v = self.W_v(x).view(B, L, H, self.head_dim).permute(0, 2, 1, 3)
+        k = self.W_k(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v = self.W_v(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        k_p, v_p, p_mask = self._fasa_prune(k, v, attention_mask)
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        if self.num_kv_heads < self.num_heads:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
         scale = 1.0 / math.sqrt(self.head_dim)
-        attn_scores = torch.matmul(q, k_p.transpose(-2, -1)) * scale
+        is_causal = bool(self.is_decoder and not is_cross and L > 1)
 
-        if p_mask is not None:
-            pad_mask = (p_mask == 0).unsqueeze(1).unsqueeze(2)
-            attn_scores = attn_scores.masked_fill(pad_mask, -10000.0)
+        # In causal decoding mode, do not prune to preserve strict lower-triangular causality
+        if is_causal or is_cross:
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+            if is_causal:
+                causal_mask = torch.triu(
+                    torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
+                    diagonal=1,
+                ).unsqueeze(0).unsqueeze(0)
+                scores = scores + causal_mask
 
-        attn_weights = F.softmax(attn_scores, dim=-1)
-        attn_weights = self.dropout(attn_weights)
-        if head_mask is not None:
-            attn_weights = attn_weights * head_mask
+            if eff_mask is not None:
+                if eff_mask.dim() == 2:
+                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                elif eff_mask.dim() == 3:
+                    scores = scores + eff_mask.unsqueeze(1).float()
+                elif eff_mask.dim() == 4:
+                    scores = scores + eff_mask.float()
 
-        out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
-        output = self.out_proj(out)
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            attn_weights = F.softmax(scores, dim=-1).to(dtype)
+            attn_weights = self.dropout(attn_weights)
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(1)
+                attn_weights = attn_weights * head_mask
+
+            out = torch.matmul(attn_weights, v).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+        else:
+            k_p, v_p, p_mask = self._fasa_prune(k, v, eff_mask)
+            attn_scores = torch.matmul(q.float(), k_p.float().transpose(-2, -1)) * scale
+
+            if p_mask is not None:
+                pad_mask = (p_mask == 0).unsqueeze(1).unsqueeze(2)
+                attn_scores = attn_scores.masked_fill(pad_mask, -10000.0)
+
+            attn_scores = torch.nan_to_num(attn_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            attn_weights = F.softmax(attn_scores, dim=-1).to(dtype)
+            attn_weights = self.dropout(attn_weights)
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(1)
+                attn_weights = attn_weights * head_mask
+
+            out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        if self.is_nested_encoder:
+            output = out
+        else:
+            output = self.out_proj(out)
+
         return output, (attn_weights if output_attentions else None)
+
+
+@ATTENTION_REGISTRY.register("mixattention_moska_inject")
+def inject_mixattention_moska(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 6,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> MixAttentionMoSKA:
+    r"""Injection hook for MixAttentionMoSKA."""
+    keep_ratio = getattr(comp_config, "fasa_keep_ratio", 0.5) if comp_config is not None else 0.5
+    new_attn = MixAttentionMoSKA(config=model_config, fasa_keep_ratio=keep_ratio)
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    if src_attn is not None:
+        try:
+            new_attn.copy_weights(src_attn)
+        except Exception:
+            pass
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+    if hasattr(layer, "attention"):
+        layer.attention = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
+    return new_attn

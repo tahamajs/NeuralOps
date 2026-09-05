@@ -3,19 +3,65 @@ SALT Attention: Singular Value Adaptation with Low-Rank Tuning.
 
 Parameter-efficient adaptation mechanism for transformer attention projections combining
 orthogonal singular vector preservation, singular value rescaling ($\gamma$), and additive low-rank adapters ($A B$).
+Hardened for multi-architecture production deployment.
 """
 
-from typing import Any, Optional, Tuple
 import math
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim <= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+
+    return q, k
 
 
 class SALTLinear(nn.Module):
@@ -56,7 +102,7 @@ class SALTLinear(nn.Module):
 
         self.gamma = nn.Parameter(torch.ones(r, device=target_dev, dtype=target_dtype))
         self.A = nn.Parameter(torch.randn(out_features, r, device=target_dev, dtype=target_dtype) * 0.01)
-        self.B = nn.Parameter(torch.zeros(r, in_features, device=target_dev, dtype=target_dtype))  # Zero init for exact initial preservation
+        self.B = nn.Parameter(torch.zeros(r, in_features, device=target_dev, dtype=target_dtype))
 
         if original_bias is not None:
             self.bias = nn.Parameter(original_bias.clone().to(device=target_dev, dtype=target_dtype))
@@ -79,33 +125,64 @@ class SALTLinear(nn.Module):
         W = (W_svd + W_lora).to(dtype=x.dtype)
         return F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None)
 
+    def freeze_base_weights(self) -> None:
+        """Buffers U, S, Vt are non-trainable by construction. Gamma and A, B remain trainable."""
+        pass
 
-@ATTENTION_REGISTRY.register("salt_attention")
-@ATTENTION_REGISTRY.register("salt")
+
+@ATTENTION_REGISTRY.register("salt_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("salt", supports_causal=True, supports_gqa=True)
 class SALTAttention(BaseAttention):
     r"""
     SALT Attention module replacing standard linear projections with SALTLinear.
-
-    Mathematical Formulation:
-        1. SVD & LoRA Factorized Linear Projections:
-           $$Q = X W_Q, \quad K = X W_K, \quad V = X W_V$$
-        2. Scaled Dot-Product Attention:
-           $$O = \operatorname{Softmax}\left(\frac{Q K^\top}{\sqrt{d}} + M\right) V W_O$$
+    Hardened for production across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
     """
+
+    supports_causal: bool = True
+    supports_gqa: bool = True
 
     def __init__(
         self,
         config: Any,
         rank: Optional[int] = None,
         pretrained_attn: Optional[nn.Module] = None,
+        is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", 4)
-        hidden_size: int = getattr(config, "hidden_size", 768)
-        self.head_dim: int = hidden_size // self.num_heads
+        self.num_heads: int = getattr(
+            config, "num_attention_heads", getattr(config, "num_heads", kwargs.get("num_attention_heads", 4))
+        )
+        self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.head_dim: int = getattr(
+            config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
+
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+        if cfg_kv is not None:
+            self.num_kv_heads = int(cfg_kv)
+        elif kwargs.get("num_kv_heads") is not None:
+            self.num_kv_heads = int(kwargs["num_kv_heads"])
+        else:
+            self.num_kv_heads = self.num_heads
+
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_repeat: int = self.num_heads // self.num_kv_heads
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+
         self.rank: int = rank if rank is not None else getattr(config, "salt_rank", getattr(config, "rank", 16))
+
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            self.is_decoder = (
+                getattr(config, "is_decoder", False)
+                or getattr(config, "causal", False)
+                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+            )
+
+        self.is_nested_encoder: bool = False
 
         dropout_p = getattr(
             config,
@@ -118,51 +195,182 @@ class SALTAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        # Projections
+        self.q_proj = SALTLinear(self.hidden_size, self.all_head_size, self.rank)
+        self.k_proj = SALTLinear(self.hidden_size, self.kv_head_size, self.rank)
+        self.v_proj = SALTLinear(self.hidden_size, self.kv_head_size, self.rank)
+        self.out_proj = SALTLinear(self.all_head_size, self.hidden_size, self.rank)
+
         if pretrained_attn is not None:
-            self.init_from_pretrained(pretrained_attn)
-        else:
-            self.q_proj = SALTLinear(hidden_size, self.all_head_size, self.rank)
-            self.k_proj = SALTLinear(hidden_size, self.all_head_size, self.rank)
-            self.v_proj = SALTLinear(hidden_size, self.all_head_size, self.rank)
-            self.out_proj = SALTLinear(self.all_head_size, hidden_size, self.rank)
+            self.copy_weights(pretrained_attn)
 
-    def init_from_pretrained(self, src: Any) -> None:
-        r"""Initialize SALTLinear projections directly from pretrained module."""
-        from framework.core.adapters import UniversalAdapter
-        hidden_size = self.num_heads * self.head_dim
+    @property
+    def query(self) -> SALTLinear:
+        return self.q_proj
 
-        for proj, attr in [("q", "q_proj"), ("k", "k_proj"), ("v", "v_proj"), ("o", "out_proj")]:
-            try:
-                w, b = UniversalAdapter.get_weight_bias(src, proj)
-                # GPT-2 fused c_attn: weight is [3*hidden, hidden] (after Conv1D transpose).
-                # UniversalAdapter returns the full fused tensor for q/k/v since 'c_attn'
-                # appears in the 'q' alias list.  Slice the correct portion out.
-                if proj in ("q", "k", "v") and w.size(0) == 3 * self.all_head_size:
-                    slice_map = {
-                        "q": slice(None, self.all_head_size),
-                        "k": slice(self.all_head_size, 2 * self.all_head_size),
-                        "v": slice(2 * self.all_head_size, None),
-                    }
-                    w = w[slice_map[proj]].contiguous()
-                    if b is not None:
-                        b = b[slice_map[proj]].contiguous()
-                mod = SALTLinear(w.size(1), w.size(0), self.rank, original_weight=w, original_bias=b)
-                mod.to(device=w.device, dtype=w.dtype)
-                setattr(self, attr, mod)
-            except Exception:
-                # Infer device/dtype from src so fallback stays on GPU, not CPU
-                _params = list(src.parameters()) if hasattr(src, "parameters") else []
-                _fb_dev = _params[0].device if _params else None
-                _fb_dtype = _params[0].dtype if _params else torch.float32
-                fb = SALTLinear(hidden_size, hidden_size, self.rank)
-                if _fb_dev is not None:
-                    fb = fb.to(device=_fb_dev, dtype=_fb_dtype)
-                setattr(self, attr, fb)
+    @property
+    def key(self) -> SALTLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> SALTLinear:
+        return self.v_proj
 
     def copy_weights(self, src: Any) -> None:
-        r"""Universal adapter weight copying."""
-        self.init_from_pretrained(src)
+        from framework.core.adapters import UniversalAdapter
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        # 1. UniversalAdapter extraction
+        for proj in ["q", "k", "v", "o"]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                if w is not None:
+                    extracted[proj] = (w, b)
+            except Exception:
+                pass
+
+        # 2. GPT-2 Fused c_attn Conv1D handling
+        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            weight = src.c_attn.weight.data
+            bias = getattr(src.c_attn, "bias", None)
+            bias_data = bias.data if bias is not None else None
+            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+                weight = weight.t()
+            split_size = weight.shape[0] // 3
+            q_w = weight[:split_size, :]
+            k_w = weight[split_size : 2 * split_size, :]
+            v_w = weight[2 * split_size :, :]
+            q_b = bias_data[:split_size] if bias_data is not None else None
+            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+            v_b = bias_data[2 * split_size :] if bias_data is not None else None
+            extracted["q"] = (q_w, q_b)
+            extracted["k"] = (k_w, k_b)
+            extracted["v"] = (v_w, v_b)
+
+        if hasattr(src, "c_proj") and extracted["o"][0] is None:
+            w_o = src.c_proj.weight.data
+            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+                w_o = w_o.t()
+            b_o = getattr(src.c_proj, "bias", None)
+            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+
+        # 3. RoBERTa / BERT Nested Encoder handling
+        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            s = getattr(src, "self")
+            if hasattr(s, "query"):
+                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+            if hasattr(s, "key"):
+                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+            if hasattr(s, "value"):
+                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+
+        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+            dense = src.output.dense
+            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
+
+        # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
+        named_map = {
+            "q": ["q_proj", "q_lin", "query"],
+            "k": ["k_proj", "k_lin", "key"],
+            "v": ["v_proj", "v_lin", "value"],
+            "o": ["o_proj", "out_proj", "out_lin", "dense"],
+        }
+        for proj, names in named_map.items():
+            if extracted[proj][0] is None:
+                for name in names:
+                    if hasattr(src, name):
+                        layer = getattr(src, name)
+                        if hasattr(layer, "weight"):
+                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            break
+
+        # Detect nested encoder architecture
+        cls_name = src.__class__.__name__
+        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        self.is_nested_encoder = (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            or (cls_name.endswith("SelfAttention") and not has_out_proj)
+        ) and not has_out_proj
+
+        # Check required weights
+        missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
+        if not self.is_nested_encoder and extracted["o"][0] is None:
+            missing.append("o")
+        if missing:
+            raise RuntimeError(f"SALTAttention missing required weights for projections: {missing}")
+
+        # Frobenius norm validation
+        for proj_key in ["q", "k", "v"]:
+            w = extracted[proj_key][0]
+            if w is not None:
+                norm = torch.linalg.norm(w.float())
+                if norm < 1e-4:
+                    raise RuntimeError(f"SALTAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+
+        if extracted["o"][0] is not None:
+            norm_o = torch.linalg.norm(extracted["o"][0].float())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"SALTAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+
+        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t()
+            return w
+
+        # Initialize SALTLinear projections
+        with torch.no_grad():
+            for proj_key, attr, in_dim, out_dim in [
+                ("q", "q_proj", self.hidden_size, self.all_head_size),
+                ("k", "k_proj", self.hidden_size, self.kv_head_size),
+                ("v", "v_proj", self.hidden_size, self.kv_head_size),
+                ("o", "out_proj", self.all_head_size, self.hidden_size),
+            ]:
+                w, b = extracted[proj_key]
+                if w is not None:
+                    w_oriented = _orient(w, in_dim)
+                    src_out, src_in = w_oriented.shape
+
+                    # Handle KV dimension matching for GQA
+                    if proj_key in ("k", "v"):
+                        if src_out == out_dim:
+                            final_w = w_oriented
+                            final_b = b
+                        elif src_out > out_dim and src_out % out_dim == 0:
+                            rep = src_out // out_dim
+                            final_w = w_oriented.view(out_dim, rep, -1).mean(dim=1)
+                            final_b = b.view(out_dim, rep).mean(dim=1) if b is not None else None
+                        elif src_out < out_dim and out_dim % src_out == 0:
+                            rep = out_dim // src_out
+                            final_w = w_oriented.repeat(rep, 1)
+                            final_b = b.repeat(rep) if b is not None else None
+                        else:
+                            final_w = torch.zeros(out_dim, in_dim, device=w.device, dtype=w.dtype)
+                            final_w[:min(out_dim, src_out), :min(in_dim, src_in)] = w_oriented[:min(out_dim, src_out), :min(in_dim, src_in)]
+                            final_b = b[:min(out_dim, len(b))] if b is not None else None
+                    else:
+                        if src_out == out_dim and src_in == in_dim:
+                            final_w = w_oriented
+                            final_b = b
+                        else:
+                            final_w = torch.zeros(out_dim, in_dim, device=w.device, dtype=w.dtype)
+                            final_w[:min(out_dim, src_out), :min(in_dim, src_in)] = w_oriented[:min(out_dim, src_out), :min(in_dim, src_in)]
+                            final_b = b[:min(out_dim, len(b))] if b is not None else None
+
+                    new_linear = SALTLinear(in_dim, out_dim, self.rank, original_weight=final_w, original_bias=final_b)
+                    new_linear.to(device=w.device, dtype=w.dtype)
+                    setattr(self, attr, new_linear)
+                elif proj_key == "o" and self.is_nested_encoder:
+                    eye_w = torch.eye(out_dim, in_dim, device=self.out_proj.U.device, dtype=self.out_proj.U.dtype)
+                    new_linear = SALTLinear(in_dim, out_dim, self.rank, original_weight=eye_w, original_bias=None)
+                    setattr(self, attr, new_linear)
+
+        if hasattr(src, "is_decoder"):
+            self.is_decoder = bool(src.is_decoder)
 
     def forward(
         self,
@@ -175,6 +383,7 @@ class SALTAttention(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
@@ -183,27 +392,64 @@ class SALTAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        L_kv = kv_input.shape[1]
+
         Q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-        K = self.k_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-        V = self.v_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
+        K = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, Dh).transpose(1, 2)
+        V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, Dh).transpose(1, 2)
+
+        if position_embeddings is None:
+            position_embeddings = kwargs.get("position_embeddings", None)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+
+        if self.num_kv_heads < self.num_heads:
+            K = repeat_kv(K, self.kv_repeat)
+            V = repeat_kv(V, self.kv_repeat)
 
         scale = Dh ** -0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
-        valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
-        key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
-        scores = scores.masked_fill(~key_valid_4d, -10000.0)
+        if self.is_decoder and not is_cross and L > 1:
+            causal_mask = torch.triu(
+                torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
+                diagonal=1,
+            ).unsqueeze(0).unsqueeze(0)
+            scores = scores + causal_mask
 
-        attn = F.softmax(scores, dim=-1)
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        if eff_mask is not None:
+            if eff_mask.dim() == 2:
+                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+            elif eff_mask.dim() == 3:
+                scores = scores + eff_mask.unsqueeze(1).float()
+            elif eff_mask.dim() == 4:
+                scores = scores + eff_mask.float()
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn = F.softmax(scores, dim=-1).to(dtype)
         attn = self.dropout(attn)
 
         if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(1)
             attn = attn * head_mask
 
         context = torch.matmul(attn, V)
-        context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-        out = self.out_proj(context)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
 
         return out, (attn if output_attentions else None)
 
@@ -212,16 +458,25 @@ class SALTAttention(BaseAttention):
 def inject_salt_attention(
     layer: Any,
     model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Any,
-    **kwargs) -> SALTAttention:
-    rank = getattr(comp_config, "rank", getattr(comp_config, "salt_rank", 16))
-    new_attn = SALTAttention(config=model_config, rank=rank, pretrained_attn=old_attn)
-    if old_attn is not None:
-        p = next(old_attn.parameters(), None)
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 1,
+    old_attn: Any = None,
+    **kwargs: Any,
+) -> SALTAttention:
+    rank = getattr(comp_config, "rank", getattr(comp_config, "salt_rank", 16)) if comp_config is not None else 16
+    new_attn = SALTAttention(config=model_config, rank=rank)
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    if src_attn is not None:
+        try:
+            new_attn.copy_weights(src_attn)
+        except Exception:
+            pass
+        p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
-    layer.attention = new_attn
+    if hasattr(layer, "attention"):
+        layer.attention = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
     return new_attn
