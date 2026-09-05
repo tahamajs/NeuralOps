@@ -374,6 +374,19 @@ class AdaSplashAttention(BaseAttention):
                 elif hasattr(src, "value") and proj == "v":
                     w = src.value.weight
                     b = getattr(src.value, "bias", None)
+                # DistilBERT manual fallback
+                elif hasattr(src, "q_lin") and proj == "q":
+                    w = src.q_lin.weight
+                    b = getattr(src.q_lin, "bias", None)
+                elif hasattr(src, "k_lin") and proj == "k":
+                    w = src.k_lin.weight
+                    b = getattr(src.k_lin, "bias", None)
+                elif hasattr(src, "v_lin") and proj == "v":
+                    w = src.v_lin.weight
+                    b = getattr(src.v_lin, "bias", None)
+                elif hasattr(src, "out_lin") and proj == "o":
+                    w = src.out_lin.weight
+                    b = getattr(src.out_lin, "bias", None)
                 # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral)
                 elif hasattr(src, f"{proj}_proj"):
                     mod = getattr(src, f"{proj}_proj")
@@ -384,16 +397,29 @@ class AdaSplashAttention(BaseAttention):
             if w is None:
                 extracted_all = False
 
-        if not extracted_all:
-            cls_name = src.__class__.__name__
-            has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-            is_nested_encoder = (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj
+        cls_name = src.__class__.__name__
+        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        is_nested_encoder = (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj
 
+        if not extracted_all:
             if is_nested_encoder and extracted_weights["q"][0] is not None and extracted_weights["k"][0] is not None and extracted_weights["v"][0] is not None:
                 extracted_all = True
 
         if not extracted_all:
             raise RuntimeError(f"Could not extract all required weights for AdaSplashAttention. Missing: {[p for p, (w, _) in extracted_weights.items() if w is None]}")
+
+        # Frobenius norm validation
+        for proj_key in ["q", "k", "v"]:
+            w = extracted_weights[proj_key][0]
+            if w is not None:
+                norm = torch.linalg.norm(w.float())
+                if norm < 1e-4:
+                    raise RuntimeError(f"AdaSplashAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+
+        if extracted_weights["o"][0] is not None:
+            norm_o = torch.linalg.norm(extracted_weights["o"][0].float())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"AdaSplashAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
 
         for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
             w, b = extracted_weights[proj]
@@ -405,7 +431,11 @@ class AdaSplashAttention(BaseAttention):
                     if b is not None and target.bias is not None:
                         target.bias.data[:min(len(target.bias), len(b))].copy_(b[:min(len(target.bias), len(b))])
                     if getattr(target, "lora_A", None) is not None:
-                        nn.init.zeros_(target.lora_A)
+                        nn.init.kaiming_uniform_(target.lora_A, a=math.sqrt(5))
+                        target.lora_A.requires_grad = True
+                    if getattr(target, "lora_B", None) is not None:
+                        nn.init.zeros_(target.lora_B)
+                        target.lora_B.requires_grad = True
             elif proj == "o" and is_nested_encoder:
                 with torch.no_grad():
                     if target.weight.shape[0] == target.weight.shape[1]:
@@ -417,7 +447,15 @@ class AdaSplashAttention(BaseAttention):
                     if target.bias is not None:
                         nn.init.zeros_(target.bias)
                     if getattr(target, "lora_A", None) is not None:
-                        nn.init.zeros_(target.lora_A)
+                        nn.init.kaiming_uniform_(target.lora_A, a=math.sqrt(5))
+                        target.lora_A.requires_grad = True
+                    if getattr(target, "lora_B", None) is not None:
+                        nn.init.zeros_(target.lora_B)
+                        target.lora_B.requires_grad = True
+
+            target.weight.requires_grad = False
+            if target.bias is not None:
+                target.bias.requires_grad = False
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
