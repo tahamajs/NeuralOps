@@ -243,7 +243,70 @@ router_init_bias: Tuple[float, float, float] = (2.0, 0.0, -1.0)
 
 ---
 
-### 4.4 Hardware Scalability & Profiling Suite
+### 4.4 Diagnostic Case Study 3: The Nested Encoder Double-Projection Pathology in RoBERTa
+
+#### Problem Statement
+While DistilBERT recovered to **84.86%** and GPT-2 to **80.16%** with the router prior bias, RoBERTa remained trapped at **50.92%** (`PASS_LOW`), with training loss stagnating and climbing between $0.70$ and $1.25$.
+
+#### Root Cause Analysis: Architectural Discrepancy & Double Output Projection
+A systematic trace of RoBERTa's tensor flow uncovered a critical architectural distinction between flat and nested transformer blocks:
+
+1. **Flat Architecture (DistilBERT, GPT-2, Qwen):**
+   The attention module is self-contained, holding both the dot-product computation and the linear output projection (`out_lin`, `c_proj`, or `o_proj`). Replacing the module replaces both stages simultaneously.
+
+2. **Nested Architecture (RoBERTa & BERT):**
+   HuggingFace divides attention into two cascaded sub-modules:
+   ```
+   RobertaAttention
+   ├── self: RobertaSelfAttention          <-- [Target of inject_attention]
+   └── output: RobertaSelfOutput           <-- [Holds outer dense + LayerNorm]
+         ├── dense: Linear(768, 768)
+         ├── LayerNorm: LayerNorm(768)
+         └── dropout: Dropout(0.1)
+   ```
+   In native RoBERTa, `RobertaSelfAttention` computes attention weights and values and returns `context_layer` directly *without* an output projection. The parent container's `RobertaSelfOutput.dense` then applies the linear projection.
+
+3. **The Attribute Injection Masking Bug:**
+   In `aegis_spectron_fp8.py`, a safety check was intended to bypass the internal output projection for nested encoders:
+   ```python
+   cls_name = old_attn.__class__.__name__
+   has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", ...))
+   if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") ...) and not has_out_proj:
+       self.is_nested_encoder = True
+   ```
+   However, the framework's universal injection adapter (`attention_utils.py`) pre-emptively attaches proxy `dense` and `out_proj` attributes to `old_attn` before passing it to the constructor. Consequently:
+   - `has_out_proj` evaluated to `True`.
+   - `self.is_nested_encoder` was set to `False`.
+   - `old_attn.__class__.__name__` was wrapped as `UniversalAttentionWrapper`.
+
+4. **The Mathematical Double-Projection ($W_{\text{dense}}^2$):**
+   Because `is_nested_encoder` was `False`, `aegis_spectron_fp8` executed its own internal output projection:
+   $$\mathbf{y}_{\text{internal}} = \text{self.out\_proj}(\mathbf{y}_{\text{fused}}) = W_{\text{out\_proj}} \cdot \mathbf{y}_{\text{fused}}$$
+   where $W_{\text{out\_proj}}$ was initialized via SVD of RoBERTa's `output.dense`.
+   Then, the parent container `RobertaSelfOutput` received $\mathbf{y}_{\text{internal}}$ and executed:
+   $$\mathbf{y}_{\text{final}} = \operatorname{LayerNorm}\left( W_{\text{dense}} \cdot \mathbf{y}_{\text{internal}} + \mathbf{x} \right) = \operatorname{LayerNorm}\left( W_{\text{dense}} \cdot W_{\text{dense}} \cdot \mathbf{y}_{\text{fused}} + \mathbf{x} \right)$$
+   The dense transformation was applied **twice in series**.
+
+#### Quantitative Empirical Verification on Physical Hardware
+We executed a layer-by-layer tensor trace on Layer 0 of RoBERTa-base:
+- Pretrained `RobertaSelfAttention` output magnitude: $\text{mean absolute} = \mathbf{0.1297}$
+- `aegis_spectron_fp8` fused attention before `out_proj`: $\text{mean absolute} = \mathbf{0.0980}$ (cosine similarity = **0.7515**)
+- `aegis_spectron_fp8` output after internal `out_proj`: $\text{mean absolute} = \mathbf{0.01395}$ (**7× attenuation**)
+- Outer residual connection magnitude ($\mathbf{x}$): $\text{mean absolute} \approx \mathbf{16.0}$
+
+Because the attention output was attenuated by $7\times$ down to $\approx 0.014$, its contribution to the LayerNorm sum $(\mathbf{x} + \mathbf{y})$ was less than $0.1\%$. Across all 12 layers, contextual token interaction was silenced, turning RoBERTa into an identity residual pipe.
+
+#### Compounding Factor: Missing Pretrained Classification Head
+Unlike `models/distilbert_sst2` (which ships with a pre-trained SST-2 head, 90.48% baseline) and GPT-2 (pre-fine-tuned LoRA baseline, 81.31%), `models/roberta-base` is a raw masked-LM checkpoint without an SST-2 classification head (`classifier.dense` and `classifier.out_proj` are randomly initialized from $\mathcal{N}(0, 0.02)$).
+Faced with an attenuated 0.1% attention signal and a high recovery learning rate (`2e-4`), the optimizer drifted into the trivial majority-class minimum: predicting constant negative labels ($444/872 = \mathbf{50.92\%}$).
+
+#### Architectural Remedy & Validation
+1. **Explicit Nested Encoder Recognition**: Updated the detection logic to identify nested self-attention modules by checking parent container hierarchy (`"self"` submodule inside a container with `output.dense`) or model family (`"roberta"` / `"bert"` without native `out_lin`), ensuring `is_nested_encoder = True` regardless of monkey-patched attributes.
+2. **Identity Pass-Through**: When `is_nested_encoder = True`, `final_out = out_fused` is returned directly, allowing the parent's `output.dense` to perform the single, correct output projection.
+
+---
+
+### 4.5 Hardware Scalability & Profiling Suite
 
 #### Peak VRAM Footprint vs Sequence Length
 
