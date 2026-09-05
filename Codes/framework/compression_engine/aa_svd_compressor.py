@@ -199,6 +199,17 @@ class AASVDCompressor(BaseCompressor):
             )
 
         self.tokenizer = tokenizer
+        if self.tokenizer is None:
+            model_name_or_path = getattr(getattr(model, "config", None), "_name_or_path", None)
+            if model_name_or_path:
+                try:
+                    from transformers import AutoTokenizer
+                    self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+                    if self.tokenizer.pad_token is None:
+                        self.tokenizer.pad_token = self.tokenizer.eos_token
+                except Exception as e:
+                    logger.debug("Could not auto-load tokenizer from %s: %s", model_name_or_path, e)
+                    self.tokenizer = None
         self.rank = int(rank)
         self.ema_beta = float(ema_beta)
         self.max_error = float(max_error)
