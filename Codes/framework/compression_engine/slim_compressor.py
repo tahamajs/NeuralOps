@@ -41,6 +41,8 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("slim")
+@COMPRESSOR_REGISTRY.register("slim_compressor")
 class SLiMCompressor(BaseCompressor):
     """
     SLiM Compressor: One-shot joint b-bit quantization, 2:4 structured sparsity, and low-rank residual recovery.
@@ -194,14 +196,15 @@ class SLiMCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("slim")
-@COMPRESSOR_REGISTRY.register("slim_compressor")
+@COMPRESSOR_REGISTRY.register("slim_factory")
 def slim_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for SLiM compressor."""
-    bits = getattr(comp_config, "slim_bits", getattr(comp_config, "bits", 4)) if comp_config else kwargs.get("bits", 4)
-    sparsity = getattr(comp_config, "slim_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)
-    rank = getattr(comp_config, "slim_rank", getattr(comp_config, "rank", 8)) if comp_config else kwargs.get("rank", 8)
-    structured_24 = getattr(comp_config, "slim_structured_24", getattr(comp_config, "structured_24", True)) if comp_config else kwargs.get("structured_24", True)
+    bits = kwargs.pop("bits", getattr(comp_config, "slim_bits", getattr(comp_config, "bits", 4)) if comp_config else 4)
+    sparsity = kwargs.pop("sparsity", getattr(comp_config, "slim_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else 0.5)
+    rank = kwargs.pop("rank", getattr(comp_config, "slim_rank", getattr(comp_config, "rank", 8)) if comp_config else 8)
+    structured_24 = kwargs.pop("structured_24", getattr(comp_config, "slim_structured_24", getattr(comp_config, "structured_24", True)) if comp_config else True)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config else 0.20)
+    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
 
     compressor = SLiMCompressor(
         model,
@@ -209,6 +212,8 @@ def slim_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         sparsity=sparsity,
         rank=rank,
         structured_24=structured_24,
+        max_error=max_error,
+        fallback_to_original=fallback,
         comp_config=comp_config,
         **kwargs,
     )

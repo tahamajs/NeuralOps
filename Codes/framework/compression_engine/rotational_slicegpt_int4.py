@@ -114,6 +114,8 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         return y
 
 
+@COMPRESSOR_REGISTRY.register("rotational_slicegpt_int4")
+@COMPRESSOR_REGISTRY.register("rotational_slicegpt")
 class RotationalSliceGPTINT4Compressor(BaseCompressor):
     """
     Rotational-SliceGPT-INT4 Hybrid Compression Engine.
@@ -137,6 +139,11 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
+        kwargs.pop("max_error", None)
+        kwargs.pop("fallback_to_original", None)
+        kwargs.pop("r_ratio", None)
+        kwargs.pop("quant_bits", None)
+        kwargs.pop("lambda_reg", None)
         target_model = model if model is not None else nn.Identity()
         super().__init__(target_model, name="rotational_slicegpt_int4", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
@@ -417,15 +424,15 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
 RotationalSliceGPTCompressor = RotationalSliceGPTINT4Compressor
 
 
-@COMPRESSOR_REGISTRY.register("rotational_slicegpt_int4")
-@COMPRESSOR_REGISTRY.register("rotational_slicegpt")
+@COMPRESSOR_REGISTRY.register("rotational_slicegpt_int4_factory")
+@COMPRESSOR_REGISTRY.register("rotational_slicegpt_factory")
 def rotational_slicegpt_int4_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for Rotational-SliceGPT-INT4 compressor."""
-    r_ratio = getattr(comp_config, "rotational_slicegpt_r_ratio", getattr(comp_config, "r_ratio", 0.75)) if comp_config else kwargs.get("r_ratio", 0.75)
-    lambda_reg = getattr(comp_config, "lambda_reg", 1e-2) if comp_config else kwargs.get("lambda_reg", 1e-2)
-    quant_bits = getattr(comp_config, "quant_bits", 4) if comp_config else kwargs.get("quant_bits", 4)
-    max_error = getattr(comp_config, "max_error", 0.20) if comp_config else kwargs.get("max_error", 0.20)
-    fallback_to_original = getattr(comp_config, "fallback_to_original", True) if comp_config else kwargs.get("fallback_to_original", True)
+    r_ratio = kwargs.pop("r_ratio", getattr(comp_config, "rotational_slicegpt_r_ratio", getattr(comp_config, "r_ratio", 0.75)) if comp_config else 0.75)
+    lambda_reg = kwargs.pop("lambda_reg", getattr(comp_config, "lambda_reg", 1e-2) if comp_config else 1e-2)
+    quant_bits = kwargs.pop("quant_bits", getattr(comp_config, "quant_bits", 4) if comp_config else 4)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config else 0.20)
+    fallback_to_original = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
 
     compressor = RotationalSliceGPTINT4Compressor(
         model,
