@@ -1,4 +1,4 @@
-"""GFWSVD: Fisher-weighted SVD. Registered as 'gfws' and 'gfws_d'."""
+"""GFWSVD: Fisher-weighted / Covariance-weighted SVD. Registered as 'gfws' and 'gfws_d'."""
 from __future__ import annotations
 
 import logging
@@ -7,9 +7,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+
 from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +21,15 @@ class GFWSCompressor(BaseCompressor):
     Generalized Fisher / Covariance-Weighted SVD Compressor.
     Whitens weights using empirical input activation covariance square-root Cov(X)^{1/2},
     performs low-rank truncated SVD, and de-whitens to restore optimal compressed weights.
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error.
+    - Automatic fallback to standard weight SVD if covariance whitening fails or error > max_error.
+    - Safe fallback to original weights if even standard SVD exceeds max_error.
+    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+    - Unified critical-layer protection via should_compress_linear.
+    - Full FP32 computation for numerical stability, casting back to original dtype only when assigning.
+    - Per-layer logging and detailed compression statistics.
     """
 
     def __init__(
@@ -26,10 +37,13 @@ class GFWSCompressor(BaseCompressor):
         model: nn.Module,
         rank: int = 64,
         damping: float = 0.01,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="gfws", **kwargs)
@@ -37,19 +51,45 @@ class GFWSCompressor(BaseCompressor):
         if cfg is not None:
             rank = getattr(cfg, "gfws_rank", getattr(cfg, "rank", rank))
             damping = getattr(cfg, "gfws_damping", getattr(cfg, "damping", damping))
+            max_error = getattr(cfg, "gfws_max_error", getattr(cfg, "max_error", max_error))
+            fallback_to_original = getattr(
+                cfg, "gfws_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            )
+
         self.rank = int(rank)
         self.damping = float(damping)
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
+        self.target_modules = target_modules
         self.target_device = (
             torch.device(device)
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
 
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+        self.layer_ranks: Dict[str, int] = {}
+        self.used_covariance: Dict[str, bool] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        cls_name = module.__class__.__name__.lower()
+        is_linear = isinstance(module, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+        if not (is_linear or is_conv1d):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
     def _collect_activation_covariances(self) -> Dict[str, torch.Tensor]:
-        """Collect empirical input activation covariances across nn.Linear modules."""
+        """Collect empirical input activation covariances across target modules."""
         self.model.eval()
         running_cov: Dict[str, torch.Tensor] = {}
         sample_counts: Dict[str, int] = {}
@@ -59,8 +99,14 @@ class GFWSCompressor(BaseCompressor):
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
+                    cls_name = module.__class__.__name__.lower()
+                    is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                    if is_conv1d:
+                        in_f = module.weight.shape[0]
+                    else:
+                        in_f = module.weight.shape[1]
                     if x.ndim >= 2:
-                        flat_x = x.reshape(-1, x.shape[-1])
+                        flat_x = x.reshape(-1, in_f)
                     else:
                         flat_x = x.unsqueeze(0)
                     n_samples = flat_x.shape[0]
@@ -76,7 +122,7 @@ class GFWSCompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -109,64 +155,150 @@ class GFWSCompressor(BaseCompressor):
         return covariances
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress linear layers via real activation covariance singular decomposition W * Cov(X)^{1/2}."""
+        """Compress layers via activation covariance whitening + low-rank SVD, with standard SVD fallback."""
         covariances = self._collect_activation_covariances()
-        compressed_count = 0
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
+        self.used_covariance = {}
 
-        for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                W = module.weight.data.float()
-                d_out, d_in = W.shape
-                device = module.weight.device
-                dtype = module.weight.dtype
-                r = max(1, min(self.rank, d_out, d_in))
+        target_layers = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
 
-                cov = covariances.get(name, None)
-                if cov is not None and cov.shape == (d_in, d_in):
-                    try:
-                        cov_dev = cov.to(device=device, dtype=torch.float32)
-                        diag_mean = torch.diagonal(cov_dev).mean().item()
-                        if not math.isfinite(diag_mean) or diag_mean <= 0.0:
-                            diag_mean = 1.0
-                        lambda_reg = max(float(self.damping) * diag_mean, 1e-6)
-                        cov_reg = cov_dev + lambda_reg * torch.eye(d_in, device=device)
+        for name, module in target_layers:
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            raw_w = module.weight.data
 
-                        eigvals, eigvecs = torch.linalg.eigh(cov_reg)
-                        eigvals_clamped = torch.clamp(eigvals, min=1e-6)
+            if is_conv1d:
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+                W = raw_w.t().float()  # [out_features, in_features]
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+                W = raw_w.float()      # [out_features, in_features]
 
-                        # Cov(X)^{1/2} and Cov(X)^{-1/2}
-                        cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
-                        cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+            r = max(1, min(self.rank, out_f, in_f))
+            device = module.weight.device
+            dtype = module.weight.dtype
+            W_norm = torch.norm(W, p="fro").item()
 
-                        # Whiten weights: M = W * Cov(X)^{1/2}
-                        M = torch.matmul(W, cov_sqrt)
-                        U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+            used_cov = False
+            W_approx = None
+            final_err = 1.0
 
-                        # Low-rank approximation of M: U_r * S_r * Vt_r
-                        M_r = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
+            cov = covariances.get(name, None)
+            if cov is not None and cov.shape == (in_f, in_f):
+                try:
+                    cov_dev = cov.to(device=device, dtype=torch.float32)
+                    diag_mean = torch.diagonal(cov_dev).mean().item()
+                    if not math.isfinite(diag_mean) or diag_mean <= 0.0:
+                        diag_mean = 1.0
+                    lambda_reg = max(float(self.damping) * diag_mean, 1e-6)
+                    cov_reg = cov_dev + lambda_reg * torch.eye(in_f, device=device, dtype=torch.float32)
 
-                        # De-whiten: W_approx = M_r * Cov(X)^{-1/2}
-                        W_approx = torch.matmul(M_r, cov_inv_sqrt)
-                        module.weight.data = W_approx.to(dtype=dtype, device=device)
-                        compressed_count += 1
-                        continue
-                    except Exception as e:
-                        logger.debug("GFWS covariance decomposition exception on layer %s: %s", name, e)
+                    eigvals, eigvecs = torch.linalg.eigh(cov_reg)
+                    eigvals_clamped = torch.clamp(eigvals, min=1e-6)
 
-                # Fallback to standard SVD
-                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                W_approx = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
-                module.weight.data = W_approx.to(dtype=dtype, device=device)
-                compressed_count += 1
+                    # Cov(X)^{1/2} and Cov(X)^{-1/2}
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+
+                    # Whiten weights: M = W * Cov(X)^{1/2}
+                    M = torch.matmul(W, cov_sqrt)
+                    U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+
+                    # Low-rank approximation of M: U_r * S_r * Vt_r
+                    M_r = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
+
+                    # De-whiten: candidate = M_r * Cov(X)^{-1/2}
+                    candidate = torch.matmul(M_r, cov_inv_sqrt)
+
+                    if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
+                        err = float(torch.norm(W - candidate, p="fro").item() / max(W_norm, 1e-12))
+                        if err <= self.max_error:
+                            W_approx = candidate
+                            final_err = err
+                            used_cov = True
+                        else:
+                            logger.debug(
+                                "GFWS covariance de-whitened error (%.4f) > max_error (%.4f) on %s. Trying SVD fallback.",
+                                err,
+                                self.max_error,
+                                name,
+                            )
+                except Exception as e:
+                    logger.debug("GFWS covariance decomposition exception on layer %s: %s", name, e)
+
+            # Fallback to standard SVD if covariance whitening was not used or failed
+            if W_approx is None:
+                try:
+                    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                    candidate = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
+                    if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
+                        err = float(torch.norm(W - candidate, p="fro").item() / max(W_norm, 1e-12))
+                        W_approx = candidate
+                        final_err = err
+                        used_cov = False
+                except Exception as e:
+                    logger.warning("GFWS standard SVD failed on %s: %s", name, e)
+                    W_approx = None
+                    final_err = 1.0
+
+            self.layer_errors[name] = final_err
+            self.layer_ranks[name] = r
+            self.used_covariance[name] = used_cov
+
+            if W_approx is None or final_err > self.max_error:
+                logger.warning(
+                    "GFWS reconstruction error %.4f on %s exceeded threshold %.4f.",
+                    final_err,
+                    name,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    logger.info("Skipping GFWS compression for %s (fallback to original).", name)
+                    self.fallback_layers.append(name)
+                    continue
+
+            # Assign compressed weight back in original orientation and dtype
+            if is_conv1d:
+                module.weight.data.copy_(W_approx.t().to(dtype=dtype, device=device))
+            else:
+                module.weight.data.copy_(W_approx.to(dtype=dtype, device=device))
+            self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats.update({
             "rank": self.rank,
             "damping": self.damping,
-            "compressed_layers": compressed_count,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "layer_errors": self.layer_errors,
+            "layer_ranks": self.layer_ranks,
+            "used_covariance": self.used_covariance,
+            "avg_reconstruction_error": avg_err,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
             "method": "covariance_weighted_svd",
         })
+        logger.info(
+            "GFWS compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+        )
         return self.model, stats
 
 
@@ -176,6 +308,21 @@ def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """GFWS factory."""
     rank = getattr(comp_config, "gfws_rank", getattr(comp_config, "rank", kwargs.get("rank", 64)))
     damping = getattr(comp_config, "gfws_damping", getattr(comp_config, "damping", kwargs.get("damping", 0.01)))
-    compressor = GFWSCompressor(model, rank=rank, damping=damping, **kwargs)
+    max_error = getattr(comp_config, "gfws_max_error", getattr(comp_config, "max_error", kwargs.get("max_error", 0.20)))
+    fallback = getattr(
+        comp_config, "gfws_fallback_to_original", getattr(comp_config, "fallback_to_original", kwargs.get("fallback_to_original", True))
+    )
+    compressor = GFWSCompressor(
+        model,
+        rank=rank,
+        damping=damping,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        comp_config=comp_config,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+__all__ = ["GFWSCompressor", "gfws_factory"]
