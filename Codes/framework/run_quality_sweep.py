@@ -1211,14 +1211,27 @@ def main():
                         hf_export_dir = weights_dir / "hf_export"
                         hf_export_dir.mkdir(parents=True, exist_ok=True)
                         try:
-                            if hasattr(model, "save_pretrained") and callable(model.save_pretrained):
-                                model.save_pretrained(hf_export_dir)
-                            else:
+                            torch.save(checkpoint_payload, hf_export_dir / "weights.pt")
+                            try:
                                 torch.save(model.state_dict(), hf_export_dir / "pytorch_model.bin")
+                            except Exception:
+                                pass
+                            if hasattr(model, "save_pretrained") and callable(model.save_pretrained):
+                                try:
+                                    model.save_pretrained(hf_export_dir, safe_serialization=False)
+                                except Exception:
+                                    pass
                             if tokenizer is not None and hasattr(tokenizer, "save_pretrained"):
-                                tokenizer.save_pretrained(hf_export_dir)
-                            if hasattr(model, "config") and model.config is not None and hasattr(model.config, "to_json_file"):
-                                model.config.to_json_file(hf_export_dir / "config.json")
+                                try:
+                                    tokenizer.save_pretrained(hf_export_dir)
+                                except Exception:
+                                    pass
+                            if hasattr(model, "config") and model.config is not None:
+                                try:
+                                    with open(hf_export_dir / "config.json", "w", encoding="utf-8") as cf:
+                                        json.dump(model.config.to_dict(), cf, indent=2)
+                                except Exception:
+                                    pass
                         except Exception as hf_save_err:
                             LOG.debug("Optional HF model export info: %s", hf_save_err)
                     except Exception as me_err:
