@@ -31,9 +31,21 @@ from framework.compression_engine.pruning_utils import (
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("proxsparse")
+@COMPRESSOR_REGISTRY.register("proxsparse_pruner")
+@COMPRESSOR_REGISTRY.register("proxsparse_compressor")
 class ProxSparsePruner(BaseCompressor):
     """
     ProxSparse: Regularized learning of structured and semi-structured sparsity.
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.20).
+    - Safe fallback to original weights by default (fallback_to_original=True).
+    - Robust Conv1D detection by class name and nf attribute without unreliable shape heuristics.
+    - Unified critical-layer protection via should_compress_linear.
+    - Warning logged whenever error exceeds max_error regardless of fallback setting.
+    - FP32 numerical stability with NaN/Inf guards.
+    - Comprehensive per-layer stats and error tracking.
     """
 
     def __init__(
@@ -44,8 +56,8 @@ class ProxSparsePruner(BaseCompressor):
         steps: int = 5,
         structured_24: bool = False,
         block_size: Tuple[int, int] = (4, 4),
-        max_error: float = 0.50,
-        fallback_to_original: bool = False,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -56,25 +68,27 @@ class ProxSparsePruner(BaseCompressor):
             lambda_prox = getattr(cfg, "proxsparse_lambda", getattr(cfg, "lambda_prox", lambda_prox))
             steps = getattr(cfg, "proxsparse_steps", getattr(cfg, "steps", steps))
             structured_24 = getattr(cfg, "proxsparse_structured_24", getattr(cfg, "structured_24", structured_24))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            max_error = getattr(cfg, "proxsparse_max_error", getattr(cfg, "max_error", max_error))
+            fallback_to_original = getattr(
+                cfg, "proxsparse_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            )
 
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
-        self.lambda_prox = lambda_prox
+        self.lambda_prox = float(lambda_prox)
         self.steps = max(1, int(steps))
-        self.structured_24 = structured_24
+        self.structured_24 = bool(structured_24)
         self.block_size = block_size
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_modules = target_modules
-        self.compressed_layers: List[Dict[str, Any]] = []
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
-            return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like:
             return False
         from framework.utils.compat import should_compress_linear
@@ -106,17 +120,14 @@ class ProxSparsePruner(BaseCompressor):
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes proximal gradient sparsity iterations across all compressible modules."""
         self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
 
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 raw_w = module.weight.data
-                cls_name = module.__class__.__name__
-                is_conv1d = "conv1d" in cls_name.lower() or (
-                    raw_w.ndim == 2
-                    and hasattr(module, "in_features")
-                    and module.in_features == raw_w.shape[0]
-                    and raw_w.shape[0] < raw_w.shape[1]
-                )
+                cls_name = module.__class__.__name__.lower()
+                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
 
                 W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
                 device = raw_w.device
@@ -133,31 +144,53 @@ class ProxSparsePruner(BaseCompressor):
 
                 # Final projection
                 W_final = self._project_sparse(W_curr)
+                W_final = torch.nan_to_num(W_final, nan=0.0)
 
-                err = (torch.norm(W - W_final, p="fro") / (torch.norm(W, p="fro") + 1e-8)).item()
-                if self.fallback_to_original and err > self.max_error:
-                    continue
+                w_norm = torch.norm(W, p="fro").item()
+                err = (torch.norm(W - W_final, p="fro") / max(w_norm, 1e-12)).item()
+                self.layer_errors[name] = float(err)
+
+                if err > self.max_error:
+                    logger.warning(
+                        "ProxSparse reconstruction error %.4f on %s exceeded threshold %.4f.",
+                        err,
+                        name,
+                        self.max_error,
+                    )
+                    if self.fallback_to_original:
+                        logger.info("Skipping ProxSparse for %s (fallback to original).", name)
+                        self.fallback_layers.append(name)
+                        continue
 
                 if is_conv1d:
-                    module.weight.data = W_final.t().contiguous().to(dtype=dtype, device=device)
+                    module.weight.data.copy_(W_final.t().contiguous().to(dtype=dtype, device=device))
                 else:
-                    module.weight.data = W_final.contiguous().to(dtype=dtype, device=device)
+                    module.weight.data.copy_(W_final.contiguous().to(dtype=dtype, device=device))
 
-                self.compressed_layers.append({
-                    "name": name,
-                    "relative_error": float(err),
-                })
+                self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats = self.get_compression_stats()
         stats.update({
             "pruned_layers": len(self.compressed_layers),
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "layer_errors": self.layer_errors,
+            "avg_reconstruction_error": avg_err,
             "sparsity_target": self.sparsity,
             "lambda_prox": self.lambda_prox,
             "structured_24": self.structured_24,
             "steps": self.steps,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
             "method": "proxsparse_regularized",
-            "compressed_layers": self.compressed_layers,
         })
         self.stats = stats
         return self.model, stats
@@ -167,15 +200,19 @@ class ProxSparsePruner(BaseCompressor):
 ProxSparseCompressor = ProxSparsePruner
 
 
-@COMPRESSOR_REGISTRY.register("proxsparse")
-@COMPRESSOR_REGISTRY.register("proxsparse_pruner")
-@COMPRESSOR_REGISTRY.register("proxsparse_compressor")
+@COMPRESSOR_REGISTRY.register("proxsparse_factory")
+@COMPRESSOR_REGISTRY.register("proxsparse_pruner_factory")
+@COMPRESSOR_REGISTRY.register("proxsparse_compressor_factory")
 def proxsparse_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for ProxSparse pruner."""
-    sparsity = getattr(comp_config, "proxsparse_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)
-    lambda_prox = getattr(comp_config, "proxsparse_lambda", getattr(comp_config, "lambda_prox", 0.01)) if comp_config else kwargs.get("lambda_prox", 0.01)
-    steps = getattr(comp_config, "proxsparse_steps", getattr(comp_config, "steps", 5)) if comp_config else kwargs.get("steps", 5)
-    structured_24 = getattr(comp_config, "proxsparse_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else kwargs.get("structured_24", False)
+    sparsity = kwargs.pop("sparsity", getattr(comp_config, "proxsparse_sparsity", getattr(comp_config, "sparsity", 0.5)))
+    lambda_prox = kwargs.pop("lambda_prox", getattr(comp_config, "proxsparse_lambda", getattr(comp_config, "lambda_prox", 0.01)))
+    steps = kwargs.pop("steps", getattr(comp_config, "proxsparse_steps", getattr(comp_config, "steps", 5)))
+    structured_24 = kwargs.pop("structured_24", getattr(comp_config, "proxsparse_structured_24", getattr(comp_config, "structured_24", False)))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "proxsparse_max_error", getattr(comp_config, "max_error", 0.20)))
+    fallback = kwargs.pop("fallback_to_original", getattr(
+        comp_config, "proxsparse_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    ))
 
     compressor = ProxSparsePruner(
         model,
@@ -183,6 +220,9 @@ def proxsparse_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
         lambda_prox=lambda_prox,
         steps=steps,
         structured_24=structured_24,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
