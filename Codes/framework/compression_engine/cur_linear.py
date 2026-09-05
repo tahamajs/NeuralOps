@@ -227,14 +227,14 @@ class CURLinear(nn.Module):
         C = W_float[:, col_idx]
         R = W_float[row_idx, :]
 
-        # Optimal core matrix: SVD-regularized Moore-Penrose pseudo-inverse for numerical stability
-        W_int = W_float[row_idx][:, col_idx]  # (r, r)
+        # Optimal core matrix: U = C^+ @ W @ R^+
+        # This is the exact least-squares solution argmin_U ||W - C U R||_F
         try:
-            u_int, s_int, vt_int = torch.linalg.svd(W_int, full_matrices=False)
-            eps = 1e-3 * s_int.max().clamp_min(1e-6)
-            s_inv = s_int / (s_int**2 + eps**2)
-            U = torch.matmul(vt_int.T, torch.matmul(torch.diag(s_inv), u_int.T))
+            C_pinv = torch.linalg.pinv(C, rcond=1e-4)
+            R_pinv = torch.linalg.pinv(R, rcond=1e-4)
+            U = torch.matmul(torch.matmul(C_pinv, W_float), R_pinv)
         except Exception:
+            W_int = W_float[row_idx][:, col_idx]
             U = torch.linalg.pinv(W_int, rcond=1e-3)
 
         cur_layer.C.data.copy_(C.to(dtype=W.dtype))
