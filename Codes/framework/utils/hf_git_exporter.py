@@ -299,8 +299,15 @@ def upload_to_huggingface(
             os.environ["HF_DATASETS_OFFLINE"] = old_ds_offline
 
 
-def commit_and_push_git(commit_message: str, cwd: Optional[Path] = None) -> Optional[str]:
-    """Stage modified documentation, summaries, and CSVs, commit, and push to origin/main."""
+def commit_and_push_git(
+    commit_message: str,
+    cwd: Optional[Path] = None,
+    branch: Optional[str] = None,
+) -> Optional[str]:
+    """Stage modified documentation, summaries, and CSVs, commit, and push to Git.
+    
+    If branch is specified, commits to that branch and pushes upstream, preserving working tree.
+    """
     cwd = find_git_root(cwd)
     try:
         subprocess.run(["git", "add", "Docs/", "results/"], cwd=cwd, check=False)
@@ -310,12 +317,31 @@ def commit_and_push_git(commit_message: str, cwd: Optional[Path] = None) -> Opti
             rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
             return rev.stdout.strip()[:8]
 
+        curr_branch = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd, capture_output=True, text=True
+        ).stdout.strip()
+        target_branch = branch or os.environ.get("BENCHMARK_GIT_BRANCH", curr_branch or "main")
+
+        switched = False
+        if target_branch != curr_branch:
+            # Check if target branch exists locally
+            check = subprocess.run(["git", "show-ref", "--verify", f"refs/heads/{target_branch}"], cwd=cwd, capture_output=True)
+            if check.returncode == 0:
+                subprocess.run(["git", "checkout", target_branch], cwd=cwd, check=True)
+            else:
+                subprocess.run(["git", "checkout", "-b", target_branch], cwd=cwd, check=True)
+            switched = True
+
         subprocess.run(["git", "commit", "-m", commit_message], cwd=cwd, check=True)
-        subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=cwd, check=False)
-        subprocess.run(["git", "push", "origin", "main"], cwd=cwd, check=True)
+        subprocess.run(["git", "pull", "--rebase", "origin", target_branch], cwd=cwd, check=False)
+        subprocess.run(["git", "push", "-u", "origin", target_branch], cwd=cwd, check=True)
         rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
         commit_hash = rev.stdout.strip()[:8]
-        LOG.info("Successfully committed and pushed Git changes: %s", commit_hash)
+        LOG.info("Successfully committed and pushed Git changes to %s: %s", target_branch, commit_hash)
+
+        if switched:
+            subprocess.run(["git", "checkout", curr_branch], cwd=cwd, check=False)
+
         return commit_hash
     except Exception as e:
         LOG.warning("Git commit/push failed: %s", e)
@@ -396,9 +422,13 @@ def handle_benchmark_run_export(
             hf_repo_url=hf_url,
         )
 
+    target_branch = os.environ.get("BENCHMARK_GIT_BRANCH")
+    if not target_branch and (config_dict and config_dict.get("new_branch")):
+        target_branch = f"results/{clean_model}-{clean_mod}"
+
     f1_val = perf_metrics.get("f1_score", "N/A")
     commit_msg = f"feat(benchmark): record successful {module_name} on {clean_model} (Acc: {acc:.2f}%, F1: {f1_val})"
-    commit_hash = commit_and_push_git(commit_msg)
+    commit_hash = commit_and_push_git(commit_msg, branch=target_branch)
 
     return {
         "success": True,
