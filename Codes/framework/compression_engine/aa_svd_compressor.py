@@ -517,6 +517,12 @@ class AASVDCompressor(BaseCompressor):
                 replace_module(self.model, name, svd_layer)
                 self.compressed_layers.append(name)
 
+        # Explicitly freeze all parameters in fallback layers so recovery fine-tuning only trains compressed/LoRA layers
+        for name, mod in self.model.named_modules():
+            if name in self.fallback_layers:
+                for p in mod.parameters():
+                    p.requires_grad = False
+
         # Clear covariances and factor cache to immediately free memory
         covariances.clear()
         cov_factor_cache.clear()
