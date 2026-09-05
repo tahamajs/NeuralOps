@@ -28,10 +28,11 @@ models = [
             "--parent_checkpoint", r"results\unified_asvd\distilbert\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "200",
             "--learning_rate", "2e-4",
-            "--rank", "192",
-            "--aasvd_max_error", "0.85",
+            "--rank", "288",
+            "--aasvd_max_error", "0.50",
+            "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
             "--timeout", "1200",
@@ -51,10 +52,11 @@ models = [
             "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "200",
             "--learning_rate", "2e-4",
-            "--rank", "192",
-            "--aasvd_max_error", "0.85",
+            "--rank", "288",
+            "--aasvd_max_error", "0.50",
+            "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
             "--timeout", "1200",
@@ -74,10 +76,11 @@ models = [
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "200",
             "--learning_rate", "2e-4",
-            "--rank", "192",
-            "--aasvd_max_error", "0.85",
+            "--rank", "288",
+            "--aasvd_max_error", "0.50",
+            "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
             "--timeout", "1200",
@@ -97,10 +100,11 @@ models = [
             "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "200",
             "--learning_rate", "2e-4",
-            "--rank", "256",
-            "--aasvd_max_error", "0.85",
+            "--rank", "384",
+            "--aasvd_max_error", "0.50",
+            "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
             "--timeout", "1500",
@@ -112,7 +116,7 @@ models = [
 
 print("=" * 80, flush=True)
 print("STARTING UNIFIED 4-MODEL HARDENED AASVD BENCHMARK ON GPU SERVER", flush=True)
-print("Config: modules=full,aasvd, dataset=sst2, recovery_steps=50, lr=2e-4, rank=256, max_error=0.85, batch_size=8, precision=fp16", flush=True)
+print("Config: modules=full,aasvd, dataset=sst2, recovery_steps=200, lr=2e-4, rank=288/384, max_error=0.50, attention_only=True, batch_size=8, precision=fp16", flush=True)
 print("=" * 80, flush=True)
 
 final_stats = []
