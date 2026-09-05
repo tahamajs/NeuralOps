@@ -245,15 +245,30 @@ class AASVDCompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear):
             return False
+        # Do not target inner submodules of LoRA or wrappers
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
         cls_name = module.__class__.__name__.lower()
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        target_cls = target_mod.__class__.__name__.lower()
+
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or isinstance(target_mod, nn.Linear)
+            or "conv1d" in cls_name
+            or "conv1d" in target_cls
+            or hasattr(module, "nf")
+            or hasattr(target_mod, "nf")
+            or "loralinear" in cls_name
+            or hasattr(module, "base_layer")
+        )
         if not is_linear_like:
             return False
         name_lower = name.lower()
         if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler"]):
             return False
-        if not should_compress_linear(self.model, name):
-            return False
+
         if self.target_attention_only:
             # Skip FFN / MLP / feed-forward layers
             ffn_patterns = [
@@ -265,13 +280,17 @@ class AASVDCompressor(BaseCompressor):
             # RoBERTa layer.X.output.dense is FFN, while attention.output.dense is attention
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
-            # Accept only attention projections
+            # Explicitly match attention projections including GPT-2 c_attn and c_proj
             attn_patterns = [
                 "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "query", "key", "value"
+                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value"
             ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
+        else:
+            if not should_compress_linear(self.model, name):
+                return False
+
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
@@ -288,8 +307,10 @@ class AASVDCompressor(BaseCompressor):
         and symmetric singular value distribution. Returns (svd_layer, error, rank).
         """
         try:
+            target_mod = getattr(layer, "base_layer", layer)
             cls_name = layer.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
+            target_cls = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
             if not hasattr(layer, "weight") or layer.weight is None:
                 return None, float("inf"), 0
 

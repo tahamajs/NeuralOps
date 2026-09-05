@@ -27,8 +27,12 @@ def is_decoder_family(family: str) -> bool:
 
 def is_decoder_projection_name(name: str) -> bool:
     """Whether a parameter name denotes a decoder attention projection."""
+    name_low = name.lower()
+    if any(p in name_low for p in ["c_attn", "c_proj", "q_proj", "k_proj", "v_proj", "o_proj", "out_proj"]):
+        if "attn" in name_low or "attention" in name_low or "self_attn" in name_low:
+            return True
     leaf = name.rsplit(".", 1)[-1].lower()
-    if leaf in {"weight", "bias"}:
+    if leaf in {"weight", "bias", "base_layer"}:
         parts = name.rsplit(".", 2)
         leaf = parts[-2].lower() if len(parts) >= 2 else leaf
     return leaf in {"q_proj", "k_proj", "v_proj", "o_proj", "out_proj", "c_attn", "c_proj"}
@@ -59,7 +63,7 @@ def should_compress_linear(model: Any, name: str, family: Optional[str] = None) 
     For other families, original safe linear layer compression behavior is preserved.
     """
     leaf = name.rsplit(".", 1)[-1].lower()
-    if leaf in {"weight", "bias"}:
+    if leaf in {"weight", "bias", "base_layer"}:
         parts = name.rsplit(".", 2)
         leaf = parts[-2].lower() if len(parts) >= 2 else leaf
 
@@ -69,6 +73,10 @@ def should_compress_linear(model: Any, name: str, family: Optional[str] = None) 
         k in name_low for k in ["classifier", "score", "lm_head", "pooler", "pre_classifier", "classification_head"]
     ):
         return False
+
+    if "c_attn" in name_low or "c_proj" in name_low:
+        if "attn" in name_low or "attention" in name_low:
+            return True
 
     fam = family or (detect_family(model) if not isinstance(model, str) else model)
 
@@ -100,18 +108,19 @@ def get_dynamic_compression_rank(
         if "dynamic_rank" in comp_config and comp_config["dynamic_rank"] is not None:
             return int(comp_config["dynamic_rank"])
         if "rank" in comp_config and comp_config["rank"] is not None:
-            default_rank = int(comp_config["rank"])
+            return int(comp_config["rank"])
     elif comp_config is not None:
         if hasattr(comp_config, "qwen3_5_rank") and getattr(comp_config, "qwen3_5_rank") is not None:
             return int(getattr(comp_config, "qwen3_5_rank"))
         if hasattr(comp_config, "dynamic_rank") and getattr(comp_config, "dynamic_rank") is not None:
             return int(getattr(comp_config, "dynamic_rank"))
         if hasattr(comp_config, "rank") and getattr(comp_config, "rank") is not None:
-            default_rank = int(getattr(comp_config, "rank"))
+            return int(getattr(comp_config, "rank"))
 
-    fam = model_or_family if isinstance(model_or_family, str) else (detect_family(model_or_family) if model_or_family is not None else "unknown")
+    fam = detect_family(model_or_family) if model_or_family is not None else "unknown"
     if fam == "qwen3_5":
-        return min(256, max(128, min(in_features, out_features) // 4))
+        target = min(in_features, out_features) // 4
+        return max(128, min(256, target))
     return default_rank
 
 
@@ -120,24 +129,23 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     Task 3: Recovery parameter selection.
     
     Returns LoRA adapter parameters, classification head parameters,
-    and all parameters of injected attention/adapter/compressor modules to allow them
+    and all parameters of injected attention/adapter/compressor modules.
     """
     trainable_params = []
-    has_lora = any(any(tag in n.lower() for tag in (".lora_", ".lora_a", ".lora_b")) for n, _ in model.named_parameters())
-
     for name, param in model.named_parameters():
         n_low = name.lower()
-        # Strictly keep base SVD factors and base projection layers frozen when LoRA is present
-        if has_lora and (any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v", ".bias")) or ".base_layer." in n_low or ".lin1." in n_low or ".lin2." in n_low):
+        layer_prefix = name.rsplit(".", 1)[0]
+        layer_has_lora = any(k.startswith(layer_prefix) and any(t in k.lower() for t in (".lora_", ".lora_a", ".lora_b")) for k, _ in model.named_parameters())
+        if layer_has_lora and (any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v", ".bias")) or ".base_layer." in n_low or ".lin1." in n_low or ".lin2." in n_low):
             continue
 
         if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt")):
             trainable_params.append(param)
         elif any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
             trainable_params.append(param)
-        elif not has_lora and any(tag in n_low for tag in (".inner.", "attention.", "self_attn.", ".attn.", "swa_mamba", "kernel_linear")):
+        elif not layer_has_lora and any(tag in n_low for tag in (".inner.", "attention.", "self_attn.", ".attn.", "swa_mamba", "kernel_linear", ".u", ".v")):
             trainable_params.append(param)
-        elif not has_lora and any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
+        elif not layer_has_lora and any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
                                           ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
                                           ".comp_", ".svd_", ".cur_", ".salr", ".direct_svd", ".sparse_proj",
                                           ".cores", ".centroids", ".weight_table", ".alpha", ".gate",
