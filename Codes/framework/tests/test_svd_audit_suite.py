@@ -436,7 +436,8 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
 
         linear = nn.Linear(128, 128)
         compressor = ERCCompressor(model, allowed_error=allowed_error)
-        svd_layer = compressor.compress_linear(linear)
+        svd_res = compressor.compress_linear(linear)
+        svd_layer = svd_res[0] if isinstance(svd_res, tuple) else svd_res
 
         W_orig = linear.weight.data.float()
         W_approx = (svd_layer.U @ svd_layer.V).float()
