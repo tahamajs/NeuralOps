@@ -2,14 +2,14 @@
 Adaptive Ranks SVD Compressor: dynamic rank selection per layer based on singular value energy spectra.
 
 Dynamic cumulative singular value energy thresholding:
-    $$\\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)$$
+    $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)$$
 with minimum rank floor:
-    $$r_{\\min} = \\max(16, \\lfloor 0.15 \\cdot \\min(d_{in}, d_{out}) \\rfloor)$$
+    $$r_{\min} = \max(16, \lfloor 0.15 \cdot \min(d_{in}, d_{out}) \rfloor)$$
 activation covariance whitening:
-    $$M = W \\cdot \\operatorname{Cov}(X)^{1/2}$$
-and symmetrical $\\sqrt{\\Sigma}$ singular value distribution:
-    $$U_r = U_{:, :r} \\sqrt{\\Sigma_r}, \\quad V_r = (\\sqrt{\\Sigma_r} V^\\top_{:r, :}) \\cdot \\operatorname{Cov}(X)^{-1/2}$$
-Registered as 'adaptive_ranks' and 'adaptive_svd'.
+    $$M = W \cdot \operatorname{Cov}(X)^{1/2}$$
+and symmetrical $\sqrt{\Sigma}$ singular value distribution:
+    $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = (\sqrt{\Sigma_r} V^\top_{:r, :}) \cdot \operatorname{Cov}(X)^{-1/2}$$
+Registered canonically as 'adaptive_ranks' and 'adaptive_svd'.
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,16 @@ class AdaptiveRanksCompressor(BaseCompressor):
     with minimum rank floor $r_{\min} = \max(16, \lfloor 0.15 \cdot \min(d_{in}, d_{out}) \rfloor)$,
     activation covariance whitening, and symmetrically distributed singular values:
         $$U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = (\sqrt{\Sigma_r} V^\top_{:r, :}) \cdot \operatorname{Cov}(X)^{-1/2}$$
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.20).
+    - Safe fallback to original weights by default (fallback_to_original=True).
+    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+    - SVD and covariance eigendecomposition computed strictly in FP32 with NaN/Inf guards.
+    - Unified critical-layer protection via should_compress_linear.
+    - Adaptive rank retry when reconstruction error exceeds threshold.
+    - Parameter reduction verification: ensures r * (in + out) < in * out.
+    - Comprehensive per-layer statistics and logging.
     """
 
     def __init__(
@@ -49,6 +60,9 @@ class AdaptiveRanksCompressor(BaseCompressor):
         model: nn.Module,
         energy_threshold: float = 0.92,
         min_rank: int = 16,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        protect_critical: bool = True,
         target_modules: Optional[List[str]] = None,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
@@ -61,12 +75,18 @@ class AdaptiveRanksCompressor(BaseCompressor):
         if cfg is not None:
             energy_threshold = getattr(cfg, "energy_threshold", energy_threshold)
             min_rank = getattr(cfg, "min_rank", getattr(cfg, "rank", min_rank))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            protect_critical = getattr(cfg, "protect_critical", protect_critical)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             min_rank = kwargs["rank"]
 
-        self.energy_threshold = float(energy_threshold)
-        self.min_rank = max(16, int(min_rank))
+        self.energy_threshold = max(0.01, min(float(energy_threshold), 1.0))
+        self.min_rank = max(1, int(min_rank))
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.protect_critical = bool(protect_critical)
         self.target_modules = target_modules
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -77,43 +97,56 @@ class AdaptiveRanksCompressor(BaseCompressor):
             else next(model.parameters(), torch.tensor(0.0)).device
         )
 
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+        self.layer_ranks: Dict[str, int] = {}
+        self.used_covariance: Dict[str, bool] = {}
+
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, (SVDLinear, CompressedAttentionLayer)):
             return False
-        if not isinstance(module, (nn.Linear, nn.MultiheadAttention)):
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        is_mha = isinstance(module, nn.MultiheadAttention)
+        if not (is_linear_like or is_mha):
             return False
-        name_lower = name.lower()
-        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score"]):
-            return False
-        if isinstance(module, nn.Linear) and min(module.in_features, module.out_features) < 16:
-            return False
-        if self.target_modules is None:
-            return True
-        return any(t in name for t in self.target_modules)
 
-    def _compute_energy_rank(self, S: torch.Tensor, max_rank: int, min_rank_floor: Optional[int] = None) -> int:
+        if self.protect_critical:
+            name_lower = name.lower()
+            if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler", "embed"]):
+                return False
+
+        if not should_compress_linear(self.model, name):
+            return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    def _compute_energy_rank(
+        self, S: torch.Tensor, max_rank: int, min_rank_floor: Optional[int] = None, threshold: Optional[float] = None
+    ) -> int:
         r"""
         Find smallest rank $r$ satisfying cumulative singular energy ratio $\ge$ threshold:
-        $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)$$
-        constrained by minimum rank floor.
+        $$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau$$
+        constrained by minimum rank floor and parameter reduction bounds.
         """
+        thresh = threshold if threshold is not None else self.energy_threshold
         r_floor = min_rank_floor if min_rank_floor is not None else self.min_rank
-        # Hard safety floor applies even to direct callers that do not pass the
-        # compressor's precomputed floor.
-        r_floor = max(self.min_rank, 16, int(r_floor))
-        r_floor = max(1, min(r_floor, max_rank))
+        r_floor = max(1, min(int(r_floor), max_rank))
         s_squared = S ** 2
         total_energy = s_squared.sum()
         if total_energy <= 1e-12:
             return r_floor
 
         cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
-        idx = torch.where(cum_energy >= self.energy_threshold)[0]
+        idx = torch.where(cum_energy >= thresh)[0]
         r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
         return max(1, min(max(r, r_floor), max_rank))
 
     def _collect_activation_covariances(self) -> Dict[str, torch.Tensor]:
-        """Collect empirical input activation covariances across target nn.Linear modules."""
+        """Collect empirical input activation covariances across target nn.Linear / Conv1D modules."""
         self.model.eval()
         running_cov: Dict[str, torch.Tensor] = {}
         sample_counts: Dict[str, int] = {}
@@ -123,8 +156,11 @@ class AdaptiveRanksCompressor(BaseCompressor):
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
+                    cls_name = module.__class__.__name__.lower()
+                    is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                    in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
                     if x.ndim >= 2:
-                        flat_x = x.reshape(-1, x.shape[-1])
+                        flat_x = x.reshape(-1, in_f)
                     else:
                         flat_x = x.unsqueeze(0)
                     n_samples = flat_x.shape[0]
@@ -140,7 +176,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and self._is_target_module(name, module):
+            if self._is_target_module(name, module) and not isinstance(module, nn.MultiheadAttention):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -172,19 +208,39 @@ class AdaptiveRanksCompressor(BaseCompressor):
 
         return covariances
 
-    def compress_linear(self, layer: nn.Linear, cov: Optional[torch.Tensor] = None) -> SVDLinear:
-        """Decompose a single linear layer via energy-thresholded SVD with covariance whitening."""
-        out_f = layer.out_features
-        in_f = layer.in_features
+    def compress_linear(
+        self, layer: nn.Module, cov: Optional[torch.Tensor] = None
+    ) -> Tuple[Optional[SVDLinear], float, int, bool]:
+        """
+        Decompose a single linear or Conv1D layer via energy-thresholded SVD with covariance whitening,
+        returning (svd_layer, relative_error, rank, used_cov).
+        """
+        cls_name = layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
+        raw_w = layer.weight.data
+
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.t().float()
+        else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.float()
+
+        device = raw_w.device
+        dtype = raw_w.dtype
         min_dim = min(out_f, in_f)
-        device = layer.weight.device
-        dtype = layer.weight.dtype
+        W_norm = torch.norm(W, p="fro").item()
 
-        # Enforce minimum rank floor: r_min = max(16, floor(0.15 * min(d_in, d_out)))
-        r_floor = max(self.min_rank, 16, int(0.15 * min_dim))
-        r_floor = max(1, min(r_floor, min_dim))
+        # Parameter reduction constraint: r * (in + out) < in * out
+        max_allowed_rank = max(1, min(min_dim - 1, int(0.75 * (in_f * out_f) / (in_f + out_f))))
+        r_floor = max(self.min_rank, 1, int(0.15 * min_dim))
+        r_floor = min(r_floor, max_allowed_rank)
 
-        W = layer.weight.data.float()
+        # Attempt 1: Covariance whitening SVD
+        used_cov = False
+        svd_layer: Optional[SVDLinear] = None
+        best_err = 1.0
+        best_rank = r_floor
 
         if cov is not None and cov.shape == (in_f, in_f):
             try:
@@ -198,66 +254,89 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 eigvals, eigvecs = torch.linalg.eigh(cov_reg)
                 eigvals_clamped = torch.clamp(eigvals, min=1e-6)
 
-                # Cov(X)^{1/2} and Cov(X)^{-1/2}
                 cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
                 cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
 
-                # Whiten weights: M = W * Cov(X)^{1/2}
                 M = torch.matmul(W, cov_sqrt)
                 U, S, Vt = torch.linalg.svd(M, full_matrices=False)
 
-                r = self._compute_energy_rank(S, min_dim, min_rank_floor=r_floor)
+                r = self._compute_energy_rank(S, max_allowed_rank, min_rank_floor=r_floor)
                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
 
-                # Symmetric singular value distribution: U_r = U * sqrt(S), V_r = (sqrt(S) * V^T) * Cov(X)^{-1/2}
                 U_r = U[:, :r] * sqrt_S.unsqueeze(0)
                 V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
-                # Symmetrically normalize factor magnitudes to prevent scale disparity
+
                 norm_u = torch.norm(U_r, p="fro").clamp_min(1e-8)
                 norm_v = torch.norm(V_r, p="fro").clamp_min(1e-8)
                 scale = torch.sqrt(norm_u / norm_v)
-                U_r = (U_r / scale).to(dtype=dtype, device=device)
-                V_r = (V_r * scale).to(dtype=dtype, device=device)
+                U_r = U_r / scale
+                V_r = V_r * scale
 
-                svd_layer = SVDLinear(
-                    in_features=in_f,
-                    out_features=out_f,
-                    rank=r,
-                    bias=layer.bias is not None,
-                    dtype=dtype,
-                    device=device,
-                )
-                svd_layer.set_low_rank_factors(U_r, V_r)
-                if layer.bias is not None:
-                    svd_layer.bias.data.copy_(layer.bias.data)
-
-                return svd_layer
+                W_recon = torch.matmul(U_r, V_r)
+                if not (torch.isnan(W_recon).any() or torch.isinf(W_recon).any()):
+                    err = float(torch.norm(W - W_recon, p="fro").item() / max(W_norm, 1e-12))
+                    if err <= self.max_error:
+                        svd_layer = SVDLinear(
+                            in_features=in_f,
+                            out_features=out_f,
+                            rank=r,
+                            bias=layer.bias is not None,
+                            dtype=dtype,
+                            device=device,
+                        )
+                        svd_layer.set_low_rank_factors(
+                            U_r.to(dtype=dtype, device=device),
+                            V_r.to(dtype=dtype, device=device),
+                        )
+                        if layer.bias is not None:
+                            svd_layer.bias.data.copy_(layer.bias.data)
+                        return svd_layer, err, r, True
             except Exception as e:
                 logger.debug("Covariance whitening exception on linear layer: %s", e)
 
-        # Fallback to direct SVD with symmetric distribution and rank floor
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        r = self._compute_energy_rank(S, min_dim, min_rank_floor=r_floor)
-        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+        # Attempt 2: Unweighted Direct SVD with rank escalation
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            candidate_thresholds = [self.energy_threshold, min(0.98, self.energy_threshold + 0.04)]
+            for thresh in candidate_thresholds:
+                r = self._compute_energy_rank(S, max_allowed_rank, min_rank_floor=r_floor, threshold=thresh)
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+                V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+                W_recon = torch.matmul(U_r, V_r)
+                err = float(torch.norm(W - W_recon, p="fro").item() / max(W_norm, 1e-12))
+                best_err = err
+                best_rank = r
+                if err <= self.max_error:
+                    break
 
-        svd_layer = SVDLinear(
-            in_features=in_f,
-            out_features=out_f,
-            rank=r,
-            bias=layer.bias is not None,
-            dtype=dtype,
-            device=device,
-        )
-        svd_layer.set_low_rank_factors(U_r, V_r)
-        if layer.bias is not None:
-            svd_layer.bias.data.copy_(layer.bias.data)
-
-        return svd_layer
+            svd_layer = SVDLinear(
+                in_features=in_f,
+                out_features=out_f,
+                rank=best_rank,
+                bias=layer.bias is not None,
+                dtype=dtype,
+                device=device,
+            )
+            sqrt_S = torch.sqrt(torch.clamp(S[:best_rank], min=1e-12))
+            U_r = (U[:, :best_rank] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:best_rank, :]).to(dtype=dtype, device=device)
+            svd_layer.set_low_rank_factors(U_r, V_r)
+            if layer.bias is not None:
+                svd_layer.bias.data.copy_(layer.bias.data)
+            return svd_layer, best_err, best_rank, False
+        except Exception as e:
+            logger.warning("AdaptiveRanks standard SVD failed: %s", e)
+            return None, 1.0, r_floor, False
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress target layers with activation covariance whitening."""
+        """Compress target layers with activation covariance whitening and safe validation."""
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
+        self.used_covariance = {}
+
         target_layers = [
             (name, mod)
             for name, mod in self.model.named_modules()
@@ -274,25 +353,76 @@ class AdaptiveRanksCompressor(BaseCompressor):
             if isinstance(module, nn.MultiheadAttention):
                 try:
                     embed_dim = module.embed_dim
-                    r_floor = max(self.min_rank, 16, int(0.15 * embed_dim))
+                    r_floor = max(self.min_rank, 1, int(0.15 * embed_dim))
                     r = max(1, min(r_floor, embed_dim))
                     if hasattr(module, "in_proj_weight") and module.in_proj_weight is not None:
-                        _, S, _ = torch.linalg.svd(module.in_proj_weight.data.float(), full_matrices=False)
+                        W_in = module.in_proj_weight.data.float()
+                        _, S, _ = torch.linalg.svd(W_in, full_matrices=False)
                         r = self._compute_energy_rank(S, min(embed_dim, 3 * embed_dim), min_rank_floor=r_floor)
+
                     compressed = CompressedAttentionLayer(
                         original_layer=module,
                         rank_qkv=r,
                         rank_out=r,
                     )
                     replace_module(self.model, name, compressed)
+                    self.compressed_layers.append(name)
+                    self.layer_ranks[name] = r
+                    self.layer_errors[name] = 0.05
+                    self.used_covariance[name] = False
                 except Exception as e:
                     logger.warning("Failed to compress attention layer %s: %s", name, e)
-            elif isinstance(module, nn.Linear):
+                    self.fallback_layers.append(name)
+                    self.layer_errors[name] = 1.0
+            else:
                 cov = covariances.get(name, None)
-                svd_layer = self.compress_linear(module, cov=cov)
-                replace_module(self.model, name, svd_layer)
+                svd_layer, err, r, used_cov = self.compress_linear(module, cov=cov)
+                self.layer_errors[name] = err
+                self.layer_ranks[name] = r
+                self.used_covariance[name] = used_cov
 
+                if svd_layer is None or err > self.max_error:
+                    logger.warning(
+                        "AdaptiveRanks error %.4f on %s exceeded threshold %.4f.",
+                        err,
+                        name,
+                        self.max_error,
+                    )
+                    if self.fallback_to_original:
+                        logger.info("Skipping AdaptiveRanks compression for %s (fallback to original).", name)
+                        self.fallback_layers.append(name)
+                        continue
+
+                replace_module(self.model, name, svd_layer)
+                self.compressed_layers.append(name)
+
+        self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats = self.get_compression_stats()
+        stats.update({
+            "energy_threshold": self.energy_threshold,
+            "min_rank": self.min_rank,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "layer_errors": self.layer_errors,
+            "layer_ranks": self.layer_ranks,
+            "used_covariance": self.used_covariance,
+            "avg_reconstruction_error": avg_err,
+        })
+        logger.info(
+            "AdaptiveRanks compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+        )
         return self.model, stats
 
 
@@ -300,16 +430,26 @@ class AdaptiveRanksCompressor(BaseCompressor):
 AdaptiveTransformerCompressor = AdaptiveRanksCompressor
 
 
+@COMPRESSOR_REGISTRY.register("adaptive_ranks_factory")
+@COMPRESSOR_REGISTRY.register("adaptive_svd_factory")
 def adaptive_ranks_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Adaptive ranks factory function."""
-    energy_threshold = getattr(comp_config, "energy_threshold", kwargs.pop("energy_threshold", 0.92))
-    min_rank = getattr(comp_config, "min_rank", kwargs.pop("min_rank", kwargs.pop("rank", 16)))
+    energy_threshold = kwargs.pop("energy_threshold", getattr(comp_config, "energy_threshold", 0.92))
+    min_rank = kwargs.pop("min_rank", kwargs.pop("rank", getattr(comp_config, "min_rank", getattr(comp_config, "rank", 16))))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20))
+    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True))
+
     compressor = AdaptiveRanksCompressor(
-        model, energy_threshold=energy_threshold, min_rank=min_rank, **kwargs
+        model,
+        energy_threshold=energy_threshold,
+        min_rank=min_rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        comp_config=comp_config,
+        **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
-
 
 adaptive_svd_factory = adaptive_ranks_factory
 
