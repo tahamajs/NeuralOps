@@ -462,6 +462,8 @@ class FAQQuantizer(BaseCompressor):
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register("faq")
+@COMPRESSOR_REGISTRY.register("faq_quantizer")
 @COMPRESSOR_REGISTRY.register("faq_factory")
 @COMPRESSOR_REGISTRY.register("faq_quantizer_factory")
 def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:

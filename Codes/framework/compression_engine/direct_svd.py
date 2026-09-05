@@ -51,7 +51,7 @@ class DirectSVDCompressor(BaseCompressor):
         rank: Optional[int] = 32,
         min_rank: int = 16,
         rank_ratio: Optional[float] = None,
-        max_error: float = 0.20,
+        max_error: float = 0.50,
         fallback_to_original: bool = True,
         protect_critical: bool = True,
         lora_r: int = 0,
@@ -331,7 +331,7 @@ def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
     """Direct SVD factory function."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     rank = kwargs.pop("rank", getattr(comp_config, "direct_svd_rank", getattr(comp_config, "rank", 32)) if comp_config is not None else 32)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "direct_svd_max_error", getattr(comp_config, "max_error", 0.20)) if comp_config is not None else 0.20)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "direct_svd_max_error", getattr(comp_config, "max_error", 0.50)) if comp_config is not None else 0.50)
     fallback = kwargs.pop(
         "fallback_to_original",
         getattr(comp_config, "direct_svd_fallback_to_original", getattr(comp_config, "fallback_to_original", True)) if comp_config is not None else True,
