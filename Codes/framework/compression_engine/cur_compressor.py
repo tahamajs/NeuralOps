@@ -21,7 +21,6 @@ from .cur_linear import CURLinear
 logger = logging.getLogger(__name__)
 
 
-@COMPRESSOR_REGISTRY.register("cur")
 @COMPRESSOR_REGISTRY.register("cur_compressor")
 class CURCompressor(BaseCompressor):
     """
