@@ -72,20 +72,36 @@ def copy_attention_weights(
 
 
 def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -> None:
-    """Replace a sub‑module identified by its dotted name."""
-    parts = full_name.split(".")
+    """Replace a sub-module identified by its dotted name, supporting ModuleList and ModuleDict."""
+    parts = [p for p in full_name.split(".") if p]
     parent = model
     for part in parts[:-1]:
-        parent = getattr(parent, part)
-    setattr(parent, parts[-1], new_module)
+        if isinstance(parent, (nn.ModuleList, list)):
+            parent = parent[int(part)]
+        elif isinstance(parent, (nn.ModuleDict, dict)):
+            parent = parent[part]
+        else:
+            parent = getattr(parent, part)
+    last = parts[-1]
+    if isinstance(parent, (nn.ModuleList, list)):
+        parent[int(last)] = new_module
+    elif isinstance(parent, (nn.ModuleDict, dict)):
+        parent[last] = new_module
+    else:
+        setattr(parent, last, new_module)
 
 
 def get_parent_and_child_name(model: nn.Module, full_name: str) -> Any:
-    """Return (parent_module, child_attribute_name)."""
-    parts = full_name.split(".")
+    """Return (parent_module, child_attribute_name), supporting ModuleList and ModuleDict."""
+    parts = [p for p in full_name.split(".") if p]
     parent = model
     for part in parts[:-1]:
-        parent = getattr(parent, part)
+        if isinstance(parent, (nn.ModuleList, list)):
+            parent = parent[int(part)]
+        elif isinstance(parent, (nn.ModuleDict, dict)):
+            parent = parent[part]
+        else:
+            parent = getattr(parent, part)
     return parent, parts[-1]
 
 
