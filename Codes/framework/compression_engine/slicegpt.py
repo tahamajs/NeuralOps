@@ -1,17 +1,21 @@
 """
-SliceGPT: Post-Training Slicing with Orthogonal Transformations and Non-Uniform Head Slicing.
+SliceGPT: Compress Large Language Models by Deleting Rows and Columns.
 Registered in COMPRESSOR_REGISTRY as 'slicegpt'.
 
 Mathematical Formulation:
-1. Activation Covariance:
-   $$C_X = \\frac{1}{N} X^\\top X \\in \\mathbb{R}^{d_{in} \\times d_{in}}$$
-2. Orthogonal Eigendecomposition:
-   $$C_X = Q \\Lambda Q^\\top, \\quad Q^\\top Q = I$$
-3. Rotated Linear Transformation:
-   $$\\widetilde{W} = W Q, \\quad \\widetilde{X} = Q^\\top X$$
-4. Slicing Projection (Uniform or Non-Uniform Head Slicing):
-   $$P_r = [e_{\\pi(1)}, e_{\\pi(2)}, \\dots, e_{\\pi(r)}] \\in \\mathbb{R}^{d_{in} \\times r}$$
-   $$W_{sliced} = \\widetilde{W} P_r P_r^\\top Q^\\top$$
+1. Orthogonal Coordinate Invariance:
+   $$W_{\\ell} X_{\\ell} = (W_{\\ell} Q_{\\ell}) (Q_{\\ell}^\\top X_{\\ell})$$
+2. Eigen-decomposition of Activation Covariance:
+   $$C = X X^\\top = Q \\Lambda Q^\\top$$
+3. Coordinate Slicing Transformation:
+   $$W_{\\text{sliced}} = W Q P_r, \\quad P_r = [I_r, 0]^\\top$$
+
+Production Hardening:
+- Fix 1: Default fallback_to_original changed to True.
+- Fix 2: Reliable Conv1D detection by class name and nf attribute without shape heuristics.
+- Fix 3: Always log warning when reconstruction error exceeds max_error regardless of fallback.
+- Fix 4: Unified critical-layer protection delegated solely to should_compress_linear.
+- Fix 5: Store max_error and fallback_to_original in returned stats.
 """
 
 from __future__ import annotations
@@ -23,10 +27,7 @@ import torch.nn as nn
 
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.compression_engine.pruning_utils import (
-    DEFAULT_CALIB_TEXTS,
-    get_calibration_tensors,
-)
+from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -34,10 +35,8 @@ logger = logging.getLogger(__name__)
 
 class SliceGPTCompressor(BaseCompressor):
     """
-    Native PyTorch SliceGPT Compressor.
-    
-    Applies orthogonal transformation Q to rotate model representations onto principal
-    activation variance coordinates, followed by uniform or non-uniform projection head slicing.
+    SliceGPT Compression Strategy: Projects activations onto principal components via orthogonal
+    rotation matrices Q and slices out lowest-variance coordinates, with Frobenius validation and fallback.
     """
 
     def __init__(
@@ -45,12 +44,12 @@ class SliceGPTCompressor(BaseCompressor):
         model: nn.Module,
         tokenizer: Optional[Any] = None,
         sparsity: float = 0.25,
-        non_uniform: bool = True,
+        non_uniform: bool = False,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
         max_error: float = 0.5,
-        fallback_to_original: bool = False,
+        fallback_to_original: bool = True,  # Fix 1: Default changed to True
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -61,6 +60,9 @@ class SliceGPTCompressor(BaseCompressor):
             non_uniform = getattr(cfg, "non_uniform", non_uniform)
             max_error = getattr(cfg, "max_error", max_error)
             fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
+        if "fallback_to_original" in kwargs:
+            fallback_to_original = bool(kwargs["fallback_to_original"])
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
@@ -79,10 +81,13 @@ class SliceGPTCompressor(BaseCompressor):
         self.stats: Dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
-            return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        """
+        Fix 4: Unified critical-layer protection delegated to should_compress_linear.
+        Eliminates duplicate keyword matching.
+        """
+        cls_name = module.__class__.__name__.lower()
+        # Fix 2: Reliable Conv1D check using class name and hasattr(nf)
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
@@ -141,46 +146,28 @@ class SliceGPTCompressor(BaseCompressor):
 
         return aggregated
 
-    def _compute_orthogonal_rotation(self, activations: torch.Tensor, d_in: int, device: Optional[torch.device] = None) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Derives orthogonal matrix Q from activation covariance C_X = (1/N) X^T X via eigendecomposition.
-        Returns:
-            Q: Orthogonal rotation matrix [d_in, d_in]
-            eigenvalues: Eigenvalue variance spectrum [d_in]
-        """
-        dev = device if device is not None else torch.device("cpu")
-        if activations is not None and activations.numel() > 0:
-            X = activations.to(dev).reshape(-1, activations.shape[-1]).float()
-            if X.shape[-1] == d_in:
-                N = X.shape[0]
-                C = (1.0 / max(N, 1)) * torch.matmul(X.T, X)
-                # Add small regularizer for numerical stability
-                C = C + 1e-6 * torch.eye(d_in, device=dev)
-                eigenvalues, Q = torch.linalg.eigh(C)
-                # Sort in descending order
-                idx = torch.argsort(eigenvalues, descending=True)
-                eigenvalues = eigenvalues[idx]
-                Q = Q[:, idx]
-                return Q, eigenvalues
+    def _compute_orthogonal_rotation(self, X: Optional[torch.Tensor], d_in: int, device: torch.device) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute orthogonal rotation matrix Q via eigen-decomposition of activation covariance."""
+        if X is not None and X.numel() > 0:
+            X_flat = X.reshape(-1, X.shape[-1]).float().to(device)
+            if X_flat.shape[-1] == d_in and X_flat.shape[0] > 1:
+                cov = torch.matmul(X_flat.T, X_flat) / X_flat.shape[0]
+                cov = cov + 1e-4 * torch.eye(d_in, device=device)
+                try:
+                    eigvals, Q = torch.linalg.eigh(cov)
+                    idx = torch.argsort(eigvals, descending=True)
+                    return Q[:, idx], eigvals[idx]
+                except Exception as e:
+                    logger.debug("eigh covariance failed (%s). Falling back to QR random basis.", e)
 
-        # Fallback to Haar-distributed random orthogonal matrix
-        H = torch.randn(d_in, d_in, device=dev)
-        Q, _ = torch.linalg.qr(H)
-        eigenvalues = torch.ones(d_in, device=dev)
-        return Q, eigenvalues
+        # Haar distributed random orthogonal matrix via QR factorization
+        rand_mat = torch.randn(d_in, d_in, device=device)
+        Q, _ = torch.linalg.qr(rand_mat)
+        return Q, torch.ones(d_in, device=device)
 
-    def compress(
-        self,
-        save_dir: Optional[str] = None,
-        run_finetuning: bool = False,
-        finetune_nsamples: int = 128,
-        **kwargs: Any,
-    ) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """
-        Applies SliceGPT orthogonal rotation and projection slicing.
-        
-        Returns:
-            Tuple[nn.Module, Dict[str, Any]]: Compressed model and comprehensive stats.
+        Applies SliceGPT orthogonal rotation and projection slicing with reconstruction validation.
         """
         self.layer_errors = {}
         activations_map = self._collect_layer_activations()
@@ -190,13 +177,9 @@ class SliceGPTCompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 raw_w = module.weight.data
-                cls_name = module.__class__.__name__
-                is_conv1d = "conv1d" in cls_name.lower() or (
-                    raw_w.ndim == 2
-                    and hasattr(module, "in_features")
-                    and module.in_features == raw_w.shape[0]
-                    and raw_w.shape[0] < raw_w.shape[1]
-                )
+                cls_name = module.__class__.__name__.lower()
+                # Fix 2: Check for Conv1D via class name and nf attribute
+                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
                 device = raw_w.device
                 dtype = raw_w.dtype
 
@@ -217,11 +200,9 @@ class SliceGPTCompressor(BaseCompressor):
 
                 # Determine slicing dimension r
                 if self.non_uniform and ("query" in name or "key" in name or "q_lin" in name or "k_lin" in name):
-                    # Non-uniform attention projection head preservation: lighter slicing
                     head_sparsity = max(0.0, self.sparsity * 0.75)
                     r = max(1, int(d_in * (1.0 - head_sparsity)))
                 elif self.non_uniform and ("mlp" in name or "ffn" in name or "dense" in name):
-                    # Intermediate MLP projections: higher tolerance for slicing
                     mlp_sparsity = min(0.9, self.sparsity * 1.15)
                     r = max(1, int(d_in * (1.0 - mlp_sparsity)))
                 else:
@@ -240,14 +221,17 @@ class SliceGPTCompressor(BaseCompressor):
                 rel_err = (torch.norm(W - W_pruned, p="fro") / (norm_orig + 1e-8)).item()
                 self.layer_errors[name] = rel_err
 
-                if self.fallback_to_original and rel_err > self.max_error:
+                # Fix 3: Always log a warning when reconstruction error exceeds max_error
+                if rel_err > self.max_error:
                     logger.warning(
-                        "SliceGPT reconstruction error %.4f on %s exceeded threshold %.4f. Skipping.",
+                        "SliceGPT reconstruction error %.4f on %s exceeded threshold %.4f%s",
                         rel_err,
                         name,
                         self.max_error,
+                        ". Skipping (fallback to original)." if self.fallback_to_original else ". Proceeding with sliced weight.",
                     )
-                    continue
+                    if self.fallback_to_original:
+                        continue
 
                 if r < d_in:
                     total_channels_pruned += (d_in - r)
@@ -258,12 +242,16 @@ class SliceGPTCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        # Fix 5: Store max_error and fallback_to_original in stats
         stats.update({
             "sliced_layers": sliced_layers_count,
-            "total_channels_pruned": total_channels_pruned,
             "sparsity_target": self.sparsity,
+            "non_uniform": self.non_uniform,
+            "total_channels_pruned": total_channels_pruned,
             "layer_errors": self.layer_errors,
-            "method": "slicegpt_orthogonal_projection",
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "method": "slicegpt_pca_rotation_slicing",
         })
         self.stats = stats
         return self.model, stats
@@ -273,7 +261,7 @@ class SliceGPTCompressor(BaseCompressor):
 def slicegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for SliceGPT compressor."""
     sparsity = getattr(comp_config, "slicegpt_sparsity", getattr(comp_config, "sparsity", 0.25)) if comp_config else kwargs.get("sparsity", 0.25)
-    non_uniform = getattr(comp_config, "slicegpt_non_uniform", getattr(comp_config, "non_uniform", True)) if comp_config else kwargs.get("non_uniform", True)
+    non_uniform = getattr(comp_config, "non_uniform", False) if comp_config else kwargs.get("non_uniform", False)
     tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
 
     compressor = SliceGPTCompressor(
@@ -281,6 +269,7 @@ def slicegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         tokenizer=tokenizer,
         sparsity=sparsity,
         non_uniform=non_uniform,
+        comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
