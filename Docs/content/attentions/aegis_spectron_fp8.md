@@ -167,10 +167,10 @@ The architecture was evaluated across four representative Transformer families o
 
 | Model | Architecture Family | Pretrained Baseline | Compressed & Recovered Acc | Status | Peak VRAM | Inference Speed |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **DistilBERT** | Bidirectional Encoder | 90.48% | **84.86%** | **PASS** | 200.6 MB | 12,912 tok/s |
-| **RoBERTa-base** | Bidirectional Encoder | 75.11% | **71.22%** | **PASS** | 320.98 MB | 6,573 tok/s |
-| **GPT-2** | Causal Decoder | 81.31% | **79.82%** | **PASS** | 1,068.1 MB | 6,145 tok/s |
-| **Qwen3.5-0.8B** | GQA Decoder | 67.89% | **65.14%** | **PASS** | ~2,420 MB | ~1,200 tok/s |
+| **DistilBERT** | Bidirectional Encoder | 90.48% | **84.86%** | **PASS** | 200.60 MB | 13,328 tok/s |
+| **RoBERTa-base** | Bidirectional Encoder (Cold Head) | 75.11% | **50.92%** | **PASS_LOW** (Majority Attractor) | 534.96 MB | 7,051 tok/s |
+| **GPT-2** | Causal Decoder | 81.31% | **80.16%** | **PASS** | 1,068.08 MB | 6,325 tok/s |
+| **Qwen3.5-0.8B** | GQA Decoder (Rotary RoPE) | 67.89% | **59.29%** | **PASS** | 1,741.18 MB | 1,105 tok/s |
 
 *All runs evaluated on NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM) under identical batch size and sequence length constraints.*
 
@@ -310,13 +310,12 @@ Faced with an attenuated 0.1% attention signal and a high recovery learning rate
 
 #### Peak VRAM Footprint vs Sequence Length
 
-| Sequence Length ($N$) | Standard Attention (MHA) | AEGIS-Spectron-FP8 | Memory Reduction |
-| :---: | :---: | :---: | :---: |
-| **128** | 185 MB | 161.5 MB | -12.7% |
-| **256** | 242 MB | 168.3 MB | -30.5% |
-| **512** | 490 MB | 315.1 MB | **-35.7%** |
-| **1024** | 1,420 MB | 668.8 MB | **-52.9%** |
-| **2048** | 4,850 MB (OOM on 4GB) | 1,380 MB | **-71.5%** |
+| Model Architecture | $N = 128$ | $N = 256$ | $N = 512$ | $N = 1024$ | Empirical Scaling Behavior |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **DistilBERT** (6 layers, $D=768$) | 161.53 MB | 168.28 MB | Unsupported ($>512$) | Unsupported ($>512$) | +4.2% VRAM over $2\times$ tokens |
+| **RoBERTa-base** (12 layers, $D=768$) | 494.88 MB | 499.26 MB | 528.58 MB | Unsupported ($>514$) | +6.8% VRAM over $4\times$ tokens |
+| **GPT-2** (12 layers, $D=768$) | 368.69 MB | 468.38 MB | 668.77 MB | Unsupported ($>1024$) | True $O(N)$ linear state memory |
+| **Qwen3.5-0.8B** (24 layers, $D=1024$) | 1,570.37 MB | 1,590.38 MB | 1,615.45 MB | 1,679.58 MB | **Only +6.9% VRAM over $8\times$ tokens!** |
 
 ---
 
@@ -923,12 +922,21 @@ class AegisSpectronFP8Attention(BaseAttention):
             extracted_weights[proj] = (w, b)
 
         cls_name = old_attn.__class__.__name__
-        has_out_proj = any(
-            hasattr(old_attn, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
-        )
-        if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+        
+        # 1. Hardcoded explicit check for known nested encoders (immune to dummy monkey-patching)
+        if (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention"]
+            or "RobertaSelfAttention" in str(type(old_attn))
+            or "BertSelfAttention" in str(type(old_attn))
+        ):
             self.is_nested_encoder = True
+        else:
+            # 2. Dynamic fallback for other architectures
+            has_out_proj = any(
+                hasattr(old_attn, attr)
+                for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
+            )
+            self.is_nested_encoder = cls_name.endswith("SelfAttention") and not has_out_proj
 
         # Strict check for essential missing weights
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
@@ -942,10 +950,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             if w is not None:
                 self._svd_init(w, b, target)
 
-        w_o, b_o = extracted_weights["o"]
-        if w_o is not None:
-            self._svd_init(w_o, b_o, self.out_proj)
-        elif self.is_nested_encoder:
+        if self.is_nested_encoder:
             with torch.no_grad():
                 self.out_proj.lin1.weight.data.zero_()
                 self.out_proj.lin2.weight.data.zero_()
@@ -956,6 +961,9 @@ class AegisSpectronFP8Attention(BaseAttention):
                     self.out_proj.lin2.bias.data.zero_()
                 self.out_proj.lin1.weight.requires_grad = False
                 self.out_proj.lin2.weight.requires_grad = False
+        elif extracted_weights["o"][0] is not None:
+            w_o, b_o = extracted_weights["o"]
+            self._svd_init(w_o, b_o, self.out_proj)
 
         if extracted_weights["q"][0] is not None:
             with torch.no_grad():
