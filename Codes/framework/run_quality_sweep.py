@@ -764,6 +764,7 @@ def main():
             "spectron": 400, "svd_llm_v2": 400, "swift_svd": 400,
             "swift_svd_act": 400, "tt": 400, "svd_quant": 400,
             "svd_projection": 400,
+            "aegis_spectron_fp8": 1500,
         }
         base_timeout = 600
         effective_timeout = max(base_timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, base_timeout))
@@ -806,7 +807,7 @@ def main():
                             "hgrn2_gated_deltanet", "gated_delta_net", "gated_deltanet_block",
                             "factorised_matrix_state", "linformer", "lsh", "hashed_net",
                             "hamming", "spectron", "span_expanded", "gfws", "hla", "oha", "kda",
-                            "aegis_hybrid",
+                            "aegis_hybrid", "aegis_spectron_fp8",
                         }
                         if name in FROM_SCRATCH_MODULES:
                             rec_steps = max(args.recovery_steps, 50)
