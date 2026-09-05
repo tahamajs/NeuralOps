@@ -26,7 +26,6 @@ from .cur_linear import (
 logger = logging.getLogger(__name__)
 
 
-@COMPRESSOR_REGISTRY.register("cur_moe")
 @COMPRESSOR_REGISTRY.register("cur_moe_compressor")
 class CURMoECompressor(BaseCompressor):
     """
@@ -38,7 +37,7 @@ class CURMoECompressor(BaseCompressor):
         min_rank: Minimum allowable rank (default 8).
         method: 'leverage' (statistical leverage scores) or 'energy' (Frobenius energy).
         deterministic: Whether to use deterministic top-k selection (default True).
-        max_error: Maximum allowed relative Frobenius error (default 0.20).
+        max_error: Maximum allowed relative Frobenius error (default 0.90).
         fallback_to_original: Whether to preserve original layer if error > max_error (default True).
         max_retries: Number of adaptive rank escalations (default 2).
         cfg: Optional configuration object.
@@ -51,7 +50,7 @@ class CURMoECompressor(BaseCompressor):
         min_rank: int = 8,
         method: str = "leverage",
         deterministic: bool = True,
-        max_error: float = 0.20,
+        max_error: float = 0.90,
         fallback_to_original: bool = True,
         max_retries: int = 2,
         cfg: Optional[Any] = None,
