@@ -316,13 +316,25 @@ class ASTPruner(BaseCompressor):
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes AST 2:4 structured pruning with PCA rotation and empirical Fisher calibration."""
+        from framework.utils.compat import replace_module
+
         cov_map, fisher_map = self._collect_fisher_and_activations()
         self.compressed_layers = []
         self.fallback_layers = []
+        self.skipped_layers = []
         self.layer_errors = {}
+        seen_weights: set[int] = set()
 
-        for name, module in self.model.named_modules():
+        for name, module in list(self.model.named_modules()):
             if self._is_target_module(name, module):
+                if not hasattr(module, "weight") or module.weight is None:
+                    continue
+                w_id = id(module.weight)
+                if w_id in seen_weights:
+                    self.skipped_layers.append(name)
+                    continue
+                seen_weights.add(w_id)
+
                 raw_w = module.weight.data
                 cls_name = module.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
@@ -389,10 +401,22 @@ class ASTPruner(BaseCompressor):
                         self.fallback_layers.append(name)
                         continue
 
-                if is_conv1d:
-                    module.weight.data.copy_(W_final.t().contiguous().to(dtype=dtype, device=device))
+                if self.lora_r > 0:
+                    ast_layer = ASTPrunedLoRALinear.from_linear(
+                        module,
+                        weight=W_final,
+                        lora_r=self.lora_r,
+                        lora_alpha=self.lora_alpha,
+                    )
+                    if name == "":
+                        self.model = ast_layer
+                    else:
+                        replace_module(self.model, name, ast_layer)
                 else:
-                    module.weight.data.copy_(W_final.contiguous().to(dtype=dtype, device=device))
+                    if is_conv1d:
+                        module.weight.data.copy_(W_final.t().contiguous().to(dtype=dtype, device=device))
+                    else:
+                        module.weight.data.copy_(W_final.contiguous().to(dtype=dtype, device=device))
 
                 self.compressed_layers.append(name)
 
@@ -409,6 +433,18 @@ class ASTPruner(BaseCompressor):
             except Exception as e:
                 logger.warning("AST LayerNorm recalibration skipped: %s", e)
 
+        # Post-compression forward sanity check
+        forward_check_success = False
+        try:
+            self.model.eval()
+            with torch.no_grad():
+                d = next(self.model.parameters()).device
+                dummy = torch.randint(0, 100, (1, 16), device=d)
+                self.model(dummy)
+            forward_check_success = True
+        except Exception as e:
+            logger.debug("AST post-compression forward sanity check exception: %s", e)
+
         self._compressed_params = self._count_params(self.model)
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
@@ -420,8 +456,10 @@ class ASTPruner(BaseCompressor):
             "pruned_layers": len(self.compressed_layers),
             "compressed_layers": self.compressed_layers,
             "fallback_layers": self.fallback_layers,
+            "skipped_layers": self.skipped_layers,
             "num_compressed": len(self.compressed_layers),
             "num_fallback": len(self.fallback_layers),
+            "num_skipped": len(self.skipped_layers),
             "layer_errors": self.layer_errors,
             "avg_reconstruction_error": avg_err,
             "block_size": self.block_size,
@@ -432,6 +470,9 @@ class ASTPruner(BaseCompressor):
             "recalibrate_ln": self.recalibrate_ln,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
+            "lora_r": self.lora_r,
+            "lora_alpha": self.lora_alpha,
+            "forward_check_success": forward_check_success,
             "method": "ast_fisher_pca_2_4_pruning",
         })
         self.stats = stats
@@ -442,6 +483,7 @@ class ASTPruner(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("ast_factory")
 def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for AST pruner."""
+    return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     block_size = kwargs.pop("block_size", getattr(comp_config, "ast_block_size", getattr(comp_config, "block_size", 4)))
     n_keep = kwargs.pop("n_keep", getattr(comp_config, "ast_n_keep", getattr(comp_config, "n_keep", 2)))
     dim = kwargs.pop("dim", getattr(comp_config, "ast_dim", getattr(comp_config, "dim", 1)))
@@ -452,6 +494,9 @@ def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
     fallback = kwargs.pop("fallback_to_original", getattr(
         comp_config, "ast_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
     ))
+    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", getattr(comp_config, "lora_rank", 0)))
+    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0))
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", getattr(comp_config, "skip_attention_qkv", True))
 
     compressor = ASTPruner(
         model,
@@ -463,18 +508,20 @@ def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
         recalibrate_ln=recalibrate_ln,
         max_error=max_error,
         fallback_to_original=fallback,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        skip_attention_qkv=skip_attention_qkv,
         comp_config=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_tuple:
+        return compressed_model, stats
     return compressed_model
 
-__all__ = [
-    "ASTPruner",
-    "ast_pruner_factory",
-]
 
 __all__ = [
     "ASTPruner",
+    "ASTPrunedLoRALinear",
     "ast_pruner_factory",
 ]
