@@ -113,6 +113,9 @@ class ZeroKVNeoCache:
         return self.k_cache, self.v_cache
 
 
+@COMPRESSOR_REGISTRY.register("zerokv_neo")
+@COMPRESSOR_REGISTRY.register("zerokv")
+@COMPRESSOR_REGISTRY.register("zerokv_neo_compressor")
 class ZeroKVNeoCompressor(BaseCompressor):
     """
     ZeroKV-Neo Compressor: L2-norm weight pruning preserving attention sinks and heavy hitters.
@@ -164,6 +167,8 @@ class ZeroKVNeoCompressor(BaseCompressor):
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
         self.compressed_layers: List[Dict[str, Any]] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         # Protect critical classification heads, poolers, lm_heads, and embeddings
@@ -190,6 +195,8 @@ class ZeroKVNeoCompressor(BaseCompressor):
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress linear projection weights preserving attention sinks and heavy hitters."""
         self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
         total_error = 0.0
 
         for name, module in list(self.model.named_modules()):
@@ -201,12 +208,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
             orig_device = raw_w.device
             cls_name = module.__class__.__name__
 
-            is_conv1d = "conv1d" in cls_name.lower() or (
-                raw_w.ndim == 2
-                and hasattr(module, "in_features")
-                and module.in_features == raw_w.shape[0]
-                and raw_w.shape[0] < raw_w.shape[1]
-            )
+            is_conv1d = "conv1d" in cls_name.lower() or hasattr(module, "nf")
 
             if is_conv1d:
                 W = raw_w.t().float().contiguous()
@@ -272,6 +274,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 )
                 if self.fallback_to_original:
                     logger.info("ZeroKV-Neo: Keeping original module for %s.", name)
+                    self.fallback_layers.append(name)
                     continue
 
             if best_mask is None:
@@ -302,6 +305,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
                     "rel_error": float(best_err),
                 }
             )
+            self.layer_errors[name] = float(best_err)
             total_error += best_err
 
         self._compressed_params = self._count_params(self.model)
@@ -311,11 +315,15 @@ class ZeroKVNeoCompressor(BaseCompressor):
             {
                 "compressed_layers": self.compressed_layers,
                 "num_compressed_layers": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "layer_errors": self.layer_errors,
                 "keep_ratio": self.keep_ratio,
                 "num_attention_sinks": self.num_attention_sinks,
                 "heavy_hitter_ratio": self.heavy_hitter_ratio,
                 "avg_reconstruction_error": avg_err,
                 "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
                 "kv_cache_budget_saving": f"{(1.0 - self.keep_ratio) * 100:.1f}% Footprint Reduction",
             }
         )
