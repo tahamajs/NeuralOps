@@ -716,36 +716,34 @@ class AegisSpectronFP8Attention(BaseAttention):
         phi_Q = F.elu(Q_lr) + 1.0
         phi_K = F.elu(K_lr) + 1.0
 
-        if getattr(self, "is_decoder", False):
-            # Causal Global Linear Attention via Cumulative Sums in FP32
+        device_type = Q.device.type if Q.device.type in ("cuda", "cpu") else "cuda"
+        with torch.autocast(device_type=device_type, enabled=False):
             phi_Q_f = phi_Q.float()
             phi_K_f = phi_K.float()
             V_f = V_flat.float()
 
-            # Numerator: cumsum_{j <= t} phi_K_j * V_j -> [B, N, rank, D]
-            KV_pair = phi_K_f.unsqueeze(-1) * V_f.unsqueeze(-2)
-            KV_cumsum = torch.cumsum(KV_pair, dim=1)
-            num = torch.einsum("bnr,bnrd->bnd", phi_Q_f, KV_cumsum)
+            if getattr(self, "is_decoder", False):
+                # Causal Global Linear Attention via Cumulative Sums in FP32
+                # Numerator: cumsum_{j <= t} phi_K_j * V_j -> [B, N, rank, D]
+                KV_pair = phi_K_f.unsqueeze(-1) * V_f.unsqueeze(-2)
+                KV_cumsum = torch.cumsum(KV_pair, dim=1)
+                num = torch.einsum("bnr,bnrd->bnd", phi_Q_f, KV_cumsum)
 
-            # Denominator: cumsum_{j <= t} phi_K_j -> [B, N, rank]
-            K_cumsum = torch.cumsum(phi_K_f, dim=1)
-            den = (phi_Q_f * K_cumsum).sum(dim=-1, keepdim=True) + 1e-6
+                # Denominator: cumsum_{j <= t} phi_K_j -> [B, N, rank]
+                K_cumsum = torch.cumsum(phi_K_f, dim=1)
+                den = (phi_Q_f * K_cumsum).sum(dim=-1, keepdim=True) + 1e-6
 
-            out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
-            return out_lr.view(B, N, h, d).transpose(1, 2)
-        else:
-            # True Bidirectional Linear Attention with Normalization (FP32 to prevent FP16 Overflow)
-            phi_Q_f = phi_Q.float()
-            phi_K_f = phi_K.float()
-            V_f = V_flat.float()
+                out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
+                return out_lr.view(B, N, h, d).transpose(1, 2)
+            else:
+                # True Bidirectional Linear Attention with Normalization (FP32 to prevent FP16 Overflow)
+                KV = torch.matmul(phi_K_f.transpose(-1, -2), V_f)
+                Z = phi_K_f.sum(dim=1, keepdim=True)
+                num = torch.matmul(phi_Q_f, KV)
+                den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)) + 1e-6
 
-            KV = torch.matmul(phi_K_f.transpose(-1, -2), V_f)
-            Z = phi_K_f.sum(dim=1, keepdim=True)
-            num = torch.matmul(phi_Q_f, KV)
-            den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)) + 1e-6
-
-            out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
-            return out_lr.view(B, N, h, d).transpose(1, 2)
+                out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
+                return out_lr.view(B, N, h, d).transpose(1, 2)
 
     def _linear_branch(self, X: torch.Tensor) -> torch.Tensor:
         if self.linear_in is not None:
