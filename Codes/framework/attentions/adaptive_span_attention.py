@@ -148,11 +148,11 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_span_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=False, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_span_attention", supports_causal=True, supports_bidirectional=False, supports_gqa=True)
 class AdaptiveSpanAttention(BaseAttention):
     supports_causal: bool = True
-    supports_bidirectional: bool = True
+    supports_bidirectional: bool = False
     supports_gqa: bool = True
     supports_rope: bool = True
 

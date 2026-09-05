@@ -249,18 +249,29 @@ class LEKAv2Attention(BaseAttention):
 
         return torch.cat([f1, f2], dim=-1)
 
+    def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
+        new_x_shape = x.size()[:-1] + (self.num_heads, self.head_dim)
+        x = x.view(new_x_shape)
+        return x.permute(0, 2, 1, 3)
+
     def select_landmarks(
-        self, K_features: torch.Tensor, V: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self,
+        K_features: torch.Tensor,
+        V: torch.Tensor,
+        return_indices: bool = False,
+    ) -> Union[Tuple[torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         B, H, N, feat_dim = K_features.shape
         L_max = min(self.num_landmarks, N)
         scores = self.landmark_scorer(K_features).squeeze(-1)
         scores[:, :, 0] = 1e4  # Anchor index 0
         _, idx = scores.topk(L_max, dim=-1)
+        idx[:, :, 0] = 0
 
         K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
         V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
-        return K_land, V_land, idx
+        if return_indices:
+            return K_land, V_land, idx
+        return K_land, V_land
 
     @staticmethod
     def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
@@ -441,7 +452,7 @@ class LEKAv2Attention(BaseAttention):
         Q_features = self.kernel_feature_map(q)
         K_features = self.kernel_feature_map(k)
 
-        K_land, V_land, land_idx = self.select_landmarks(K_features, v)
+        K_land, V_land, land_idx = self.select_landmarks(K_features, v, return_indices=True)
 
         W = self.W_corr.unsqueeze(0).expand(B, -1, -1, -1)
         V_land_adj = torch.einsum("bhld,bhde->bhle", V_land, W)
