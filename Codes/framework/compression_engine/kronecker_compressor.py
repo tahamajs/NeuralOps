@@ -22,7 +22,7 @@ from .kronecker_linear import KroneckerLinear
 logger = logging.getLogger(__name__)
 
 
-@COMPRESSOR_REGISTRY.register("kronecker")
+@COMPRESSOR_REGISTRY.register("kronecker_compressor")
 class KroneckerCompressor(BaseCompressor):
     """
     Compresses a model by replacing eligible nn.Linear and Conv1D layers with a
@@ -273,6 +273,7 @@ class KroneckerCompressor(BaseCompressor):
         return kron_layer, err
 
 
+@COMPRESSOR_REGISTRY.register("kronecker")
 @COMPRESSOR_REGISTRY.register("kronecker_factory")
 def kronecker_factory(
     model: nn.Module,
