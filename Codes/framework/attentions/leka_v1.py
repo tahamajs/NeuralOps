@@ -1,37 +1,150 @@
+"""LEKAv1: Linear-time Efficient Kernel Attention (Production-Hardened).
+
+Mathematical Mechanism:
+    Approximates the Gaussian RBF kernel via Random Fourier Feature (RFF) mapping:
+    Supports:
+    - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
+    - Trainable LoRA adapters with frozen base weights
+    - GQA with repeat_kv
+    - RoPE position embeddings
+    - Causal cumulative recurrence for decoders
+    - Nested encoder bypass
+    - Frobenius norm verification (>= 1e-4)
+    - Safe injection returning None on failure
+"""
+
+from __future__ import annotations
+
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("leka_v1")
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim < head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
+        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+        k = torch.cat([k_rot_embed, k_pass], dim=-1)
+    else:
+        q = (q * cos) + (_rotate_half(q) * sin)
+        k = (k * cos) + (_rotate_half(k) * sin)
+
+    return q, k
+
+
+class LoRALinear(nn.Module):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -> None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank > 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank > 0 and self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -> None:
+        self.weight.requires_grad = True
+        if self.bias is not None:
+            self.bias.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out
+        return out
+
+
+@ATTENTION_REGISTRY.register("leka_v1", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class LEKAV1Attention(BaseAttention):
-    r"""
-    LEKAv1: Linear-time Efficient Kernel Attention (Basic Random Fourier Features).
-
-    Mathematical Mechanism:
-        Approximates the Gaussian RBF kernel via Random Fourier Feature (RFF) mapping $\phi(x)$:
-        $$\begin{aligned}
-        \phi(x) &= \frac{1}{\sqrt{F}} \left[\cos(x W_{\text{proj}}), \; \sin(x W_{\text{proj}})\right] \in \mathbb{R}^{B \times H \times N \times 2F} \\
-        KV &= \sum_{t=1}^N \phi(K_t)^\top V_t \in \mathbb{R}^{B \times H \times 2F \times d} \\
-        Z &= \sum_{t=1}^N \phi(K_t) \in \mathbb{R}^{B \times H \times 2F} \\
-        O_i &= \frac{\phi(Q_i) KV}{\phi(Q_i) Z^\top + \epsilon} W_{\text{out}}
-        \end{aligned}$$
-
-    Computational Complexity:
-        - Time: $\mathcal{O}(B \cdot H \cdot N \cdot F \cdot d_k)$ — strictly linear in sequence length $N$.
-        - Space: $\mathcal{O}(B \cdot H \cdot F \cdot d_k)$ for associative matrix products.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: `[B, N, D]`
-        - Output: Tuple `(output, None)` where `output` is `[B, N, D]`.
-    """
+    r"""LEKAv1: Linear-time Efficient Kernel Attention (Hardened)."""
 
     def __init__(
         self,
@@ -41,146 +154,262 @@ class LEKAV1Attention(BaseAttention):
         total_layers: int = 6,
         bert_mode: bool = False,
         rank: Optional[int] = None,
+        pretrained_attn: Optional[nn.Module] = None,
+        old_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
+        source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
-        self.num_attention_heads: int = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
-        hidden_size: int = getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
-        self.attention_head_size: int = hidden_size // self.num_attention_heads if self.num_attention_heads > 0 else 64
-        self.all_head_size: int = self.num_attention_heads * self.attention_head_size
-        self.head_dim: int = self.attention_head_size
-        self.bert_mode: bool = bert_mode
-        self.layer_idx: int = layer_idx
 
-        self.feature_dim: int = getattr(comp_config, "feature_dim", 256) if comp_config is not None else 256
-        dropout_p: float = getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1
+        if config is not None:
+            hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
+            num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+            num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", num_heads))
+        elif source_attn is not None:
+            out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+            hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+            num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
+            num_kv_heads = getattr(source_attn, "num_key_value_heads", num_heads)
+        else:
+            hidden_size = kwargs.get("hidden_size", 768)
+            num_heads = kwargs.get("num_attention_heads", 12)
+            num_kv_heads = kwargs.get("num_key_value_heads", num_heads)
 
-        self.query: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
-        self.key: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
-        self.value: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
-        self.out_proj: nn.Linear = nn.Linear(self.all_head_size, hidden_size)
-        self.norm: nn.LayerNorm = nn.LayerNorm(self.head_dim)
-        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
-        # PATCH: Preservation gate — interpolates between new linear-attn output and the
-        # pretrained residual bypass. Initialised at sigmoid(2.0) ≈ 0.88, meaning the
-        # model starts close to the pretrained distribution and learns to deviate gradually.
-        self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(2.0))
+        self.dim = int(hidden_size)
+        self.num_heads = int(num_heads)
+        self.num_kv_heads = int(num_kv_heads)
+        self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
+        self.layer_idx = layer_idx
+        self.bert_mode = bert_mode
 
-        # PATCH: QR-orthogonalised random projection for stable linear attention features.
-        # The original torch.randn() with persistent=False caused two bugs:
-        #   1. Buffer re-randomised on every model load (not saved in checkpoint).
-        #   2. Correlated feature columns across heads due to unstructured random init.
-        # Fix: QR-orthogonalise each head's projection slice; set persistent=True.
-        proj_data = torch.randn(self.num_attention_heads, self.head_dim, self.feature_dim)
-        for h in range(self.num_attention_heads):
-            # QR gives orthogonal columns; take first feature_dim columns
-            q_h, _ = torch.linalg.qr(
-                proj_data[h].T if self.head_dim < self.feature_dim else proj_data[h]
-            )
+        self.feature_dim = getattr(comp_config, "feature_dim", 256) if comp_config is not None else 256
+        dropout_p = getattr(comp_config, "dropout", getattr(config, "dropout", 0.1)) if config is not None else 0.1
+
+        # Decoder & nested encoder flags
+        model_type = getattr(config, "model_type", "").lower() if config else ""
+        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            is_dec = True
+        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = bool(is_dec)
+        self.is_nested_encoder = False
+
+        # LoRA config
+        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
+        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        self.freeze_base = (self.lora_rank > 0)
+
+        # Projections
+        self.query = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.key = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.value = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+
+        self.q_proj = self.query
+        self.k_proj = self.key
+        self.v_proj = self.value
+
+        self.norm = nn.LayerNorm(self.head_dim)
+        self.dropout = nn.Dropout(dropout_p)
+        self.pres_gate = nn.Parameter(torch.tensor(2.0))
+
+        # QR-orthogonalised random projection buffer
+        proj_data = torch.randn(self.num_heads, self.head_dim, self.feature_dim)
+        for h in range(self.num_heads):
+            q_h, _ = torch.linalg.qr(proj_data[h].T if self.head_dim < self.feature_dim else proj_data[h])
             if self.head_dim < self.feature_dim:
-                # QR on the transposed matrix yields Q=[feature_dim, head_dim].
-                # Transpose it back to the required [head_dim, feature_dim]
-                # layout; slicing q_h.T before transposing swaps dimensions.
-                proj_data[h] = q_h.T  # (head_dim, feature_dim)
+                proj_data[h] = q_h.T
             else:
-                proj_data[h] = q_h[:, :self.feature_dim]  # (head_dim, feature_dim)
-        self.register_buffer(
-            "proj",
-            proj_data,
-            persistent=True,  # saved to checkpoint; never re-randomised
-        )
+                proj_data[h] = q_h[:, :self.feature_dim]
+        self.register_buffer("proj", proj_data, persistent=True)
 
-    def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
-        r"""Reshapes `[B, N, D]` to `[B, H, N, d_k]`."""
-        new_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
-        return x.view(new_shape).permute(0, 2, 1, 3)
+        if source_attn is not None:
+            self.copy_weights(source_attn)
 
     def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
-        r"""
-        Computes positive kernel feature embedding $\phi(x)$ with pre-projection LayerNorm.
-
-        Args:
-            x: Tensor of shape `[B, H, N, d_k]`.
-
-        Returns:
-            Feature map tensor `[B, H, N, F]`.
-        """
+        r"""Positive kernel feature embedding \phi(x) = [cos(x W), sin(x W)] / sqrt(F)."""
         x_norm = self.norm(x)
-        proj = self.proj.to(dtype=x.dtype, device=x.device)  # (H, D, F)
-        x_proj = torch.einsum("bhnd,hdf->bhnf", x_norm, proj)  # (B, H, N, F)
-        phi = (F.elu(x_proj) + 1.0) / math.sqrt(self.feature_dim)
-        return phi
+        features = torch.einsum("bhnd,hdf->bhnf", x_norm, self.proj.to(device=x.device, dtype=x.dtype))
+        scale = 1.0 / math.sqrt(self.feature_dim)
+        phi_cos = torch.cos(features) * scale
+        phi_sin = torch.sin(features) * scale
+        return torch.cat([phi_cos, phi_sin], dim=-1)
 
-    @staticmethod
-    def softpick(x, dim: int = -1, temperature: float = 1.0):
-        import torch.nn.functional as F
-        orig_dtype = x.dtype
-        x = x.float()
-        m = x.max(dim=dim, keepdim=True).values
-        e = torch.exp((x - m) / temperature)
-        m_scaled = torch.clamp(-m / temperature, max=80.0)
-        denom = e - torch.exp(m_scaled)
-        p = F.relu(denom)
-        return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
+    def copy_weights(self, src: Any) -> None:
+        if src is None:
+            return
 
-    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        is_nested = False
+        if (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            is_nested = True
+        elif (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+        ) and not has_out_lin:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        # 1. GPT-2 fused
+        if hasattr(src, "c_attn") and src.c_attn is not None:
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                    c_w = c_w.t()
+                split_size = c_w.size(0) // 3
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+
+            if hasattr(src, "c_proj") and src.c_proj is not None:
+                c_proj_mod = src.c_proj
+                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                        o_w = o_w.t()
+                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+
+        # 2. RoBERTa nested
+        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+            s = getattr(src, "self")
+            for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
+                mod = getattr(s, sub_name, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                out_mod = src.output.dense
+                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+
+        # 3. Flat modules
+        else:
+            proj_candidates = {
+                "q": ["q_lin", "q_proj", "query"],
+                "k": ["k_lin", "k_proj", "key"],
+                "v": ["v_lin", "v_proj", "value"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+            }
+            for proj_key, names in proj_candidates.items():
+                for name in names:
+                    if hasattr(src, name):
+                        mod = getattr(src, name)
+                        if mod is not None and hasattr(mod, "weight"):
+                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            break
+
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing:
+            try:
+                from framework.core.adapters import UniversalAdapter
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception:
+                pass
+
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing_after:
+            raise RuntimeError(
+                f"LEKAV1Attention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+            )
+
+        target_map = {
+            "q": self.query,
+            "k": self.key,
+            "v": self.value,
+            "o": self.out_proj,
+        }
+
         with torch.no_grad():
-            q_src = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", getattr(pretrained_attn, "q_proj", None)))
-            k_src = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", getattr(pretrained_attn, "k_proj", None)))
-            v_src = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", getattr(pretrained_attn, "v_proj", None)))
-            out_src = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", getattr(pretrained_attn, "out_proj", getattr(pretrained_attn, "o_proj", None))))
+            for proj_key, target_mod in target_map.items():
+                w, b = extracted[proj_key]
+                if w is None:
+                    if proj_key == "o" and self.is_nested_encoder:
+                        nn.init.eye_(target_mod.weight)
+                        if target_mod.bias is not None:
+                            nn.init.zeros_(target_mod.bias)
+                    continue
 
-            if q_src is not None and hasattr(q_src, "weight"):
-                self.query.weight.copy_(q_src.weight)
-                if q_src.bias is not None:
-                    self.query.bias.copy_(q_src.bias)
-            if k_src is not None and hasattr(k_src, "weight"):
-                self.key.weight.copy_(k_src.weight)
-                if k_src.bias is not None:
-                    self.key.bias.copy_(k_src.bias)
-            if v_src is not None and hasattr(v_src, "weight"):
-                self.value.weight.copy_(v_src.weight)
-                if v_src.bias is not None:
-                    self.value.bias.copy_(v_src.bias)
-            if out_src is not None and hasattr(out_src, "weight"):
-                self.out_proj.weight.copy_(out_src.weight)
-                if out_src.bias is not None:
-                    self.out_proj.bias.copy_(out_src.bias)
+                if w.ndim != 2:
+                    w = w.reshape(w.size(0), -1)
+
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
+                    w = w.t()
+                out_d = min(target_mod.weight.size(0), w.size(0))
+                in_d = min(target_mod.weight.size(1), w.size(1))
+
+                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+
+                if b is not None and target_mod.bias is not None:
+                    min_b = min(target_mod.bias.numel(), b.numel())
+                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
+                elif target_mod.bias is not None:
+                    nn.init.zeros_(target_mod.bias)
+
+                w_norm = float(torch.norm(target_mod.weight.data).item())
+                if w_norm < 1e-4:
+                    raise RuntimeError(f"LEKAV1Attention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+
+                if self.freeze_base:
+                    target_mod.freeze_base_weights()
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Forward computation of LEKAV1Attention.
-
-        Args:
-            hidden_states: Input tensor of shape `[B, N, D]`.
-            attention_mask: Optional mask tensor.
-            head_mask: Optional head masking tensor.
-            output_attentions: Unused flag for interface compliance.
-            **kwargs: Extra keyword arguments.
-
-        Returns:
-            Tuple `(output, None)` with output of shape `[B, N, D]`.
-        """
         B, N, D = hidden_states.shape
-        Q = self.transpose_for_scores(self.query(hidden_states))
-        K = self.transpose_for_scores(self.key(hidden_states))
-        V = self.transpose_for_scores(self.value(hidden_states))
+        H, d = self.num_heads, self.head_dim
 
-        Q_features = self.kernel_feature_map(Q)  # (B, H, N, F)
-        K_features = self.kernel_feature_map(K)
+        q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
+        k = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+        v = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
+
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        Q_features = self.kernel_feature_map(q)  # (B, H, N, 2F)
+        K_features = self.kernel_feature_map(k)  # (B, H, N, 2F)
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
@@ -190,36 +419,52 @@ class LEKAV1Attention(BaseAttention):
             else:
                 mask = attention_mask.to(hidden_states.dtype)
             K_features = K_features * mask
-            V = V * mask
+            v = v * mask
         else:
             mask = None
 
-        # Linear attention
-        KV = torch.einsum("bhnf,bhnd->bhfd", K_features, V)  # (B, H, F, D)
-        K_sum = K_features.sum(dim=2, keepdim=True)  # (B, H, 1, F)
+        if self.is_decoder:
+            # Causal linear attention via cumulative sum
+            kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_features.float(), v.float())
+            KV_cum = torch.cumsum(kv_outer, dim=2)
+            num = torch.einsum("bhnf,bhnfd->bhnd", Q_features.float(), KV_cum)
+            z_cum = torch.cumsum(K_features.float(), dim=2)
+            denom = torch.einsum("bhnf,bhnf->bhn", Q_features.float(), z_cum).unsqueeze(-1).clamp(min=1e-5)
+            context = (num / denom).to(hidden_states.dtype)
+        else:
+            # Bidirectional linear attention
+            KV = torch.einsum("bhnf,bhnd->bhfd", K_features.float(), v.float())
+            K_sum = K_features.float().sum(dim=2, keepdim=True)
+            num = torch.einsum("bhnf,bhfd->bhnd", Q_features.float(), KV)
+            denom = (torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum.squeeze(2)).unsqueeze(-1)).clamp(min=1e-5)
+            context = (num / denom).to(hidden_states.dtype)
 
-        num = torch.einsum("bhnf,bhfd->bhnd", Q_features, KV)
-        denom = (
-            torch.einsum("bhnf,bhf->bhn", Q_features, K_sum.squeeze(2)).unsqueeze(-1)
-        ).clamp(min=1e-5)
-        context = num / denom
+        context = torch.nan_to_num(context, nan=0.0)
+
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                hm = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                hm = head_mask.view(head_mask.size(0), -1, 1, 1)
+            else:
+                hm = head_mask
+            context = context * hm
 
         if mask is not None:
             context = context * mask
 
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
-        out = self.out_proj(context)
-        # PATCH: Preservation gate — blends learned linear-attn output with the
-        # original hidden_states. alpha starts at ~0.88 so the model behaves near
-        # the pretrained baseline at step 0 and gradually learns to use the new output.
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
+
         alpha = torch.sigmoid(self.pres_gate)
         out = alpha * out + (1.0 - alpha) * hidden_states
         return out, None
 
     def get_ortho_loss(self) -> float:
-        r"""Returns orthogonality loss for projection matrices (default 0.0)."""
         return 0.0
 
 
@@ -232,42 +477,19 @@ def inject_leka_v1(
     total_layers: int = 6,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> LEKAV1Attention:
-    r"""
-    Injection hook for LEKAV1Attention into transformer layer.
-
-    Args:
-        layer: Target transformer layer module.
-        model_config: Model configuration.
-        comp_config: Compression configuration.
-        layer_idx: Layer index.
-        total_layers: Total number of transformer layers.
-        old_attn: Previous attention module to copy pretrained weights from.
-
-    Returns:
-        Instantiated `LEKAV1Attention` assigned to `layer.attention`.
-    """
-    new_attn = LEKAV1Attention(
-        config=model_config,
-        comp_config=comp_config,
-        layer_idx=layer_idx,
-        total_layers=total_layers,
-        bert_mode=False,
-    )
-    # Copy pretrained weights if available
-    if old_attn is not None:
-        if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "weight"):
-            new_attn.query.weight.data.copy_(old_attn.q_lin.weight.data)
-            if old_attn.q_lin.bias is not None and new_attn.query.bias is not None:
-                new_attn.query.bias.data.copy_(old_attn.q_lin.bias.data)
-            new_attn.key.weight.data.copy_(old_attn.k_lin.weight.data)
-            if old_attn.k_lin.bias is not None and new_attn.key.bias is not None:
-                new_attn.key.bias.data.copy_(old_attn.k_lin.bias.data)
-            new_attn.value.weight.data.copy_(old_attn.v_lin.weight.data)
-            if old_attn.v_lin.bias is not None and new_attn.value.bias is not None:
-                new_attn.value.bias.data.copy_(old_attn.v_lin.bias.data)
-            new_attn.out_proj.weight.data.copy_(old_attn.out_lin.weight.data)
-            if old_attn.out_lin.bias is not None and new_attn.out_proj.bias is not None:
-                new_attn.out_proj.bias.data.copy_(old_attn.out_lin.bias.data)
-    layer.attention = new_attn
-    return new_attn
+) -> Optional[LEKAV1Attention]:
+    try:
+        new_attn = LEKAV1Attention(
+            config=model_config,
+            comp_config=comp_config,
+            layer_idx=layer_idx,
+            total_layers=total_layers,
+            bert_mode=False,
+        )
+        if old_attn is not None:
+            new_attn.copy_weights(old_attn)
+        if layer is not None:
+            layer.attention = new_attn
+        return new_attn
+    except Exception:
+        return None

@@ -1,54 +1,77 @@
-r"""
-ORION: Optimized Rectified Input-aware Orthogonal Network.
+"""ORION: Optimized Rectified Input-aware Orthogonal Network (Production-Hardened).
 
 Hybrid multi-head attention architecture integrating zero-shot SVD low-rank factorized projections,
 head-wise bifurcated linear kernel vs. rectified Softpick full attention, and random Fourier features.
 
-Mathematical Mechanism:
-    1. **SVD-Factorized Projections:**
-       Weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ is decomposed via truncated SVD
-       guided by cumulative spectral energy threshold $\eta$:
-       $$\sum_{i=1}^r \sigma_i^2 \ge \eta \sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i^2 \implies W \approx A B, \quad A \in \mathbb{R}^{d_{\text{out}} \times r}, B \in \mathbb{R}^{r \times d_{\text{in}}}$$
-    2. **Bifurcated Attention Heads ($H = H_k + H_f$):**
-       - **Linear Kernel Heads ($H_k$):**
-         Random Fourier feature mapping $\phi(x) = \frac{1}{\sqrt{F}} \exp(x W_{\text{rff}})$ yielding linearized attention:
-         $$\operatorname{Attn}_{\text{kernel}}(Q, K, V) = \frac{\phi(Q) (\phi(K)^T V)}{\phi(Q) (\phi(K)^T \mathbf{1})}$$
-       - **Full Softpick Heads ($H_f$):**
-         Dense attention with rectified ~47% sparse Softpick activation:
-         $$\operatorname{Attn}_{\text{full}}(Q, K, V) = \operatorname{Softpick}\left(\frac{Q K^T}{\sqrt{d}}\right) V$$
-
-Computational Complexity:
-    - Kernel heads: $\mathcal{O}(B \cdot H_k \cdot N \cdot F \cdot d)$ linear in sequence length $N$.
-    - Full heads: $\mathcal{O}(B \cdot H_f \cdot N^2 \cdot d)$ quadratic in sequence length $N$.
-    - Overall Complexity: $\mathcal{O}(N \cdot (H_k F + H_f N) \cdot d)$.
+Supports:
+- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
+- Trainable LoRA adapters with frozen base weights
+- GQA with repeat_kv
+- RoPE position embeddings
+- Causal cumulative scan for kernel heads and causal masking for full heads in decoders
+- Nested encoder bypass
+- Frobenius norm verification (>= 1e-4)
+- Safe injection returning None on failure
 """
+
+from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
+from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim < head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
+        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+        k = torch.cat([k_rot_embed, k_pass], dim=-1)
+    else:
+        q = (q * cos) + (_rotate_half(q) * sin)
+        k = (k * cos) + (_rotate_half(k) * sin)
+
+    return q, k
 
 
 @dataclass
 class ORIONConfig:
-    r"""Hyperparameter configuration for ORION Attention.
-
-    Attributes:
-        svd_energy: Cumulative spectral energy target for SVD rank determination ($\eta \in (0, 1]$).
-        svd_min_rank: Minimum allowable rank for factorized linear projections.
-        svd_max_rank: Maximum allowable rank for factorized linear projections.
-        num_kernel_heads: Number of heads computing linearized random Fourier feature attention ($H_k$).
-        num_full_heads: Number of heads computing full Softpick rectified attention ($H_f$).
-        rff_features: Number of random Fourier features per kernel head ($F$).
-        softpick_temperature: Softmax temperature parameter for Softpick activation.
-        dropout: Attention dropout probability.
-    """
-
     svd_energy: float = 0.95
     svd_min_rank: int = 4
     svd_max_rank: int = 64
@@ -59,7 +82,7 @@ class ORIONConfig:
     dropout: float = 0.1
 
 
-def softpick(x, dim: int = -1, temperature: float = 1.0):
+def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
     orig_dtype = x.dtype
     x = x.float()
     m = x.max(dim=dim, keepdim=True).values
@@ -71,84 +94,123 @@ def softpick(x, dim: int = -1, temperature: float = 1.0):
 
 
 class FactorisedLinear(nn.Module):
-    r"""Low-rank factorized linear layer initialized via truncated SVD of pretrained weights.
-
-    Factorizes $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ into:
-    $$\text{Down}: \mathbb{R}^{d_{\text{in}}} \to \mathbb{R}^r, \quad \text{Up}: \mathbb{R}^r \to \mathbb{R}^{d_{\text{out}}}$$
-
-    Args:
-        pretrained_weight: Source weight tensor `[OutDim, InDim]`.
-        pretrained_bias: Optional source bias tensor `[OutDim]`.
-        energy: Cumulative singular value energy fraction to retain.
-        min_rank: Lower bound on factorization rank.
-        max_rank: Upper bound on factorization rank.
-        in_features: Input dimension fallback.
-        out_features: Output dimension fallback.
-    """
+    """Low-rank factorized linear layer with SVD decomposition and LoRA adapters."""
 
     def __init__(
         self,
-        pretrained_weight: Optional[torch.Tensor] = None,
-        pretrained_bias: Optional[torch.Tensor] = None,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
         energy: float = 0.95,
         min_rank: int = 4,
         max_rank: int = 64,
-        in_features: Optional[int] = None,
-        out_features: Optional[int] = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if pretrained_weight is not None:
-            out_dim, in_dim = pretrained_weight.shape
-            with torch.no_grad():
-                U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
-                total = (S**2).sum()
-                cum = torch.cumsum(S**2, dim=0) / torch.clamp(total, min=1e-8)
-                rank = int((cum < energy).sum().item()) + 1
-                rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
-                self.rank: int = rank
-                A = U[:, :rank] * S[:rank].unsqueeze(0)
-                B = Vt[:rank, :]
-        else:
-            in_dim = in_features or 768
-            out_dim = out_features or 768
-            rank = max(min_rank, min(max_rank, min(in_dim, out_dim) // 4, 16))
-            self.rank = rank
-            A = torch.randn(out_dim, rank) * 0.02
-            B = torch.randn(rank, in_dim) * 0.02
+        self.in_features = in_features
+        self.out_features = out_features
+        self.energy = energy
+        self.min_rank = min_rank
+        self.max_rank = max_rank
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+        self.freeze_base = freeze_base
 
-        self.down = nn.Linear(in_dim, self.rank, bias=False)
-        self.up = nn.Linear(self.rank, out_dim, bias=(pretrained_bias is not None))
-        self.down.weight.data = B.float()
-        self.up.weight.data = A.float()
-        if pretrained_bias is not None:
-            self.up.bias.data = pretrained_bias.float()
-        elif self.up.bias is not None:
-            self.up.bias.data.zero_()
+        rank = max(min_rank, min(max_rank, min(in_features, out_features) // 4, 16))
+        self.rank = rank
+
+        self.down = nn.Linear(in_features, rank, bias=False, device=device, dtype=dtype)
+        self.up = nn.Linear(rank, out_features, bias=bias, device=device, dtype=dtype)
+        nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.up.weight, a=math.sqrt(5))
+        if self.up.bias is not None:
+            nn.init.zeros_(self.up.bias)
+
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), device=device, dtype=dtype))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), device=device, dtype=dtype))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        if freeze_base:
+            self.freeze_base_weights()
 
     @property
     def weight(self) -> torch.Tensor:
-        """Reconstructed effective weight matrix (out_features, in_features)."""
         return torch.matmul(self.up.weight, self.down.weight)
 
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return self.up.bias
+
+    def decompose_from_weight(self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+        out_dim, in_dim = weight.shape
+        with torch.no_grad():
+            U, S, Vt = torch.linalg.svd(weight.float(), full_matrices=False)
+            total = (S ** 2).sum()
+            cum = torch.cumsum(S ** 2, dim=0) / torch.clamp(total, min=1e-8)
+            rank = int((cum < self.energy).sum().item()) + 1
+            rank = max(self.min_rank, min(rank, min(out_dim, in_dim), self.max_rank))
+            self.rank = rank
+
+            device = self.down.weight.device
+            dtype = self.down.weight.dtype
+
+            self.down = nn.Linear(in_dim, rank, bias=False, device=device, dtype=dtype)
+            self.up = nn.Linear(rank, out_dim, bias=(bias is not None or self.up.bias is not None), device=device, dtype=dtype)
+
+            A = U[:, :rank] * S[:rank].unsqueeze(0)
+            B = Vt[:rank, :]
+            self.down.weight.data.copy_(B.to(device=device, dtype=dtype))
+            self.up.weight.data.copy_(A.to(device=device, dtype=dtype))
+
+            if bias is not None and self.up.bias is not None:
+                self.up.bias.data.copy_(bias.to(device=device, dtype=dtype))
+            elif self.up.bias is not None:
+                self.up.bias.data.zero_()
+
+            if self.freeze_base:
+                self.freeze_base_weights()
+
+    def freeze_base_weights(self) -> None:
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+        if self.lora_rank > 0 and self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -> None:
+        self.down.weight.requires_grad = True
+        self.up.weight.requires_grad = True
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = True
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        r"""Compute low-rank linear projection: $y = (x B^T) A^T + b$."""
-        return self.up(self.down(x))
+        out = self.up(self.down(x))
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out
+        return out
 
 
-@ATTENTION_REGISTRY.register("orion_module")
-@ATTENTION_REGISTRY.register("orion")
-@ATTENTION_REGISTRY.register("orion_attention")
+@ATTENTION_REGISTRY.register("orion_module", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("orion", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("orion_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class ORIONAttention(BaseAttention):
-    r"""ORION hybrid multi-head attention module.
-
-    Args:
-        config: Model configuration containing `hidden_size` and `num_attention_heads`.
-        rank: Rank constraint hint.
-        model_config: Backwards-compatible alias for config.
-        orion_cfg: ORIONConfig hyperparameters.
-        pretrained_attn: Pretrained attention module used for SVD weight initialization.
-        bert_mode: Boolean indicating bidirectional context handling.
-    """
+    r"""ORION hybrid multi-head attention module."""
 
     def __init__(
         self,
@@ -157,82 +219,211 @@ class ORIONAttention(BaseAttention):
         model_config: Optional[Any] = None,
         orion_cfg: Optional[ORIONConfig] = None,
         pretrained_attn: Optional[Any] = None,
+        old_attn: Optional[Any] = None,
+        comp_config: Optional[Any] = None,
         bert_mode: bool = False,
         **kwargs: Any,
     ) -> None:
         cfg = config or model_config
+        source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(cfg, rank)
+
         if orion_cfg is None:
             orion_cfg = ORIONConfig()
             if rank is not None:
                 orion_cfg.svd_max_rank = max(rank, orion_cfg.svd_min_rank)
 
-        hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768))) if cfg is not None else kwargs.get("hidden_size", 768)
-        num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 4)) if cfg is not None else kwargs.get("num_attention_heads", 4)
-
-        self.num_heads: int = max(1, num_heads)
-        self.head_dim: int = hidden_size // self.num_heads
-        self.all_head_size: int = hidden_size
-        self.hidden_size: int = hidden_size
-        self.cfg: ORIONConfig = orion_cfg
-        self.bert_mode: bool = bert_mode
-
-        # Allocate kernel vs full heads dynamically based on self.num_heads
-        if orion_cfg.num_kernel_heads + orion_cfg.num_full_heads == self.num_heads:
-            self.num_kernel_heads: int = orion_cfg.num_kernel_heads
-            self.num_full_heads: int = orion_cfg.num_full_heads
+        if cfg is not None:
+            hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768)))
+            num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 12))
+            num_kv_heads = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", num_heads))
+        elif source_attn is not None:
+            out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+            hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+            num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
+            num_kv_heads = getattr(source_attn, "num_key_value_heads", num_heads)
         else:
-            if self.num_heads <= 1:
-                self.num_kernel_heads = 1
-                self.num_full_heads = 0
-            else:
-                self.num_full_heads = max(1, self.num_heads // 3)
-                self.num_kernel_heads = self.num_heads - self.num_full_heads
+            hidden_size = kwargs.get("hidden_size", 768)
+            num_heads = kwargs.get("num_attention_heads", 12)
+            num_kv_heads = kwargs.get("num_key_value_heads", num_heads)
 
-        self.q_proj = FactorisedLinear(None, None, orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank, in_features=hidden_size, out_features=hidden_size)
-        self.k_proj = FactorisedLinear(None, None, orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank, in_features=hidden_size, out_features=hidden_size)
-        self.v_proj = FactorisedLinear(None, None, orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank, in_features=hidden_size, out_features=hidden_size)
-        self.out_proj = FactorisedLinear(None, None, orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank, in_features=hidden_size, out_features=hidden_size)
+        self.num_heads = max(1, int(num_heads))
+        self.num_kv_heads = max(1, int(num_kv_heads))
+        self.head_dim = hidden_size // self.num_heads if self.num_heads > 0 else 64
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
+        self.hidden_size = hidden_size
+        self.cfg = orion_cfg
+        self.bert_mode = bert_mode
 
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        # Allocate kernel vs full heads
+        if self.num_heads <= 1:
+            self.num_kernel_heads = 1
+            self.num_full_heads = 0
+        else:
+            self.num_full_heads = max(1, self.num_heads // 3)
+            self.num_kernel_heads = self.num_heads - self.num_full_heads
 
-        self.rff_proj = nn.Parameter(
-            torch.randn(max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features)
-            * 0.02
-        )
+        # Decoder detection
+        model_type = getattr(cfg, "model_type", "").lower() if cfg else ""
+        is_dec = getattr(cfg, "is_decoder", getattr(cfg, "is_causal", kwargs.get("is_causal", False))) if cfg else False
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
+        elif hasattr(cfg, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(cfg, "architectures", []) or [])):
+            is_dec = True
+        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = bool(is_dec)
+        self.is_nested_encoder = False
+
+        # LoRA config
+        self.lora_rank = getattr(cfg, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if cfg else 16
+        self.lora_alpha = getattr(cfg, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if cfg else 32.0
+        self.freeze_base = (self.lora_rank > 0)
+
+        # Projections
+        self.q_proj = FactorisedLinear(hidden_size, self.all_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.k_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.v_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = FactorisedLinear(self.all_head_size, hidden_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+
+        self.register_buffer("rff_proj", torch.randn(max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features) * 0.02, persistent=True)
         self.dropout = nn.Dropout(orion_cfg.dropout)
 
-    def copy_weights(self, old_attn: Any) -> None:
-        """Transfer weights from pretrained attention layer using SVD factorization."""
-        if old_attn is None:
+        if source_attn is not None:
+            self.copy_weights(source_attn)
+
+    def copy_weights(self, src: Any) -> None:
+        if src is None:
             return
-        from framework.core.adapters import UniversalAdapter
-        adapter = UniversalAdapter()
-        for proj_name, attr in [("q", "q_proj"), ("k", "k_proj"), ("v", "v_proj"), ("o", "out_proj")]:
+
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        is_nested = False
+        if (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            is_nested = True
+        elif (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+        ) and not has_out_lin:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        # 1. GPT-2 fused
+        if hasattr(src, "c_attn") and src.c_attn is not None:
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                    c_w = c_w.t()
+                split_size = c_w.size(0) // 3
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+
+            if hasattr(src, "c_proj") and src.c_proj is not None:
+                c_proj_mod = src.c_proj
+                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                        o_w = o_w.t()
+                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+
+        # 2. RoBERTa nested
+        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+            s = getattr(src, "self")
+            for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
+                mod = getattr(s, sub_name, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                out_mod = src.output.dense
+                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+
+        # 3. Flat modules
+        else:
+            proj_candidates = {
+                "q": ["q_lin", "q_proj", "query"],
+                "k": ["k_lin", "k_proj", "key"],
+                "v": ["v_lin", "v_proj", "value"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+            }
+            for proj_key, names in proj_candidates.items():
+                for name in names:
+                    if hasattr(src, name):
+                        mod = getattr(src, name)
+                        if mod is not None and hasattr(mod, "weight"):
+                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            break
+
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing:
             try:
-                w, b = adapter.get_weight_bias(old_attn, proj_name)
-                if w is not None:
-                    setattr(
-                        self,
-                        attr,
-                        FactorisedLinear(
-                            w,
-                            b,
-                            self.cfg.svd_energy,
-                            self.cfg.svd_min_rank,
-                            self.cfg.svd_max_rank,
-                        ).to(device=w.device, dtype=w.dtype)
-                    )
-                    if hasattr(self, "rff_proj"):
-                        self.rff_proj.data = self.rff_proj.data.to(device=w.device, dtype=w.dtype)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+                from framework.core.adapters import UniversalAdapter
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception:
                 pass
+
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing_after:
+            raise RuntimeError(
+                f"ORIONAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+            )
+
+        target_map = {
+            "q": self.q_proj,
+            "k": self.k_proj,
+            "v": self.v_proj,
+            "o": self.out_proj,
+        }
+
+        with torch.no_grad():
+            for proj_key, target_mod in target_map.items():
+                w, b = extracted[proj_key]
+                if w is None:
+                    continue
+
+                if w.ndim != 2:
+                    w = w.reshape(w.size(0), -1)
+
+                if w.shape != (target_mod.out_features, target_mod.in_features) and (target_mod.out_features, target_mod.in_features) == w.t().shape:
+                    w = w.t()
+
+                target_mod.decompose_from_weight(w[:target_mod.out_features, :target_mod.in_features], b[:target_mod.out_features] if b is not None else None)
+
+                w_norm = float(torch.norm(target_mod.weight).item())
+                if w_norm < 1e-4:
+                    raise RuntimeError(f"ORIONAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
     def _kernel_linear_attention(
         self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor
     ) -> torch.Tensor:
-        r"""Compute kernel linear attention via RFF projections in $\mathcal{O}(N \cdot F \cdot d)$."""
         B, Hk, N, D = Q.shape
         if Hk == 0:
             return torch.zeros(B, 0, N, D, device=Q.device, dtype=Q.dtype)
@@ -247,10 +438,19 @@ class ORIONAttention(BaseAttention):
         K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, proj).clamp(max=11.0)
         Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
         K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
-        KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
-        K_sum = K_feat.sum(dim=2)
-        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
-        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-5)
+
+        if self.is_decoder:
+            kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_feat, V)
+            KV_cum = torch.cumsum(kv_outer, dim=2)
+            num = torch.einsum("bhnf,bhnfd->bhnd", Q_feat, KV_cum)
+            z_cum = torch.cumsum(K_feat, dim=2)
+            denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1e-5)
+            ctx = num / denom
+        else:
+            KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
+            K_sum = K_feat.sum(dim=2)
+            denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-5)
+            ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
         return ctx.to(orig_dtype)
 
     def _full_softpick_attention(
@@ -260,15 +460,20 @@ class ORIONAttention(BaseAttention):
         V: torch.Tensor,
         token_valid: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        r"""Compute full Softpick rectified attention in $\mathcal{O}(N^2 \cdot d)$."""
         B, Hf, N, D = Q.shape
         if Hf == 0:
             return torch.zeros(B, 0, N, D, device=Q.device, dtype=Q.dtype)
-        scale = self.head_dim**-0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        scale = self.head_dim ** -0.5
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+
+        if self.is_decoder:
+            causal_mask = torch.tril(torch.ones(N, N, device=Q.device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+
         if token_valid is not None:
-            scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -10000.0)
-        attn_w = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
+            scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e4)
+
+        attn_w = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature).to(V.dtype)
         attn_w = self.dropout(attn_w)
         return torch.matmul(attn_w, V)
 
@@ -277,29 +482,11 @@ class ORIONAttention(BaseAttention):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""Forward pass computing hybrid kernel and full attention across parallel heads.
-
-        Args:
-            hidden_states: Input tensor of shape `[Batch, SeqLen, HiddenDim]`.
-            attention_mask: Optional attention mask tensor `[Batch, SeqLen]` or broadcastable.
-            head_mask: Optional head gating mask.
-            output_attentions: Return explicit attention matrices if True.
-            **kwargs: Additional runtime arguments.
-
-        Returns:
-            Tuple of:
-                - output: Layer projection output of shape `[Batch, SeqLen, HiddenDim]`.
-                - attention_weights: Attention matrix or None.
-        """
         if hidden_states.dim() == 4:
             B, H, L, Dh = hidden_states.shape
             hidden_states = hidden_states.view(B, L, H * Dh)
@@ -310,28 +497,21 @@ class ORIONAttention(BaseAttention):
         Hk = self.num_kernel_heads
         Hf = self.num_full_heads
 
-        Q_all = self.q_proj(hidden_states)
-        K_all = self.k_proj(hidden_states)
-        V_all = self.v_proj(hidden_states)
-        Q_all = Q_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        K_all = K_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        V_all = V_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        Q_all = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        K_all = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        V_all = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
 
-        mask = (
-            attention_mask
-            if attention_mask is not None
-            else kwargs.get("attn_mask", None)
-        )
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            Q_all, K_all = apply_rotary_pos_emb(Q_all, K_all, cos, sin)
+
+        if self.kv_repeat > 1:
+            K_all = repeat_kv(K_all, self.kv_repeat)
+            V_all = repeat_kv(V_all, self.kv_repeat)
+
         token_valid = None
-        if mask is not None:
-            if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-                token_valid = mask[:, 0, 0, :] > -10000.0
-            elif mask.dim() == 4:
-                token_valid = mask.squeeze(1).squeeze(1) > -10000.0
-            elif mask.dim() == 3:
-                token_valid = mask.squeeze(1).bool()
-            elif mask.dim() == 2:
-                token_valid = mask.bool()
+        if attention_mask is not None:
+            token_valid = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
 
         ctx_list = []
         if Hk > 0:
@@ -353,42 +533,49 @@ class ORIONAttention(BaseAttention):
         else:
             context = torch.cat(ctx_list, dim=1)
 
+        context = torch.nan_to_num(context, nan=0.0)
+
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                hm = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                hm = head_mask.view(head_mask.size(0), -1, 1, 1)
+            else:
+                hm = head_mask
+            context = context * hm
+
         if token_valid is not None:
             context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
 
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-        output = self.out_proj(context)
+
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = self.out_proj(context)
+
         return output, None
 
     def get_ortho_loss(self) -> torch.Tensor:
-        r"""Compute orthogonal regularization loss."""
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
 @ATTENTION_REGISTRY.register("orion_inject")
 def inject_orion(
     layer: Any,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Any,
-    **kwargs) -> ORIONAttention:
-    r"""Bridge function injecting ORION attention into a transformer layer."""
-    cfg = ORIONConfig(
-        svd_energy=getattr(comp_config, "svd_energy", 0.95),
-        svd_min_rank=getattr(comp_config, "min_rank", 4),
-        svd_max_rank=getattr(comp_config, "max_rank", 64),
-        num_kernel_heads=getattr(comp_config, "num_kernel_heads", 8),
-        num_full_heads=getattr(comp_config, "num_full_heads", 4),
-        rff_features=getattr(comp_config, "rff_features", 256),
-        softpick_temperature=getattr(comp_config, "softpick_temperature", 1.0),
-        dropout=getattr(comp_config, "dropout", 0.1),
-    )
-    new_attn = ORIONAttention(model_config, orion_cfg=cfg, pretrained_attn=old_attn)
-    if old_attn is not None:
-        p = next(old_attn.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
-    layer.attention = new_attn
-    return new_attn
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> Optional[ORIONAttention]:
+    try:
+        new_attn = ORIONAttention(config=model_config, comp_config=comp_config)
+        if old_attn is not None:
+            new_attn.copy_weights(old_attn)
+        if layer is not None:
+            layer.attention = new_attn
+        return new_attn
+    except Exception:
+        return None
