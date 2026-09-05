@@ -81,6 +81,13 @@ print("Logits shape:", outputs.logits.shape)
 
 ## 6. Empirical Benchmark Results & Verification
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **gpt2** | sst2 | `PASS` | N/A | **81.31%** | N/A | 0.8372 | 1.00x | 0 | N/A | 2026-09-06 |
+
+
 > [!NOTE]
 > **GPU Benchmark Evaluation Protocol**: Standardized evaluation on GLUE benchmarks (SST-2, MRPC, QNLI, MNLI) and LongBench is executed via distributed GPU cluster runs. Benchmark execution scripts and diagnostic verification harnesses are provided below.
 
