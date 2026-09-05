@@ -177,9 +177,9 @@ class AASVDCompressor(BaseCompressor):
         self,
         model: nn.Module,
         tokenizer: Optional[Any] = None,
-        rank: int = 64,
+        rank: int = 256,
         ema_beta: float = 0.9,
-        max_error: float = 0.20,
+        max_error: float = 0.85,
         fallback_to_original: bool = True,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
@@ -198,6 +198,8 @@ class AASVDCompressor(BaseCompressor):
                 cfg, "aasvd_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
             )
 
+        if tokenizer is None:
+            tokenizer = getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
         self.tokenizer = tokenizer
         if self.tokenizer is None:
             model_name_or_path = getattr(getattr(model, "config", None), "_name_or_path", None)
@@ -210,6 +212,11 @@ class AASVDCompressor(BaseCompressor):
                 except Exception as e:
                     logger.debug("Could not auto-load tokenizer from %s: %s", model_name_or_path, e)
                     self.tokenizer = None
+
+        cfg_max_error = getattr(getattr(model, "config", None), "aasvd_max_error", None)
+        if cfg_max_error is not None:
+            max_error = float(cfg_max_error)
+
         self.rank = int(rank)
         self.ema_beta = float(ema_beta)
         self.max_error = float(max_error)
