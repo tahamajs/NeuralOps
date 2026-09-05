@@ -274,7 +274,15 @@ def upload_to_huggingface(
             encoding="utf-8",
         )
 
-        # 3. Upload folder to private repo
+        # 3. Prune large uncompressed binary if present to keep upload lean (~90 MB)
+        bin_file = export_dir / "pytorch_model.bin"
+        if bin_file.exists():
+            try:
+                bin_file.unlink()
+            except Exception:
+                pass
+
+        # 4. Upload folder to private repo
         acc = float(perf_metrics.get("accuracy_pct", 0.0))
         f1 = perf_metrics.get("f1_score", "N/A")
         commit_msg = f"feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})"

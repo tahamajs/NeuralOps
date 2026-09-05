@@ -1207,20 +1207,11 @@ def main():
                         LOG.info("Successfully saved model weights and checkpoint to %s (module_params=%d, lora_params=%d)",
                                  ckpt_file, len(module_state), len(lora_state))
 
-                        # Export HuggingFace-compatible model artifacts for automated publishing
+                        # Export lean factorized SVD checkpoint artifacts (~90 MB) for automated publishing
                         hf_export_dir = weights_dir / "hf_export"
                         hf_export_dir.mkdir(parents=True, exist_ok=True)
                         try:
                             torch.save(checkpoint_payload, hf_export_dir / "weights.pt")
-                            try:
-                                torch.save(model.state_dict(), hf_export_dir / "pytorch_model.bin")
-                            except Exception:
-                                pass
-                            if hasattr(model, "save_pretrained") and callable(model.save_pretrained):
-                                try:
-                                    model.save_pretrained(hf_export_dir, safe_serialization=False)
-                                except Exception:
-                                    pass
                             if tokenizer is not None and hasattr(tokenizer, "save_pretrained"):
                                 try:
                                     tokenizer.save_pretrained(hf_export_dir)
