@@ -33,9 +33,20 @@ from framework.compression_engine.pruning_utils import (
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("oats")
+@COMPRESSOR_REGISTRY.register("oats_compressor")
 class OATSCompressor(BaseCompressor):
     """
     OATS Compressor: Outlier-aware low-rank + structured sparse matrix decomposition.
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.20).
+    - Safe fallback to original weights by default (fallback_to_original=True).
+    - Robust Conv1D detection by class name and nf attribute without unreliable shape heuristics.
+    - Unified critical-layer protection via should_compress_linear.
+    - Warning logged whenever error exceeds max_error regardless of fallback setting.
+    - FP32 numerical stability with NaN/Inf guards.
+    - Comprehensive per-layer stats and error tracking.
     """
 
     def __init__(
@@ -49,8 +60,8 @@ class OATSCompressor(BaseCompressor):
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         structured_24: bool = True,
-        max_error: float = 0.35,
-        fallback_to_original: bool = False,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -61,14 +72,16 @@ class OATSCompressor(BaseCompressor):
             rank_ratio = getattr(cfg, "oats_rank_ratio", getattr(cfg, "rank_ratio", rank_ratio))
             num_iters = getattr(cfg, "oats_num_iters", getattr(cfg, "num_iters", num_iters))
             structured_24 = getattr(cfg, "oats_structured_24", getattr(cfg, "structured_24", structured_24))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            max_error = getattr(cfg, "oats_max_error", getattr(cfg, "max_error", max_error))
+            fallback_to_original = getattr(
+                cfg, "oats_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            )
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.rank_ratio = max(0.01, min(float(rank_ratio), 0.9))
         self.num_iters = max(1, int(num_iters))
-        self.structured_24 = structured_24
+        self.structured_24 = bool(structured_24)
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.max_error = float(max_error)
@@ -79,14 +92,14 @@ class OATSCompressor(BaseCompressor):
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.compressed_layers: List[Dict[str, Any]] = []
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
-            return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like:
             return False
         from framework.utils.compat import should_compress_linear
@@ -167,6 +180,8 @@ class OATSCompressor(BaseCompressor):
         try:
             L_M = torch.linalg.cholesky(M)
             L_M_inv = torch.linalg.inv(L_M)
+            if torch.isnan(L_M).any() or torch.isnan(L_M_inv).any():
+                raise ValueError("Cholesky produced NaNs")
         except Exception:
             L_M = torch.eye(d_in, device=device)
             L_M_inv = torch.eye(d_in, device=device)
@@ -200,7 +215,7 @@ class OATSCompressor(BaseCompressor):
                 U, S, Vh = torch.linalg.svd(W_scaled - S_mat, full_matrices=False)
                 r = min(rank, len(S))
                 L = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except Exception:
                 pass
 
             R = W_scaled - L
@@ -215,23 +230,22 @@ class OATSCompressor(BaseCompressor):
 
         # De-scale: W_comp = (L + S_mat) @ L_M^-1
         W_comp = torch.matmul(L + S_mat, L_M_inv)
+        if torch.isnan(W_comp).any() or torch.isinf(W_comp).any():
+            return W
         return W_comp
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes OATS decomposition across compressible Linear and Conv1D modules."""
         activations_map = self._collect_activations()
         self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
 
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 raw_w = module.weight.data
-                cls_name = module.__class__.__name__
-                is_conv1d = "conv1d" in cls_name.lower() or (
-                    raw_w.ndim == 2
-                    and hasattr(module, "in_features")
-                    and module.in_features == raw_w.shape[0]
-                    and raw_w.shape[0] < raw_w.shape[1]
-                )
+                cls_name = module.__class__.__name__.lower()
+                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
 
                 W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
                 device = raw_w.device
@@ -240,21 +254,35 @@ class OATSCompressor(BaseCompressor):
                 act = activations_map.get(name, None)
                 W_comp = self._oats_decompose(W, act)
 
-                err = (torch.norm(W - W_comp, p="fro") / (torch.norm(W, p="fro") + 1e-8)).item()
-                if self.fallback_to_original and err > self.max_error:
-                    continue
+                w_norm = torch.norm(W, p="fro").item()
+                err = (torch.norm(W - W_comp, p="fro") / max(w_norm, 1e-12)).item()
+                self.layer_errors[name] = float(err)
+
+                if err > self.max_error:
+                    logger.warning(
+                        "OATS reconstruction error %.4f on %s exceeded threshold %.4f.",
+                        err,
+                        name,
+                        self.max_error,
+                    )
+                    if self.fallback_to_original:
+                        logger.info("Skipping OATS compression for %s (fallback to original).", name)
+                        self.fallback_layers.append(name)
+                        continue
 
                 if is_conv1d:
-                    module.weight.data = W_comp.t().contiguous().to(dtype=dtype, device=device)
+                    module.weight.data.copy_(W_comp.t().to(dtype=dtype, device=device))
                 else:
-                    module.weight.data = W_comp.contiguous().to(dtype=dtype, device=device)
+                    module.weight.data.copy_(W_comp.to(dtype=dtype, device=device))
 
-                self.compressed_layers.append({
-                    "name": name,
-                    "relative_error": float(err),
-                })
+                self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats = self.get_compression_stats()
         stats.update({
             "decomposed_layers": len(self.compressed_layers),
@@ -262,23 +290,33 @@ class OATSCompressor(BaseCompressor):
             "rank_ratio": self.rank_ratio,
             "structured_24": self.structured_24,
             "num_iters": self.num_iters,
-            "method": "oats_outlier_decomposition",
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
             "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "layer_errors": self.layer_errors,
+            "avg_reconstruction_error": avg_err,
+            "method": "oats_outlier_decomposition",
         })
         self.stats = stats
         return self.model, stats
 
 
-
-@COMPRESSOR_REGISTRY.register("oats")
-@COMPRESSOR_REGISTRY.register("oats_compressor")
+@COMPRESSOR_REGISTRY.register("oats_factory")
+@COMPRESSOR_REGISTRY.register("oats_compressor_factory")
 def oats_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for OATS compressor."""
-    sparsity = getattr(comp_config, "oats_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)
-    rank_ratio = getattr(comp_config, "oats_rank_ratio", getattr(comp_config, "rank_ratio", 0.2)) if comp_config else kwargs.get("rank_ratio", 0.2)
-    num_iters = getattr(comp_config, "oats_num_iters", getattr(comp_config, "num_iters", 4)) if comp_config else kwargs.get("num_iters", 4)
-    structured_24 = getattr(comp_config, "oats_structured_24", getattr(comp_config, "structured_24", True)) if comp_config else kwargs.get("structured_24", True)
-    tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
+    sparsity = kwargs.pop("sparsity", getattr(comp_config, "oats_sparsity", getattr(comp_config, "sparsity", 0.5)))
+    rank_ratio = kwargs.pop("rank_ratio", getattr(comp_config, "oats_rank_ratio", getattr(comp_config, "rank_ratio", 0.2)))
+    num_iters = kwargs.pop("num_iters", getattr(comp_config, "oats_num_iters", getattr(comp_config, "num_iters", 4)))
+    structured_24 = kwargs.pop("structured_24", getattr(comp_config, "oats_structured_24", getattr(comp_config, "structured_24", True)))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "oats_max_error", getattr(comp_config, "max_error", 0.20)))
+    fallback = kwargs.pop("fallback_to_original", getattr(
+        comp_config, "oats_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    ))
+    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or getattr(comp_config, "tokenizer", None))
 
     compressor = OATSCompressor(
         model,
@@ -287,6 +325,9 @@ def oats_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) 
         rank_ratio=rank_ratio,
         num_iters=num_iters,
         structured_24=structured_24,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()

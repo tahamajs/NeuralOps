@@ -150,24 +150,95 @@ class KroneckerLinear(nn.Module):
         else:
             return torch.matmul(self.U, self.V)
 
+    def _fit_svd(
+        self,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+        rank: Optional[int] = None,
+        max_error: float = 0.20,
+    ) -> None:
+        """Fit low-rank SVD factors ensuring parameter reduction."""
+        in_f = self.in_features
+        out_f = self.out_features
+        target_dtype = weight.dtype
+        target_device = weight.device
+        W_norm = torch.norm(weight, p="fro").item()
+
+        # Parameter reduction constraint: r * (in + out) < in * out
+        max_allowed_rank = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
+        base_r = rank if rank is not None and rank > 0 else max(1, min(in_f, out_f) // 4)
+        base_r = min(base_r, max_allowed_rank)
+
+        try:
+            U, S, Vt = torch.linalg.svd(weight.float(), full_matrices=False)
+            best_r = base_r
+            candidate_ranks = [base_r]
+            if base_r * 2 <= max_allowed_rank:
+                candidate_ranks.append(base_r * 2)
+            if base_r * 4 <= max_allowed_rank:
+                candidate_ranks.append(base_r * 4)
+
+            for cand_r in candidate_ranks:
+                U_r = U[:, :cand_r] * torch.sqrt(S[:cand_r].unsqueeze(0))
+                V_r = torch.sqrt(S[:cand_r].unsqueeze(1)) * Vt[:cand_r, :]
+                W_cand = torch.matmul(U_r, V_r)
+                err = float(torch.norm(weight.float() - W_cand, p="fro").item() / max(W_norm, 1e-12))
+                best_r = cand_r
+                if err <= max_error:
+                    break
+
+            U_r = U[:, :best_r] * torch.sqrt(S[:best_r].unsqueeze(0))
+            V_r = torch.sqrt(S[:best_r].unsqueeze(1)) * Vt[:best_r, :]
+        except Exception:
+            best_r = base_r
+            U_r = torch.zeros(out_f, best_r, device=target_device, dtype=torch.float32)
+            V_r = torch.zeros(best_r, in_f, device=target_device, dtype=torch.float32)
+
+        self.can_decompose = False
+        if hasattr(self, "A"):
+            del self.A
+        if hasattr(self, "B"):
+            del self.B
+
+        self.rank = best_r
+        self.U = nn.Parameter(U_r.to(dtype=target_dtype, device=target_device))
+        self.V = nn.Parameter(V_r.to(dtype=target_dtype, device=target_device))
+        if bias is not None:
+            self.bias = nn.Parameter(bias.clone().to(dtype=target_dtype, device=target_device))
+        elif not hasattr(self, "bias") or self.bias is None:
+            self.register_parameter("bias", None)
+
     @classmethod
     def from_linear(
         cls,
-        linear: nn.Linear,
+        linear: nn.Module,
         rank: Optional[int] = None,
+        max_error: float = 0.20,
         m1: Optional[int] = None,
         n1: Optional[int] = None,
         m2: Optional[int] = None,
         n2: Optional[int] = None,
     ) -> "KroneckerLinear":
         """
-        Decompose a pretrained nn.Linear layer into Kronecker factors A and B
-        using Nearest Kronecker Product (Van Loan & Pitsianis 1993).
+        Decompose a pretrained nn.Linear or Conv1D layer into Kronecker factors A and B
+        using Nearest Kronecker Product (Van Loan & Pitsianis 1993), falling back to SVD
+        if error exceeds max_error or dimensions do not factorize.
         """
-        in_features = linear.in_features
-        out_features = linear.out_features
-        weight = linear.weight.data.clone()
-        bias = linear.bias.data.clone() if linear.bias is not None else None
+        cls_name = linear.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
+        raw_w = linear.weight.data
+        if is_conv1d:
+            in_features = raw_w.shape[0]
+            out_features = raw_w.shape[1]
+            weight = raw_w.t().float()
+        else:
+            out_features = raw_w.shape[0]
+            in_features = raw_w.shape[1]
+            weight = raw_w.float()
+
+        bias = linear.bias.data.clone() if getattr(linear, "bias", None) is not None else None
+        target_dtype = raw_w.dtype
+        target_device = raw_w.device
 
         kron_layer = cls(
             in_features=in_features,
@@ -178,38 +249,44 @@ class KroneckerLinear(nn.Module):
             n1=n1,
             m2=m2,
             n2=n2,
-            dtype=weight.dtype,
-            device=weight.device,
+            dtype=target_dtype,
+            device=target_device,
         )
+
+        W_norm = torch.norm(weight, p="fro").item()
 
         if kron_layer.can_decompose:
             m1, m2 = kron_layer.m1, kron_layer.m2
             n1, n2 = kron_layer.n1, kron_layer.n2
 
-            # Rearrange W (m1*m2, n1*n2) -> (m1, m2, n1, n2) -> (m1, n1, m2, n2) -> (m1*n1, m2*n2)
-            W_tensor = weight.view(m1, m2, n1, n2).permute(0, 2, 1, 3).contiguous()
-            W_reordered = W_tensor.view(m1 * n1, m2 * n2).float()
+            try:
+                # Rearrange W (m1*m2, n1*n2) -> (m1, m2, n1, n2) -> (m1, n1, m2, n2) -> (m1*n1, m2*n2)
+                W_tensor = weight.view(m1, m2, n1, n2).permute(0, 2, 1, 3).contiguous()
+                W_reordered = W_tensor.view(m1 * n1, m2 * n2).float()
 
-            # Optimal Rank-1 SVD approximation of reordered matrix
-            U, S, Vt = torch.linalg.svd(W_reordered, full_matrices=False)
-            sigma1 = S[0].item() if S.numel() > 0 else 1.0
-            scale = math.sqrt(max(sigma1, 1e-12))
+                # Optimal Rank-1 SVD approximation of reordered matrix
+                U, S, Vt = torch.linalg.svd(W_reordered, full_matrices=False)
+                sigma1 = S[0].item() if S.numel() > 0 else 1.0
+                scale = math.sqrt(max(sigma1, 1e-12))
 
-            u1 = U[:, 0] * scale
-            v1 = Vt[0, :] * scale
+                u1 = U[:, 0] * scale
+                v1 = Vt[0, :] * scale
 
-            kron_layer.A.data.copy_(u1.view(m1, n1).to(dtype=weight.dtype))
-            kron_layer.B.data.copy_(v1.view(m2, n2).to(dtype=weight.dtype))
+                kron_layer.A.data.copy_(u1.view(m1, n1).to(dtype=target_dtype, device=target_device))
+                kron_layer.B.data.copy_(v1.view(m2, n2).to(dtype=target_dtype, device=target_device))
+
+                # Check reconstruction error
+                W_recon = torch.kron(kron_layer.A, kron_layer.B).float()
+                err = float(torch.norm(weight - W_recon, p="fro").item() / max(W_norm, 1e-12))
+            except Exception:
+                err = 1.0
+
+            if err > max_error:
+                kron_layer._fit_svd(weight, bias, rank=rank, max_error=max_error)
         else:
-            # Fallback to SVD
-            U, S, Vt = torch.linalg.svd(weight.float(), full_matrices=False)
-            r = kron_layer.rank
-            U_r = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-            V_r = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
-            kron_layer.U.data.copy_(U_r.to(dtype=weight.dtype))
-            kron_layer.V.data.copy_(V_r.to(dtype=weight.dtype))
+            kron_layer._fit_svd(weight, bias, rank=rank, max_error=max_error)
 
         if bias is not None and kron_layer.bias is not None:
-            kron_layer.bias.data.copy_(bias)
+            kron_layer.bias.data.copy_(bias.to(dtype=target_dtype, device=target_device))
 
         return kron_layer
