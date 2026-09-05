@@ -242,53 +242,56 @@ class AASVDCompressor(BaseCompressor):
         Factored linear compression implementing activation-aware subspace projection
         and symmetric singular value distribution. Returns (svd_layer, error, rank).
         """
-        cls_name = layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
-        raw_w = layer.weight.data
-
-        if is_conv1d:
-            in_feat, out_feat = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t().float()
-        else:
-            out_feat, in_feat = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.float()
-
-        r = get_dynamic_compression_rank(
-            in_feat,
-            out_feat,
-            model_or_family=self.model,
-            default_rank=rank or self.rank,
-            comp_config=getattr(self, "comp_config", None),
-        )
-        max_allowed_rank = max(1, min(in_feat, out_feat, int(0.75 * (in_feat * out_feat) / (in_feat + out_feat))))
-        r = min(r, max_allowed_rank)
-        W_norm = torch.norm(W, p="fro").item()
-
-        # Fix 4 & 5: Standard AASVD formulation with symmetric covariance square root
-        cov_sqrt: Optional[torch.Tensor] = None
-        cov_inv_sqrt: Optional[torch.Tensor] = None
-
-        if cov_factors is not None:
-            cov_sqrt, cov_inv_sqrt = cov_factors
-        elif cov is not None and cov.shape == (in_feat, in_feat):
-            try:
-                cov_fp32 = cov.to(device=layer.weight.device, dtype=torch.float32)
-                cov_sym = 0.5 * (cov_fp32 + cov_fp32.T)
-                eigvals, eigvecs = torch.linalg.eigh(cov_sym)
-                eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
-                eigvals_reg = eigvals.clamp(min=eps)
-                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_reg)) @ eigvecs.T
-                cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
-            except Exception as e:
-                logger.debug("Failed computing covariance square roots: %s", e)
-                cov_sqrt, cov_inv_sqrt = None, None
-
-        if cov_sqrt is not None and cov_inv_sqrt is not None:
-            W_weighted = torch.matmul(W, cov_sqrt)
-        else:
-            W_weighted = W
-
         try:
+            cls_name = layer.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
+            if not hasattr(layer, "weight") or layer.weight is None:
+                return None, float("inf"), 0
+
+            raw_w = layer.weight.data
+
+            if is_conv1d:
+                in_feat, out_feat = raw_w.shape[0], raw_w.shape[1]
+                W = raw_w.t().float()
+            else:
+                out_feat, in_feat = raw_w.shape[0], raw_w.shape[1]
+                W = raw_w.float()
+
+            r = get_dynamic_compression_rank(
+                in_feat,
+                out_feat,
+                model_or_family=self.model,
+                default_rank=rank or self.rank,
+                comp_config=getattr(self, "comp_config", None),
+            )
+            max_allowed_rank = max(1, min(in_feat, out_feat, int(0.75 * (in_feat * out_feat) / (in_feat + out_feat))))
+            r = min(r, max_allowed_rank)
+            W_norm = torch.norm(W, p="fro").item()
+
+            # Fix 4 & 5: Standard AASVD formulation with symmetric covariance square root
+            cov_sqrt: Optional[torch.Tensor] = None
+            cov_inv_sqrt: Optional[torch.Tensor] = None
+
+            if cov_factors is not None:
+                cov_sqrt, cov_inv_sqrt = cov_factors
+            elif cov is not None and cov.shape == (in_feat, in_feat):
+                try:
+                    cov_fp32 = cov.to(device=layer.weight.device, dtype=torch.float32)
+                    cov_sym = 0.5 * (cov_fp32 + cov_fp32.T)
+                    eigvals, eigvecs = torch.linalg.eigh(cov_sym)
+                    eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
+                    eigvals_reg = eigvals.clamp(min=eps)
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_reg)) @ eigvecs.T
+                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
+                except Exception as e:
+                    logger.debug("Failed computing covariance square roots: %s", e)
+                    cov_sqrt, cov_inv_sqrt = None, None
+
+            if cov_sqrt is not None and cov_inv_sqrt is not None:
+                W_weighted = torch.matmul(W, cov_sqrt)
+            else:
+                W_weighted = W
+
             W_weighted_dev = W_weighted.to(device=layer.weight.device, dtype=torch.float32)
             U, S, Vt = torch.linalg.svd(W_weighted_dev, full_matrices=False)
 
@@ -322,7 +325,6 @@ class AASVDCompressor(BaseCompressor):
 
             svd_layer.reconstruction_error = err
             svd_layer.rank = r
-            # Fix 1: Explicit tuple return
             return svd_layer, err, r
         except Exception as e:
             # Fix 2: Return (None, float('inf'), 0) on failure
