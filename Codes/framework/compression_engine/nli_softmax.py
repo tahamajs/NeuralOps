@@ -160,11 +160,17 @@ class NLISoftmaxCompressor(BaseCompressor):
         try:
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
                 try:
+                    dummy = torch.randint(0, 100, (1, 8), device=dev)
                     self.model(dummy)
                 except Exception:
-                    self.model(dummy.float())
+                    first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                    if first_linear is not None:
+                        dummy_x = torch.randn(1, first_linear.in_features, device=dev)
+                        self.model(dummy_x)
+                    else:
+                        dummy_f = torch.randn(1, 8, device=dev)
+                        self.model(dummy_f)
         except Exception as e:
             logger.warning("NLISoftmax post-compression forward check warning: %s", e)
             forward_check_success = False
