@@ -28,9 +28,19 @@ from framework.compression_engine.pruning_utils import get_calibration_tensors
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("optimal_subspace_projection")
 class OptimalSubspaceProjectionCompressor(BaseCompressor):
     """
     Optimal Subspace Projection Compressor using activation-aware randomized SVD.
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.20).
+    - Safe fallback to original weights by default (fallback_to_original=True).
+    - Robust Conv1D detection by class name and nf attribute without unreliable shape heuristics.
+    - Unified critical-layer protection via should_compress_linear.
+    - Warning logged whenever error exceeds max_error regardless of fallback setting.
+    - FP32 numerical stability with NaN/Inf guards.
+    - Comprehensive per-layer stats and error tracking.
     """
     def __init__(
         self,
@@ -41,8 +51,8 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         tokenizer: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
-        max_error: float = 0.35,
-        fallback_to_original: bool = False,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -51,8 +61,10 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         if cfg is not None:
             rank_ratio = getattr(cfg, "optimal_subspace_rank_ratio", getattr(cfg, "rank_ratio", rank_ratio))
             power_iters = getattr(cfg, "optimal_subspace_power_iters", getattr(cfg, "power_iters", power_iters))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            max_error = getattr(cfg, "optimal_subspace_max_error", getattr(cfg, "max_error", max_error))
+            fallback_to_original = getattr(
+                cfg, "optimal_subspace_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            )
 
         self.calibration_loader = calibration_loader
         self.rank_ratio = max(0.01, min(float(rank_ratio), 1.0))
@@ -67,14 +79,15 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.compressed_layers: List[Dict[str, Any]] = []
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+        self.layer_ranks: Dict[str, int] = {}
         self.stats: Dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(skip in name.lower() for skip in ["embeddings", "classifier", "lm_head", "score", "pooler"]):
-            return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like:
             return False
         from framework.utils.compat import should_compress_linear
@@ -127,16 +140,15 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             h.remove()
 
         self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
+
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 raw_w = module.weight.data
-                cls_name = module.__class__.__name__
-                is_conv1d = "conv1d" in cls_name.lower() or (
-                    raw_w.ndim == 2
-                    and hasattr(module, "in_features")
-                    and module.in_features == raw_w.shape[0]
-                    and raw_w.shape[0] < raw_w.shape[1]
-                )
+                cls_name = module.__class__.__name__.lower()
+                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
 
                 W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
                 d_out, d_in = W.shape
@@ -152,6 +164,8 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                     try:
                         L = torch.linalg.cholesky(C_reg)
                         L_inv = torch.linalg.inv(L)
+                        if torch.isnan(L).any() or torch.isnan(L_inv).any():
+                            raise ValueError("Cholesky NaNs")
                     except Exception:
                         L = torch.eye(d_in, device=device)
                         L_inv = torch.eye(d_in, device=device)
@@ -179,48 +193,74 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                     new_weight = torch.matmul(new_U * S_r.unsqueeze(0), new_V)
                     new_weight = torch.nan_to_num(new_weight, nan=0.0)
 
-                    err = (torch.norm(W - new_weight, p="fro") / (torch.norm(W, p="fro") + 1e-8)).item()
-                    if self.fallback_to_original and err > self.max_error:
-                        continue
+                    w_norm = torch.norm(W, p="fro").item()
+                    err = (torch.norm(W - new_weight, p="fro") / max(w_norm, 1e-12)).item()
+                    self.layer_errors[name] = float(err)
+                    self.layer_ranks[name] = r
+
+                    if err > self.max_error:
+                        logger.warning(
+                            "OptimalSubspaceProjection reconstruction error %.4f on %s exceeded threshold %.4f.",
+                            err,
+                            name,
+                            self.max_error,
+                        )
+                        if self.fallback_to_original:
+                            logger.info("Skipping OptimalSubspaceProjection for %s (fallback to original).", name)
+                            self.fallback_layers.append(name)
+                            continue
 
                     if is_conv1d:
-                        module.weight.data = new_weight.t().contiguous().to(dtype=dtype, device=device)
+                        module.weight.data.copy_(new_weight.t().to(dtype=dtype, device=device))
                     else:
-                        module.weight.data = new_weight.contiguous().to(dtype=dtype, device=device)
+                        module.weight.data.copy_(new_weight.to(dtype=dtype, device=device))
 
-                    self.compressed_layers.append({
-                        "name": name,
-                        "relative_error": float(err),
-                        "rank": r,
-                    })
+                    self.compressed_layers.append(name)
                 except Exception as e:
-                    logger.debug("Subspace projection SVD exception in %s: %s", name, e)
+                    logger.warning("Subspace projection SVD exception in %s: %s", name, e)
+                    self.fallback_layers.append(name)
+                    self.layer_errors[name] = 1.0
 
         self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats = self.get_compression_stats()
         stats.update({
-            "compressed_layers": len(self.compressed_layers),
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "layer_errors": self.layer_errors,
+            "layer_ranks": self.layer_ranks,
+            "avg_reconstruction_error": avg_err,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
             "rank_ratio": self.rank_ratio,
             "power_iters": self.power_iters,
             "method": "optimal_subspace_projection",
-            "layers": self.compressed_layers,
         })
         self.stats = stats
         return self.model, stats
-
 
 
 # Alias
 SubspaceProjectionCompressor = OptimalSubspaceProjectionCompressor
 
 
-@COMPRESSOR_REGISTRY.register("optimal_subspace_projection")
+@COMPRESSOR_REGISTRY.register("optimal_subspace_projection_factory")
 def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Optimal Subspace Projection factory."""
-    calibration_loader = getattr(comp_config, "calibration_loader", kwargs.get("calibration_loader", None))
-    rank_ratio = getattr(comp_config, "optimal_subspace_rank_ratio", getattr(comp_config, "rank_ratio", 0.5)) if comp_config else kwargs.get("rank_ratio", 0.5)
-    power_iters = getattr(comp_config, "optimal_subspace_power_iters", getattr(comp_config, "power_iters", 2)) if comp_config else kwargs.get("power_iters", 2)
-    tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
+    calibration_loader = kwargs.pop("calibration_loader", getattr(comp_config, "calibration_loader", None))
+    rank_ratio = kwargs.pop("rank_ratio", getattr(comp_config, "optimal_subspace_rank_ratio", getattr(comp_config, "rank_ratio", 0.5)))
+    power_iters = kwargs.pop("power_iters", getattr(comp_config, "optimal_subspace_power_iters", getattr(comp_config, "power_iters", 2)))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "optimal_subspace_max_error", getattr(comp_config, "max_error", 0.20)))
+    fallback = kwargs.pop("fallback_to_original", getattr(
+        comp_config, "optimal_subspace_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    ))
+    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or getattr(comp_config, "tokenizer", None))
 
     compressor = OptimalSubspaceProjectionCompressor(
         model,
@@ -228,6 +268,9 @@ def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = Non
         rank_ratio=rank_ratio,
         power_iters=power_iters,
         tokenizer=tokenizer,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
