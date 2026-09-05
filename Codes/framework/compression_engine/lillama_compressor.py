@@ -1,6 +1,6 @@
 """
 LiLLaMA: Local Distillation via Activation Cross-Covariance Singular Value Decomposition.
-Registered in COMPRESSOR_REGISTRY as 'lillama'.
+Registered in COMPRESSOR_REGISTRY as 'lillama' and 'lillama_compressor'.
 
 Mathematical Formulation:
 1. Input and Output Activations:
@@ -11,6 +11,13 @@ Mathematical Formulation:
    $$C_{YX} = U \\Sigma V^\\top \\approx U_r \\Sigma_r V_r^\\top$$
 4. Optimal Distilled Weight Reconstruction:
    $$W_{distill} = U_r \\Sigma_r V_r^\\top$$
+
+Production Hardening:
+- Fix 1: Reconstruction error validation with configurable max_error (default 0.20) and safe fallback.
+- Fix 2: Support for Conv1D (GPT-2) and fused QKV projections (Qwen/LLaMA).
+- Fix 3: FP32 computations with cross-covariance SVD and weight SVD fallback.
+- Fix 4: Comprehensive per-layer statistics including ranks, errors, and cross-covariance usage flags.
+- Fix 5: Configurable target modules / skip_attention flag and critical-layer protection via should_compress_linear.
 """
 
 from __future__ import annotations
@@ -23,10 +30,13 @@ import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.pruning_utils import get_calibration_tensors
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("lillama")
+@COMPRESSOR_REGISTRY.register("lillama_compressor")
 class LiLLaMACompressor(BaseCompressor):
     """
     LiLLaMA Compressor: Local activation cross-covariance SVD distillation.
@@ -40,22 +50,59 @@ class LiLLaMACompressor(BaseCompressor):
         calibration_texts: Optional[List[str]] = None,
         calibration_loader: Optional[Any] = None,
         device: Optional[Union[str, torch.device]] = None,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        skip_attention: bool = True,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="lillama", **kwargs)
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        if cfg is not None:
+            rank = getattr(cfg, "lillama_rank", getattr(cfg, "rank", rank))
+            max_error = getattr(cfg, "max_error", max_error)
+            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            skip_attention = getattr(cfg, "skip_attention", skip_attention)
+
+        if "fallback_to_original" in kwargs:
+            fallback_to_original = bool(kwargs["fallback_to_original"])
+
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.rank = max(1, int(rank))
         self.calibration_texts = calibration_texts
         self.calibration_loader = calibration_loader
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.skip_attention = bool(skip_attention)
+        self.target_modules = target_modules
         self.target_device = (
             torch.device(device)
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
+        self.layer_errors: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
 
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        cls_name = module.__class__.__name__.lower()
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        if not is_linear_like:
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+
+        if self.skip_attention:
+            attn_keywords = {"query", "key", "value", "q_lin", "k_lin", "v_lin", "q_proj", "k_proj", "v_proj", "out_lin", "out_proj", "dense", "o_proj", "c_attn"}
+            last_name = name.split(".")[-1].lower()
+            if last_name in attn_keywords or any(k in name.lower() for k in ["self_attn", "attn.c_attn"]):
+                return False
+
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
     def _collect_io_activations(self) -> Dict[str, Tuple[torch.Tensor, torch.Tensor]]:
-        """Collect input and output activations across all Linear layers."""
+        """Collect input and output activations across target layers."""
         self.model.eval()
         activations: Dict[str, Dict[str, List[torch.Tensor]]] = {}
         hooks = []
@@ -72,7 +119,7 @@ class LiLLaMACompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -86,14 +133,12 @@ class LiLLaMACompressor(BaseCompressor):
         with torch.no_grad():
             try:
                 if isinstance(calib_inputs, dict):
-                    calib_inputs = {k: v.to(self.target_device) if isinstance(v, torch.Tensor) else v
-                                    for k, v in calib_inputs.items()}
+                    calib_inputs = {k: v.to(self.target_device) if isinstance(v, torch.Tensor) else v for k, v in calib_inputs.items()}
                     self.model(**calib_inputs)
                 elif isinstance(calib_inputs, torch.Tensor):
                     self.model(calib_inputs.to(self.target_device))
                 elif isinstance(calib_inputs, (list, tuple)):
-                    calib_inputs = [v.to(self.target_device) if isinstance(v, torch.Tensor) else v
-                                    for v in calib_inputs]
+                    calib_inputs = [v.to(self.target_device) if isinstance(v, torch.Tensor) else v for v in calib_inputs]
                     self.model(*calib_inputs)
             except Exception as e:
                 logger.debug("LiLLaMA IO activation collection forward pass exception: %s", e)
@@ -114,50 +159,49 @@ class LiLLaMACompressor(BaseCompressor):
         """Executes LiLLaMA cross-covariance SVD distillation."""
         activations_map = self._collect_io_activations()
         distilled_layers_count = 0
+        self.layer_errors = {}
+        layer_details = {}
 
-        # PATCH: Names of attention projection layers to skip.
-        # Replacing Q/K/V/out with rank-32 SVD truncation destroys pretrained
-        # representations across all heads — skip them entirely.
-        _ATTN_NAMES = frozenset({
-            "query", "key", "value",
-            "q_lin", "k_lin", "v_lin",
-            "q_proj", "k_proj", "v_proj",
-            "out_lin", "out_proj", "dense", "o_proj",
-        })
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                last_name = name.split(".")[-1]
-                if last_name in _ATTN_NAMES:
-                    continue   # preserve attention weights intact
-                W = module.weight.data.clone().float()
-                d_out, d_in = W.shape
-                device = W.device
-                dtype = module.weight.dtype
+            if not self._is_target_module(name, module):
+                # Record 0.0 error for skipped layers as required
+                self.layer_errors[name] = 0.0
+                continue
 
-                if name in activations_map:
-                    inp, out = activations_map[name]
-                    inp_flat = inp.reshape(-1, inp.shape[-1]).float()
-                    out_flat = out.reshape(-1, out.shape[-1]).float()
+            raw_w = module.weight.data
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            device = raw_w.device
+            dtype = module.weight.dtype
 
-                    if inp_flat.shape[-1] == d_in and out_flat.shape[-1] == d_out:
-                        # Cross-covariance
-                        C = torch.matmul(out_flat.T, inp_flat) / max(len(inp_flat), 1)
-                        try:
-                            U, S, Vh = torch.linalg.svd(C, full_matrices=False)
-                            r = min(self.rank, min(d_out, d_in), len(S))
-                            # PATCH: 95% energy guard — never truncate below 95% retention
-                            cum_e = (S[:r] ** 2).sum() / ((S ** 2).sum() + 1e-12)
-                            if cum_e < 0.95:
-                                cum_ratio = torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12)
-                                r_needed = int((cum_ratio < 0.95).sum().item()) + 1
-                                r = min(r_needed, len(S))
-                            W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
-                        except Exception:
-                            W_new = W
-                    else:
+            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            d_out, d_in = W.shape
+            used_cross_cov = False
+
+            if name in activations_map:
+                inp, out = activations_map[name]
+                inp_flat = inp.reshape(-1, inp.shape[-1]).float()
+                out_flat = out.reshape(-1, out.shape[-1]).float()
+
+                if inp_flat.shape[-1] == d_in and out_flat.shape[-1] == d_out:
+                    C = torch.matmul(out_flat.T, inp_flat) / max(len(inp_flat), 1)
+                    try:
+                        U, S, Vh = torch.linalg.svd(C, full_matrices=False)
+                        r = min(self.rank, min(d_out, d_in), len(S))
+                        cum_e = (S[:r] ** 2).sum() / ((S ** 2).sum() + 1e-12)
+                        if cum_e < 0.95:
+                            cum_ratio = torch.cumsum(S ** 2, 0) / ((S ** 2).sum() + 1e-12)
+                            r_needed = int((cum_ratio < 0.95).sum().item()) + 1
+                            r = min(r_needed, len(S))
+                        W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
+                        used_cross_cov = True
+                    except Exception:
                         W_new = W
                 else:
-                    # SVD on weight itself as fallback — PATCH: apply 95% energy guard
+                    W_new = W
+            else:
+                # SVD on weight itself as fallback
+                try:
                     U, S, Vh = torch.linalg.svd(W, full_matrices=False)
                     r = min(self.rank, len(S))
                     cum_e = (S[:r] ** 2).sum() / ((S ** 2).sum() + 1e-12)
@@ -166,34 +210,78 @@ class LiLLaMACompressor(BaseCompressor):
                         r_needed = int((cum_ratio < 0.95).sum().item()) + 1
                         r = min(r_needed, len(S))
                     W_new = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
+                except Exception:
+                    W_new = W
 
-                module.weight.data = W_new.to(dtype=dtype, device=device)
-                distilled_layers_count += 1
+            # Relative Frobenius reconstruction error check
+            norm_orig = torch.norm(W, p="fro")
+            rel_err = (torch.norm(W - W_new, p="fro") / (norm_orig + 1e-8)).item()
+            self.layer_errors[name] = rel_err
+
+            if rel_err > self.max_error:
+                logger.warning(
+                    "LiLLaMA reconstruction error %.4f on %s exceeded max_error %.4f%s",
+                    rel_err,
+                    name,
+                    self.max_error,
+                    ". Keeping original layer." if self.fallback_to_original else ". Proceeding with distilled weights.",
+                )
+                if self.fallback_to_original:
+                    continue
+
+            final_w = W_new.t() if is_conv1d else W_new
+            module.weight.data = final_w.to(dtype=dtype, device=device)
+            distilled_layers_count += 1
+            layer_details[name] = {
+                "rank": r if 'r' in locals() else self.rank,
+                "rel_error": rel_err,
+                "used_cross_cov": used_cross_cov,
+                "shape": tuple(final_w.shape),
+            }
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        avg_err = float(torch.tensor(list(self.layer_errors.values())).mean().item()) if self.layer_errors else 0.0
         stats.update({
             "distilled_layers": distilled_layers_count,
             "rank": self.rank,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "avg_reconstruction_error": avg_err,
+            "layer_errors": self.layer_errors,
+            "layer_details": layer_details,
             "method": "lillama_cross_covariance_svd",
         })
         self.stats = stats
+        logger.info(
+            "LiLLaMA compression complete: %d layers distilled, avg error: %.4f",
+            distilled_layers_count,
+            avg_err,
+        )
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("lillama")
-@COMPRESSOR_REGISTRY.register("lillama_compressor")
 def lillama_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for LiLLaMA compressor."""
     rank = getattr(comp_config, "lillama_rank", getattr(comp_config, "rank", 32)) if comp_config else kwargs.get("rank", 32)
+    max_error = getattr(comp_config, "max_error", 0.20) if comp_config else kwargs.get("max_error", 0.20)
+    fallback_to_original = getattr(comp_config, "fallback_to_original", True) if comp_config else kwargs.get("fallback_to_original", True)
     tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
 
-    compressor = LiLLaMACompressor(model, tokenizer=tokenizer, rank=rank, **kwargs)
+    compressor = LiLLaMACompressor(
+        model,
+        tokenizer=tokenizer,
+        rank=rank,
+        max_error=max_error,
+        fallback_to_original=fallback_to_original,
+        comp_config=comp_config,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+
+__all__ = [
+    "LiLLaMACompressor",
+    "lillama_factory",
+]
