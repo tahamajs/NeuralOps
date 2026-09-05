@@ -61,6 +61,7 @@ class CoMeBridge(nn.Module):
 class CoMeBridgedLayer(nn.Module):
     """
     Wraps a retained transformer layer and appends a learnable CoMeBridge when skipping layers.
+    Delegates attribute lookups to the underlying transformer layer.
     """
 
     def __init__(self, layer: nn.Module, bridge: Optional[CoMeBridge] = None) -> None:
@@ -68,11 +69,105 @@ class CoMeBridgedLayer(nn.Module):
         self.layer = layer
         self.bridge = bridge
 
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.layer, name)
+
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         out = self.layer(*args, **kwargs)
         if self.bridge is not None:
             out = self.bridge(out)
         return out
+
+
+class CoMeLoRALinear(nn.Module):
+    """
+    Linear layer containing frozen base weights with optional trainable LoRA adapters (lora_A, lora_B).
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.nf = out_features  # Conv1D compatibility
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
+
+        target_device = device if device is not None else weight.device
+        target_dtype = dtype if dtype is not None else weight.dtype
+
+        self.weight = nn.Parameter(
+            weight.to(device=target_device, dtype=target_dtype),
+            requires_grad=False,
+        )
+        if bias is not None:
+            self.bias = nn.Parameter(
+                bias.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=target_device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=target_device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Module,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -> CoMeLoRALinear:
+        cls_name = linear.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
+        raw_w = linear.weight.detach()
+        w = raw_w.t().clone() if is_conv1d else raw_w.clone()
+        bias = linear.bias.detach() if hasattr(linear, "bias") and linear.bias is not None else None
+        in_features = getattr(linear, "in_features", w.shape[1])
+        out_features = getattr(linear, "out_features", w.shape[0])
+        return cls(
+            in_features=in_features,
+            out_features=out_features,
+            weight=w,
+            bias=bias,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            device=w.device,
+            dtype=w.dtype,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+        out = F.linear(x_flat, self.weight, self.bias)
+
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
+            out = out + (self.scaling * lora_out).to(out.dtype)
+
+        return out.reshape(*orig_shape[:-1], self.out_features)
 
 
 class CoMeCompressor(BaseCompressor):
@@ -83,6 +178,8 @@ class CoMeCompressor(BaseCompressor):
         target_layers : int, optional – target number of layers after shedding
         sparsity      : float, default 0.3 – fraction of layers to remove
         alpha_init    : float, default 0.1 – initial bridge interpolation weight
+        lora_r        : int, default 0 – rank for optional post-compression LoRA adapters
+        lora_alpha    : float, default 1.0 – alpha scaling for LoRA adapters
     """
 
     def __init__(
@@ -92,35 +189,60 @@ class CoMeCompressor(BaseCompressor):
         target_layers: Optional[int] = None,
         sparsity: float = 0.3,
         alpha_init: float = 0.1,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        skip_attention_qkv: bool = True,
+        protect_critical: bool = True,
         recalibrate_ln: bool = True,
         device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="come", **kwargs)
+        conf = cfg or kwargs.get("comp_config", None)
+        if conf is not None:
+            target_layers = getattr(conf, "come_target_layers", getattr(conf, "target_layers", target_layers))
+            sparsity = getattr(conf, "come_sparsity", getattr(conf, "sparsity", sparsity))
+            alpha_init = getattr(conf, "come_alpha_init", getattr(conf, "alpha_init", alpha_init))
+            lora_r = getattr(conf, "lora_r", getattr(conf, "lora_rank", lora_r))
+            lora_alpha = getattr(conf, "lora_alpha", lora_alpha)
+            skip_attention_qkv = getattr(conf, "skip_attention_qkv", skip_attention_qkv)
+            protect_critical = getattr(conf, "protect_critical", protect_critical)
+            recalibrate_ln = getattr(conf, "come_recalibrate_ln", getattr(conf, "recalibrate_ln", recalibrate_ln))
+
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.target_layers = target_layers
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
-        self.alpha_init = alpha_init
-        self.recalibrate_ln = recalibrate_ln
+        self.alpha_init = float(alpha_init)
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.protect_critical = bool(protect_critical)
+        self.recalibrate_ln = bool(recalibrate_ln)
         self.target_device = (
             torch.device(device)
             if device is not None
             else (next(model.parameters(), torch.tensor(0.0)).device)
         )
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.skipped_layers: List[str] = []
         self.stats: Dict[str, Any] = {}
 
-    def _get_hidden_size(self, layer: nn.Module) -> int:
-        """Infers the hidden feature dimension from a transformer layer.
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        if not self.skip_attention_qkv:
+            return False
+        cfg = getattr(self.model, "config", None)
+        num_heads = getattr(cfg, "num_attention_heads", None)
+        num_kv_heads = getattr(cfg, "num_key_value_heads", None)
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+            name_lower = name.lower()
+            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+                return True
+        return False
 
-        Priority:
-        1. Explicit attribute on the layer itself (hidden_size / d_model / dim / embed_dim).
-        2. Same attributes on layer.config (HuggingFace style).
-        3. Output-projection Linear whose out_features equals the model hidden dim
-           (o_proj / out_proj / output / dense).  These project *back* to hidden_size.
-        4. Majority-vote over all Linear.in_features – avoids MLP intermediate sizes
-           (e.g. 2816 = up-proj intermediate) dominating when they appear first.
-        5. Hard-coded default 768.
-        """
+    def _get_hidden_size(self, layer: nn.Module) -> int:
+        """Infers the hidden feature dimension from a transformer layer."""
         # 0. Via self.model.config (top-level model config is canonical)
         if hasattr(self, "model") and hasattr(self.model, "config"):
             for attr in ["hidden_size", "d_model", "dim"]:
@@ -138,16 +260,13 @@ class CoMeCompressor(BaseCompressor):
                 if hasattr(layer.config, attr):
                     return int(getattr(layer.config, attr))
 
-        # 3. Output-projection Linears project FROM all_head_size TO hidden_size;
-        #    their out_features is the true hidden_size.
+        # 3. Output-projection Linears project FROM all_head_size TO hidden_size
         _OUTPUT_PROJ_KEYS = ("o_proj", "out_proj", "output", "dense")
         for name, m in layer.named_modules():
             if isinstance(m, nn.Linear) and any(k in name for k in _OUTPUT_PROJ_KEYS):
                 return m.out_features
 
-        # 4. Majority vote over in_features of all Linear layers.
-        #    MLP intermediate projections (e.g. gate_proj, up_proj) produce large
-        #    outlier sizes; the hidden_size typically has the highest count.
+        # 4. Majority vote over in_features of all Linear layers
         sizes = [m.in_features for _, m in layer.named_modules() if isinstance(m, nn.Linear)]
         if sizes:
             from collections import Counter
@@ -162,8 +281,11 @@ class CoMeCompressor(BaseCompressor):
         return 768
 
     def _find_layer_container(self) -> Tuple[Optional[nn.Module], Optional[str], Optional[nn.ModuleList]]:
-        """Finds the ModuleList containing transformer layers."""
+        """Finds the ModuleList containing transformer layers across diverse architectures."""
         candidates = [
+            ("roberta.encoder.layer", lambda m: getattr(getattr(getattr(m, "roberta", None), "encoder", None), "layer", None)),
+            ("bert.encoder.layer", lambda m: getattr(getattr(getattr(m, "bert", None), "encoder", None), "layer", None)),
+            ("distilbert.transformer.layer", lambda m: getattr(getattr(getattr(m, "distilbert", None), "transformer", None), "layer", None)),
             ("transformer.layer", lambda m: getattr(getattr(m, "transformer", None), "layer", None)),
             ("transformer.h", lambda m: getattr(getattr(m, "transformer", None), "h", None)),
             ("transformer.blocks", lambda m: getattr(getattr(m, "transformer", None), "blocks", None)),
@@ -186,21 +308,36 @@ class CoMeCompressor(BaseCompressor):
                     parent = getattr(parent, p)
                 return parent, parts[-1], res
 
-        # Generic search for any child ModuleList of repeated blocks
+        # Generic search prioritizing largest ModuleList named layer/h/block
+        best_match = None
+        max_score = -1
         for name, module in self.model.named_modules():
             if isinstance(module, nn.ModuleList) and len(module) >= 2:
                 parts = name.split(".")
-                parent = self.model
-                for p in parts[:-1]:
-                    parent = getattr(parent, p)
-                return parent, parts[-1], module
+                last = parts[-1].lower()
+                is_layer_name = any(k in last for k in ["layer", "h", "block"])
+                score = len(module) + (1000 if is_layer_name else 0)
+                if score > max_score:
+                    max_score = score
+                    parent = self.model
+                    for p in parts[:-1]:
+                        parent = getattr(parent, p)
+                    best_match = (parent, parts[-1], module)
+
+        if best_match is not None:
+            return best_match
 
         return None, None, None
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Applies layer shedding with learnable inter-layer interpolation adapters."""
+        from framework.utils.compat import should_compress_linear, replace_module
+
         parent, attr_name, layers = self._find_layer_container()
         bridges_inserted = 0
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
 
         if layers is not None and parent is not None and attr_name is not None:
             orig_len = len(layers)
@@ -232,22 +369,94 @@ class CoMeCompressor(BaseCompressor):
                         bridged_module_list.append(layer)
 
                 setattr(parent, attr_name, bridged_module_list)
+                self.compressed_layers.append(f"{attr_name} (shed {orig_len - keep_len} layers)")
         else:
-            # SVD prune linear layers if architecture lacks explicit layer list
-            for name, module in self.model.named_modules():
-                if isinstance(module, nn.Linear):
-                    W = module.weight.data.float()
-                    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                    r = max(1, int(len(S) * (1.0 - self.sparsity)))
-                    module.weight.data = ((U[:, :r] * S[:r]) @ Vt[:r, :]).to(dtype=module.weight.dtype)
+            # Fallback: SVD compress linear layers if architecture lacks explicit layer list
+            seen_weights: set[int] = set()
+            for name, module in list(self.model.named_modules()):
+                cls_name = module.__class__.__name__.lower()
+                is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+                if is_linear_like and not isinstance(module, CoMeLoRALinear):
+                    if self.protect_critical and any(skip in name.lower() for skip in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor"]):
+                        continue
+                    if not should_compress_linear(self.model, name):
+                        continue
+                    if self._is_gqa_asymmetric(name, module):
+                        continue
+                    if not hasattr(module, "weight") or module.weight is None:
+                        continue
+                    w_id = id(module.weight)
+                    if w_id in seen_weights:
+                        self.skipped_layers.append(name)
+                        continue
+                    seen_weights.add(w_id)
+
+                    try:
+                        raw_w = module.weight.data
+                        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                        W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+                        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                        r = max(1, int(len(S) * (1.0 - self.sparsity)))
+                        W_comp = (U[:, :r] * S[:r]) @ Vt[:r, :]
+                        if is_conv1d:
+                            module.weight.data.copy_(W_comp.t().to(dtype=module.weight.dtype, device=raw_w.device))
+                        else:
+                            module.weight.data.copy_(W_comp.to(dtype=module.weight.dtype, device=raw_w.device))
+                        self.compressed_layers.append(name)
+                    except Exception as e:
+                        logger.warning("CoMe fallback SVD failed on %s: %s", name, e)
+                        self.fallback_layers.append(name)
+
+        # Post-shedding trainable LoRA adapter insertion on retained layers if lora_r > 0
+        if self.lora_r > 0:
+            seen_weights: set[int] = set()
+            for name, module in list(self.model.named_modules()):
+                cls_name = module.__class__.__name__.lower()
+                is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+                if is_linear_like and not isinstance(module, (CoMeLoRALinear, CoMeBridge)):
+                    if self.protect_critical and any(skip in name.lower() for skip in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor"]):
+                        continue
+                    if not should_compress_linear(self.model, name):
+                        continue
+                    if self._is_gqa_asymmetric(name, module):
+                        continue
+                    if not hasattr(module, "weight") or module.weight is None:
+                        continue
+                    w_id = id(module.weight)
+                    if w_id in seen_weights:
+                        self.skipped_layers.append(name)
+                        continue
+                    seen_weights.add(w_id)
+
+                    lora_mod = CoMeLoRALinear.from_linear(
+                        module,
+                        lora_r=self.lora_r,
+                        lora_alpha=self.lora_alpha,
+                    )
+                    replace_module(self.model, name, lora_mod)
 
         # LayerNorm Recalibration
         if self.recalibrate_ln:
-            recalibrate_layernorms(
-                self.model,
-                tokenizer=self.tokenizer,
-                device=self.target_device,
-            )
+            try:
+                recalibrate_layernorms(
+                    self.model,
+                    tokenizer=self.tokenizer,
+                    device=self.target_device,
+                )
+            except Exception as e:
+                logger.warning("CoMe LayerNorm recalibration skipped: %s", e)
+
+        # Post-compression forward sanity check
+        forward_check_success = False
+        try:
+            self.model.eval()
+            with torch.no_grad():
+                d = next(self.model.parameters()).device
+                dummy = torch.randint(0, 100, (1, 16), device=d)
+                self.model(dummy)
+            forward_check_success = True
+        except Exception as e:
+            logger.debug("CoMe post-compression forward sanity check exception: %s", e)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -255,7 +464,16 @@ class CoMeCompressor(BaseCompressor):
             "bridges_inserted": bridges_inserted,
             "target_layers": self.target_layers,
             "sparsity": self.sparsity,
+            "lora_r": self.lora_r,
+            "lora_alpha": self.lora_alpha,
             "recalibrate_ln": self.recalibrate_ln,
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "skipped_layers": self.skipped_layers,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "num_skipped": len(self.skipped_layers),
+            "forward_check_success": forward_check_success,
             "method": "come_layer_shedding_with_bridges",
         })
         self.stats = stats
@@ -263,13 +481,21 @@ class CoMeCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("come")
+@COMPRESSOR_REGISTRY.register("come_compressor")
+@COMPRESSOR_REGISTRY.register("come_factory")
+@COMPRESSOR_REGISTRY.register("come_compressor_factory")
 def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for CoMe compressor."""
-    target_layers = getattr(comp_config, "come_target_layers", kwargs.get("target_layers", None))
-    sparsity = getattr(comp_config, "come_sparsity", kwargs.get("sparsity", 0.3))
-    alpha_init = getattr(comp_config, "come_alpha_init", kwargs.get("alpha_init", 0.1))
-    tokenizer = getattr(model, "tokenizer", kwargs.get("tokenizer", None))
-    recalibrate_ln = getattr(comp_config, "come_recalibrate_ln", kwargs.get("recalibrate_ln", True))
+    return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    target_layers = kwargs.pop("target_layers", getattr(comp_config, "come_target_layers", getattr(comp_config, "target_layers", None)) if comp_config else None)
+    sparsity = kwargs.pop("sparsity", getattr(comp_config, "come_sparsity", getattr(comp_config, "sparsity", 0.3)) if comp_config else 0.3)
+    alpha_init = kwargs.pop("alpha_init", getattr(comp_config, "come_alpha_init", getattr(comp_config, "alpha_init", 0.1)) if comp_config else 0.1)
+    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", getattr(comp_config, "lora_rank", 0)) if comp_config else 0)
+    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", getattr(comp_config, "skip_attention_qkv", True) if comp_config else True)
+    protect_critical = kwargs.pop("protect_critical", getattr(comp_config, "protect_critical", True) if comp_config else True)
+    tokenizer = getattr(model, "tokenizer", kwargs.pop("tokenizer", None))
+    recalibrate_ln = getattr(comp_config, "come_recalibrate_ln", kwargs.get("recalibrate_ln", True)) if comp_config else kwargs.get("recalibrate_ln", True)
 
     compressor = CoMeCompressor(
         model,
@@ -277,15 +503,24 @@ def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         target_layers=target_layers,
         sparsity=sparsity,
         alpha_init=alpha_init,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        skip_attention_qkv=skip_attention_qkv,
+        protect_critical=protect_critical,
         recalibrate_ln=recalibrate_ln,
+        comp_config=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_tuple:
+        return compressed_model, stats
     return compressed_model
+
 
 __all__ = [
     "CoMeBridge",
     "CoMeBridgedLayer",
+    "CoMeLoRALinear",
     "CoMeCompressor",
     "come_factory",
 ]
