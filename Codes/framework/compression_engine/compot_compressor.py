@@ -177,6 +177,8 @@ class COMPOTLinear(nn.Module):
         if norm_orig < 1e-12:
             rel_err = 0.0
         else:
+            rel_err = float(torch.norm(W_float - W_recon, p="fro").item() / norm_orig)
+
         compot_layer.reconstruction_error = rel_err
         compot_layer.used_activations = used_act
         return compot_layer
