@@ -22,7 +22,7 @@ from .hashed_linear import HashedLinear
 logger = logging.getLogger(__name__)
 
 
-@COMPRESSOR_REGISTRY.register("hashed_net")
+@COMPRESSOR_REGISTRY.register("hashed_net_compressor")
 class HashedNetCompressor(BaseCompressor):
     """
     Compress a model by replacing target linear/Conv1D layers with HashedLinear,
@@ -347,6 +347,7 @@ class HashedNetCompressor(BaseCompressor):
         return hashed, err
 
 
+@COMPRESSOR_REGISTRY.register("hashed_net")
 @COMPRESSOR_REGISTRY.register("hashed_net_factory")
 def hashed_net_factory(
     model: nn.Module,

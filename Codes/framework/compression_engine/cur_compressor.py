@@ -226,6 +226,7 @@ class CURCompressor(BaseCompressor):
         )
 
 
+@COMPRESSOR_REGISTRY.register("cur")
 @COMPRESSOR_REGISTRY.register("cur_factory")
 @COMPRESSOR_REGISTRY.register("cur_compressor_factory")
 def cur_compressor_factory(
@@ -243,6 +244,7 @@ def cur_compressor_factory(
     fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True))
     target_names = kwargs.pop("target_names", getattr(comp_config, "cur_target_names", None))
     exclude_names = kwargs.pop("exclude_names", getattr(comp_config, "cur_exclude_names", None))
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = CURCompressor(
         model,
@@ -257,5 +259,7 @@ def cur_compressor_factory(
         cfg=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
