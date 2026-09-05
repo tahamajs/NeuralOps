@@ -504,11 +504,17 @@ class ViGAttention(BaseAttention):
             out = out[:, :N, :]
 
         if head_mask is not None:
+            out = out.view(B, N, self.num_heads, self.head_dim)
             if head_mask.dim() == 1:
-                hm = head_mask.view(1, 1, -1)
-            else:
-                hm = head_mask.view(head_mask.size(0), 1, -1)
-            out = out * hm
+                out = out * head_mask.view(1, 1, -1, 1)
+            elif head_mask.dim() == 2:
+                out = out * head_mask.view(head_mask.size(0), 1, -1, 1)
+            elif head_mask.dim() == 4:
+                if head_mask.size(1) == self.num_heads:
+                    out = out * head_mask.permute(0, 2, 1, 3)
+                else:
+                    out = out * head_mask
+            out = out.reshape(B, N, D)
 
         if self.is_nested_encoder:
             output = out
