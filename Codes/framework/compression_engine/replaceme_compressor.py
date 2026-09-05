@@ -33,6 +33,7 @@ class ReplacementBlock(nn.Module):
         hidden_size: int,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
+        return_tuple: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ) -> None:
@@ -40,6 +41,7 @@ class ReplacementBlock(nn.Module):
         self.hidden_size = hidden_size
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
+        self.return_tuple = return_tuple
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
         self.ln = nn.LayerNorm(hidden_size, device=device, dtype=dtype)
@@ -65,14 +67,18 @@ class ReplacementBlock(nn.Module):
         hidden_states: torch.Tensor,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, ...]:
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
+        if isinstance(hidden_states, tuple):
+            hidden_states = hidden_states[0]
         normed = self.ln(hidden_states)
         delta = self.linear(normed)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_delta = F.linear(F.linear(normed.float(), self.lora_A), self.lora_B) * self.scaling
             delta = delta + lora_delta.to(delta.dtype)
         out = hidden_states + delta
-        return (out,)
+        if self.return_tuple:
+            return (out,)
+        return out
 
 
 @COMPRESSOR_REGISTRY.register('replaceme')
