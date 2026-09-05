@@ -417,6 +417,8 @@ def main():
                     help="Error threshold for ASVD dynamic rank")
     ap.add_argument("--aasvd_max_error", type=float, default=0.85,
                     help="Maximum reconstruction error threshold for AASVD before fallback")
+    ap.add_argument("--aasvd_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict AASVD compression to attention layers only")
 
     
     # Pre-parse to check if a config file is provided
@@ -820,6 +822,8 @@ def main():
                             setattr(model.config, "asvd_error_threshold", args.asvd_error_threshold)
                         if getattr(args, "aasvd_max_error", None) is not None:
                             setattr(model.config, "aasvd_max_error", args.aasvd_max_error)
+                        if getattr(args, "aasvd_target_attention_only", None) is not None:
+                            setattr(model.config, "aasvd_target_attention_only", args.aasvd_target_attention_only)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
@@ -893,15 +897,20 @@ def main():
                         weights_dir = out / "checkpoints" / name
                         weights_dir.mkdir(parents=True, exist_ok=True)
                         
-                        # Save module-specific parameters (e.g. span_logits, projections, compressors)
+                        # Save module-specific parameters (e.g. SVDLinear factors U, V, bias, span_logits, projections, compressors)
                         module_state = {}
                         for mod_name, mod in model.named_modules():
-                            if any(k in mod_name for k in [name, "span", "adapter", "compressor"]):
+                            is_svd = mod.__class__.__name__ == "SVDLinear" or (hasattr(mod, "U") and hasattr(mod, "V"))
+                            if is_svd or any(k in mod_name for k in [name, "span", "adapter", "compressor"]):
                                 for param_name, param in mod.named_parameters(recurse=False):
                                     module_state[f"{mod_name}.{param_name}"] = param.detach().cpu()
                         
-                        # Save LoRA adapter weights if trained
-                        lora_state = {k: v.detach().cpu() for k, v in model.state_dict().items() if "lora_" in k}
+                        # Save LoRA adapter weights and classification head if trained
+                        lora_state = {
+                            k: v.detach().cpu()
+                            for k, v in model.state_dict().items()
+                            if "lora_" in k or any(h in k for h in ["classifier.", "score.", "classification_head."])
+                        }
                         
                         checkpoint_payload = {
                             "module_name": name,
