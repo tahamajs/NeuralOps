@@ -1,54 +1,89 @@
 """
-ROAST: Hardware‑Aware Weight Sharing with Tiling.
-Reference: "ROAST: A Hardware‑Aware Weight Sharing Scheme for Efficient Neural Networks"
+ROAST: Hardware-Aware Weight Sharing with Tiling.
+Reference: 'ROAST: A Hardware-Aware Weight Sharing Scheme for Efficient Neural Networks'
+Registered in COMPRESSOR_REGISTRY as 'roast', 'roast_compressor', and 'roast_factory'.
 """
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+from __future__ import annotations
+
+import logging
+import math
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
+from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
+
+logger = logging.getLogger(__name__)
 
 
 class ROASTLinear(nn.Module):
     """
     Linear layer with weight sharing based on tiles (blocks) rather than
     individual scalar weights. Each tile of size (tile_size, tile_size) shares
-    a single weight from a small table.
+    a single weight from a small table, with optional trainable LoRA adapters.
     """
 
     def __init__(
-        self, in_features, out_features, n_buckets=1024, tile_size=32, bias=True
-    ):
+        self,
+        in_features: int,
+        out_features: int,
+        n_buckets: int = 1024,
+        tile_size: int = 32,
+        bias: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.tile_size = tile_size
-        self.n_buckets = n_buckets
+        self.tile_size = max(1, int(tile_size))
+        self.n_buckets = max(1, int(n_buckets))
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
         # Number of tiles along each dimension (padded)
-        self.tiles_out = (out_features + tile_size - 1) // tile_size
-        self.tiles_in = (in_features + tile_size - 1) // tile_size
-        self.tiles_out * self.tiles_in
+        self.tiles_out = (out_features + self.tile_size - 1) // self.tile_size
+        self.tiles_in = (in_features + self.tile_size - 1) // self.tile_size
 
-        # Weight table: one scalar per bucket, but each tile repeats that scalar
-        # To have unique per-tile scaling, we can also store a full tile pattern
-        # but the simplest ROAST uses one weight per tile.
-        self.weight_table = nn.Parameter(torch.randn(n_buckets))
+        # Weight table: frozen if LoRA is active
+        requires_grad = not (self.lora_r > 0)
+        self.weight_table = nn.Parameter(
+            torch.randn(self.n_buckets, device=device, dtype=dtype),
+            requires_grad=requires_grad,
+        )
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features))
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, device=device, dtype=dtype),
+                requires_grad=requires_grad,
+            )
         else:
-            self.register_parameter("bias", None)
+            self.register_parameter('bias', None)
 
         # Precompute tile indices
-        tile_idx_i = torch.arange(self.tiles_out).unsqueeze(1).expand(-1, self.tiles_in)
-        tile_idx_j = torch.arange(self.tiles_in).unsqueeze(0).expand(self.tiles_out, -1)
-        # Use a simple hash to map each tile to a bucket
+        tile_idx_i = torch.arange(self.tiles_out, device=device).unsqueeze(1).expand(-1, self.tiles_in)
+        tile_idx_j = torch.arange(self.tiles_in, device=device).unsqueeze(0).expand(self.tiles_out, -1)
         self.register_buffer(
-            "tile_hash_idx",
-            ((tile_idx_i * 10007 + tile_idx_j * 10009) % n_buckets).long(),
+            'tile_hash_idx',
+            ((tile_idx_i * 10007 + tile_idx_j * 10009) % self.n_buckets).long(),
         )
+
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter('lora_A', None)
+            self.register_parameter('lora_B', None)
 
     @property
     def weight(self) -> torch.Tensor:
@@ -64,7 +99,11 @@ class ROASTLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Vectorized forward pass without per-element python loops."""
         W = self.weight.to(device=x.device, dtype=x.dtype)
-        return F.linear(x, W, self.bias)
+        out = F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None)
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out.to(out.dtype)
+        return out
 
     @classmethod
     def from_linear(
@@ -72,62 +111,59 @@ class ROASTLinear(nn.Module):
         linear: nn.Module,
         n_buckets: int = 1024,
         tile_size: int = 32,
-    ) -> "ROASTLinear":
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -> ROASTLinear:
         """Initialize from a pretrained nn.Linear or Conv1D."""
         raw_w = linear.weight.data
         cls_name = linear.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or (
-            raw_w.ndim == 2
-            and hasattr(linear, "in_features")
-            and linear.in_features == raw_w.shape[0]
-            and raw_w.shape[0] < raw_w.shape[1]
-        )
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(linear, 'nf')
 
         if is_conv1d:
-            W = raw_w.t().float()
+            W = raw_w.t().contiguous().float()
             out_f, in_f = W.shape
         else:
-            W = raw_w.float()
+            W = raw_w.contiguous().float()
             out_f, in_f = W.shape
 
-        bias = getattr(linear, "bias", None) is not None
+        bias = getattr(linear, 'bias', None) is not None
         roast = cls(
             in_features=in_f,
             out_features=out_f,
             n_buckets=n_buckets,
             tile_size=tile_size,
             bias=bias,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            device=raw_w.device,
+            dtype=raw_w.dtype,
         )
         if bias and linear.bias is not None:
             roast.bias.data.copy_(linear.bias.data)
 
-        ts = tile_size
+        ts = max(1, tile_size)
         tiles_out = (out_f + ts - 1) // ts
         tiles_in = (in_f + ts - 1) // ts
 
         # Gather per-tile means
-        for i in range(tiles_out):
-            for j in range(tiles_in):
-                tile = W[
-                    i * ts : min((i + 1) * ts, out_f),
-                    j * ts : min((j + 1) * ts, in_f),
-                ]
-                bucket_idx = roast.tile_hash_idx[i, j].item()
-                roast.weight_table.data[bucket_idx] = tile.mean()
+        with torch.no_grad():
+            for i in range(tiles_out):
+                for j in range(tiles_in):
+                    tile = W[
+                        i * ts : min((i + 1) * ts, out_f),
+                        j * ts : min((j + 1) * ts, in_f),
+                    ]
+                    bucket_idx = roast.tile_hash_idx[i, j].item()
+                    roast.weight_table.data[bucket_idx] = tile.mean()
 
         return roast
 
 
-from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.utils.compat import should_compress_linear
-
-
-@COMPRESSOR_REGISTRY.register("roast")
-@COMPRESSOR_REGISTRY.register("roast_compressor")
+@COMPRESSOR_REGISTRY.register('roast')
+@COMPRESSOR_REGISTRY.register('roast_compressor')
 class ROASTCompressor(BaseCompressor):
     """
-    Replace eligible linear and Conv1D layers with ROASTLinear (hardware‑aware weight sharing).
+    Replace eligible linear and Conv1D layers with ROASTLinear (hardware-aware weight sharing).
     """
 
     def __init__(
@@ -135,86 +171,233 @@ class ROASTCompressor(BaseCompressor):
         model: nn.Module,
         n_buckets: int = 1024,
         tile_size: int = 32,
-        target_modules: Optional[list[str]] = None,
+        skip_attention_qkv: bool = True,
+        use_lora: bool = False,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        target_modules: Optional[List[str]] = None,
         max_error: float = 0.50,
-        fallback_to_original: bool = False,
+        fallback_to_original: bool = True,
+        min_numel: int = 16,
+        device: Optional[Union[str, torch.device]] = None,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(model, name="roast", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            n_buckets = getattr(cfg, "n_buckets", n_buckets)
-            tile_size = getattr(cfg, "tile_size", tile_size)
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+        super().__init__(model, name='roast', **kwargs)
+        cfg_obj = cfg or kwargs.get('comp_config', None)
 
-        self.n_buckets = int(n_buckets)
-        self.tile_size = int(tile_size)
+        self.n_buckets = max(1, int(n_buckets or getattr(cfg_obj, 'n_buckets', 1024)))
+        self.tile_size = max(1, int(tile_size or getattr(cfg_obj, 'tile_size', 32)))
+        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else getattr(cfg_obj, 'skip_attention_qkv', True))
+        self.use_lora = bool(use_lora or getattr(cfg_obj, 'use_lora', False) or (lora_r > 0))
+        self.lora_r = int(lora_r or getattr(cfg_obj, 'lora_r', 0))
+        self.lora_alpha = float(lora_alpha or getattr(cfg_obj, 'lora_alpha', 1.0))
         self.target_modules = target_modules
-        self.max_error = float(max_error)
-        self.fallback_to_original = bool(fallback_to_original)
-        self.compressed_layers: list[dict[str, Any]] = []
+        self.max_error = float(max_error or getattr(cfg_obj, 'max_error', 0.50))
+        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else getattr(cfg_obj, 'fallback_to_original', True))
+        self.min_numel = max(1, int(min_numel or getattr(cfg_obj, 'min_numel', 16)))
+
+        # Target device derivation
+        if device is not None:
+            try:
+                self.target_device = torch.device(device)
+            except Exception:
+                self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device('cpu')
+        else:
+            self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device('cpu')
+
+        # Diagnostics & Tracking
+        self.visited_modules: Set[int] = set()
+        self.compressed_layers: List[str] = []
+        self.protected_layers: List[str] = []
+        self.skipped_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.failed_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        """Check if layer belongs to an attention projection in a GQA architecture."""
+        cfg = getattr(self.model, 'config', None)
+        num_heads = getattr(cfg, 'num_attention_heads', None)
+        num_kv_heads = getattr(cfg, 'num_key_value_heads', None)
+        is_gqa = (num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads)
+        
+        name_l = name.lower()
+        is_attn_qkv = any(p in name_l for p in [
+            'q_proj', 'k_proj', 'v_proj', 'c_attn', 'query', 'key', 'value',
+            'q_lin', 'k_lin', 'v_lin', 'self_attn.q', 'self_attn.k', 'self_attn.v'
+        ])
+        return (is_gqa or self.skip_attention_qkv) and is_attn_qkv
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+        name_l = name.lower()
+        if any(k in name_l for k in [
+            'classifier', 'score', 'lm_head', 'pooler', 'embed', 'embedding',
+            'cls_head', 'head', 'logits_processor'
+        ]):
+            self.protected_layers.append(name)
             return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
-        if not is_linear_like:
-            return False
-        if isinstance(module, ROASTLinear):
-            return False
-        if not should_compress_linear(self.model, name):
-            return False
-        if self.target_modules is None:
-            return True
-        return any(t in name for t in self.target_modules)
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress the target module using ROAST tiling."""
-        self.compressed_layers = []
+        if self._is_gqa_asymmetric(name, module):
+            self.skipped_layers.append(name)
+            return False
+
+        cls_name = module.__class__.__name__
+        raw_w = getattr(module, 'weight', None)
+        if raw_w is None or not isinstance(raw_w, torch.Tensor):
+            return False
+
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
+        is_linear_like = isinstance(module, nn.Linear) or is_conv1d
+        if not is_linear_like or isinstance(module, ROASTLinear):
+            return False
+
+        if raw_w.numel() < self.min_numel:
+            self.skipped_layers.append(name)
+            return False
+
+        if not should_compress_linear(self.model, name):
+            self.protected_layers.append(name)
+            return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Compress the target modules using ROAST tiling with LoRA support."""
+        self.compressed_layers.clear()
+        self.visited_modules.clear()
+        self.protected_layers.clear()
+        self.skipped_layers.clear()
+        self.fallback_layers.clear()
+        self.failed_layers.clear()
+        self.layer_errors.clear()
+
         for name, module in list(self.model.named_modules()):
             if self._is_target_module(name, module):
-                raw_w = module.weight.data
-                cls_name = module.__class__.__name__
-                is_conv1d = "conv1d" in cls_name.lower() or (
-                    raw_w.ndim == 2
-                    and hasattr(module, "in_features")
-                    and module.in_features == raw_w.shape[0]
-                    and raw_w.shape[0] < raw_w.shape[1]
-                )
-                W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
-
-                new_layer = ROASTLinear.from_linear(
-                    module, self.n_buckets, self.tile_size
-                )
-                W_rec = new_layer.weight.float()
-                err = (torch.norm(W_orig - W_rec, p="fro") / (torch.norm(W_orig, p="fro") + 1e-8)).item()
-
-                if self.fallback_to_original and err > self.max_error:
+                mod_id = id(module)
+                if mod_id in self.visited_modules:
+                    logger.debug('ROAST: Skipping tied module %s', name)
+                    self.skipped_layers.append(name)
                     continue
+                self.visited_modules.add(mod_id)
 
-                replace_module(self.model, name, new_layer)
-                self.compressed_layers.append({
-                    "name": name,
-                    "relative_error": float(err),
-                })
+                try:
+                    raw_w = module.weight.data
+                    cls_name = module.__class__.__name__
+                    is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
+                    W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
+
+                    new_layer = ROASTLinear.from_linear(
+                        module,
+                        n_buckets=self.n_buckets,
+                        tile_size=self.tile_size,
+                        lora_r=self.lora_r if self.use_lora else 0,
+                        lora_alpha=self.lora_alpha,
+                    )
+                    W_rec = new_layer.weight.float()
+                    norm_orig = torch.norm(W_orig, p='fro').clamp_min(1e-8)
+                    err = (torch.norm(W_orig - W_rec, p='fro') / norm_orig).item()
+                    self.layer_errors[name] = float(err)
+
+                    is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
+                    if err > self.max_error:
+                        logger.warning(
+                            'ROAST: reconstruction error %.4f on %s exceeded threshold %.4f.',
+                            err, name, self.max_error
+                        )
+                        is_invalid = True
+
+                    if is_invalid and self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        continue
+
+                    replace_module(self.model, name, new_layer)
+                    self.compressed_layers.append(name)
+
+                except Exception as e_roast:
+                    logger.warning('ROAST: Failed to process %s: %s', name, e_roast)
+                    self.failed_layers.append(name)
+
+        # Post-compression forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
+                self.model(dummy_input)
+        except Exception as ex_sanity:
+            logger.warning('ROAST post-compression forward sanity check warning: %s', ex_sanity)
+            forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         stats = self.get_compression_stats()
         stats.update({
-            "compressed_layer_count": len(self.compressed_layers),
-            "n_buckets": self.n_buckets,
-            "tile_size": self.tile_size,
-            "compressed_layers": self.compressed_layers,
+            'compressed_layers': self.compressed_layers,
+            'compressed_layer_count': len(self.compressed_layers),
+            'protected_layers': self.protected_layers,
+            'protected_layer_count': len(self.protected_layers),
+            'skipped_layers': self.skipped_layers,
+            'skipped_layer_count': len(self.skipped_layers),
+            'fallback_layers': self.fallback_layers,
+            'fallback_layer_count': len(self.fallback_layers),
+            'failed_layers': self.failed_layers,
+            'failed_layer_count': len(self.failed_layers),
+            'layer_errors': self.layer_errors,
+            'avg_reconstruction_error': avg_err,
+            'forward_check_success': forward_check_success,
+            'n_buckets': self.n_buckets,
+            'tile_size': self.tile_size,
+            'skip_attention_qkv': self.skip_attention_qkv,
+            'use_lora': self.use_lora,
+            'lora_r': self.lora_r,
+            'method': 'roast',
         })
+        self.stats = stats
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("roast_factory")
-def roast_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
-    """ROAST compressor factory function."""
-    compressor = ROASTCompressor(model, comp_config=comp_config, **kwargs)
-    compressed_model, _ = compressor.compress()
+@COMPRESSOR_REGISTRY.register('roast_factory')
+@COMPRESSOR_REGISTRY.register('roast_compressor_factory')
+def roast_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+    """ROAST compressor factory function returning (compressed_model, stats) when requested."""
+    n_buckets = kwargs.pop('n_buckets', getattr(comp_config, 'n_buckets', 1024) if comp_config else 1024)
+    tile_size = kwargs.pop('tile_size', getattr(comp_config, 'tile_size', 32) if comp_config else 32)
+    skip_attention_qkv = kwargs.pop('skip_attention_qkv', getattr(comp_config, 'skip_attention_qkv', True) if comp_config else True)
+    use_lora = kwargs.pop('use_lora', getattr(comp_config, 'use_lora', False) if comp_config else False)
+    lora_r = kwargs.pop('lora_r', getattr(comp_config, 'lora_r', 0) if comp_config else 0)
+    lora_alpha = kwargs.pop('lora_alpha', getattr(comp_config, 'lora_alpha', 1.0) if comp_config else 1.0)
+    max_error = kwargs.pop('max_error', getattr(comp_config, 'max_error', 0.50) if comp_config else 0.50)
+    fallback = kwargs.pop('fallback_to_original', getattr(comp_config, 'fallback_to_original', True) if comp_config else True)
+
+    compressor = ROASTCompressor(
+        model,
+        n_buckets=n_buckets,
+        tile_size=tile_size,
+        skip_attention_qkv=skip_attention_qkv,
+        use_lora=use_lora,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop('return_both', False):
+        return compressed_model, stats
     return compressed_model
 
+
+__all__ = [
+    'ROASTLinear',
+    'ROASTCompressor',
+    'roast_factory',
+]
