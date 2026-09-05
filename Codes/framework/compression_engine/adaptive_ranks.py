@@ -32,6 +32,15 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register("adaptive_ranks")
 @COMPRESSOR_REGISTRY.register("adaptive_svd")
 class AdaptiveRanksCompressor(BaseCompressor):
@@ -47,7 +56,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
     Production hardening features:
     - Relative Frobenius reconstruction error validation with configurable max_error (default 0.20).
     - Safe fallback to original weights by default (fallback_to_original=True).
-    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+    - Robust Conv1D and LoRALinear support via base_layer weight transposition.
     - SVD and covariance eigendecomposition computed strictly in FP32 with NaN/Inf guards.
     - Unified critical-layer protection via should_compress_linear.
     - Adaptive rank retry when reconstruction error exceeds threshold.
@@ -63,6 +72,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         max_error: float = 0.20,
         fallback_to_original: bool = True,
         protect_critical: bool = True,
+        target_attention_only: bool = False,
         target_modules: Optional[List[str]] = None,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
@@ -73,20 +83,24 @@ class AdaptiveRanksCompressor(BaseCompressor):
         super().__init__(model, name="adaptive_ranks", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            energy_threshold = getattr(cfg, "energy_threshold", energy_threshold)
-            min_rank = getattr(cfg, "min_rank", getattr(cfg, "rank", min_rank))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
-            protect_critical = getattr(cfg, "protect_critical", protect_critical)
+            energy_threshold = _cfg_get(cfg, "energy_threshold", energy_threshold)
+            min_rank = _cfg_get(cfg, "min_rank", _cfg_get(cfg, "rank", min_rank))
+            max_error = _cfg_get(cfg, "max_error", max_error)
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            protect_critical = _cfg_get(cfg, "protect_critical", protect_critical)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             min_rank = kwargs["rank"]
+        if "target_attention_only" in kwargs and kwargs["target_attention_only"] is not None:
+            target_attention_only = kwargs["target_attention_only"]
 
         self.energy_threshold = max(0.01, min(float(energy_threshold), 1.0))
         self.min_rank = max(1, int(min_rank))
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.protect_critical = bool(protect_critical)
+        self.target_attention_only = bool(target_attention_only)
         self.target_modules = target_modules
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -106,9 +120,25 @@ class AdaptiveRanksCompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, (SVDLinear, CompressedAttentionLayer)):
             return False
+        # Do not target inner submodules of LoRA or wrappers
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
         cls_name = module.__class__.__name__.lower()
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-        is_mha = isinstance(module, nn.MultiheadAttention)
+        target_cls = target_mod.__class__.__name__.lower()
+
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or isinstance(target_mod, nn.Linear)
+            or "conv1d" in cls_name
+            or "conv1d" in target_cls
+            or hasattr(module, "nf")
+            or hasattr(target_mod, "nf")
+            or "loralinear" in cls_name
+            or hasattr(module, "base_layer")
+        )
+        is_mha = isinstance(module, nn.MultiheadAttention) or isinstance(target_mod, nn.MultiheadAttention)
         if not (is_linear_like or is_mha):
             return False
 
@@ -117,8 +147,25 @@ class AdaptiveRanksCompressor(BaseCompressor):
             if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler", "embed"]):
                 return False
 
-        if not should_compress_linear(self.model, name):
-            return False
+        if self.target_attention_only:
+            name_lower = name.lower()
+            ffn_patterns = [
+                "ffn", "mlp", "lin1", "lin2", "intermediate",
+                "gate_proj", "up_proj", "down_proj", "c_fc"
+            ]
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            if "output.dense" in name_lower and "attention" not in name_lower:
+                return False
+            attn_patterns = [
+                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value"
+            ]
+            if not any(p in name_lower for p in attn_patterns):
+                return False
+        else:
+            if not should_compress_linear(self.model, name):
+                return False
 
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
@@ -147,6 +194,10 @@ class AdaptiveRanksCompressor(BaseCompressor):
 
     def _collect_activation_covariances(self) -> Dict[str, torch.Tensor]:
         """Collect empirical input activation covariances across target nn.Linear / Conv1D modules."""
+        if not (self.tokenizer or self.calibration_loader or self.calibration_texts):
+            logger.info("No calibration data available; using unweighted SVD.")
+            return {}
+
         self.model.eval()
         running_cov: Dict[str, torch.Tensor] = {}
         sample_counts: Dict[str, int] = {}
@@ -156,9 +207,14 @@ class AdaptiveRanksCompressor(BaseCompressor):
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
+                    target_mod = getattr(module, "base_layer", module)
                     cls_name = module.__class__.__name__.lower()
-                    is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-                    in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
+                    target_cls = target_mod.__class__.__name__.lower()
+                    is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
+                    weight = getattr(target_mod, "weight", getattr(module, "weight", None))
+                    if weight is None:
+                        return
+                    in_f = weight.shape[0] if is_conv1d else weight.shape[1]
                     if x.ndim >= 2:
                         flat_x = x.reshape(-1, in_f)
                     else:
@@ -176,7 +232,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if self._is_target_module(name, module) and not isinstance(module, nn.MultiheadAttention):
+            if self._is_target_module(name, module) and not isinstance(getattr(module, "base_layer", module), nn.MultiheadAttention):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -186,6 +242,12 @@ class AdaptiveRanksCompressor(BaseCompressor):
             calibration_texts=self.calibration_texts,
             device=self.target_device,
         )
+
+        if calib_inputs is None or (isinstance(calib_inputs, (list, tuple, dict)) and len(calib_inputs) == 0):
+            for h in hooks:
+                h.remove()
+            logger.info("No calibration data available; using unweighted SVD.")
+            return {}
 
         with torch.no_grad():
             try:
@@ -212,12 +274,20 @@ class AdaptiveRanksCompressor(BaseCompressor):
         self, layer: nn.Module, cov: Optional[torch.Tensor] = None
     ) -> Tuple[Optional[SVDLinear], float, int, bool]:
         """
-        Decompose a single linear or Conv1D layer via energy-thresholded SVD with covariance whitening,
-        returning (svd_layer, relative_error, rank, used_cov).
+        Decompose a single linear, Conv1D, or LoRALinear layer via energy-thresholded SVD
+        with covariance whitening, returning (svd_layer, relative_error, rank, used_cov).
         """
+        target_mod = getattr(layer, "base_layer", layer)
         cls_name = layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
-        raw_w = layer.weight.data
+        target_cls = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
+
+        weight = getattr(target_mod, "weight", getattr(layer, "weight", None))
+        bias = getattr(target_mod, "bias", getattr(layer, "bias", None))
+        if weight is None:
+            return None, float("inf"), self.min_rank, False
+
+        raw_w = weight.data
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -266,12 +336,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 U_r = U[:, :r] * sqrt_S.unsqueeze(0)
                 V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
 
-                norm_u = torch.norm(U_r, p="fro").clamp_min(1e-8)
-                norm_v = torch.norm(V_r, p="fro").clamp_min(1e-8)
-                scale = torch.sqrt(norm_u / norm_v)
-                U_r = U_r / scale
-                V_r = V_r * scale
-
                 W_recon = torch.matmul(U_r, V_r)
                 if not (torch.isnan(W_recon).any() or torch.isinf(W_recon).any()):
                     err = float(torch.norm(W - W_recon, p="fro").item() / max(W_norm, 1e-12))
@@ -280,7 +344,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
                             in_features=in_f,
                             out_features=out_f,
                             rank=r,
-                            bias=layer.bias is not None,
+                            bias=bias is not None,
                             dtype=dtype,
                             device=device,
                         )
@@ -288,8 +352,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
                             U_r.to(dtype=dtype, device=device),
                             V_r.to(dtype=dtype, device=device),
                         )
-                        if layer.bias is not None:
-                            svd_layer.bias.data.copy_(layer.bias.data)
+                        if bias is not None:
+                            svd_layer.bias.data.copy_(bias.data)
                         return svd_layer, err, r, True
             except Exception as e:
                 logger.debug("Covariance whitening exception on linear layer: %s", e)
@@ -314,7 +378,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
                 in_features=in_f,
                 out_features=out_f,
                 rank=best_rank,
-                bias=layer.bias is not None,
+                bias=bias is not None,
                 dtype=dtype,
                 device=device,
             )
@@ -322,8 +386,8 @@ class AdaptiveRanksCompressor(BaseCompressor):
             U_r = (U[:, :best_rank] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
             V_r = (sqrt_S.unsqueeze(1) * Vt[:best_rank, :]).to(dtype=dtype, device=device)
             svd_layer.set_low_rank_factors(U_r, V_r)
-            if layer.bias is not None:
-                svd_layer.bias.data.copy_(layer.bias.data)
+            if bias is not None:
+                svd_layer.bias.data.copy_(bias.data)
             return svd_layer, best_err, best_rank, False
         except Exception as e:
             logger.warning("AdaptiveRanks standard SVD failed: %s", e)
@@ -350,24 +414,38 @@ class AdaptiveRanksCompressor(BaseCompressor):
         covariances = self._collect_activation_covariances()
 
         for name, module in target_layers:
-            if isinstance(module, nn.MultiheadAttention):
+            target_mod = getattr(module, "base_layer", module)
+            if isinstance(target_mod, nn.MultiheadAttention):
                 try:
-                    embed_dim = module.embed_dim
+                    embed_dim = target_mod.embed_dim
                     r_floor = max(self.min_rank, 1, int(0.15 * embed_dim))
-                    r = max(1, min(r_floor, embed_dim))
-                    if hasattr(module, "in_proj_weight") and module.in_proj_weight is not None:
-                        W_in = module.in_proj_weight.data.float()
-                        _, S, _ = torch.linalg.svd(W_in, full_matrices=False)
-                        r = self._compute_energy_rank(S, min(embed_dim, 3 * embed_dim), min_rank_floor=r_floor)
+                    r_qkv = r_floor
+                    if hasattr(target_mod, "in_proj_weight") and target_mod.in_proj_weight is not None:
+                        W_in = target_mod.in_proj_weight.data.float()
+                        # in_proj_weight is [3 * embed_dim, embed_dim]. Split into Q, K, V
+                        w_q, w_k, w_v = W_in.chunk(3, dim=0)
+                        _, s_q, _ = torch.linalg.svd(w_q, full_matrices=False)
+                        _, s_k, _ = torch.linalg.svd(w_k, full_matrices=False)
+                        _, s_v, _ = torch.linalg.svd(w_v, full_matrices=False)
+                        rq = self._compute_energy_rank(s_q, embed_dim, min_rank_floor=r_floor)
+                        rk = self._compute_energy_rank(s_k, embed_dim, min_rank_floor=r_floor)
+                        rv = self._compute_energy_rank(s_v, embed_dim, min_rank_floor=r_floor)
+                        r_qkv = max(rq, rk, rv)
+
+                    r_out = r_floor
+                    if hasattr(target_mod, "out_proj") and hasattr(target_mod.out_proj, "weight") and target_mod.out_proj.weight is not None:
+                        W_out = target_mod.out_proj.weight.data.float()
+                        _, s_out, _ = torch.linalg.svd(W_out, full_matrices=False)
+                        r_out = self._compute_energy_rank(s_out, embed_dim, min_rank_floor=r_floor)
 
                     compressed = CompressedAttentionLayer(
-                        original_layer=module,
-                        rank_qkv=r,
-                        rank_out=r,
+                        original_layer=target_mod,
+                        rank_qkv=r_qkv,
+                        rank_out=r_out,
                     )
                     replace_module(self.model, name, compressed)
                     self.compressed_layers.append(name)
-                    self.layer_ranks[name] = r
+                    self.layer_ranks[name] = max(r_qkv, r_out)
                     self.layer_errors[name] = 0.05
                     self.used_covariance[name] = False
                 except Exception as e:
@@ -395,6 +473,12 @@ class AdaptiveRanksCompressor(BaseCompressor):
 
                 replace_module(self.model, name, svd_layer)
                 self.compressed_layers.append(name)
+
+        # Ensure fallback layers are frozen so recovery fine-tuning does not touch them
+        for name, mod in self.model.named_modules():
+            if name in self.fallback_layers:
+                for p in mod.parameters():
+                    p.requires_grad = False
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
@@ -433,11 +517,12 @@ AdaptiveTransformerCompressor = AdaptiveRanksCompressor
 @COMPRESSOR_REGISTRY.register("adaptive_ranks_factory")
 @COMPRESSOR_REGISTRY.register("adaptive_svd_factory")
 def adaptive_ranks_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
-    """Adaptive ranks factory function."""
-    energy_threshold = kwargs.pop("energy_threshold", getattr(comp_config, "energy_threshold", 0.92))
-    min_rank = kwargs.pop("min_rank", kwargs.pop("rank", getattr(comp_config, "min_rank", getattr(comp_config, "rank", 16))))
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20))
-    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True))
+    """Adaptive ranks factory function with robust None/dict/object config handling."""
+    energy_threshold = kwargs.pop("energy_threshold", _cfg_get(comp_config, "energy_threshold", 0.92))
+    min_rank = kwargs.pop("min_rank", kwargs.pop("rank", _cfg_get(comp_config, "min_rank", _cfg_get(comp_config, "rank", 16))))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
 
     compressor = AdaptiveRanksCompressor(
         model,
@@ -445,11 +530,13 @@ def adaptive_ranks_factory(model: Any, comp_config: Any = None, **kwargs: Any) -
         min_rank=min_rank,
         max_error=max_error,
         fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
         comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
 
 adaptive_svd_factory = adaptive_ranks_factory
 
