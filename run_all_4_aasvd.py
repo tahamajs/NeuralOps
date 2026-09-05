@@ -114,6 +114,10 @@ models = [
     },
 ]
 
+if len(sys.argv) > 1:
+    selected = set(sys.argv[1:])
+    models = [m for m in models if m["name"] in selected]
+
 print("=" * 80, flush=True)
 print("STARTING UNIFIED 4-MODEL HARDENED AASVD BENCHMARK ON GPU SERVER", flush=True)
 print("Config: modules=full,aasvd, dataset=sst2, recovery_steps=200, lr=2e-4, rank=288/384, max_error=0.50, attention_only=True, batch_size=8, precision=fp16", flush=True)
