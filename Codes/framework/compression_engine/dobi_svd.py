@@ -105,6 +105,15 @@ class DobiSVDLinearLayer(nn.Module):
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, bias={self.bias is not None}"
 
+    def __iter__(self):
+        """Allow tuple unpacking: dobi_layer, err, r = compressor.compress_linear(...)."""
+        yield self
+        yield getattr(self, "reconstruction_error", 0.0)
+        yield getattr(self, "rank", 0)
+
+    def __getitem__(self, idx: int) -> Any:
+        return (self, getattr(self, "reconstruction_error", 0.0), getattr(self, "rank", 0))[idx]
+
 
 @COMPRESSOR_REGISTRY.register("dobi")
 @COMPRESSOR_REGISTRY.register("dobi_svd")
@@ -232,7 +241,8 @@ class DobiSVDCompressor(BaseCompressor):
         # Initial gate scaling factor to achieve exact initial SVD energy
         init_gate_scale = 1.0 / (1.0 / (1.0 + math.exp(-self.init_gate_val)))
 
-        for attempt in range(self.max_retries + 1):
+        retries = 0 if rank is not None else self.max_retries
+        for attempt in range(retries + 1):
             r = max(1, min(current_r, max_r))
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
@@ -265,13 +275,16 @@ class DobiSVDCompressor(BaseCompressor):
             if err <= self.max_error or r >= max_r:
                 break
 
-            if attempt < self.max_retries:
+            if attempt < retries:
                 next_r = min(int(r * 1.5), max_r)
                 if next_r <= r:
                     break
                 current_r = next_r
 
-        return best_layer, best_err, chosen_r
+        if best_layer is not None:
+            best_layer.reconstruction_error = best_err
+            return best_layer
+        return None, best_err, chosen_r
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all target linear and Conv1D layers across the model."""
