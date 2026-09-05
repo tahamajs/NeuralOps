@@ -155,7 +155,6 @@ class CRLinear(nn.Module):
         return cr_layer
 
 
-@COMPRESSOR_REGISTRY.register("cr")
 @COMPRESSOR_REGISTRY.register("cr_compressor")
 class CRCompressor(BaseCompressor):
     """
@@ -302,6 +301,7 @@ class CRCompressor(BaseCompressor):
         return CRLinear.from_linear(linear, rank=self.rank)
 
 
+@COMPRESSOR_REGISTRY.register("cr")
 @COMPRESSOR_REGISTRY.register("cr_factory")
 @COMPRESSOR_REGISTRY.register("cr_compressor_factory")
 def cr_compressor_factory(
@@ -314,6 +314,7 @@ def cr_compressor_factory(
     effective_rank = kwargs.pop("rank", rank or getattr(comp_config, "cr_rank", None) or getattr(comp_config, "rank", 64))
     max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20))
     fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True))
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     compressor = CRCompressor(
         model,
         rank=effective_rank,
@@ -322,5 +323,7 @@ def cr_compressor_factory(
         cfg=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
