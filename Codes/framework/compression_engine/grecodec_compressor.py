@@ -205,12 +205,17 @@ class GreCoDeCLinear(nn.Module):
 class GreCoDeCCompressor(BaseCompressor):
     """
     GreCoDeC (Greedy Coordinate Descent) Compressor.
-    Decomposes linear layers into low-rank factors using fast greedy rank-1 updates.
+    Decomposes linear/Conv1D layers into low-rank factors using fast greedy rank-1 updates.
 
     Args:
         model: PyTorch model.
         rank: Target rank for decomposition.
         max_iter: Coordinate descent iterations per rank component (default 15).
+        lora_r: Optional LoRA rank.
+        lora_alpha: LoRA scaling alpha.
+        max_error: Maximum allowed reconstruction error before fallback (default 0.20).
+        fallback_to_original: If True, keep original layer on error excess.
+        skip_attention_qkv: Skip asymmetric GQA projections.
         cfg: Optional configuration object.
         target_layers: Optional target layer filter.
     """
@@ -220,16 +225,41 @@ class GreCoDeCCompressor(BaseCompressor):
         model: Optional[nn.Module] = None,
         rank: int = 16,
         max_iter: int = 15,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        skip_attention_qkv: bool = True,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="grecodec", **kwargs)
-        self.rank = rank or getattr(cfg, "grecodec_rank", None) or getattr(cfg, "rank", 16)
-        self.max_iter = max_iter or getattr(cfg, "grecodec_max_iter", 15)
+        self.rank = int(rank or getattr(cfg, "grecodec_rank", None) or getattr(cfg, "rank", 16))
+        self.max_iter = int(max_iter or getattr(cfg, "grecodec_max_iter", 15))
+        self.lora_r = int(getattr(cfg, "lora_r", getattr(cfg, "lora_rank", lora_r)))
+        self.lora_alpha = float(getattr(cfg, "lora_alpha", lora_alpha))
+        self.max_error = float(getattr(cfg, "max_error", max_error))
+        self.fallback_to_original = bool(getattr(cfg, "fallback_to_original", fallback_to_original))
+        self.skip_attention_qkv = bool(getattr(cfg, "skip_attention_qkv", skip_attention_qkv))
         self.cfg = cfg
         self.target_layers = target_layers or getattr(cfg, "target_layers", None)
         self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.skipped_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        if not self.skip_attention_qkv:
+            return False
+        cfg = getattr(self.model, "config", None)
+        num_heads = getattr(cfg, "num_attention_heads", None)
+        num_kv_heads = getattr(cfg, "num_key_value_heads", None)
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+            name_lower = name.lower()
+            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+                return True
+        return False
 
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress linear layers using GreCoDeC."""
@@ -238,39 +268,129 @@ class GreCoDeCCompressor(BaseCompressor):
             self._original_params = self._count_params(self.model)
 
         self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        seen_weights: set[int] = set()
+
         for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and not isinstance(module, GreCoDeCLinear) and should_compress_linear(self.model, name):
-                if self.target_layers and not any(t in name for t in self.target_layers):
-                    continue
+            cls_name = module.__class__.__name__.lower()
+            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+            if not is_linear_like or isinstance(module, GreCoDeCLinear):
+                continue
 
-                max_rank = min(module.in_features, module.out_features)
-                r = min(self.rank, max_rank)
-                if r >= max_rank and max_rank > 4:
-                    continue
+            if not should_compress_linear(self.model, name):
+                continue
 
+            if self._is_gqa_asymmetric(name, module):
+                continue
+
+            if self.target_layers and not any(t in name for t in self.target_layers):
+                continue
+
+            if not hasattr(module, "weight") or module.weight is None:
+                continue
+
+            w_id = id(module.weight)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+
+            raw_w = module.weight.data
+            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            W_target = raw_w.t().float() if is_conv1d else raw_w.float()
+            out_f, in_f = W_target.shape[0], W_target.shape[1]
+            max_rank = min(in_f, out_f)
+            r = max(1, min(self.rank, max_rank))
+
+            if r >= max_rank and max_rank > 4:
+                continue
+
+            try:
                 grecodec_layer = GreCoDeCLinear.from_linear(
-                    module, rank=r, max_iter=self.max_iter
+                    module,
+                    rank=r,
+                    max_iter=self.max_iter,
+                    lora_r=self.lora_r,
+                    lora_alpha=self.lora_alpha,
                 )
+                W_comp = grecodec_layer.get_weight().float()
+                W_norm = torch.norm(W_target, p="fro").clamp_min(1e-8)
+                err = float(torch.norm(W_target - W_comp, p="fro").item() / W_norm)
+                self.layer_errors[name] = err
+
+                if err > self.max_error:
+                    if self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        continue
+
                 replace_module(self.model, name, grecodec_layer)
                 self.compressed_layers.append(name)
+            except Exception as e:
+                self.fallback_layers.append(name)
+
+        # Post-compression forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                try:
+                    self.model(dummy)
+                except Exception:
+                    first_linear = next(
+                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, GreCoDeCLinear))),
+                        None,
+                    )
+                    in_dim = getattr(first_linear, "in_features", 8)
+                    self.model(torch.randn(1, 8, in_dim, device=dev))
+        except Exception as e:
+            forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         stats.update(
             {
+                "compressed_layers": self.compressed_layers,
                 "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "avg_reconstruction_error": avg_err,
                 "grecodec_rank": self.rank,
                 "grecodec_max_iter": self.max_iter,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "forward_check_success": forward_check_success,
             }
         )
         return self.model, stats
 
-    def compress_linear(self, linear: nn.Linear) -> GreCoDeCLinear:
+    def compress_linear(self, linear: nn.Module) -> Tuple[GreCoDeCLinear, float]:
         """Compress a single linear layer into GreCoDeCLinear."""
-        return GreCoDeCLinear.from_linear(linear, rank=self.rank, max_iter=self.max_iter)
+        cls_name = linear.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
+        raw_w = linear.weight.data
+        W_target = raw_w.t().float() if is_conv1d else raw_w.float()
+        layer = GreCoDeCLinear.from_linear(
+            linear,
+            rank=self.rank,
+            max_iter=self.max_iter,
+            lora_r=self.lora_r,
+            lora_alpha=self.lora_alpha,
+        )
+        W_comp = layer.get_weight().float()
+        W_norm = torch.norm(W_target, p="fro").clamp_min(1e-8)
+        err = float(torch.norm(W_target - W_comp, p="fro").item() / W_norm)
+        return layer, err
 
 
-@COMPRESSOR_REGISTRY.register("grecodec")
+@COMPRESSOR_REGISTRY.register("grecodec_factory")
+@COMPRESSOR_REGISTRY.register("grecodec_compressor_factory")
 def grecodec_compressor_factory(
     model: nn.Module,
     comp_config: Optional[Any] = None,
@@ -280,6 +400,20 @@ def grecodec_compressor_factory(
     """Factory function for GreCoDeC compressor."""
     effective_rank = rank or getattr(comp_config, "grecodec_rank", None) or getattr(comp_config, "rank", 16)
     max_iter = getattr(comp_config, "grecodec_max_iter", 15)
-    compressor = GreCoDeCCompressor(model, rank=effective_rank, max_iter=max_iter, cfg=comp_config, **kwargs)
-    compressed_model, _ = compressor.compress()
+    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0)
+    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+
+    compressor = GreCoDeCCompressor(
+        model,
+        rank=effective_rank,
+        max_iter=max_iter,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
