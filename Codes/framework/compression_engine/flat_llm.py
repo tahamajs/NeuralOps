@@ -1,25 +1,16 @@
 """
 FLAT-LLM: Activation-Aware Structured Dimension & Neuron Pruning via Eigen-Decomposition.
-Registered in COMPRESSOR_REGISTRY as 'flat_llm'.
-
-Mathematical Formulation:
-1. Output Activation Covariance:
-   $$\\Sigma_Y = \\frac{1}{N} Y^\\top Y \\in \\mathbb{R}^{d_{out} \\times d_{out}}$$
-2. Eigendecomposition:
-   $$\\Sigma_Y = V \\Lambda V^\\top, \\quad \\Lambda = \\operatorname{diag}(\\lambda_1, \\dots, \\lambda_{d_{out}})$$
-3. Retain top $k = \\lfloor d_{out} \\cdot \\text{keep\\_ratio} \\rfloor$ most informative dimensions:
-   $$\\mathcal{I}_{kept} = \\operatorname{Top-}k(\\Lambda)$$
-4. Output Neuron Mask:
-   $$\\mathcal{M}_i = \\begin{cases} 1 & \\text{if } i \\in \\mathcal{I}_{kept} \\\\ 0 & \\text{otherwise} \\end{cases}$$
-5. Pruned Weights & Biases:
-   $$W_{flat} = \\mathcal{M} \\odot W, \\quad b_{flat} = \\mathcal{M} \\odot b$$
+Registered in COMPRESSOR_REGISTRY as 'flat_llm' and 'flat_llm_compressor'. Production hardened
+for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with reconstruction
+validation, Conv1D support, and safe fallback.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
 import math
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -29,13 +20,25 @@ from framework.compression_engine.pruning_utils import (
     apply_24_structured_mask,
     get_calibration_tensors,
 )
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("flat_llm")
+@COMPRESSOR_REGISTRY.register("flat_llm_compressor")
 class FLATLLMCompressor(BaseCompressor):
     """
     FLAT-LLM Compressor: Activation-aware neuron and output channel pruning.
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error.
+    - Safe fallback to original module if error exceeds threshold.
+    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+    - Consistent bias pruning when output channels are pruned.
+    - Well-conditioned damped Hessian inversion in FP32 with magnitude fallback.
+    - Unified critical-layer protection via should_compress_linear.
+    - Per-layer stats and error reporting.
     """
 
     def __init__(
@@ -44,10 +47,13 @@ class FLATLLMCompressor(BaseCompressor):
         tokenizer: Optional[Any] = None,
         keep_ratio: float = 0.7,
         damping: float = 1e-4,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
         structured_24: bool = False,
+        target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="flat_llm", **kwargs)
@@ -56,21 +62,45 @@ class FLATLLMCompressor(BaseCompressor):
             keep_ratio = getattr(cfg, "flat_llm_keep_ratio", getattr(cfg, "keep_ratio", keep_ratio))
             damping = getattr(cfg, "flat_llm_damping", getattr(cfg, "damping", damping))
             structured_24 = getattr(cfg, "flat_llm_structured_24", getattr(cfg, "structured_24", structured_24))
+            max_error = getattr(cfg, "flat_llm_max_error", getattr(cfg, "max_error", max_error))
+            fallback_to_original = getattr(
+                cfg, "flat_llm_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            )
+
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.keep_ratio = max(0.05, min(float(keep_ratio), 1.0))
         self.damping = float(damping)
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
-        self.structured_24 = structured_24
+        self.structured_24 = bool(structured_24)
+        self.target_modules = target_modules
         self.target_device = (
             torch.device(device)
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.stats: Dict[str, Any] = {}
+
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+        self.layer_keep_ratios: Dict[str, float] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        cls_name = module.__class__.__name__.lower()
+        is_linear = isinstance(module, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+        if not (is_linear or is_conv1d):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
 
     def _collect_layer_outputs(self) -> Dict[str, torch.Tensor]:
-        """Capture output activations across all nn.Linear modules."""
+        """Capture output activations across target modules."""
         self.model.eval()
         activations: Dict[str, List[torch.Tensor]] = {}
         hooks = []
@@ -85,7 +115,7 @@ class FLATLLMCompressor(BaseCompressor):
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
@@ -118,22 +148,44 @@ class FLATLLMCompressor(BaseCompressor):
         return aggregated
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Executes FLAT-LLM dimension pruning across all Linear modules with damped Hessian."""
+        """Executes FLAT-LLM dimension pruning across target linear and Conv1D modules."""
         outputs_map = self._collect_layer_outputs()
-        pruned_layers_count = 0
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_keep_ratios = {}
 
-        for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                W = module.weight.data.clone().float()
-                d_out, d_in = W.shape
-                device = W.device
-                dtype = module.weight.dtype
+        targets = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
 
-                act = outputs_map.get(name, None)
-                if act is not None and act.numel() > 0:
-                    act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
-                    if act_flat.shape[-1] == d_out:
-                        # Empirical Hessian H = (1/N) Y^T Y with diagonal damping H + lambda * I
+        if not targets:
+            logger.warning("FLAT-LLM: No compressible layers found.")
+            return self.model, self.get_compression_stats()
+
+        for name, module in targets:
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            raw_w = module.weight.data
+            orig_shape = raw_w.shape
+            device = raw_w.device
+            dtype = raw_w.dtype
+
+            if is_conv1d:
+                W = raw_w.t().float()  # [out_features, in_features]
+            else:
+                W = raw_w.float()      # [out_features, in_features]
+
+            d_out, d_in = W.shape
+            norm_w = torch.norm(W, p="fro").item()
+
+            act = outputs_map.get(name, None)
+            if act is not None and act.numel() > 0:
+                act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
+                if act_flat.shape[-1] == d_out:
+                    try:
                         H = torch.matmul(act_flat.T, act_flat) / max(act_flat.shape[0], 1)
                         diag_mean = torch.diagonal(H).mean().item()
                         if not math.isfinite(diag_mean) or diag_mean <= 0.0:
@@ -141,38 +193,88 @@ class FLATLLMCompressor(BaseCompressor):
                         lambda_val = max(float(self.damping) * diag_mean, 1e-6)
                         H_damped = H + lambda_val * torch.eye(d_out, device=device, dtype=H.dtype)
                         eigvals, _ = torch.linalg.eigh(H_damped)
-                    else:
+                    except Exception as e:
+                        logger.debug("FLAT-LLM eigh failed on %s: %s", name, e)
                         eigvals = torch.sum(W.pow(2), dim=1)
                 else:
                     eigvals = torch.sum(W.pow(2), dim=1)
+            else:
+                eigvals = torch.sum(W.pow(2), dim=1)
 
-                if self.structured_24:
-                    saliency_matrix = eigvals.unsqueeze(1).expand_as(W)
-                    W_pruned, _ = apply_24_structured_mask(W, saliency=saliency_matrix, dim=0)
-                    module.weight.data = W_pruned.to(dtype=dtype, device=device)
-                else:
-                    keep_dims = max(1, int(d_out * self.keep_ratio))
-                    _, keep_idx = torch.topk(eigvals, k=keep_dims, largest=True)
-                    mask = torch.zeros(d_out, device=device)
-                    mask[keep_idx] = 1.0
+            if self.structured_24:
+                saliency_matrix = eigvals.unsqueeze(1).expand_as(W)
+                W_pruned, _ = apply_24_structured_mask(W, saliency=saliency_matrix, dim=0)
+                mask = None
+            else:
+                keep_dims = max(1, int(d_out * self.keep_ratio))
+                _, keep_idx = torch.topk(eigvals, k=keep_dims, largest=True)
+                mask = torch.zeros(d_out, device=device)
+                mask[keep_idx] = 1.0
+                W_pruned = W * mask.unsqueeze(1)
 
-                    W_pruned = W * mask.unsqueeze(1)
-                    module.weight.data = W_pruned.to(dtype=dtype, device=device)
-                    if module.bias is not None:
-                        module.bias.data = (module.bias.data * mask).to(dtype=dtype, device=device)
+            # Compute relative Frobenius reconstruction error
+            if norm_w < 1e-12:
+                final_err = 0.0
+            else:
+                final_err = float(torch.norm(W - W_pruned, p="fro").item() / norm_w)
 
-                pruned_layers_count += 1
+            self.layer_errors[name] = final_err
+            self.layer_keep_ratios[name] = 0.5 if self.structured_24 else self.keep_ratio
+
+            if final_err > self.max_error:
+                logger.warning(
+                    "FLAT-LLM reconstruction error %.4f on %s exceeded threshold %.4f.",
+                    final_err,
+                    name,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    logger.info("Skipping FLAT-LLM pruning for %s (fallback to original).", name)
+                    self.fallback_layers.append(name)
+                    continue
+
+            # Assign pruned weights ensuring shape preservation
+            if is_conv1d:
+                res_w = W_pruned.t().to(dtype=dtype, device=device)
+            else:
+                res_w = W_pruned.to(dtype=dtype, device=device)
+
+            assert res_w.shape == orig_shape, f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
+            module.weight.data.copy_(res_w)
+
+            if mask is not None and module.bias is not None:
+                module.bias.data.copy_((module.bias.data * mask).to(dtype=dtype, device=device))
+
+            self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats.update({
-            "pruned_layers": pruned_layers_count,
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
+            "layer_errors": self.layer_errors,
+            "layer_keep_ratios": self.layer_keep_ratios,
             "keep_ratio": self.keep_ratio,
             "damping": self.damping,
             "structured_24": self.structured_24,
+            "max_error": self.max_error,
+            "fallback_to_original": self.fallback_to_original,
+            "avg_reconstruction_error": avg_err,
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
             "method": "flat_llm_eigen_pruning",
         })
-        self.stats = stats
+        logger.info(
+            "FLAT-LLM compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+        )
         return self.model, stats
 
 
@@ -180,10 +282,12 @@ class FLATLLMCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("flat_llm_compressor")
 def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for FLAT-LLM compressor."""
-    keep_ratio = getattr(comp_config, "flat_llm_keep_ratio", getattr(comp_config, "keep_ratio", 0.7)) if comp_config else kwargs.get("keep_ratio", 0.7)
-    damping = getattr(comp_config, "flat_llm_damping", getattr(comp_config, "damping", 1e-4)) if comp_config else kwargs.get("damping", 1e-4)
-    structured_24 = getattr(comp_config, "flat_llm_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else kwargs.get("structured_24", False)
-    tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
+    keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "flat_llm_keep_ratio", getattr(comp_config, "keep_ratio", 0.7)) if comp_config else 0.7)
+    damping = kwargs.pop("damping", getattr(comp_config, "flat_llm_damping", getattr(comp_config, "damping", 1e-4)) if comp_config else 1e-4)
+    structured_24 = kwargs.pop("structured_24", getattr(comp_config, "flat_llm_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else False)
+    max_error = kwargs.pop("max_error", getattr(comp_config, "flat_llm_max_error", getattr(comp_config, "max_error", 0.20)) if comp_config else 0.20)
+    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "flat_llm_fallback_to_original", getattr(comp_config, "fallback_to_original", True)) if comp_config else True)
+    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else None))
 
     compressor = FLATLLMCompressor(
         model,
@@ -191,13 +295,13 @@ def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         keep_ratio=keep_ratio,
         damping=damping,
         structured_24=structured_24,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        comp_config=comp_config,
         **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
 
-# FIX APPLIED: Mathematical breakdown of failure modes (vanishing gradients, NaN losses, routing collapse, unweighted SVD, ill-conditioned Hessians)
-# FIX APPLIED: Pruning Saliency & Mask broadcasting without LayerNorm recalibration or PCA coordinate rotation
-# FIX APPLIED: SliceGPT orthogonal rotation Q^T Q = I
-# FIX APPLIED: SparseGPT Hessian damping H + lambda I
-# FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
+
+__all__ = ["FLATLLMCompressor", "flat_llm_factory"]

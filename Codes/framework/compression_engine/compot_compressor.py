@@ -1,18 +1,27 @@
 """
 COMPOT: Compressed Orthogonal Dictionary Learning Compressor.
-Registered in COMPRESSOR_REGISTRY as 'compot'.
+Registered in COMPRESSOR_REGISTRY as 'compot'. Production hardened for
+multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with
+reconstruction validation, Conv1D support, rank reduction bounds, and safe fallback.
 """
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.compression_engine.pruning_utils import get_calibration_tensors
+from framework.utils.compat import should_compress_linear
+
+logger = logging.getLogger(__name__)
 
 
 class COMPOTLinear(nn.Module):
@@ -38,7 +47,7 @@ class COMPOTLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.rank = min(rank, in_features, out_features)
+        self.rank = max(1, min(rank, in_features, out_features))
 
         self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
@@ -60,7 +69,7 @@ class COMPOTLinear(nn.Module):
         return torch.matmul(self.B, self.A)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass."""
+        """Forward pass matching standard Linear and Conv1D."""
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
@@ -76,203 +85,303 @@ class COMPOTLinear(nn.Module):
     @classmethod
     def from_linear_and_activations(
         cls,
-        linear: nn.Linear,
+        layer: nn.Module,
         activations: Optional[torch.Tensor] = None,
         rank: int = 64,
-    ) -> "COMPOTLinear":
+    ) -> Tuple["COMPOTLinear", float, bool]:
         """
         Construct COMPOTLinear by learning orthogonal dictionary from activations or weights.
+        Returns: (compot_layer, relative_reconstruction_error, used_activations)
         """
-        W = linear.weight.data
-        bias = linear.bias.data if linear.bias is not None else None
-        out_f, in_f = W.shape
+        cls_name = layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
+        raw_w = layer.weight.data
+
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            W_float = raw_w.t().float()  # [out_features, in_features]
+        else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+            W_float = raw_w.float()      # [out_features, in_features]
+
+        bias = layer.bias.data if layer.bias is not None else None
         r = max(1, min(rank, out_f, in_f))
+        device = raw_w.device
+        dtype = raw_w.dtype
 
         compot_layer = cls(
             in_features=in_f,
             out_features=out_f,
             rank=r,
             bias=bias is not None,
-            dtype=W.dtype,
-            device=W.device,
+            dtype=dtype,
+            device=device,
         )
 
-        device = W.device
-        W_float = W.float()
+        used_act = False
+        A_data = None
+        B_data = None
 
         if activations is not None and activations.size(0) >= 4:
             X = activations.float().to(device)
-            # QR decomposition of activations: X = Q @ R
-            # X in R^{N x in_f} -> Q in R^{N x in_f}, R in R^{in_f x in_f}
-            try:
-                Q, R = torch.linalg.qr(X, mode="reduced")
-                # D = Y^T @ Q = W @ R^T
-                D = torch.matmul(W_float, R.t())
-                U, S, Vt = torch.linalg.svd(D, full_matrices=False)
+            if X.shape[-1] == in_f:
+                try:
+                    # QR decomposition of activations: X = Q @ R
+                    Q, R = torch.linalg.qr(X, mode="reduced")
+                    D = torch.matmul(W_float, R.t())
+                    U, S, Vt = torch.linalg.svd(D, full_matrices=False)
 
-                B_data = U[:, :r] * S[:r].unsqueeze(0)  # (out_f, r)
-                # Solve R^T A^T = V_r -> A = V_r^T @ R^{-T}
-                V_r = Vt[:r, :]  # (r, in_f)
-                R_inv_T = torch.linalg.pinv(R.t())
-                A_data = torch.matmul(V_r, R_inv_T)
-            except Exception:
-                # SVD fallback
-                U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
-                B_data = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-                A_data = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
-        else:
-            # Direct SVD on weight matrix
+                    B_cand = U[:, :r] * S[:r].unsqueeze(0)  # (out_f, r)
+                    V_r = Vt[:r, :]                         # (r, in_f)
+                    R_inv_T = torch.linalg.pinv(R.t())
+                    A_cand = torch.matmul(V_r, R_inv_T)
+
+                    if not (
+                        torch.isnan(A_cand).any()
+                        or torch.isnan(B_cand).any()
+                        or torch.isinf(A_cand).any()
+                        or torch.isinf(B_cand).any()
+                    ):
+                        A_data = A_cand
+                        B_data = B_cand
+                        used_act = True
+                except Exception as e:
+                    logger.debug("COMPOT QR decomposition exception on layer: %s", e)
+
+        # Fallback to direct SVD on weight matrix
+        if A_data is None or B_data is None:
             U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
-            B_data = U[:, :r] * torch.sqrt(S[:r].unsqueeze(0))
-            A_data = torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :]
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+            A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
+            used_act = False
 
-        compot_layer.A.data.copy_(A_data.to(dtype=W.dtype))
-        compot_layer.B.data.copy_(B_data.to(dtype=W.dtype))
+        compot_layer.A.data.copy_(A_data.to(dtype=dtype, device=device))
+        compot_layer.B.data.copy_(B_data.to(dtype=dtype, device=device))
 
         if bias is not None and compot_layer.bias is not None:
             compot_layer.bias.data.copy_(bias)
 
-        return compot_layer
+        # Compute relative Frobenius reconstruction error
+        W_recon = torch.matmul(B_data, A_data)
+        norm_orig = torch.norm(W_float, p="fro").item()
+        if norm_orig < 1e-12:
+            rel_err = 0.0
+        else:
+            rel_err = float(torch.norm(W_float - W_recon, p="fro").item() / norm_orig)
+
+        return compot_layer, rel_err, used_act
 
 
+@COMPRESSOR_REGISTRY.register("compot")
 class COMPOTCompressor(BaseCompressor):
     """
     COMPOT (Compressed Orthogonal Dictionary Learning) Compressor.
     Learns a low-rank basis from activation QR decompositions and compresses
-    linear layers into factorized COMPOTLinear modules.
+    linear and Conv1D layers into factorized COMPOTLinear modules.
 
-    Args:
-        model: PyTorch model.
-        rank: Target rank for factorization.
-        calibration_texts: Optional calibration texts.
-        tokenizer: Optional tokenizer.
-        cfg: Optional configuration object.
-        target_layers: Optional target layer filter.
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error.
+    - Safe fallback to original layer if error exceeds threshold or decomposition is unstable.
+    - SVD fallback if QR decomposition on activations fails.
+    - Parameter reduction guarantee: checks r * (in + out) < in * out.
+    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+    - Unified critical-layer protection via should_compress_linear.
+    - Comprehensive per-layer stats and error reporting.
     """
 
     def __init__(
         self,
         model: Optional[nn.Module] = None,
         rank: int = 64,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
         calibration_texts: Optional[List[str]] = None,
+        calibration_loader: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="compot", **kwargs)
-        self.rank = rank or getattr(cfg, "compot_rank", None) or getattr(cfg, "rank", 64)
-        self.calibration_texts = (
-            calibration_texts
-            or getattr(cfg, "compot_calibration_texts", None)
-            or [
-                "The quick brown fox jumps over the lazy dog.",
-                "Singular value decomposition enables low rank compression.",
-                "Transformers process sequence embeddings in high dimensional spaces.",
-            ]
-        )
-        self.tokenizer = tokenizer or getattr(cfg, "tokenizer", None) or getattr(model, "tokenizer", None)
-        self.cfg = cfg
-        self.target_layers = target_layers or getattr(cfg, "target_layers", None)
+        conf = cfg or kwargs.get("comp_config", None)
+        if conf is not None:
+            rank = getattr(conf, "compot_rank", getattr(conf, "rank", rank))
+            max_error = getattr(conf, "compot_max_error", getattr(conf, "max_error", max_error))
+            fallback_to_original = getattr(
+                conf, "compot_fallback_to_original", getattr(conf, "fallback_to_original", fallback_to_original)
+            )
+
+        self.rank = int(rank)
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.calibration_texts = calibration_texts
+        self.calibration_loader = calibration_loader
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
+        self.target_layers = target_layers
+
         self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+        self.layer_ranks: Dict[str, int] = {}
+        self.used_activations: Dict[str, bool] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        cls_name = module.__class__.__name__.lower()
+        is_linear = isinstance(module, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+        if not (is_linear or is_conv1d):
+            return False
+        if isinstance(module, COMPOTLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_layers is not None:
+            return any(t in name for t in self.target_layers)
+        return True
 
     def _collect_activations(self) -> Dict[str, torch.Tensor]:
-        """Collect input activations if tokenizer and model are present."""
-        if self.tokenizer is None or not hasattr(self.model, "named_modules"):
-            return {}
-
+        """Collect input activations across target modules."""
         layer_data: Dict[str, torch.Tensor] = {}
         hooks = []
 
         def make_hook(name: str):
             def hook(module, input, output):
                 if len(input) > 0 and isinstance(input[0], torch.Tensor):
-                    inp = input[0].detach()
-                    flat = inp.reshape(-1, inp.shape[-1])
+                    inp = input[0].detach().float()
+                    cls_name = module.__class__.__name__.lower()
+                    is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                    in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
+                    flat = inp.reshape(-1, in_f)
                     if name not in layer_data:
-                        layer_data[name] = flat
+                        layer_data[name] = flat.cpu()
                     else:
-                        layer_data[name] = torch.cat([layer_data[name], flat], dim=0)
+                        layer_data[name] = torch.cat([layer_data[name], flat.cpu()], dim=0)
             return hook
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and not isinstance(module, COMPOTLinear):
+            if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
-        device = next(self.model.parameters()).device if list(self.model.parameters()) else torch.device("cpu")
+        device = next(self.model.parameters(), torch.tensor(0.0)).device
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=device,
+        )
+
         self.model.eval()
-        try:
-            inputs = self.tokenizer(
-                self.calibration_texts,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-                max_length=128,
-            )
-            inputs = {k: v.to(device) for k, v in inputs.items() if isinstance(v, torch.Tensor)}
-            with torch.no_grad():
-                _ = self.model(**inputs)
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
-            pass
-        finally:
-            for h in hooks:
-                h.remove()
+        with torch.no_grad():
+            try:
+                if isinstance(calib_inputs, dict):
+                    self.model(**calib_inputs)
+                elif isinstance(calib_inputs, torch.Tensor):
+                    self.model(calib_inputs)
+                elif isinstance(calib_inputs, (list, tuple)):
+                    self.model(*calib_inputs)
+            except Exception as e:
+                logger.debug("COMPOT activation collection forward pass exception: %s", e)
+            finally:
+                for h in hooks:
+                    h.remove()
 
         return layer_data
 
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress linear layers via COMPOT orthogonal dictionary learning."""
+        """Compress linear and Conv1D layers via COMPOT orthogonal dictionary learning."""
         if model is not None:
             self.model = model
             self._original_params = self._count_params(self.model)
 
         activations = self._collect_activations()
         self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
+        self.used_activations = {}
 
-        for name, module in list(self.model.named_modules()):
-            if isinstance(module, nn.Linear) and not isinstance(module, COMPOTLinear):
-                if self.target_layers and not any(t in name for t in self.target_layers):
+        targets = [
+            (name, mod)
+            for name, mod in list(self.model.named_modules())
+            if self._is_target_module(name, mod)
+        ]
+
+        if not targets:
+            logger.warning("COMPOT: No compressible layers found.")
+            return self.model, self.get_compression_stats()
+
+        for name, module in targets:
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            raw_w = module.weight.data
+            if is_conv1d:
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+            # Guarantee parameter reduction: r * (in_f + out_f) < in_f * out_f
+            max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+            max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
+            r = max(1, min(self.rank, max_r))
+
+            act = activations.get(name, None)
+            compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(module, activations=act, rank=r)
+            self.layer_errors[name] = err
+            self.layer_ranks[name] = r
+            self.used_activations[name] = used_act
+
+            # Validate dimensions
+            if compot_layer.in_features != in_f or compot_layer.out_features != out_f:
+                logger.warning("Dimension mismatch on %s: (%d, %d) vs (%d, %d)", name, compot_layer.out_features, compot_layer.in_features, out_f, in_f)
+                self.fallback_layers.append(name)
+                continue
+
+            if err > self.max_error:
+                logger.warning(
+                    "COMPOT reconstruction error %.4f on %s exceeded threshold %.4f.",
+                    err,
+                    name,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    logger.info("Skipping COMPOT compression for %s (fallback to original).", name)
+                    self.fallback_layers.append(name)
                     continue
 
-                max_rank = min(module.in_features, module.out_features)
-                r = min(self.rank, max_rank)
-                if r >= max_rank and max_rank > 4:
-                    continue
-
-                act = activations.get(name, None)
-                compot_layer = COMPOTLinear.from_linear_and_activations(module, activations=act, rank=r)
-                parent = self._get_parent_module(name)
-                if parent is not None:
-                    child_name = name.split(".")[-1]
-                    setattr(parent, child_name, compot_layer)
-                    self.compressed_layers.append(name)
+            replace_module(self.model, name, compot_layer)
+            self.compressed_layers.append(name)
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
         stats.update(
             {
-                "compressed_layer_count": len(self.compressed_layers),
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "used_activations": self.used_activations,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "avg_reconstruction_error": avg_err,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
                 "compot_rank": self.rank,
             }
         )
-        return self.model, stats
-
-    def compress_linear(
-        self, linear: nn.Linear, activations: Optional[torch.Tensor] = None
-    ) -> COMPOTLinear:
-        """Compress a single linear layer into COMPOTLinear."""
-        return COMPOTLinear.from_linear_and_activations(
-            linear, activations=activations, rank=self.rank
+        logger.info(
+            "COMPOT compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
         )
-
-    def _get_parent_module(self, full_name: str) -> Optional[nn.Module]:
-        parts = full_name.split(".")
-        parent = self.model
-        for part in parts[:-1]:
-            parent = getattr(parent, part, None)
-            if parent is None:
-                return None
-        return parent
+        return self.model, stats
 
 
 @COMPRESSOR_REGISTRY.register("compot")
@@ -286,8 +395,21 @@ def compot_compressor_factory(
     effective_rank = rank or getattr(comp_config, "compot_rank", None) or getattr(comp_config, "rank", 64)
     cal_texts = getattr(comp_config, "compot_calibration_texts", None)
     tokenizer = getattr(comp_config, "tokenizer", None) or getattr(model, "tokenizer", None)
+    max_error = getattr(comp_config, "compot_max_error", getattr(comp_config, "max_error", 0.20))
+    fallback = getattr(comp_config, "compot_fallback_to_original", getattr(comp_config, "fallback_to_original", True))
+
     compressor = COMPOTCompressor(
-        model, rank=effective_rank, calibration_texts=cal_texts, tokenizer=tokenizer, cfg=comp_config, **kwargs
+        model,
+        rank=effective_rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        calibration_texts=cal_texts,
+        tokenizer=tokenizer,
+        cfg=comp_config,
+        **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+__all__ = ["COMPOTLinear", "COMPOTCompressor", "compot_compressor_factory"]
