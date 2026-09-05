@@ -115,9 +115,9 @@ def test_group5():
     print("\n" + "=" * 80)
     print(f"SUMMARY: {total_passed}/{total_tests} passed ({total_passed/total_tests*100:.1f}%)")
     print("=" * 80)
-    if total_passed < total_tests:
-        sys.exit(1)
+    return total_passed == total_tests
 
 
 if __name__ == "__main__":
-    test_group5()
+    success = test_group5()
+    sys.exit(0 if success else 1)
