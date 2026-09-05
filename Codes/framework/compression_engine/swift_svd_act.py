@@ -248,6 +248,21 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         norm_orig = torch.norm(W, p="fro").item()
         rel_err = (torch.norm(W - W_rec) / max(norm_orig, 1e-12)).item()
 
+        if not math.isfinite(rel_err) or rel_err > self.max_error:
+            # Fall back to standard SVD if activation projection error was high
+            try:
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                r_direct = min(r, len(S))
+                sqrt_S = torch.sqrt(torch.clamp(S[:r_direct], min=1e-12))
+                A_direct = U[:, :r_direct] * sqrt_S.unsqueeze(0)
+                B_direct = sqrt_S.unsqueeze(1) * Vt[:r_direct, :]
+                W_rec_direct = torch.matmul(A_direct, B_direct)
+                rel_err_direct = (torch.norm(W - W_rec_direct) / max(norm_orig, 1e-12)).item()
+                if rel_err_direct <= self.max_error or rel_err_direct < rel_err:
+                    A, B, r, rel_err = A_direct, B_direct, r_direct, rel_err_direct
+            except Exception:
+                pass
+
         if not math.isfinite(rel_err) or (self.fallback_to_original and rel_err > self.max_error):
             logger.warning(
                 "SwiftSVDActivation reconstruction error %.4f exceeded threshold %.4f. Keeping original.",
