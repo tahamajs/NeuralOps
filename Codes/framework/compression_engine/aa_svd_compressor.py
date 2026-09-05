@@ -177,13 +177,14 @@ class AASVDCompressor(BaseCompressor):
         self,
         model: nn.Module,
         tokenizer: Optional[Any] = None,
-        rank: int = 256,
+        rank: int = 288,
         ema_beta: float = 0.9,
-        max_error: float = 0.85,
+        max_error: float = 0.50,
         fallback_to_original: bool = True,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
         target_modules: Optional[List[str]] = None,
+        target_attention_only: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="aasvd", **kwargs)
@@ -197,6 +198,13 @@ class AASVDCompressor(BaseCompressor):
             fallback_to_original = getattr(
                 cfg, "aasvd_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
             )
+            target_attention_only = getattr(
+                cfg, "aasvd_target_attention_only", getattr(cfg, "target_attention_only", target_attention_only)
+            )
+
+        target_attention_only = kwargs.get(
+            "target_attention_only", kwargs.get("aasvd_target_attention_only", target_attention_only)
+        )
 
         if tokenizer is None:
             tokenizer = getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
@@ -221,6 +229,7 @@ class AASVDCompressor(BaseCompressor):
         self.ema_beta = float(ema_beta)
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
+        self.target_attention_only = bool(target_attention_only)
         self.calibration_texts = calibration_texts or DEFAULT_CALIBRATION_CORPUS
         self.target_modules = target_modules
         self.device = (
@@ -245,6 +254,24 @@ class AASVDCompressor(BaseCompressor):
             return False
         if not should_compress_linear(self.model, name):
             return False
+        if self.target_attention_only:
+            # Skip FFN / MLP / feed-forward layers
+            ffn_patterns = [
+                "ffn", "mlp", "lin1", "lin2", "intermediate",
+                "gate_proj", "up_proj", "down_proj", "c_fc"
+            ]
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            # RoBERTa layer.X.output.dense is FFN, while attention.output.dense is attention
+            if "output.dense" in name_lower and "attention" not in name_lower:
+                return False
+            # Accept only attention projections
+            attn_patterns = [
+                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "query", "key", "value"
+            ]
+            if not any(p in name_lower for p in attn_patterns):
+                return False
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
