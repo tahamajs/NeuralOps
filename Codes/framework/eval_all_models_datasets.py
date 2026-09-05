@@ -15,10 +15,11 @@ from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 def apply_module_to_model(model: nn.Module, module_name: str, module_type: str,
                           rank: int = 16, device: torch.device = torch.device("cpu")) -> Tuple[nn.Module, float]:
     original = sum(p.numel() for p in model.parameters())
-    if module_name in ATTENTION_REGISTRY:
-        module_type = "attention"
-    elif module_name in COMPRESSOR_REGISTRY:
-        module_type = "compressor"
+    if not module_type:
+        if module_name in ATTENTION_REGISTRY:
+            module_type = "attention"
+        elif module_name in COMPRESSOR_REGISTRY:
+            module_type = "compressor"
     if module_type == "attention":
         inject_attention(model, module_name, rank=rank, copy_weights=True)
     elif module_type == "compressor":
