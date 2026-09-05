@@ -6,6 +6,11 @@ import json
 import pandas as pd
 from pathlib import Path
 
+# Enforce completely offline dataset and model resolution
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"
+
 # Switch to project directory if on Windows GPU server
 if os.path.exists(r"D:\svd_project"):
     os.chdir(r"D:\svd_project")
