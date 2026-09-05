@@ -88,6 +88,16 @@ class MockTransformerBlock(nn.Module):
         self.act = nn.GELU()
         self.fc2 = nn.Linear(intermediate_size, hidden_size)
         self.norm2 = nn.LayerNorm(hidden_size)
+        with torch.no_grad():
+            for m in [self.q_proj, self.k_proj, self.v_proj, self.out_proj, self.fc1, self.fc2]:
+                out_f, in_f = m.weight.shape
+                min_dim = min(out_f, in_f)
+                u = torch.randn(out_f, min_dim)
+                u, _ = torch.linalg.qr(u)
+                v = torch.randn(in_f, min_dim)
+                v, _ = torch.linalg.qr(v)
+                s = torch.exp(-0.25 * torch.arange(min_dim, dtype=torch.float32))
+                m.weight.data.copy_(u @ torch.diag(s) @ v.T)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         res = x
