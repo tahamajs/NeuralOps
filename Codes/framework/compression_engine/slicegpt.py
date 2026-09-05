@@ -148,8 +148,10 @@ class SliceGPTCompressor(BaseCompressor):
 
         return aggregated
 
-    def _compute_orthogonal_rotation(self, X: Optional[torch.Tensor], d_in: int, device: torch.device) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _compute_orthogonal_rotation(self, X: Optional[torch.Tensor], d_in: int, device: Optional[torch.device] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute orthogonal rotation matrix Q via eigen-decomposition of activation covariance."""
+        if device is None:
+            device = X.device if X is not None else torch.device("cpu")
         if X is not None and X.numel() > 0:
             X_flat = X.reshape(-1, X.shape[-1]).float().to(device)
             if X_flat.shape[-1] == d_in and X_flat.shape[0] > 1:
