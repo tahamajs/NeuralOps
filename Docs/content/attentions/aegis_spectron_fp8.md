@@ -306,7 +306,33 @@ Faced with an attenuated 0.1% attention signal and a high recovery learning rate
 
 ---
 
-### 4.5 Hardware Scalability & Profiling Suite
+---
+
+### 4.5 Diagnostic Case Study 4: Qwen3.5-0.8B Timeout, Recovery Rate & 24-Layer Sublinear Scaling
+
+#### Problem Statement
+In the initial multi-model sweep, Qwen3.5-0.8B was terminated prematurely at Step 95/200 by the framework's hardcoded 600-second stall timer, despite loss descending rapidly ($4.60 \to 0.57$).
+
+#### Root Cause Analysis
+1. **Computational Workload Across 24 Layers:**
+   Unlike 6-layer DistilBERT or 12-layer GPT-2/RoBERTa, Qwen3.5-0.8B has 24 decoder layers with Grouped-Query Attention (GQA, 8 query heads, 2 KV heads, $d_{\text{head}}=256$) and Rotary Position Embeddings (RoPE). Under batch size 8 with micro-batch accumulation ($bs=4$), each training step on the RTX 4070 Laptop GPU required $\approx 6.5$ seconds. Reaching 200 recovery steps requires $\approx 1,300$ seconds, guaranteeing a timeout under a 600-second window.
+2. **Learning Rate Misclassification:**
+   Because Qwen3.5 hidden size exceeds 512 ($D=1024$), the default sweep logic fell back to a conservative fine-tuning rate of $5 \times 10^{-5}$. However, hybrid attention modules with newly initialized state parameters (EMA decay $\gamma$, linear state projections, and spectral entropy routers) require a scratch recovery learning rate ($2 \times 10^{-4}$) to escape early saddle points.
+
+#### Resolution & Verification
+1. **Timeout Override**: Added `"aegis_spectron_fp8": 1500` to `_SLOW_MODULE_TIMEOUT_OVERRIDES` in `Codes/framework/run_quality_sweep.py`.
+2. **From-Scratch Learning Rate**: Registered `"aegis_spectron_fp8"` in `FROM_SCRATCH_MODULES`, enforcing `rec_lr = 2e-4`.
+3. **Empirical Convergence**:
+   - Step 1: `loss = 3.6045`
+   - Step 35: `loss = 0.6085`
+   - Step 100: `loss = 0.6983`
+   - Step 155: `loss = 0.4395`
+   - Step 200: `loss = 0.5804`
+   - Final Evaluated Accuracy: **59.29%** (**PASS**, exceeding the statistical significance threshold of 56.00% by $+3.29\%$).
+
+---
+
+### 4.6 Hardware Scalability & Profiling Suite
 
 #### Peak VRAM Footprint vs Sequence Length
 
