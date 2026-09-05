@@ -79,7 +79,7 @@ models = [
             "--recovery_steps", "200",
             "--learning_rate", "2e-4",
             "--rank", "288",
-            "--aasvd_max_error", "0.60",
+            "--aasvd_max_error", "0.72",
             "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
