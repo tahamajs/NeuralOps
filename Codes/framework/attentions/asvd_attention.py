@@ -273,7 +273,7 @@ class ASVDAttention(nn.Module):
             "asvd_rank",
             rank if rank is not None else getattr(config, "rank", 32),
         )
-        self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 0))
+        self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 16))
         self.freeze_base: bool = getattr(config, "freeze_base", kwargs.get("freeze_base", self.lora_rank > 0))
         self.energy_threshold: float = getattr(config, "asvd_energy_threshold", kwargs.get("energy_threshold", 0.95))
         self.error_threshold: Optional[float] = getattr(config, "asvd_error_threshold", kwargs.get("error_threshold", 0.20))
@@ -402,7 +402,28 @@ class ASVDAttention(nn.Module):
             "o": (None, None),
         }
 
-        # 1. GPT-2: Fused Conv1D c_attn + Conv1D c_proj
+        # 1. Robust Nested Encoder Detection (prior to extraction)
+        # Robustly detects both:
+        # a) Outer RobertaAttention / BertAttention with inner 'self' (query/key/value) and 'output.dense'
+        # b) Inner RobertaSelfAttention / BertSelfAttention
+        # Prevents double output projection signal attenuation
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, "out_lin")
+
+        is_nested_encoder = False
+        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query") and hasattr(src, "output") and hasattr(src.output, "dense"):
+            # Outer RobertaAttention containing inner self-attention and output dense
+            is_nested_encoder = True
+        elif (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+        ) and not has_out_lin:
+            # Inner SelfAttention module
+            is_nested_encoder = True
+
+        self.is_nested_encoder = bool(is_nested_encoder)
+
+        # 2. GPT-2: Fused Conv1D c_attn + Conv1D c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None and hasattr(src.c_attn, "weight"):
             c_w = src.c_attn.weight.data
             c_b = getattr(src.c_attn, "bias", None)
@@ -423,7 +444,7 @@ class ASVDAttention(nn.Module):
                     o_w = o_w.t()
                 extracted_weights["o"] = (o_w, o_b)
 
-        # 2. RoBERTa / BERT Nested Encoder: self.query, self.key, self.value
+        # 3. RoBERTa / BERT Nested Encoder: self.query, self.key, self.value
         s = getattr(src, "self", src)
         name_map = {"q": "query", "k": "key", "v": "value"}
         for proj, attr in name_map.items():
@@ -432,12 +453,12 @@ class ASVDAttention(nn.Module):
                 b = getattr(mod, "bias", None)
                 extracted_weights[proj] = (mod.weight.data, b.data if b is not None else None)
 
-        if extracted_weights["o"][0] is None and hasattr(src, "output") and hasattr(src.output, "dense"):
+        if not self.is_nested_encoder and extracted_weights["o"][0] is None and hasattr(src, "output") and hasattr(src.output, "dense"):
             mod = src.output.dense
             b = getattr(mod, "bias", None)
             extracted_weights["o"] = (mod.weight.data, b.data if b is not None else None)
 
-        # 3. Qwen / LLaMA: q_proj, k_proj, v_proj, o_proj
+        # 4. Qwen / LLaMA: q_proj, k_proj, v_proj, o_proj
         for proj in ["q", "k", "v", "o"]:
             if extracted_weights[proj][0] is None:
                 for candidate in [f"{proj}_proj", f"{proj}_lin", proj]:
@@ -447,7 +468,7 @@ class ASVDAttention(nn.Module):
                         extracted_weights[proj] = (mod.weight.data, b.data if b is not None else None)
                         break
 
-        # 4. Fallback to UniversalAdapter
+        # 5. Fallback to UniversalAdapter
         for proj in ["q", "k", "v", "o"]:
             if extracted_weights[proj][0] is None:
                 try:
@@ -456,19 +477,6 @@ class ASVDAttention(nn.Module):
                         extracted_weights[proj] = (w, b)
                 except Exception:
                     pass
-
-        # 5. Nested Encoder Detection
-        # Strict nested encoder detection: RoBERTa and BERT use two cascaded modules:
-        # (RobertaAttention -> self: RobertaSelfAttention, output: RobertaSelfOutput).
-        # In contrast, DistilBERT is flat and owns 'out_lin'.
-        cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin")
-        is_known_nested = (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin
-
-        self.is_nested_encoder = bool(is_known_nested)
 
         # 6. Check for missing essential projections
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
@@ -516,6 +524,9 @@ class ASVDAttention(nn.Module):
         d = self.head_dim
         kv_H = self.num_kv_heads
 
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("Cross-attention is not supported in ASVDAttention.")
+
         # Extract rotary kwargs if supplied
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
@@ -533,7 +544,8 @@ class ASVDAttention(nn.Module):
             q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
         elif self.rotary_emb is not None:
             try:
-                rotary_out = self.rotary_emb(v, position_ids) if position_ids is not None else self.rotary_emb(v)
+                # Use query tensor q (full H heads) to infer sequence length, shapes, and device correctly
+                rotary_out = self.rotary_emb(q, position_ids) if position_ids is not None else self.rotary_emb(q)
                 if isinstance(rotary_out, (tuple, list)) and len(rotary_out) >= 2:
                     cos, sin = rotary_out[0], rotary_out[1]
                     q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
@@ -557,8 +569,26 @@ class ASVDAttention(nn.Module):
             )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        # 6. Padding Attention Mask
+        # 6. Padding Attention Mask (Broadcast 2D/3D to 4D additive logits format)
         if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                if attention_mask.dtype == torch.bool:
+                    extended_mask = torch.zeros_like(attention_mask, dtype=scores.dtype)
+                    extended_mask = extended_mask.masked_fill(~attention_mask, -10000.0)
+                elif torch.is_floating_point(attention_mask) and (attention_mask < 0).any():
+                    extended_mask = attention_mask.to(dtype=scores.dtype)
+                else:
+                    extended_mask = (1.0 - attention_mask.to(dtype=scores.dtype)) * -10000.0
+                attention_mask = extended_mask.unsqueeze(1).unsqueeze(2)
+            elif attention_mask.dim() == 3:
+                if attention_mask.dtype == torch.bool:
+                    extended_mask = torch.zeros_like(attention_mask, dtype=scores.dtype)
+                    extended_mask = extended_mask.masked_fill(~attention_mask, -10000.0)
+                elif torch.is_floating_point(attention_mask) and (attention_mask < 0).any():
+                    extended_mask = attention_mask.to(dtype=scores.dtype)
+                else:
+                    extended_mask = (1.0 - attention_mask.to(dtype=scores.dtype)) * -10000.0
+                attention_mask = extended_mask.unsqueeze(1)
             scores = apply_attention_mask(scores, attention_mask)
 
         # 7. Softmax & NaN Protection
