@@ -4,10 +4,12 @@ Registered as 'swift_svd'.
 Production-hardened with:
 - Relative Frobenius reconstruction error validation (err <= max_error)
 - Adaptive rank retries stepping up rank if error threshold is exceeded
-- Safe fallback preserving original layer on failure
-- Conv1D (GPT-2) and linear layer support
-- Protection of critical classification/embedding/head layers
-- Per-layer error logging and stats collection
+- Safe fallback preserving original layer on failure (fallback_to_original default True)
+- Accurate Conv1D (GPT-2) and linear layer detection by class name and nf attribute
+- Correct raw_shape reporting as (out_features, in_features)
+- Unified critical classification/embedding/head protection via should_compress_linear
+- Safe stats access and optional validation calibration
+- Strict dimensional assertions before module replacement
 """
 
 from __future__ import annotations
@@ -23,7 +25,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.utils.compat import get_dynamic_compression_rank, should_compress_linear
+from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +46,9 @@ class SwiftSVDCompressor(BaseCompressor):
         target_modules: Optional list of layer name filters.
         max_error: Maximum allowed relative Frobenius error (default 0.20).
         max_retries: Number of rank-step retries if error exceeds max_error (default 3).
-        fallback_to_original: If True, keep original layer if error exceeds max_error.
+        fallback_to_original: If True, keep original layer if error exceeds max_error (default True).
+        validation_calibration: If True, validate with forward pass on dummy inputs before replacement.
+        calibration_threshold: Maximum allowed relative difference during calibration (default 0.10).
     """
 
     def __init__(
@@ -55,7 +59,9 @@ class SwiftSVDCompressor(BaseCompressor):
         target_modules: Optional[List[str]] = None,
         max_error: float = 0.20,
         max_retries: int = 3,
-        fallback_to_original: bool = False,
+        fallback_to_original: bool = True,  # Fix 1: Changed default from False to True
+        validation_calibration: bool = False,  # Fix 6: Optional calibration validation
+        calibration_threshold: float = 0.10,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="swift_svd", **kwargs)
@@ -66,6 +72,8 @@ class SwiftSVDCompressor(BaseCompressor):
             max_error = getattr(cfg, "max_error", getattr(cfg, "max_reconstruction_error", max_error))
             max_retries = getattr(cfg, "max_retries", max_retries)
             fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            validation_calibration = getattr(cfg, "validation_calibration", validation_calibration)
+            calibration_threshold = getattr(cfg, "calibration_threshold", calibration_threshold)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -75,6 +83,10 @@ class SwiftSVDCompressor(BaseCompressor):
             max_retries = int(kwargs["max_retries"])
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
+        if "validation_calibration" in kwargs:
+            validation_calibration = bool(kwargs["validation_calibration"])
+        if "calibration_threshold" in kwargs:
+            calibration_threshold = float(kwargs["calibration_threshold"])
 
         self.rank = rank
         self.rank_ratio = float(rank_ratio)
@@ -82,17 +94,22 @@ class SwiftSVDCompressor(BaseCompressor):
         self.max_error = float(max_error)
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
+        self.validation_calibration = bool(validation_calibration)
+        self.calibration_threshold = float(calibration_threshold)
         self.compressed_layers: List[Dict[str, Any]] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        # Protect critical classification heads, poolers, lm_heads, and embeddings
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
-            return False
-
-        cls_name = module.__class__.__name__
+        """
+        Identify compressible linear-like layers.
+        Fix 4: Unified critical-layer protection delegated solely to framework's
+        should_compress_linear(model, name) to eliminate redundant, fragile manual checks.
+        """
+        cls_name = module.__class__.__name__.lower()
+        # Fix 2: Reliable Conv1D check using class name and hasattr(nf) instead of shape comparison
         is_linear_like = (
             isinstance(module, nn.Linear)
-            or "conv1d" in cls_name.lower()
+            or "conv1d" in cls_name
+            or hasattr(module, "nf")
             or (
                 hasattr(module, "weight")
                 and hasattr(module.weight, "ndim")
@@ -124,21 +141,16 @@ class SwiftSVDCompressor(BaseCompressor):
         dtype = layer.weight.dtype
         raw_w = layer.weight.data.float()
 
-        cls_name = layer.__class__.__name__
-        # Handle Conv1D (where weight is (nx, nf) = (in_features, out_features))
-        is_conv1d = "conv1d" in cls_name.lower() or (
-            raw_w.ndim == 2
-            and hasattr(layer, "in_features")
-            and layer.in_features == raw_w.shape[0]
-            and raw_w.shape[0] < raw_w.shape[1]
-        )
+        cls_name = layer.__class__.__name__.lower()
+        # Fix 2: Reliable Conv1D detection by class name and nf attribute (never by raw shape heuristic)
+        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
 
         if is_conv1d:
             W = raw_w.t().contiguous()  # (out_features, in_features)
             in_f = W.shape[1]
             out_f = W.shape[0]
         else:
-            W = raw_w
+            W = raw_w  # (out_features, in_features)
             out_f, in_f = W.shape[0], W.shape[1]
 
         # Bound rank so parameter count r*(in_f + out_f) < in_f*out_f
@@ -200,6 +212,7 @@ class SwiftSVDCompressor(BaseCompressor):
                 self.max_error,
                 best_r,
             )
+            # Fix 1: fallback_to_original defaults to True, safely preserving original layer
             if self.fallback_to_original:
                 return None, best_err, best_r
 
@@ -229,6 +242,28 @@ class SwiftSVDCompressor(BaseCompressor):
             logger.error("SwiftSVD: Shape mismatch for %s: expected (%d, %d), got (%d, %d)", name, in_f, out_f, svd_layer.in_features, svd_layer.out_features)
             return None, best_err, best_r
 
+        # Fix 6: Optional calibration validation on small dummy forward pass
+        if self.validation_calibration:
+            try:
+                with torch.no_grad():
+                    dummy_x = torch.randn(1, in_f, device=device, dtype=dtype)
+                    if is_conv1d:
+                        orig_out = dummy_x @ layer.weight + (layer.bias if layer.bias is not None else 0)
+                    else:
+                        orig_out = layer(dummy_x)
+                    svd_out = svd_layer(dummy_x)
+                    rel_diff = (torch.norm(orig_out.float() - svd_out.float()) / (torch.norm(orig_out.float()) + 1e-8)).item()
+                    if rel_diff > self.calibration_threshold:
+                        logger.warning(
+                            "SwiftSVD: %s calibration validation failed (diff=%.4f > %.4f). Keeping original.",
+                            name,
+                            rel_diff,
+                            self.calibration_threshold,
+                        )
+                        return None, rel_diff, best_r
+            except Exception as ce:
+                logger.warning("SwiftSVD: %s calibration check encountered %s. Continuing with SVD layer.", name, ce)
+
         return svd_layer, best_err, best_r
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
@@ -247,10 +282,21 @@ class SwiftSVDCompressor(BaseCompressor):
         total_error = 0.0
 
         for name, module in target_layers:
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            expected_in = module.weight.shape[0] if is_conv1d else getattr(module, "in_features", module.weight.shape[1])
+            expected_out = module.weight.shape[1] if is_conv1d else getattr(module, "out_features", module.weight.shape[0])
+
             svd_layer, rel_err, final_rank = self.compress_linear(module, rank=self.rank, name=name)
             if svd_layer is not None:
+                # Fix 7: Strict dimensional assertion before module replacement
+                assert svd_layer.in_features == expected_in and svd_layer.out_features == expected_out, (
+                    f"SwiftSVD shape mismatch for {name}: expected (in={expected_in}, out={expected_out}), "
+                    f"got (in={svd_layer.in_features}, out={svd_layer.out_features})"
+                )
                 replace_module(self.model, name, svd_layer)
-                raw_shape = (module.in_features, module.out_features) if hasattr(module, "in_features") and hasattr(module, "out_features") else (svd_layer.in_features, svd_layer.out_features)
+                # Fix 3: Fix raw_shape reporting as (out_features, in_features) for all layers
+                raw_shape = (expected_out, expected_in)
                 self.compressed_layers.append(
                     {
                         "name": name,
@@ -266,6 +312,7 @@ class SwiftSVDCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (total_error / len(self.compressed_layers)) if self.compressed_layers else 0.0
+        # Fix 5: Ensure all stats keys are present with safe fallbacks
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
@@ -274,6 +321,8 @@ class SwiftSVDCompressor(BaseCompressor):
                 "rank": self.rank,
                 "rank_ratio": self.rank_ratio,
                 "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "param_reduction_pct": stats.get("param_reduction_pct", 0.0),
             }
         )
         logger.info(
@@ -290,4 +339,3 @@ def swift_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) 
     compressor = SwiftSVDCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
-
