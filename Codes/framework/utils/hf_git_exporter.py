@@ -256,6 +256,10 @@ def upload_to_huggingface(
     config_dict: Optional[dict] = None,
 ) -> Optional[str]:
     """Upload model directory to a private Hugging Face repository."""
+    # Temporarily remove any offline switches to ensure Hugging Face Hub connectivity
+    old_offline = os.environ.pop("HF_HUB_OFFLINE", None)
+    old_tr_offline = os.environ.pop("TRANSFORMERS_OFFLINE", None)
+    old_ds_offline = os.environ.pop("HF_DATASETS_OFFLINE", None)
     try:
         from huggingface_hub import HfApi
         api = HfApi()
@@ -286,6 +290,13 @@ def upload_to_huggingface(
     except Exception as e:
         LOG.warning("Hugging Face upload failed for %s: %s", repo_id, e)
         return None
+    finally:
+        if old_offline is not None:
+            os.environ["HF_HUB_OFFLINE"] = old_offline
+        if old_tr_offline is not None:
+            os.environ["TRANSFORMERS_OFFLINE"] = old_tr_offline
+        if old_ds_offline is not None:
+            os.environ["HF_DATASETS_OFFLINE"] = old_ds_offline
 
 
 def commit_and_push_git(commit_message: str, cwd: Optional[Path] = None) -> Optional[str]:
@@ -300,6 +311,7 @@ def commit_and_push_git(commit_message: str, cwd: Optional[Path] = None) -> Opti
             return rev.stdout.strip()[:8]
 
         subprocess.run(["git", "commit", "-m", commit_message], cwd=cwd, check=True)
+        subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=cwd, check=False)
         subprocess.run(["git", "push", "origin", "main"], cwd=cwd, check=True)
         rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
         commit_hash = rev.stdout.strip()[:8]
