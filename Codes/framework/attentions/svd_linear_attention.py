@@ -170,14 +170,12 @@ class SVDLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.use_fused_kernel and HAS_FUSED_KERNEL:
-            has_lora = self.lora_A is not None and self.lora_B is not None
-            base_bias = None if has_lora else self.bias
             out = fused_svd_linear(
                 x=x,
                 V=self.V,
                 U=self.U,
                 norm_weight=self.norm_weight if self.use_rms_norm else None,
-                bias=base_bias,
+                bias=self.bias,
                 eps=self.eps,
                 use_rms_norm=self.use_rms_norm,
             )

@@ -294,6 +294,17 @@ def wrap_for_family(module: nn.Module, model_family: Optional[str] = None) -> nn
 
 
 def module_family_support(name: str) -> dict[str, str]:
+    if name.lower() in {"mamba"}:
+        return {
+            "bert": "encoder_compatible",
+            "roberta": "encoder_compatible",
+            "gpt": "adapted",
+            "qwen": "incompatible",
+            "qwen3_5": "incompatible",
+            "t5": "encoder_decoder_compatible",
+            "ssm": "adapted",
+            "unknown": "adapted",
+        }
     return {
         "bert": "encoder_compatible",
         "roberta": "encoder_compatible",
@@ -304,3 +315,4 @@ def module_family_support(name: str) -> dict[str, str]:
         "ssm": "adapted",
         "unknown": "adapted",
     }
+
