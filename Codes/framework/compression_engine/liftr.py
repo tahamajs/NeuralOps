@@ -112,6 +112,13 @@ class _LinearizedAttentionWrapper(nn.Module):
             context = context.mean(dim=1, keepdim=True).expand(x.shape[0], x.shape[1], in_dim)
             output = self.original_attn.out_proj(context)
             return _fmt(output)
+        elif hasattr(self.original_attn, "c_attn") and hasattr(self.original_attn, "c_proj"):
+            # GPT-2 style fused attention
+            qkv = self.original_attn.c_attn(x)
+            q, k, v = torch.chunk(qkv, 3, dim=-1)
+            context = v.mean(dim=1, keepdim=True).expand_as(v)
+            output = self.original_attn.c_proj(context)
+            return _fmt(output)
         elif hasattr(self.original_attn, "query") and hasattr(self.original_attn, "value"):
             # BERT BertSelfAttention
             v = self.original_attn.value(x)
@@ -124,10 +131,6 @@ class _LinearizedAttentionWrapper(nn.Module):
             try:
                 m = mask if mask is not None else attention_mask
                 res = self.original_attn(x, attention_mask=m, **kwargs)
-                # Always unwrap tuple to a plain tensor before re-wrapping with _fmt.
-                # Previously, non-linear-attn modules returned the raw sub-module tuple
-                # (e.g. (tensor, None)) which caused TypeError when the caller added the
-                # residual: `hidden_states + output` where output was a tuple.
                 if isinstance(res, tuple):
                     res = res[0]
                 return _fmt(res)
@@ -165,10 +168,12 @@ class LIFTRCompressor(BaseCompressor):
                 self.replace_attention
                 and ("attention" in name.lower() or "self_attn" in name.lower() or "attn" in name.lower())
                 and "norm" not in name.lower()
-                and not isinstance(child, (nn.LayerNorm, nn.RMSNorm))
+                and not isinstance(child, (nn.Linear, nn.LayerNorm, nn.RMSNorm, nn.Embedding))
             ):
-                # If child contains sub-projections, wrap it
-                if not isinstance(child, _LinearizedAttentionWrapper):
+                # If composite attention container with .self and .output, recurse into it
+                if hasattr(child, "self") and hasattr(child, "output"):
+                    self._linearize_module(child)
+                elif not isinstance(child, _LinearizedAttentionWrapper):
                     setattr(module, name, _LinearizedAttentionWrapper(child, layer_name=name))
                     self.linearized_attentions_count += 1
             else:
