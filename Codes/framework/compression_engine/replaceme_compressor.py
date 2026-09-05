@@ -170,11 +170,13 @@ class ReplaceMeCompressor(BaseCompressor):
         if layers is not None:
             num_layers = len(layers)
             n_remove = min(self.remove_layers, num_layers)
+            return_tuple = False
             for i in range(num_layers - n_remove, num_layers):
                 layers[i] = ReplacementBlock(
                     hidden_size,
                     lora_r=self.lora_r if self.use_lora else 0,
                     lora_alpha=self.lora_alpha,
+                    return_tuple=return_tuple,
                     device=self.target_device,
                     dtype=target_dtype,
                 )
