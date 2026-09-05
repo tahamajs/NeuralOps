@@ -37,6 +37,7 @@ models = [
             "--recovery_steps 50 "
             "--timeout 600 "
             "--precision fp16 "
+            "--parent_checkpoint results\\roberta_sst2_lora_baseline\\finetuned_model.pt "
             "--fresh"
         ),
     },
