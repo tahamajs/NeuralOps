@@ -345,15 +345,18 @@ def handle_benchmark_run_export(
 
     clean_model = sanitize_slug(Path(model_name).name)
     clean_mod = sanitize_slug(module_name)
-    repo_id = f"tahamajs/svd-linear-attention-{clean_model}-{clean_mod}"
+    hf_org = os.environ.get("HF_ORG", "Hooshaai")
+    repo_id = f"{hf_org}/svd-linear-attention-{clean_model}-{clean_mod}"
 
     LOG.info(
-        "[Automation] Run %s / %s is SUCCESSFUL (acc=%.2f%% >= %.2f%%). Starting automated HF export and Git recording.",
-        clean_model, clean_mod, acc, pass_threshold_pct,
+        "[Automation] Run %s / %s is SUCCESSFUL (acc=%.2f%% >= %.2f%%). Starting automated HF export to %s and Git recording.",
+        clean_model, clean_mod, acc, pass_threshold_pct, repo_id,
     )
 
     hf_url = None
-    if export_dir and export_dir.exists():
+    if module_name.lower() == "full":
+        LOG.info("[Automation] Module is baseline 'full'. Skipping HF model upload (base model already on Hugging Face).")
+    elif export_dir and export_dir.exists():
         hf_url = upload_to_huggingface(
             export_dir=export_dir,
             repo_id=repo_id,
