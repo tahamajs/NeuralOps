@@ -61,7 +61,7 @@ class CURMoECompressor(BaseCompressor):
         self.min_rank = min_rank or getattr(cfg, "min_rank", 8)
         self.method = method or getattr(cfg, "cur_moe_method", "leverage")
         self.deterministic = deterministic
-        self.max_error = max_error if max_error is not None else getattr(cfg, "max_error", 0.20)
+        self.max_error = max_error if max_error is not None else getattr(cfg, "max_error", 0.90)
         self.fallback_to_original = (
             fallback_to_original if fallback_to_original is not None else getattr(cfg, "fallback_to_original", True)
         )
@@ -233,6 +233,7 @@ class CURMoECompressor(BaseCompressor):
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register("cur_moe")
 @COMPRESSOR_REGISTRY.register("cur_moe_factory")
 @COMPRESSOR_REGISTRY.register("cur_moe_compressor_factory")
 def cur_moe_factory(
@@ -246,8 +247,9 @@ def cur_moe_factory(
     min_rank = kwargs.pop("min_rank", getattr(comp_config, "min_rank", 8))
     method = kwargs.pop("method", getattr(comp_config, "cur_moe_method", "leverage"))
     deterministic = kwargs.pop("deterministic", getattr(comp_config, "deterministic", True))
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20))
+    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.90))
     fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True))
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = CURMoECompressor(
         model,
@@ -260,5 +262,7 @@ def cur_moe_factory(
         cfg=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
