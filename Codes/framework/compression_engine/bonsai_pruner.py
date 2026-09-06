@@ -36,6 +36,16 @@ from framework.compression_engine.pruning_utils import (
 )
 from framework.utils.compat import should_compress_linear
 
+
+def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -156,6 +166,7 @@ class BonsaiPruner(BaseCompressor):
         block_size: Tuple[int, int] = (4, 4),
         protect_cls: bool = True,
         skip_attention_qkv: bool = True,
+        target_attention_only: bool = False,
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -181,6 +192,7 @@ class BonsaiPruner(BaseCompressor):
         self.structured_24 = bool(structured_24 if structured_24 is not None else getattr(cfg_obj, "structured_24", False))
         self.block_size = block_size or getattr(cfg_obj, "block_size", (4, 4))
         self.protect_cls = bool(protect_cls if protect_cls is not None else getattr(cfg_obj, "protect_cls", True))
+        self.target_attention_only = target_attention_only
         self.skip_attention_qkv = bool(
             skip_attention_qkv if skip_attention_qkv is not None else getattr(cfg_obj, "skip_attention_qkv", True)
         )
@@ -229,6 +241,8 @@ class BonsaiPruner(BaseCompressor):
     def _is_protected_layer(self, name: str, module: Optional[nn.Module] = None) -> bool:
         """Determines if a layer is a protected [CLS], router, GQA projection, or head module."""
         if not self.protect_cls:
+            if self.target_attention_only and not any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value", "c_attn", "c_proj"]):
+                return True
             return False
 
         name_lower = name.lower()
@@ -367,10 +381,12 @@ class BonsaiPruner(BaseCompressor):
 
             if self._is_protected_layer(name, module):
                 protected_layers_count += 1
+                for p in module.parameters(): p.requires_grad = False
                 self.protected_layers.append(name)
                 continue
 
-            raw_w = module.weight.data
+            target_mod = getattr(module, 'base_layer', module)
+            raw_w = target_mod.weight.data
             dtype = raw_w.dtype
             device = raw_w.device
             is_conv1d = "conv1d" in cls_name.lower() or hasattr(module, "nf")
@@ -381,6 +397,7 @@ class BonsaiPruner(BaseCompressor):
 
             # Guard against tiny layers
             if (out_f * in_f) < self.min_numel:
+                for p in module.parameters(): p.requires_grad = False
                 self.skipped_layers.append(name)
                 continue
 
@@ -452,25 +469,33 @@ class BonsaiPruner(BaseCompressor):
                 )
 
             if is_invalid and self.fallback_to_original:
+                for p in module.parameters(): p.requires_grad = False
                 self.fallback_layers.append(name)
                 continue
 
             # Commit pruned layer with optional LoRA integration
             if self.use_lora and self.lora_r > 0:
                 pruned_lora_layer = BonsaiPrunedLoRALinear.from_linear(
-                    linear=module,
+                    linear=target_mod,
                     pruned_weight=W.to(dtype=dtype, device=device),
                     mask=final_mask.to(device=device),
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
                     freeze_base=True,
                 )
+                if hasattr(module, 'base_layer'):
+                    if hasattr(module, 'lora_A'):
+                        pruned_lora_layer.lora_A = module.lora_A
+                    if hasattr(module, 'lora_B'):
+                        pruned_lora_layer.lora_B = module.lora_B
+                    module.base_layer = pruned_lora_layer
+                    pruned_lora_layer = module
                 replace_module(self.model, name, pruned_lora_layer)
             else:
                 if is_conv1d:
-                    module.weight.data.copy_(W.t().contiguous().to(dtype=dtype, device=device))
+                    target_mod.weight.data.copy_(W.t().contiguous().to(dtype=dtype, device=device))
                 else:
-                    module.weight.data.copy_(W.contiguous().to(dtype=dtype, device=device))
+                    target_mod.weight.data.copy_(W.contiguous().to(dtype=dtype, device=device))
 
             self.pruned_layers.append(name)
             pruned_layers_count += 1

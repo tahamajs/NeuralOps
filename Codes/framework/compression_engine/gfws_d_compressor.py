@@ -14,6 +14,16 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
+
+def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -132,6 +142,7 @@ class GFWSCompressor(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
+        target_attention_only: bool = False,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
@@ -159,6 +170,7 @@ class GFWSCompressor(BaseCompressor):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.target_attention_only = target_attention_only
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
@@ -199,6 +211,8 @@ class GFWSCompressor(BaseCompressor):
         if not should_compress_linear(self.model, name):
             return False
         if self._is_gqa_asymmetric(name, module):
+            return False
+        if self.target_attention_only and not any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value", "c_attn", "c_proj"]):
             return False
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
@@ -295,13 +309,15 @@ class GFWSCompressor(BaseCompressor):
 
             w_id = id(module.weight)
             if w_id in seen_weights:
+                for p in module.parameters(): p.requires_grad = False
                 self.skipped_layers.append(name)
                 continue
             seen_weights.add(w_id)
 
             cls_name = module.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-            raw_w = module.weight.data
+            target_mod = getattr(module, 'base_layer', module)
+            raw_w = target_mod.weight.data
 
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -311,8 +327,8 @@ class GFWSCompressor(BaseCompressor):
                 W = raw_w.float()      # [out_features, in_features]
 
             r = max(1, min(self.rank, out_f, in_f))
-            device = module.weight.device
-            dtype = module.weight.dtype
+            device = target_mod.weight.device
+            dtype = target_mod.weight.dtype
             W_norm = torch.norm(W, p="fro").item()
 
             used_cov = False
@@ -390,16 +406,24 @@ class GFWSCompressor(BaseCompressor):
                 )
                 if self.fallback_to_original:
                     logger.info("Skipping GFWS compression for %s (fallback to original).", name)
+                    for p in module.parameters(): p.requires_grad = False
                     self.fallback_layers.append(name)
                     continue
 
             # Replace with GFWSLoRALinear to support optional post-compression LoRA adapters
             new_layer = GFWSLoRALinear.from_linear(
-                module,
+                target_mod,
                 weight=W_approx.to(dtype=dtype, device=device),
                 lora_r=self.lora_r,
                 lora_alpha=self.lora_alpha,
             )
+            if hasattr(module, 'base_layer'):
+                if hasattr(module, 'lora_A'):
+                    new_layer.lora_A = module.lora_A
+                if hasattr(module, 'lora_B'):
+                    new_layer.lora_B = module.lora_B
+                module.base_layer = new_layer
+                new_layer = module
             replace_module(self.model, name, new_layer)
             self.compressed_layers.append(name)
 

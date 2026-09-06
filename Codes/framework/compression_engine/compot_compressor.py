@@ -21,6 +21,16 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.utils.compat import should_compress_linear
 
+
+def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -211,6 +221,7 @@ class COMPOTCompressor(BaseCompressor):
         calibration_loader: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
         cfg: Optional[Any] = None,
+        target_attention_only: bool = False,
         target_layers: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -230,6 +241,7 @@ class COMPOTCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.target_layers = target_layers
+        self.target_attention_only = target_attention_only
 
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
@@ -246,6 +258,8 @@ class COMPOTCompressor(BaseCompressor):
         if isinstance(module, COMPOTLinear):
             return False
         if not should_compress_linear(self.model, name):
+            return False
+        if self.target_attention_only and not any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value", "c_attn", "c_proj"]):
             return False
         if self.target_layers is not None:
             return any(t in name for t in self.target_layers)
@@ -326,7 +340,8 @@ class COMPOTCompressor(BaseCompressor):
         for name, module in targets:
             cls_name = module.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-            raw_w = module.weight.data
+            target_mod = getattr(module, 'base_layer', module)
+            raw_w = target_mod.weight.data
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             else:
@@ -338,7 +353,7 @@ class COMPOTCompressor(BaseCompressor):
             r = max(1, min(self.rank, max_r))
 
             act = activations.get(name, None)
-            compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(module, activations=act, rank=r)
+            compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(target_mod, activations=act, rank=r)
             self.layer_errors[name] = err
             self.layer_ranks[name] = r
             self.used_activations[name] = used_act
@@ -346,6 +361,7 @@ class COMPOTCompressor(BaseCompressor):
             # Validate dimensions
             if compot_layer.in_features != in_f or compot_layer.out_features != out_f:
                 logger.warning("Dimension mismatch on %s: (%d, %d) vs (%d, %d)", name, compot_layer.out_features, compot_layer.in_features, out_f, in_f)
+                for p in module.parameters(): p.requires_grad = False
                 self.fallback_layers.append(name)
                 continue
 
@@ -358,9 +374,17 @@ class COMPOTCompressor(BaseCompressor):
                 )
                 if self.fallback_to_original:
                     logger.info("Skipping COMPOT compression for %s (fallback to original).", name)
+                    for p in module.parameters(): p.requires_grad = False
                     self.fallback_layers.append(name)
                     continue
 
+            if hasattr(module, 'base_layer'):
+                if hasattr(module, 'lora_A'):
+                    compot_layer.lora_A = module.lora_A
+                if hasattr(module, 'lora_B'):
+                    compot_layer.lora_B = module.lora_B
+                module.base_layer = compot_layer
+                compot_layer = module
             replace_module(self.model, name, compot_layer)
             self.compressed_layers.append(name)
 

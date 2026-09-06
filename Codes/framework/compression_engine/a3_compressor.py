@@ -38,6 +38,16 @@ from framework.compression_engine.pruning_utils import (
     recalibrate_layernorms,
 )
 
+
+def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -350,9 +360,10 @@ class A3Compressor(BaseCompressor):
             return None, 0.0, 0
 
         # Extract weights and orient as [out_features, in_features]
-        device = module.weight.device
-        dtype = module.weight.dtype
-        raw_w = module.weight.data.float()
+        device = target_mod.weight.device
+        dtype = target_mod.weight.dtype
+        target_mod = getattr(module, 'base_layer', module)
+        raw_w = target_mod.weight.data.float()
         bias = getattr(module, "bias", None)
 
         if hasattr(module, "nf"):
@@ -469,21 +480,21 @@ class A3Compressor(BaseCompressor):
             in_features=in_f,
             out_features=out_f,
             rank=best_r,
-            bias=module.bias is not None,
+            bias=target_mod.bias is not None,
             dtype=dtype,
             device=device,
         )
         factorized_layer.U.data.copy_(U_final.to(dtype=dtype, device=device))
         factorized_layer.V.data.copy_(V_final.to(dtype=dtype, device=device))
-        if module.bias is not None and factorized_layer.bias is not None:
-            if factorized_layer.bias.shape == module.bias.shape:
-                factorized_layer.bias.data.copy_(module.bias.data.to(dtype=dtype, device=device))
+        if target_mod.bias is not None and factorized_layer.bias is not None:
+            if factorized_layer.bias.shape == target_mod.bias.shape:
+                factorized_layer.bias.data.copy_(target_mod.bias.data.to(dtype=dtype, device=device))
             else:
                 logger.warning(
                     "A3 bias shape mismatch on %s: expected %s, got %s. Skipping bias copy.",
                     name,
                     factorized_layer.bias.shape,
-                    module.bias.shape,
+                    target_mod.bias.shape,
                 )
 
         factorized_layer.reconstruction_error = best_err
@@ -548,6 +559,13 @@ class A3Compressor(BaseCompressor):
             )
 
             if factorized_layer is not None:
+                if hasattr(module, 'base_layer'):
+                    if hasattr(module, 'lora_A'):
+                        factorized_layer.lora_A = module.lora_A
+                    if hasattr(module, 'lora_B'):
+                        factorized_layer.lora_B = module.lora_B
+                    module.base_layer = factorized_layer
+                    factorized_layer = module
                 replace_module(self.model, name, factorized_layer)
                 factorized_count += 1
                 total_err += rel_err
@@ -561,6 +579,7 @@ class A3Compressor(BaseCompressor):
                 self.compressed_layers.append(name)
             else:
                 skipped_count += 1
+                for p in module.parameters(): p.requires_grad = False
                 self.skipped_layers.append(name)
 
         # LayerNorm Recalibration - only execute if calibration data & tokenizer are present
