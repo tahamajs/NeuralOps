@@ -510,3 +510,8 @@ def inject_nsa(
         return new_attn
     except Exception:
         return None
+
+
+# Aliases
+NSAAttention = NativeSparseAttention
+inject_nsa_attention = inject_nsa
