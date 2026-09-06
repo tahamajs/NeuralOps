@@ -340,12 +340,7 @@ class PHANTOMAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
+        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             is_nested = True
         elif (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
@@ -571,5 +566,62 @@ def inject_phantom(
                 if target_layer_idx is not None and replaced > target_layer_idx:
                     break
         return model if replaced > 0 else None
+    except Exception:
+        return None
+
+
+@ATTENTION_REGISTRY.register("phantom_inject")
+def inject_phantom_attention(
+    layer: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> Optional[PHANTOMAttention]:
+    src_attn = old_attn
+    if src_attn is None and layer is not None:
+        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+
+    hidden_size = (
+        kwargs.get("hidden_size") or
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
+        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', None) or
+        getattr(model_config, 'd_model', 64)
+    )
+    num_heads = (
+        kwargs.get("num_heads") or
+        kwargs.get("num_attention_heads") or
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', None) or
+        getattr(model_config, 'num_heads', 4)
+    )
+    try:
+        new_attn = PHANTOMAttention(
+            config=model_config,
+            comp_config=comp_config,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
+            pretrained_attn=src_attn,
+            **kwargs,
+        )
+        if layer is not None:
+            if hasattr(layer, "attention"):
+                layer.attention = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+            elif hasattr(layer, "attn"):
+                layer.attn = new_attn
+            else:
+                layer.attention = new_attn
+        return new_attn
     except Exception:
         return None

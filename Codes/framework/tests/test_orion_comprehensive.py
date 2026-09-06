@@ -83,7 +83,7 @@ def test_orion_distilbert_weight_copy():
     cfg = MockConfig()
     ocfg = ORIONConfig(num_kernel_heads=2, num_full_heads=2, rff_features=16)
     old_attn = DummyDistilBertAttention(64)
-    attn = ORIONAttention(config=cfg, orion_cfg=ocfg, source_attn=old_attn)
+    attn = ORIONAttention(config=cfg, orion_cfg=ocfg, old_attn=old_attn)
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
@@ -93,7 +93,7 @@ def test_orion_roberta_weight_copy():
     cfg = MockConfig()
     ocfg = ORIONConfig(num_kernel_heads=2, num_full_heads=2, rff_features=16)
     old_attn = DummyRobertaAttention(64)
-    attn = ORIONAttention(config=cfg, orion_cfg=ocfg, source_attn=old_attn)
+    attn = ORIONAttention(config=cfg, orion_cfg=ocfg, old_attn=old_attn)
     assert attn.is_nested_encoder
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
@@ -104,7 +104,7 @@ def test_orion_gpt2_weight_copy():
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     ocfg = ORIONConfig(num_kernel_heads=2, num_full_heads=2, rff_features=16)
     old_attn = DummyGPT2Attention(64)
-    attn = ORIONAttention(config=cfg, orion_cfg=ocfg, source_attn=old_attn)
+    attn = ORIONAttention(config=cfg, orion_cfg=ocfg, old_attn=old_attn)
     assert attn.is_decoder
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
@@ -115,7 +115,7 @@ def test_orion_qwen_gqa_and_rope():
     cfg = MockConfig(hidden_size=64, num_attention_heads=4, num_key_value_heads=2, head_dim=16, is_decoder=True, model_type="qwen2")
     ocfg = ORIONConfig(num_kernel_heads=2, num_full_heads=2, rff_features=16)
     old_attn = DummyQwenAttention(dim=64, num_kv_heads=2, head_dim=16)
-    attn = ORIONAttention(config=cfg, orion_cfg=ocfg, source_attn=old_attn)
+    attn = ORIONAttention(config=cfg, orion_cfg=ocfg, old_attn=old_attn)
     assert attn.kv_repeat == 2
     x = torch.randn(2, 8, 64)
     cos = torch.randn(2, 8, 16)
