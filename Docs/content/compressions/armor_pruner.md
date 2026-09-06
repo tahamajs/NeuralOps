@@ -544,3 +544,13 @@ __all__ = [
     "armor_pruner_factory",
 ]
 ```
+
+## Unified 4-Architecture Benchmark Results (ARMOR Pruner)
+Evaluated on SST-2 sentiment classification (FP16, 2:4 structured sparsity core, rank 16 low-rank correction, decoupled branches, 200 recovery steps):
+
+| Model Architecture | Baseline Acc | ARMOR Pruned Acc | Δ Acc | F1 Score | Actual Sparsity | Effective Param Ratio | Avg Recon Error | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:------------:|:----------------:|:-----:|:--------:|:---------------:|:---------------------:|:---------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.48% | 89.68% | -0.80% | 0.9002 | 50.0% | 1.00x | 0.3934 | 311.9 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-armor) |
+| ROBERTA | 88.76% | 87.84% | -0.92% | 0.8843 | 50.0% | 1.00x | 0.4028 | 322.4 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-armor) |
+| GPT2 | 81.31% | 75.11% | -6.20% | 0.7823 | 50.0% | 1.00x | 0.3900 | 401.6 MB | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-armor) |
+| QWEN3_5 | 67.55% | 60.21% | -7.34% | 0.7177 | 50.0% | 1.00x | 0.3868 | 1861.6 MB | `PASS` | [`qwen3_5`](https://huggingface.co/Hooshaai/svd-linear-attention-qwen3_5-armor) |
