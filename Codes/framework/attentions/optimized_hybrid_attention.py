@@ -257,12 +257,7 @@ class OptimizedHybridAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
+        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             is_nested = True
         elif (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
@@ -538,3 +533,8 @@ def inject_oha(
         return new_attn
     except Exception:
         return None
+
+
+# Aliases
+inject_optimized_hybrid_attention = inject_oha
+inject_optimized_hybrid = inject_oha
