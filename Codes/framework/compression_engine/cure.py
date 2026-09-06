@@ -60,11 +60,15 @@ class CURMoECompressor(BaseCompressor):
                 continue
             if isinstance(target_mod, nn.Linear) and "expert" in name:
                 target_mod.weight.data = cur_compress(target_mod.weight.data, self.rank)
-                if hasattr(module, 'base_layer'):
-                    if hasattr(module, 'lora_A'):
-                        pass
-                else:
-                    for p in module.parameters(): p.requires_grad = False
+                # Preserve existing LoRA adapter weights in-place (in-place edit, no replacement needed)
+                if hasattr(module, 'lora_A') and module.lora_A is not None and \
+                   hasattr(module, 'lora_B') and module.lora_B is not None:
+                    # lora_A/lora_B are nn.Linear submodules; their parameters stay trainable
+                    pass  # weights untouched — CUR modifies base_layer.weight in-place
+            else:
+                # Layer not compressed (not an expert linear) — freeze to avoid gradient waste
+                for p in module.parameters(recurse=False):
+                    p.requires_grad = False
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
