@@ -345,6 +345,9 @@ datasets:
                 commit_message=f"Upload hardened AdaptiveSparseAttention model weights ({name}) - Acc: {acc:.2f}%",
             )
             print(f"Successfully uploaded {name} to {repo_id}", flush=True)
+        except Exception as e:
+            print(f"Upload failed for {repo_id}: {e}", flush=True)
+
     res_item = {
         "model": name,
         "slug": slug,
