@@ -59,6 +59,15 @@ DEFAULT_CALIBRATION_CORPUS: List[str] = [
 ]
 
 
+def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 class SVDLinear(nn.Module):
     """
     FIX: True Low-Rank Factorized Linear Layer executing as:
