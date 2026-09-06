@@ -104,11 +104,15 @@ class AdaSVDCompressor(BaseCompressor):
         cls_name = module.__class__.__name__.lower()
         target_cls = target_mod.__class__.__name__.lower()
 
+        # Extract weight and ensure it is strictly a 2D matrix (filters out 3D/4D convs like nn.Conv1d)
+        weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
+        if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
+            return False
+
         is_linear_like = (
             isinstance(module, nn.Linear)
             or isinstance(target_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or "conv1d" in target_cls
+            or (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
             or hasattr(module, "nf")
             or hasattr(target_mod, "nf")
             or "loralinear" in cls_name
@@ -132,10 +136,11 @@ class AdaSVDCompressor(BaseCompressor):
             # RoBERTa layer.X.output.dense is FFN, while attention.output.dense is attention
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
-            # Explicitly match attention projections including GPT-2 c_attn and c_proj
+            # Explicitly match attention projections including GPT-2 c_attn and c_proj, and Qwen linear_attn
             attn_patterns = [
                 "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value"
+                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value",
+                "in_proj_qkv", "in_proj_z", "in_proj_b", "out_proj"
             ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
@@ -167,10 +172,14 @@ class AdaSVDCompressor(BaseCompressor):
         target_mod = getattr(layer, "base_layer", layer)
         cls_name = layer.__class__.__name__.lower()
         target_cls = target_mod.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
+        is_conv1d = (
+            (Conv1D is not None and (isinstance(layer, Conv1D) or isinstance(target_mod, Conv1D)))
+            or hasattr(layer, "nf")
+            or hasattr(target_mod, "nf")
+        )
 
         weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
-        if weight_tensor is None:
+        if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
             return None, float("inf"), 0
 
         raw_w = weight_tensor.data
@@ -319,10 +328,14 @@ class AdaSVDCompressor(BaseCompressor):
             target_mod = getattr(module, "base_layer", module)
             cls_name = module.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
             weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
-            if weight_tensor is None:
+            if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
                 continue
+            is_conv1d = (
+                (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
+                or hasattr(module, "nf")
+                or hasattr(target_mod, "nf")
+            )
             raw_w = weight_tensor.data
             W_2d = raw_w.t().float() if is_conv1d else raw_w.float()
             imp = self._compute_nuclear_norm(W_2d)
@@ -334,10 +347,14 @@ class AdaSVDCompressor(BaseCompressor):
             target_mod = getattr(module, "base_layer", module)
             cls_name = module.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
             weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
-            if weight_tensor is None:
+            if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
                 continue
+            is_conv1d = (
+                (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
+                or hasattr(module, "nf")
+                or hasattr(target_mod, "nf")
+            )
             raw_w = weight_tensor.data
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
