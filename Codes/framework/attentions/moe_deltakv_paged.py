@@ -234,10 +234,15 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
         cls_name = pretrained_attn.__class__.__name__
         has_out_proj = any(hasattr(pretrained_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+        is_nested = False
+        if hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
+            is_nested = True
+        elif (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
 
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
@@ -432,3 +437,32 @@ class MoEDeltaKVPagedAttention(nn.Module):
             out = self.out_proj(context[:, :N, :])
 
         return out, None
+
+
+@ATTENTION_REGISTRY.register("moe_deltakv_paged_inject")
+def inject_moe_deltakv_paged(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 1,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> Optional[MoEDeltaKVPagedAttention]:
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'page_size': 4, 'k_experts': 2})()
+
+    try:
+        new_attn = MoEDeltaKVPagedAttention(
+            config=model_config,
+            pretrained_attn=old_attn,
+            **kwargs,
+        )
+        if layer is not None:
+            if hasattr(layer, "attention"):
+                layer.attention = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+        return new_attn
+    except Exception:
+        return None
