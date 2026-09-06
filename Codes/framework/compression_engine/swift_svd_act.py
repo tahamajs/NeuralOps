@@ -22,6 +22,14 @@ from framework.compression_engine.pruning_utils import get_calibration_tensors
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register("swift_svd_act")
 class SwiftSVDActivationCompressor(BaseCompressor):
     """
@@ -30,19 +38,6 @@ class SwiftSVDActivationCompressor(BaseCompressor):
     Captures empirical input-output cross-covariances (C_XY = Y^T X / N) across calibration data,
     derives activation-aligned singular subspaces, projects original weights onto the principal
     activation subspace, and replaces dense nn.Linear / Conv1D layers with factorized SVDLinear modules.
-
-    Production hardening features:
-    - Relative Frobenius reconstruction error validation with configurable max_error (default 0.50).
-    - Safe fallback to original weights by default (fallback_to_original=True).
-    - Robust Conv1D detection and support across GPT-2 architectures.
-    - Unified critical-layer protection via should_compress_linear.
-    - GQA-aware skipping to preserve key-value cache dimension alignment.
-    - Tied / shared weight protection tracking parameter IDs.
-    - Trainable LoRA adapter integration via SVDLinear.
-    - Multi-batch activation covariance averaging.
-    - FP32 numerical stability with NaN/Inf guards.
-    - Post-compression forward sanity check under torch.no_grad().
-    - Comprehensive per-layer stats and error tracking.
     """
 
     def __init__(
@@ -54,9 +49,10 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         rank: int = 64,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
+        target_attention_only: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
         min_rank: int = 4,
         target_modules: Optional[list[str]] = None,
         **kwargs: Any,
@@ -64,16 +60,17 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         super().__init__(model, name="swift_svd_act", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            rank = getattr(cfg, "swift_svd_act_rank", getattr(cfg, "rank", rank))
-            tokenizer = getattr(cfg, "tokenizer", tokenizer)
-            calibration_loader = getattr(cfg, "calibration_loader", calibration_loader)
-            calibration_texts = getattr(cfg, "calibration_texts", calibration_texts)
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
-            lora_r = getattr(cfg, "lora_r", lora_r)
-            lora_alpha = getattr(cfg, "lora_alpha", lora_alpha)
-            skip_attention_qkv = getattr(cfg, "skip_attention_qkv", skip_attention_qkv)
-            min_rank = getattr(cfg, "min_rank", min_rank)
+            rank = _cfg_get(cfg, "swift_svd_act_rank", _cfg_get(cfg, "rank", rank))
+            tokenizer = _cfg_get(cfg, "tokenizer", tokenizer)
+            calibration_loader = _cfg_get(cfg, "calibration_loader", calibration_loader)
+            calibration_texts = _cfg_get(cfg, "calibration_texts", calibration_texts)
+            max_error = _cfg_get(cfg, "max_error", max_error)
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            lora_r = _cfg_get(cfg, "lora_r", lora_r)
+            lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
+            skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
+            min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -84,6 +81,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         self.rank = int(rank)
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
+        self.target_attention_only = bool(target_attention_only)
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
@@ -110,11 +108,21 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        cls_name = module.__class__.__name__.lower()
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        name_l = name.lower()
+        if any(k in name_l for k in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor"]):
+            return False
+
+        if self.target_attention_only:
+            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, "base_layer", module)
+        cls_name = base_mod.__class__.__name__.lower()
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
-        if isinstance(module, SVDLinear):
+        if isinstance(base_mod, SVDLinear):
             return False
         if not should_compress_linear(self.model, name):
             return False
@@ -192,14 +200,16 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         act_pair: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
     ) -> Optional[SVDLinear]:
         """Compress a single linear or Conv1D layer via Swift-SVD activation projection."""
-        raw_w = layer.weight.data
-        cls_name = layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
+        base_layer = getattr(layer, "base_layer", layer)
+        raw_w = base_layer.weight.data
+        cls_name = base_layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
         W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
         out_f, in_f = W.shape
         max_r = min(out_f, in_f)
-        r = max(min(self.min_rank, max_r), min(self.rank, max_r))
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1) if (in_f * out_f > 16) else max_r
+        r = max(min(self.min_rank, max_r), min(self.rank, max_r, param_cap))
         device = raw_w.device
         dtype = raw_w.dtype
 
@@ -271,22 +281,36 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             )
             return None
 
+        has_existing_lora = hasattr(layer, "lora_A") and hasattr(layer, "lora_B")
+        effective_lora_r = self.lora_r
+        if has_existing_lora and getattr(layer, "r", 0) > 0:
+            effective_lora_r = getattr(layer, "r", self.lora_r)
+
         svd_layer = SVDLinear(
             in_features=in_f,
             out_features=out_f,
             rank=r,
-            bias=layer.bias is not None,
+            bias=base_layer.bias is not None,
             dtype=dtype,
             device=device,
-            lora_r=self.lora_r,
+            lora_r=effective_lora_r,
             lora_alpha=self.lora_alpha,
         )
         svd_layer.set_low_rank_factors(
             U_factor=A.to(dtype=dtype, device=device),
             V_factor=B.to(dtype=dtype, device=device),
         )
-        if layer.bias is not None:
-            svd_layer.bias.data.copy_(layer.bias.data)
+        if base_layer.bias is not None:
+            svd_layer.bias.data.copy_(base_layer.bias.data)
+
+        if has_existing_lora and svd_layer.use_lora:
+            try:
+                if hasattr(layer.lora_A, "weight"):
+                    svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+                if hasattr(layer.lora_B, "weight"):
+                    svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+            except Exception:
+                pass
 
         svd_layer.reconstruction_error = rel_err
         return svd_layer
@@ -329,6 +353,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 self.compressed_layers.append(name)
             else:
                 self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -376,11 +402,12 @@ def swift_svd_act_factory(
     model: nn.Module, comp_config: Any = None, **kwargs: Any
 ) -> Any:
     """Swift-SVD activation-aware factory function."""
-    rank = kwargs.pop("rank", getattr(comp_config, "swift_svd_act_rank", getattr(comp_config, "rank", 64)) if comp_config else 64)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.50) if comp_config else 0.50)
-    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
-    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0)
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "swift_svd_act_rank", _cfg_get(comp_config, "rank", 64)))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = SwiftSVDActivationCompressor(
@@ -390,6 +417,7 @@ def swift_svd_act_factory(
         fallback_to_original=fallback,
         lora_r=lora_r,
         lora_alpha=lora_alpha,
+        target_attention_only=target_attn,
         comp_config=comp_config,
         **kwargs,
     )

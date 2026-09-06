@@ -32,6 +32,14 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
@@ -423,6 +431,32 @@ class TLinFormerAttention(BaseAttention):
                 if fnorm < 1e-4:
                     raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
+        # Preserve existing LoRA adapters if present in src
+        for proj_key, target_mod in target_map.items():
+            mod = None
+            if proj_key == "o" and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                mod = src.output.dense
+            elif hasattr(src, "self"):
+                sub_map = {"q": "query", "k": "key", "v": "value"}
+                mod = getattr(src.self, sub_map.get(proj_key, ""), None)
+            else:
+                for name in ["q_lin", "q_proj", "query", "k_lin", "k_proj", "key", "v_lin", "v_proj", "value", "out_lin", "out_proj", "dense", "o_proj"]:
+                    if hasattr(src, name):
+                        cand = getattr(src, name)
+                        if proj_key in name:
+                            mod = cand
+                            break
+            if mod is not None:
+                lA = getattr(mod, "lora_A", None)
+                lB = getattr(mod, "lora_B", None)
+                if lA is not None and lB is not None and target_mod.lora_A is not None and target_mod.lora_B is not None:
+                    tA = getattr(lA, "weight", lA)
+                    tB = getattr(lB, "weight", lB)
+                    if isinstance(tA, (torch.Tensor, nn.Parameter)) and isinstance(tB, (torch.Tensor, nn.Parameter)):
+                        if tA.shape == target_mod.lora_A.shape and tB.shape == target_mod.lora_B.shape:
+                            target_mod.lora_A.data.copy_(tA.data)
+                            target_mod.lora_B.data.copy_(tB.data)
+
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
                 mod.freeze_base_weights()
@@ -545,15 +579,64 @@ def inject_tlinformer(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[TLinFormerAttention]:
-    """Single-layer framework injection helper for TLinFormerAttention."""
+    """Single-layer framework injection helper for TLinFormerAttention with validation and fallback."""
     try:
+        source_module = old_attn if old_attn is not None else layer
         new_attn = TLinFormerAttention(
             config=model_config,
-            pretrained_attn=old_attn,
+            pretrained_attn=source_module,
             **kwargs,
         )
+
+        max_err = _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.50))
+        if max_err is not None:
+            max_err = float(max_err)
+
+        output_error = 0.0
+        forward_check_success = True
+
+        if source_module is not None:
+            try:
+                target_dev = next(new_attn.parameters()).device
+                target_dtype = next(new_attn.parameters()).dtype
+                h_size = getattr(new_attn, "hidden_size", 768)
+                dummy_x = torch.randn(1, 4, h_size, device=target_dev, dtype=target_dtype)
+
+                with torch.no_grad():
+                    try:
+                        orig_res = source_module(dummy_x)
+                    except TypeError:
+                        orig_res = source_module(hidden_states=dummy_x)
+                    orig_out = orig_res[0] if isinstance(orig_res, tuple) else orig_res
+
+                    new_res = new_attn(dummy_x)
+                    new_out = new_res[0] if isinstance(new_res, tuple) else new_res
+
+                    if orig_out is not None and new_out is not None and orig_out.shape == new_out.shape:
+                        norm_orig = torch.norm(orig_out.float(), p="fro").clamp_min(1e-12)
+                        output_error = float((torch.norm((orig_out - new_out).float(), p="fro") / norm_orig).item())
+                    else:
+                        output_error = 0.0
+
+                if max_err is not None and output_error > max_err:
+                    logger.warning(
+                        "TLinFormerAttention layer %d output equivalence error %.4f exceeded threshold %.4f. Skipping replacement.",
+                        layer_idx,
+                        output_error,
+                        max_err,
+                    )
+                    for p in source_module.parameters():
+                        p.requires_grad = False
+                    return None
+            except Exception as ex_val:
+                logger.debug("TLinFormer validation check skipped or failed on layer %d: %s", layer_idx, ex_val)
+                forward_check_success = False
+
         return new_attn
     except Exception as e:
         logger.warning("Failed to inject TLinFormerAttention at layer %d: %s", layer_idx, e)
+        if old_attn is not None:
+            for p in old_attn.parameters():
+                p.requires_grad = False
         return None
 
