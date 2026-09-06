@@ -775,6 +775,20 @@ def main():
                     help="LoRA alpha scaling factor for CacheNotes")
     ap.add_argument("--cachenotes_skip_attention_qkv", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Skip GQA asymmetric QKV projections in CacheNotes")
+    ap.add_argument("--come_target_layers", type=int, default=None,
+                    help="Target number of layers after shedding in CoMe")
+    ap.add_argument("--come_sparsity", type=float, default=0.3,
+                    help="Fraction of layers to shed in CoMe (default: 0.3)")
+    ap.add_argument("--come_alpha_init", type=float, default=0.1,
+                    help="Initial interpolation weight for learnable CoMe bridges")
+    ap.add_argument("--come_lora_r", type=int, default=16,
+                    help="LoRA rank for retained layers in CoMe")
+    ap.add_argument("--come_lora_alpha", type=float, default=1.0,
+                    help="LoRA alpha scaling in CoMe")
+    ap.add_argument("--come_skip_attention_qkv", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Skip GQA asymmetric QKV projections in CoMe")
+    ap.add_argument("--come_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
+                    help="Only bridge/adapt attention projections in CoMe")
 
     
     # Pre-parse to check if a config file is provided
@@ -1326,13 +1340,35 @@ def main():
                         if getattr(args, "cachenotes_skip_attention_qkv", None) is not None:
                             setattr(model.config, "cachenotes_skip_attention_qkv", args.cachenotes_skip_attention_qkv)
                             setattr(model.config, "skip_attention_qkv", args.cachenotes_skip_attention_qkv)
+                        if getattr(args, "come_target_layers", None) is not None:
+                            setattr(model.config, "come_target_layers", args.come_target_layers)
+                            setattr(model.config, "target_layers", args.come_target_layers)
+                        if getattr(args, "come_sparsity", None) is not None:
+                            setattr(model.config, "come_sparsity", args.come_sparsity)
+                            setattr(model.config, "sparsity", args.come_sparsity)
+                        if getattr(args, "come_alpha_init", None) is not None:
+                            setattr(model.config, "come_alpha_init", args.come_alpha_init)
+                            setattr(model.config, "alpha_init", args.come_alpha_init)
+                        if getattr(args, "come_lora_r", None) is not None:
+                            setattr(model.config, "come_lora_r", args.come_lora_r)
+                            setattr(model.config, "lora_r", args.come_lora_r)
+                            setattr(model.config, "lora_rank", args.come_lora_r)
+                        if getattr(args, "come_lora_alpha", None) is not None:
+                            setattr(model.config, "come_lora_alpha", args.come_lora_alpha)
+                            setattr(model.config, "lora_alpha", args.come_lora_alpha)
+                        if getattr(args, "come_skip_attention_qkv", None) is not None:
+                            setattr(model.config, "come_skip_attention_qkv", args.come_skip_attention_qkv)
+                            setattr(model.config, "skip_attention_qkv", args.come_skip_attention_qkv)
+                        if getattr(args, "come_target_attention_only", None) is not None:
+                            setattr(model.config, "come_target_attention_only", args.come_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.come_target_attention_only)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
