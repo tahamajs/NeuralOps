@@ -301,6 +301,8 @@ print(f"\n[+] Master 4-model summary saved to {master_csv} and {master_json}")
 # ==============================================================================
 import huggingface_hub as hfh
 
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 api = hfh.HfApi()
 
 for res in collected_results:
@@ -350,12 +352,17 @@ for res in collected_results:
     # Upload to private Hugging Face repo
     try:
         api.create_repo(repo_name, exist_ok=True, private=True)
-        print(f"    Uploading lean export from {hf_export_dir} to {repo_name}...")
-        api.upload_folder(
-            folder_path=str(hf_export_dir),
-            repo_id=repo_name,
-            repo_type="model",
-        )
+        print(f"    Uploading files from {hf_export_dir} to {repo_name}...")
+        for file_path in sorted(hf_export_dir.rglob("*")):
+            if file_path.is_file():
+                rel_p = file_path.relative_to(hf_export_dir).as_posix()
+                api.upload_file(
+                    path_or_fileobj=str(file_path),
+                    path_in_repo=rel_p,
+                    repo_id=repo_name,
+                    repo_type="model",
+                )
+                print(f"      Uploaded {rel_p}")
         print(f"    Uploaded successfully to https://huggingface.co/{repo_name}")
         res["hf_repo"] = f"https://huggingface.co/{repo_name}"
     except Exception as e:
