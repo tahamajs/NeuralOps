@@ -246,13 +246,14 @@ class KroneckerLinear(nn.Module):
         lora_alpha: float = 1.0,
     ) -> "KroneckerLinear":
         """
-        Decompose a pretrained nn.Linear or Conv1D layer into Kronecker factors A and B
+        Decompose a pretrained nn.Linear, Conv1D, or LoRALinear layer into Kronecker factors A and B
         using Nearest Kronecker Product (Van Loan & Pitsianis 1993), falling back to SVD
         if error exceeds max_error or dimensions do not factorize.
         """
-        cls_name = linear.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
-        raw_w = linear.weight.data
+        target_mod = getattr(linear, "base_layer", linear)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        raw_w = target_mod.weight.data
         if is_conv1d:
             in_features = raw_w.shape[0]
             out_features = raw_w.shape[1]
@@ -262,9 +263,22 @@ class KroneckerLinear(nn.Module):
             in_features = raw_w.shape[1]
             weight = raw_w.float()
 
-        bias = linear.bias.data.clone() if getattr(linear, "bias", None) is not None else None
+        bias = target_mod.bias.data.clone() if getattr(target_mod, "bias", None) is not None else None
         target_dtype = raw_w.dtype
         target_device = raw_w.device
+
+        # Check for existing LoRA adapters on the layer
+        existing_lora_A = getattr(linear, "lora_A", None)
+        existing_lora_B = getattr(linear, "lora_B", None)
+        effective_lora_r = lora_r
+        effective_lora_alpha = lora_alpha
+        if existing_lora_A is not None and existing_lora_B is not None:
+            w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+            effective_lora_r = w_A.shape[0]
+            if hasattr(linear, "scaling") and linear.scaling:
+                effective_lora_alpha = linear.scaling * effective_lora_r
+            elif hasattr(linear, "lora_alpha"):
+                effective_lora_alpha = linear.lora_alpha
 
         kron_layer = cls(
             in_features=in_features,
@@ -277,9 +291,18 @@ class KroneckerLinear(nn.Module):
             n2=n2,
             dtype=target_dtype,
             device=target_device,
-            lora_r=lora_r,
-            lora_alpha=lora_alpha,
+            lora_r=effective_lora_r,
+            lora_alpha=effective_lora_alpha,
         )
+
+        if existing_lora_A is not None and existing_lora_B is not None:
+            w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+            w_B = getattr(existing_lora_B, "weight", existing_lora_B)
+            if hasattr(w_A, "data") and hasattr(w_B, "data") and kron_layer.lora_A is not None and kron_layer.lora_B is not None:
+                kron_layer.lora_A.data.copy_(w_A.data)
+                kron_layer.lora_B.data.copy_(w_B.data)
+                kron_layer.lora_A.requires_grad = True
+                kron_layer.lora_B.requires_grad = True
 
         W_norm = torch.norm(weight, p="fro").item()
 

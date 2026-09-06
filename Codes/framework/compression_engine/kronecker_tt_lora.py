@@ -23,6 +23,20 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {
+    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin",
+}
+
+
 def _init_orthogonal_spectral(shape: Tuple[int, ...], shape_2d: Tuple[int, int], device: torch.device, dtype: torch.dtype) -> torch.Tensor:
     """Initialize tensor with orthogonal matrix and spectral normalization."""
     flat = torch.empty(shape_2d, dtype=torch.float32, device="cpu")
@@ -101,78 +115,80 @@ class KroneckerTTLoRALayer(nn.Module):
         device = base_layer.weight.device
         dtype = base_layer.weight.dtype
 
-        # Kronecker factor matrices with orthogonal init & spectral normalization
-        a1_tensor = _init_orthogonal_spectral((m1, n1), (m1, n1), device, dtype)
-        self.A1 = nn.Parameter(a1_tensor)
-        self.A2 = nn.Parameter(torch.zeros(m2, n2, device=device, dtype=dtype))
-
-        # Tensor-Train cores with orthogonal init & spectral normalization
-        # G1: (1, tt_shapes[0], r1)
-        g1_tensor = _init_orthogonal_spectral(
-            (self.tt_ranks[0], tt_shapes[0], self.tt_ranks[1]),
-            (tt_shapes[0], self.tt_ranks[1]),
-            device,
-            dtype,
+        # Kronecker Factors: A1 (m1, n1), A2 (m2, n2) with Spectral Normalization
+        self.A1 = nn.Parameter(
+            _init_orthogonal_spectral((m1, n1), (m1, n1), device, dtype)
         )
-        self.G1 = nn.Parameter(g1_tensor)
-
-        # G2: (r1, tt_shapes[1], r2)
-        g2_tensor = _init_orthogonal_spectral(
-            (self.tt_ranks[1], tt_shapes[1], self.tt_ranks[2]),
-            (self.tt_ranks[1] * tt_shapes[1], self.tt_ranks[2]),
-            device,
-            dtype,
+        self.A2 = nn.Parameter(
+            _init_orthogonal_spectral((m2, n2), (m2, n2), device, dtype)
         )
-        self.G2 = nn.Parameter(g2_tensor)
 
-        # G3: (r2, tt_shapes[2], 1)
-        g3_tensor = _init_orthogonal_spectral(
-            (self.tt_ranks[2], tt_shapes[2], self.tt_ranks[3]),
-            (self.tt_ranks[2], tt_shapes[2]),
-            device,
-            dtype,
-        )
-        self.G3 = nn.Parameter(g3_tensor)
-
-        # Symmetric LoRA residual bypass
-        self.lora_A = nn.Parameter(
+        # 3-Core Tensor-Train factors: G1, G2, G3 with Spectral Normalization
+        self.G1 = nn.Parameter(
             _init_orthogonal_spectral(
-                (self.lora_r, self.in_features),
-                (self.lora_r, self.in_features),
+                (1, tt_shapes[0], tt_ranks[1]), (tt_shapes[0], tt_ranks[1]), device, dtype
+            )
+        )
+        self.G2 = nn.Parameter(
+            _init_orthogonal_spectral(
+                (tt_ranks[1], tt_shapes[1], tt_ranks[2]),
+                (tt_ranks[1] * tt_shapes[1], tt_ranks[2]),
                 device,
                 dtype,
             )
         )
-        self.lora_B = nn.Parameter(torch.zeros(self.out_features, self.lora_r, device=device, dtype=dtype))
+        self.G3 = nn.Parameter(
+            _init_orthogonal_spectral(
+                (tt_ranks[2], tt_shapes[2], 1), (tt_ranks[2], tt_shapes[2]), device, dtype
+            )
+        )
 
-    @staticmethod
-    def factorize_dimensions(in_features: int, out_features: int) -> Dict[str, Any]:
-        """Find balanced factors with shape padding for Kronecker and TT dimensions."""
-        def find_factor_pair(n: int) -> Tuple[int, int, int]:
-            curr = n
-            while True:
-                for i in range(int(math.isqrt(curr)), 0, -1):
-                    if curr % i == 0:
-                        return i, curr // i, curr
-                curr += 1
+        # Direct symmetric LoRA bypass parameters
+        self.lora_A = nn.Parameter(torch.zeros((self.lora_r, self.in_features), dtype=dtype, device=device))
+        self.lora_B = nn.Parameter(torch.zeros((self.out_features, self.lora_r), dtype=dtype, device=device))
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        nn.init.zeros_(self.lora_B)
 
-        m1, m2, padded_out = find_factor_pair(out_features)
-        n1, n2, padded_in = find_factor_pair(in_features)
-        tt_shapes = (padded_out, n1, n2)
+    @classmethod
+    def factorize_dimensions(cls, in_f: int, out_f: int) -> Dict[str, Any]:
+        """Auto-factorize input and output dimensions with shape padding."""
+        def best_factor_pair(dim: int) -> Tuple[int, int]:
+            for d in range(int(math.isqrt(dim)), 0, -1):
+                if dim % d == 0:
+                    return d, dim // d
+            return 1, dim
+
+        m1, m2 = best_factor_pair(out_f)
+        n1, n2 = best_factor_pair(in_f)
+
+        total_padded = (m1 * m2) * (n1 * n2)
+        # Factor total_padded into 3 dimensions for 3-core TT
+        c = int(round(total_padded ** (1.0 / 3.0)))
+        factors = []
+        for d in range(max(1, c - 32), c + 33):
+            if total_padded % d == 0:
+                rem = total_padded // d
+                for d2 in range(int(math.isqrt(rem)), 0, -1):
+                    if rem % d2 == 0:
+                        factors.append((d, d2, rem // d2))
+                        break
+        if factors:
+            tt_shapes = sorted(factors, key=lambda t: max(t) - min(t))[0]
+        else:
+            tt_shapes = (m1, m2, n1 * n2)
+
         return {
             "m1": m1,
             "n1": n1,
             "m2": m2,
             "n2": n2,
-            "padded_out_features": padded_out,
-            "padded_in_features": padded_in,
             "tt_shapes": tt_shapes,
         }
 
     @classmethod
     def from_linear(
         cls,
-        base_layer: nn.Linear,
+        base_layer: nn.Module,
         m1: Optional[int] = None,
         n1: Optional[int] = None,
         m2: Optional[int] = None,
@@ -184,10 +200,48 @@ class KroneckerTTLoRALayer(nn.Module):
         lora_alpha: float = 8.0,
         **kwargs: Any,
     ) -> "KroneckerTTLoRALayer":
-        """Create KroneckerTTLoRALayer directly from linear layer with auto-factorization and shape padding."""
-        dims = cls.factorize_dimensions(base_layer.in_features, base_layer.out_features)
-        return cls(
-            base_layer=base_layer,
+        """Create KroneckerTTLoRALayer directly from linear/Conv1D/LoRALinear layer with auto-factorization."""
+        target_mod = getattr(base_layer, "base_layer", base_layer)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+
+        raw_w = target_mod.weight.data
+        if is_conv1d:
+            in_features = raw_w.shape[0]
+            out_features = raw_w.shape[1]
+            lin = nn.Linear(in_features, out_features, bias=getattr(target_mod, "bias", None) is not None, device=raw_w.device, dtype=raw_w.dtype)
+            lin.weight.data.copy_(raw_w.t())
+            if getattr(target_mod, "bias", None) is not None:
+                lin.bias.data.copy_(target_mod.bias.data)
+            effective_base = lin
+        elif isinstance(target_mod, nn.Linear):
+            effective_base = target_mod
+        else:
+            in_features = getattr(target_mod, "in_features", raw_w.shape[1])
+            out_features = getattr(target_mod, "out_features", raw_w.shape[0])
+            lin = nn.Linear(in_features, out_features, bias=getattr(target_mod, "bias", None) is not None, device=raw_w.device, dtype=raw_w.dtype)
+            lin.weight.data.copy_(raw_w)
+            if getattr(target_mod, "bias", None) is not None:
+                lin.bias.data.copy_(target_mod.bias.data)
+            effective_base = lin
+
+        dims = cls.factorize_dimensions(effective_base.in_features, effective_base.out_features)
+
+        # Check existing LoRA adapters
+        existing_lora_A = getattr(base_layer, "lora_A", None)
+        existing_lora_B = getattr(base_layer, "lora_B", None)
+        effective_lora_r = lora_r
+        effective_lora_alpha = lora_alpha
+        if existing_lora_A is not None and existing_lora_B is not None:
+            w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+            effective_lora_r = w_A.shape[0]
+            if hasattr(base_layer, "scaling") and base_layer.scaling:
+                effective_lora_alpha = base_layer.scaling * effective_lora_r
+            elif hasattr(base_layer, "lora_alpha"):
+                effective_lora_alpha = base_layer.lora_alpha
+
+        layer = cls(
+            base_layer=effective_base,
             m1=m1 or dims["m1"],
             n1=n1 or dims["n1"],
             m2=m2 or dims["m2"],
@@ -195,10 +249,21 @@ class KroneckerTTLoRALayer(nn.Module):
             tt_shapes=tt_shapes or dims["tt_shapes"],
             tt_ranks=tt_ranks,
             gamma=gamma,
-            lora_r=lora_r,
-            lora_alpha=lora_alpha,
+            lora_r=effective_lora_r,
+            lora_alpha=effective_lora_alpha,
             **kwargs,
         )
+
+        if existing_lora_A is not None and existing_lora_B is not None:
+            w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+            w_B = getattr(existing_lora_B, "weight", existing_lora_B)
+            if hasattr(w_A, "data") and hasattr(w_B, "data"):
+                layer.lora_A.data.copy_(w_A.data)
+                layer.lora_B.data.copy_(w_B.data)
+                layer.lora_A.requires_grad = True
+                layer.lora_B.requires_grad = True
+
+        return layer
 
     def get_tt_tensor(self) -> torch.Tensor:
         """Construct dense tensor from TT cores."""
@@ -312,15 +377,6 @@ class KroneckerTTLoRACompressor(BaseCompressor):
     """
     Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear and Conv1D layers.
     Inherits from BaseCompressor.
-
-    Production hardening features:
-    - Robust Conv1D detection and conversion to equivalent linear base layer.
-    - Unified critical-layer protection via should_compress_linear.
-    - GQA-aware skipping to protect asymmetric attention heads.
-    - Tied / shared weight protection tracking parameter IDs.
-    - Safe module replacement via replace_module supporting nested layers.
-    - Post-compression forward sanity check under torch.no_grad().
-    - Comprehensive per-layer statistics and error tracking.
     """
 
     def __init__(
@@ -330,21 +386,34 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         gamma: float = 1.0,
         lora_r: int = 4,
         lora_alpha: float = 8.0,
-        skip_attention_qkv: bool = True,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        skip_attention_qkv: bool = False,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             model if model is not None else nn.Identity(), name="kronecker_tt_lora", **kwargs
         )
-        self.rank = rank or getattr(cfg, "tt_rank", 8) or getattr(cfg, "rank", 8)
-        self.gamma = gamma or getattr(cfg, "gamma", 1.0)
-        self.lora_r = lora_r or getattr(cfg, "lora_r", 4)
-        self.lora_alpha = lora_alpha or getattr(cfg, "lora_alpha", 8.0)
-        self.skip_attention_qkv = bool(skip_attention_qkv or getattr(cfg, "skip_attention_qkv", True))
+        self.rank = int(_cfg_get(cfg, "tt_rank", _cfg_get(cfg, "rank", rank)))
+        self.gamma = float(_cfg_get(cfg, "gamma", gamma))
+        self.lora_r = int(_cfg_get(cfg, "lora_r", lora_r))
+        self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
+        self.max_error = float(_cfg_get(cfg, "kronecker_tt_lora_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.target_attention_only = bool(
+            _cfg_get(cfg, "kronecker_tt_lora_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(cfg, "kronecker_tt_lora_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+        )
+        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
         self.cfg = cfg
+
         self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
@@ -359,15 +428,27 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        cls_name = module.__class__.__name__.lower()
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+            return False
+        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+            return False
+
+        if self.target_attention_only:
+            if not any(attn_kw in name_lower for attn_kw in _ATTN_NAMES):
+                return False
+
+        if self._is_gqa_asymmetric(name, module):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not is_linear_like:
             return False
-        if isinstance(module, KroneckerTTLoRALayer):
+        if isinstance(target_mod, KroneckerTTLoRALayer):
             return False
         if not should_compress_linear(self.model, name):
-            return False
-        if self._is_gqa_asymmetric(name, module):
             return False
         return True
 
@@ -378,41 +459,74 @@ class KroneckerTTLoRACompressor(BaseCompressor):
             self._original_params = self._count_params(self.model)
 
         self.compressed_layers = []
+        self.fallback_layers = []
         self.skipped_layers = []
+        self.layer_errors = {}
         seen_weights: Set[int] = set()
 
-        for name, module in list(self.model.named_modules()):
-            if self._is_target_module(name, module):
-                if not hasattr(module, "weight") or module.weight is None:
-                    continue
+        total_orig_params = 0
+        total_comp_params = 0
 
-                w_id = id(module.weight)
-                if w_id in seen_weights:
+        # Freeze non-target linear/conv1d layers when target_attention_only is True
+        if self.target_attention_only:
+            for name, module in self.model.named_modules():
+                target_mod = getattr(module, "base_layer", module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
                     self.skipped_layers.append(name)
-                    continue
-                seen_weights.add(w_id)
 
-                cls_name = module.__class__.__name__.lower()
-                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+        for name, module in list(self.model.named_modules()):
+            if not self._is_target_module(name, module):
+                continue
 
-                if is_conv1d:
-                    # Convert Conv1D to standard nn.Linear for base_layer
-                    in_f = module.weight.shape[0]
-                    out_f = module.weight.shape[1]
-                    lin = nn.Linear(in_f, out_f, bias=module.bias is not None, device=module.weight.device, dtype=module.weight.dtype)
-                    lin.weight.data.copy_(module.weight.data.t())
-                    if module.bias is not None:
-                        lin.bias.data.copy_(module.bias.data)
-                    base_module = lin
-                else:
-                    base_module = module
+            target_mod = getattr(module, "base_layer", module)
+            if not hasattr(target_mod, "weight") or target_mod.weight is None:
+                continue
 
-                try:
-                    adapted = self.compress_linear(base_module)
-                    replace_module(self.model, name, adapted)
-                    self.compressed_layers.append(name)
-                except Exception as e:
-                    logger.warning("Kronecker-TT-LoRA adaptation exception on %s: %s", name, e)
+            w_id = id(target_mod.weight)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+
+            raw_w = target_mod.weight.data
+            orig_params = raw_w.numel()
+            if getattr(target_mod, "bias", None) is not None:
+                orig_params += target_mod.bias.numel()
+            total_orig_params += orig_params
+
+            try:
+                adapted = self.compress_linear(module)
+                W_orig = raw_w.t().float() if ("conv1d" in target_mod.__class__.__name__.lower() or hasattr(target_mod, "nf")) else raw_w.float()
+                delta_w = adapted.get_delta_w().float()
+                err = float(torch.norm(delta_w, p="fro").item() / max(torch.norm(W_orig, p="fro").item(), 1e-12))
+                self.layer_errors[name] = err
+
+                if err > self.max_error:
+                    logger.warning("Kronecker-TT-LoRA error %.4f on %s exceeded max_error %.4f", err, name, self.max_error)
+                    if self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        total_comp_params += orig_params
+                        continue
+
+                # Compute adapter parameters (only trainable adapter parameters)
+                adapter_params = sum(p.numel() for p in [adapted.A1, adapted.A2, adapted.G1, adapted.G2, adapted.G3, adapted.lora_A, adapted.lora_B] if p is not None)
+                total_comp_params += adapter_params
+
+                replace_module(self.model, name, adapted)
+                self.compressed_layers.append(name)
+            except Exception as e:
+                logger.warning("Kronecker-TT-LoRA adaptation exception on %s: %s", name, e)
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_params += orig_params
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -438,21 +552,35 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
+        avg_err = (
+            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
+            if self.layer_errors
+            else 0.0
+        )
+        param_ratio = round(total_comp_params / max(total_orig_params, 1), 4) if total_orig_params > 0 else 1.0
+
         stats.update({
             "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
             "skipped_layers": self.skipped_layers,
             "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
             "num_skipped": len(self.skipped_layers),
-            "compressed_layer_count": len(self.compressed_layers),
+            "tt_rank": self.rank,
+            "gamma": self.gamma,
             "lora_r": self.lora_r,
             "lora_alpha": self.lora_alpha,
+            "max_error": self.max_error,
+            "target_attention_only": self.target_attention_only,
+            "avg_reconstruction_error": avg_err,
+            "effective_parameter_ratio": param_ratio,
             "forward_check_success": forward_check_success,
             "method": "kronecker_tt_lora",
         })
         return self.model, stats
 
-    def compress_linear(self, linear_layer: nn.Linear) -> KroneckerTTLoRALayer:
-        """Compress a single linear layer into KroneckerTTLoRALayer."""
+    def compress_linear(self, linear_layer: nn.Module) -> KroneckerTTLoRALayer:
+        """Compress a single linear or Conv1D layer into KroneckerTTLoRALayer."""
         r = max(1, min(self.rank, 32))
         r_inner = max(1, r // 2)
         return KroneckerTTLoRALayer.from_linear(
@@ -465,6 +593,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kronecker_tt_lora")
+@COMPRESSOR_REGISTRY.register("kronecker_tt_lora_factory")
 def kronecker_tt_lora_factory(
     model: nn.Module,
     comp_config: Optional[Any] = None,
@@ -472,14 +601,32 @@ def kronecker_tt_lora_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for Kronecker-TT-LoRA compressor."""
-    rank = rank or getattr(comp_config, "tt_rank", 8) or getattr(comp_config, "rank", 8)
-    gamma = getattr(comp_config, "gamma", 1.0)
-    lora_r = getattr(comp_config, "lora_r", kwargs.pop("lora_r", 4))
-    lora_alpha = getattr(comp_config, "lora_alpha", kwargs.pop("lora_alpha", 8.0))
+    rank = rank or _cfg_get(comp_config, "tt_rank", _cfg_get(comp_config, "rank", 8))
+    gamma = _cfg_get(comp_config, "gamma", 1.0)
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 4))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 8.0))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "kronecker_tt_lora_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "kronecker_tt_lora_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(comp_config, "kronecker_tt_lora_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = KroneckerTTLoRACompressor(
-        model, rank=rank, gamma=gamma, lora_r=lora_r, lora_alpha=lora_alpha, cfg=comp_config, **kwargs
+        model,
+        rank=rank,
+        gamma=gamma,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
     )
     compressed_model, stats = compressor.compress()
     if return_stats:
@@ -492,4 +639,5 @@ __all__ = [
     "KroneckerTTLoRACompressor",
     "kronecker_tt_lora_factory",
 ]
+
 
