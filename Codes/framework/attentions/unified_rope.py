@@ -24,11 +24,25 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely retrieve attribute from dict, object, namespace, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    """Rotates half the hidden dimensions of the input tensor safely handling odd dims."""
+    d = x.shape[-1]
+    half = d // 2
+    x1 = x[..., :half]
+    x2 = x[..., half : 2 * half]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if 2 * half < d:
+        return torch.cat((rotated, x[..., 2 * half :]), dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -39,8 +53,8 @@ def apply_rotary_pos_emb(
     position_ids: Optional[torch.Tensor] = None,
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
-    rotary_dim = min(cos.shape[-1], q.shape[-1])
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
+    rotary_dim = min(cos.shape[-1], q.shape[-1], k.shape[-1])
     rotary_dim = 2 * (rotary_dim // 2)
     if rotary_dim == 0:
         return q, k
@@ -51,12 +65,31 @@ def apply_rotary_pos_emb(
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
-    while cos.dim() < q_rot.dim():
-        cos = cos.unsqueeze(unsqueeze_dim)
-        sin = sin.unsqueeze(unsqueeze_dim)
+    q_len = q.shape[-2]
+    k_len = k.shape[-2]
 
-    q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+    cos_q = cos
+    sin_q = sin
+    cos_k = cos
+    sin_k = sin
+
+    while cos_q.dim() < q_rot.dim():
+        cos_q = cos_q.unsqueeze(unsqueeze_dim)
+        sin_q = sin_q.unsqueeze(unsqueeze_dim)
+    while cos_k.dim() < k_rot.dim():
+        cos_k = cos_k.unsqueeze(unsqueeze_dim)
+        sin_k = sin_k.unsqueeze(unsqueeze_dim)
+
+    # Slice sequence length dimension if needed
+    if cos_q.shape[-2] != q_len:
+        cos_q = cos_q[..., :q_len, :]
+        sin_q = sin_q[..., :q_len, :]
+    if cos_k.shape[-2] != k_len:
+        cos_k = cos_k[..., :k_len, :]
+        sin_k = sin_k[..., :k_len, :]
+
+    q_rot = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
     q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
     k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
@@ -99,6 +132,8 @@ class LoRALinear(nn.Module):
             self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -117,7 +152,8 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("compression_unified_rope", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("unified_rope")
+@ATTENTION_REGISTRY.register("unified_rope", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("unified_rope_attention", supports_causal=True, supports_gqa=True)
 class UnifiedRoPE(BaseAttention):
     r"""Universal Rotary Position Embedding Attention module."""
 
