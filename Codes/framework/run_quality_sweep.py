@@ -761,6 +761,20 @@ def main():
                     help="Maximum bits per channel in Fisher-adaptive quantization")
     ap.add_argument("--astro_fisher_beta", type=float, default=0.5,
                     help="Sensitivity exponent for Fisher importance in AstroQuantizer")
+    ap.add_argument("--cachenotes_task", type=str, default="qa",
+                    help="Downstream task type for CPT importance modulation in CacheNotes (e.g. qa, summarize, reasoning)")
+    ap.add_argument("--cachenotes_keep_ratio", type=float, default=0.5,
+                    help="Target SVD keep ratio for static weight compression in CacheNotes")
+    ap.add_argument("--cachenotes_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for CacheNotes before fallback")
+    ap.add_argument("--cachenotes_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict CacheNotes compression to attention projections only")
+    ap.add_argument("--cachenotes_lora_r", type=int, default=16,
+                    help="LoRA rank for trainable residual adaptation in CacheNotes")
+    ap.add_argument("--cachenotes_lora_alpha", type=float, default=1.0,
+                    help="LoRA alpha scaling factor for CacheNotes")
+    ap.add_argument("--cachenotes_skip_attention_qkv", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Skip GQA asymmetric QKV projections in CacheNotes")
 
     
     # Pre-parse to check if a config file is provided
@@ -1290,13 +1304,35 @@ def main():
                         if getattr(args, "astro_fisher_beta", None) is not None:
                             setattr(model.config, "astro_fisher_beta", args.astro_fisher_beta)
                             setattr(model.config, "fisher_beta", args.astro_fisher_beta)
+                        if getattr(args, "cachenotes_task", None) is not None:
+                            setattr(model.config, "cachenotes_task", args.cachenotes_task)
+                            setattr(model.config, "task_type", args.cachenotes_task)
+                        if getattr(args, "cachenotes_keep_ratio", None) is not None:
+                            setattr(model.config, "cachenotes_keep_ratio", args.cachenotes_keep_ratio)
+                            setattr(model.config, "keep_ratio", args.cachenotes_keep_ratio)
+                        if getattr(args, "cachenotes_max_error", None) is not None:
+                            setattr(model.config, "cachenotes_max_error", args.cachenotes_max_error)
+                            setattr(model.config, "max_error", args.cachenotes_max_error)
+                        if getattr(args, "cachenotes_target_attention_only", None) is not None:
+                            setattr(model.config, "cachenotes_target_attention_only", args.cachenotes_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.cachenotes_target_attention_only)
+                        if getattr(args, "cachenotes_lora_r", None) is not None:
+                            setattr(model.config, "cachenotes_lora_r", args.cachenotes_lora_r)
+                            setattr(model.config, "lora_r", args.cachenotes_lora_r)
+                            setattr(model.config, "lora_rank", args.cachenotes_lora_r)
+                        if getattr(args, "cachenotes_lora_alpha", None) is not None:
+                            setattr(model.config, "cachenotes_lora_alpha", args.cachenotes_lora_alpha)
+                            setattr(model.config, "lora_alpha", args.cachenotes_lora_alpha)
+                        if getattr(args, "cachenotes_skip_attention_qkv", None) is not None:
+                            setattr(model.config, "cachenotes_skip_attention_qkv", args.cachenotes_skip_attention_qkv)
+                            setattr(model.config, "skip_attention_qkv", args.cachenotes_skip_attention_qkv)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
