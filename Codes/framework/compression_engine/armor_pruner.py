@@ -1,23 +1,24 @@
 """
 ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction).
-Registered in COMPRESSOR_REGISTRY as 'armor_pruner' and 'armor'.
+Registered in COMPRESSOR_REGISTRY as 'armor_pruner', 'armor', and 'armor_compressor'.
 
 Mathematical Formulation:
-1. Resilient First-Order Taylor Saliency (handling zero-grad gracefully):
+1. Resilient First-Order Taylor Saliency (handling zero-grad, NaN/Inf, and absent activations):
    $$S_{ij} = \\begin{cases} |W_{ij} \\odot g_{ij}| & \\text{if } g \\text{ is valid and } \\|g\\| > 0 \\\\ |W_{ij}| \\cdot \\mathbb{E}[|x_j|] & \\text{if activations available} \\\\ |W_{ij}| \\cdot (\\sigma(W) + 1) & \\text{fallback} \\end{cases}$$
 2. 2:4 Semi-Structured Pruning Mask:
    $$\\mathcal{M} = \\Pi_{2:4}(S), \\quad W_{\\text{sparse}} = W \\odot \\mathcal{M}$$
-3. Residual Low-Rank Decomposition:
+3. Residual Low-Rank SVD Correction:
    $$R = W - W_{\\text{sparse}} \\approx B A, \\quad A \\in \\mathbb{R}^{r \\times d_{\\text{in}}}, \\; B \\in \\mathbb{R}^{d_{\\text{out}} \\times r}$$
 4. Decoupled Dual-Branch Forward with Independent Gradient Flow:
-   $$y = x (W_{\\text{sparse}} \\odot \\mathcal{M})^\\top + (x A^\\top) B^\\top + b$$
+   $$y = x (W_{\\text{sparse}} \\odot \\mathcal{M})^\\top + \\frac{\\alpha}{r} (x A^\\top) B^\\top + b$$
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
 import logging
 import math
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -30,8 +31,23 @@ from framework.compression_engine.pruning_utils import (
     get_calibration_tensors,
     recalibrate_layernorms,
 )
+from framework.utils.compat import should_compress_linear
+
+try:
+    from transformers.pytorch_utils import Conv1D
+except ImportError:
+    Conv1D = None
 
 logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 
 def compute_resilient_taylor_saliency(
@@ -69,6 +85,7 @@ class ARMORLinear(nn.Module):
     """
     Decoupled Sparse + Low-Rank Residual Layer with optional LoRA scaling.
     Maintains clean gradient flow to low-rank adapter branches while base sparse weights are frozen.
+    Forward formula matches: x @ (sparse_weight * mask)^T + (x @ lora_A^T) @ lora_B^T * scaling + bias.
     """
 
     def __init__(
@@ -133,8 +150,10 @@ class ARMORLinear(nn.Module):
             dtype=raw_w.dtype,
             device=raw_w.device,
         )
-        layer.sparse_weight.data.copy_(w_data)
-        layer.sparse_mask.copy_(mask.to(dtype=raw_w.dtype, device=raw_w.device))
+        # Store sparse-masked weights in base sparse tensor
+        mask_dev = mask.to(dtype=w_data.dtype, device=w_data.device)
+        layer.sparse_weight.data.copy_(w_data * mask_dev)
+        layer.sparse_mask.copy_(mask_dev)
         layer.lora_A.data.copy_(lora_A.to(dtype=raw_w.dtype, device=raw_w.device))
         layer.lora_B.data.copy_(lora_B.to(dtype=raw_w.dtype, device=raw_w.device))
         if getattr(linear, "bias", None) is not None and linear.bias is not None:
@@ -155,7 +174,10 @@ class ARMORLinear(nn.Module):
         out_sparse = F.linear(x_flat, w_eff)
 
         # 2. Low-Rank Residual Correction Forward with LoRA scaling
-        out_lr = self.scaling * F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B).to(out_sparse.dtype)
+        x_lr = x_flat.to(dtype=self.lora_A.dtype) if self.lora_A.dtype != x_flat.dtype else x_flat
+        out_lr = self.scaling * F.linear(F.linear(x_lr, self.lora_A), self.lora_B)
+        if out_lr.dtype != out_sparse.dtype:
+            out_lr = out_lr.to(dtype=out_sparse.dtype)
 
         out = out_sparse + out_lr
         if self.bias is not None:
@@ -163,17 +185,27 @@ class ARMORLinear(nn.Module):
         return out.view(*orig_shape[:-1], self.out_features)
 
 
+@COMPRESSOR_REGISTRY.register("armor_pruner")
+@COMPRESSOR_REGISTRY.register("armor")
+@COMPRESSOR_REGISTRY.register("armor_compressor")
 class ARMORPruner(BaseCompressor):
     """
-    ARMOR Pruner: Combines 2:4 structured sparsity with low-rank error compensation
+    Production-Hardened ARMOR Pruner: Combines 2:4 structured sparsity with low-rank SVD error compensation
     and decoupled dual-branch gradient propagation.
+
+    Hardening features:
+    - Robust LoRALinear and Conv1D support (in-place base_layer replacement, adapter preservation).
+    - Configurable target_attention_only filtering (skips FFN/MLP and classification heads).
+    - Safe fallback with strict parameter freezing (requires_grad=False).
+    - Detailed metric tracking: actual_sparsity, base_sparse_params, correction_params, effective_parameter_ratio.
+    - SVD numerical stability in FP32 with NaN/Inf guards.
     """
 
     def __init__(
         self,
         model: nn.Module,
         block_size: int = 4,
-        rank: int = 8,
+        rank: int = 16,
         sparsity: float = 0.5,
         structured_24: bool = True,
         decouple: bool = True,
@@ -181,7 +213,9 @@ class ARMORPruner(BaseCompressor):
         lora_alpha: float = 1.0,
         max_error: float = 0.35,
         fallback_to_original: bool = True,
-        skip_attention_qkv: bool = True,
+        target_attention_only: bool = False,
+        skip_attention_qkv: bool = False,
+        target_modules: Optional[List[str]] = None,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
@@ -191,16 +225,20 @@ class ARMORPruner(BaseCompressor):
     ) -> None:
         super().__init__(model, name="armor_pruner", **kwargs)
         conf = cfg or kwargs.get("comp_config", None)
-        self.block_size = block_size
-        self.rank = max(1, int(rank if rank is not None else getattr(conf, "armor_rank", getattr(conf, "rank", 8))))
-        self.sparsity = max(0.0, min(float(sparsity), 0.95))
-        self.structured_24 = structured_24
-        self.decouple = decouple
-        self.recalibrate_ln = recalibrate_ln
-        self.lora_alpha = float(lora_alpha if lora_alpha is not None else getattr(conf, "lora_alpha", 1.0))
-        self.max_error = float(max_error if max_error is not None else getattr(conf, "max_error", 0.35))
-        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else getattr(conf, "fallback_to_original", True))
-        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else getattr(conf, "skip_attention_qkv", True))
+
+        self.block_size = int(_cfg_get(conf, "armor_block_size", _cfg_get(conf, "block_size", block_size)))
+        self.rank = max(1, int(_cfg_get(conf, "armor_rank", _cfg_get(conf, "rank", rank))))
+        self.sparsity = max(0.0, min(float(_cfg_get(conf, "armor_sparsity", _cfg_get(conf, "sparsity", sparsity))), 0.95))
+        self.structured_24 = bool(_cfg_get(conf, "armor_structured_24", _cfg_get(conf, "structured_24", structured_24)))
+        self.decouple = bool(_cfg_get(conf, "armor_decouple", _cfg_get(conf, "decouple", decouple)))
+        self.recalibrate_ln = bool(_cfg_get(conf, "armor_recalibrate_ln", _cfg_get(conf, "recalibrate_ln", recalibrate_ln)))
+        self.lora_alpha = float(_cfg_get(conf, "armor_lora_alpha", _cfg_get(conf, "lora_alpha", lora_alpha)))
+        self.max_error = float(_cfg_get(conf, "armor_max_error", _cfg_get(conf, "max_error", max_error)))
+        self.fallback_to_original = bool(_cfg_get(conf, "armor_fallback_to_original", _cfg_get(conf, "fallback_to_original", fallback_to_original)))
+        self.target_attention_only = bool(_cfg_get(conf, "armor_target_attention_only", _cfg_get(conf, "target_attention_only", target_attention_only)))
+        self.skip_attention_qkv = bool(_cfg_get(conf, "armor_skip_attention_qkv", _cfg_get(conf, "skip_attention_qkv", skip_attention_qkv)))
+        self.target_modules = target_modules
+
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
@@ -209,14 +247,22 @@ class ARMORPruner(BaseCompressor):
             if device is not None
             else (next(model.parameters(), torch.tensor(0.0)).device)
         )
+        self.comp_config = conf
+
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
+        self.layer_actual_sparsities: Dict[str, float] = {}
+        self.layer_effective_ratios: Dict[str, float] = {}
         self.stats: Dict[str, Any] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
+        """Determines if layer is asymmetric GQA projection that should be skipped."""
         if not self.skip_attention_qkv:
+            return False
+        if self.target_attention_only:
+            # If target_attention_only is True, we explicitly compress attention projections
             return False
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
@@ -227,28 +273,87 @@ class ARMORPruner(BaseCompressor):
                 return True
         return False
 
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        """Determines if module is eligible for ARMOR pruning."""
+        if isinstance(module, ARMORLinear):
+            return False
+        # Do not target inner submodules of LoRA or wrappers directly
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
+            return False
+
+        target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+        cls_name = module.__class__.__name__.lower()
+
+        weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
+        if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
+            return False
+
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or isinstance(target_mod, nn.Linear)
+            or (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
+            or hasattr(module, "nf")
+            or hasattr(target_mod, "nf")
+            or "loralinear" in cls_name
+            or hasattr(module, "base_layer")
+        )
+        if not is_linear_like:
+            return False
+
+        name_lower = name.lower()
+        # Skip classification / output heads
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler", "pre_classifier"]):
+            return False
+
+        if self._is_gqa_asymmetric(name, module):
+            return False
+
+        if self.target_attention_only:
+            # Skip FFN / MLP layers
+            ffn_patterns = [
+                "ffn", "mlp", "lin1", "lin2", "intermediate",
+                "gate_proj", "up_proj", "down_proj", "c_fc"
+            ]
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            # RoBERTa layer.X.output.dense is FFN, while attention.output.dense is attention
+            if "output.dense" in name_lower and "attention" not in name_lower:
+                return False
+            # Match attention projections
+            attn_patterns = [
+                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value",
+                "in_proj_qkv", "in_proj_z", "in_proj_b", "out_proj"
+            ]
+            if not any(p in name_lower for p in attn_patterns):
+                return False
+        else:
+            if not should_compress_linear(self.model, name):
+                return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
     def _collect_activations(self) -> Dict[str, torch.Tensor]:
-        """Capture activations across linear layers."""
+        """Captures input activations across eligible linear layers."""
         self.model.eval()
         activations: Dict[str, List[torch.Tensor]] = {}
         hooks = []
 
-        def make_hook(name: str):
+        def make_hook(layer_name: str):
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
                 if inp and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach()
-                    if name not in activations:
-                        activations[name] = []
-                    activations[name].append(x.cpu())
+                    if layer_name not in activations:
+                        activations[layer_name] = []
+                    activations[layer_name].append(x.cpu())
             return hook
 
-        from framework.utils.compat import should_compress_linear
-
         for name, module in self.model.named_modules():
-            cls_name = module.__class__.__name__.lower()
-            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-            if is_linear_like and should_compress_linear(self.model, name) and not self._is_gqa_asymmetric(name, module):
-                hooks.append(module.register_forward_hook(make_hook(name)))
+            if self._is_target_module(name, module):
+                target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+                hooks.append(target_mod.register_forward_hook(make_hook(name)))
 
         calib_inputs = get_calibration_tensors(
             self.model,
@@ -281,52 +386,68 @@ class ARMORPruner(BaseCompressor):
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes ARMOR pruning with low-rank error correction and decoupled gradient modules."""
-        from framework.utils.compat import should_compress_linear
-
         act_map = self._collect_activations()
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
+        self.layer_actual_sparsities = {}
+        self.layer_effective_ratios = {}
         total_correction_energy = 0.0
         seen_weights: set[int] = set()
 
-        for name, module in list(self.model.named_modules()):
+        total_base_sparse = 0
+        total_correction = 0
+        total_orig = 0
+
+        targets = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not targets:
+            logger.warning("ARMORPruner: No compressible target modules found.")
+            stats = self.get_compression_stats()
+            self.stats = stats
+            self.model.compression_stats = stats
+            return self.model, stats
+
+        for name, module in targets:
+            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
             cls_name = module.__class__.__name__.lower()
-            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-            if not is_linear_like or isinstance(module, ARMORLinear):
-                continue
+            is_conv1d = (
+                (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
+                or hasattr(target_mod, "nf")
+                or hasattr(module, "nf")
+            )
+            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
-            if not should_compress_linear(self.model, name):
-                continue
-
-            if self._is_gqa_asymmetric(name, module):
-                continue
-
-            if not hasattr(module, "weight") or module.weight is None:
-                continue
-
-            w_id = id(module.weight)
+            w_id = id(target_mod.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
                 continue
             seen_weights.add(w_id)
 
-            raw_w = module.weight.data
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            raw_w = target_mod.weight.data
+            orig_shape = raw_w.shape
             device = raw_w.device
             dtype = raw_w.dtype
-            grad = getattr(module.weight, "grad", None)
+
+            # Shape standardization: [out_features, in_features] in FP32
+            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            out_features, in_features = W.shape
+            grad = getattr(target_mod.weight, "grad", None)
             act = act_map.get(name, None)
 
             try:
-                # 1. Resilient Saliency Computation
+                # 1. Resilient Taylor Saliency
                 saliency = compute_resilient_taylor_saliency(W, grad=grad, activations=act)
 
                 # 2. Structured 2:4 or magnitude sparse mask
                 if self.structured_24:
                     W_sparse, mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
+                    mask = (mask > 0.5).float()
                 else:
                     flat = saliency.reshape(-1)
                     k = max(1, int(flat.numel() * (1.0 - self.sparsity)))
@@ -334,7 +455,7 @@ class ARMORPruner(BaseCompressor):
                     mask = (saliency >= thr).float()
                     W_sparse = W * mask
 
-                # 3. Residual Low-Rank Error SVD Correction
+                # 3. Residual Low-Rank SVD Error Correction
                 residual = W - W_sparse
                 r = min(self.rank, residual.shape[0], residual.shape[1])
                 try:
@@ -346,54 +467,95 @@ class ARMORPruner(BaseCompressor):
                     total_correction_energy += torch.norm(correction).item()
                 except Exception as e:
                     logger.debug("SVD failed on residual in %s: %s", name, e)
-                    lora_A = torch.zeros(r, W.shape[1], dtype=dtype, device=device)
-                    lora_B = torch.zeros(W.shape[0], r, dtype=dtype, device=device)
+                    lora_A = torch.zeros(r, in_features, dtype=dtype, device=device)
+                    lora_B = torch.zeros(out_features, r, dtype=dtype, device=device)
 
-                # Measure reconstruction error
+                # Measure relative Frobenius reconstruction error
                 scaling = (self.lora_alpha / r) if r > 0 else 1.0
-                W_recon = W_sparse + scaling * torch.matmul(lora_B, lora_A)
-                W_norm = torch.norm(W, p="fro").clamp_min(1e-8)
-                err = float(torch.norm(W - W_recon, p="fro").item() / W_norm)
+                W_recon = W_sparse + scaling * torch.matmul(lora_B.float(), lora_A.float())
+                w_norm = torch.norm(W, p="fro").clamp_min(1e-8)
+                err = float(torch.norm(W - W_recon, p="fro").item() / w_norm)
                 self.layer_errors[name] = err
 
-                if err > self.max_error:
+                if (
+                    torch.isnan(W_recon).any()
+                    or torch.isinf(W_recon).any()
+                    or err > self.max_error
+                ):
+                    logger.warning(
+                        "ARMOR reconstruction error %.4f on %s exceeded threshold %.4f.",
+                        err,
+                        name,
+                        self.max_error,
+                    )
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
+                        # Freeze fallback layers so recovery fine-tuning does not alter them
+                        for p in module.parameters():
+                            p.requires_grad = False
                         continue
 
-                # 4. Module Replacement: Decoupled Dual-Branch or Fused
+                # Parameter and Sparsity Accounting
+                base_sp_count = int((mask > 0).sum().item())
+                corr_count = int(lora_A.numel() + lora_B.numel()) if self.decouple else 0
+                orig_count = int(W.numel())
+                total_base_sparse += base_sp_count
+                total_correction += corr_count
+                total_orig += orig_count
+
+                actual_zero_frac = float((mask == 0).sum().item() / max(1, orig_count))
+                eff_ratio = float((base_sp_count + corr_count) / max(1, orig_count))
+                self.layer_actual_sparsities[name] = actual_zero_frac
+                self.layer_effective_ratios[name] = eff_ratio
+
+                # 4. Module Replacement: Decoupled Dual-Branch or In-Place Assignment
                 if self.decouple:
                     armor_layer = ARMORLinear.from_linear(
-                        module,
+                        target_mod,
                         mask=mask,
                         lora_A=lora_A,
                         lora_B=lora_B,
                         lora_alpha=self.lora_alpha,
                     )
-                    if name == "":
+                    if has_lora:
+                        # Keep original LoRALinear wrapper and replace its base_layer
+                        module.base_layer = armor_layer
+                    elif name == "":
                         self.model = armor_layer
                     else:
                         replace_module(self.model, name, armor_layer)
                 else:
                     if is_conv1d:
-                        module.weight.data.copy_(W_recon.t().to(dtype=dtype, device=device))
+                        target_mod.weight.data.copy_(W_recon.t().to(dtype=dtype, device=device))
                     else:
-                        module.weight.data.copy_(W_recon.to(dtype=dtype, device=device))
+                        target_mod.weight.data.copy_(W_recon.to(dtype=dtype, device=device))
+
+                # Preserve LoRA adapter parameters if original layer had LoRA
+                if has_lora:
+                    for p_name, p in module.named_parameters():
+                        if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                            p.requires_grad = True
 
                 self.compressed_layers.append(name)
+
             except Exception as e:
                 logger.warning("ARMOR pruning failed on %s: %s", name, e)
                 self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
 
         # LayerNorm Recalibration
         if self.recalibrate_ln:
-            recalibrate_layernorms(
-                self.model,
-                tokenizer=self.tokenizer,
-                calibration_loader=self.calibration_loader,
-                calibration_texts=self.calibration_texts,
-                device=self.target_device,
-            )
+            try:
+                recalibrate_layernorms(
+                    self.model,
+                    tokenizer=self.tokenizer,
+                    calibration_loader=self.calibration_loader,
+                    calibration_texts=self.calibration_texts,
+                    device=self.target_device,
+                )
+            except Exception as e:
+                logger.warning("ARMOR LayerNorm recalibration skipped: %s", e)
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -415,8 +577,19 @@ class ARMORPruner(BaseCompressor):
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
-        stats = self.get_compression_stats()
         avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        avg_actual_sparsity = (
+            sum(self.layer_actual_sparsities.values()) / max(1, len(self.layer_actual_sparsities))
+            if self.layer_actual_sparsities
+            else (0.5 if self.structured_24 else self.sparsity)
+        )
+        effective_param_ratio = (
+            float((total_base_sparse + total_correction) / max(1, total_orig))
+            if total_orig > 0
+            else 1.0
+        )
+
+        stats = self.get_compression_stats()
         stats.update({
             "compressed_layers": self.compressed_layers,
             "compressed_layer_count": len(self.compressed_layers),
@@ -427,42 +600,60 @@ class ARMORPruner(BaseCompressor):
             "layer_errors": self.layer_errors,
             "avg_reconstruction_error": avg_err,
             "pruned_layers": len(self.compressed_layers),
+            "num_compressed": len(self.compressed_layers),
+            "num_fallback": len(self.fallback_layers),
+            "actual_sparsity": avg_actual_sparsity,
+            "layer_actual_sparsities": self.layer_actual_sparsities,
+            "layer_effective_ratios": self.layer_effective_ratios,
+            "base_sparse_params": total_base_sparse,
+            "correction_params": total_correction,
+            "effective_parameter_ratio": effective_param_ratio,
             "rank": self.rank,
             "structured_24": self.structured_24,
             "decouple": self.decouple,
             "lora_alpha": self.lora_alpha,
+            "max_error": self.max_error,
+            "target_attention_only": self.target_attention_only,
             "total_correction_energy": total_correction_energy,
             "forward_check_success": forward_check_success,
             "method": "armor_sparse_plus_lowrank_decoupled",
         })
         self.stats = stats
+        self.model.compression_stats = stats
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("armor_pruner")
-@COMPRESSOR_REGISTRY.register("armor")
-@COMPRESSOR_REGISTRY.register("armor_compressor")
-@COMPRESSOR_REGISTRY.register("armor_factory")
 @COMPRESSOR_REGISTRY.register("armor_pruner_factory")
+@COMPRESSOR_REGISTRY.register("armor_factory")
 @COMPRESSOR_REGISTRY.register("armor_compressor_factory")
 def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
-    """Factory function for ARMOR pruner."""
-    block_size = getattr(comp_config, "armor_block_size", getattr(comp_config, "block_size", 4)) if comp_config else kwargs.get("block_size", 4)
-    rank = getattr(comp_config, "armor_rank", getattr(comp_config, "rank", 8)) if comp_config else kwargs.get("rank", 8)
-    structured_24 = getattr(comp_config, "armor_structured_24", getattr(comp_config, "structured_24", True)) if comp_config else kwargs.get("structured_24", True)
-    decouple = getattr(comp_config, "armor_decouple", kwargs.get("decouple", True))
-    recalibrate_ln = getattr(comp_config, "armor_recalibrate_ln", kwargs.get("recalibrate_ln", True))
-    lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 1.0))
+    """Factory function for ARMOR pruner with robust config handling."""
+    block_size = kwargs.pop("block_size", _cfg_get(comp_config, "armor_block_size", _cfg_get(comp_config, "block_size", 4)))
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "armor_rank", _cfg_get(comp_config, "rank", 16)))
+    sparsity = kwargs.pop("sparsity", _cfg_get(comp_config, "armor_sparsity", _cfg_get(comp_config, "sparsity", 0.5)))
+    structured_24 = kwargs.pop("structured_24", _cfg_get(comp_config, "armor_structured_24", _cfg_get(comp_config, "structured_24", True)))
+    decouple = kwargs.pop("decouple", _cfg_get(comp_config, "armor_decouple", _cfg_get(comp_config, "decouple", True)))
+    recalibrate_ln = kwargs.pop("recalibrate_ln", _cfg_get(comp_config, "armor_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", True)))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "armor_lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0)))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "armor_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    fallback_to_original = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "armor_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "armor_target_attention_only", _cfg_get(comp_config, "target_attention_only", True)))
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "armor_skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = ARMORPruner(
         model,
         block_size=block_size,
         rank=rank,
+        sparsity=sparsity,
         structured_24=structured_24,
         decouple=decouple,
         recalibrate_ln=recalibrate_ln,
         lora_alpha=lora_alpha,
+        max_error=max_error,
+        fallback_to_original=fallback_to_original,
+        target_attention_only=target_attention_only,
+        skip_attention_qkv=skip_attention_qkv,
         cfg=comp_config,
         **kwargs,
     )
@@ -470,6 +661,7 @@ def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> 
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
 
 __all__ = [
     "compute_resilient_taylor_saliency",
