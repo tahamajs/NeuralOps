@@ -1,0 +1,5 @@
+Model,Baseline Acc,ADMM Acc,Delta Acc,F1,Status,Compressed Layers,Actual Sparsity,Quant Bits,Recon Error,Peak VRAM
+distilbert,90.48%,88.53%,-1.95%,0.8922,PASS,11,54.5%,4,0.4088,339.4 MB
+roberta,88.76%,89.11%,+0.35%,0.8966,PASS,27,58.0%,4,0.4280,333.4 MB
+gpt2,81.31%,84.63%,+3.32%,0.8537,PASS,0,0.0%,4,0.0000,409.9 MB
+qwen3_5,67.55%,88.42%,+20.87%,0.8947,PASS,28,58.3%,4,0.4158,1851.3 MB
