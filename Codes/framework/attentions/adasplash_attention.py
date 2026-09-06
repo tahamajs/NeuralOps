@@ -229,44 +229,65 @@ class AdaSplashAttention(BaseAttention):
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(config, rank)
-        self.adapter = ModelAdapter(config)
-        self.alpha: float = float(getattr(config, "alpha", kwargs.get("alpha", alpha)))
-        self.n_iter: int = n_iter
-        self.splash_radius: int = int(getattr(config, "splash_radius", kwargs.get("splash_radius", splash_radius)))
-        lora_rank_cfg = getattr(config, "lora_rank", getattr(config, "residual_rank", getattr(config, "rank", kwargs.get("lora_rank", kwargs.get("rank", 16)))))
-        self.lora_rank: int = int(lora_rank_cfg) if lora_rank_cfg is not None else 16
-        self.num_heads: int = self.adapter.num_heads
-        self.num_kv_heads: int = self.adapter.num_key_value_heads
-        self.hidden_size: int = self.adapter.hidden_size
-        self.head_dim: int = self.adapter.head_dim
-        self.all_head_size: int = self.num_heads * self.head_dim
-        self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.kv_repeat: int = self.adapter.kv_repeat
+        super().__init__(config, rank, **kwargs)
+        if config is not None:
+            self.adapter = ModelAdapter(config)
+            self.alpha = float(getattr(config, "alpha", kwargs.get("alpha", alpha)))
+            self.n_iter = n_iter
+            self.splash_radius = int(getattr(config, "splash_radius", kwargs.get("splash_radius", splash_radius)))
+            lora_rank_cfg = getattr(config, "lora_rank", getattr(config, "residual_rank", getattr(config, "rank", kwargs.get("lora_rank", kwargs.get("rank", 16)))))
+            self.lora_rank = int(lora_rank_cfg) if lora_rank_cfg is not None else 16
+            self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
+            self.num_kv_heads = kwargs.get("num_kv_heads", self.adapter.num_key_value_heads or self.num_heads)
+            self.hidden_size = kwargs.get("hidden_size", self.adapter.hidden_size or 768)
+            self.head_dim = kwargs.get("head_dim", self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads)))
+            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+            dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+            self.is_decoder = getattr(config, "is_decoder", False)
+            self.relative_attention_num_buckets = getattr(config, "relative_attention_num_buckets", 32)
+            self.relative_attention_max_distance = getattr(config, "relative_attention_max_distance", 128)
+        else:
+            self.adapter = None
+            self.alpha = float(kwargs.get("alpha", alpha))
+            self.n_iter = n_iter
+            self.splash_radius = int(kwargs.get("splash_radius", splash_radius))
+            self.lora_rank = int(kwargs.get("lora_rank", kwargs.get("rank", 16)))
+            self.hidden_size = kwargs.get("hidden_size", 768)
+            self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
+            self.num_kv_heads = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads))
+            self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
+            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+            dropout_p = kwargs.get("dropout", 0.1)
+            self.is_decoder = kwargs.get("is_decoder", False)
+            self.relative_attention_num_buckets = 32
+            self.relative_attention_max_distance = 128
+
+        self.all_head_size = self.num_heads * self.head_dim
+        self.kv_head_size = self.num_kv_heads * self.head_dim
 
         self.q_proj = AdaSplashLinear(self.hidden_size, self.all_head_size, lora_rank=self.lora_rank)
         self.k_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank)
         self.v_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank)
         self.out_proj = AdaSplashLinear(self.all_head_size, self.hidden_size, lora_rank=self.lora_rank)
 
-        dropout_p = getattr(
-            config,
-            "dropout",
-            getattr(
-                config,
-                "hidden_dropout_prob",
-                getattr(config, "attention_probs_dropout_prob", 0.1),
-            ),
-        )
+        # Aliases
+        self.q_lin = self.q_proj
+        self.k_lin = self.k_proj
+        self.v_lin = self.v_proj
+        self.out_lin = self.out_proj
+        self.query = self.q_proj
+        self.key = self.k_proj
+        self.value = self.v_proj
+        self.dense = self.out_proj
+        self.o_proj = self.out_proj
+        self.c_proj = self.out_proj
+
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
-        self.is_decoder: bool = getattr(config, "is_decoder", False)
-        self.is_nested_encoder: bool = False
-        self.has_relative_attention_bias: bool = False
-        self.relative_attention_bias: Optional[nn.Embedding] = None
-        self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
-        self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
+        self.is_nested_encoder = False
+        self.has_relative_attention_bias = False
+        self.relative_attention_bias = None
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -399,7 +420,16 @@ class AdaSplashAttention(BaseAttention):
 
         cls_name = src.__class__.__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        is_nested_encoder = (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj
+        is_nested_encoder = False
+        if (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            is_nested_encoder = True
+        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+            is_nested_encoder = True
 
         if not extracted_all:
             if is_nested_encoder and extracted_weights["q"][0] is not None and extracted_weights["k"][0] is not None and extracted_weights["v"][0] is not None:
