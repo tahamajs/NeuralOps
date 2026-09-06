@@ -789,6 +789,40 @@ def main():
                     help="Skip GQA asymmetric QKV projections in CoMe")
     ap.add_argument("--come_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
                     help="Only bridge/adapt attention projections in CoMe")
+    ap.add_argument("--coopq_bits", type=int, default=4,
+                    help="Target average bit-width for CoopQ quantizer")
+    ap.add_argument("--coopq_min_bits", type=int, default=4,
+                    help="Minimum bit floor for CoopQ quantizer (>= 4)")
+    ap.add_argument("--coopq_max_bits", type=int, default=8,
+                    help="Maximum bit width for CoopQ quantizer")
+    ap.add_argument("--coopq_symmetric", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
+                    help="Enable symmetric quantization in CoopQ")
+    ap.add_argument("--coopq_per_channel", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Enable per-channel quantization in CoopQ")
+    ap.add_argument("--coopq_use_ste", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Enable STE autograd wrap in CoopQ")
+    ap.add_argument("--coopq_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict CoopQ quantization to attention projections only")
+    ap.add_argument("--cr_rank", type=int, default=32,
+                    help="Target rank for Column-Row (CR) interpolative decomposition")
+    ap.add_argument("--cr_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for CR compressor before fallback")
+    ap.add_argument("--cr_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict CR compression to attention projections only")
+    ap.add_argument("--cur_rank", type=int, default=32,
+                    help="Target rank for CUR matrix decomposition")
+    ap.add_argument("--cur_min_rank", type=int, default=8,
+                    help="Minimum rank for CUR decomposition")
+    ap.add_argument("--cur_method", type=str, default="leverage",
+                    help="Sampling method for CUR decomposition (leverage, energy, uniform)")
+    ap.add_argument("--cur_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for CUR compressor before fallback")
+    ap.add_argument("--cur_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict CUR compression to attention projections only")
+    ap.add_argument("--cur_moe_rank", type=int, default=32,
+                    help="Target rank for CUR-MoE decomposition")
+    ap.add_argument("--cur_moe_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Freeze attention projections and target MoE/FFN in CUR-MoE")
 
     
     # Pre-parse to check if a config file is provided
@@ -1362,13 +1396,68 @@ def main():
                         if getattr(args, "come_target_attention_only", None) is not None:
                             setattr(model.config, "come_target_attention_only", args.come_target_attention_only)
                             setattr(model.config, "target_attention_only", args.come_target_attention_only)
+                        # CoopQ
+                        if getattr(args, "coopq_bits", None) is not None:
+                            setattr(model.config, "coopq_bits", args.coopq_bits)
+                            setattr(model.config, "bits", args.coopq_bits)
+                        if getattr(args, "coopq_min_bits", None) is not None:
+                            setattr(model.config, "coopq_min_bits", args.coopq_min_bits)
+                            setattr(model.config, "min_bits", args.coopq_min_bits)
+                        if getattr(args, "coopq_max_bits", None) is not None:
+                            setattr(model.config, "coopq_max_bits", args.coopq_max_bits)
+                            setattr(model.config, "max_bits", args.coopq_max_bits)
+                        if getattr(args, "coopq_symmetric", None) is not None:
+                            setattr(model.config, "coopq_symmetric", args.coopq_symmetric)
+                            setattr(model.config, "symmetric", args.coopq_symmetric)
+                        if getattr(args, "coopq_per_channel", None) is not None:
+                            setattr(model.config, "coopq_per_channel", args.coopq_per_channel)
+                            setattr(model.config, "per_channel", args.coopq_per_channel)
+                        if getattr(args, "coopq_use_ste", None) is not None:
+                            setattr(model.config, "coopq_use_ste", args.coopq_use_ste)
+                            setattr(model.config, "use_ste", args.coopq_use_ste)
+                        if getattr(args, "coopq_target_attention_only", None) is not None:
+                            setattr(model.config, "coopq_target_attention_only", args.coopq_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.coopq_target_attention_only)
+                        # CR
+                        if getattr(args, "cr_rank", None) is not None:
+                            setattr(model.config, "cr_rank", args.cr_rank)
+                            setattr(model.config, "rank", args.cr_rank)
+                        if getattr(args, "cr_max_error", None) is not None:
+                            setattr(model.config, "cr_max_error", args.cr_max_error)
+                            setattr(model.config, "max_error", args.cr_max_error)
+                        if getattr(args, "cr_target_attention_only", None) is not None:
+                            setattr(model.config, "cr_target_attention_only", args.cr_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.cr_target_attention_only)
+                        # CUR
+                        if getattr(args, "cur_rank", None) is not None:
+                            setattr(model.config, "cur_rank", args.cur_rank)
+                            setattr(model.config, "rank", args.cur_rank)
+                        if getattr(args, "cur_min_rank", None) is not None:
+                            setattr(model.config, "cur_min_rank", args.cur_min_rank)
+                            setattr(model.config, "min_rank", args.cur_min_rank)
+                        if getattr(args, "cur_method", None) is not None:
+                            setattr(model.config, "cur_method", args.cur_method)
+                            setattr(model.config, "method", args.cur_method)
+                        if getattr(args, "cur_max_error", None) is not None:
+                            setattr(model.config, "cur_max_error", args.cur_max_error)
+                            setattr(model.config, "max_error", args.cur_max_error)
+                        if getattr(args, "cur_target_attention_only", None) is not None:
+                            setattr(model.config, "cur_target_attention_only", args.cur_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.cur_target_attention_only)
+                        # CUR-MoE
+                        if getattr(args, "cur_moe_rank", None) is not None:
+                            setattr(model.config, "cur_moe_rank", args.cur_moe_rank)
+                            setattr(model.config, "rank", args.cur_moe_rank)
+                        if getattr(args, "cur_moe_target_attention_only", None) is not None:
+                            setattr(model.config, "cur_moe_target_attention_only", args.cur_moe_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.cur_moe_target_attention_only)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
