@@ -42,6 +42,11 @@ class Registry:
             if key is None:
                 key = obj.__name__
             k = key.lower()
+            # If key already exists and maps to a class, do not let a plain function overwrite it
+            if k in self._dict and isinstance(self._dict[k], type) and not isinstance(obj, type):
+                logger.debug("Registry '%s': Skipping overwrite of class %s by function %s for key '%s'", self.name, self._dict[k].__name__, obj.__name__, k)
+                return obj
+
             self._dict[k] = obj
 
             # Derive capabilities from explicit kwargs or attributes on the registered object
