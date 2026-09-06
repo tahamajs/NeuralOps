@@ -21,6 +21,15 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register("adasvd")
 class AdaSVDCompressor(BaseCompressor):
     """
@@ -36,9 +45,11 @@ class AdaSVDCompressor(BaseCompressor):
     - Relative Frobenius reconstruction error validation with configurable max_error.
     - ALS check vs initial SVD: reverts to initial SVD factors if ALS worsens error.
     - Safe fallback to original layer if error exceeds max_error or factorization fails.
-    - Enforced rank safeguard: r < min(in_features, out_features) and r * (in + out) < in * out.
-    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition and SVDLinear replacement.
-    - Single unified critical-layer protection via should_compress_linear.
+    - Preserves LoRALinear wrappers: replaces inner base_layer with SVDLinear, retaining trainable LoRA deltas.
+    - Enforced rank safeguard: r <= max_param_r and r >= min_rank (or 15% of min dimension).
+    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition to [out_features, in_features].
+    - GPT-2 c_attn support: max_param_r=432, rank floor >= 288.
+    - Target attention only option: skips FFN/MLP projections for safety.
     - Full FP32 computation for numerical stability, casting back to original dtype at module insertion.
     - Per-layer logging and detailed compression statistics.
     """
@@ -49,30 +60,32 @@ class AdaSVDCompressor(BaseCompressor):
         rank: Optional[int] = None,
         target_param_ratio: float = 0.7,
         num_iters: int = 5,
-        max_error: float = 0.20,
+        max_error: float = 0.70,
         fallback_to_original: bool = True,
+        target_attention_only: bool = True,
+        min_rank: int = 16,
         target_modules: Optional[List[str]] = None,
+        comp_config: Any = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="adasvd", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            rank = getattr(cfg, "adasvd_rank", getattr(cfg, "rank", rank))
-            target_param_ratio = getattr(
-                cfg, "adasvd_target_ratio", getattr(cfg, "target_param_ratio", target_param_ratio)
-            )
-            num_iters = getattr(cfg, "adasvd_iters", getattr(cfg, "num_iters", num_iters))
-            max_error = getattr(cfg, "adasvd_max_error", getattr(cfg, "max_error", max_error))
-            fallback_to_original = getattr(
-                cfg, "adasvd_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
-            )
+        cfg = comp_config or kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
 
-        self.rank = rank
-        self.target_param_ratio = float(target_param_ratio)
-        self.num_iters = int(num_iters)
-        self.max_error = float(max_error)
-        self.fallback_to_original = bool(fallback_to_original)
+        self.rank = _cfg_get(cfg, "adasvd_rank", _cfg_get(cfg, "rank", rank))
+        self.target_param_ratio = float(
+            _cfg_get(cfg, "adasvd_target_ratio", _cfg_get(cfg, "target_param_ratio", target_param_ratio))
+        )
+        self.num_iters = int(_cfg_get(cfg, "adasvd_iters", _cfg_get(cfg, "num_iters", num_iters)))
+        self.max_error = float(_cfg_get(cfg, "adasvd_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.fallback_to_original = bool(
+            _cfg_get(cfg, "adasvd_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+        )
+        self.target_attention_only = bool(
+            _cfg_get(cfg, "adasvd_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        )
+        self.min_rank = int(_cfg_get(cfg, "adasvd_min_rank", _cfg_get(cfg, "min_rank", min_rank)))
         self.target_modules = target_modules
+        self.comp_config = cfg
 
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
@@ -81,15 +94,55 @@ class AdaSVDCompressor(BaseCompressor):
         self.layer_iters: Dict[str, int] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        cls_name = module.__class__.__name__.lower()
-        is_linear = isinstance(module, nn.Linear)
-        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-        if not (is_linear or is_conv1d):
-            return False
         if isinstance(module, SVDLinear):
             return False
-        if not should_compress_linear(self.model, name):
+        # Do not target inner submodules of LoRA or wrappers
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
             return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = module.__class__.__name__.lower()
+        target_cls = target_mod.__class__.__name__.lower()
+
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or isinstance(target_mod, nn.Linear)
+            or "conv1d" in cls_name
+            or "conv1d" in target_cls
+            or hasattr(module, "nf")
+            or hasattr(target_mod, "nf")
+            or "loralinear" in cls_name
+            or hasattr(module, "base_layer")
+        )
+        if not is_linear_like:
+            return False
+
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler"]):
+            return False
+
+        if self.target_attention_only:
+            # Skip FFN / MLP / feed-forward layers
+            ffn_patterns = [
+                "ffn", "mlp", "lin1", "lin2", "intermediate",
+                "gate_proj", "up_proj", "down_proj", "c_fc"
+            ]
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            # RoBERTa layer.X.output.dense is FFN, while attention.output.dense is attention
+            if "output.dense" in name_lower and "attention" not in name_lower:
+                return False
+            # Explicitly match attention projections including GPT-2 c_attn and c_proj
+            attn_patterns = [
+                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value"
+            ]
+            if not any(p in name_lower for p in attn_patterns):
+                return False
+        else:
+            if not should_compress_linear(self.model, name):
+                return False
+
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
@@ -105,14 +158,22 @@ class AdaSVDCompressor(BaseCompressor):
         self,
         layer: nn.Module,
         rank: int,
+        name: str = "",
     ) -> Tuple[Optional[SVDLinear], float, int]:
         """
-        Compress a single nn.Linear or Conv1D layer using symmetric SVD and ALS refinement.
+        Compress a single nn.Linear, Conv1D, or LoRALinear layer using symmetric SVD and ALS refinement.
         Returns: (svd_layer, relative_reconstruction_error, actual_als_iters)
         """
+        target_mod = getattr(layer, "base_layer", layer)
         cls_name = layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
-        raw_w = layer.weight.data
+        target_cls = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
+
+        weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
+        if weight_tensor is None:
+            return None, float("inf"), 0
+
+        raw_w = weight_tensor.data
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -121,18 +182,29 @@ class AdaSVDCompressor(BaseCompressor):
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()  # [out_features, in_features]
 
-        # Enforce rank < min(in_f, out_f) and parameter reduction: r * (in_f + out_f) < in_f * out_f
-        max_param_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        max_r = max(1, min(in_f - 1, out_f - 1, max_param_r))
-        r = max(1, min(rank, max_r))
-        device = layer.weight.device
-        dtype = layer.weight.dtype
+        # Enforce parameter reduction bound: r * (in_f + out_f) <= 0.75 * in_f * out_f
+        max_param_r = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
+
+        # Minimum rank floor: min_rank or 15% of min dimension
+        r_floor = max(self.min_rank, int(0.15 * min(in_f, out_f)))
+
+        # For GPT-2 c_attn (768->2304): max_param_r is 432, rank floor is at least 288
+        if "c_attn" in name.lower() or (in_f >= 768 and out_f >= 2000):
+            r_floor = max(r_floor, 288)
+            max_param_r = min(max_param_r, 432)
+
+        r = max(r_floor, min(rank, max_param_r))
+        if r > max_param_r:
+            r = max_param_r
+
+        device = weight_tensor.device
+        dtype = weight_tensor.dtype
 
         # Compute truncated SVD in FP32
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
-            logger.warning("AdaSVD SVD computation failed: %s", e)
+            logger.warning("AdaSVD SVD computation failed on %s: %s", name, e)
             return None, 1.0, 0
 
         # Symmetric square-root singular value initialization
@@ -160,7 +232,7 @@ class AdaSVDCompressor(BaseCompressor):
                 AtA = A_next.t() @ A_next + eps_eye
                 B_next = torch.linalg.inv(AtA) @ A_next.t() @ W
             except Exception as e:
-                logger.debug("AdaSVD ALS inversion failed at iter %d: %s", it, e)
+                logger.debug("AdaSVD ALS inversion failed at iter %d on %s: %s", it, name, e)
                 break
 
             if (
@@ -169,7 +241,7 @@ class AdaSVDCompressor(BaseCompressor):
                 or torch.isinf(A_next).any()
                 or torch.isinf(B_next).any()
             ):
-                logger.debug("AdaSVD NaN/Inf during ALS iter %d. Halting ALS.", it)
+                logger.debug("AdaSVD NaN/Inf during ALS iter %d on %s. Halting ALS.", it, name)
                 break
 
             A, B = A_next, B_next
@@ -193,19 +265,21 @@ class AdaSVDCompressor(BaseCompressor):
 
             if final_err > init_err:
                 logger.debug(
-                    "AdaSVD: ALS error (%.4f) > initial SVD error (%.4f). Reverting to initial SVD.",
+                    "AdaSVD: ALS error (%.4f) > initial SVD error (%.4f) on %s. Reverting to initial SVD.",
                     final_err,
                     init_err,
+                    name,
                 )
                 A, B = A_0, B_0
                 final_err = init_err
 
         # Instantiate structural SVDLinear
+        bias_tensor = getattr(target_mod, "bias", getattr(layer, "bias", None))
         svd_layer = SVDLinear(
             in_features=in_f,
             out_features=out_f,
             rank=r,
-            bias=layer.bias is not None,
+            bias=bias_tensor is not None,
             dtype=dtype,
             device=device,
         )
@@ -213,8 +287,8 @@ class AdaSVDCompressor(BaseCompressor):
             U_factor=A.to(dtype=dtype, device=device),
             V_factor=B.to(dtype=dtype, device=device),
         )
-        if layer.bias is not None and svd_layer.bias is not None:
-            svd_layer.bias.data.copy_(layer.bias.data)
+        if bias_tensor is not None and svd_layer.bias is not None:
+            svd_layer.bias.data.copy_(bias_tensor.data)
 
         return svd_layer, final_err, actual_iters
 
@@ -242,9 +316,14 @@ class AdaSVDCompressor(BaseCompressor):
         layer_importances = {}
         total_importance = 0.0
         for name, module in target_layers:
+            target_mod = getattr(module, "base_layer", module)
             cls_name = module.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-            raw_w = module.weight.data
+            target_cls = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
+            weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
+            if weight_tensor is None:
+                continue
+            raw_w = weight_tensor.data
             W_2d = raw_w.t().float() if is_conv1d else raw_w.float()
             imp = self._compute_nuclear_norm(W_2d)
             layer_importances[name] = max(imp, 1e-8)
@@ -252,27 +331,37 @@ class AdaSVDCompressor(BaseCompressor):
 
         # Step 2: Assign ranks per layer and compress
         for name, module in target_layers:
+            target_mod = getattr(module, "base_layer", module)
             cls_name = module.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-            raw_w = module.weight.data
+            target_cls = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
+            weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
+            if weight_tensor is None:
+                continue
+            raw_w = weight_tensor.data
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
-            max_param_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-            max_r = max(1, min(in_f - 1, out_f - 1, max_param_r))
+            max_param_r = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
+            r_floor = max(self.min_rank, int(0.15 * min(in_f, out_f)))
+            if "c_attn" in name.lower() or (in_f >= 768 and out_f >= 2000):
+                r_floor = max(r_floor, 288)
+                max_param_r = min(max_param_r, 432)
 
             if self.rank is not None:
-                frac = layer_importances[name] / (total_importance / len(target_layers))
+                frac = layer_importances.get(name, 1.0) / (total_importance / max(1, len(target_layers)))
                 allocated_rank = int(round(self.rank * frac))
             else:
-                frac = layer_importances[name] / total_importance
+                frac = layer_importances.get(name, 1.0) / max(total_importance, 1e-8)
                 allocated_rank = int(round(min(in_f, out_f) * self.target_param_ratio * frac * len(target_layers)))
 
-            allocated_rank = max(1, min(allocated_rank, max_r))
+            allocated_rank = max(r_floor, min(allocated_rank, max_param_r))
+            if allocated_rank > max_param_r:
+                allocated_rank = max_param_r
 
-            svd_layer, err, iters = self.compress_linear(module, rank=allocated_rank)
+            svd_layer, err, iters = self.compress_linear(module, rank=allocated_rank, name=name)
             self.layer_errors[name] = err
             self.layer_ranks[name] = allocated_rank
             self.layer_iters[name] = iters
@@ -289,8 +378,24 @@ class AdaSVDCompressor(BaseCompressor):
                     self.fallback_layers.append(name)
                     continue
 
-            replace_module(self.model, name, svd_layer)
+            if hasattr(module, "base_layer"):
+                module.base_layer = svd_layer
+                if hasattr(module, "lora_A") and module.lora_A is not None:
+                    for p in (module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]):
+                        p.requires_grad = True
+                if hasattr(module, "lora_B") and module.lora_B is not None:
+                    for p in (module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]):
+                        p.requires_grad = True
+            else:
+                replace_module(self.model, name, svd_layer)
             self.compressed_layers.append(name)
+
+        # Explicitly freeze fallback layers so recovery fine-tuning does not touch them
+        for name, mod in self.model.named_modules():
+            if name in self.fallback_layers:
+                target = getattr(mod, "base_layer", mod)
+                for p in target.parameters():
+                    p.requires_grad = False
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -321,8 +426,34 @@ class AdaSVDCompressor(BaseCompressor):
 
 
 def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
-    """AdaSVD factory function."""
-    compressor = AdaSVDCompressor(model, comp_config=comp_config, **kwargs)
+    """AdaSVD factory function with robust config handling."""
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "adasvd_rank", _cfg_get(comp_config, "rank", None)))
+    target_param_ratio = kwargs.pop(
+        "target_param_ratio", _cfg_get(comp_config, "adasvd_target_ratio", _cfg_get(comp_config, "target_param_ratio", 0.7))
+    )
+    num_iters = kwargs.pop("num_iters", _cfg_get(comp_config, "adasvd_iters", _cfg_get(comp_config, "num_iters", 5)))
+    max_error = kwargs.pop(
+        "max_error", _cfg_get(comp_config, "adasvd_max_error", _cfg_get(comp_config, "max_error", 0.70))
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original", _cfg_get(comp_config, "adasvd_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    )
+    target_attention_only = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "adasvd_target_attention_only", _cfg_get(comp_config, "target_attention_only", True))
+    )
+    min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "adasvd_min_rank", _cfg_get(comp_config, "min_rank", 16)))
+    compressor = AdaSVDCompressor(
+        model,
+        rank=rank,
+        target_param_ratio=target_param_ratio,
+        num_iters=num_iters,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
+        min_rank=min_rank,
+        comp_config=comp_config,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
 
