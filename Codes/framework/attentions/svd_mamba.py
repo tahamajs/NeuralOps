@@ -38,7 +38,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D"):
             w = w.t()
     if b is not None:
         b = b.data.clone()
@@ -327,20 +327,36 @@ class SVDMamba(BaseAttention):
                 )
 
             # Assemble in_proj weight: [V, Q, V, Q] repeated to 2 * inner_dim
-            chunks = [w_v, w_q, w_v, w_q]
-            in_w_full = torch.cat(chunks, dim=0)
-            if in_w_full.shape[0] < 2 * self.inner_dim:
-                n_rep = math.ceil(2 * self.inner_dim / in_w_full.shape[0])
-                in_w_full = in_w_full.repeat(n_rep, 1)
-            in_w = in_w_full[: 2 * self.inner_dim, : self.d_model]
+            # Ensure w_v and w_q have matching column dimensions before concatenation (e.g. GQA)
+            if w_v.shape[0] < self.inner_dim:
+                n_rep = math.ceil(self.inner_dim / w_v.shape[0])
+                v_chunk = w_v.repeat(n_rep, 1)[: self.inner_dim, : self.d_model]
+            else:
+                v_chunk = w_v[: self.inner_dim, : self.d_model]
+
+            if w_q.shape[0] < self.inner_dim:
+                n_rep = math.ceil(self.inner_dim / w_q.shape[0])
+                q_chunk = w_q.repeat(n_rep, 1)[: self.inner_dim, : self.d_model]
+            else:
+                q_chunk = w_q[: self.inner_dim, : self.d_model]
+
+            in_w = torch.cat([v_chunk, q_chunk], dim=0)[: 2 * self.inner_dim, : self.d_model]
 
             in_b = None
             if b_v is not None and b_q is not None:
-                in_b_full = torch.cat([b_v, b_q, b_v, b_q], dim=0)
-                if in_b_full.shape[0] < 2 * self.inner_dim:
-                    n_rep = math.ceil(2 * self.inner_dim / in_b_full.shape[0])
-                    in_b_full = in_b_full.repeat(n_rep)
-                in_b = in_b_full[: 2 * self.inner_dim]
+                if b_v.shape[0] < self.inner_dim:
+                    n_rep = math.ceil(self.inner_dim / b_v.shape[0])
+                    b_v_chunk = b_v.repeat(n_rep)[: self.inner_dim]
+                else:
+                    b_v_chunk = b_v[: self.inner_dim]
+
+                if b_q.shape[0] < self.inner_dim:
+                    n_rep = math.ceil(self.inner_dim / b_q.shape[0])
+                    b_q_chunk = b_q.repeat(n_rep)[: self.inner_dim]
+                else:
+                    b_q_chunk = b_q[: self.inner_dim]
+
+                in_b = torch.cat([b_v_chunk, b_q_chunk], dim=0)[: 2 * self.inner_dim]
 
             self.in_proj.decompose_from_weight(in_w, in_b)
 
