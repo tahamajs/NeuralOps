@@ -559,11 +559,13 @@ def spectral_residual_lora_factory(
 
 
 res_svd_compressor_factory = res_svd_factory
+SpectralResidualLoRACompressor = SpectralResidualLoRA
 
 __all__ = [
     "ResSVDLinear",
     "ResSVDCompressor",
     "SpectralResidualLoRA",
+    "SpectralResidualLoRACompressor",
     "res_svd_factory",
     "spectral_residual_lora_factory",
     "res_svd_compressor_factory",
