@@ -98,52 +98,46 @@ class HashedLinear(nn.Module):
         if use_sign:
             self.register_buffer("sign_val", sign_val)
         else:
-            self.register_buffer("sign_val", torch.ones_like(sign_val, dtype=torch.int8))
+            self.register_buffer("sign_val", torch.ones_like(hash_idx, dtype=torch.int8))
 
-        # Optional LoRA adapter parameters
-        if lora_rank is not None and lora_rank > 0:
-            self.lora_rank = int(lora_rank)
-            self.lora_alpha = float(lora_alpha)
-            self.lora_scale = self.lora_alpha / self.lora_rank
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, in_features, dtype=dtype, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros(out_features, self.lora_rank, dtype=dtype, device=device)
-            )
+        # Trainable low-rank adaptation branch
+        self.lora_rank = lora_rank if lora_rank and lora_rank > 0 else 0
+        self.lora_alpha = float(lora_alpha)
+        if self.lora_rank > 0:
+            self.scaling = self.lora_alpha / float(self.lora_rank)
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features, dtype=dtype, device=device))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, self.lora_rank, dtype=dtype, device=device))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
-            self.lora_rank = 0
-            self.lora_alpha = 1.0
-            self.lora_scale = 1.0
+            self.scaling = 1.0
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass reconstructing W on-the-fly, with optional LoRA residual."""
-        orig_shape = x.shape
-        x_flat = x.reshape(-1, self.in_features)
-
-        W = self.get_weight()
-        out = F.linear(x_flat, W, self.bias)
-
-        if self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.lora_scale
-            out = out + lora_out
-
-        return out.view(*orig_shape[:-1], self.out_features)
-
     @property
     def weight(self) -> torch.Tensor:
-        """Reconstructed effective weight matrix for compatibility."""
+        """Reconstruct the effective full weight matrix W."""
         return self.get_weight()
 
     def get_weight(self) -> torch.Tensor:
-        """Materialize full reconstructed weight matrix."""
-        W = self.weight_table[self.hash_idx.long()]
-        if self.use_sign and self.sign_val is not None:
-            W = W * self.sign_val.to(dtype=self.weight_table.dtype)
-        return W
+        """
+        Reconstruct dense 2D weight matrix from parameter hash table:
+        W = sign_val * weight_table[hash_idx]
+        """
+        w_shared = self.weight_table[self.hash_idx.long()]
+        if self.use_sign:
+            w_shared = w_shared * self.sign_val.to(dtype=w_shared.dtype)
+        return w_shared
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass with vectorized weight lookup and optional LoRA addition."""
+        W = self.get_weight()
+        out = F.linear(x, W, self.bias)
+
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_contrib = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_contrib
+
+        return out
 
     @classmethod
     def from_linear(
@@ -155,12 +149,13 @@ class HashedLinear(nn.Module):
         lora_alpha: float = 1.0,
     ) -> "HashedLinear":
         """
-        Create HashedLinear from existing nn.Linear or Conv1D layer using
+        Create HashedLinear from existing nn.Linear, Conv1D, or LoRALinear layer using
         FP32 scatter-averaging.
         """
-        cls_name = layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
-        raw_w = layer.weight.data
+        target_mod = getattr(layer, "base_layer", layer)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        raw_w = target_mod.weight.data
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -169,7 +164,13 @@ class HashedLinear(nn.Module):
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w
 
-        bias = layer.bias.data if layer.bias is not None else None
+        bias = target_mod.bias.data if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None else None
+
+        existing_lora_A = getattr(layer, "lora_A", None)
+        existing_lora_B = getattr(layer, "lora_B", None)
+        effective_lora_r = lora_rank
+        if existing_lora_A is not None and hasattr(existing_lora_A, "weight"):
+            effective_lora_r = existing_lora_A.weight.shape[0]
 
         hashed = cls(
             in_features=in_f,
@@ -177,7 +178,7 @@ class HashedLinear(nn.Module):
             n_buckets=n_buckets,
             bias=bias is not None,
             use_sign=use_sign,
-            lora_rank=lora_rank,
+            lora_rank=effective_lora_r,
             lora_alpha=lora_alpha,
             dtype=W.dtype,
             device=W.device,
@@ -204,6 +205,15 @@ class HashedLinear(nn.Module):
 
         if bias is not None and hashed.bias is not None:
             hashed.bias.data.copy_(bias)
+
+        if existing_lora_A is not None and existing_lora_B is not None and hashed.lora_A is not None:
+            w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+            w_B = getattr(existing_lora_B, "weight", existing_lora_B)
+            if hasattr(w_A, "data") and hasattr(w_B, "data"):
+                hashed.lora_A.data.copy_(w_A.data)
+                hashed.lora_B.data.copy_(w_B.data)
+                hashed.lora_A.requires_grad = True
+                hashed.lora_B.requires_grad = True
 
         return hashed
 

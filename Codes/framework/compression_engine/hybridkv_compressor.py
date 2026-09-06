@@ -9,12 +9,27 @@ Registered as 'hybridkv'.
 """
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract config value from None, dict, or namespace/object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin"}
 
 
 class HybridKVCache:
@@ -36,10 +51,10 @@ class HybridKVCache:
         static_ratio: float = 0.7,
         static_heads_mask: Optional[torch.Tensor] = None,
     ) -> None:
-        self.max_cache_len = int(max_cache_len)
+        self.budget = float(budget)
+        self.max_cache_len = max(8, int(max_cache_len * self.budget)) if self.budget > 0 else int(max_cache_len)
         self.num_sinks = int(num_sinks)
         self.recent_window = int(recent_window)
-        self.budget = float(budget)
         self.static_ratio = float(static_ratio)
         self.static_heads_mask = static_heads_mask
         self.k_cache: Optional[torch.Tensor] = None
@@ -61,7 +76,6 @@ class HybridKVCache:
         Shapes: (B, H, N, D) or (B, N, D) or (N, D).
         """
         orig_ndim = new_k.ndim
-        orig_shape = new_k.shape
         k_4d = new_k
         v_4d = new_v
         if orig_ndim == 2:
@@ -100,69 +114,46 @@ class HybridKVCache:
         head_k_list: List[torch.Tensor] = []
         head_v_list: List[torch.Tensor] = []
 
-        is_static_head = [True] * H
-        if self.static_heads_mask is not None:
-            mask_list = self.static_heads_mask.view(-1).tolist()
-            is_static_head = [bool(mask_list[h % len(mask_list)]) for h in range(H)]
-        else:
-            # Default first int(H * static_ratio) heads as static
-            num_static = max(1, int(H * self.static_ratio))
-            is_static_head = [h < num_static for h in range(H)]
+        is_static = (
+            self.static_heads_mask
+            if self.static_heads_mask is not None
+            else torch.ones(H, dtype=torch.bool, device=self.k_cache.device)
+        )
 
-        for h in range(H):
-            cur_k_h = self.k_cache[:, h : h + 1, :, :]
-            cur_v_h = self.v_cache[:, h : h + 1, :, :]
+        for h_idx in range(H):
+            k_h = self.k_cache[:, h_idx, :, :]  # (B, cur_len, D)
+            v_h = self.v_cache[:, h_idx, :, :]
 
-            if is_static_head[h]:
-                # Static head policy: pinned sinks + heavy hitters across sequence
-                sinks = min(self.num_sinks, cur_len)
-                sink_k = cur_k_h[:, :, :sinks, :]
-                sink_v = cur_v_h[:, :, :sinks, :]
+            if is_static[h_idx]:
+                # Static head policy: Sink tokens + Heavy Hitters via L2 Key norm
+                sinks_k = k_h[:, : self.num_sinks, :]
+                sinks_v = v_h[:, : self.num_sinks, :]
+                remaining_k = k_h[:, self.num_sinks :, :]
+                remaining_v = v_h[:, self.num_sinks :, :]
 
-                rem_capacity = max(0, target_len - sinks)
-                if rem_capacity > 0 and cur_len > sinks:
-                    rest_k = cur_k_h[:, :, sinks:, :]
-                    rest_v = cur_v_h[:, :, sinks:, :]
-                    rest_norms = torch.norm(rest_k.float(), dim=-1)  # (B, 1, rem_len)
-                    k_val = min(rem_capacity, rest_norms.size(-1))
-                    _, top_idx = torch.topk(rest_norms, k_val, dim=-1)
-                    top_idx, _ = torch.sort(top_idx, dim=-1)
-                    idx_exp = top_idx.unsqueeze(-1).expand(-1, -1, -1, D)
-                    sel_k = rest_k.gather(2, idx_exp)
-                    sel_v = rest_v.gather(2, idx_exp)
-                    head_k = torch.cat([sink_k, sel_k], dim=2)
-                    head_v = torch.cat([sink_v, sel_v], dim=2)
+                rem_budget = max(0, target_len - self.num_sinks)
+                if remaining_k.size(1) > rem_budget and rem_budget > 0:
+                    k_norms = torch.norm(remaining_k, p=2, dim=-1).mean(dim=0)
+                    _, topk_indices = torch.topk(k_norms, k=rem_budget, largest=True)
+                    topk_indices, _ = torch.sort(topk_indices)
+                    kept_k = remaining_k[:, topk_indices, :]
+                    kept_v = remaining_v[:, topk_indices, :]
+                    evicted_k = torch.cat([sinks_k, kept_k], dim=1)
+                    evicted_v = torch.cat([sinks_v, kept_v], dim=1)
                 else:
-                    head_k = sink_k
-                    head_v = sink_v
+                    evicted_k = sinks_k
+                    evicted_v = sinks_v
             else:
-                # Dynamic head policy: recent sliding window + chunked top keys
-                window = min(self.recent_window, cur_len)
-                win_k = cur_k_h[:, :, -window:, :]
-                win_v = cur_v_h[:, :, -window:, :]
+                # Dynamic head policy: Sliding local window strictly
+                window_budget = min(self.recent_window, target_len)
+                evicted_k = k_h[:, -window_budget:, :]
+                evicted_v = v_h[:, -window_budget:, :]
 
-                rem_capacity = max(0, target_len - window)
-                if rem_capacity > 0 and cur_len > window:
-                    rest_k = cur_k_h[:, :, :-window, :]
-                    rest_v = cur_v_h[:, :, :-window, :]
-                    rest_norms = torch.norm(rest_k.float(), dim=-1)
-                    k_val = min(rem_capacity, rest_norms.size(-1))
-                    _, top_idx = torch.topk(rest_norms, k_val, dim=-1)
-                    top_idx, _ = torch.sort(top_idx, dim=-1)
-                    idx_exp = top_idx.unsqueeze(-1).expand(-1, -1, -1, D)
-                    sel_k = rest_k.gather(2, idx_exp)
-                    sel_v = rest_v.gather(2, idx_exp)
-                    head_k = torch.cat([sel_k, win_k], dim=2)
-                    head_v = torch.cat([sel_v, win_v], dim=2)
-                else:
-                    head_k = win_k
-                    head_v = win_v
+            head_k_list.append(evicted_k.unsqueeze(1))
+            head_v_list.append(evicted_v.unsqueeze(1))
 
-            head_k_list.append(head_k)
-            head_v_list.append(head_v)
-
-        self.k_cache = torch.cat(head_k_list, dim=1).contiguous()
-        self.v_cache = torch.cat(head_v_list, dim=1).contiguous()
+        self.k_cache = torch.cat(head_k_list, dim=1)
+        self.v_cache = torch.cat(head_v_list, dim=1)
 
         out_k, out_v = self.k_cache, self.v_cache
         if orig_ndim == 2:
@@ -171,26 +162,13 @@ class HybridKVCache:
             return out_k.squeeze(1), out_v.squeeze(1)
         return out_k, out_v
 
-    @torch.no_grad()
-    def compress(
-        self, k: torch.Tensor, v: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Compress dynamic KV cache tensors directly."""
-        return self.update_and_compress(k, v)
 
-
+@COMPRESSOR_REGISTRY.register("hybridkv")
+@COMPRESSOR_REGISTRY.register("hybridkv_compressor")
 class HybridKVCompressor(BaseCompressor):
     """
-    HybridKV Compressor: Classifies attention projection heads into static/dynamic types
-    and configures hierarchical dynamic KV cache budgets without altering model stationary weights.
-
-    Args:
-        model: PyTorch model.
-        budget: Overall fraction of KV cache budget to retain (default 0.3).
-        static_ratio: Fraction of budget allocated to static heads (default 0.7).
-        max_cache_len: Maximum KV cache capacity per head (default 128).
-        num_sinks: Number of sink tokens pinned for static heads (default 4).
-        recent_window: Number of recent tokens retained for dynamic heads (default 32).
+    HybridKV Compressor: Classifies projection heads into static/dynamic types
+    and attaches HybridKVCache instances to attention layers without modifying model weights.
     """
 
     def __init__(
@@ -201,47 +179,62 @@ class HybridKVCompressor(BaseCompressor):
         max_cache_len: int = 128,
         num_sinks: int = 4,
         recent_window: int = 32,
+        target_attention_only: bool = True,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="hybridkv", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            budget = getattr(cfg, "hybridkv_budget", getattr(cfg, "budget", budget))
-            static_ratio = getattr(cfg, "hybridkv_static_ratio", getattr(cfg, "static_ratio", static_ratio))
-            max_cache_len = getattr(cfg, "max_cache_len", max_cache_len)
-            num_sinks = getattr(cfg, "num_sinks", num_sinks)
-            recent_window = getattr(cfg, "recent_window", recent_window)
+        cfg = cfg or kwargs.get("comp_config", None)
+        self.cfg = cfg
 
-        self.budget = float(budget)
-        self.static_ratio = float(static_ratio)
-        self.max_cache_len = int(max_cache_len)
-        self.num_sinks = int(num_sinks)
-        self.recent_window = int(recent_window)
+        self.budget = float(_cfg_get(cfg, "hybridkv_budget", _cfg_get(cfg, "budget", budget)))
+        self.static_ratio = float(_cfg_get(cfg, "hybridkv_static_ratio", _cfg_get(cfg, "static_ratio", static_ratio)))
+        self.max_cache_len = int(_cfg_get(cfg, "hybridkv_max_cache_len", _cfg_get(cfg, "max_cache_len", max_cache_len)))
+        self.num_sinks = int(_cfg_get(cfg, "hybridkv_num_sinks", _cfg_get(cfg, "num_sinks", num_sinks)))
+        self.recent_window = int(_cfg_get(cfg, "hybridkv_recent_window", _cfg_get(cfg, "recent_window", recent_window)))
+        self.target_attention_only = bool(
+            _cfg_get(cfg, "hybridkv_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        )
 
-    @staticmethod
-    def _classify_head(weight: torch.Tensor, threshold: float = 0.5) -> str:
-        """
-        Classify a projection head as 'static' or 'dynamic' based on normalized variance.
-        """
-        if weight.numel() == 0 or weight.shape[1] <= 1:
-            return "static"
-        row_variance = torch.var(weight.float(), dim=1, unbiased=False)
-        max_var = row_variance.max() + 1e-8
-        norm_var = row_variance / max_var
-        dynamic_ratio = (norm_var > threshold).float().mean().item()
-        return "dynamic" if dynamic_ratio > 0.3 else "static"
+    def _classify_head(self, weight: torch.Tensor) -> str:
+        """Classify attention projection weight into static vs dynamic based on variance."""
+        var = torch.var(weight.float(), dim=-1).mean().item()
+        return "static" if var < 0.1 else "dynamic"
+
+    def _is_attention_proj(self, name: str, module: nn.Module) -> bool:
+        """Check if module corresponds to attention projection."""
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B"]):
+            return False
+        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        if not (is_linear or is_conv1d):
+            return False
+
+        if self.target_attention_only:
+            return any(kw in name_lower for kw in _ATTN_NAMES)
+        return True
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Configure dynamic KV cache compression per attention layer while preserving all model weights."""
+        """Classify heads and configure dynamic KV caches without mutating model weights."""
         head_stats: Dict[str, Any] = {}
         total_heads = 0
         static_heads_count = 0
         dynamic_heads_count = 0
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and self._is_attention_proj(name):
-                W = module.weight.data
-                out_f = W.shape[0]
+            if self._is_attention_proj(name, module):
+                target_mod = getattr(module, "base_layer", module)
+                W = target_mod.weight.data
+                cls_name = target_mod.__class__.__name__.lower()
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                out_f = W.shape[1] if is_conv1d else W.shape[0]
+
                 head_dim = 64 if out_f % 64 == 0 else (128 if out_f % 128 == 0 else 32)
                 num_heads = max(1, out_f // head_dim)
                 head_type = self._classify_head(W)
@@ -259,8 +252,10 @@ class HybridKVCompressor(BaseCompressor):
                     static_ratio=self.static_ratio,
                     static_heads_mask=static_mask,
                 )
-                # Attach KV cache manager without mutating model weights
+                # Attach KV cache manager without mutating stationary weights
                 setattr(module, "hybrid_kv_cache", kv_cache)
+                if hasattr(module, "base_layer"):
+                    setattr(module.base_layer, "hybrid_kv_cache", kv_cache)
 
                 head_stats[name] = {
                     "head_type": head_type,
@@ -272,42 +267,70 @@ class HybridKVCompressor(BaseCompressor):
                 static_heads_count += num_static
                 dynamic_heads_count += num_dynamic
 
+        # Forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                try:
+                    self.model(dummy)
+                except Exception:
+                    first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                    in_dim = getattr(first_linear, "in_features", 8)
+                    self.model(torch.randn(1, 8, in_dim, device=dev))
+        except Exception:
+            forward_check_success = False
+
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         stats["budget"] = self.budget
         stats["static_ratio"] = self.static_ratio
+        stats["max_cache_len"] = self.max_cache_len
+        stats["num_sinks"] = self.num_sinks
+        stats["recent_window"] = self.recent_window
         stats["total_attention_heads"] = total_heads
         stats["static_heads_count"] = static_heads_count
         stats["dynamic_heads_count"] = dynamic_heads_count
         stats["head_classifications"] = head_stats
+        stats["attached_caches"] = len(head_stats)
         stats["kv_cache_budget_saving"] = f"{(1.0 - self.budget) * 100:.1f}% Footprint Reduction"
+        stats["forward_check_success"] = forward_check_success
         return self.model, stats
-
-    @staticmethod
-    def _is_attention_proj(name: str) -> bool:
-        """Check if module name corresponds to attention projection."""
-        attn_keywords = [
-            "q_lin",
-            "k_lin",
-            "v_lin",
-            "q_proj",
-            "k_proj",
-            "v_proj",
-            "query",
-            "key",
-            "value",
-            "attention",
-            "fc",
-            "dense",
-        ]
-        return any(kw in name.lower() for kw in attn_keywords)
 
 
 @COMPRESSOR_REGISTRY.register("hybridkv")
+@COMPRESSOR_REGISTRY.register("hybridkv_factory")
+@COMPRESSOR_REGISTRY.register("hybridkv_compressor_factory")
 def hybridkv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """HybridKV compressor factory function."""
-    budget = kwargs.pop("budget", getattr(comp_config, "hybridkv_budget", getattr(comp_config, "budget", 0.3)) if comp_config is not None else 0.3)
-    static_ratio = kwargs.pop("static_ratio", getattr(comp_config, "hybridkv_static_ratio", getattr(comp_config, "static_ratio", 0.7)) if comp_config is not None else 0.7)
-    compressor = HybridKVCompressor(model, budget=budget, static_ratio=static_ratio, **kwargs)
+    budget = kwargs.pop("budget", _cfg_get(comp_config, "hybridkv_budget", _cfg_get(comp_config, "budget", 0.3)))
+    static_ratio = kwargs.pop("static_ratio", _cfg_get(comp_config, "hybridkv_static_ratio", _cfg_get(comp_config, "static_ratio", 0.7)))
+    max_cache_len = kwargs.pop("max_cache_len", _cfg_get(comp_config, "hybridkv_max_cache_len", _cfg_get(comp_config, "max_cache_len", 128)))
+    num_sinks = kwargs.pop("num_sinks", _cfg_get(comp_config, "hybridkv_num_sinks", _cfg_get(comp_config, "num_sinks", 4)))
+    recent_window = kwargs.pop("recent_window", _cfg_get(comp_config, "hybridkv_recent_window", _cfg_get(comp_config, "recent_window", 32)))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "hybridkv_target_attention_only", _cfg_get(comp_config, "target_attention_only", True)),
+    )
+
+    compressor = HybridKVCompressor(
+        model,
+        budget=budget,
+        static_ratio=static_ratio,
+        max_cache_len=max_cache_len,
+        num_sinks=num_sinks,
+        recent_window=recent_window,
+        target_attention_only=target_attention_only,
+        cfg=comp_config,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+__all__ = [
+    "HybridKVCache",
+    "HybridKVCompressor",
+    "hybridkv_factory",
+]

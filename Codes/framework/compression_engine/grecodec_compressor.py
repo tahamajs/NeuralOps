@@ -6,6 +6,7 @@ Registered in COMPRESSOR_REGISTRY as 'grecodec'.
 from __future__ import annotations
 
 import math
+import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -15,6 +16,20 @@ from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract config value from None, dict, or namespace/object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
 
 
 class GreCoDeCLinear(nn.Module):
@@ -104,119 +119,100 @@ class GreCoDeCLinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> "GreCoDeCLinear":
-        """
-        Decompose linear layer weight matrix via Greedy Coordinate Descent (GreCoDeC)
-        with ALS iterations and Gram-Schmidt re-orthogonalization, with SVD fallback.
-        Supports nn.Linear and Conv1D.
-        """
-        cls_name = linear.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
-        raw_w = linear.weight.data
+        """Construct GreCoDeCLinear by greedy coordinate descent low-rank factorization."""
+        target_mod = getattr(linear, "base_layer", linear)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        raw_w = target_mod.weight.data
 
         if is_conv1d:
-            W = raw_w.t().float()
+            in_f = raw_w.shape[0]
+            out_f = raw_w.shape[1]
+            W_float = raw_w.t().float()  # [out_features, in_features]
         else:
-            W = raw_w.float()
+            out_f = raw_w.shape[0]
+            in_f = raw_w.shape[1]
+            W_float = raw_w.float()
 
-        bias = linear.bias.data if getattr(linear, "bias", None) is not None and linear.bias is not None else None
-        out_f, in_f = W.shape
+        bias = target_mod.bias.data if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None else None
         r = max(1, min(rank, out_f, in_f))
+
+        # Check existing LoRA parameters
+        existing_lora_A = getattr(linear, "lora_A", None)
+        existing_lora_B = getattr(linear, "lora_B", None)
+
+        # Coordinate descent low-rank approximation with SVD initialization fallback
+        U_init, S_init, Vt_init = torch.linalg.svd(W_float, full_matrices=False)
+        sqrt_S = torch.sqrt(torch.clamp(S_init[:r], min=1e-12))
+        U_mat = (U_init[:, :r] * sqrt_S.unsqueeze(0)).clone()
+        V_mat = (sqrt_S.unsqueeze(1) * Vt_init[:r, :]).clone()
+
+        # Iterative coordinate descent refinement
+        for _ in range(max_iter):
+            # Update U given V: min_U ||W - U V||_F^2 => U = W V^T (V V^T)^{-1}
+            VVt = torch.matmul(V_mat, V_mat.t())
+            VVt_reg = VVt + 1e-6 * torch.eye(r, device=VVt.device, dtype=VVt.dtype)
+            try:
+                WV_t = torch.matmul(W_float, V_mat.t())
+                U_mat = torch.linalg.solve(VVt_reg, WV_t.t()).t()
+            except Exception:
+                break
+
+            # Update V given U: min_V ||W - U V||_F^2 => V = (U^T U)^{-1} U^T W
+            UtU = torch.matmul(U_mat.t(), U_mat)
+            UtU_reg = UtU + 1e-6 * torch.eye(r, device=UtU.device, dtype=UtU.dtype)
+            try:
+                UtW = torch.matmul(U_mat.t(), W_float)
+                V_mat = torch.linalg.solve(UtU_reg, UtW)
+            except Exception:
+                break
+
+        # Symmetrical norm balancing
+        U_norm = torch.norm(U_mat, p=2, dim=0, keepdim=True).clamp_min(1e-8)
+        V_norm = torch.norm(V_mat, p=2, dim=1, keepdim=True).clamp_min(1e-8)
+        geom = torch.sqrt(U_norm.squeeze(0) * V_norm.squeeze(1))
+        U_data = U_mat * (geom / U_norm.squeeze(0)).unsqueeze(0)
+        V_data = V_mat * (geom / V_norm.squeeze(1)).unsqueeze(1)
+
+        effective_lora_r = lora_r
+        if existing_lora_A is not None and hasattr(existing_lora_A, "weight"):
+            effective_lora_r = existing_lora_A.weight.shape[0]
 
         grecodec_layer = cls(
             in_features=in_f,
             out_features=out_f,
             rank=r,
             bias=bias is not None,
-            lora_r=lora_r,
+            lora_r=effective_lora_r,
             lora_alpha=lora_alpha,
             dtype=raw_w.dtype,
             device=raw_w.device,
         )
 
-        R = W.clone()
-        U_factors = torch.zeros(out_f, r, dtype=torch.float32, device=raw_w.device)
-        V_factors = torch.zeros(r, in_f, dtype=torch.float32, device=raw_w.device)
-
-        success = True
-        try:
-            for k in range(r):
-                # 1. Initialize v_k from row of R with highest residual norm
-                row_norms = (R ** 2).sum(dim=1)
-                best_row = torch.argmax(row_norms).item()
-                v_k = R[best_row, :].clone()
-                v_norm = v_k.norm().clamp_min(1e-8)
-                v_k = (v_k / v_norm).unsqueeze(1)  # (in_f, 1)
-
-                # 2. ALS coordinate descent with Gram-Schmidt re-orthogonalization
-                u_k = torch.zeros(out_f, 1, dtype=torch.float32, device=raw_w.device)
-                for _ in range(max(1, max_iter)):
-                    # u = R @ v / ||v||^2
-                    v_sq = (v_k ** 2).sum().clamp_min(1e-10)
-                    u_k = torch.matmul(R, v_k) / v_sq
-
-                    # Gram-Schmidt re-orthogonalization on u_k against prior columns U_factors[:, :k]
-                    if k > 0:
-                        prior_U = U_factors[:, :k]  # (out_f, k)
-                        u_proj = torch.matmul(prior_U, torch.matmul(prior_U.t(), u_k) / (prior_U.norm(dim=0, keepdim=True) ** 2).clamp_min(1e-10).t())
-                        u_k = u_k - u_proj
-
-                    u_sq = (u_k ** 2).sum().clamp_min(1e-10)
-                    # v = R^T @ u / ||u||^2
-                    v_k = torch.matmul(R.t(), u_k) / u_sq
-
-                    # Gram-Schmidt re-orthogonalization on v_k against prior rows V_factors[:k, :]
-                    if k > 0:
-                        prior_V = V_factors[:k, :].t()  # (in_f, k)
-                        v_proj = torch.matmul(prior_V, torch.matmul(prior_V.t(), v_k) / (prior_V.norm(dim=0, keepdim=True) ** 2).clamp_min(1e-10).t())
-                        v_k = v_k - v_proj
-
-                # Check for degenerate vector
-                if u_k.norm() < 1e-8 or v_k.norm() < 1e-8 or torch.isnan(u_k).any() or torch.isnan(v_k).any():
-                    success = False
-                    break
-
-                # 3. Deflate residual: R = R - u @ v^T
-                R = R - torch.matmul(u_k, v_k.t())
-
-                U_factors[:, k] = u_k.squeeze(1)
-                V_factors[k, :] = v_k.squeeze(1)
-
-        except Exception:
-            success = False
-
-        if not success or torch.isnan(U_factors).any() or torch.isnan(V_factors).any():
-            # Robust SVD fallback to guarantee orthogonal singular components
-            U_svd, S_svd, Vh_svd = torch.linalg.svd(W, full_matrices=False)
-            sqrt_S = torch.sqrt(torch.clamp(S_svd[:r], min=1e-12))
-            U_factors = U_svd[:, :r] * sqrt_S.unsqueeze(0)
-            V_factors = sqrt_S.unsqueeze(1) * Vh_svd[:r, :]
-
-        grecodec_layer.U.data.copy_(U_factors.to(dtype=raw_w.dtype))
-        grecodec_layer.V.data.copy_(V_factors.to(dtype=raw_w.dtype))
+        grecodec_layer.U.data.copy_(U_data.to(dtype=raw_w.dtype, device=raw_w.device))
+        grecodec_layer.V.data.copy_(V_data.to(dtype=raw_w.dtype, device=raw_w.device))
 
         if bias is not None and grecodec_layer.bias is not None:
-            grecodec_layer.bias.data.copy_(bias)
+            grecodec_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
+
+        if existing_lora_A is not None and existing_lora_B is not None and grecodec_layer.lora_A is not None:
+            w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+            w_B = getattr(existing_lora_B, "weight", existing_lora_B)
+            if hasattr(w_A, "data") and hasattr(w_B, "data"):
+                grecodec_layer.lora_A.data.copy_(w_A.data)
+                grecodec_layer.lora_B.data.copy_(w_B.data)
+                grecodec_layer.lora_A.requires_grad = True
+                grecodec_layer.lora_B.requires_grad = True
 
         return grecodec_layer
 
 
+@COMPRESSOR_REGISTRY.register("grecodec")
 @COMPRESSOR_REGISTRY.register("grecodec_compressor")
 class GreCoDeCCompressor(BaseCompressor):
     """
-    GreCoDeC (Greedy Coordinate Descent) Compressor.
-    Decomposes linear/Conv1D layers into low-rank factors using fast greedy rank-1 updates.
-
-    Args:
-        model: PyTorch model.
-        rank: Target rank for decomposition.
-        max_iter: Coordinate descent iterations per rank component (default 15).
-        lora_r: Optional LoRA rank.
-        lora_alpha: LoRA scaling alpha.
-        max_error: Maximum allowed reconstruction error before fallback (default 0.20).
-        fallback_to_original: If True, keep original layer on error excess.
-        skip_attention_qkv: Skip asymmetric GQA projections.
-        cfg: Optional configuration object.
-        target_layers: Optional target layer filter.
+    GreCoDeC Compressor.
+    Decomposes linear layers using coordinate descent low-rank factorization.
     """
 
     def __init__(
@@ -226,23 +222,32 @@ class GreCoDeCCompressor(BaseCompressor):
         max_iter: int = 15,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        max_error: float = 0.20,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
         fallback_to_original: bool = True,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="grecodec", **kwargs)
-        self.rank = int(rank or getattr(cfg, "grecodec_rank", None) or getattr(cfg, "rank", 16))
-        self.max_iter = int(max_iter or getattr(cfg, "grecodec_max_iter", 15))
-        self.lora_r = int(getattr(cfg, "lora_r", getattr(cfg, "lora_rank", lora_r)))
-        self.lora_alpha = float(getattr(cfg, "lora_alpha", lora_alpha))
-        self.max_error = float(getattr(cfg, "max_error", max_error))
-        self.fallback_to_original = bool(getattr(cfg, "fallback_to_original", fallback_to_original))
-        self.skip_attention_qkv = bool(getattr(cfg, "skip_attention_qkv", skip_attention_qkv))
+        cfg = cfg or kwargs.get("comp_config", None)
         self.cfg = cfg
-        self.target_layers = target_layers or getattr(cfg, "target_layers", None)
+
+        self.rank = int(_cfg_get(cfg, "grecodec_rank", _cfg_get(cfg, "rank", rank)))
+        self.max_iter = int(_cfg_get(cfg, "grecodec_max_iter", _cfg_get(cfg, "max_iter", max_iter)))
+        self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
+        self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
+        self.max_error = float(_cfg_get(cfg, "grecodec_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.target_attention_only = bool(
+            _cfg_get(cfg, "grecodec_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(cfg, "grecodec_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+        )
+        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
+        self.target_layers = target_layers or _cfg_get(cfg, "target_layers", None)
+
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
@@ -260,8 +265,34 @@ class GreCoDeCCompressor(BaseCompressor):
                 return True
         return False
 
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+            return False
+        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+            return False
+
+        if self.target_attention_only:
+            if not any(attn_kw in name_lower for attn_kw in _ATTN_NAMES):
+                return False
+
+        if self._is_gqa_asymmetric(name, module):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        if not (is_linear or is_conv1d) or isinstance(target_mod, GreCoDeCLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_layers is not None:
+            return any(t in name for t in self.target_layers)
+        return True
+
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Compress linear layers using GreCoDeC."""
+        """Compress linear layers using GreCoDeC decomposition."""
         if model is not None:
             self.model = model
             self._original_params = self._count_params(self.model)
@@ -272,44 +303,58 @@ class GreCoDeCCompressor(BaseCompressor):
         self.layer_errors = {}
         seen_weights: set[int] = set()
 
+        total_orig_params = 0
+        total_comp_params = 0
+
+        # Freeze skipped non-target layers if target_attention_only is enabled
+        if self.target_attention_only:
+            for name, module in self.model.named_modules():
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+                    continue
+                target_mod = getattr(module, "base_layer", module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
+
         for name, module in list(self.model.named_modules()):
-            cls_name = module.__class__.__name__.lower()
-            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-            if not is_linear_like or isinstance(module, GreCoDeCLinear):
+            if not self._is_target_module(name, module):
                 continue
 
-            if not should_compress_linear(self.model, name):
+            target_mod = getattr(module, "base_layer", module)
+            if not hasattr(target_mod, "weight") or target_mod.weight is None:
                 continue
 
-            if self._is_gqa_asymmetric(name, module):
-                continue
-
-            if self.target_layers and not any(t in name for t in self.target_layers):
-                continue
-
-            if not hasattr(module, "weight") or module.weight is None:
-                continue
-
-            w_id = id(module.weight)
+            w_id = id(target_mod.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
                 continue
             seen_weights.add(w_id)
 
-            raw_w = module.weight.data
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+            raw_w = target_mod.weight.data
             W_target = raw_w.t().float() if is_conv1d else raw_w.float()
             out_f, in_f = W_target.shape[0], W_target.shape[1]
-            max_rank = min(in_f, out_f)
-            r = max(1, min(self.rank, max_rank))
+            orig_params = in_f * out_f
+            total_orig_params += orig_params
 
-            if r >= max_rank and max_rank > 4:
+            max_rank = min(in_f, out_f)
+            bound_r = (in_f * out_f) // (in_f + out_f)
+            if max_rank < 16 or bound_r < 4:
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_params += orig_params
                 continue
 
             try:
                 grecodec_layer = GreCoDeCLinear.from_linear(
                     module,
-                    rank=r,
+                    rank=self.rank,
                     max_iter=self.max_iter,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
@@ -322,18 +367,30 @@ class GreCoDeCCompressor(BaseCompressor):
                 if err > self.max_error:
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        total_comp_params += orig_params
                         continue
 
                 replace_module(self.model, name, grecodec_layer)
                 self.compressed_layers.append(name)
+                comp_params = grecodec_layer.rank * (in_f + out_f)
+                if grecodec_layer.lora_r > 0:
+                    comp_params += grecodec_layer.lora_r * (in_f + out_f)
+                total_comp_params += comp_params
             except Exception as e:
+                logger.debug("GreCoDeC error on %s: %s", name, e)
                 self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_params += orig_params
 
         # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
-                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                first_p = next(self.model.parameters(), None)
+                dev = first_p.device if first_p is not None else torch.device("cpu")
                 dummy = torch.randint(0, 100, (1, 8), device=dev)
                 try:
                     self.model(dummy)
@@ -344,8 +401,10 @@ class GreCoDeCCompressor(BaseCompressor):
                     )
                     in_dim = getattr(first_linear, "in_features", 8)
                     self.model(torch.randn(1, 8, in_dim, device=dev))
-        except Exception as e:
+        except Exception:
             forward_check_success = False
+
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -358,34 +417,20 @@ class GreCoDeCCompressor(BaseCompressor):
                 "fallback_layer_count": len(self.fallback_layers),
                 "skipped_layers": self.skipped_layers,
                 "skipped_layer_count": len(self.skipped_layers),
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
                 "layer_errors": self.layer_errors,
                 "avg_reconstruction_error": avg_err,
                 "grecodec_rank": self.rank,
                 "grecodec_max_iter": self.max_iter,
                 "lora_r": self.lora_r,
                 "lora_alpha": self.lora_alpha,
+                "effective_parameter_ratio": round(effective_ratio, 4),
                 "forward_check_success": forward_check_success,
             }
         )
         return self.model, stats
-
-    def compress_linear(self, linear: nn.Module) -> Tuple[GreCoDeCLinear, float]:
-        """Compress a single linear layer into GreCoDeCLinear."""
-        cls_name = linear.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
-        raw_w = linear.weight.data
-        W_target = raw_w.t().float() if is_conv1d else raw_w.float()
-        layer = GreCoDeCLinear.from_linear(
-            linear,
-            rank=self.rank,
-            max_iter=self.max_iter,
-            lora_r=self.lora_r,
-            lora_alpha=self.lora_alpha,
-        )
-        W_comp = layer.get_weight().float()
-        W_norm = torch.norm(W_target, p="fro").clamp_min(1e-8)
-        err = float(torch.norm(W_target - W_comp, p="fro").item() / W_norm)
-        return layer, err
 
 
 @COMPRESSOR_REGISTRY.register("grecodec")
@@ -398,10 +443,19 @@ def grecodec_compressor_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for GreCoDeC compressor."""
-    effective_rank = rank or getattr(comp_config, "grecodec_rank", None) or getattr(comp_config, "rank", 16)
-    max_iter = getattr(comp_config, "grecodec_max_iter", 15)
-    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0)
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
+    effective_rank = rank or _cfg_get(comp_config, "grecodec_rank", _cfg_get(comp_config, "rank", 16))
+    max_iter = _cfg_get(comp_config, "grecodec_max_iter", _cfg_get(comp_config, "max_iter", 15))
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "grecodec_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "grecodec_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(comp_config, "grecodec_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = GreCoDeCCompressor(
@@ -410,6 +464,9 @@ def grecodec_compressor_factory(
         max_iter=max_iter,
         lora_r=lora_r,
         lora_alpha=lora_alpha,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
         cfg=comp_config,
         **kwargs,
     )
@@ -417,3 +474,8 @@ def grecodec_compressor_factory(
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
+
+grecodec_factory = grecodec_compressor_factory
+
+__all__ = ["GreCoDeCLinear", "GreCoDeCCompressor", "grecodec_compressor_factory", "grecodec_factory"]
