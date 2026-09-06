@@ -26,11 +26,40 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    if module is None:
+        return None, None
+    base = getattr(module, "base_layer", module)
+    w = getattr(base, "weight", None)
+    b = getattr(base, "bias", None)
+    if w is not None:
+        w = w.data.clone()
+        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+            w = w.t()
+    if b is not None:
+        b = b.data.clone()
+    return w, b
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    rotary_dim = x.shape[-1]
+    rotary_dim = rotary_dim - (rotary_dim % 2)
+    x_rot = x[..., :rotary_dim]
+    x1 = x_rot[..., : rotary_dim // 2]
+    x2 = x_rot[..., rotary_dim // 2 :]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if x.shape[-1] > rotary_dim:
+        return torch.cat([rotated, x[..., rotary_dim:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -43,8 +72,11 @@ def apply_rotary_pos_emb(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
     rotary_dim = cos.shape[-1]
+    rotary_dim = rotary_dim - (rotary_dim % 2)
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+    cos = cos[..., :rotary_dim]
+    sin = sin[..., :rotary_dim]
 
     while cos.dim() < q_rot.dim():
         cos = cos.unsqueeze(unsqueeze_dim)
