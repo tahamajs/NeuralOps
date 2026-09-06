@@ -16,6 +16,18 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract config value from None, dict, or namespace/object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
+
+
 class KMeansSTEFunction(torch.autograd.Function):
     """
     Straight-Through Estimator for codebook lookup.
@@ -95,8 +107,7 @@ def fast_kmeans_1d(
     centroids = sorted_vals[quantiles].clone()
 
     for _ in range(max_iters):
-        # Compute distances: |x_i - c_j|
-        # For 1D, use searchsorted with midpoints between sorted centroids
+        # Midpoints between sorted centroids for fast searchsorted lookup
         sorted_c, sort_perm = torch.sort(centroids)
         midpoints = 0.5 * (sorted_c[:-1] + sorted_c[1:])
         sorted_idx = torch.searchsorted(midpoints, flat)
@@ -104,9 +115,9 @@ def fast_kmeans_1d(
 
         # Update centroids
         new_centroids = torch.zeros_like(centroids)
-        counts = torch.zeros(k, device=flat.device)
-        counts.scatter_add_(0, idx, torch.ones_like(flat))
+        counts = torch.zeros_like(centroids)
         new_centroids.scatter_add_(0, idx, flat)
+        counts.scatter_add_(0, idx, torch.ones_like(flat))
 
         non_empty = counts > 0
         new_centroids[non_empty] = new_centroids[non_empty] / counts[non_empty]
@@ -117,38 +128,34 @@ def fast_kmeans_1d(
         if shift < tol:
             break
 
-    # Final assignment
-    sorted_c, sort_perm = torch.sort(centroids)
-    midpoints = 0.5 * (sorted_c[:-1] + sorted_c[1:])
-    sorted_idx = torch.searchsorted(midpoints, flat)
-    indices = sort_perm[sorted_idx].reshape(tensor.shape)
-
-    return centroids, indices
+    final_idx = idx.view(tensor.shape)
+    return centroids, final_idx
 
 
 class KMeansLinear(nn.Module):
-    """Linear layer with weights represented by k-means centroids and discrete index table with optional LoRA adapter."""
+    """Linear layer using K-Means vector quantization and Straight-Through Estimator with optional LoRA."""
 
     def __init__(
         self,
-        linear: Union[nn.Linear, Any],
+        linear: nn.Module,
         n_clusters: int = 256,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ):
+    ) -> None:
         super().__init__()
-        raw_w = linear.weight.data
-        cls_name = linear.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or hasattr(linear, "nf")
+        target_mod = getattr(linear, "base_layer", linear)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        raw_w = target_mod.weight.data
 
         if is_conv1d:
-            W = raw_w.t().contiguous()
-            self.in_features = W.shape[1]
-            self.out_features = W.shape[0]
+            W = raw_w.t().float()  # [out_features, in_features]
+            self.in_features = raw_w.shape[0]
+            self.out_features = raw_w.shape[1]
         else:
-            W = raw_w.contiguous()
-            self.in_features = getattr(linear, "in_features", W.shape[1])
-            self.out_features = getattr(linear, "out_features", W.shape[0])
+            W = raw_w.float()      # [out_features, in_features]
+            self.in_features = getattr(target_mod, "in_features", W.shape[1])
+            self.out_features = getattr(target_mod, "out_features", W.shape[0])
 
         self.n_clusters = n_clusters
         self.lora_r = int(lora_r)
@@ -156,19 +163,33 @@ class KMeansLinear(nn.Module):
         self.scaling = (lora_alpha / lora_r) if lora_r > 0 else 1.0
 
         centroids, indices = fast_kmeans_1d(W, n_clusters=n_clusters)
-        self.centroids = nn.Parameter(centroids.to(dtype=W.dtype), requires_grad=(lora_r == 0))
+        self.centroids = nn.Parameter(centroids.to(dtype=raw_w.dtype), requires_grad=(lora_r == 0))
         self.register_buffer("indices", indices)
 
-        if getattr(linear, "bias", None) is not None and linear.bias is not None:
-            self.bias = nn.Parameter(linear.bias.data.clone())
+        if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
+            self.bias = nn.Parameter(target_mod.bias.data.clone())
         else:
             self.register_parameter("bias", None)
+
+        existing_lora_A = getattr(linear, "lora_A", None)
+        existing_lora_B = getattr(linear, "lora_B", None)
+        if existing_lora_A is not None and hasattr(existing_lora_A, "weight"):
+            self.lora_r = existing_lora_A.weight.shape[0]
 
         if self.lora_r > 0:
             dev = raw_w.device
             self.lora_A = nn.Parameter(torch.empty((self.lora_r, self.in_features), dtype=torch.float32, device=dev))
             self.lora_B = nn.Parameter(torch.zeros((self.out_features, self.lora_r), dtype=torch.float32, device=dev))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+
+            if existing_lora_A is not None and existing_lora_B is not None:
+                w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+                w_B = getattr(existing_lora_B, "weight", existing_lora_B)
+                if hasattr(w_A, "data") and hasattr(w_B, "data"):
+                    self.lora_A.data.copy_(w_A.data)
+                    self.lora_B.data.copy_(w_B.data)
+                    self.lora_A.requires_grad = True
+                    self.lora_B.requires_grad = True
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -214,9 +235,6 @@ class KMeansLinear(nn.Module):
 
         return out
 
-    def extra_repr(self) -> str:
-        return f"in_features={self.in_features}, out_features={self.out_features}, n_clusters={self.n_clusters}, lora_r={self.lora_r}"
-
 
 @COMPRESSOR_REGISTRY.register("kmeans")
 @COMPRESSOR_REGISTRY.register("kmeans_quantize")
@@ -224,17 +242,6 @@ class KMeansLinear(nn.Module):
 class KMeansCompressor(BaseCompressor):
     """
     KMeansCompressor: Vector quantization via scalar k-means clustering of weight parameters.
-
-    Args:
-        model: PyTorch model.
-        n_clusters: Number of centroid codebook entries (default 256 -> 8 bits, 16 -> 4 bits).
-        bits: Optional bitwidth constraint (e.g. 4 or 8) which sets n_clusters = 2**bits.
-        max_error: Maximum allowed relative Frobenius error (default 0.20).
-        fallback_to_original: If True, keep original layer on error excess (default True).
-        lora_r: Optional LoRA rank.
-        lora_alpha: LoRA scaling alpha.
-        skip_attention_qkv: Skip asymmetric GQA projections.
-        cfg: Optional configuration object.
     """
 
     def __init__(
@@ -242,26 +249,37 @@ class KMeansCompressor(BaseCompressor):
         model: Optional[nn.Module] = None,
         n_clusters: int = 256,
         bits: Optional[int] = None,
-        max_error: float = 0.20,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
         fallback_to_original: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="kmeans", **kwargs)
-        if bits is not None:
-            self.n_clusters = 2 ** int(bits)
-        else:
-            self.n_clusters = int(n_clusters or getattr(cfg, "kmeans_clusters", 256))
-        self.bits = math.ceil(math.log2(max(self.n_clusters, 2)))
-        self.max_error = float(max_error if max_error is not None else getattr(cfg, "max_error", 0.20))
-        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else getattr(cfg, "fallback_to_original", True))
-        self.lora_r = int(getattr(cfg, "lora_r", getattr(cfg, "lora_rank", lora_r)))
-        self.lora_alpha = float(getattr(cfg, "lora_alpha", lora_alpha))
-        self.skip_attention_qkv = bool(getattr(cfg, "skip_attention_qkv", skip_attention_qkv))
+        cfg = cfg or kwargs.get("comp_config", None)
         self.cfg = cfg
+
+        parsed_bits = _cfg_get(cfg, "kmeans_bits", _cfg_get(cfg, "bits", bits))
+        if parsed_bits is not None:
+            self.n_clusters = 2 ** int(parsed_bits)
+        else:
+            self.n_clusters = int(_cfg_get(cfg, "kmeans_clusters", _cfg_get(cfg, "n_clusters", n_clusters)))
+        self.bits = math.ceil(math.log2(max(self.n_clusters, 2)))
+
+        self.max_error = float(_cfg_get(cfg, "kmeans_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.target_attention_only = bool(
+            _cfg_get(cfg, "kmeans_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(cfg, "kmeans_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+        )
+        self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
+        self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
+        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
+
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
@@ -279,6 +297,30 @@ class KMeansCompressor(BaseCompressor):
                 return True
         return False
 
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+            return False
+        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+            return False
+
+        if self.target_attention_only:
+            if not any(attn_kw in name_lower for attn_kw in _ATTN_NAMES):
+                return False
+
+        if self._is_gqa_asymmetric(name, module):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        if not (is_linear or is_conv1d) or isinstance(target_mod, KMeansLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        return True
+
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
         """Replace eligible nn.Linear and Conv1D modules with KMeansLinear layers."""
         if model is not None:
@@ -291,30 +333,44 @@ class KMeansCompressor(BaseCompressor):
         self.layer_errors = {}
         seen_weights: set[int] = set()
 
+        total_orig_params = 0
+        total_comp_params = 0
+
+        # Freeze skipped non-target layers if target_attention_only is enabled
+        if self.target_attention_only:
+            for name, module in self.model.named_modules():
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+                    continue
+                target_mod = getattr(module, "base_layer", module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
+
         for name, module in list(self.model.named_modules()):
-            cls_name = module.__class__.__name__
-            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower() or hasattr(module, "nf")
-            if not is_linear_like or isinstance(module, KMeansLinear):
+            if not self._is_target_module(name, module):
                 continue
 
-            if not should_compress_linear(self.model, name):
+            target_mod = getattr(module, "base_layer", module)
+            if not hasattr(target_mod, "weight") or target_mod.weight is None:
                 continue
 
-            if self._is_gqa_asymmetric(name, module):
-                continue
-
-            if not hasattr(module, "weight") or module.weight is None:
-                continue
-
-            w_id = id(module.weight)
+            w_id = id(target_mod.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
                 continue
             seen_weights.add(w_id)
 
-            is_conv1d = "conv1d" in cls_name.lower() or hasattr(module, "nf")
-            orig_w = module.weight.data.t().float() if is_conv1d else module.weight.data.float()
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+            orig_w = target_mod.weight.data.t().float() if is_conv1d else target_mod.weight.data.float()
             norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
+            out_f, in_f = orig_w.shape[0], orig_w.shape[1]
+            orig_layer_params = in_f * out_f
+            total_orig_params += orig_layer_params
 
             try:
                 new_layer = KMeansLinear(
@@ -327,20 +383,28 @@ class KMeansCompressor(BaseCompressor):
                 err = (torch.norm(orig_w - recon_w, p="fro") / norm_orig).item()
             except Exception as ex:
                 logger.warning("KMeansCompressor: Error compressing %s: %s", name, ex)
-                if self.fallback_to_original:
-                    self.fallback_layers.append(name)
-                    continue
-                raise
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_params += orig_layer_params
+                continue
 
             if err > self.max_error:
                 logger.warning("KMeansCompressor: Layer %s error %.4f exceeded max_error %.4f", name, err, self.max_error)
                 if self.fallback_to_original:
                     self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    total_comp_params += orig_layer_params
                     continue
 
             replace_module(self.model, name, new_layer)
             self.compressed_layers.append(name)
             self.layer_errors[name] = float(err)
+            comp_layer_params = new_layer.n_clusters + int(orig_layer_params * (self.bits / 16.0))
+            if new_layer.lora_r > 0:
+                comp_layer_params += new_layer.lora_r * (in_f + out_f)
+            total_comp_params += comp_layer_params
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -361,9 +425,11 @@ class KMeansCompressor(BaseCompressor):
             logger.warning("KMeans post-compression forward check warning: %s", e)
             forward_check_success = False
 
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
+
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        avg_err = (sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
@@ -372,14 +438,19 @@ class KMeansCompressor(BaseCompressor):
                 "fallback_layer_count": len(self.fallback_layers),
                 "skipped_layers": self.skipped_layers,
                 "skipped_layer_count": len(self.skipped_layers),
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
                 "layer_errors": self.layer_errors,
                 "avg_reconstruction_error": avg_err,
                 "max_error": self.max_error,
+                "target_attention_only": self.target_attention_only,
                 "fallback_to_original": self.fallback_to_original,
                 "n_clusters": self.n_clusters,
                 "effective_bits_per_weight": self.bits,
                 "lora_r": self.lora_r,
                 "lora_alpha": self.lora_alpha,
+                "effective_parameter_ratio": round(effective_ratio, 4),
                 "forward_check_success": forward_check_success,
                 "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
             }
@@ -391,12 +462,16 @@ class KMeansCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("kmeans_quantize_factory")
 def kmeans_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """KMeans compressor factory function."""
-    n_clusters = kwargs.pop("n_clusters", getattr(comp_config, "kmeans_clusters", 256) if comp_config is not None else 256)
-    bits = kwargs.pop("bits", getattr(comp_config, "kmeans_bits", None) if comp_config is not None else None)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config is not None else 0.20)
-    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config is not None else True)
-    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config is not None else 0)
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config is not None else 1.0)
+    n_clusters = kwargs.pop("n_clusters", _cfg_get(comp_config, "kmeans_clusters", _cfg_get(comp_config, "n_clusters", 256)))
+    bits = kwargs.pop("bits", _cfg_get(comp_config, "kmeans_bits", _cfg_get(comp_config, "bits", None)))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "kmeans_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "kmeans_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "kmeans_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 16)))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = KMeansCompressor(
@@ -404,6 +479,7 @@ def kmeans_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         n_clusters=n_clusters,
         bits=bits,
         max_error=max_error,
+        target_attention_only=target_attention_only,
         fallback_to_original=fallback,
         lora_r=lora_r,
         lora_alpha=lora_alpha,
@@ -414,3 +490,6 @@ def kmeans_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
+
+__all__ = ["KMeansSTEFunction", "KMeansLinear", "KMeansCompressor", "kmeans_factory", "fast_kmeans_1d"]
