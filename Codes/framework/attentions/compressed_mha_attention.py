@@ -94,13 +94,13 @@ class CompressedDistilBertAttention(BaseAttention):
         cfg = config or model_config
         super().__init__(cfg, rank)
         self.adapter = ModelAdapter(cfg)
-        self.num_heads: int = self.adapter.num_heads
-        self.num_kv_heads: int = self.adapter.num_key_value_heads
-        self.hidden_size: int = self.adapter.hidden_size
-        self.head_dim: int = self.adapter.head_dim
+        self.hidden_size: int = self.adapter.hidden_size or kwargs.get("hidden_size", kwargs.get("d_model", 768))
+        self.num_heads: int = self.adapter.num_heads or kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
+        self.num_kv_heads: int = self.adapter.num_key_value_heads or kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads))
+        self.head_dim: int = self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.kv_repeat: int = self.adapter.kv_repeat
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.is_decoder: bool = getattr(cfg, "is_decoder", False)
         self.is_nested_encoder: bool = False
 
@@ -145,6 +145,16 @@ class CompressedDistilBertAttention(BaseAttention):
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+    @property
+    def qkv_weight(self) -> torch.Tensor:
+        """Reconstruct the effective base QKV weight from SVD factors."""
+        return (self.U_qkv * self.S_qkv.view(1, -1)) @ self.Vh_qkv
+
+    @property
+    def out_weight(self) -> torch.Tensor:
+        """Reconstruct the effective base Out weight from SVD factors."""
+        return (self.U_out * self.S_out.view(1, -1)) @ self.Vh_out
 
     def reset_lora_parameters(self) -> None:
         if self.lora_rank > 0:
@@ -234,10 +244,20 @@ class CompressedDistilBertAttention(BaseAttention):
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
+        if (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
+        elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
