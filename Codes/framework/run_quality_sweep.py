@@ -1926,6 +1926,7 @@ def main():
                             "factorised_matrix_state", "linformer", "lsh", "hashed_net",
                             "hamming", "spectron", "span_expanded", "gfws", "hla", "oha", "kda",
                             "aegis_hybrid", "aegis_spectron_fp8",
+                            "halo_regla", "griffin_ssd", "granite_hybrid", "gqa", "gqa_attention",
                         }
                         if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
                             rec_steps = max(args.recovery_steps, 50)

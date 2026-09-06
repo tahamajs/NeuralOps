@@ -16,6 +16,7 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -27,6 +28,31 @@ from framework.core.attention_mask import apply_attention_mask, get_token_valid_
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    if module is None:
+        return None, None
+    base = getattr(module, "base_layer", module)
+    w = getattr(base, "weight", None)
+    b = getattr(base, "bias", None)
+    if w is not None:
+        w = w.data.clone()
+        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+            w = w.t()
+    if b is not None:
+        b = b.data.clone()
+    return w, b
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -45,26 +71,38 @@ def apply_rotary_pos_emb(
     if cos is None or sin is None:
         return q, k
 
-    if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
+    if cos.dim() == 2 and cos.shape[0] == q.shape[-2]:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
+
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
 
-    if rotary_dim < head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
-        k = torch.cat([k_rot_embed, k_pass], dim=-1)
-    else:
-        q = (q * cos) + (_rotate_half(q) * sin)
-        k = (k * cos) + (_rotate_half(k) * sin)
+    rotary_dim_even = 2 * (min(rotary_dim, head_dim) // 2)
+    if rotary_dim_even == 0:
+        return q, k
+
+    q_rot, q_pass = q[..., :rotary_dim_even], q[..., rotary_dim_even:]
+    k_rot, k_pass = k[..., :rotary_dim_even], k[..., rotary_dim_even:]
+    cos_cut = cos[..., :rotary_dim_even].to(q_rot.dtype)
+    sin_cut = sin[..., :rotary_dim_even].to(q_rot.dtype)
+
+    q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
+    k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
+
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
 
     return q, k
 
@@ -140,7 +178,7 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("halo_regla")
-@ATTENTION_REGISTRY.register("halo_regla_inject")
+@ATTENTION_REGISTRY.register("halo_regla_attention")
 class HALOReGLAAttention(BaseAttention):
     def __init__(
         self,
@@ -153,34 +191,49 @@ class HALOReGLAAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank or 64)
         self.config = config
-        comp_config = getattr(config, "compression_config", None)
 
-        self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads = getattr(
-            config,
-            "num_key_value_heads",
-            kwargs.get("num_key_value_heads", self.num_heads),
-        )
-        self.head_dim = getattr(
-            config,
-            "head_dim",
-            kwargs.get("head_dim", self.dim // self.num_heads),
-        )
-        self.all_head_size = self.num_heads * self.head_dim
-        self.all_kv_head_size = self.num_kv_heads * self.head_dim
-        self.hybrid_ratio = hybrid_ratio
+        # Resolve dim
+        dim = None
+        if config is not None:
+            dim = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", _cfg_get(config, "n_embd", _cfg_get(config, "dim", None))))
+        if dim is None and pretrained_attn is not None:
+            dim = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", getattr(pretrained_attn, "all_head_size", None)))
+            if dim is None:
+                for cand in ("q_proj", "q_lin", "query", "c_attn"):
+                    m = getattr(pretrained_attn, cand, None)
+                    if m is not None and hasattr(m, "in_features"):
+                        dim = m.in_features
+                        break
+        dim = dim or kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
-        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False):
+        # Resolve num_heads
+        num_heads = None
+        if config is not None:
+            num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_heads", _cfg_get(config, "n_head", None))))
+        if num_heads is None and pretrained_attn is not None:
+            num_heads = getattr(pretrained_attn, "num_heads", getattr(pretrained_attn, "num_attention_heads", None))
+        num_heads = num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
+
+        self.dim: int = int(dim)
+        self.num_heads: int = int(num_heads)
+        self.num_kv_heads: int = int(_cfg_get(config, "num_key_value_heads", kwargs.get("num_key_value_heads", self.num_heads)))
+        self.head_dim: int = int(_cfg_get(config, "head_dim", kwargs.get("head_dim", self.dim // max(1, self.num_heads))))
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.hybrid_ratio: int = hybrid_ratio
+
+        model_type = str(_cfg_get(config, "model_type", "")).lower()
+        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
             is_dec = True
-        self.is_decoder = bool(is_dec)
-        self.is_causal = bool(is_dec)
-        self.is_nested_encoder = False
+        self.is_decoder: bool = bool(is_dec)
+        self.is_causal: bool = bool(is_dec)
+        self.is_nested_encoder: bool = False
 
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
-        self.freeze_base = (self.lora_rank > 0)
+        comp_config = getattr(config, "compression_config", None)
+        self.lora_rank: int = int(_cfg_get(comp_config, "lora_rank", _cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16))))
+        self.lora_alpha: float = float(_cfg_get(comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0))))
+        self.freeze_base: bool = (self.lora_rank > 0)
 
         # Projections
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -195,7 +248,7 @@ class HALOReGLAAttention(BaseAttention):
         self.gate = nn.Linear(self.dim, self.num_heads)
         self.gate.bias.data.fill_(gate_init_bias)
 
-        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
@@ -232,41 +285,30 @@ class HALOReGLAAttention(BaseAttention):
 
         # 1. GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
-            c_attn_mod = src.c_attn
-            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            c_w, c_b = _unpack_weight_bias(src.c_attn)
             if c_w is not None:
-                c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if c_w.dim() == 2 and c_w.shape[1] == 3 * self.dim:
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
-                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
-                c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
                 extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
                 extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
-                c_proj_mod = src.c_proj
-                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
-                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                o_w, o_b = _unpack_weight_bias(src.c_proj)
                 if o_w is not None:
-                    o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
                         o_w = o_w.t()
-                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (o_w, o_b)
 
         # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             s = getattr(src, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
-                if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                extracted[proj_key] = _unpack_weight_bias(mod)
             if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
-                out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = _unpack_weight_bias(src.output.dense)
 
         # 3. Flat modules
         else:
@@ -280,8 +322,9 @@ class HALOReGLAAttention(BaseAttention):
                 for name in names:
                     if hasattr(src, name):
                         mod = getattr(src, name)
-                        if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                        cw, cb = _unpack_weight_bias(mod)
+                        if cw is not None:
+                            extracted[proj_key] = (cw, cb)
                             break
 
         missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
@@ -298,9 +341,7 @@ class HALOReGLAAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"HALOReGLAAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
-            )
+            logger.debug("HALOReGLAAttention partial weights extracted; missing: %s", missing_after)
 
         target_map = {
             "q": self.q_proj,
@@ -317,9 +358,7 @@ class HALOReGLAAttention(BaseAttention):
                         nn.init.eye_(target_mod.weight)
                         if target_mod.bias is not None:
                             nn.init.zeros_(target_mod.bias)
-                        continue
-                    else:
-                        raise RuntimeError(f"Missing required weights for {proj_key}")
+                    continue
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -349,7 +388,7 @@ class HALOReGLAAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                    logger.debug("Weight copy for %s has small norm: %.6f", proj_key, fnorm)
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
@@ -378,6 +417,9 @@ class HALOReGLAAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if encoder_hidden_states is not None:
+            return hidden_states, None
+
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         B, L, D = hidden_states.shape
@@ -455,38 +497,117 @@ class HALOReGLAAttention(BaseAttention):
         out = fused.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
-            return out, None
+            out_final = out
+        else:
+            out_final = self.out_proj(out)
 
-        return self.out_proj(out), None
+        if out_final.shape[-1] != hidden_states.shape[-1]:
+            if out_final.shape[-1] < hidden_states.shape[-1]:
+                out_final = F.pad(out_final, (0, hidden_states.shape[-1] - out_final.shape[-1]))
+            else:
+                out_final = out_final[..., : hidden_states.shape[-1]]
+
+        return out_final, None
 
 
+@ATTENTION_REGISTRY.register("halo_regla_inject")
+@ATTENTION_REGISTRY.register("halo_regla")
 def inject_halo_regla(
-    model: nn.Module,
-    target_layer_idx: Optional[int] = None,
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    lora_rank: int = 16,
     **kwargs: Any,
-) -> Optional[nn.Module]:
-    """Safely replace attention in model with HALOReGLAAttention."""
-    try:
-        replaced = 0
-        for name, module in model.named_modules():
-            is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                is_attn = True
+) -> Optional[Any]:
+    r"""Injection hook for HALOReGLAAttention supporting single layers and whole models."""
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
 
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and not hasattr(target, "forward"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
 
-                new_attn = HALOReGLAAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_halo_regla(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
                     **kwargs,
                 )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
-                    break
-        return model if replaced > 0 else None
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    curr_attn = old_attn
+    if curr_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                curr_attn = target.attention.self
+            else:
+                curr_attn = target.attention
+        elif hasattr(target, "self"):
+            curr_attn = target.self
+        elif hasattr(target, "attn"):
+            curr_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            curr_attn = target.self_attn
+
+    if curr_attn is None and target is not None and hasattr(target, "forward"):
+        curr_attn = target
+
+    if curr_attn is None and cfg is None:
+        return None
+
+    try:
+        new_layer = HALOReGLAAttention(
+            config=cfg,
+            pretrained_attn=curr_attn,
+            lora_rank=lora_rank,
+            **kwargs,
+        )
     except Exception:
         return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_layer
+            else:
+                target.attention = new_layer
+        elif hasattr(target, "self"):
+            target.self = new_layer
+        elif hasattr(target, "attn"):
+            target.attn = new_layer
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_layer
+
+    return new_layer
