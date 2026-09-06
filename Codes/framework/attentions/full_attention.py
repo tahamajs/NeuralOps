@@ -157,13 +157,13 @@ class FullAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         self.adapter = ModelAdapter(config)
-        self.num_heads: int = self.adapter.num_heads
-        self.num_kv_heads: int = self.adapter.num_key_value_heads
-        self.hidden_size: int = self.adapter.hidden_size
-        self.head_dim: int = self.adapter.head_dim
+        self.hidden_size: int = self.adapter.hidden_size or kwargs.get("hidden_size", kwargs.get("d_model", 768))
+        self.num_heads: int = self.adapter.num_heads or kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
+        self.num_kv_heads: int = self.adapter.num_key_value_heads or kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads))
+        self.head_dim: int = self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.kv_repeat: int = self.adapter.kv_repeat
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.is_decoder: bool = getattr(config, "is_decoder", False)
         self.is_nested_encoder: bool = False
 
@@ -182,12 +182,33 @@ class FullAttention(BaseAttention):
                 "hidden_dropout_prob",
                 getattr(config, "attention_probs_dropout_prob", 0.1),
             ),
-        )
+        ) if config else 0.1
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+    @property
+    def q_proj(self) -> LoRALinear: return self.query
+    @property
+    def k_proj(self) -> LoRALinear: return self.key
+    @property
+    def v_proj(self) -> LoRALinear: return self.value
+    @property
+    def q_lin(self) -> LoRALinear: return self.query
+    @property
+    def k_lin(self) -> LoRALinear: return self.key
+    @property
+    def v_lin(self) -> LoRALinear: return self.value
+    @property
+    def out_lin(self) -> LoRALinear: return self.out_proj
+    @property
+    def dense(self) -> LoRALinear: return self.out_proj
+    @property
+    def o_proj(self) -> LoRALinear: return self.out_proj
+    @property
+    def c_proj(self) -> LoRALinear: return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
@@ -266,10 +287,20 @@ class FullAttention(BaseAttention):
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
+        if (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
+        elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
