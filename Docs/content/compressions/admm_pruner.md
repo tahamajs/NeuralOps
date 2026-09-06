@@ -506,3 +506,13 @@ __all__ = [
 1. **Zhang, T., Ye, S., Zhang, K., Tang, J., Wen, W., Fardad, M., & Wang, Y. (2018)**. *A Systematic DNN Weight Pruning Framework using Alternating Direction Method of Multipliers*. In European Conference on Computer Vision (ECCV 2018).
 2. **Boyd, S., Parikh, N., Chu, E., Peleato, B., & Eckstein, J. (2011)**. *Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers*. Foundations and Trends in Machine Learning, 3(1), 1-122.
 3. **Ren, A., et al. (2019)**. *ADMM-NN: An Algorithm-Hardware Co-Design Framework for Deep Neural Network Pruning*. In IEEE ASPLOS 2019.
+
+## Unified 4-Architecture Benchmark Results (ADMM Pruner with Distillation)
+Evaluated on SST-2 sentiment classification (FP16, 2:4 structured sparsity, $\lambda_{\text{distill}} = 0.1$, 200 recovery steps):
+
+| Model Architecture | Baseline Acc | Pruned + Distill Acc | Δ Acc | F1 Score | Actual Sparsity | Distill MSE | Avg Recon Error | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:------------:|:--------------------:|:-----:|:--------:|:---------------:|:-----------:|:---------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.48% | 84.29% | -6.19% | 0.8603 | 50.0% | 0.000242 | 0.3571 | 551.2 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-admm-distill) |
+| ROBERTA | 88.76% | 80.62% | -8.14% | 0.7966 | 50.0% | 0.000374 | 0.3513 | 336.4 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-admm-distill) |
+| GPT2 | 81.31% | 80.73% | -0.58% | 0.8146 | 50.0% | 0.002039 | 0.3565 | 414.9 MB | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-admm-distill) |
+| QWEN3_5 | 67.55% | 78.21% | +10.66% | 0.8201 | 50.0% | 0.000009 | 0.3569 | 1879.8 MB | `PASS` | [`qwen3_5`](https://huggingface.co/Hooshaai/svd-linear-attention-qwen3_5-admm-distill) |
