@@ -80,7 +80,7 @@ def test_oha_trainable_lora_weights():
 def test_oha_distilbert_weight_copy():
     cfg = MockConfig()
     old_attn = DummyDistilBertAttention(64)
-    attn = OptimizedHybridAttention(config=cfg, window_size=4, compression_rank=4, source_attn=old_attn)
+    attn = OptimizedHybridAttention(config=cfg, window_size=4, compression_rank=4, old_attn=old_attn)
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
@@ -89,7 +89,7 @@ def test_oha_distilbert_weight_copy():
 def test_oha_roberta_weight_copy():
     cfg = MockConfig()
     old_attn = DummyRobertaAttention(64)
-    attn = OptimizedHybridAttention(config=cfg, window_size=4, compression_rank=4, source_attn=old_attn)
+    attn = OptimizedHybridAttention(config=cfg, window_size=4, compression_rank=4, old_attn=old_attn)
     assert attn.is_nested_encoder
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
@@ -99,7 +99,7 @@ def test_oha_roberta_weight_copy():
 def test_oha_gpt2_weight_copy():
     cfg = MockConfig(is_decoder=True, model_type="gpt2")
     old_attn = DummyGPT2Attention(64)
-    attn = OptimizedHybridAttention(config=cfg, window_size=4, compression_rank=4, source_attn=old_attn)
+    attn = OptimizedHybridAttention(config=cfg, window_size=4, compression_rank=4, old_attn=old_attn)
     assert attn.is_decoder
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
@@ -109,7 +109,7 @@ def test_oha_gpt2_weight_copy():
 def test_oha_qwen_gqa_and_rope():
     cfg = MockConfig(hidden_size=64, num_attention_heads=4, num_key_value_heads=2, head_dim=16, is_decoder=True, model_type="qwen2")
     old_attn = DummyQwenAttention(dim=64, num_kv_heads=2, head_dim=16)
-    attn = OptimizedHybridAttention(config=cfg, window_size=4, compression_rank=4, source_attn=old_attn)
+    attn = OptimizedHybridAttention(config=cfg, window_size=4, compression_rank=4, old_attn=old_attn)
     assert attn.kv_repeat == 2
     x = torch.randn(2, 8, 64)
     cos = torch.randn(2, 8, 16)
