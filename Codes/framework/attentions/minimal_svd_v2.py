@@ -475,13 +475,19 @@ class MinimalSVDAttentionV2(BaseAttention):
 @ATTENTION_REGISTRY.register("minimal_svd_v2_inject")
 def inject_minimal_svd_v2(
     layer: nn.Module,
-    model_config: Any,
+    model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> MinimalSVDAttentionV2:
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
     r"""Injection hook for MinimalSVDAttentionV2 into transformer layer."""
     energy = getattr(comp_config, "svd_energy", 0.95) if comp_config else 0.95
     dropout = getattr(comp_config, "dropout", 0.1) if comp_config else 0.1

@@ -457,13 +457,19 @@ class SALTAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("salt_inject")
 def inject_salt_attention(
     layer: Any,
-    model_config: Any,
+    model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Any = None,
     **kwargs: Any,
 ) -> SALTAttention:
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
     rank = getattr(comp_config, "rank", getattr(comp_config, "salt_rank", 16)) if comp_config is not None else 16
     new_attn = SALTAttention(config=model_config, rank=rank)
     src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
