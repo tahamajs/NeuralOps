@@ -387,24 +387,6 @@ class TokenCompressedAttention(BaseAttention):
                     f"TokenCompressedAttention: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
-            self.q_lin.weight.copy_(w_q.to(self.q_lin.weight.dtype))
-            if b_q is not None and self.q_lin.bias is not None:
-                self.q_lin.bias.copy_(b_q.to(self.q_lin.bias.dtype))
-            elif self.q_lin.bias is not None:
-                self.q_lin.bias.zero_()
-
-            self.k_lin.weight.copy_(w_k.to(self.k_lin.weight.dtype))
-            if b_k is not None and self.k_lin.bias is not None:
-                self.k_lin.bias.copy_(b_k.to(self.k_lin.bias.dtype))
-            elif self.k_lin.bias is not None:
-                self.k_lin.bias.zero_()
-
-            self.v_lin.weight.copy_(w_v.to(self.v_lin.weight.dtype))
-            if b_v is not None and self.v_lin.bias is not None:
-                self.v_lin.bias.copy_(b_v.to(self.v_lin.bias.dtype))
-            elif self.v_lin.bias is not None:
-                self.v_lin.bias.zero_()
-
             def _copy_layer(target_layer, w, b, src_sub=None):
                 if w is not None:
                     if w.shape == target_layer.weight.shape:
