@@ -8,3 +8,6 @@ from framework.attentions.nha_attention import NativeHybridAttention
 
 # Alias NHACompressor to NativeHybridAttention for registry and direct instantiation
 NHACompressor = NativeHybridAttention
+from framework.attentions.nha_attention import inject_nha
+
+inject_nha_compressor = inject_nha
