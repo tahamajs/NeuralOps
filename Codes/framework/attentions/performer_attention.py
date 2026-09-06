@@ -582,7 +582,8 @@ def inject_performer(
         or hasattr(target, "distilbert")
         or hasattr(target, "roberta")
         or hasattr(target, "bert")
-        or (hasattr(target, "model") and not hasattr(target, "forward"))
+        or (hasattr(target, "model") and hasattr(target.model, "layers"))
+        or hasattr(target, "layers")
     ):
         layer_list = None
         if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
@@ -597,6 +598,8 @@ def inject_performer(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
+        elif hasattr(target, "layers"):
+            layer_list = target.layers
 
         if layer_list is not None:
             num_injected = 0
