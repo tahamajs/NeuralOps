@@ -24,11 +24,29 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely retrieve attribute from dict, object, namespace, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    """Rotates half the hidden dimensions: [-x2, x1], safe for odd dimensions."""
+    d = x.shape[-1]
+    rotary_dim = 2 * (d // 2)
+    if rotary_dim == 0:
+        return x
+    x_rot = x[..., :rotary_dim]
+    half = rotary_dim // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if rotary_dim < d:
+        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -39,23 +57,40 @@ def apply_rotary_pos_emb(
     position_ids: Optional[torch.Tensor] = None,
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
-    rotary_dim = min(cos.shape[-1], q.shape[-1])
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
+
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
-    cos_c = cos[..., :rotary_dim]
-    sin_c = sin[..., :rotary_dim]
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
 
-    while cos_c.dim() < q_rot.dim():
-        cos_c = cos_c.unsqueeze(unsqueeze_dim)
-        sin_c = sin_c.unsqueeze(unsqueeze_dim)
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
 
-    q_rot = (q_rot * cos_c) + (_rotate_half(q_rot) * sin_c)
-    k_rot = (k_rot * cos_c) + (_rotate_half(k_rot) * sin_c)
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
-    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
-    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q, k
 
 
@@ -95,6 +130,8 @@ class LoRALinear(nn.Module):
             self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -113,7 +150,8 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("tpa", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("tpa_attention")
+@ATTENTION_REGISTRY.register("tpa_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("tp_attention", supports_causal=True, supports_gqa=True)
 class TPAttention(BaseAttention):
     r"""Tensor Product Attention with factorised low-rank query-key projection."""
 
@@ -131,40 +169,60 @@ class TPAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.dim: int = getattr(
-            config, "hidden_size", getattr(config, "dim", kwargs.get("hidden_size", 768))
-        ) if config is not None else kwargs.get("hidden_size", 768)
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
 
-        self.num_heads: int = getattr(
-            config,
-            "num_attention_heads",
-            getattr(config, "n_heads", getattr(config, "num_heads", kwargs.get("num_attention_heads", 12))),
-        ) if config is not None else kwargs.get("num_attention_heads", 12)
+        dim = None
+        if config is not None and not isinstance(config, int):
+            dim = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", None)))
+        if dim is None and src is not None:
+            dim = getattr(src, "hidden_size", getattr(src, "embed_dim", None))
+            if dim is None and hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
+                dim = src.q_proj.in_features
+            elif dim is None and hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features"):
+                dim = src.q_lin.in_features
+            elif dim is None and hasattr(src, "query") and hasattr(src.query, "in_features"):
+                dim = src.query.in_features
+            elif dim is None and hasattr(src, "c_attn") and hasattr(src.c_attn, "weight"):
+                dim = src.c_attn.weight.shape[0] if src.c_attn.weight.shape[0] != 3 * src.c_attn.weight.shape[1] else src.c_attn.weight.shape[1]
+        if dim is None:
+            dim = kwargs.get("hidden_size", 768)
 
+        num_heads = None
+        if config is not None and not isinstance(config, int):
+            num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", None)))
+        if num_heads is None and src is not None:
+            num_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", getattr(src, "n_head", None)))
+        if num_heads is None:
+            num_heads = 12
+
+        self.dim: int = int(dim)
+        self.num_heads: int = max(1, int(num_heads))
         self.head_dim: int = getattr(
-            config, "head_dim", kwargs.get("head_dim", self.dim // max(1, self.num_heads))
-        ) if config is not None else self.dim // max(1, self.num_heads)
+            config, "head_dim", kwargs.get("head_dim", self.dim // self.num_heads)
+        ) if config is not None else self.dim // self.num_heads
 
         cfg_kv = (
-            getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+            _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
             if config is not None
             else None
         )
+        if cfg_kv is None and src is not None:
+            cfg_kv = getattr(src, "num_key_value_heads", getattr(src, "num_kv_heads", None))
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        self.rank: int = rank
-        self.lora_rank: int = lora_rank
-        self.lora_alpha: float = lora_alpha
+        self.rank: int = kwargs.get("rank", _cfg_get(config, "rank", rank))
+        self.lora_rank: int = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        self.lora_alpha: float = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
         # Decoder / Causal flag
         if is_decoder is not None:
             self.is_decoder: bool = is_decoder
         elif config is not None:
-            self.is_decoder = bool(getattr(config, "is_decoder", False))
+            self.is_decoder = bool(_cfg_get(config, "is_decoder", False))
         else:
             self.is_decoder = False
 
