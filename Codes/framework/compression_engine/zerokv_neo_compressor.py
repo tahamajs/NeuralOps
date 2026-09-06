@@ -113,6 +113,14 @@ class ZeroKVNeoCache:
         return self.k_cache, self.v_cache
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register("zerokv_neo")
 @COMPRESSOR_REGISTRY.register("zerokv")
 @COMPRESSOR_REGISTRY.register("zerokv_neo_compressor")
@@ -128,6 +136,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
         max_error: Maximum allowed relative Frobenius error (default 0.85).
         max_retries: Number of keep_ratio retry steps on error threshold excess (default 3).
         fallback_to_original: If True, keep original layer on high error (default True).
+        target_attention_only: If True, only compress attention projections (default True for ZeroKV).
     """
 
     def __init__(
@@ -139,17 +148,19 @@ class ZeroKVNeoCompressor(BaseCompressor):
         max_error: float = 0.85,
         max_retries: int = 3,
         fallback_to_original: bool = True,
+        target_attention_only: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="zerokv_neo", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            keep_ratio = getattr(cfg, "zerokv_keep_ratio", getattr(cfg, "keep_ratio", keep_ratio))
-            num_attention_sinks = getattr(cfg, "zerokv_num_sinks", getattr(cfg, "num_attention_sinks", num_attention_sinks))
-            heavy_hitter_ratio = getattr(cfg, "zerokv_heavy_ratio", getattr(cfg, "heavy_hitter_ratio", heavy_hitter_ratio))
-            max_error = getattr(cfg, "max_error", getattr(cfg, "max_reconstruction_error", max_error))
-            max_retries = getattr(cfg, "max_retries", max_retries)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            keep_ratio = _cfg_get(cfg, "zerokv_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio))
+            num_attention_sinks = _cfg_get(cfg, "zerokv_num_sinks", _cfg_get(cfg, "num_attention_sinks", num_attention_sinks))
+            heavy_hitter_ratio = _cfg_get(cfg, "zerokv_heavy_ratio", _cfg_get(cfg, "heavy_hitter_ratio", heavy_hitter_ratio))
+            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error))
+            max_retries = _cfg_get(cfg, "max_retries", max_retries)
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "keep_ratio" in kwargs and kwargs["keep_ratio"] is not None:
             keep_ratio = kwargs["keep_ratio"]
@@ -159,6 +170,8 @@ class ZeroKVNeoCompressor(BaseCompressor):
             max_retries = int(kwargs["max_retries"])
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
+        if "target_attention_only" in kwargs:
+            target_attention_only = bool(kwargs["target_attention_only"])
 
         self.keep_ratio = float(keep_ratio)
         self.num_attention_sinks = int(num_attention_sinks)
@@ -166,6 +179,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
         self.max_error = float(max_error)
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
+        self.target_attention_only = target_attention_only
         self.compressed_layers: List[Dict[str, Any]] = []
         self.fallback_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
@@ -175,22 +189,26 @@ class ZeroKVNeoCompressor(BaseCompressor):
         if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
             return False
 
-        cls_name = module.__class__.__name__
+        base_layer = getattr(module, "base_layer", module)
+        cls_name = base_layer.__class__.__name__
         is_linear_like = (
-            isinstance(module, nn.Linear)
+            isinstance(base_layer, nn.Linear)
             or "conv1d" in cls_name.lower()
+            or hasattr(base_layer, "nf")
             or (
-                hasattr(module, "weight")
-                and hasattr(module.weight, "ndim")
-                and module.weight.ndim == 2
-                and not isinstance(module, (nn.Embedding, nn.LayerNorm, nn.RMSNorm))
+                hasattr(base_layer, "weight")
+                and hasattr(base_layer.weight, "ndim")
+                and base_layer.weight.ndim == 2
+                and not isinstance(base_layer, (nn.Embedding, nn.LayerNorm, nn.RMSNorm))
             )
         )
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
             return False
-        return self._is_attention_proj(name)
+        if self.target_attention_only:
+            return self._is_attention_proj(name)
+        return True
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress linear projection weights preserving attention sinks and heavy hitters."""
@@ -203,12 +221,13 @@ class ZeroKVNeoCompressor(BaseCompressor):
             if not self._is_target_module(name, module):
                 continue
 
-            raw_w = module.weight.data
+            base_layer = getattr(module, "base_layer", module)
+            raw_w = base_layer.weight.data
             orig_dtype = raw_w.dtype
             orig_device = raw_w.device
-            cls_name = module.__class__.__name__
+            cls_name = base_layer.__class__.__name__
 
-            is_conv1d = "conv1d" in cls_name.lower() or hasattr(module, "nf")
+            is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_layer, "nf")
 
             if is_conv1d:
                 W = raw_w.t().float().contiguous()
@@ -275,25 +294,33 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 if self.fallback_to_original:
                     logger.info("ZeroKV-Neo: Keeping original module for %s.", name)
                     self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
                     continue
 
             if best_mask is None:
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
-            # Assign pruned weights
+            # Assign pruned weights to base_layer
             if is_conv1d:
                 W_assigned = (W * best_mask.unsqueeze(1)).t().contiguous().to(dtype=orig_dtype, device=orig_device)
             else:
                 W_assigned = (W * best_mask.unsqueeze(1)).to(dtype=orig_dtype, device=orig_device)
 
-            if W_assigned.shape != module.weight.shape:
-                logger.error("ZeroKV-Neo shape mismatch for %s: %s vs %s", name, W_assigned.shape, module.weight.shape)
+            if W_assigned.shape != base_layer.weight.shape:
+                logger.error("ZeroKV-Neo shape mismatch for %s: %s vs %s", name, W_assigned.shape, base_layer.weight.shape)
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
-            module.weight.data.copy_(W_assigned)
-            if getattr(module, "bias", None) is not None and module.bias is not None:
-                b_pruned = (module.bias.data.float() * best_mask).to(dtype=orig_dtype, device=orig_device)
-                module.bias.data.copy_(b_pruned)
+            base_layer.weight.data.copy_(W_assigned)
+            if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
+                b_pruned = (base_layer.bias.data.float() * best_mask).to(dtype=orig_dtype, device=orig_device)
+                base_layer.bias.data.copy_(b_pruned)
 
             self.compressed_layers.append(
                 {
@@ -358,19 +385,24 @@ class ZeroKVNeoCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("zerokv_neo_factory")
 @COMPRESSOR_REGISTRY.register("zerokv_factory")
 @COMPRESSOR_REGISTRY.register("zerokv_neo_compressor_factory")
-def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """ZeroKV-Neo compressor factory function."""
-    keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "zerokv_keep_ratio", getattr(comp_config, "keep_ratio", 0.3)) if comp_config else 0.3)
-    num_sinks = kwargs.pop("num_attention_sinks", kwargs.pop("num_sinks", getattr(comp_config, "zerokv_num_sinks", getattr(comp_config, "num_attention_sinks", 4)) if comp_config else 4))
-    heavy_ratio = kwargs.pop("heavy_hitter_ratio", kwargs.pop("heavy_ratio", getattr(comp_config, "zerokv_heavy_ratio", getattr(comp_config, "heavy_hitter_ratio", 0.1)) if comp_config else 0.1))
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    keep_ratio = kwargs.pop("keep_ratio", _cfg_get(comp_config, "zerokv_keep_ratio", _cfg_get(comp_config, "keep_ratio", 0.3)))
+    num_sinks = kwargs.pop("num_attention_sinks", kwargs.pop("num_sinks", _cfg_get(comp_config, "zerokv_num_sinks", _cfg_get(comp_config, "num_attention_sinks", 4))))
+    heavy_ratio = kwargs.pop("heavy_hitter_ratio", kwargs.pop("heavy_ratio", _cfg_get(comp_config, "zerokv_heavy_ratio", _cfg_get(comp_config, "heavy_hitter_ratio", 0.1))))
+    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", True))
     compressor = ZeroKVNeoCompressor(
         model,
         keep_ratio=keep_ratio,
         num_attention_sinks=num_sinks,
         heavy_hitter_ratio=heavy_ratio,
         comp_config=comp_config,
+        target_attention_only=target_attn,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
 

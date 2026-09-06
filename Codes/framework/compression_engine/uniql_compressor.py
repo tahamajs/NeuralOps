@@ -22,6 +22,14 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register("uniql_compressor")
 class UniQLCompressor(BaseCompressor):
     """
@@ -34,6 +42,7 @@ class UniQLCompressor(BaseCompressor):
         max_error: Maximum allowed relative Frobenius reconstruction error (default 0.20).
         max_retries: Number of retry attempts adjusting bits/rank if error exceeds max_error (default 3).
         fallback_to_original: If True, keep original module weights if error remains above max_error (default True).
+        target_attention_only: If True, only compress attention projections.
     """
 
     def __init__(
@@ -44,16 +53,18 @@ class UniQLCompressor(BaseCompressor):
         max_error: float = 0.20,
         max_retries: int = 3,
         fallback_to_original: bool = True,
+        target_attention_only: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="uniql", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            rank = getattr(cfg, "uniql_rank", getattr(cfg, "rank", rank))
-            bits = getattr(cfg, "uniql_bits", getattr(cfg, "bits", bits))
-            max_error = getattr(cfg, "max_error", getattr(cfg, "max_reconstruction_error", max_error))
-            max_retries = getattr(cfg, "max_retries", max_retries)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            rank = _cfg_get(cfg, "uniql_rank", _cfg_get(cfg, "rank", rank))
+            bits = _cfg_get(cfg, "uniql_bits", _cfg_get(cfg, "bits", bits))
+            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error))
+            max_retries = _cfg_get(cfg, "max_retries", max_retries)
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -65,12 +76,15 @@ class UniQLCompressor(BaseCompressor):
             max_retries = int(kwargs["max_retries"])
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
+        if "target_attention_only" in kwargs:
+            target_attention_only = bool(kwargs["target_attention_only"])
 
         self.rank = max(1, int(rank))
         self.bits = max(1, min(32, int(bits)))
         self.max_error = float(max_error)
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
+        self.target_attention_only = target_attention_only
         self.compressed_layers: List[Dict[str, Any]] = []
 
     @staticmethod
@@ -92,15 +106,22 @@ class UniQLCompressor(BaseCompressor):
         if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
             return False
 
-        cls_name = module.__class__.__name__
+        if self.target_attention_only:
+            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"]
+            if not any(k in name.lower() for k in attn_keywords):
+                return False
+
+        base_layer = getattr(module, "base_layer", module)
+        cls_name = base_layer.__class__.__name__
         is_linear_like = (
-            isinstance(module, nn.Linear)
+            isinstance(base_layer, nn.Linear)
             or "conv1d" in cls_name.lower()
+            or hasattr(base_layer, "nf")
             or (
-                hasattr(module, "weight")
-                and hasattr(module.weight, "ndim")
-                and module.weight.ndim == 2
-                and not isinstance(module, (nn.Embedding, nn.LayerNorm, nn.RMSNorm))
+                hasattr(base_layer, "weight")
+                and hasattr(base_layer.weight, "ndim")
+                and base_layer.weight.ndim == 2
+                and not isinstance(base_layer, (nn.Embedding, nn.LayerNorm, nn.RMSNorm))
             )
         )
         if not is_linear_like:
@@ -112,21 +133,23 @@ class UniQLCompressor(BaseCompressor):
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress the model linear/Conv1D layers using UniQL low-rank quantization."""
         self.compressed_layers = []
+        fallback_layers = []
         total_error = 0.0
 
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
                 continue
 
-            raw_w = module.weight.data
+            base_layer = getattr(module, "base_layer", module)
+            raw_w = base_layer.weight.data
             orig_dtype = raw_w.dtype
             orig_device = raw_w.device
-            cls_name = module.__class__.__name__
+            cls_name = base_layer.__class__.__name__
 
-            is_conv1d = "conv1d" in cls_name.lower() or (
+            is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_layer, "nf") or (
                 raw_w.ndim == 2
-                and hasattr(module, "in_features")
-                and module.in_features == raw_w.shape[0]
+                and hasattr(base_layer, "in_features")
+                and base_layer.in_features == raw_w.shape[0]
                 and raw_w.shape[0] < raw_w.shape[1]
             )
 
@@ -152,6 +175,9 @@ class UniQLCompressor(BaseCompressor):
                     U, S, Vt = U.to(orig_device), S.to(orig_device), Vt.to(orig_device)
                 except Exception as e2:
                     logger.warning("UniQL SVD failed for %s: %s. Keeping original module.", name, e2)
+                    fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
                     continue
 
             cur_r = max(1, min(self.rank, max_r))
@@ -202,26 +228,35 @@ class UniQLCompressor(BaseCompressor):
                 )
                 if self.fallback_to_original:
                     logger.info("UniQL: Keeping original weights for %s.", name)
+                    fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
                     continue
 
             if best_w_rec is None:
+                fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
-            # Reconstruct and assign weights
+            # Reconstruct and assign weights to base_layer
             if is_conv1d:
                 w_to_assign = best_w_rec.t().contiguous().to(dtype=orig_dtype, device=orig_device)
             else:
                 w_to_assign = best_w_rec.to(dtype=orig_dtype, device=orig_device)
 
-            if w_to_assign.shape != module.weight.shape:
-                logger.error("UniQL shape mismatch for %s: %s vs %s", name, w_to_assign.shape, module.weight.shape)
+            if w_to_assign.shape != base_layer.weight.shape:
+                logger.error("UniQL shape mismatch for %s: %s vs %s", name, w_to_assign.shape, base_layer.weight.shape)
+                fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
-            module.weight.data.copy_(w_to_assign)
+            base_layer.weight.data.copy_(w_to_assign)
 
-            if getattr(module, "bias", None) is not None and module.bias is not None:
-                b_q = self._quantize(module.bias.data.float(), best_bits)
-                module.bias.data.copy_(b_q.to(dtype=orig_dtype, device=orig_device))
+            if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
+                b_q = self._quantize(base_layer.bias.data.float(), best_bits)
+                base_layer.bias.data.copy_(b_q.to(dtype=orig_dtype, device=orig_device))
 
             self.compressed_layers.append(
                 {
@@ -240,7 +275,9 @@ class UniQLCompressor(BaseCompressor):
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
+                "fallback_layers": fallback_layers,
                 "num_compressed_layers": len(self.compressed_layers),
+                "num_fallback": len(fallback_layers),
                 "rank": self.rank,
                 "bits": self.bits,
                 "avg_reconstruction_error": avg_err,
@@ -256,11 +293,23 @@ class UniQLCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("uniql")
+@COMPRESSOR_REGISTRY.register("uniql_factory")
 def uniql_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """UniQL factory."""
-    rank = kwargs.pop("rank", getattr(comp_config, "uniql_rank", getattr(comp_config, "rank", 64)) if comp_config is not None else 64)
-    bits = kwargs.pop("bits", getattr(comp_config, "uniql_bits", getattr(comp_config, "bits", 8)) if comp_config is not None else 8)
-    compressor = UniQLCompressor(model, rank=rank, bits=bits, comp_config=comp_config, **kwargs)
-    compressed_model, _ = compressor.compress()
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "uniql_rank", _cfg_get(comp_config, "rank", 64)))
+    bits = kwargs.pop("bits", _cfg_get(comp_config, "uniql_bits", _cfg_get(comp_config, "bits", 8)))
+    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    compressor = UniQLCompressor(
+        model,
+        rank=rank,
+        bits=bits,
+        comp_config=comp_config,
+        target_attention_only=target_attn,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
 
