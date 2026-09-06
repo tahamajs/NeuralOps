@@ -435,13 +435,6 @@ class ADMMPruner(BaseCompressor):
             out_features, in_features = W0.shape
             w_norm = torch.norm(W0, p="fro").item()
 
-            # Baseline 0-iteration projection candidate
-            Z0, mask0 = self._project_sparse(W0)
-            W_sparse_0 = W0 * mask0
-            best_W_sparse = W_sparse_0
-            best_mask = mask0
-            best_err = float(torch.norm(W0 - W_sparse_0, p="fro").item() / max(w_norm, 1e-12))
-
             # Retrieve or generate calibration input activations for distillation
             X_calib = calib_inputs.get(name, None)
             if self.lambda_distill > 0:
@@ -462,6 +455,19 @@ class ADMMPruner(BaseCompressor):
             else:
                 X_calib = None
                 Y0 = None
+
+            # Baseline 0-iteration projection candidate
+            Z0, mask0 = self._project_sparse(W0)
+            W_sparse_0 = W0 * mask0
+            best_W_sparse = W_sparse_0
+            best_mask = mask0
+            base_w_err = float(torch.norm(W0 - W_sparse_0, p="fro").item() / max(w_norm, 1e-12))
+            best_err = base_w_err
+            best_score = base_w_err
+            if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
+                y0_norm = max(torch.norm(Y0, p="fro").item(), 1e-12)
+                base_y_err = float(torch.norm((X_calib @ W_sparse_0.t()) - Y0, p="fro").item() / y0_norm)
+                best_score = base_w_err + self.lambda_distill * base_y_err
 
             # ADMM State Initialization
             W = W0.clone()
@@ -527,9 +533,15 @@ class ADMMPruner(BaseCompressor):
 
                     # Monotonic best-iterate tracking
                     W_sparse_curr = W * mask
-                    curr_err = float(torch.norm(W0 - W_sparse_curr, p="fro").item() / max(w_norm, 1e-12))
-                    if curr_err < best_err:
-                        best_err = curr_err
+                    curr_w_err = float(torch.norm(W0 - W_sparse_curr, p="fro").item() / max(w_norm, 1e-12))
+                    curr_score = curr_w_err
+                    if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
+                        curr_y_err = float(torch.norm((X_calib @ W_sparse_curr.t()) - Y0, p="fro").item() / y0_norm)
+                        curr_score = curr_w_err + self.lambda_distill * curr_y_err
+
+                    if curr_score < best_score:
+                        best_score = curr_score
+                        best_err = curr_w_err
                         best_W_sparse = W_sparse_curr
                         best_mask = mask
 
