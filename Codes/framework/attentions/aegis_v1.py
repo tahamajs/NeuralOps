@@ -482,10 +482,20 @@ class AegisAttentionV1(BaseAttention):
 
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
+        if (
+            hasattr(old_attn, "self")
+            and hasattr(getattr(old_attn, "self"), "query")
+            and hasattr(old_attn, "output")
+            and hasattr(getattr(old_attn, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
+        elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:

@@ -222,10 +222,10 @@ class AegisAttentionV2(BaseAttention):
         **kwargs: Any,
     ) -> None:
         if config is None or not isinstance(config, AegisConfigV2):
-            h_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768
-            n_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12)) if config is not None else 12
-            h_dim = getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads)
-            n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
+            h_size = kwargs.get("hidden_size", kwargs.get("d_model", getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768))
+            n_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", getattr(config, "num_attention_heads", getattr(config, "num_heads", 12)) if config is not None else 12))
+            h_dim = kwargs.get("head_dim", getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads))
+            n_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads))
             dec = is_decoder if is_decoder is not None else (
                 getattr(config, "is_decoder", False)
                 or getattr(config, "causal", False)
@@ -238,10 +238,10 @@ class AegisAttentionV2(BaseAttention):
                 num_heads=n_heads,
                 num_key_value_heads=n_kv_heads,
                 head_dim=h_dim,
-                local_window=getattr(config, "block_size", getattr(config, "local_window", 64)) if config is not None else 64,
-                rank=getattr(config, "lora_r", getattr(config, "rank", 64)) if config is not None else 64,
+                local_window=kwargs.get("local_window", getattr(config, "block_size", getattr(config, "local_window", 64)) if config is not None else 64),
+                rank=kwargs.get("rank", getattr(config, "lora_r", getattr(config, "rank", 64)) if config is not None else 64),
                 kernel_feature_dim=getattr(config, "rff_features", getattr(config, "kernel_feature_dim", 128)) if config is not None else 128,
-                dropout=getattr(config, "dropout", 0.1) if config is not None else 0.1,
+                dropout=kwargs.get("dropout", getattr(config, "dropout", 0.1) if config is not None else 0.1),
                 use_adaptive_pruning=getattr(config, "use_gate", True) if config is not None else True,
                 gate_init_bias=getattr(config, "gate_init_bias", 1.8) if config is not None else 1.8,
                 is_decoder=dec,
@@ -329,6 +329,34 @@ class AegisAttentionV2(BaseAttention):
     def value(self) -> FactorisedLinear:
         return self.v_proj
 
+    @property
+    def q_lin(self) -> FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def dense(self) -> FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def o_proj(self) -> FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -> FactorisedLinear:
+        return self.out_proj
+
     def _copy_pretrained(self, old_attn: nn.Module) -> None:
         self.copy_weights(old_attn)
 
@@ -408,10 +436,20 @@ class AegisAttentionV2(BaseAttention):
 
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
+        if (
+            hasattr(old_attn, "self")
+            and hasattr(getattr(old_attn, "self"), "query")
+            and hasattr(old_attn, "output")
+            and hasattr(getattr(old_attn, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
+        elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
