@@ -185,6 +185,14 @@ class NLISoftmaxCompressor(BaseCompressor):
                     elif isinstance(p, nn.Parameter):
                         p.requires_grad = True
 
+        # Freeze fallback layers (skipped due to validation failure or head exclusion)
+        if self.fallback_layers:
+            fallback_set = set(self.fallback_layers)
+            for name, module in self.model.named_modules():
+                if name in fallback_set:
+                    for p in module.parameters(recurse=False):
+                        p.requires_grad = False
+
         # Post-compression forward sanity check
         forward_check_success = True
         try:
