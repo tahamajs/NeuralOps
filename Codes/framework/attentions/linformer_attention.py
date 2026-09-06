@@ -232,6 +232,21 @@ class LinformerAttention(BaseAttention):
         self.k_proj = self.key
         self.v_proj = self.value
 
+    @property
+    def q_lin(self) -> LoRALinear: return self.query
+    @property
+    def k_lin(self) -> LoRALinear: return self.key
+    @property
+    def v_lin(self) -> LoRALinear: return self.value
+    @property
+    def out_lin(self) -> LoRALinear: return self.out_proj
+    @property
+    def dense(self) -> LoRALinear: return self.out_proj
+    @property
+    def o_proj(self) -> LoRALinear: return self.out_proj
+    @property
+    def c_proj(self) -> LoRALinear: return self.out_proj
+
         self.E = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
         self.F = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
         nn.init.normal_(self.E, std=1.0 / math.sqrt(self.k_proj_dim))
