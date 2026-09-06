@@ -181,6 +181,12 @@ class SVDMamba(BaseAttention):
             self.is_decoder = bool(kwargs.get("is_causal", False))
 
         self.is_nested_encoder: bool = False
+        num_heads = int(_cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))) if config is not None else 12
+        num_kv_heads = int(_cfg_get(config, "num_key_value_heads", kwargs.get("num_key_value_heads", num_heads))) if config is not None else num_heads
+        self.num_heads = num_heads
+        self.num_kv_heads = num_kv_heads
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
 
         # SVD-factorized projections
         self.in_proj = SVDLinear(
@@ -540,3 +546,7 @@ def inject_svd_mamba(
     except Exception as e:
         logger.error("inject_svd_mamba failed at layer %d: %s", layer_idx, e)
         return None
+
+
+inject_svd_mamba_attention = inject_svd_mamba
+inject_SVD_Mamba = inject_svd_mamba
