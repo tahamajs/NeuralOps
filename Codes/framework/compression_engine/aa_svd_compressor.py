@@ -112,6 +112,11 @@ class SVDLinear(nn.Module):
         """Reconstructed effective weight matrix for compatibility."""
         return torch.matmul(self.U, self.V)
 
+    @property
+    def use_lora(self) -> bool:
+        """Indicates whether trainable LoRA adapters are enabled."""
+        return bool(self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None)
+
     def reset_parameters(self) -> None:
         with torch.no_grad():
             if self.U.dtype in (torch.float16, torch.bfloat16):
