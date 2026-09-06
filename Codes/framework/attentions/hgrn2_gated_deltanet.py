@@ -39,8 +39,11 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
-            w = w.t()
+        cls_name = getattr(module, "__class__", type(module)).__name__
+        base_cls_name = getattr(base, "__class__", type(base)).__name__
+        if "Conv1D" in cls_name or "Conv1D" in base_cls_name:
+            if w.ndim == 2 and w.shape[0] < w.shape[1]:
+                w = w.t()
     if b is not None:
         b = b.data.clone()
     return w, b
