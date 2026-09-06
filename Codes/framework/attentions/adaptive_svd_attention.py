@@ -547,29 +547,108 @@ class AdaptiveSVDAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("adaptive_svd_attention_inject")
 @ATTENTION_REGISTRY.register("adaptive_svd_inject")
 def inject_adaptive_svd(
-    layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Optional[nn.Module],
+    layer: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[AdaptiveSVDAttention]:
-    try:
-        svd_rank = getattr(comp_config, "svd_rank", getattr(comp_config, "rank", getattr(model_config, "rank", 32)))
-        residual_rank = getattr(comp_config, "residual_rank", 16)
-        energy_threshold = getattr(comp_config, "energy_threshold", 0.92)
-        test_module = AdaptiveSVDAttention(
-            config=model_config,
-            svd_rank=svd_rank,
-            residual_rank=residual_rank,
-            energy_threshold=energy_threshold,
-            pretrained_attn=old_attn,
+    if model_config is None and layer is not None:
+        model_config = getattr(layer, "config", None)
+    if model_config is None and old_attn is not None:
+        model_config = getattr(old_attn, "config", None)
+    if model_config is None:
+        hidden_size = getattr(layer, "hidden_size", getattr(old_attn, "hidden_size", 64))
+        num_heads = getattr(
+            layer,
+            "num_attention_heads",
+            getattr(
+                layer,
+                "num_heads",
+                getattr(
+                    old_attn,
+                    "num_attention_heads",
+                    getattr(old_attn, "num_heads", 4),
+                ),
+            ),
         )
-        layer.attention = test_module
+        head_dim = getattr(
+            layer,
+            "head_dim",
+            getattr(old_attn, "head_dim", hidden_size // max(1, num_heads)),
+        )
+        model_config = type(
+            "Config",
+            (),
+            {
+                "hidden_size": hidden_size,
+                "num_attention_heads": num_heads,
+                "num_heads": num_heads,
+                "head_dim": head_dim,
+                "num_key_value_heads": num_heads,
+                "rank": 32,
+                "svd_rank": 32,
+                "residual_rank": 16,
+                "energy_threshold": 0.92,
+                "dropout": 0.1,
+            },
+        )()
+
+    if old_attn is None and layer is not None:
+        for attr in ("attention", "self_attn", "self", "attn"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None:
+                    old_attn = cand
+                    break
+
+    try:
+        svd_rank = getattr(
+            comp_config,
+            "svd_rank",
+            getattr(
+                comp_config,
+                "rank",
+                getattr(model_config, "svd_rank", getattr(model_config, "rank", kwargs.get("rank", 32))),
+            ),
+        )
+        residual_rank = getattr(comp_config, "residual_rank", getattr(model_config, "residual_rank", kwargs.get("residual_rank", 16)))
+        energy_threshold = getattr(comp_config, "energy_threshold", getattr(model_config, "energy_threshold", kwargs.get("energy_threshold", 0.92)))
+
+        try:
+            test_module = AdaptiveSVDAttention(
+                config=model_config,
+                svd_rank=svd_rank,
+                residual_rank=residual_rank,
+                energy_threshold=energy_threshold,
+                pretrained_attn=old_attn,
+                **kwargs,
+            )
+        except Exception:
+            test_module = AdaptiveSVDAttention(
+                config=model_config,
+                svd_rank=svd_rank,
+                residual_rank=residual_rank,
+                energy_threshold=energy_threshold,
+                pretrained_attn=None,
+                **kwargs,
+            )
+
+        if layer is not None:
+            if hasattr(layer, "attention"):
+                layer.attention = test_module
+            elif hasattr(layer, "self_attn"):
+                layer.self_attn = test_module
+            elif hasattr(layer, "self"):
+                layer.self = test_module
+            else:
+                layer.attention = test_module
         return test_module
-    except RuntimeError:
+    except Exception:
         return None
+
 
 
 

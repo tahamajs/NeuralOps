@@ -154,21 +154,26 @@ class GatedLinearAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         if d_model is None:
-            if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            else:
-                d_model = kwargs.get("hidden_size", 768)
+            d_model = kwargs.get("hidden_size") or kwargs.get("d_model")
+            if d_model is None:
+                if config is not None:
+                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                else:
+                    d_model = 768
 
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
         if num_heads is None:
-            if config is not None:
-                num_heads = getattr(config, "num_attention_heads", 4)
-            else:
-                num_heads = kwargs.get("num_attention_heads", 4)
+            num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
+            if num_heads is None:
+                if config is not None:
+                    num_heads = getattr(config, "num_attention_heads", 4)
+                else:
+                    num_heads = 4
 
         self.dim: int = int(d_model)
+        self.hidden_size: int = self.dim
         self.num_heads: int = int(num_heads)
         self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim
@@ -525,17 +530,29 @@ def inject_gated_linear(
     **kwargs: Any,
 ) -> GatedLinearAttention:
     r"""Injection hook for GatedLinearAttention."""
-    d_model = 768
-    num_heads = 4
-    if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-        num_heads = getattr(model_config, "num_attention_heads", 4)
-    elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", 768)
-        num_heads = getattr(layer.config, "num_attention_heads", 4)
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
 
-    new_block = GatedLinearAttention(config=model_config, d_model=d_model, num_heads=num_heads, **kwargs)
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', 64)
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', 4)
+    )
+
+    new_block = GatedLinearAttention(
+        config=model_config,
+        d_model=hidden_size,
+        num_heads=num_heads,
+        hidden_size=hidden_size,
+        num_attention_heads=num_heads,
+        **kwargs,
+    )
     if src_attn is not None:
         try:
             new_block.copy_weights(src_attn)
@@ -546,5 +563,7 @@ def inject_gated_linear(
         layer.attention = new_block
     elif hasattr(layer, "self"):
         layer.self = new_block
+    elif hasattr(layer, "attn"):
+        layer.attn = new_block
 
     return new_block

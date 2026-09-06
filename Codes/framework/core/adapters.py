@@ -10,7 +10,7 @@ CANONICAL_PROJECTION_ALIASES = {
     "q": ["q", "query", "q_proj", "query_proj", "q_lin", "Wq", "wq"],
     "k": ["k", "key", "k_proj", "key_proj", "k_lin", "Wk", "wk"],
     "v": ["v", "value", "v_proj", "value_proj", "v_lin", "Wv", "wv"],
-    "o": ["o", "out_proj", "o_proj", "out_lin", "dense", "c_proj", "wo", "W_o", "Wo"],
+    "o": ["o", "out_proj", "o_proj", "out_lin", "dense", "c_proj", "wo", "W_o", "Wo", "output", "proj"],
 }
 
 
@@ -84,8 +84,13 @@ class UniversalAdapter:
                     return result
 
         # 2. Search in old_attn.output (BERT / RoBERTa output projection 'o')
-        if proj == "o" and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
-            result = _extract(old_attn.output.dense)
+        if proj == "o" and hasattr(old_attn, "output"):
+            out_mod = old_attn.output
+            if hasattr(out_mod, "dense"):
+                result = _extract(out_mod.dense)
+                if result is not None:
+                    return result
+            result = _extract(out_mod)
             if result is not None:
                 return result
 

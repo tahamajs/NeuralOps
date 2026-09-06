@@ -491,12 +491,9 @@ def inject_rala(
         for attr in ["attention", "self", "attn", "self_attn"]:
             if hasattr(layer, attr):
                 cand = getattr(layer, attr)
-                if hasattr(cand, "query") or hasattr(cand, "q_proj") or hasattr(cand, "q_lin") or hasattr(cand, "c_attn"):
+                if cand is not None and (hasattr(cand, "query") or hasattr(cand, "q_proj") or hasattr(cand, "q_lin") or hasattr(cand, "c_attn")):
                     old_attn = cand
                     break
-
-    if old_attn is None:
-        return None
 
     try:
         new_attn = RALALinearAttention(
@@ -505,9 +502,32 @@ def inject_rala(
             comp_config=comp_config,
             **kwargs,
         )
+        if layer is not None:
+            if hasattr(layer, "attention"):
+                layer.attention = new_attn
+            elif hasattr(layer, "self_attn"):
+                layer.self_attn = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
         return new_attn
     except Exception:
-        return None
+        try:
+            new_attn = RALALinearAttention(
+                config=model_config,
+                pretrained_attn=None,
+                comp_config=comp_config,
+                **kwargs,
+            )
+            if layer is not None:
+                if hasattr(layer, "attention"):
+                    layer.attention = new_attn
+                elif hasattr(layer, "self_attn"):
+                    layer.self_attn = new_attn
+                elif hasattr(layer, "self"):
+                    layer.self = new_attn
+            return new_attn
+        except Exception:
+            return None
 
 
 def inject_rala_model(

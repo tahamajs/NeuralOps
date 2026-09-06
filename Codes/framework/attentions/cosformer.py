@@ -181,19 +181,29 @@ class CosformerAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        if config is not None:
-            hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
-        elif source_attn is not None:
-            out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-            hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
-        else:
-            hidden_size = kwargs.get("hidden_size", 768)
-            num_heads = kwargs.get("num_attention_heads", 12)
+        hidden_size = kwargs.get("hidden_size")
+        num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
+
+        if hidden_size is None:
+            if config is not None:
+                hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
+            elif source_attn is not None:
+                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+                hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+            else:
+                hidden_size = 768
+
+        if num_heads is None:
+            if config is not None:
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
+            elif source_attn is not None:
+                num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
+            else:
+                num_heads = 12
 
         super().__init__(config, rank)
         self.dim: int = int(hidden_size)
+        self.hidden_size: int = self.dim
         self.num_heads: int = int(num_heads)
         self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
         self.head_dim: int = getattr(config, "head_dim", None) or (self.dim // max(1, self.num_heads))
@@ -579,13 +589,28 @@ def inject_cosformer(
 ) -> Optional[CosformerAttention]:
     r"""Safe injection factory for CosformerAttention."""
     src_attn = old_attn
-    if src_attn is None:
+    if src_attn is None and layer is not None:
         if hasattr(layer, "attention"):
             src_attn = layer.attention
         elif hasattr(layer, "attn"):
             src_attn = layer.attn
         elif hasattr(layer, "self_attn"):
             src_attn = layer.self_attn
+        elif hasattr(layer, "self"):
+            src_attn = layer.self
+
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', 64)
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', 4)
+    )
 
     try:
         new_attn = CosformerAttention(
@@ -594,6 +619,9 @@ def inject_cosformer(
             layer_id=layer_idx,
             layer_idx=layer_idx,
             old_attn=src_attn,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
             **kwargs,
         )
         if hasattr(layer, "attention"):
@@ -602,6 +630,12 @@ def inject_cosformer(
             layer.attn = new_attn
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
         return new_attn
     except Exception:
         return None
+
+
+fasa_inject = inject_cosformer
+
