@@ -578,8 +578,6 @@ class AdaptiveSparseAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("adaptive_sparse_attention_inject")
 @ATTENTION_REGISTRY.register("adaptive_sparse_inject")
-@ATTENTION_REGISTRY.register("adaptive_sparse_attention")
-@ATTENTION_REGISTRY.register("adaptive_sparse")
 def inject_adaptive_sparse(
     layer: Any = None,
     model: Any = None,
