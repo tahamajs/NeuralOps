@@ -739,6 +739,28 @@ def main():
                     help="LoRA alpha scaling for ARMOR low-rank branch")
     ap.add_argument("--armor_skip_attention_qkv", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
                     help="Skip attention Q/K/V projections for GQA models")
+    ap.add_argument("--astro_bits", type=int, default=8,
+                    help="Quantization bits for AstroQuantizer (default: 8)")
+    ap.add_argument("--astro_symmetric", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Enable symmetric quantization in AstroQuantizer")
+    ap.add_argument("--astro_per_channel", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
+                    help="Enable per-channel scale quantization in AstroQuantizer")
+    ap.add_argument("--astro_use_ste", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
+                    help="Enable STE autograd wrap in AstroQuantizer")
+    ap.add_argument("--astro_max_error", type=float, default=0.20,
+                    help="Max relative Frobenius error threshold for AstroQuantizer before fallback")
+    ap.add_argument("--astro_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Astro quantization to attention projections only")
+    ap.add_argument("--astro_use_fisher_adaptive_bits", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
+                    help="Enable Fisher-adaptive mixed-precision bit allocation in AstroQuantizer")
+    ap.add_argument("--astro_target_avg_bits", type=float, default=6.0,
+                    help="Target average bits across channels for Fisher-adaptive quantization")
+    ap.add_argument("--astro_min_bits", type=int, default=2,
+                    help="Minimum bits per channel in Fisher-adaptive quantization")
+    ap.add_argument("--astro_max_bits", type=int, default=8,
+                    help="Maximum bits per channel in Fisher-adaptive quantization")
+    ap.add_argument("--astro_fisher_beta", type=float, default=0.5,
+                    help="Sensitivity exponent for Fisher importance in AstroQuantizer")
 
     
     # Pre-parse to check if a config file is provided
@@ -1235,13 +1257,46 @@ def main():
                         if getattr(args, "armor_skip_attention_qkv", None) is not None:
                             setattr(model.config, "armor_skip_attention_qkv", args.armor_skip_attention_qkv)
                             setattr(model.config, "skip_attention_qkv", args.armor_skip_attention_qkv)
+                        if getattr(args, "astro_bits", None) is not None:
+                            setattr(model.config, "astro_bits", args.astro_bits)
+                            setattr(model.config, "bits", args.astro_bits)
+                        if getattr(args, "astro_symmetric", None) is not None:
+                            setattr(model.config, "astro_symmetric", args.astro_symmetric)
+                            setattr(model.config, "symmetric", args.astro_symmetric)
+                        if getattr(args, "astro_per_channel", None) is not None:
+                            setattr(model.config, "astro_per_channel", args.astro_per_channel)
+                            setattr(model.config, "per_channel", args.astro_per_channel)
+                        if getattr(args, "astro_use_ste", None) is not None:
+                            setattr(model.config, "astro_use_ste", args.astro_use_ste)
+                            setattr(model.config, "use_ste", args.astro_use_ste)
+                        if getattr(args, "astro_max_error", None) is not None:
+                            setattr(model.config, "astro_max_error", args.astro_max_error)
+                            setattr(model.config, "max_error", args.astro_max_error)
+                        if getattr(args, "astro_target_attention_only", None) is not None:
+                            setattr(model.config, "astro_target_attention_only", args.astro_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.astro_target_attention_only)
+                        if getattr(args, "astro_use_fisher_adaptive_bits", None) is not None:
+                            setattr(model.config, "astro_use_fisher_adaptive_bits", args.astro_use_fisher_adaptive_bits)
+                            setattr(model.config, "use_fisher_adaptive_bits", args.astro_use_fisher_adaptive_bits)
+                        if getattr(args, "astro_target_avg_bits", None) is not None:
+                            setattr(model.config, "astro_target_avg_bits", args.astro_target_avg_bits)
+                            setattr(model.config, "target_avg_bits", args.astro_target_avg_bits)
+                        if getattr(args, "astro_min_bits", None) is not None:
+                            setattr(model.config, "astro_min_bits", args.astro_min_bits)
+                            setattr(model.config, "min_bits", args.astro_min_bits)
+                        if getattr(args, "astro_max_bits", None) is not None:
+                            setattr(model.config, "astro_max_bits", args.astro_max_bits)
+                            setattr(model.config, "max_bits", args.astro_max_bits)
+                        if getattr(args, "astro_fisher_beta", None) is not None:
+                            setattr(model.config, "astro_fisher_beta", args.astro_fisher_beta)
+                            setattr(model.config, "fisher_beta", args.astro_fisher_beta)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
