@@ -210,6 +210,18 @@ class FactorisedLowRankProjection(nn.Module):
             self.B.requires_grad = True
 
     @property
+    def lora_A(self) -> Optional[nn.Parameter]:
+        return self.A
+
+    @property
+    def lora_B(self) -> Optional[nn.Parameter]:
+        return self.B
+
+    @property
+    def base_weight(self) -> torch.Tensor:
+        return ((self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t()).to(self.U.dtype)
+
+    @property
     def weight(self) -> torch.Tensor:
         svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t()
         if self.lora_rank > 0 and self.A is not None and self.B is not None:
@@ -440,6 +452,34 @@ class AegisAttentionV3(BaseAttention):
     def value(self) -> FactorisedLowRankProjection:
         return self.v_proj
 
+    @property
+    def q_lin(self) -> FactorisedLowRankProjection:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> FactorisedLowRankProjection:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> FactorisedLowRankProjection:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> FactorisedLowRankProjection:
+        return self.out_proj
+
+    @property
+    def dense(self) -> FactorisedLowRankProjection:
+        return self.out_proj
+
+    @property
+    def o_proj(self) -> FactorisedLowRankProjection:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -> FactorisedLowRankProjection:
+        return self.out_proj
+
     def copy_weights(self, old_attn: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
@@ -516,10 +556,20 @@ class AegisAttentionV3(BaseAttention):
 
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
+        if (
+            hasattr(old_attn, "self")
+            and hasattr(getattr(old_attn, "self"), "query")
+            and hasattr(old_attn, "output")
+            and hasattr(getattr(old_attn, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
+        elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
