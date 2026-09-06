@@ -218,12 +218,12 @@ class AegisHybridAttention(BaseAttention):
                 use_prune = config.get("use_adaptive_pruning", True)
                 use_glob = config.get("use_global", True)
             else:
-                h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
-                n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
-                h_dim = getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads)
-                n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
-                r = rank or getattr(config, "rank", min(128, h_size)) if config is not None else 128
-                l_rank = lora_rank or getattr(config, "lora_rank", getattr(config, "lora_r", 32)) if config is not None else 32
+                h_size = hidden_size or kwargs.get("hidden_size", kwargs.get("d_model", getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768))
+                n_heads = num_heads or kwargs.get("num_heads", kwargs.get("num_attention_heads", getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12))
+                h_dim = kwargs.get("head_dim", getattr(config, "head_dim", getattr(config, "d_kv", h_size // max(1, n_heads))) if config is not None else h_size // max(1, n_heads))
+                n_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads))
+                r = rank or kwargs.get("rank", getattr(config, "rank", min(128, h_size)) if config is not None else 128)
+                l_rank = lora_rank or kwargs.get("lora_rank", getattr(config, "lora_rank", getattr(config, "lora_r", 32)) if config is not None else 32)
                 model_type = getattr(config, "model_type", "") if config is not None else ""
                 is_dec = getattr(config, "is_decoder", False) if config is not None else False
                 if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
@@ -555,7 +555,14 @@ class AegisHybridAttention(BaseAttention):
             hasattr(old_attn, attr)
             for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
         )
-        if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+        if (
+            hasattr(old_attn, "self")
+            and hasattr(getattr(old_attn, "self"), "query")
+            and hasattr(old_attn, "output")
+            and hasattr(getattr(old_attn, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
+        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
             self.is_nested_encoder = True
 
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
