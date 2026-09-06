@@ -1,18 +1,148 @@
 r"""
-GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated DeltaNet Memory.
+GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated DeltaNet Memory (Hardened).
 
 Combines short-term multi-head sliding-window attention with long-term GatedDeltaNet recurrent memory
 via a learned input-dependent dynamic gating mechanism initialized for stable representation transfer.
+
+Supports:
+- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
+- Trainable LoRA adapters with frozen base weights
+- GQA with repeat_kv
+- RoPE position embeddings
+- get_token_valid_mask for 2D/4D masks
+- Forward-only causal scan for decoders
+- Nested encoder bypass
+- Frobenius norm verification (>= 1e-4)
+- Safe injection returning None on failure
 """
 
+from __future__ import annotations
+
 import math
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim < head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
+        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+        k = torch.cat([k_rot_embed, k_pass], dim=-1)
+    else:
+        q = (q * cos) + (_rotate_half(q) * sin)
+        k = (k * cos) + (_rotate_half(k) * sin)
+
+    return q, k
+
+
+class LoRALinear(nn.Module):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -> None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank > 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank > 0 and self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -> None:
+        self.weight.requires_grad = True
+        if self.bias is not None:
+            self.bias.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out
+        return out
 
 
 class GatedDeltaNetLayer(nn.Module):
@@ -26,80 +156,265 @@ class GatedDeltaNetLayer(nn.Module):
         return self.net(x)
 
 
-@ATTENTION_REGISTRY.register("goldfinch_ahn")
-@ATTENTION_REGISTRY.register("goldfinch_ahn_inject")
+@ATTENTION_REGISTRY.register("goldfinch_ahn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("goldfinch_ahn_inject", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("goldfinch", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class GoldFinchAHNBlock(BaseAttention):
     r"""
     GoldFinch-AHN: Adaptive Hybrid Network Attention Block.
 
-    Mathematical Formulation:
-        1. Multi-Head Sliding-Window Attention:
-           $$S_{ij} = \frac{Q_i K_j^T}{\sqrt{d_h}} + M_{\text{window}}$$
-           $$O^{\text{short}} = \text{Softmax}(S) V$$
-        2. Long-Term Delta Memory:
-           $$O^{\text{long}} = \text{DeltaNet}(X)$$
-        3. Adaptive Gated Context Blending:
-           $$g = \sigma(X W_{\text{gate}} + b_{\text{gate}})$$
-           $$\text{Output} = W_{\text{out}} \left( g \odot O^{\text{short}} + (1 - g) \odot O^{\text{long}} \right)$$
+    Combines multi-head sliding-window attention with long-term GatedDeltaNet memory
+    via learned input-dependent dynamic gating.
     """
 
     def __init__(
         self,
         config: Optional[Any] = None,
-        rank: int = 64,
+        rank: Optional[int] = None,
+        d_model: Optional[Union[int, Any]] = None,
+        num_heads: Optional[int] = None,
         window_size: int = 64,
         is_causal: bool = False,
         pretrained_attn: Optional[nn.Module] = None,
+        old_attn: Optional[nn.Module] = None,
         gate_init_bias: float = 1.8,
+        comp_config: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        if config is None and pretrained_attn is not None:
-            class DummyConfig:
-                pass
-            config = DummyConfig()
-            config.hidden_size = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None)).out_features
-            config.num_attention_heads = getattr(pretrained_attn, "n_heads", getattr(pretrained_attn, "num_attention_heads", 4))
-
+        source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
-        self.dim: int = getattr(config, "hidden_size", 768) if config is not None else 768
-        self.num_heads: int = getattr(config, "num_attention_heads", 4) if config is not None else 12
-        self.head_dim: int = self.dim // max(1, self.num_heads)
-        self.window_size: int = window_size
-        self.is_causal: bool = is_causal
 
-        self.W_q = nn.Linear(self.dim, self.dim, bias=True)
-        self.W_k = nn.Linear(self.dim, self.dim, bias=True)
-        self.W_v = nn.Linear(self.dim, self.dim, bias=True)
+        if d_model is None:
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
+            if d_model is None:
+                if config is not None:
+                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                elif source_attn is not None:
+                    out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", getattr(source_attn, "out_proj", None)))))
+                    if out_layer is not None:
+                        d_model = getattr(out_layer, "out_features", getattr(out_layer, "in_features", 768))
+                    else:
+                        q_l = getattr(source_attn, "q_proj", getattr(source_attn, "query", getattr(source_attn, "q_lin", None)))
+                        d_model = getattr(q_l, "in_features", getattr(q_l, "out_features", 768)) if q_l is not None else 768
+                else:
+                    d_model = 768
+
+        if hasattr(d_model, "hidden_size"):
+            d_model = d_model.hidden_size
+
+        if num_heads is None:
+            num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
+            if num_heads is None:
+                if config is not None:
+                    num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+                elif source_attn is not None:
+                    num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
+                else:
+                    num_heads = 12
+
+        self.dim = int(d_model)
+        self.hidden_size = self.dim
+        self.num_heads = int(num_heads)
+        self.num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads))) if config else kwargs.get("num_kv_heads", self.num_heads)
+        self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
+        self.window_size = int(kwargs.get("window_size", window_size))
+
+        # Decoder detection
+        model_type = getattr(config, "model_type", "").lower() if config else ""
+        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            is_dec = True
+        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False) or is_causal:
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = bool(is_dec)
+        self.is_nested_encoder = False
+
+        # LoRA config
+        if config is not None:
+            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+        elif comp_config is not None:
+            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+        else:
+            self.lora_rank = kwargs.get("lora_rank", 16)
+
+        if config is not None:
+            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        elif comp_config is not None:
+            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+        else:
+            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
+
+        self.freeze_base = (self.lora_rank > 0)
+        self.source_attn = source_attn
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
+
+        # Projections
+        self.W_q = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.W_k = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.W_v = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.delta_mem = GatedDeltaNetLayer(self.dim, use_spectral_norm=True)
         self.gate = nn.Linear(self.dim, self.num_heads)
         self.gate.bias.data.fill_(gate_init_bias)
-        self.out_proj = nn.Linear(self.dim, self.dim, bias=True)
-        self.dropout = nn.Dropout(getattr(config, "dropout", 0.1) if config is not None else 0.1)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.dropout = nn.Dropout(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config is not None else 0.1)
 
-        if pretrained_attn is not None:
-            self._copy_pretrained(pretrained_attn)
+        if source_attn is not None:
+            self.copy_weights(source_attn)
 
-    def _copy_pretrained(self, old_attn: nn.Module) -> None:
-        q_src = getattr(old_attn, "q_lin", getattr(old_attn, "query", None))
-        k_src = getattr(old_attn, "k_lin", getattr(old_attn, "key", None))
-        v_src = getattr(old_attn, "v_lin", getattr(old_attn, "value", None))
-        out_src = getattr(old_attn, "out_lin", getattr(old_attn, "dense", None))
-        if q_src is not None:
-            self.W_q.weight.data.copy_(q_src.weight.data)
-            if q_src.bias is not None:
-                self.W_q.bias.data.copy_(q_src.bias.data)
-        if k_src is not None:
-            self.W_k.weight.data.copy_(k_src.weight.data)
-            if k_src.bias is not None:
-                self.W_k.bias.data.copy_(k_src.bias.data)
-        if v_src is not None:
-            self.W_v.weight.data.copy_(v_src.weight.data)
-            if v_src.bias is not None:
-                self.W_v.bias.data.copy_(v_src.bias.data)
-        if out_src is not None:
-            self.out_proj.weight.data.copy_(out_src.weight.data)
-            if out_src.bias is not None:
-                self.out_proj.bias.data.copy_(out_src.bias.data)
+    def freeze_base_weights(self) -> None:
+        for mod in (self.W_q, self.W_k, self.W_v, self.out_proj):
+            if hasattr(mod, "freeze_base_weights"):
+                mod.freeze_base_weights()
+
+    def copy_weights(self, src: Any) -> None:
+        if src is None:
+            return
+
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj") or hasattr(src, "out_proj")
+        is_nested = False
+        if (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            is_nested = True
+        elif (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+        ) and not has_out_lin:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        # 1. GPT-2 fused
+        if hasattr(src, "c_attn") and src.c_attn is not None:
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                    c_w = c_w.t()
+                split_size = c_w.size(0) // 3
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+
+            if hasattr(src, "c_proj") and src.c_proj is not None:
+                c_proj_mod = src.c_proj
+                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                        o_w = o_w.t()
+                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+
+        # 2. RoBERTa nested
+        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+            s = getattr(src, "self")
+            for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
+                mod = getattr(s, sub_name, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                out_mod = src.output.dense
+                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+
+        # 3. Flat modules
+        else:
+            proj_candidates = {
+                "q": ["q_lin", "q_proj", "query", "W_q"],
+                "k": ["k_lin", "k_proj", "key", "W_k"],
+                "v": ["v_lin", "v_proj", "value", "W_v"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+            }
+            for proj_key, names in proj_candidates.items():
+                for name in names:
+                    if hasattr(src, name):
+                        mod = getattr(src, name)
+                        if mod is not None and hasattr(mod, "weight"):
+                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            break
+
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing:
+            try:
+                from framework.core.adapters import UniversalAdapter
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception:
+                pass
+
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing_after:
+            raise RuntimeError(
+                f"GoldFinchAHNBlock copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+            )
+
+        target_map = {
+            "q": self.W_q,
+            "k": self.W_k,
+            "v": self.W_v,
+            "o": self.out_proj,
+        }
+
+        with torch.no_grad():
+            for proj_key, target_mod in target_map.items():
+                w, b = extracted[proj_key]
+                if w is None:
+                    if proj_key == "o" and self.is_nested_encoder:
+                        nn.init.eye_(target_mod.weight)
+                        if target_mod.bias is not None:
+                            nn.init.zeros_(target_mod.bias)
+                    continue
+
+                if w.ndim != 2:
+                    w = w.reshape(w.size(0), -1)
+
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
+                    w = w.t()
+                out_d = min(target_mod.weight.size(0), w.size(0))
+                in_d = min(target_mod.weight.size(1), w.size(1))
+
+                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
+                if w_norm < 1e-4:
+                    raise RuntimeError(f"GoldFinchAHNBlock weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+
+                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+
+                if b is not None and target_mod.bias is not None:
+                    min_b = min(target_mod.bias.numel(), b.numel())
+                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
+                elif target_mod.bias is not None:
+                    nn.init.zeros_(target_mod.bias)
+
+                if self.freeze_base:
+                    target_mod.freeze_base_weights()
+
+        if self.lora_rank > 0 or self.freeze_base:
+            self.freeze_base_weights()
 
     @classmethod
     def from_distilbert_pretrained(
@@ -115,6 +430,7 @@ class GoldFinchAHNBlock(BaseAttention):
         encoder_hidden_states: Optional[torch.Tensor] = None,
         encoder_attention_mask: Optional[torch.Tensor] = None,
         past_key_value: Optional[Any] = None,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
@@ -122,13 +438,35 @@ class GoldFinchAHNBlock(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         x = hidden_states
+        if not x.is_contiguous():
+            x = x.contiguous()
         B, L, D = x.shape
+        H, d = self.num_heads, self.head_dim
 
         q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.W_k(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
 
-        scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim**-0.5)
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+        elif self.rotary_emb is not None or (self.source_attn is not None and hasattr(self.source_attn, "rotary_emb")):
+            rotary_module = self.rotary_emb if self.rotary_emb is not None else getattr(self.source_attn, "rotary_emb", None)
+            if rotary_module is not None:
+                pos_ids = kwargs.get("position_ids", None)
+                if pos_ids is None:
+                    pos_ids = torch.arange(L, device=x.device).unsqueeze(0).expand(B, -1)
+                try:
+                    cos, sin = rotary_module(k, pos_ids)
+                    q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
+                except Exception:
+                    pass
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        scores = torch.matmul(q, k.transpose(-2, -1)) * (self.head_dim ** -0.5)
 
         idx = torch.arange(L, device=x.device)
         dist = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs()
@@ -140,44 +478,154 @@ class GoldFinchAHNBlock(BaseAttention):
         else:
             valid_mask = mask_window
 
-        mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
+        mask_val = -10000.0
         scores = scores.masked_fill(~valid_mask.unsqueeze(0).unsqueeze(0), mask_val)
 
+        pad_mask = None
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                pad_m = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).float()) * mask_val
-                scores = scores + pad_m
-            elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.to(scores.dtype)
+            pad_mask = get_token_valid_mask(attention_mask, B, L, x.device)
+            scores = scores.masked_fill(~pad_mask.unsqueeze(1).unsqueeze(2), mask_val)
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
         attn_weights = self.dropout(attn_weights)
-        short_out = torch.matmul(attn_weights, v).transpose(1, 2).contiguous().view(B, L, D)
+        short_out = torch.matmul(attn_weights, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         long_out = self.delta_mem(x)  # (B, L, D)
         gate = torch.sigmoid(self.gate(x)).mean(dim=-1, keepdim=True)  # (B, L, 1)
         fused = gate * short_out + (1.0 - gate) * long_out
-        out = self.out_proj(fused)
+
+        if pad_mask is not None:
+            fused = fused * pad_mask.unsqueeze(-1).to(fused.dtype)
+
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                hm = head_mask.view(1, 1, -1)
+            else:
+                hm = head_mask
+            fused = fused * hm
+
+        if self.is_nested_encoder:
+            out = fused
+        else:
+            out = self.out_proj(fused)
+
         return out, (attn_weights if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("goldfinch_ahn_inject")
+@ATTENTION_REGISTRY.register("goldfinch_ahn")
+@ATTENTION_REGISTRY.register("goldfinch")
 def inject_goldfinch_ahn(
-    layer: Any,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> GoldFinchAHNBlock:
-    r"""Injects GoldFinchAHNBlock into a transformer layer."""
-    if model_config is None and hasattr(layer, "attention"):
-        old_attn = layer.attention
-    if model_config is None and old_attn is not None:
-        new_attn = GoldFinchAHNBlock.from_distilbert_pretrained(old_attn)
-    else:
-        new_attn = GoldFinchAHNBlock(config=model_config, pretrained_attn=old_attn)
-    if hasattr(layer, "attention"):
-        layer.attention = new_attn
+) -> Optional[Union[GoldFinchAHNBlock, nn.Module]]:
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_goldfinch_ahn(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    src_attn = old_attn
+    if src_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                src_attn = target.attention.self
+            else:
+                src_attn = target.attention
+        elif hasattr(target, "self"):
+            src_attn = target.self
+        elif hasattr(target, "attn"):
+            src_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            src_attn = target.self_attn
+
+    if src_attn is None and target is not None and hasattr(target, "forward"):
+        src_attn = target
+
+    if src_attn is None and cfg is None:
+        return None
+
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        getattr(src_attn, 'dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (getattr(target, 'in_features', None) if target is not None else None) or
+        getattr(cfg, 'hidden_size', getattr(cfg, 'dim', 64))
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(src_attn, 'n_heads', None) or
+        getattr(cfg, 'num_attention_heads', getattr(cfg, 'n_heads', 4))
+    )
+
+    try:
+        new_attn = GoldFinchAHNBlock(
+            config=cfg,
+            comp_config=comp_config,
+            d_model=hidden_size,
+            num_heads=num_heads,
+            old_attn=src_attn,
+            hidden_size=hidden_size,
+            num_attention_heads=num_heads,
+            **kwargs,
+        )
+    except Exception:
+        return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
+            else:
+                target.attention = new_attn
+        elif hasattr(target, "self"):
+            target.self = new_attn
+        elif hasattr(target, "attn"):
+            target.attn = new_attn
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+
     return new_attn

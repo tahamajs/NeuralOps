@@ -1928,6 +1928,7 @@ def main():
                             "aegis_hybrid", "aegis_spectron_fp8",
                             "halo_regla", "griffin_ssd", "granite_hybrid", "gqa", "gqa_attention",
                             "nha", "nha_attention",
+                            "goldfinch_ahn", "goldfinch",
                         }
                         if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
                             rec_steps = max(args.recovery_steps, 50)
