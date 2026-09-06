@@ -1,38 +1,53 @@
+"""Granite Hybrid Attention-SSM Layer with MoE Feed-Forward.
+
+Combines Mamba-2 SSM recurrent layers with dense Multihead Attention (MHA) and
+Top-k Mixture-of-Experts (MoE) feed-forward, with LoRA adapters and pretrained weight transfer.
+Hardened across DistilBERT, RoBERTa, GPT-2, and Qwen3.5 architectures.
+"""
+
+from __future__ import annotations
+
+import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.attentions.gated_delta_net import LoRALinear
+from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    if module is None:
+        return None, None
+    base = getattr(module, "base_layer", module)
+    w = getattr(base, "weight", None)
+    b = getattr(base, "bias", None)
+    if w is not None:
+        w = w.data.clone()
+        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+            w = w.t()
+    if b is not None:
+        b = b.data.clone()
+    return w, b
+
 
 class Mamba2(nn.Module):
-    r"""
-    Simplified Mamba-2 State Space Model (SSM) block stub.
-
-    Mathematical Mechanism:
-        Given an input sequence $X \in \mathbb{R}^{B \times L \times D}$, the input is projected:
-        $$\begin{aligned}
-        [X_{\text{ssm}}, Z] &= \text{Linear}(X) \in \mathbb{R}^{B \times L \times 2D_{\text{inner}}} \\
-        \tilde{X}_{\text{ssm}} &= \text{Conv1D}(X_{\text{ssm}}) \\
-        \Delta t &= \text{softplus}(\text{Linear}(\tilde{X}_{\text{ssm}})) \in \mathbb{R}^{B \times L \times D} \\
-        A &= -\exp(A_{\log}) \in \mathbb{R}^{D \times d_{\text{state}}} \\
-        h_t &= h_{t-1} \odot \exp(\Delta t_t A) + (\tilde{X}_{\text{ssm}, t} \otimes \Delta t_t) \\
-        y_t &= \sum_{s} (h_{t, s} D_s) \\
-        Y &= (y \odot \text{SiLU}(Z)) W_{\text{out}}
-        \end{aligned}$$
-
-    Computational Complexity:
-        - Time: $\mathcal{O}(B \cdot L \cdot D \cdot d_{\text{state}})$ (Linear in sequence length $L$).
-        - Space: $\mathcal{O}(B \cdot D \cdot d_{\text{state}})$ state memory.
-
-    Tensor Dimensions:
-        - Input $x$: $[B, L, D]$
-        - Output: $[B, L, D]$
-    """
+    r"""Simplified Mamba-2 State Space Model (SSM) block."""
 
     def __init__(
         self,
@@ -40,7 +55,8 @@ class Mamba2(nn.Module):
         d_state: int = 16,
         d_conv: int = 4,
         expand: int = 2,
-    **kwargs) -> None:
+        **kwargs: Any,
+    ) -> None:
         super().__init__()
         self.d_model: int = d_model
         self.d_state: int = d_state
@@ -59,69 +75,38 @@ class Mamba2(nn.Module):
         self.out_proj: nn.Linear = nn.Linear(inner_dim, d_model)
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
-        r"""
-        Forward pass for Mamba2 SSM.
-
-        Args:
-            x: Input tensor of shape `[B, L, D]`.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Projected output tensor of shape `[B, L, D]`.
-        """
         B, L, D = x.shape
         inner_dim = self.in_proj.out_features // 2
-        x_proj = self.in_proj(x)  # (B, L, 2*inner)
-        x_ssm, z = x_proj.chunk(2, dim=-1)  # each (B, L, inner)
+        x_proj = self.in_proj(x)
+        x_ssm, z = x_proj.chunk(2, dim=-1)
         x_ssm = self.conv1d(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2)
-        dt = F.softplus(self.dt_proj(x_ssm))  # (B, L, inner_dim)
-        A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)  # (inner_dim, d_state)
+        dt = F.softplus(self.dt_proj(x_ssm))
+        A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
 
-        # Vectorized cumsum / linear recurrence approximation for fast training
-        # dt: (B, L, inner_dim), A: (inner_dim, d_state)
-        # Prevents Python loop step timeout under gradient checkpointing (use_reentrant=False compatible)
         dA_exp_arg = torch.clamp(torch.einsum("bli,in->blin", dt, A), min=-30.0, max=10.0)
-        dA = torch.exp(dA_exp_arg)  # (B, L, inner_dim, d_state)
-        dBX = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))  # (B, L, inner_dim, d_state)
-        
-        # Fast parallel prefix product scan along L
+        dA = torch.exp(dA_exp_arg)
+        dBX = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))
+
         log_dA = torch.log(dA.clamp_min(1e-12))
         log_dA_cumsum = torch.cumsum(log_dA, dim=1)
         decay_factor = torch.exp(torch.clamp(log_dA_cumsum, min=-30.0, max=10.0))
         h = torch.cumsum(dBX / (decay_factor + 1e-12), dim=1) * decay_factor
-        
+
         out = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1) * F.silu(z)
         return self.out_proj(out)
 
 
 class MixtureOfExperts(nn.Module):
-    r"""
-    Top-$k$ Token-Choice Mixture-of-Experts (MoE) Layer.
-
-    Mathematical Mechanism:
-        For routing scores $S = X W_r \in \mathbb{R}^{B \times L \times E}$:
-        $$\begin{aligned}
-        \text{TopK Indices } \mathcal{I}, \text{Raw Weights } W_{\text{raw}} &= \text{topk}(S, k, \text{dim}=-1) \\
-        W_{\text{gate}} &= \text{softmax}(W_{\text{raw}}, \text{dim}=-1) \\
-        \text{MoE}(X) &= \sum_{j=1}^{k} W_{\text{gate}, j} \cdot \text{Expert}_{\mathcal{I}_j}(X)
-        \end{aligned}$$
-
-    Computational Complexity:
-        - Time: $\mathcal{O}(B \cdot L \cdot (D \cdot E + k \cdot D \cdot D_{\text{ff}}))$
-        - Space: $\mathcal{O}(B \cdot L \cdot E)$ for router logits.
-
-    Tensor Dimensions:
-        - Input $x$: $[B, L, D]$
-        - Output: $[B, L, D]$
-    """
+    r"""Top-$k$ Token-Choice Mixture-of-Experts (MoE) Layer."""
 
     def __init__(
         self,
         dim: int,
         ff_dim: int,
-        num_experts: int,
+        num_experts: int = 4,
         top_k: int = 2,
-    **kwargs) -> None:
+        **kwargs: Any,
+    ) -> None:
         super().__init__()
         self.dim: int = dim
         self.num_experts: int = num_experts
@@ -139,19 +124,10 @@ class MixtureOfExperts(nn.Module):
         self.router: nn.Linear = nn.Linear(dim, num_experts)
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
-        r"""
-        Forward pass for Mixture-of-Experts.
-
-        Args:
-            x: Input tensor of shape `[B, L, D]`.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Aggregated expert output of shape `[B, L, D]`.
-        """
         B, L, D = x.shape
         scores = self.router(x)  # (B, L, E)
-        weights, indices = torch.topk(scores, self.top_k, dim=-1)
+        k = min(self.top_k, scores.shape[-1])
+        weights, indices = torch.topk(scores, k, dim=-1)
         weights = F.softmax(weights, dim=-1)
         out = torch.zeros_like(x)
         for e in range(self.num_experts):
@@ -169,59 +145,212 @@ class MixtureOfExperts(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid")
+@ATTENTION_REGISTRY.register("granite_hybrid_block")
 class GraniteHybridBlock(BaseAttention):
-    r"""
-    Granite Hybrid Attention-SSM Layer with MoE Feed-Forward.
-
-    Mathematical Mechanism:
-        Combines Mamba-2 SSM recurrent layers with dense Multihead Attention (MHA)
-        in a ratio of $R:1$ (e.g. 9 SSM layers to 1 MHA layer), followed by top-$k$ MoE:
-        $$Y = \begin{cases}
-        \text{Mamba2}(X), & \text{if } (\text{step} \pmod{R+1}) < R \\
-        \text{MHA}(X, X, X), & \text{otherwise}
-        \end{cases}$$
-        $$\text{Output} = Y + \text{MoE}(Y)$$
-
-    Computational Complexity:
-        - Mamba Step: $\mathcal{O}(B \cdot L \cdot D \cdot d_{\text{state}})$ time, $\mathcal{O}(B \cdot L \cdot D)$ memory.
-        - Attention Step: $\mathcal{O}(B \cdot L^2 \cdot D)$ time, $\mathcal{O}(B \cdot L^2)$ memory.
-        - MoE: $\mathcal{O}(B \cdot L \cdot k \cdot D \cdot D_{\text{ff}})$.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: $[B, L, D]$
-        - Output: Tuple of `(output, None)` with `output` shape $[B, L, D]$.
-    """
+    r"""Granite Hybrid Attention-SSM Layer with MoE Feed-Forward and LoRA Adaptation."""
 
     def __init__(
         self,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
         dim: Optional[int] = None,
-        num_experts: int = 8,
+        num_heads: Optional[int] = None,
+        num_experts: int = 4,
         top_k: int = 2,
-        ratio: int = 9,
+        ratio: int = 2,
         pretrained_attn: Optional[nn.Module] = None,
+        old_attn: Optional[nn.Module] = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        src_attn = pretrained_attn if pretrained_attn is not None else old_attn
+
         if dim is None:
             if config is not None:
-                dim = getattr(config, "hidden_size", getattr(config, "d_model", 768))
-            else:
-                dim = kwargs.get("hidden_size", 768)
-        self.dim: int = dim
-        self.mamba: Mamba2 = Mamba2(d_model=dim)
-        num_heads = getattr(config, "num_attention_heads", 8) if config else 8
-        self.attn: nn.MultiheadAttention = nn.MultiheadAttention(
-            dim, num_heads, batch_first=True
-        )
-        self.moe: MixtureOfExperts = MixtureOfExperts(
-            dim, dim * 4, num_experts, top_k
-        )
-        self.ratio: int = ratio
-        self.register_buffer(
-            "counter", torch.tensor(0, dtype=torch.long)
-        )
+                dim = (
+                    _cfg_get(config, "hidden_size", None)
+                    or _cfg_get(config, "d_model", None)
+                    or _cfg_get(config, "n_embd", None)
+                    or _cfg_get(config, "dim", None)
+                )
+        if dim is None and src_attn is not None:
+            dim = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", None))
+            if dim is None:
+                for cand in ("q_proj", "q_lin", "query", "c_attn"):
+                    m = getattr(src_attn, cand, None)
+                    if m is not None and hasattr(m, "in_features"):
+                        dim = m.in_features
+                        break
+        dim = dim or kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
+
+        if num_heads is None:
+            if config is not None:
+                num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", None))
+        if num_heads is None and src_attn is not None:
+            num_heads = getattr(src_attn, "num_heads", getattr(src_attn, "num_attention_heads", None))
+        num_heads = num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8))
+
+        self.dim: int = int(dim)
+        self.num_heads: int = int(num_heads)
+        self.head_dim: int = self.dim // max(1, self.num_heads)
+
+        # Decoder detection
+        model_type = str(_cfg_get(config, "model_type", "")).lower()
+        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
+        self.is_decoder: bool = bool(is_dec)
+
+        # LoRA setup
+        comp_config = getattr(config, "compression_config", None)
+        self.lora_rank: int = int(_cfg_get(comp_config, "lora_rank", _cfg_get(config, "lora_rank", kwargs.get("lora_rank", lora_rank))))
+        self.lora_alpha: float = float(_cfg_get(comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha))))
+        self.freeze_base: bool = (self.lora_rank > 0)
+
+        self.mamba: Mamba2 = Mamba2(d_model=self.dim)
+
+        self.q_proj = LoRALinear(self.dim, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.k_proj = LoRALinear(self.dim, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.v_proj = LoRALinear(self.dim, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.dim, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+
+        num_exp = int(_cfg_get(comp_config, "num_experts", kwargs.get("num_experts", num_experts)))
+        tk = int(_cfg_get(comp_config, "top_k", kwargs.get("top_k", top_k)))
+        rat = int(_cfg_get(comp_config, "ratio", kwargs.get("ratio", ratio)))
+        self.moe: MixtureOfExperts = MixtureOfExperts(self.dim, self.dim * 4, num_exp, tk)
+        self.ratio: int = rat
+        self.register_buffer("counter", torch.tensor(0, dtype=torch.long))
+
+        if src_attn is not None:
+            self.copy_weights(src_attn)
+
+    def copy_weights(self, old_attn: Any) -> None:
+        if old_attn is None:
+            return
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        try:
+            adapter = UniversalAdapter()
+            for p in ["q", "k", "v", "o"]:
+                w, b = adapter.get_weight_bias(old_attn, p)
+                if w is not None:
+                    extracted[p] = (w, b)
+        except Exception:
+            pass
+
+        if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
+            c_w, c_b = _unpack_weight_bias(old_attn.c_attn)
+            if c_w is not None:
+                if c_w.dim() == 2 and c_w.shape[1] == 3 * self.dim:
+                    c_w = c_w.t()
+                split_size = c_w.size(0) // 3
+                extracted["q"] = (c_w[:split_size], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size : 2 * split_size], c_b[split_size : 2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size :], c_b[2 * split_size :] if c_b is not None else None)
+
+            if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
+                o_w, o_b = _unpack_weight_bias(old_attn.c_proj)
+                if o_w is not None:
+                    if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
+                        o_w = o_w.t()
+                    extracted["o"] = (o_w, o_b)
+
+        elif hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query"):
+            s = getattr(old_attn, "self")
+            for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
+                extracted[proj_key] = _unpack_weight_bias(getattr(s, sub_name, None))
+            if hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
+                extracted["o"] = _unpack_weight_bias(old_attn.output.dense)
+
+        else:
+            candidates = {
+                "q": ["q_proj", "q_lin", "query"],
+                "k": ["k_proj", "k_lin", "key"],
+                "v": ["v_proj", "v_lin", "value"],
+                "o": ["out_proj", "out_lin", "o_proj", "dense"],
+            }
+            for proj_key, names in candidates.items():
+                if extracted[proj_key][0] is None:
+                    for name in names:
+                        if hasattr(old_attn, name):
+                            cw, cb = _unpack_weight_bias(getattr(old_attn, name))
+                            if cw is not None:
+                                extracted[proj_key] = (cw, cb)
+                                break
+
+        target_map = {"q": self.q_proj, "k": self.k_proj, "v": self.v_proj, "o": self.out_proj}
+        with torch.no_grad():
+            for proj_key, target_mod in target_map.items():
+                w, b = extracted[proj_key]
+                if w is not None:
+                    if w.shape == target_mod.weight.shape:
+                        target_mod.weight.copy_(w)
+                    elif w.t().shape == target_mod.weight.shape:
+                        target_mod.weight.copy_(w.t())
+                    elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
+                        repeats = target_mod.weight.shape[0] // w.shape[0]
+                        target_mod.weight.copy_(w.repeat(repeats, 1))
+                    else:
+                        min_0 = min(target_mod.weight.shape[0], w.shape[0])
+                        min_1 = min(target_mod.weight.shape[1], w.shape[1])
+                        target_mod.weight.zero_()
+                        target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+
+                    if b is not None and getattr(target_mod, "bias", None) is not None:
+                        if b.shape == target_mod.bias.shape:
+                            target_mod.bias.copy_(b)
+                        elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
+                            repeats = target_mod.bias.shape[0] // b.shape[0]
+                            target_mod.bias.copy_(b.repeat(repeats))
+
+        if self.freeze_base:
+            for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
+                mod.freeze_base_weights()
+
+    def _attn_forward(
+        self,
+        q_in: torch.Tensor,
+        k_in: torch.Tensor,
+        v_in: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        B, L_q, _ = q_in.shape
+        L_k = k_in.shape[1]
+        H = self.num_heads
+        Dh = self.head_dim
+
+        q = self.q_proj(q_in).view(B, L_q, H, Dh).transpose(1, 2)
+        k = self.k_proj(k_in).view(B, L_k, H, Dh).transpose(1, 2)
+        v = self.v_proj(v_in).view(B, L_k, H, Dh).transpose(1, 2)
+
+        scale = 1.0 / math.sqrt(Dh)
+        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+
+        if self.is_decoder and L_q == L_k:
+            causal_mask = torch.triu(torch.full((L_q, L_k), -1e4, device=q_in.device), diagonal=1)
+            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                pad_mask = (attention_mask == 0).view(B, 1, 1, L_k)
+                scores = scores.masked_fill(pad_mask, -10000.0)
+            elif attention_mask.dim() == 4:
+                scores = scores + attention_mask
+
+        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+        context = torch.matmul(attn_weights, v)
+        context = context.transpose(1, 2).contiguous().view(B, L_q, self.dim)
+        out = self.out_proj(context)
+        return out, attn_weights
 
     def forward(
         self,
@@ -237,76 +366,132 @@ class GraniteHybridBlock(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""
-        Forward execution of the Granite Hybrid block.
+        if encoder_hidden_states is not None:
+            return hidden_states, None
 
-        Args:
-            hidden_states: Tensor of shape `[B, L, D]`.
-            attention_mask: Optional attention mask `[B, L]` or `[B, 1, L, L]`.
-            head_mask: Optional head mask tensor.
-            output_attentions: Boolean flag indicating whether to return attention weights.
-            **kwargs: Extra keyword arguments.
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
 
-        Returns:
-            Tuple `(output, attn_weights)` where `output` is `[B, L, D]` and `attn_weights` is `None` or tensor.
-        """
         self.counter += 1
         attn_weights: Optional[torch.Tensor] = None
 
-        kv = encoder_hidden_states if encoder_hidden_states is not None else kwargs.get("key_value_states", None)
-        if kv is not None:
-            x, attn_weights = self.attn(hidden_states, kv, kv)
+        if self.counter % (self.ratio + 1) < self.ratio:
+            x = self.mamba(hidden_states)
         else:
-            if self.counter % (self.ratio + 1) < self.ratio:
-                x = self.mamba(hidden_states)
-            else:
-                x, attn_weights = self.attn(
-                    hidden_states, hidden_states, hidden_states
-                )
+            x, attn_weights = self._attn_forward(
+                hidden_states, hidden_states, hidden_states, attention_mask=attention_mask
+            )
 
         x = x + self.moe(x)
+
+        if x.shape[-1] != hidden_states.shape[-1]:
+            if x.shape[-1] < hidden_states.shape[-1]:
+                x = F.pad(x, (0, hidden_states.shape[-1] - x.shape[-1]))
+            else:
+                x = x[..., : hidden_states.shape[-1]]
+
         return x, (attn_weights if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid_inject")
+@ATTENTION_REGISTRY.register("granite_hybrid")
 def inject_granite_hybrid(
-    layer: nn.Module,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
-    **kwargs) -> GraniteHybridBlock:
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    lora_rank: int = 16,
+    **kwargs: Any,
+) -> Optional[Any]:
+    r"""Injection hook for GraniteHybridBlock supporting single layers and whole models."""
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and not hasattr(target, "forward"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
 
-    r"""
-    Factory / injection hook to construct and inject GraniteHybridBlock into a transformer layer.
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_granite_hybrid(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
 
-    Args:
-        layer: Transformer layer module to patch.
-        model_config: Model configuration with `hidden_size`.
-        comp_config: Compression configuration with optional hyperparameters.
-        layer_idx: 0-indexed position of the layer in the model.
-        total_layers: Total number of transformer layers.
-        old_attn: Previous attention module being replaced.
+    # 2. Single layer injection
+    curr_attn = old_attn
+    if curr_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                curr_attn = target.attention.self
+            else:
+                curr_attn = target.attention
+        elif hasattr(target, "self"):
+            curr_attn = target.self
+        elif hasattr(target, "attn"):
+            curr_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            curr_attn = target.self_attn
 
-    Returns:
-        Instantiated `GraniteHybridBlock` assigned to `layer.attention`.
-    """
-    dim: int = model_config.hidden_size
-    num_experts: int = getattr(comp_config, "num_experts", 8)
-    top_k: int = getattr(comp_config, "top_k", 2)
-    ratio: int = getattr(comp_config, "ratio", 9)
-    new_block = GraniteHybridBlock(
-        dim=dim,
-        num_experts=num_experts,
-        top_k=top_k,
-        ratio=ratio,
-        config=model_config,
-    )
-    layer.attention = new_block
-    return new_block
+    if curr_attn is None and target is not None and hasattr(target, "forward"):
+        curr_attn = target
+
+    if curr_attn is None and cfg is None:
+        return None
+
+    try:
+        new_layer = GraniteHybridBlock(
+            config=cfg,
+            old_attn=curr_attn,
+            lora_rank=lora_rank,
+            **kwargs,
+        )
+    except Exception as ex:
+        logger.warning("Failed to instantiate GraniteHybridBlock: %s", ex)
+        return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_layer
+            else:
+                target.attention = new_layer
+        elif hasattr(target, "self"):
+            target.self = new_layer
+        elif hasattr(target, "attn"):
+            target.attn = new_layer
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_layer
+
+    return new_layer

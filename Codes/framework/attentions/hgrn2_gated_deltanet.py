@@ -130,6 +130,9 @@ class HGRN2GatedDeltaNet(BaseAttention):
         self.lora_alpha: float = float(_cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base: bool = (self.lora_rank > 0)
 
+        # Filter kwargs to avoid duplicate keyword argument errors
+        sub_kwargs = {k: v for k, v in kwargs.items() if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")}
+
         # Branches
         self.hgrn = HGRN2Layer(
             config=config,
@@ -138,7 +141,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             is_decoder=self.is_decoder,
             lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
-            **kwargs,
+            **sub_kwargs,
         )
         self.deltanet = GatedDeltaNet(
             config=config,
@@ -148,7 +151,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             is_decoder=self.is_decoder,
             lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
-            **kwargs,
+            **sub_kwargs,
         )
 
         # Gate and output projection
