@@ -141,12 +141,19 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     has_svd = len(svd_modules) > 0
     svd_param_ids = {id(p) for m in svd_modules for p in m.parameters()}
     has_lora = any(any(t in n.lower() for t in (".lora_", ".lora_a", ".lora_b")) for n, _ in model.named_parameters())
+    fallback_layers = set()
+    if hasattr(model, "compression_stats") and isinstance(model.compression_stats, dict):
+        fallback_layers = set(model.compression_stats.get("fallback_layers", []))
 
     trainable_params = []
     for name, param in model.named_parameters():
         n_low = name.lower()
         parent_module_prefix = name.split(".base_layer.")[0] if ".base_layer." in name else name.rsplit(".", 1)[0]
         layer_has_lora = any(k.startswith(parent_module_prefix) and any(t in k.lower() for t in (".lora_", ".lora_a", ".lora_b")) for k, _ in model.named_parameters())
+
+        # Fallback layers must remain strictly frozen during recovery fine-tuning
+        if fallback_layers and (parent_module_prefix in fallback_layers or any(name.startswith(fb + ".") or name == fb for fb in fallback_layers)):
+            continue
 
         # 1. LoRA adapter parameters are always trainable
         if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt")):

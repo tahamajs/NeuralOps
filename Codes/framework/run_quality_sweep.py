@@ -691,6 +691,22 @@ def main():
                     help="Restrict AdaSVD compression to attention projections only")
     ap.add_argument("--adasvd_min_rank", type=int, default=16,
                     help="Minimum rank floor for AdaSVD layers")
+    ap.add_argument("--admm_sparsity", type=float, default=0.5,
+                    help="Target sparsity ratio for ADMM pruner")
+    ap.add_argument("--admm_quant_bits", type=int, default=4,
+                    help="Quantization bitwidth for ADMM compressor")
+    ap.add_argument("--admm_structured_24", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Enable structured 2:4 sparsity for ADMM")
+    ap.add_argument("--admm_max_error", type=float, default=0.45,
+                    help="Maximum relative Frobenius reconstruction error threshold for ADMM before fallback")
+    ap.add_argument("--admm_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict ADMM compression to attention projections only")
+    ap.add_argument("--admm_rho1", type=float, default=0.1,
+                    help="ADMM penalty parameter rho1 for pruning")
+    ap.add_argument("--admm_rho2", type=float, default=0.1,
+                    help="ADMM penalty parameter rho2 for quantization")
+    ap.add_argument("--admm_max_iter", type=int, default=8,
+                    help="Number of ADMM optimization iterations")
 
     
     # Pre-parse to check if a config file is provided
@@ -1120,16 +1136,40 @@ def main():
                         if getattr(args, "adasvd_min_rank", None) is not None:
                             setattr(model.config, "adasvd_min_rank", args.adasvd_min_rank)
                             setattr(model.config, "min_rank", args.adasvd_min_rank)
+                        if getattr(args, "admm_sparsity", None) is not None:
+                            setattr(model.config, "admm_sparsity", args.admm_sparsity)
+                            setattr(model.config, "sparsity", args.admm_sparsity)
+                        if getattr(args, "admm_quant_bits", None) is not None:
+                            setattr(model.config, "admm_quant_bits", args.admm_quant_bits)
+                            setattr(model.config, "quant_bits", args.admm_quant_bits)
+                        if getattr(args, "admm_structured_24", None) is not None:
+                            setattr(model.config, "admm_structured_24", args.admm_structured_24)
+                            setattr(model.config, "structured_24", args.admm_structured_24)
+                        if getattr(args, "admm_max_error", None) is not None:
+                            setattr(model.config, "admm_max_error", args.admm_max_error)
+                            setattr(model.config, "max_error", args.admm_max_error)
+                        if getattr(args, "admm_target_attention_only", None) is not None:
+                            setattr(model.config, "admm_target_attention_only", args.admm_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.admm_target_attention_only)
+                        if getattr(args, "admm_rho1", None) is not None:
+                            setattr(model.config, "admm_rho1", args.admm_rho1)
+                        if getattr(args, "admm_rho2", None) is not None:
+                            setattr(model.config, "admm_rho2", args.admm_rho2)
+                        if getattr(args, "admm_max_iter", None) is not None:
+                            setattr(model.config, "admm_max_iter", args.admm_max_iter)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd"):
+                    if name in ("aasvd", "adasvd", "admm"):
                         try:
+                            sdata = getattr(model, "compression_stats", {})
+                            if not sdata and name in ("aasvd", "adasvd"):
+                                sdata = {"num_compressed_layers": num_svd_layers}
                             with open(out / f"{name}_stats.json", "w", encoding="utf-8") as sf:
-                                json.dump({"num_compressed_layers": num_svd_layers}, sf, indent=2)
+                                json.dump(sdata, sf, indent=2)
                         except Exception:
                             pass
                     had_nan = False
