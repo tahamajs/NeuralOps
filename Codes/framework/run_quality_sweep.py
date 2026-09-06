@@ -916,6 +916,91 @@ def main():
                     help="Max relative Frobenius error threshold for FLAP before fallback")
     ap.add_argument("--flap_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict FLAP compression to attention projections only")
+    # FLAT-LLM
+    ap.add_argument("--flat_llm_keep_ratio", type=float, default=0.7,
+                    help="Neuron / dimension keep ratio for FLAT-LLM")
+    ap.add_argument("--flat_llm_damping", type=float, default=1e-4,
+                    help="Hessian damping factor for FLAT-LLM")
+    ap.add_argument("--flat_llm_structured_24", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
+                    help="Enable structured 2:4 pruning for FLAT-LLM")
+    ap.add_argument("--flat_llm_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for FLAT-LLM before fallback")
+    ap.add_argument("--flat_llm_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict FLAT-LLM compression to attention projections only")
+    # FRanDI
+    ap.add_argument("--frandi_rank", type=int, default=128,
+                    help="Target rank for FRanDI low-rank SVD decomposition")
+    ap.add_argument("--frandi_energy_threshold", type=float, default=None,
+                    help="Singular energy preservation threshold for FRanDI dynamic rank")
+    ap.add_argument("--frandi_lora_r", type=int, default=16,
+                    help="LoRA rank for FRanDI recovery adapter")
+    ap.add_argument("--frandi_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for FRanDI before fallback")
+    ap.add_argument("--frandi_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict FRanDI compression to attention projections only")
+    # GreCoDeC
+    ap.add_argument("--grecodec_rank", type=int, default=128,
+                    help="Decomposition rank for GreCoDeC")
+    ap.add_argument("--grecodec_max_iter", type=int, default=15,
+                    help="Coordinate descent iterations for GreCoDeC")
+    ap.add_argument("--grecodec_lora_r", type=int, default=16,
+                    help="LoRA rank for GreCoDeC recovery adapter")
+    ap.add_argument("--grecodec_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for GreCoDeC before fallback")
+    ap.add_argument("--grecodec_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict GreCoDeC compression to attention projections only")
+    # HashedNets & HashedNet
+    ap.add_argument("--hashed_net_buckets", type=int, default=65536,
+                    help="Global parameter hash table size for HashedNet")
+    ap.add_argument("--hashed_net_use_sign", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Enable random sign hashing for HashedNet")
+    ap.add_argument("--hashed_net_lora_r", type=int, default=16,
+                    help="LoRA rank for HashedNet recovery adapter")
+    ap.add_argument("--hashed_net_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for HashedNet before fallback")
+    ap.add_argument("--hashed_net_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict HashedNet compression to attention projections only")
+    # Huffman
+    ap.add_argument("--huffman_quantize_bits", type=int, default=8,
+                    help="Quantization bitwidth for Huffman entropy coding")
+    ap.add_argument("--huffman_max_error", type=float, default=0.20,
+                    help="Max relative Frobenius error threshold for Huffman before fallback")
+    ap.add_argument("--huffman_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Huffman compression to attention projections only")
+    # Hybrid SVD
+    ap.add_argument("--hybrid_svd_rank", type=int, default=128,
+                    help="Target rank for Hybrid SVD decomposition")
+    ap.add_argument("--hybrid_svd_use_full", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
+                    help="Use full layer replacement for Hybrid SVD")
+    ap.add_argument("--hybrid_svd_lora_r", type=int, default=16,
+                    help="LoRA rank for Hybrid SVD recovery adapter")
+    ap.add_argument("--hybrid_svd_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for Hybrid SVD before fallback")
+    ap.add_argument("--hybrid_svd_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Hybrid SVD compression to attention projections only")
+    # HybridKV
+    ap.add_argument("--hybridkv_budget", type=float, default=0.3,
+                    help="Dynamic KV cache capacity budget for HybridKV")
+    ap.add_argument("--hybridkv_static_ratio", type=float, default=0.7,
+                    help="Proportion of static retention attention heads for HybridKV")
+    ap.add_argument("--hybridkv_max_cache_len", type=int, default=128,
+                    help="Maximum sequence cache length for HybridKV")
+    ap.add_argument("--hybridkv_num_sinks", type=int, default=4,
+                    help="Number of initial attention sink tokens for HybridKV")
+    ap.add_argument("--hybridkv_recent_window", type=int, default=32,
+                    help="Sliding local window size for HybridKV dynamic heads")
+    ap.add_argument("--hybridkv_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Attach HybridKV caches exclusively to attention projections")
+    # KMeans Quantizer
+    ap.add_argument("--kmeans_clusters", type=int, default=256,
+                    help="Number of centroid codebook clusters for KMeans quantization")
+    ap.add_argument("--kmeans_lora_r", type=int, default=16,
+                    help="LoRA rank for KMeans recovery adapter")
+    ap.add_argument("--kmeans_max_error", type=float, default=0.20,
+                    help="Max relative Frobenius error threshold for KMeans before fallback")
+    ap.add_argument("--kmeans_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict KMeans compression to attention projections only")
+
 
 
     
@@ -1680,13 +1765,137 @@ def main():
                         if getattr(args, "flap_target_attention_only", None) is not None:
                             setattr(model.config, "flap_target_attention_only", args.flap_target_attention_only)
                             setattr(model.config, "target_attention_only", args.flap_target_attention_only)
+                        # FLAT-LLM
+                        if getattr(args, "flat_llm_keep_ratio", None) is not None:
+                            setattr(model.config, "flat_llm_keep_ratio", args.flat_llm_keep_ratio)
+                            setattr(model.config, "keep_ratio", args.flat_llm_keep_ratio)
+                        if getattr(args, "flat_llm_damping", None) is not None:
+                            setattr(model.config, "flat_llm_damping", args.flat_llm_damping)
+                            setattr(model.config, "damping", args.flat_llm_damping)
+                        if getattr(args, "flat_llm_structured_24", None) is not None:
+                            setattr(model.config, "flat_llm_structured_24", args.flat_llm_structured_24)
+                            setattr(model.config, "structured_24", args.flat_llm_structured_24)
+                        if getattr(args, "flat_llm_max_error", None) is not None:
+                            setattr(model.config, "flat_llm_max_error", args.flat_llm_max_error)
+                            setattr(model.config, "max_error", args.flat_llm_max_error)
+                        if getattr(args, "flat_llm_target_attention_only", None) is not None:
+                            setattr(model.config, "flat_llm_target_attention_only", args.flat_llm_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.flat_llm_target_attention_only)
+                        # FRanDI
+                        if getattr(args, "frandi_rank", None) is not None:
+                            setattr(model.config, "frandi_rank", args.frandi_rank)
+                            setattr(model.config, "rank", args.frandi_rank)
+                        if getattr(args, "frandi_energy_threshold", None) is not None:
+                            setattr(model.config, "frandi_energy_threshold", args.frandi_energy_threshold)
+                            setattr(model.config, "energy_threshold", args.frandi_energy_threshold)
+                        if getattr(args, "frandi_lora_r", None) is not None:
+                            setattr(model.config, "frandi_lora_r", args.frandi_lora_r)
+                            setattr(model.config, "lora_r", args.frandi_lora_r)
+                        if getattr(args, "frandi_max_error", None) is not None:
+                            setattr(model.config, "frandi_max_error", args.frandi_max_error)
+                            setattr(model.config, "max_error", args.frandi_max_error)
+                        if getattr(args, "frandi_target_attention_only", None) is not None:
+                            setattr(model.config, "frandi_target_attention_only", args.frandi_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.frandi_target_attention_only)
+                        # GreCoDeC
+                        if getattr(args, "grecodec_rank", None) is not None:
+                            setattr(model.config, "grecodec_rank", args.grecodec_rank)
+                            setattr(model.config, "rank", args.grecodec_rank)
+                        if getattr(args, "grecodec_max_iter", None) is not None:
+                            setattr(model.config, "grecodec_max_iter", args.grecodec_max_iter)
+                            setattr(model.config, "max_iter", args.grecodec_max_iter)
+                        if getattr(args, "grecodec_lora_r", None) is not None:
+                            setattr(model.config, "grecodec_lora_r", args.grecodec_lora_r)
+                            setattr(model.config, "lora_r", args.grecodec_lora_r)
+                        if getattr(args, "grecodec_max_error", None) is not None:
+                            setattr(model.config, "grecodec_max_error", args.grecodec_max_error)
+                            setattr(model.config, "max_error", args.grecodec_max_error)
+                        if getattr(args, "grecodec_target_attention_only", None) is not None:
+                            setattr(model.config, "grecodec_target_attention_only", args.grecodec_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.grecodec_target_attention_only)
+                        # HashedNets & HashedNet
+                        if getattr(args, "hashed_net_buckets", None) is not None:
+                            setattr(model.config, "hashed_net_buckets", args.hashed_net_buckets)
+                            setattr(model.config, "n_buckets", args.hashed_net_buckets)
+                        if getattr(args, "hashed_net_use_sign", None) is not None:
+                            setattr(model.config, "hashed_net_use_sign", args.hashed_net_use_sign)
+                            setattr(model.config, "use_sign", args.hashed_net_use_sign)
+                        if getattr(args, "hashed_net_lora_r", None) is not None:
+                            setattr(model.config, "hashed_net_lora_r", args.hashed_net_lora_r)
+                            setattr(model.config, "lora_r", args.hashed_net_lora_r)
+                        if getattr(args, "hashed_net_max_error", None) is not None:
+                            setattr(model.config, "hashed_net_max_error", args.hashed_net_max_error)
+                            setattr(model.config, "max_error", args.hashed_net_max_error)
+                        if getattr(args, "hashed_net_target_attention_only", None) is not None:
+                            setattr(model.config, "hashed_net_target_attention_only", args.hashed_net_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.hashed_net_target_attention_only)
+                        # Huffman
+                        if getattr(args, "huffman_quantize_bits", None) is not None:
+                            setattr(model.config, "huffman_quantize_bits", args.huffman_quantize_bits)
+                            setattr(model.config, "quantize_bits", args.huffman_quantize_bits)
+                            setattr(model.config, "bits", args.huffman_quantize_bits)
+                        if getattr(args, "huffman_max_error", None) is not None:
+                            setattr(model.config, "huffman_max_error", args.huffman_max_error)
+                            setattr(model.config, "max_error", args.huffman_max_error)
+                        if getattr(args, "huffman_target_attention_only", None) is not None:
+                            setattr(model.config, "huffman_target_attention_only", args.huffman_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.huffman_target_attention_only)
+                        # Hybrid SVD
+                        if getattr(args, "hybrid_svd_rank", None) is not None:
+                            setattr(model.config, "hybrid_svd_rank", args.hybrid_svd_rank)
+                            setattr(model.config, "svd_rank", args.hybrid_svd_rank)
+                            setattr(model.config, "rank", args.hybrid_svd_rank)
+                        if getattr(args, "hybrid_svd_use_full", None) is not None:
+                            setattr(model.config, "hybrid_svd_use_full", args.hybrid_svd_use_full)
+                            setattr(model.config, "use_full_layer_replacement", args.hybrid_svd_use_full)
+                        if getattr(args, "hybrid_svd_lora_r", None) is not None:
+                            setattr(model.config, "hybrid_svd_lora_r", args.hybrid_svd_lora_r)
+                            setattr(model.config, "lora_r", args.hybrid_svd_lora_r)
+                        if getattr(args, "hybrid_svd_max_error", None) is not None:
+                            setattr(model.config, "hybrid_svd_max_error", args.hybrid_svd_max_error)
+                            setattr(model.config, "max_error", args.hybrid_svd_max_error)
+                        if getattr(args, "hybrid_svd_target_attention_only", None) is not None:
+                            setattr(model.config, "hybrid_svd_target_attention_only", args.hybrid_svd_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.hybrid_svd_target_attention_only)
+                        # HybridKV
+                        if getattr(args, "hybridkv_budget", None) is not None:
+                            setattr(model.config, "hybridkv_budget", args.hybridkv_budget)
+                            setattr(model.config, "budget", args.hybridkv_budget)
+                        if getattr(args, "hybridkv_static_ratio", None) is not None:
+                            setattr(model.config, "hybridkv_static_ratio", args.hybridkv_static_ratio)
+                            setattr(model.config, "static_ratio", args.hybridkv_static_ratio)
+                        if getattr(args, "hybridkv_max_cache_len", None) is not None:
+                            setattr(model.config, "hybridkv_max_cache_len", args.hybridkv_max_cache_len)
+                            setattr(model.config, "max_cache_len", args.hybridkv_max_cache_len)
+                        if getattr(args, "hybridkv_num_sinks", None) is not None:
+                            setattr(model.config, "hybridkv_num_sinks", args.hybridkv_num_sinks)
+                            setattr(model.config, "num_sinks", args.hybridkv_num_sinks)
+                        if getattr(args, "hybridkv_recent_window", None) is not None:
+                            setattr(model.config, "hybridkv_recent_window", args.hybridkv_recent_window)
+                            setattr(model.config, "recent_window", args.hybridkv_recent_window)
+                        if getattr(args, "hybridkv_target_attention_only", None) is not None:
+                            setattr(model.config, "hybridkv_target_attention_only", args.hybridkv_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.hybridkv_target_attention_only)
+                        # KMeans Quantizer
+                        if getattr(args, "kmeans_clusters", None) is not None:
+                            setattr(model.config, "kmeans_clusters", args.kmeans_clusters)
+                            setattr(model.config, "n_clusters", args.kmeans_clusters)
+                        if getattr(args, "kmeans_lora_r", None) is not None:
+                            setattr(model.config, "kmeans_lora_r", args.kmeans_lora_r)
+                            setattr(model.config, "lora_r", args.kmeans_lora_r)
+                        if getattr(args, "kmeans_max_error", None) is not None:
+                            setattr(model.config, "kmeans_max_error", args.kmeans_max_error)
+                            setattr(model.config, "max_error", args.kmeans_max_error)
+                        if getattr(args, "kmeans_target_attention_only", None) is not None:
+                            setattr(model.config, "kmeans_target_attention_only", args.kmeans_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.kmeans_target_attention_only)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):

@@ -1,7 +1,6 @@
 """
 HashedNet Compressor: replaces nn.Linear and Conv1D layers with HashedLinear.
-Registered in COMPRESSOR_REGISTRY as 'hashed_net'. Production hardened with
-reconstruction validation, adaptive bucket scaling, Conv1D support, and safe fallback.
+Registered in COMPRESSOR_REGISTRY as 'hashed_net', 'hashednets', and 'hashednets_compressor'.
 """
 
 from __future__ import annotations
@@ -22,21 +21,26 @@ from .hashed_linear import HashedLinear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract config value from None, dict, or namespace/object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
+
+
+@COMPRESSOR_REGISTRY.register("hashed_net")
 @COMPRESSOR_REGISTRY.register("hashed_net_compressor")
+@COMPRESSOR_REGISTRY.register("hashednets")
+@COMPRESSOR_REGISTRY.register("hashednets_compressor")
 class HashedNetCompressor(BaseCompressor):
     """
     Compress a model by replacing target linear/Conv1D layers with HashedLinear,
     which shares weights globally through compact hash tables.
-
-    Production hardening features:
-    - Relative Frobenius reconstruction error validation with configurable max_error.
-    - Adaptive bucket retries: automatically doubles bucket budget when error exceeds threshold.
-    - Safe fallback to original module if error remains high or table contains NaNs/Infs.
-    - Conv1D support (GPT-2 c_attn, c_proj) via transposed weight projection.
-    - Unified critical-layer protection via should_compress_linear.
-    - Optional trainable LoRA adapters and hash-table freezing.
-    - Clean rank / bucket budget derivation guaranteeing parameter reduction.
-    - Detailed per-layer compression statistics and logging.
     """
 
     def __init__(
@@ -45,35 +49,42 @@ class HashedNetCompressor(BaseCompressor):
         n_buckets: Optional[int] = None,
         compression_ratio: Optional[float] = None,
         rank: Optional[Union[int, float]] = None,
-        max_error: float = 0.20,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
         fallback_to_original: bool = True,
         max_retries: int = 2,
         use_sign: bool = True,
         lora_rank: Optional[int] = None,
         lora_alpha: float = 1.0,
         freeze_hash_table: bool = False,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="hashed_net", **kwargs)
         conf = cfg or kwargs.get("comp_config", None)
+        self.cfg = conf
 
-        if conf is not None:
-            n_buckets = getattr(conf, "hashed_net_buckets", getattr(conf, "n_buckets", n_buckets))
-            compression_ratio = getattr(conf, "compression_ratio", getattr(conf, "target_param_ratio", compression_ratio))
-            rank = getattr(conf, "rank", getattr(conf, "hashed_net_rank", rank))
-            max_error = getattr(conf, "hashed_net_max_error", getattr(conf, "max_error", max_error))
-            fallback_to_original = getattr(
-                conf, "hashed_net_fallback_to_original", getattr(conf, "fallback_to_original", fallback_to_original)
-            )
-            use_sign = getattr(conf, "use_sign", use_sign)
-            lora_rank = getattr(conf, "lora_rank", getattr(conf, "lora_r", getattr(conf, "hashed_net_lora_rank", lora_rank)))
-            lora_alpha = getattr(conf, "lora_alpha", getattr(conf, "hashed_net_lora_alpha", lora_alpha))
-            freeze_hash_table = getattr(conf, "freeze_hash_table", freeze_hash_table)
-            skip_attention_qkv = getattr(conf, "skip_attention_qkv", skip_attention_qkv)
-            target_layers = getattr(conf, "target_layers", target_layers)
+        n_buckets = _cfg_get(conf, "hashed_net_buckets", _cfg_get(conf, "n_buckets", n_buckets))
+        compression_ratio = _cfg_get(conf, "compression_ratio", _cfg_get(conf, "target_param_ratio", compression_ratio))
+        rank = _cfg_get(conf, "hashed_net_rank", _cfg_get(conf, "rank", rank))
+        self.max_error = float(_cfg_get(conf, "hashed_net_max_error", _cfg_get(conf, "max_error", max_error)))
+        self.target_attention_only = bool(
+            _cfg_get(conf, "hashed_net_target_attention_only", _cfg_get(conf, "target_attention_only", target_attention_only))
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(conf, "hashed_net_fallback_to_original", _cfg_get(conf, "fallback_to_original", fallback_to_original))
+        )
+        self.use_sign = bool(_cfg_get(conf, "use_sign", use_sign))
+        self.lora_rank = _cfg_get(conf, "lora_rank", _cfg_get(conf, "lora_r", _cfg_get(conf, "hashed_net_lora_rank", lora_rank)))
+        if self.lora_rank is not None:
+            self.lora_rank = int(self.lora_rank) if int(self.lora_rank) > 0 else None
+        self.lora_alpha = float(_cfg_get(conf, "lora_alpha", _cfg_get(conf, "hashed_net_lora_alpha", lora_alpha)))
+        self.freeze_hash_table = bool(_cfg_get(conf, "freeze_hash_table", freeze_hash_table or (self.lora_rank is not None and self.lora_rank > 0)))
+        self.skip_attention_qkv = bool(_cfg_get(conf, "skip_attention_qkv", skip_attention_qkv))
+        self.target_layers = target_layers or _cfg_get(conf, "target_layers", None)
+        self.max_retries = int(max_retries)
 
         # Parse bucket budget or ratio
         self.compression_ratio: Optional[float] = None
@@ -89,21 +100,21 @@ class HashedNetCompressor(BaseCompressor):
         else:
             self.base_buckets = 65536 if self.compression_ratio is None else None
 
-        self.max_error = float(max_error)
-        self.fallback_to_original = bool(fallback_to_original)
-        self.max_retries = int(max_retries)
-        self.use_sign = bool(use_sign)
-        self.lora_rank = int(lora_rank) if lora_rank is not None and lora_rank > 0 else None
-        self.lora_alpha = float(lora_alpha)
-        self.freeze_hash_table = bool(freeze_hash_table or (self.lora_rank is not None and self.lora_rank > 0))
-        self.skip_attention_qkv = bool(skip_attention_qkv)
-        self.target_layers = target_layers
-
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
         self.layer_buckets: Dict[str, int] = {}
+
+    def _determine_layer_buckets(self, in_features: int, out_features: int) -> int:
+        total_w = in_features * out_features
+        if self.compression_ratio is not None:
+            target = max(16, int(total_w * self.compression_ratio))
+        elif self.base_buckets is not None:
+            target = min(self.base_buckets, max(16, int(total_w * 0.5)))
+        else:
+            target = min(65536, max(16, int(total_w * 0.25)))
+        return max(16, min(target, total_w))
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
@@ -118,34 +129,30 @@ class HashedNetCompressor(BaseCompressor):
         return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        cls_name = module.__class__.__name__.lower()
-        is_linear = isinstance(module, nn.Linear)
-        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-        if not (is_linear or is_conv1d):
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        if isinstance(module, HashedLinear):
+        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+            return False
+
+        if self.target_attention_only:
+            if not any(attn_kw in name_lower for attn_kw in _ATTN_NAMES):
+                return False
+
+        if self._is_gqa_asymmetric(name, module):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        if not (is_linear or is_conv1d) or isinstance(target_mod, HashedLinear):
             return False
         if not should_compress_linear(self.model, name):
-            return False
-        if self._is_gqa_asymmetric(name, module):
             return False
         if self.target_layers is not None:
             return any(t in name for t in self.target_layers)
         return True
-
-    def _determine_layer_buckets(self, in_f: int, out_f: int) -> int:
-        """Compute target bucket count guaranteeing parameter reduction."""
-        total_weights = in_f * out_f
-        max_allowed_buckets = max(16, int(total_weights * 0.75))
-
-        if self.compression_ratio is not None:
-            raw_b = int(total_weights * self.compression_ratio)
-        elif self.base_buckets is not None:
-            raw_b = self.base_buckets
-        else:
-            raw_b = 65536
-
-        return max(16, min(raw_b, max_allowed_buckets))
 
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress the target model by substituting linear/Conv1D layers with HashedLinear."""
@@ -160,6 +167,23 @@ class HashedNetCompressor(BaseCompressor):
         self.layer_buckets = {}
         seen_weights: set[int] = set()
 
+        total_orig_params = 0
+        total_comp_params = 0
+
+        # Freeze skipped non-target layers if target_attention_only is enabled
+        if self.target_attention_only:
+            for name, module in self.model.named_modules():
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+                    continue
+                target_mod = getattr(module, "base_layer", module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
+
         targets = [
             (name, mod)
             for name, mod in list(self.model.named_modules())
@@ -171,18 +195,19 @@ class HashedNetCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         for name, module in targets:
-            if not hasattr(module, "weight") or module.weight is None:
+            target_mod = getattr(module, "base_layer", module)
+            if not hasattr(target_mod, "weight") or target_mod.weight is None:
                 continue
 
-            w_id = id(module.weight)
+            w_id = id(target_mod.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
                 continue
             seen_weights.add(w_id)
 
-            cls_name = module.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-            raw_w = module.weight.data
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+            raw_w = target_mod.weight.data
 
             if is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -191,6 +216,8 @@ class HashedNetCompressor(BaseCompressor):
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
                 W_target = raw_w.float()
 
+            orig_layer_params = in_f * out_f
+            total_orig_params += orig_layer_params
             W_norm = torch.norm(W_target, p="fro").item()
             total_weights = in_f * out_f
             max_allowed_buckets = max(16, int(total_weights * 0.90))
@@ -261,6 +288,9 @@ class HashedNetCompressor(BaseCompressor):
                 if self.fallback_to_original:
                     logger.info("Skipping HashedNet compression for %s (fallback to original).", name)
                     self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    total_comp_params += orig_layer_params
                     continue
 
             if self.freeze_hash_table and layer_compressed is not None:
@@ -268,12 +298,17 @@ class HashedNetCompressor(BaseCompressor):
 
             replace_module(self.model, name, layer_compressed)
             self.compressed_layers.append(name)
+            comp_layer_params = layer_compressed.n_buckets
+            if layer_compressed.lora_rank > 0:
+                comp_layer_params += layer_compressed.lora_rank * (in_f + out_f)
+            total_comp_params += comp_layer_params
 
         # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
-                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                first_p = next(self.model.parameters(), None)
+                dev = first_p.device if first_p is not None else torch.device("cpu")
                 dummy = torch.randint(0, 100, (1, 8), device=dev)
                 try:
                     self.model(dummy)
@@ -287,6 +322,8 @@ class HashedNetCompressor(BaseCompressor):
         except Exception as e:
             logger.warning("HashedNet post-compression forward check warning: %s", e)
             forward_check_success = False
+
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -306,49 +343,32 @@ class HashedNetCompressor(BaseCompressor):
                 "layer_errors": self.layer_errors,
                 "layer_buckets": self.layer_buckets,
                 "max_error": self.max_error,
+                "target_attention_only": self.target_attention_only,
                 "fallback_to_original": self.fallback_to_original,
                 "avg_reconstruction_error": avg_err,
+                "n_buckets": self.base_buckets,
                 "use_sign": self.use_sign,
                 "lora_rank": self.lora_rank,
+                "lora_alpha": self.lora_alpha,
+                "effective_parameter_ratio": round(effective_ratio, 4),
                 "forward_check_success": forward_check_success,
             }
         )
         logger.info(
-            "HashedNet compression complete: %d compressed, %d fallback. Avg error: %.4f.",
+            "HashedNet compression complete: %d compressed, %d fallback. Avg error: %.4f, Effective Param Ratio: %.2fx",
             len(self.compressed_layers),
             len(self.fallback_layers),
             avg_err,
+            effective_ratio,
         )
         return self.model, stats
-
-    def compress_linear(self, linear: nn.Module) -> Tuple[HashedLinear, float]:
-        """Compress a single linear or Conv1D layer into HashedLinear."""
-        cls_name = linear.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
-        raw_w = linear.weight.data
-        if is_conv1d:
-            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W_target = raw_w.t().float()
-        else:
-            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-            W_target = raw_w.float()
-
-        n_b = self._determine_layer_buckets(in_f, out_f)
-        hashed = HashedLinear.from_linear(
-            linear,
-            n_buckets=n_b,
-            use_sign=self.use_sign,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-        )
-        W_recon = hashed.get_weight().float()
-        W_norm = torch.norm(W_target, p="fro").item()
-        err = float(torch.norm(W_target - W_recon, p="fro").item() / max(W_norm, 1e-12))
-        return hashed, err
 
 
 @COMPRESSOR_REGISTRY.register("hashed_net")
 @COMPRESSOR_REGISTRY.register("hashed_net_factory")
+@COMPRESSOR_REGISTRY.register("hashednets")
+@COMPRESSOR_REGISTRY.register("hashednets_factory")
+@COMPRESSOR_REGISTRY.register("hashednets_compressor")
 def hashed_net_factory(
     model: nn.Module,
     comp_config: Optional[Any] = None,
@@ -357,14 +377,31 @@ def hashed_net_factory(
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for HashedNet compressor."""
     rank = kwargs.pop("rank", rank)
-    lora_rank = kwargs.pop("lora_rank", getattr(comp_config, "lora_rank", getattr(comp_config, "lora_r", None)) if comp_config else None)
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
+    n_buckets = kwargs.pop("n_buckets", _cfg_get(comp_config, "n_buckets", None))
+    use_sign = kwargs.pop("use_sign", _cfg_get(comp_config, "use_sign", True))
+    lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", _cfg_get(comp_config, "lora_r", 16)))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "hashed_net_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "hashed_net_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(comp_config, "hashed_net_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+
     compressor = HashedNetCompressor(
         model,
+        n_buckets=n_buckets,
         rank=rank,
+        use_sign=use_sign,
         lora_rank=lora_rank,
         lora_alpha=lora_alpha,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
         cfg=comp_config,
         **kwargs,
     )
@@ -374,4 +411,7 @@ def hashed_net_factory(
     return compressed_model
 
 
-__all__ = ["HashedNetCompressor", "hashed_net_factory"]
+hashednets_factory = hashed_net_factory
+HashedNetsCompressor = HashedNetCompressor
+
+__all__ = ["HashedNetCompressor", "HashedNetsCompressor", "hashed_net_factory", "hashednets_factory"]

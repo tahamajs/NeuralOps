@@ -6,12 +6,28 @@ from __future__ import annotations
 
 import heapq
 import math
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract config value from None, dict, or namespace/object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
 
 
 class HuffmanNode:
@@ -89,104 +105,83 @@ class HuffmanCoder:
     ) -> Tuple[bytes, Dict[int, str], Dict[str, Any]]:
         """
         Encode input tensor into packed bitstream bytes and Huffman codebook.
-        Returns:
-            packed_bytes: Packed bytes array of variable-length codes.
-            code_map: Dictionary mapping integer symbols to bitstrings.
-            metadata: Shape, quantization scale/min, total bits, entropy, efficiency.
         """
         flat = tensor.detach().float().view(-1)
         numel = flat.numel()
         if numel == 0:
-            return b"", {}, {"total_elements": 0, "entropy": 0.0}
+            return b"", {}, {"total_elements": 0, "entropy": 0.0, "compressed_bytes": 0}
 
         min_val = flat.min().item()
         max_val = flat.max().item()
 
-        # Step 1: Discretize if quantize_bits is specified
-        if quantize_bits is not None:
-            q_levels = (2**quantize_bits) - 1
-            scale = max((max_val - min_val) / float(max(q_levels, 1)), 1e-8)
-            discrete_symbols = torch.clamp(torch.round((flat - min_val) / scale), 0, q_levels).long().tolist()
+        if quantize_bits is not None and quantize_bits < 16:
+            num_levels = 2 ** int(quantize_bits)
+            scale = (max_val - min_val) / max(num_levels - 1, 1)
+            scale = max(scale, 1e-12)
+            quantized = torch.clamp(
+                torch.round((flat - min_val) / scale), 0, num_levels - 1
+            ).long()
         else:
             scale = 1.0
-            discrete_symbols = flat.long().tolist()
+            quantized = flat.long()
 
-        # Step 2: Frequency analysis
-        freq_map: Dict[int, int] = {}
-        for sym in discrete_symbols:
-            freq_map[sym] = freq_map.get(sym, 0) + 1
+        symbols, counts = torch.unique(quantized, return_counts=True)
+        frequencies = {int(s.item()): int(c.item()) for s, c in zip(symbols, counts)}
 
-        # Step 3: Build tree & generate code table
-        root = HuffmanCoder.build_tree(freq_map)
-        code_map = HuffmanCoder.generate_code_table(root)
+        root = HuffmanCoder.build_tree(frequencies)
+        code_table = HuffmanCoder.generate_code_table(root)
 
-        # Step 4: Bitstream encoding & byte packing
-        bitstring_list = [code_map[sym] for sym in discrete_symbols]
-        total_bitstring = "".join(bitstring_list)
-        total_bits = len(total_bitstring)
+        probs = [c / numel for c in frequencies.values()]
+        entropy = -sum(p * math.log2(p) for p in probs if p > 0.0)
 
-        # Pack bitstring into bytearray
-        packed_bytes = bytearray()
-        for i in range(0, total_bits, 8):
-            byte_chunk = total_bitstring[i : i + 8]
-            if len(byte_chunk) < 8:
-                byte_chunk = byte_chunk.ljust(8, "0")
-            packed_bytes.append(int(byte_chunk, 2))
+        # Packed bitstream
+        bit_chunks = [code_table.get(int(v.item()), "0") for v in quantized]
+        bitstream_str = "".join(bit_chunks)
+        pad_len = (8 - len(bitstream_str) % 8) % 8
+        padded_bitstream = bitstream_str + "0" * pad_len
 
-        # Step 5: Information-theoretic stats
-        entropy = 0.0
-        avg_code_len = 0.0
-        for sym, count in freq_map.items():
-            prob = count / float(numel)
-            entropy -= prob * math.log2(max(prob, 1e-12))
-            avg_code_len += prob * len(code_map[sym])
-
-        efficiency = (entropy / max(avg_code_len, 1e-6)) * 100.0
-        fp16_bytes = numel * 2
-        compressed_bytes = len(packed_bytes) + len(code_map) * 4  # packed data + codebook overhead
-        compression_ratio = fp16_bytes / max(compressed_bytes, 1)
+        byte_array = bytearray()
+        for i in range(0, len(padded_bitstream), 8):
+            byte_array.append(int(padded_bitstream[i : i + 8], 2))
 
         metadata = {
+            "scale": scale,
+            "min_val": min_val,
             "orig_shape": list(tensor.shape),
             "total_elements": numel,
-            "quantize_bits": quantize_bits,
-            "min_val": min_val,
-            "scale": scale,
-            "total_bits": total_bits,
             "entropy": round(entropy, 3),
-            "avg_code_length": round(avg_code_len, 3),
-            "coding_efficiency_pct": round(efficiency, 2),
-            "compressed_bytes": compressed_bytes,
-            "compression_ratio": round(compression_ratio, 2),
+            "pad_len": pad_len,
+            "compressed_bytes": len(byte_array),
         }
-        return bytes(packed_bytes), code_map, metadata
+        return bytes(byte_array), code_table, metadata
 
     @staticmethod
     def decode(
         packed_bytes: bytes,
-        code_map: Dict[int, str],
+        code_table: Dict[int, str],
         metadata: Dict[str, Any],
-        device: torch.device = torch.device("cpu"),
+        device: Optional[torch.device] = None,
     ) -> torch.Tensor:
-        """Decode packed bytes back to reconstructed floating point tensor."""
+        """Decode bitstream back into reconstructed tensor."""
         total_elements = metadata.get("total_elements", 0)
         if total_elements == 0:
-            return torch.empty(0, device=device)
+            return torch.empty(metadata.get("orig_shape", [0]), device=device)
 
-        total_bits = metadata.get("total_bits", len(packed_bytes) * 8)
-        # Unpack bytes to bitstring
-        bitstring = "".join(f"{b:08b}" for b in packed_bytes)[:total_bits]
+        rev_table = {v: k for k, v in code_table.items()}
+        pad_len = metadata.get("pad_len", 0)
 
-        # Invert code map
-        reverse_map = {code: sym for sym, code in code_map.items()}
+        bit_list = [f"{b:08b}" for b in packed_bytes]
+        bitstream = "".join(bit_list)
+        if pad_len > 0:
+            bitstream = bitstream[:-pad_len]
 
         decoded_symbols: List[int] = []
-        cur_code = ""
-        for bit in bitstring:
-            cur_code += bit
-            if cur_code in reverse_map:
-                decoded_symbols.append(reverse_map[cur_code])
-                cur_code = ""
+        cur_buf = ""
+        for bit in bitstream:
+            cur_buf += bit
+            if cur_buf in rev_table:
+                decoded_symbols.append(rev_table[cur_buf])
+                cur_buf = ""
                 if len(decoded_symbols) == total_elements:
                     break
 
@@ -200,64 +195,225 @@ class HuffmanCoder:
         return reconstructed.reshape(shape)
 
 
+@COMPRESSOR_REGISTRY.register("huffman")
 class HuffmanCompressor(BaseCompressor):
     """
     HuffmanCompressor: Model-wide entropy compression profiler and simulator.
-
-    Args:
-        model: PyTorch model.
-        quantize_bits: Pre-quantization bit-width before Huffman encoding (default 8).
     """
 
     def __init__(
         self,
         model: nn.Module,
         quantize_bits: int = 8,
+        max_error: float = 0.20,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="huffman", **kwargs)
-        self.quantize_bits = int(quantize_bits)
+        cfg = cfg or kwargs.get("comp_config", None)
+        self.cfg = cfg
+
+        self.quantize_bits = int(_cfg_get(cfg, "huffman_quantize_bits", _cfg_get(cfg, "quantize_bits", _cfg_get(cfg, "bits", quantize_bits))))
+        self.max_error = float(_cfg_get(cfg, "huffman_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.target_attention_only = bool(
+            _cfg_get(cfg, "huffman_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(cfg, "huffman_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+        )
+
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
+        self.skipped_layers: List[str] = []
+        self.layer_errors: Dict[str, float] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+            return False
+        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+            return False
+
+        if self.target_attention_only:
+            if not any(attn_kw in name_lower for attn_kw in _ATTN_NAMES):
+                return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        if not (is_linear or is_conv1d):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        return True
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Profile and apply Huffman entropy coding across all linear layers."""
-        # Detect model device before any weight surgery
-        _model_device = next((p.device for p in self.model.parameters()), torch.device("cpu"))
+        first_p = next(self.model.parameters(), None)
+        _model_device = first_p.device if first_p is not None else torch.device("cpu")
 
         total_orig_bytes = 0
         total_comp_bytes = 0
         total_entropy = 0.0
-        num_layers = 0
+
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        seen_weights: set[int] = set()
+
+        # Freeze skipped non-target layers if target_attention_only is enabled
+        if self.target_attention_only:
+            for name, module in self.model.named_modules():
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+                    continue
+                target_mod = getattr(module, "base_layer", module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear):
-                W = module.weight.data
-                packed_b, code_map, meta = HuffmanCoder.encode(W, quantize_bits=self.quantize_bits)
-                total_orig_bytes += W.numel() * 2
+            if not self._is_target_module(name, module):
+                continue
+
+            target_mod = getattr(module, "base_layer", module)
+            if not hasattr(target_mod, "weight") or target_mod.weight is None:
+                continue
+
+            w_id = id(target_mod.weight)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+            raw_w = target_mod.weight.data
+            orig_shape = raw_w.shape
+            orig_device = raw_w.device
+            orig_dtype = raw_w.dtype
+
+            W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
+            norm_w = torch.norm(W_orig, p="fro").item()
+
+            try:
+                packed_b, code_map, meta = HuffmanCoder.encode(W_orig, quantize_bits=self.quantize_bits)
+                W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=orig_device).to(dtype=torch.float32)
+
+                if norm_w < 1e-12:
+                    err = 0.0
+                else:
+                    err = float(torch.norm(W_orig - W_rec, p="fro").item() / norm_w)
+
+                self.layer_errors[name] = err
+
+                if err > self.max_error:
+                    logger.warning("Huffman error %.4f on %s exceeded max_error %.4f", err, name, self.max_error)
+                    if self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        total_orig_bytes += raw_w.numel() * 2
+                        total_comp_bytes += raw_w.numel() * 2
+                        continue
+
+                # Apply reconstructed weight
+                if is_conv1d:
+                    res_w = W_rec.t().to(dtype=orig_dtype, device=orig_device)
+                else:
+                    res_w = W_rec.to(dtype=orig_dtype, device=orig_device)
+
+                assert res_w.shape == orig_shape, f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
+                target_mod.weight.data.copy_(res_w)
+
+                # Preserve LoRA adapter trainability
+                if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
+                    if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
+                        module.lora_A.weight.requires_grad = True
+                    if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
+                        module.lora_B.weight.requires_grad = True
+
+                self.compressed_layers.append(name)
+                total_orig_bytes += raw_w.numel() * 2
                 total_comp_bytes += meta["compressed_bytes"]
                 total_entropy += meta["entropy"]
-                num_layers += 1
 
-                # Reconstruct simulated weights
-                W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=_model_device)
-                module.weight.data = W_rec.to(device=module.weight.device, dtype=module.weight.dtype)
+            except Exception as e:
+                logger.debug("Huffman exception on %s: %s", name, e)
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_orig_bytes += raw_w.numel() * 2
+                total_comp_bytes += raw_w.numel() * 2
 
-        # Ensure all parameters are on the original device (e.g. GPT-2 Conv1D / Embeddings)
+        # Ensure all parameters on target device
         self.model.to(device=_model_device)
 
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                try:
+                    self.model(dummy)
+                except Exception:
+                    first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                    in_dim = getattr(first_linear, "in_features", 8)
+                    self.model(torch.randn(1, 8, in_dim, device=dev))
+        except Exception:
+            forward_check_success = False
+
         stats = self.get_compression_stats()
+        avg_err = (sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
         stats["quantize_bits"] = self.quantize_bits
-        stats["avg_entropy_bits"] = round(total_entropy / max(num_layers, 1), 2)
+        stats["avg_entropy_bits"] = round(total_entropy / max(len(self.compressed_layers), 1), 2)
         stats["total_compressed_bytes"] = total_comp_bytes
         stats["huffman_compression_ratio"] = round(
             total_orig_bytes / max(total_comp_bytes, 1), 2
         )
+        stats["theoretical_compression_ratio"] = stats["huffman_compression_ratio"]
+        stats["num_compressed"] = len(self.compressed_layers)
+        stats["num_fallback"] = len(self.fallback_layers)
+        stats["num_skipped"] = len(self.skipped_layers)
+        stats["compressed_layers"] = self.compressed_layers
+        stats["fallback_layers"] = self.fallback_layers
+        stats["skipped_layers"] = self.skipped_layers
+        stats["avg_reconstruction_error"] = avg_err
+        stats["forward_check_success"] = forward_check_success
         return self.model, stats
 
 
 @COMPRESSOR_REGISTRY.register("huffman")
 def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Huffman compressor factory function."""
-    bits = kwargs.pop("quantize_bits", kwargs.pop("bits", getattr(comp_config, "huffman_bits", 8) if comp_config else 8))
-    compressor = HuffmanCompressor(model, quantize_bits=bits, **kwargs)
+    bits = kwargs.pop("quantize_bits", kwargs.pop("bits", _cfg_get(comp_config, "huffman_bits", _cfg_get(comp_config, "quantize_bits", 8))))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "huffman_max_error", _cfg_get(comp_config, "max_error", 0.20)))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "huffman_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(comp_config, "huffman_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
+    )
+    compressor = HuffmanCompressor(
+        model,
+        quantize_bits=bits,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+__all__ = ["HuffmanNode", "HuffmanCoder", "HuffmanCompressor", "huffman_factory"]
