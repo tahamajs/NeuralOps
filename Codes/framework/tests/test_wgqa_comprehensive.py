@@ -101,8 +101,8 @@ def test_rope_and_even_odd_dim_safety():
         assert rotated.shape == t.shape, f"Odd dim {d} failed shape preservation in _rotate_half"
 
     head_dim_odd = 15
-    q = torch.randn(2, 8, 4, head_dim_odd)
-    k = torch.randn(2, 8, 2, head_dim_odd)
+    q = torch.randn(2, 4, 8, head_dim_odd)
+    k = torch.randn(2, 2, 8, head_dim_odd)
     cos = torch.randn(8, head_dim_odd)
     sin = torch.randn(8, head_dim_odd)
 
