@@ -151,8 +151,9 @@ class LoRALinear(nn.Module):
 class SVDMambaSub(nn.Module):
     def __init__(self, d_model: int = 768, config: Optional[Any] = None, rank: Optional[int] = None, is_decoder: bool = False, **kwargs: Any) -> None:
         super().__init__()
-        if config is not None:
-            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
+        if d_model is None and config is not None:
+            d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
+        d_model = int(d_model or 768)
         self.d_model = d_model
         self.ssm = SimpleSSM(d_model=d_model, config=config, is_decoder=is_decoder)
         self.in_proj = nn.Linear(d_model, d_model)
@@ -188,15 +189,15 @@ class Jamba2Block(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
-        d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or d_model
+        d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim") or d_model
         n_heads = kwargs.get("n_heads") or kwargs.get("num_heads") or kwargs.get("num_attention_heads") or n_heads
 
         if d_model is None:
             if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "d_model", 768))
+                d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
             elif source_attn is not None:
                 out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                d_model = getattr(out_layer, "out_features", getattr(source_attn, "hidden_size", getattr(source_attn, "dim", 768))) if out_layer is not None else 768
             else:
                 d_model = 768
 
@@ -237,10 +238,19 @@ class Jamba2Block(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        # LoRA config
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        # LoRA config: independent inspection of config, comp_config, and kwargs
+        if config is not None:
+            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        elif comp_config is not None:
+            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+        else:
+            self.lora_rank = kwargs.get("lora_rank", 16)
+            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
         self.freeze_base = (self.lora_rank > 0)
+        self.source_attn = source_attn
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         # MHA Projections
         self.q_lin = LoRALinear(self.d_model, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -270,6 +280,18 @@ class Jamba2Block(BaseAttention):
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    def freeze_base_weights(self) -> None:
+        """Freeze base linear projection weights when LoRA adapters are present."""
+        for mod in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
+            if hasattr(mod, "freeze_base_weights"):
+                mod.freeze_base_weights()
+
+    def unfreeze_base_weights(self) -> None:
+        """Unfreeze base linear projection weights."""
+        for mod in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
+            if hasattr(mod, "unfreeze_base_weights"):
+                mod.unfreeze_base_weights()
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -404,12 +426,18 @@ class Jamba2Block(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                w_norm = float(torch.norm(target_mod.weight.data).item())
+                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"Jamba2Block weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
+
+        if hasattr(src, "rotary_emb") and src.rotary_emb is not None:
+            self.rotary_emb = src.rotary_emb
+
+        if self.lora_rank > 0 or self.freeze_base:
+            self.freeze_base_weights()
 
     def forward(
         self,
@@ -435,6 +463,23 @@ class Jamba2Block(BaseAttention):
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
+        elif self.rotary_emb is not None or (self.source_attn is not None and hasattr(self.source_attn, "rotary_emb")):
+            rotary_mod = self.rotary_emb or getattr(self.source_attn, "rotary_emb", None)
+            pos_ids = kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = rotary_mod(k, seq_len=L)
+            except TypeError:
+                try:
+                    cos, sin = rotary_mod(k, pos_ids)
+                except Exception:
+                    try:
+                        cos, sin = rotary_mod(pos_ids)
+                    except Exception:
+                        cos, sin = None, None
+            if cos is not None and sin is not None:
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
@@ -486,34 +531,99 @@ class Jamba2Block(BaseAttention):
 
 @ATTENTION_REGISTRY.register("jamba_inject")
 @ATTENTION_REGISTRY.register("jamba2_inject")
+@ATTENTION_REGISTRY.register("jamba")
+@ATTENTION_REGISTRY.register("jamba2")
 def inject_jamba(
-    layer: Any,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[Jamba2Block]:
-    src_attn = old_attn if old_attn is not None else (getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))) if layer is not None else None)
+) -> Optional[Union[Jamba2Block, nn.Module]]:
+    r"""Safe injection factory for Jamba2Block across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_jamba(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    src_attn = old_attn
+    if src_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                src_attn = target.attention.self
+            else:
+                src_attn = target.attention
+        elif hasattr(target, "self"):
+            src_attn = target.self
+        elif hasattr(target, "attn"):
+            src_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            src_attn = target.self_attn
+
+    if src_attn is None and target is not None and hasattr(target, "forward"):
+        src_attn = target
+
+    if src_attn is None and cfg is None:
+        return None
 
     hidden_size = (
         getattr(src_attn, 'hidden_size', None) or
         getattr(src_attn, 'embed_dim', None) or
+        getattr(src_attn, 'dim', None) or
         (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (layer.in_features if hasattr(layer, 'in_features') else None) or
-        getattr(model_config, 'hidden_size', 64)
+        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+        (getattr(target, 'in_features', None) if target is not None else None) or
+        getattr(cfg, 'hidden_size', getattr(cfg, 'dim', 64))
     )
     num_heads = (
         getattr(src_attn, 'num_heads', None) or
         getattr(src_attn, 'num_attention_heads', None) or
-        getattr(model_config, 'num_attention_heads', 4)
+        getattr(src_attn, 'n_heads', None) or
+        getattr(cfg, 'num_attention_heads', getattr(cfg, 'n_heads', 4))
     )
 
     try:
-        new_attn = Jamba2Block(
+        new_block = Jamba2Block(
             d_model=hidden_size,
-            config=model_config,
+            config=cfg,
             comp_config=comp_config,
             old_attn=src_attn,
             hidden_size=hidden_size,
@@ -521,15 +631,20 @@ def inject_jamba(
             num_attention_heads=num_heads,
             **kwargs,
         )
-        if src_attn is not None:
-            new_attn.copy_weights(src_attn)
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                layer.attention = new_attn
-            elif hasattr(layer, "self"):
-                layer.self = new_attn
-            elif hasattr(layer, "attn"):
-                layer.attn = new_attn
-        return new_attn
     except Exception:
         return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_block
+            else:
+                target.attention = new_block
+        elif hasattr(target, "self"):
+            target.self = new_block
+        elif hasattr(target, "attn"):
+            target.attn = new_block
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_block
+
+    return new_block
