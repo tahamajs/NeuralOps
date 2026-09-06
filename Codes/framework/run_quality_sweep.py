@@ -707,6 +707,22 @@ def main():
                     help="ADMM penalty parameter rho2 for quantization")
     ap.add_argument("--admm_max_iter", type=int, default=8,
                     help="Number of ADMM optimization iterations")
+    ap.add_argument("--admm_pruner_sparsity", type=float, default=0.5,
+                    help="Target sparsity ratio for ADMM pruner")
+    ap.add_argument("--admm_pruner_structured_24", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Enable structured 2:4 sparsity for ADMM pruner")
+    ap.add_argument("--admm_pruner_max_error", type=float, default=0.45,
+                    help="Maximum relative Frobenius reconstruction error threshold for ADMM pruner before fallback")
+    ap.add_argument("--admm_pruner_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict ADMM pruner compression to attention projections only")
+    ap.add_argument("--admm_pruner_lambda_distill", type=float, default=0.1,
+                    help="Layer-wise reconstruction distillation loss weight for ADMM pruner")
+    ap.add_argument("--admm_pruner_distill_batch_size", type=int, default=32,
+                    help="Batch size of calibration inputs for ADMM distillation")
+    ap.add_argument("--admm_pruner_rho", type=float, default=0.1,
+                    help="ADMM penalty parameter rho for ADMM pruner")
+    ap.add_argument("--admm_pruner_max_iter", type=int, default=6,
+                    help="Number of ADMM optimization iterations for ADMM pruner")
 
     
     # Pre-parse to check if a config file is provided
@@ -1157,13 +1173,35 @@ def main():
                             setattr(model.config, "admm_rho2", args.admm_rho2)
                         if getattr(args, "admm_max_iter", None) is not None:
                             setattr(model.config, "admm_max_iter", args.admm_max_iter)
+                        if getattr(args, "admm_pruner_sparsity", None) is not None:
+                            setattr(model.config, "admm_pruner_sparsity", args.admm_pruner_sparsity)
+                            setattr(model.config, "sparsity", args.admm_pruner_sparsity)
+                        if getattr(args, "admm_pruner_structured_24", None) is not None:
+                            setattr(model.config, "admm_pruner_structured_24", args.admm_pruner_structured_24)
+                            setattr(model.config, "structured_24", args.admm_pruner_structured_24)
+                        if getattr(args, "admm_pruner_max_error", None) is not None:
+                            setattr(model.config, "admm_pruner_max_error", args.admm_pruner_max_error)
+                            setattr(model.config, "max_error", args.admm_pruner_max_error)
+                        if getattr(args, "admm_pruner_target_attention_only", None) is not None:
+                            setattr(model.config, "admm_pruner_target_attention_only", args.admm_pruner_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.admm_pruner_target_attention_only)
+                        if getattr(args, "admm_pruner_lambda_distill", None) is not None:
+                            setattr(model.config, "admm_pruner_lambda_distill", args.admm_pruner_lambda_distill)
+                            setattr(model.config, "lambda_distill", args.admm_pruner_lambda_distill)
+                        if getattr(args, "admm_pruner_distill_batch_size", None) is not None:
+                            setattr(model.config, "admm_pruner_distill_batch_size", args.admm_pruner_distill_batch_size)
+                            setattr(model.config, "distill_batch_size", args.admm_pruner_distill_batch_size)
+                        if getattr(args, "admm_pruner_rho", None) is not None:
+                            setattr(model.config, "admm_pruner_rho", args.admm_pruner_rho)
+                        if getattr(args, "admm_pruner_max_iter", None) is not None:
+                            setattr(model.config, "admm_pruner_max_iter", args.admm_pruner_max_iter)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
