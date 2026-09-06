@@ -16,6 +16,7 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -28,11 +29,32 @@ from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely retrieve attribute from dict, object, namespace, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    """Rotates half the hidden dimensions: [-x2, x1], safe for odd dimensions."""
+    d = x.shape[-1]
+    rotary_dim = 2 * (d // 2)
+    if rotary_dim == 0:
+        return x
+    x_rot = x[..., :rotary_dim]
+    half = rotary_dim // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if rotary_dim < d:
+        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -41,31 +63,42 @@ def apply_rotary_pos_emb(
     cos: torch.Tensor,
     sin: torch.Tensor,
     position_ids: Optional[torch.Tensor] = None,
+    unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
     if cos is None or sin is None:
         return q, k
 
     if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
-    rotary_dim = cos.shape[-1]
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
     head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
 
-    if rotary_dim < head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
-        k = torch.cat([k_rot_embed, k_pass], dim=-1)
-    else:
-        q = (q * cos) + (_rotate_half(q) * sin)
-        k = (k * cos) + (_rotate_half(k) * sin)
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q, k
 
 
@@ -144,40 +177,42 @@ class LoRALinear(nn.Module):
 class RPCAttention(BaseAttention):
     def __init__(
         self,
-        config: Any,
+        config: Any = None,
         rank: int = 64,
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank if rank is not None else 64)
         self.config = config
-        comp_config = getattr(config, "compression_config", None)
+        comp_config = kwargs.get("comp_config", getattr(config, "compression_config", None))
 
-        self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads = getattr(
+        self.dim = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
+        self.num_heads = int(_cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12)))
+        self.num_kv_heads = int(_cfg_get(
             config,
             "num_key_value_heads",
-            kwargs.get("num_key_value_heads", self.num_heads),
-        )
-        self.head_dim = getattr(
+            _cfg_get(config, "num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads)),
+        ))
+        self.head_dim = int(_cfg_get(
             config,
             "head_dim",
-            kwargs.get("head_dim", self.dim // self.num_heads),
-        )
+            kwargs.get("head_dim", self.dim // self.num_heads if self.num_heads > 0 else 64),
+        ))
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
-        self.rank = getattr(comp_config, "rank", kwargs.get("rank", rank if rank is not None else 64))
 
-        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False):
+        raw_rank = kwargs.get("rank", _cfg_get(comp_config, "rank", _cfg_get(config, "rank", rank if rank is not None else 64)))
+        self.rank = max(1, min(int(raw_rank), self.head_dim))
+
+        is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
+        if kwargs.get("is_causal", False) or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama"):
             is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        self.lora_rank = kwargs.get("lora_rank", _cfg_get(comp_config, "lora_rank", _cfg_get(config, "lora_rank", 16)))
+        self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", 32.0)))
         self.freeze_base = (self.lora_rank > 0)
 
         # Projections
@@ -425,39 +460,88 @@ class RPCAttention(BaseAttention):
         context = torch.matmul(probs, v).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
-            return context, (probs if output_attentions else None)
+            out = context
+        else:
+            out = self.out_proj(context)
 
-        out = self.out_proj(context)
+        if out.shape[-1] != hidden_states.shape[-1]:
+            out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
+
         return out, (probs if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("rpc")
+@ATTENTION_REGISTRY.register("rpc_attention")
+@ATTENTION_REGISTRY.register("rpc_inject")
+@ATTENTION_REGISTRY.register("rpc_attention_inject")
+@ATTENTION_REGISTRY.register("inject_rpc")
 def inject_rpc(
-    model: nn.Module,
-    target_layer_idx: Optional[int] = None,
+    layer: Any,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[nn.Module]:
-    """Safely replace attention in model with RPCAttention."""
+) -> Optional[Union[RPCAttention, nn.Module]]:
+    """Safely inject RPCAttention into a layer or model."""
     try:
-        replaced = 0
-        for name, module in model.named_modules():
-            is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                is_attn = True
+        src = old_attn
+        if src is None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    candidate = getattr(layer, attr)
+                    if hasattr(candidate, "query") or hasattr(candidate, "q_proj") or hasattr(candidate, "q_lin") or hasattr(candidate, "c_attn") or hasattr(candidate, "self"):
+                        src = candidate
+                        break
 
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
+        if src is not None:
+            if model_config is None and hasattr(layer, "config"):
+                model_config = layer.config
+            if model_config is None and hasattr(src, "config"):
+                model_config = src.config
 
-                new_attn = RPCAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
-                    **kwargs,
-                )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
-                    break
-        return model if replaced > 0 else None
-    except Exception:
+            rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 64))
+            lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
+
+            new_attn = RPCAttention(
+                config=model_config,
+                rank=rank,
+                lora_rank=lora_rank,
+                pretrained_attn=src,
+                **kwargs,
+            )
+
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr) and getattr(layer, attr) is src:
+                    setattr(layer, attr, new_attn)
+                    return new_attn
+
+            layer.attention = new_attn
+            return new_attn
+
+        if isinstance(layer, nn.Module):
+            replaced = 0
+            for name, module in layer.named_modules():
+                is_attn = False
+                if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
+                    is_attn = True
+                if is_attn and not isinstance(module, RPCAttention):
+                    parent_name = name.rsplit(".", 1)[0] if "." in name else ""
+                    child_name = name.rsplit(".", 1)[-1] if "." in name else name
+                    parent = layer.get_submodule(parent_name) if parent_name else layer
+
+                    new_attn = RPCAttention(
+                        config=model_config or getattr(layer, "config", None),
+                        pretrained_attn=module,
+                        **kwargs,
+                    )
+                    setattr(parent, child_name, new_attn)
+                    replaced += 1
+            if replaced > 0:
+                return layer
+
+        return None
+    except Exception as e:
+        logger.error("inject_rpc failed: %s", e)
         return None
