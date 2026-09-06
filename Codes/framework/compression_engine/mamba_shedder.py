@@ -41,6 +41,20 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {
+    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+}
+
+
 @COMPRESSOR_REGISTRY.register("mamba_shedder")
 @COMPRESSOR_REGISTRY.register("mamba_shedder_compressor")
 class MambaShedderCompressor(BaseCompressor):
@@ -61,6 +75,7 @@ class MambaShedderCompressor(BaseCompressor):
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
         structured_24: bool = False,
+        target_attention_only: bool = False,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -72,11 +87,12 @@ class MambaShedderCompressor(BaseCompressor):
         super().__init__(model, name="mamba_shedder", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            sparsity = getattr(cfg, "mamba_shedder_sparsity", getattr(cfg, "sparsity", sparsity))
-            shed_layers = getattr(cfg, "mamba_shedder_shed_layers", getattr(cfg, "shed_layers", shed_layers))
-            structured_24 = getattr(cfg, "mamba_shedder_structured_24", getattr(cfg, "structured_24", structured_24))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            sparsity = _cfg_get(cfg, "mamba_shedder_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+            shed_layers = _cfg_get(cfg, "mamba_shedder_shed_layers", _cfg_get(cfg, "shed_layers", shed_layers))
+            structured_24 = _cfg_get(cfg, "mamba_shedder_structured_24", _cfg_get(cfg, "structured_24", structured_24))
+            max_error = _cfg_get(cfg, "max_error", max_error)
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
@@ -90,6 +106,7 @@ class MambaShedderCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.structured_24 = bool(structured_24)
+        self.target_attention_only = bool(target_attention_only)
         self.target_modules = target_modules
         self.target_device = (
             torch.device(device)
@@ -103,11 +120,20 @@ class MambaShedderCompressor(BaseCompressor):
         """Fix 6: Unified critical-layer protection delegated to should_compress_linear."""
         cls_name = module.__class__.__name__.lower()
         # Fix 2: Reliable Conv1D check using class name and hasattr(nf)
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or "conv1d" in cls_name
+            or hasattr(module, "nf")
+            or hasattr(module, "base_layer")
+        )
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
             return False
+        if self.target_attention_only:
+            is_attn = any(k in name.lower() for k in _ATTN_NAMES)
+            if not is_attn:
+                return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
@@ -265,14 +291,20 @@ class MambaShedderCompressor(BaseCompressor):
         self.layer_errors = {}
         layer_details = {}
 
+        total_orig_params = sum(p.numel() for p in self.model.parameters())
+        total_comp_params = 0
+
         for name, module in self.model.named_modules():
             if not self._is_target_module(name, module):
+                for p in module.parameters(recurse=False):
+                    total_comp_params += p.numel()
                 continue
 
-            raw_w = module.weight.data
-            cls_name = module.__class__.__name__.lower()
+            target_layer = getattr(module, "base_layer", module)
+            raw_w = target_layer.weight.data
+            cls_name = target_layer.__class__.__name__.lower()
             # Fix 2: Conv1D detection by class name and nf attribute
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
             device = raw_w.device
             dtype = raw_w.dtype
 
@@ -313,6 +345,9 @@ class MambaShedderCompressor(BaseCompressor):
             # Fix 3: Never replace with all-zero mask
             if (W_pruned == 0).all():
                 logger.warning("MambaShedder: Degenerate all-zero mask for %s. Keeping original layer.", name)
+                for p in module.parameters(recurse=False):
+                    p.requires_grad = False
+                    total_comp_params += p.numel()
                 continue
 
             # Fix 1: Reconstruction error validation
@@ -329,17 +364,34 @@ class MambaShedderCompressor(BaseCompressor):
                     ". Keeping original layer." if self.fallback_to_original else ". Proceeding with pruned weight.",
                 )
                 if self.fallback_to_original:
+                    for p in module.parameters(recurse=False):
+                        p.requires_grad = False
+                        total_comp_params += p.numel()
                     continue
 
             # Fix 5: Verify weight shape integrity before replacement
             final_w = W_pruned.t() if is_conv1d else W_pruned
-            assert final_w.shape == module.weight.shape, (
-                f"MambaShedder shape mismatch for {name}: expected {module.weight.shape}, got {final_w.shape}"
+            assert final_w.shape == target_layer.weight.shape, (
+                f"MambaShedder shape mismatch for {name}: expected {target_layer.weight.shape}, got {final_w.shape}"
             )
 
             # Assign back in original dtype
-            module.weight.data = final_w.to(dtype=dtype, device=device)
+            target_layer.weight.data = final_w.to(dtype=dtype, device=device)
+            target_layer.weight.requires_grad = False
+            if hasattr(target_layer, "bias") and target_layer.bias is not None:
+                target_layer.bias.requires_grad = False
+
+            if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
+                for p in [module.lora_A, module.lora_B]:
+                    if hasattr(p, "weight"):
+                        p.weight.requires_grad = True
+                    elif isinstance(p, nn.Parameter):
+                        p.requires_grad = True
+
             pruned_layers_count += 1
+            for p in module.parameters(recurse=False):
+                total_comp_params += p.numel()
+
             layer_details[name] = {
                 "rel_error": rel_err,
                 "used_act_sensitivity": used_act_sensitivity,
@@ -350,6 +402,7 @@ class MambaShedderCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = float(torch.tensor(list(self.layer_errors.values())).mean().item()) if self.layer_errors else 0.0
+        eff_ratio = total_comp_params / max(1, total_orig_params)
         # Fix 4: Comprehensive per-layer stats
         stats.update({
             "pruned_layers": pruned_layers_count,
@@ -361,6 +414,7 @@ class MambaShedderCompressor(BaseCompressor):
             "avg_reconstruction_error": avg_err,
             "layer_errors": self.layer_errors,
             "layer_details": layer_details,
+            "effective_parameter_ratio": eff_ratio,
             "bias_handling": "Biases preserved in full precision unpruned",  # Fix 7
             "method": "mamba_shedder_sensitivity",
         })
@@ -377,12 +431,13 @@ class MambaShedderCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("mamba_shedder_factory")
 def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for Mamba-Shedder compressor."""
-    sparsity = kwargs.pop("sparsity", getattr(comp_config, "mamba_shedder_sparsity", getattr(comp_config, "sparsity", 0.2)) if comp_config else 0.2)
-    shed_layers = kwargs.pop("shed_layers", getattr(comp_config, "mamba_shedder_shed_layers", getattr(comp_config, "shed_layers", 0)) if comp_config else 0)
-    structured_24 = kwargs.pop("structured_24", getattr(comp_config, "mamba_shedder_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else False)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config else 0.20)
-    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
-    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else None))
+    sparsity = _cfg_get(comp_config, "mamba_shedder_sparsity", _cfg_get(comp_config, "sparsity", kwargs.pop("sparsity", 0.2)))
+    shed_layers = _cfg_get(comp_config, "mamba_shedder_shed_layers", _cfg_get(comp_config, "shed_layers", kwargs.pop("shed_layers", 0)))
+    structured_24 = _cfg_get(comp_config, "mamba_shedder_structured_24", _cfg_get(comp_config, "structured_24", kwargs.pop("structured_24", False)))
+    max_error = _cfg_get(comp_config, "max_error", kwargs.pop("max_error", 0.20))
+    fallback = _cfg_get(comp_config, "fallback_to_original", kwargs.pop("fallback_to_original", True))
+    target_attention_only = _cfg_get(comp_config, "target_attention_only", kwargs.pop("target_attention_only", False))
+    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None))
 
     compressor = MambaShedderCompressor(
         model,
@@ -392,6 +447,7 @@ def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) ->
         structured_24=structured_24,
         max_error=max_error,
         fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
         comp_config=comp_config,
         **kwargs,
     )

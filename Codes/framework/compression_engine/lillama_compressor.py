@@ -27,12 +27,25 @@ import logging
 import torch
 import torch.nn as nn
 
+logger = logging.getLogger(__name__)
+
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.utils.compat import should_compress_linear
 
-logger = logging.getLogger(__name__)
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {
+    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+}
 
 
 @COMPRESSOR_REGISTRY.register("lillama")
@@ -52,17 +65,19 @@ class LiLLaMACompressor(BaseCompressor):
         device: Optional[Union[str, torch.device]] = None,
         max_error: float = 0.20,
         fallback_to_original: bool = True,
-        skip_attention: bool = True,
+        skip_attention: bool = False,
+        target_attention_only: bool = False,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="lillama", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            rank = getattr(cfg, "lillama_rank", getattr(cfg, "rank", rank))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
-            skip_attention = getattr(cfg, "skip_attention", skip_attention)
+            rank = _cfg_get(cfg, "lillama_rank", _cfg_get(cfg, "rank", rank))
+            max_error = _cfg_get(cfg, "max_error", max_error)
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            skip_attention = _cfg_get(cfg, "skip_attention", skip_attention)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
@@ -74,6 +89,7 @@ class LiLLaMACompressor(BaseCompressor):
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.skip_attention = bool(skip_attention)
+        self.target_attention_only = bool(target_attention_only)
         self.target_modules = target_modules
         self.target_device = (
             torch.device(device)
@@ -85,11 +101,21 @@ class LiLLaMACompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         cls_name = module.__class__.__name__.lower()
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or "conv1d" in cls_name
+            or hasattr(module, "nf")
+            or hasattr(module, "base_layer")
+        )
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
             return False
+
+        if self.target_attention_only:
+            is_attn = any(k in name.lower() for k in _ATTN_NAMES)
+            if not is_attn:
+                return False
 
         if self.skip_attention:
             attn_keywords = {"query", "key", "value", "q_lin", "k_lin", "v_lin", "q_proj", "k_proj", "v_proj", "out_lin", "out_proj", "dense", "o_proj", "c_attn"}
@@ -162,17 +188,24 @@ class LiLLaMACompressor(BaseCompressor):
         self.layer_errors = {}
         layer_details = {}
 
+        total_orig_params = sum(p.numel() for p in self.model.parameters())
+        total_comp_params = 0
+
         for name, module in self.model.named_modules():
             if not self._is_target_module(name, module):
                 # Record 0.0 error for skipped layers as required
                 self.layer_errors[name] = 0.0
+                for p in module.parameters(recurse=False):
+                    total_comp_params += p.numel()
                 continue
 
-            raw_w = module.weight.data
-            cls_name = module.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            # Support LoRALinear wrapper
+            target_layer = getattr(module, "base_layer", module)
+            raw_w = target_layer.weight.data
+            cls_name = target_layer.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
             device = raw_w.device
-            dtype = module.weight.dtype
+            dtype = target_layer.weight.dtype
 
             W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
@@ -227,11 +260,29 @@ class LiLLaMACompressor(BaseCompressor):
                     ". Keeping original layer." if self.fallback_to_original else ". Proceeding with distilled weights.",
                 )
                 if self.fallback_to_original:
+                    for p in module.parameters(recurse=False):
+                        p.requires_grad = False
+                        total_comp_params += p.numel()
                     continue
 
             final_w = W_new.t() if is_conv1d else W_new
-            module.weight.data = final_w.to(dtype=dtype, device=device)
+            target_layer.weight.data = final_w.to(dtype=dtype, device=device)
+            # Freeze base weight, preserve LoRA adapter trainability
+            target_layer.weight.requires_grad = False
+            if hasattr(target_layer, "bias") and target_layer.bias is not None:
+                target_layer.bias.requires_grad = False
+
+            if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
+                for p in [module.lora_A, module.lora_B]:
+                    if hasattr(p, "weight"):
+                        p.weight.requires_grad = True
+                    elif isinstance(p, nn.Parameter):
+                        p.requires_grad = True
+
             distilled_layers_count += 1
+            for p in module.parameters(recurse=False):
+                total_comp_params += p.numel()
+
             layer_details[name] = {
                 "rank": r if 'r' in locals() else self.rank,
                 "rel_error": rel_err,
@@ -242,6 +293,7 @@ class LiLLaMACompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = float(torch.tensor(list(self.layer_errors.values())).mean().item()) if self.layer_errors else 0.0
+        eff_ratio = total_comp_params / max(1, total_orig_params)
         stats.update({
             "distilled_layers": distilled_layers_count,
             "rank": self.rank,
@@ -250,6 +302,7 @@ class LiLLaMACompressor(BaseCompressor):
             "avg_reconstruction_error": avg_err,
             "layer_errors": self.layer_errors,
             "layer_details": layer_details,
+            "effective_parameter_ratio": eff_ratio,
             "method": "lillama_cross_covariance_svd",
         })
         self.stats = stats
@@ -263,10 +316,12 @@ class LiLLaMACompressor(BaseCompressor):
 
 def lillama_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for LiLLaMA compressor."""
-    rank = getattr(comp_config, "lillama_rank", getattr(comp_config, "rank", 32)) if comp_config else kwargs.get("rank", 32)
-    max_error = getattr(comp_config, "max_error", 0.20) if comp_config else kwargs.get("max_error", 0.20)
-    fallback_to_original = getattr(comp_config, "fallback_to_original", True) if comp_config else kwargs.get("fallback_to_original", True)
-    tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
+    rank = _cfg_get(comp_config, "lillama_rank", _cfg_get(comp_config, "rank", kwargs.get("rank", 32)))
+    max_error = _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.20))
+    fallback_to_original = _cfg_get(comp_config, "fallback_to_original", kwargs.get("fallback_to_original", True))
+    skip_attention = _cfg_get(comp_config, "skip_attention", kwargs.get("skip_attention", False))
+    target_attention_only = _cfg_get(comp_config, "target_attention_only", kwargs.get("target_attention_only", False))
+    tokenizer = getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", kwargs.get("tokenizer", None))
 
     compressor = LiLLaMACompressor(
         model,
@@ -274,6 +329,8 @@ def lillama_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         rank=rank,
         max_error=max_error,
         fallback_to_original=fallback_to_original,
+        skip_attention=skip_attention,
+        target_attention_only=target_attention_only,
         comp_config=comp_config,
         **kwargs,
     )

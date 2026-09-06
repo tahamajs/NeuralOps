@@ -81,19 +81,41 @@ class MoDeGPTLoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> MoDeGPTLoRALinear:
-        bias = linear.bias.detach() if hasattr(linear, "bias") and linear.bias is not None else None
-        in_features = getattr(linear, "in_features", weight.shape[1])
-        out_features = getattr(linear, "out_features", weight.shape[0])
-        return cls(
+        base_layer = getattr(linear, "base_layer", linear)
+        bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
+        in_features = getattr(base_layer, "in_features", weight.shape[1])
+        out_features = getattr(base_layer, "out_features", weight.shape[0])
+
+        existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
+        eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
+        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
+
+        layer = cls(
             in_features=in_features,
             out_features=out_features,
             weight=weight,
             bias=bias,
-            lora_r=lora_r,
-            lora_alpha=lora_alpha,
+            lora_r=eff_lora_r,
+            lora_alpha=eff_lora_alpha,
             device=weight.device,
             dtype=weight.dtype,
         )
+
+        # Preserve existing LoRA weights if present
+        if hasattr(linear, "lora_A") and hasattr(linear, "lora_B") and layer.lora_A is not None and layer.lora_B is not None:
+            with torch.no_grad():
+                src_A = linear.lora_A.weight.data if hasattr(linear.lora_A, "weight") else linear.lora_A.data
+                src_B = linear.lora_B.weight.data if hasattr(linear.lora_B, "weight") else linear.lora_B.data
+                if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
+                    layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
+                    layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
+
+        if layer.lora_A is not None:
+            layer.lora_A.requires_grad = True
+        if layer.lora_B is not None:
+            layer.lora_B.requires_grad = True
+
+        return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
@@ -102,6 +124,20 @@ class MoDeGPTLoRALinear(nn.Module):
                 F.linear(x.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
         return out
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {
+    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+}
 
 
 @COMPRESSOR_REGISTRY.register("modegpt")
@@ -133,7 +169,8 @@ class MoDeGPTCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
+        target_attention_only: bool = False,
         min_rank: int = 4,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
@@ -141,16 +178,17 @@ class MoDeGPTCompressor(BaseCompressor):
         super().__init__(model, name="modegpt", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            rank = getattr(cfg, "modegpt_rank", getattr(cfg, "rank", rank))
-            method = getattr(cfg, "modegpt_method", getattr(cfg, "method", method))
-            max_error = getattr(cfg, "modegpt_max_error", getattr(cfg, "max_error", max_error))
-            fallback_to_original = getattr(
-                cfg, "modegpt_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            rank = _cfg_get(cfg, "modegpt_rank", _cfg_get(cfg, "rank", rank))
+            method = _cfg_get(cfg, "modegpt_method", _cfg_get(cfg, "method", method))
+            max_error = _cfg_get(cfg, "modegpt_max_error", _cfg_get(cfg, "max_error", max_error))
+            fallback_to_original = _cfg_get(
+                cfg, "modegpt_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             )
-            lora_r = getattr(cfg, "lora_r", lora_r)
-            lora_alpha = getattr(cfg, "lora_alpha", lora_alpha)
-            skip_attention_qkv = getattr(cfg, "skip_attention_qkv", skip_attention_qkv)
-            min_rank = getattr(cfg, "min_rank", min_rank)
+            lora_r = _cfg_get(cfg, "lora_r", lora_r)
+            lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
+            skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         self.rank = max(1, int(rank))
         self.method = str(method).lower()
@@ -159,6 +197,7 @@ class MoDeGPTCompressor(BaseCompressor):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.target_attention_only = bool(target_attention_only)
         self.min_rank = max(1, int(min_rank))
         self.target_modules = target_modules
 
@@ -183,21 +222,31 @@ class MoDeGPTCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         cls_name = module.__class__.__name__.lower()
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or "conv1d" in cls_name
+            or hasattr(module, "nf")
+            or hasattr(module, "base_layer")
+        )
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
             return False
         if self._is_gqa_asymmetric(name, module):
             return False
+        if self.target_attention_only:
+            is_attn = any(k in name.lower() for k in _ATTN_NAMES)
+            if not is_attn:
+                return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
 
     def _get_weight(self, module: nn.Module) -> Tuple[torch.Tensor, bool]:
-        raw_w = module.weight.data
-        cls_name = module.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+        target_layer = getattr(module, "base_layer", module)
+        raw_w = target_layer.weight.data
+        cls_name = target_layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
         W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
         return W, is_conv1d
 
@@ -257,6 +306,9 @@ class MoDeGPTCompressor(BaseCompressor):
         seen_weights: Set[int] = set()
         processed_names: Set[str] = set()
 
+        total_orig_params = sum(p.numel() for p in self.model.parameters())
+        total_comp_params = 0
+
         # Step 1: Search for named pairs in submodules
         for parent_name, parent_mod in list(self.model.named_modules()):
             pair_candidates = [
@@ -278,10 +330,12 @@ class MoDeGPTCompressor(BaseCompressor):
                     if not (self._is_target_module(name1, mod1) and self._is_target_module(name2, mod2)):
                         continue
 
-                    if not (hasattr(mod1, "weight") and hasattr(mod2, "weight")):
+                    target_l1 = getattr(mod1, "base_layer", mod1)
+                    target_l2 = getattr(mod2, "base_layer", mod2)
+                    if not (hasattr(target_l1, "weight") and hasattr(target_l2, "weight")):
                         continue
 
-                    w1_id, w2_id = id(mod1.weight), id(mod2.weight)
+                    w1_id, w2_id = id(target_l1.weight), id(target_l2.weight)
                     if w1_id in seen_weights or w2_id in seen_weights:
                         self.skipped_layers.extend([name1, name2])
                         continue
@@ -293,8 +347,8 @@ class MoDeGPTCompressor(BaseCompressor):
                         if W1_approx is None or W2_approx is None:
                             continue
 
-                        W1_orig, _ = self._get_weight(mod1)
-                        W2_orig, _ = self._get_weight(mod2)
+                        W1_orig, is_conv1 = self._get_weight(mod1)
+                        W2_orig, is_conv2 = self._get_weight(mod2)
 
                         err1 = (torch.norm(W1_orig - W1_approx) / max(torch.norm(W1_orig).item(), 1e-12)).item()
                         err2 = (torch.norm(W2_orig - W2_approx) / max(torch.norm(W2_orig).item(), 1e-12)).item()
@@ -314,17 +368,24 @@ class MoDeGPTCompressor(BaseCompressor):
                                 self.fallback_layers.extend([name1, name2])
                                 processed_names.add(name1)
                                 processed_names.add(name2)
+                                for m in [mod1, mod2]:
+                                    for p in m.parameters(recurse=False):
+                                        p.requires_grad = False
+                                        total_comp_params += p.numel()
                                 continue
+
+                        w1_rep = W1_approx.t() if is_conv1 else W1_approx
+                        w2_rep = W2_approx.t() if is_conv2 else W2_approx
 
                         layer1 = MoDeGPTLoRALinear.from_linear(
                             mod1,
-                            weight=W1_approx.to(dtype=mod1.weight.dtype, device=mod1.weight.device),
+                            weight=w1_rep.to(dtype=target_l1.weight.dtype, device=target_l1.weight.device),
                             lora_r=self.lora_r,
                             lora_alpha=self.lora_alpha,
                         )
                         layer2 = MoDeGPTLoRALinear.from_linear(
                             mod2,
-                            weight=W2_approx.to(dtype=mod2.weight.dtype, device=mod2.weight.device),
+                            weight=w2_rep.to(dtype=target_l2.weight.dtype, device=target_l2.weight.device),
                             lora_r=self.lora_r,
                             lora_alpha=self.lora_alpha,
                         )
@@ -333,55 +394,80 @@ class MoDeGPTCompressor(BaseCompressor):
                         self.compressed_layers.extend([name1, name2])
                         processed_names.add(name1)
                         processed_names.add(name2)
+                        for l in [layer1, layer2]:
+                            for p in l.parameters(recurse=False):
+                                total_comp_params += p.numel()
                     except Exception as e:
                         logger.warning("MoDeGPT joint pair decomposition exception on (%s, %s): %s", name1, name2, e)
                         self.fallback_layers.extend([name1, name2])
                         processed_names.add(name1)
                         processed_names.add(name2)
+                        for m in [mod1, mod2]:
+                            for p in m.parameters(recurse=False):
+                                p.requires_grad = False
+                                total_comp_params += p.numel()
 
         # Step 2: Decompose remaining individual layers
         for name, module in list(self.model.named_modules()):
             if name in processed_names:
                 continue
-            if self._is_target_module(name, module):
-                if not hasattr(module, "weight") or module.weight is None:
-                    continue
+            if not self._is_target_module(name, module):
+                for p in module.parameters(recurse=False):
+                    total_comp_params += p.numel()
+                continue
 
-                w_id = id(module.weight)
-                if w_id in seen_weights:
-                    self.skipped_layers.append(name)
-                    continue
-                seen_weights.add(w_id)
+            target_layer = getattr(module, "base_layer", module)
+            if not hasattr(target_layer, "weight") or target_layer.weight is None:
+                for p in module.parameters(recurse=False):
+                    total_comp_params += p.numel()
+                continue
 
-                try:
-                    W_orig, _ = self._get_weight(module)
-                    W_approx, r = self._decompose_single(module)
-                    err = (torch.norm(W_orig - W_approx) / max(torch.norm(W_orig).item(), 1e-12)).item()
-                    self.layer_errors[name] = float(err)
-                    self.layer_ranks[name] = r
+            w_id = id(target_layer.weight)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                for p in module.parameters(recurse=False):
+                    total_comp_params += p.numel()
+                continue
+            seen_weights.add(w_id)
 
-                    if not math.isfinite(err) or err > self.max_error:
-                        logger.warning(
-                            "MoDeGPT reconstruction error %.4f on %s exceeded threshold %.4f.",
-                            err, name, self.max_error,
-                        )
-                        if self.fallback_to_original:
-                            self.fallback_layers.append(name)
-                            continue
+            try:
+                W_orig, is_conv = self._get_weight(module)
+                W_approx, r = self._decompose_single(module)
+                err = (torch.norm(W_orig - W_approx) / max(torch.norm(W_orig).item(), 1e-12)).item()
+                self.layer_errors[name] = float(err)
+                self.layer_ranks[name] = r
 
-                    new_layer = MoDeGPTLoRALinear.from_linear(
-                        module,
-                        weight=W_approx.to(dtype=module.weight.dtype, device=module.weight.device),
-                        lora_r=self.lora_r,
-                        lora_alpha=self.lora_alpha,
+                if not math.isfinite(err) or err > self.max_error:
+                    logger.warning(
+                        "MoDeGPT reconstruction error %.4f on %s exceeded threshold %.4f.",
+                        err, name, self.max_error,
                     )
-                    replace_module(self.model, name, new_layer)
-                    self.compressed_layers.append(name)
-                    processed_names.add(name)
-                except Exception as e:
-                    logger.warning("MoDeGPT decomposition exception on %s: %s", name, e)
-                    self.fallback_layers.append(name)
-                    self.layer_errors[name] = 1.0
+                    if self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        for p in module.parameters(recurse=False):
+                            p.requires_grad = False
+                            total_comp_params += p.numel()
+                        continue
+
+                w_rep = W_approx.t() if is_conv else W_approx
+                new_layer = MoDeGPTLoRALinear.from_linear(
+                    module,
+                    weight=w_rep.to(dtype=target_layer.weight.dtype, device=target_layer.weight.device),
+                    lora_r=self.lora_r,
+                    lora_alpha=self.lora_alpha,
+                )
+                replace_module(self.model, name, new_layer)
+                self.compressed_layers.append(name)
+                processed_names.add(name)
+                for p in new_layer.parameters(recurse=False):
+                    total_comp_params += p.numel()
+            except Exception as e:
+                logger.warning("MoDeGPT decomposition exception on %s: %s", name, e)
+                self.fallback_layers.append(name)
+                self.layer_errors[name] = 1.0
+                for p in module.parameters(recurse=False):
+                    p.requires_grad = False
+                    total_comp_params += p.numel()
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -403,6 +489,7 @@ class MoDeGPTCompressor(BaseCompressor):
             if self.compressed_layers
             else 0.0
         )
+        eff_ratio = total_comp_params / max(1, total_orig_params)
         stats = self.get_compression_stats()
         stats.update({
             "compressed_layers": self.compressed_layers,
@@ -416,6 +503,7 @@ class MoDeGPTCompressor(BaseCompressor):
             "avg_reconstruction_error": avg_err,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
+            "effective_parameter_ratio": eff_ratio,
             "rank": self.rank,
             "method": self.method,
             "lora_r": self.lora_r,
@@ -429,14 +517,15 @@ class MoDeGPTCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("modegpt_factory")
 def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """MoDeGPT compressor factory function."""
-    rank = kwargs.pop("rank", getattr(comp_config, "modegpt_rank", getattr(comp_config, "rank", 64)) if comp_config else 64)
-    method = kwargs.pop("method", getattr(comp_config, "modegpt_method", getattr(comp_config, "method", "svd")) if comp_config else "svd")
-    max_error = kwargs.pop("max_error", getattr(comp_config, "modegpt_max_error", getattr(comp_config, "max_error", 0.50)) if comp_config else 0.50)
-    fallback = kwargs.pop("fallback_to_original", getattr(
-        comp_config, "modegpt_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
-    ) if comp_config else True)
-    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0)
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "modegpt_rank", _cfg_get(comp_config, "rank", 64)))
+    method = kwargs.pop("method", _cfg_get(comp_config, "modegpt_method", _cfg_get(comp_config, "method", "svd")))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "modegpt_max_error", _cfg_get(comp_config, "max_error", 0.50)))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(
+        comp_config, "modegpt_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+    ))
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = MoDeGPTCompressor(
@@ -447,6 +536,7 @@ def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
         fallback_to_original=fallback,
         lora_r=lora_r,
         lora_alpha=lora_alpha,
+        target_attention_only=target_attention_only,
         comp_config=comp_config,
         **kwargs,
     )
