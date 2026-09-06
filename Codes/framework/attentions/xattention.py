@@ -219,10 +219,10 @@ class XAttention(BaseAttention):
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        self.block_size: int = int(_cfg_get(config, "xattn_block_size", kwargs.get("block_size", block_size)))
-        self.sparsity: float = float(_cfg_get(config, "xattn_sparsity", kwargs.get("sparsity", sparsity)))
+        self.block_size: int = int(kwargs.get("block_size", _cfg_get(config, "xattn_block_size", block_size)))
+        self.sparsity: float = float(kwargs.get("sparsity", _cfg_get(config, "xattn_sparsity", sparsity)))
         self.is_nested_encoder: bool = False
-        self.lora_rank = _cfg_get(config, "lora_rank", lora_rank)
+        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
 
         self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
         self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
