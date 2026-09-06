@@ -120,6 +120,8 @@ class ResSVDAttention(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
 
         self.query = ResSVDLinear(
             in_features=self.hidden_size,
@@ -418,12 +420,43 @@ class ResSVDAttention(BaseAttention):
 
 
 def inject_res_svd(
-    model: nn.Module,
+    model: Optional[nn.Module] = None,
     target_layer_idx: Optional[int] = None,
+    layer: Optional[nn.Module] = None,
+    model_config: Optional[Any] = None,
+    old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[nn.Module]:
-    """Safely replace attention in model with ResSVDAttention."""
+    """Safely replace attention in model or layer with ResSVDAttention."""
     try:
+        if layer is not None:
+            config = model_config or getattr(layer, "config", None)
+            target = old_attn
+            if target is None:
+                for attr in ("attention", "self_attn", "attn", "self"):
+                    if hasattr(layer, attr):
+                        cand = getattr(layer, attr)
+                        if isinstance(cand, nn.Module) and cand is not layer:
+                            target = cand
+                            break
+            if target is None:
+                target = layer
+
+            new_attn = ResSVDAttention(
+                config=config,
+                pretrained_attn=target if target is not layer else None,
+                **kwargs,
+            )
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    setattr(layer, attr, new_attn)
+                    return layer
+            layer.attention = new_attn
+            return layer
+
+        if model is None:
+            return None
+
         replaced = 0
         for name, module in model.named_modules():
             is_attn = False
@@ -447,3 +480,6 @@ def inject_res_svd(
         return model if replaced > 0 else None
     except Exception:
         return None
+
+
+inject_res_svd_attention = inject_res_svd

@@ -182,6 +182,8 @@ class RoutingAttention(BaseAttention):
         self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
         self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
         self.freeze_base = (self.lora_rank > 0)
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
 
         # Projections
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -461,12 +463,43 @@ class RoutingAttention(BaseAttention):
 
 
 def inject_routing(
-    model: nn.Module,
+    model: Optional[nn.Module] = None,
     target_layer_idx: Optional[int] = None,
+    layer: Optional[nn.Module] = None,
+    model_config: Optional[Any] = None,
+    old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[nn.Module]:
-    """Safely replace attention in model with RoutingAttention."""
+    """Safely replace attention in model or layer with RoutingAttention."""
     try:
+        if layer is not None:
+            config = model_config or getattr(layer, "config", None)
+            target = old_attn
+            if target is None:
+                for attr in ("attention", "self_attn", "attn", "self"):
+                    if hasattr(layer, attr):
+                        cand = getattr(layer, attr)
+                        if isinstance(cand, nn.Module) and cand is not layer:
+                            target = cand
+                            break
+            if target is None:
+                target = layer
+
+            new_attn = RoutingAttention(
+                config=config,
+                pretrained_attn=target if target is not layer else None,
+                **kwargs,
+            )
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    setattr(layer, attr, new_attn)
+                    return layer
+            layer.attention = new_attn
+            return layer
+
+        if model is None:
+            return None
+
         replaced = 0
         for name, module in model.named_modules():
             is_attn = False
@@ -490,3 +523,6 @@ def inject_routing(
         return model if replaced > 0 else None
     except Exception:
         return None
+
+
+inject_routing_attention = inject_routing

@@ -132,6 +132,12 @@ class SimpleSSM(BaseAttention):
             self.is_decoder = False
 
         self.is_nested_encoder: bool = False
+        num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12)) if config else 12
+        num_kv_heads = getattr(config, "num_key_value_heads", kwargs.get("num_key_value_heads", num_heads)) if config else num_heads
+        self.num_heads = num_heads
+        self.num_kv_heads = num_kv_heads
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
 
         self.in_proj = LoRALinear(
             self.d_model,
@@ -470,3 +476,6 @@ def inject_simple_ssm(
     except Exception as e:
         logger.error("inject_simple_ssm failed at layer %d: %s", layer_idx, e)
         return None
+
+
+inject_simple_ssm_attention = inject_simple_ssm

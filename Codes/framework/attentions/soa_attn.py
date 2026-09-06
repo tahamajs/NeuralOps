@@ -111,6 +111,9 @@ class LoRALinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("soa_module", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("soa_attn")
+@ATTENTION_REGISTRY.register("soa_fused_module")
+@ATTENTION_REGISTRY.register("soafusedattention")
+@ATTENTION_REGISTRY.register("soa_fused_attn")
 class SOAAttention(BaseAttention):
     r"""Shared Orthogonal Attention (SOA) with Per-Projection Latent Bottlenecks.
 
@@ -160,6 +163,7 @@ class SOAAttention(BaseAttention):
         )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.kv_repeat: int = self.num_key_value_groups
 
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -512,3 +516,10 @@ def inject_soa_attn(
     except Exception as e:
         logger.error("inject_soa_attn failed at layer %d: %s", layer_idx, e)
         return None
+
+
+inject_soa = inject_soa_attn
+inject_soa_attention = inject_soa_attn
+inject_soafusedattention = inject_soa_attn
+inject_soa_fused_module = inject_soa_attn
+SOAFusedAttention = SOAAttention
