@@ -115,6 +115,18 @@ class DobiSVDLinearLayer(nn.Module):
         return (self, getattr(self, "reconstruction_error", 0.0), getattr(self, "rank", 0))[idx]
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract config value from None, dict, or namespace/object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
+
+
 @COMPRESSOR_REGISTRY.register("dobi")
 @COMPRESSOR_REGISTRY.register("dobi_svd")
 class DobiSVDCompressor(BaseCompressor):
@@ -130,10 +142,12 @@ class DobiSVDCompressor(BaseCompressor):
     - Relative Frobenius reconstruction error validation with configurable max_error.
     - Automatic rank escalation retries when error exceeds threshold.
     - Safe fallback to original module if error remains high.
+    - Fallback and non-target layers frozen (requires_grad=False) during recovery.
+    - Robust LoRALinear and Conv1D support (with transpose and adapter preservation).
+    - target_attention_only parameter: restricts SVD factorization to attention projections.
     - Strict rank bounds guaranteeing parameter reduction.
-    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
     - Critical-layer protection via should_compress_linear.
-    - Detailed per-layer stats and error reporting.
+    - Detailed per-layer stats, avg error, and effective parameter ratio.
     """
 
     def __init__(
@@ -142,24 +156,28 @@ class DobiSVDCompressor(BaseCompressor):
         init_rank_ratio: float = 0.5,
         rank: Optional[int] = None,
         init_gate_val: float = 2.5,
-        max_error: float = 0.20,
+        max_error: float = 0.35,
         fallback_to_original: bool = True,
+        target_attention_only: bool = False,
         max_retries: int = 2,
         target_modules: Optional[List[str]] = None,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="dobi", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            init_rank_ratio = getattr(
-                cfg, "dobi_init_rank_ratio", getattr(cfg, "init_rank_ratio", init_rank_ratio)
-            )
-            rank = getattr(cfg, "dobi_rank", getattr(cfg, "rank", rank))
-            init_gate_val = getattr(cfg, "init_gate_val", init_gate_val)
-            max_error = getattr(cfg, "dobi_max_error", getattr(cfg, "max_error", max_error))
-            fallback_to_original = getattr(
-                cfg, "dobi_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
-            )
+        cfg_obj = cfg if cfg is not None else kwargs.get("comp_config", None)
+        self.cfg = cfg_obj
+
+        init_rank_ratio = _cfg_get(cfg_obj, "dobi_init_rank_ratio", _cfg_get(cfg_obj, "init_rank_ratio", init_rank_ratio))
+        rank = _cfg_get(cfg_obj, "dobi_rank", _cfg_get(cfg_obj, "rank", rank))
+        init_gate_val = _cfg_get(cfg_obj, "init_gate_val", init_gate_val)
+        max_error = _cfg_get(cfg_obj, "dobi_max_error", _cfg_get(cfg_obj, "max_error", max_error))
+        fallback_to_original = _cfg_get(
+            cfg_obj, "dobi_fallback_to_original", _cfg_get(cfg_obj, "fallback_to_original", fallback_to_original)
+        )
+        target_attention_only = _cfg_get(
+            cfg_obj, "dobi_target_attention_only", _cfg_get(cfg_obj, "target_attention_only", target_attention_only)
+        )
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -169,24 +187,40 @@ class DobiSVDCompressor(BaseCompressor):
         self.init_gate_val = float(init_gate_val)
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
+        self.target_attention_only = bool(target_attention_only)
         self.max_retries = int(max_retries)
         self.target_modules = target_modules
 
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
+        self.skipped_layers: List[str] = []
         self.layer_ranks: Dict[str, int] = {}
         self.layer_errors: Dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        cls_name = module.__class__.__name__.lower()
-        is_linear = isinstance(module, nn.Linear)
-        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+            return False
+        if any(k in name_lower for k in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not (is_linear or is_conv1d):
             return False
-        if isinstance(module, DobiSVDLinearLayer):
+        if isinstance(target_mod, DobiSVDLinearLayer) or isinstance(module, DobiSVDLinearLayer):
             return False
         if not should_compress_linear(self.model, name):
             return False
+
+        if self.target_attention_only:
+            last_part = name.split(".")[-1]
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
+            if not is_attn:
+                return False
+
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
@@ -209,9 +243,10 @@ class DobiSVDCompressor(BaseCompressor):
         rank: Optional[int] = None,
     ) -> Tuple[Optional[DobiSVDLinearLayer], float, int]:
         """Decompose a single linear or Conv1D layer into DobiSVDLinearLayer."""
-        cls_name = layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
-        raw_w = layer.weight.data
+        target_mod = getattr(layer, "base_layer", layer)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        raw_w = target_mod.weight.data
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -253,14 +288,14 @@ class DobiSVDCompressor(BaseCompressor):
                 in_features=in_f,
                 out_features=out_f,
                 rank=r,
-                bias=layer.bias is not None,
+                bias=target_mod.bias is not None,
                 init_gate_val=self.init_gate_val,
                 dtype=dtype,
                 device=device,
             )
             dobi_layer.set_low_rank_factors(U_r, V_r)
-            if layer.bias is not None and dobi_layer.bias is not None:
-                dobi_layer.bias.data.copy_(layer.bias.data)
+            if target_mod.bias is not None and dobi_layer.bias is not None:
+                dobi_layer.bias.data.copy_(target_mod.bias.data)
 
             W_recon = dobi_layer.weight.float()
             if norm_w < 1e-12:
@@ -283,15 +318,19 @@ class DobiSVDCompressor(BaseCompressor):
 
         if best_layer is not None:
             best_layer.reconstruction_error = best_err
-            return best_layer
+            return best_layer, best_err, chosen_r
         return None, best_err, chosen_r
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress all target linear and Conv1D layers across the model."""
         self.compressed_layers = []
         self.fallback_layers = []
+        self.skipped_layers = []
         self.layer_ranks = {}
         self.layer_errors = {}
+
+        total_orig_decomp_params = 0
+        total_comp_decomp_params = 0
 
         target_layers = [
             (name, mod)
@@ -303,7 +342,32 @@ class DobiSVDCompressor(BaseCompressor):
             logger.warning("Dobi-SVD: No compressible linear layers found.")
             return self.model, self.get_compression_stats()
 
+        # If target_attention_only=True, freeze non-target linear/conv layers during recovery
+        if self.target_attention_only:
+            for name, module in list(self.model.named_modules()):
+                target_mod = getattr(module, "base_layer", module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                if is_linear or is_conv1d:
+                    if not self._is_target_module(name, module):
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        self.skipped_layers.append(name)
+
         for name, module in target_layers:
+            target_mod = getattr(module, "base_layer", module)
+            raw_w = target_mod.weight.data
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+            if is_conv1d:
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+            orig_params = out_f * in_f
+            total_orig_decomp_params += orig_params
+
             new_layer, err, r = self.compress_linear(module, rank=self.rank)
             self.layer_errors[name] = err
             self.layer_ranks[name] = r
@@ -316,13 +380,31 @@ class DobiSVDCompressor(BaseCompressor):
                     self.max_error,
                 )
                 if self.fallback_to_original:
-                    logger.info("Skipping Dobi-SVD compression for %s (fallback to original).", name)
+                    logger.info("Skipping Dobi-SVD compression for %s (fallback to original and frozen).", name)
                     self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    total_comp_decomp_params += orig_params
                     continue
 
-            replace_module(self.model, name, new_layer)
-            self.compressed_layers.append(name)
+            # If wrapped in LoRALinear, replace the base_layer or the whole module
+            if hasattr(module, "base_layer") and hasattr(module, "lora_A"):
+                module.base_layer = new_layer
+                if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
+                    module.lora_A.weight.requires_grad = True
+                if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
+                    module.lora_B.weight.requires_grad = True
+            else:
+                replace_module(self.model, name, new_layer)
 
+            self.compressed_layers.append(name)
+            # Parameters: U (out*r) + V (r*in) + gate (r)
+            comp_params = r * (in_f + out_f) + r
+            total_comp_decomp_params += comp_params
+
+        effective_ratio = (
+            total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
+        )
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
@@ -332,11 +414,20 @@ class DobiSVDCompressor(BaseCompressor):
         )
         stats.update({
             "compressed_layers": self.compressed_layers,
+            "compressed_layer_count": len(self.compressed_layers),
             "fallback_layers": self.fallback_layers,
+            "fallback_layer_count": len(self.fallback_layers),
+            "skipped_layers": self.skipped_layers,
+            "skipped_layer_count": len(self.skipped_layers),
+            "original_layer_count": len(target_layers),
             "layer_ranks": self.layer_ranks,
             "layer_errors": self.layer_errors,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
+            "target_attention_only": self.target_attention_only,
+            "init_rank_ratio": self.init_rank_ratio,
+            "init_gate_val": self.init_gate_val,
+            "effective_parameter_ratio": round(effective_ratio, 4),
             "avg_reconstruction_error": avg_err,
             "num_compressed": len(self.compressed_layers),
             "num_fallback": len(self.fallback_layers),
@@ -350,13 +441,18 @@ class DobiSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Dobi factory function."""
-    init_rank_ratio = kwargs.pop("init_rank_ratio", getattr(comp_config, "dobi_init_rank_ratio", getattr(comp_config, "init_rank_ratio", 0.5)) if comp_config else 0.5)
-    rank = kwargs.pop("rank", getattr(comp_config, "dobi_rank", getattr(comp_config, "rank", None)) if comp_config else None)
-    init_gate_val = kwargs.pop("init_gate_val", getattr(comp_config, "init_gate_val", 2.5) if comp_config else 2.5)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config else 0.20)
-    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
+    init_rank_ratio = kwargs.pop("init_rank_ratio", _cfg_get(comp_config, "dobi_init_rank_ratio", _cfg_get(comp_config, "init_rank_ratio", 0.5)))
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "dobi_rank", _cfg_get(comp_config, "rank", None)))
+    init_gate_val = kwargs.pop("init_gate_val", _cfg_get(comp_config, "init_gate_val", 2.5))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "dobi_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "dobi_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+    )
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = DobiSVDCompressor(
         model,
@@ -365,10 +461,13 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Modul
         init_gate_val=init_gate_val,
         max_error=max_error,
         fallback_to_original=fallback,
-        comp_config=comp_config,
+        target_attention_only=target_attention_only,
+        cfg=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
 
 

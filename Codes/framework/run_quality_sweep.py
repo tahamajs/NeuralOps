@@ -823,6 +823,44 @@ def main():
                     help="Target rank for CUR-MoE decomposition")
     ap.add_argument("--cur_moe_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Freeze attention projections and target MoE/FFN in CUR-MoE")
+    # DeltaKV
+    ap.add_argument("--delta_kv_rank", type=int, default=16,
+                    help="Reference low-rank rank for DeltaKV")
+    ap.add_argument("--delta_kv_sparsity", type=float, default=0.29,
+                    help="Residual sparsity budget for DeltaKV")
+    ap.add_argument("--delta_kv_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for DeltaKV before fallback")
+    ap.add_argument("--delta_kv_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict DeltaKV compression to attention projections only")
+    # DirectSVD
+    ap.add_argument("--direct_svd_rank", type=int, default=128,
+                    help="Rank for Direct SVD truncation")
+    ap.add_argument("--direct_svd_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for Direct SVD before fallback")
+    ap.add_argument("--direct_svd_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Direct SVD compression to attention projections only")
+    # Dobi-SVD
+    ap.add_argument("--dobi_rank", type=int, default=None,
+                    help="Explicit rank for Dobi-SVD")
+    ap.add_argument("--dobi_init_rank_ratio", type=float, default=0.5,
+                    help="Initial rank ratio for Dobi-SVD")
+    ap.add_argument("--dobi_init_gate_val", type=float, default=2.5,
+                    help="Initial spectral gate parameter value for Dobi-SVD")
+    ap.add_argument("--dobi_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for Dobi-SVD before fallback")
+    ap.add_argument("--dobi_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Dobi-SVD compression to attention projections only")
+    # Dynamic Entropy SVD
+    ap.add_argument("--dynamic_min_rank", type=int, default=16,
+                    help="Minimum rank floor for Dynamic Entropy SVD")
+    ap.add_argument("--dynamic_max_rank", type=int, default=256,
+                    help="Maximum rank ceiling for Dynamic Entropy SVD")
+    ap.add_argument("--dynamic_target_param_ratio", type=float, default=0.5,
+                    help="Target parameter ratio budget for Dynamic Entropy SVD")
+    ap.add_argument("--dynamic_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for Dynamic Entropy SVD before fallback")
+    ap.add_argument("--dynamic_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Dynamic Entropy SVD compression to attention projections only")
 
     
     # Pre-parse to check if a config file is provided
@@ -1451,13 +1489,68 @@ def main():
                         if getattr(args, "cur_moe_target_attention_only", None) is not None:
                             setattr(model.config, "cur_moe_target_attention_only", args.cur_moe_target_attention_only)
                             setattr(model.config, "target_attention_only", args.cur_moe_target_attention_only)
+                        # DeltaKV
+                        if getattr(args, "delta_kv_rank", None) is not None:
+                            setattr(model.config, "delta_kv_rank", args.delta_kv_rank)
+                            setattr(model.config, "rank", args.delta_kv_rank)
+                        if getattr(args, "delta_kv_sparsity", None) is not None:
+                            setattr(model.config, "delta_kv_sparsity", args.delta_kv_sparsity)
+                            setattr(model.config, "sparsity", args.delta_kv_sparsity)
+                        if getattr(args, "delta_kv_max_error", None) is not None:
+                            setattr(model.config, "delta_kv_max_error", args.delta_kv_max_error)
+                            setattr(model.config, "max_error", args.delta_kv_max_error)
+                        if getattr(args, "delta_kv_target_attention_only", None) is not None:
+                            setattr(model.config, "delta_kv_target_attention_only", args.delta_kv_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.delta_kv_target_attention_only)
+                        # DirectSVD
+                        if getattr(args, "direct_svd_rank", None) is not None:
+                            setattr(model.config, "direct_svd_rank", args.direct_svd_rank)
+                            setattr(model.config, "rank", args.direct_svd_rank)
+                        if getattr(args, "direct_svd_max_error", None) is not None:
+                            setattr(model.config, "direct_svd_max_error", args.direct_svd_max_error)
+                            setattr(model.config, "max_error", args.direct_svd_max_error)
+                        if getattr(args, "direct_svd_target_attention_only", None) is not None:
+                            setattr(model.config, "direct_svd_target_attention_only", args.direct_svd_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.direct_svd_target_attention_only)
+                        # Dobi-SVD
+                        if getattr(args, "dobi_rank", None) is not None:
+                            setattr(model.config, "dobi_rank", args.dobi_rank)
+                            setattr(model.config, "rank", args.dobi_rank)
+                        if getattr(args, "dobi_init_rank_ratio", None) is not None:
+                            setattr(model.config, "dobi_init_rank_ratio", args.dobi_init_rank_ratio)
+                            setattr(model.config, "init_rank_ratio", args.dobi_init_rank_ratio)
+                        if getattr(args, "dobi_init_gate_val", None) is not None:
+                            setattr(model.config, "dobi_init_gate_val", args.dobi_init_gate_val)
+                            setattr(model.config, "init_gate_val", args.dobi_init_gate_val)
+                        if getattr(args, "dobi_max_error", None) is not None:
+                            setattr(model.config, "dobi_max_error", args.dobi_max_error)
+                            setattr(model.config, "max_error", args.dobi_max_error)
+                        if getattr(args, "dobi_target_attention_only", None) is not None:
+                            setattr(model.config, "dobi_target_attention_only", args.dobi_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.dobi_target_attention_only)
+                        # Dynamic Entropy SVD
+                        if getattr(args, "dynamic_min_rank", None) is not None:
+                            setattr(model.config, "dynamic_min_rank", args.dynamic_min_rank)
+                            setattr(model.config, "min_rank", args.dynamic_min_rank)
+                        if getattr(args, "dynamic_max_rank", None) is not None:
+                            setattr(model.config, "dynamic_max_rank", args.dynamic_max_rank)
+                            setattr(model.config, "max_rank", args.dynamic_max_rank)
+                        if getattr(args, "dynamic_target_param_ratio", None) is not None:
+                            setattr(model.config, "dynamic_target_param_ratio", args.dynamic_target_param_ratio)
+                            setattr(model.config, "target_param_ratio", args.dynamic_target_param_ratio)
+                        if getattr(args, "dynamic_max_error", None) is not None:
+                            setattr(model.config, "dynamic_max_error", args.dynamic_max_error)
+                            setattr(model.config, "max_error", args.dynamic_max_error)
+                        if getattr(args, "dynamic_target_attention_only", None) is not None:
+                            setattr(model.config, "dynamic_target_attention_only", args.dynamic_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.dynamic_target_attention_only)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
