@@ -306,10 +306,15 @@ class NASCAttention(BaseAttention):
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+        is_nested = False
+        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+            is_nested = True
+        elif (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -641,3 +646,6 @@ def inject_nasc(
     elif hasattr(layer, "self"):
         layer.self = new_attn
     return new_attn
+
+# Aliases
+inject_nasc_attention = inject_nasc
