@@ -126,7 +126,7 @@ models = [
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Unified 4-Model SVDMamba Benchmark")
+parser = argparse.ArgumentParser(description="Unified 4-Model SVD_MAMBA Benchmark")
 parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
 parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,svd_mamba)")
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
@@ -160,7 +160,7 @@ def update_cmd_arg(cmd: list, flag: str, new_val: str):
         cmd.extend([flag, str(new_val)])
 
 for m in models:
-    if args.modules is not None:
+    if args.modules:
         update_cmd_arg(m["cmd"], "--modules", args.modules)
     if args.recovery_steps is not None:
         update_cmd_arg(m["cmd"], "--recovery_steps", str(args.recovery_steps))
@@ -169,136 +169,102 @@ for m in models:
     if args.lora_rank is not None:
         update_cmd_arg(m["cmd"], "--lora_rank", str(args.lora_rank))
 
-print("=" * 80, flush=True)
-print("STARTING UNIFIED 4-MODEL HARDENED SVDMambaATTENTION BENCHMARK ON GPU SERVER", flush=True)
-print(f"Running models: {[m['name'] for m in models]}", flush=True)
-print("=" * 80, flush=True)
-
-final_stats = []
+start_time = time.time()
 
 for m in models:
-    print(f"\n{'='*30} RUNNING MODEL: {m['name']} {'='*30}", flush=True)
-    t0 = time.time()
-    res = subprocess.run(m["cmd"])
-    elapsed = time.time() - t0
+    name = m["name"]
+    out_dir = Path(m["out_dir"])
+    cmd = m["cmd"]
 
-    acc = None
-    baseline_acc = None
-    status = "UNKNOWN" if res.returncode == 0 else f"EXIT_{res.returncode}"
-    num_compressed_layers = "N/A"
-    f1 = None
-    comp_rate = None
-    peak_vram = None
+    print(f"\n========================================================")
+    print(f"Starting {name.upper()} Benchmark...")
+    print(f"Command: {' '.join(cmd)}")
+    print(f"========================================================\n", flush=True)
 
-    csv_path = Path(m["summary_csv"])
-    if csv_path.exists():
+    out_dir.mkdir(parents=True, exist_ok=True)
+    log_file = out_dir / "console.log"
+
+    with open(log_file, "w", encoding="utf-8") as lf:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+        for line in proc.stdout:
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            lf.write(line)
+            lf.flush()
+        proc.wait()
+
+    if proc.returncode != 0:
+        print(f"\n[ERROR] Benchmark failed for {name} with returncode {proc.returncode}.", flush=True)
+    else:
+        print(f"\n[SUCCESS] Finished Benchmark for {name}.", flush=True)
+
+print(f"\n========================================================")
+print(f"All Requested Models Processed in {time.time() - start_time:.2f}s")
+print(f"========================================================\n")
+
+print("\n--- Summary Results ---")
+for m in models:
+    name = m["name"]
+    summary_path = Path(m["summary_csv"])
+    if summary_path.exists():
         try:
-            df = pd.read_csv(csv_path)
-            if not df.empty:
-                col = "accuracy_pct" if "accuracy_pct" in df.columns else ("mean_accuracy" if "mean_accuracy" in df.columns else None)
-                if col:
-                    row_base = df[df["module_name"] == "full"]
-                    if not row_base.empty:
-                        baseline_acc = float(row_base[col].values[-1])
-                    row = df[df["module_name"] == "svd_mamba"]
-                    if row.empty:
-                        row = df[df["module_name"] == "svd_mamba_attention"]
-                    if not row.empty:
-                        acc = float(row[col].values[-1])
-                        status = str(row["status"].values[-1])
-                        if "f1_score" in row.columns and not pd.isna(row["f1_score"].values[-1]):
-                            try: f1 = float(row["f1_score"].values[-1])
-                            except Exception: pass
-                        if "compression_rate" in row.columns and not pd.isna(row["compression_rate"].values[-1]):
-                            try: comp_rate = float(row["compression_rate"].values[-1])
-                            except Exception: pass
-                        if "peak_vram_mb" in row.columns and not pd.isna(row["peak_vram_mb"].values[-1]):
-                            try: peak_vram = float(row["peak_vram_mb"].values[-1])
-                            except Exception: pass
-                        if "num_compressed_layers" in row.columns and not pd.isna(row["num_compressed_layers"].values[-1]):
-                            num_compressed_layers = str(row["num_compressed_layers"].values[-1])
+            df = pd.read_csv(summary_path)
+            print(f"\nSummary for {name}:")
+            print(df.to_string(index=False))
         except Exception as e:
-            print(f"Error reading summary CSV for {m['name']}: {e}", flush=True)
+            print(f"Could not read summary CSV for {name}: {e}")
+    else:
+        print(f"No summary CSV found for {name} at {summary_path}")
 
-    stats_path = Path(m.get("stats_json", ""))
-    if stats_path.exists() and num_compressed_layers == "N/A":
-        try:
-            with open(stats_path, "r", encoding="utf-8") as sf:
-                s_data = json.load(sf)
-                num_compressed_layers = s_data.get("num_compressed_layers", "N/A")
-        except Exception as e:
-            print(f"Error reading stats JSON for {m['name']}: {e}", flush=True)
+print(f"\n========================================================")
+print(f"Starting Quality Gate & Automated Hugging Face Export...")
+print(f"========================================================\n", flush=True)
 
-    delta_acc_str = f"{(acc - baseline_acc):+.2f}%" if (acc is not None and baseline_acc is not None) else "N/A"
-    f1_str = f"{f1:.4f}" if f1 is not None else "N/A"
-    comp_rate_str = f"{comp_rate:.2f}x" if comp_rate is not None else "1.00x"
-    vram_str = f"{peak_vram:.1f} MB" if peak_vram is not None else "N/A"
+try:
+    from huggingface_hub import HfApi
+    api = HfApi()
+except ImportError:
+    api = None
+    print("[WARN] huggingface_hub is not installed. Automated HF upload will be skipped.", flush=True)
 
-    final_stats.append({
-        "Model": m["name"],
-        "Exit Code": res.returncode,
-        "Baseline Acc": f"{baseline_acc:.2f}%" if baseline_acc is not None else "N/A",
-        "SVDMamba Acc": f"{acc:.2f}%" if acc is not None else "N/A",
-        "Delta Acc": delta_acc_str,
-        "F1": f1_str,
-        "Status": status,
-        "Compressed Layers": num_compressed_layers,
-        "Comp Rate": comp_rate_str,
-        "Peak VRAM": vram_str,
-        "Time (s)": f"{elapsed:.1f}",
-    })
-    print(f"\n>>> FINISHED MODEL: {m['name']} in {elapsed:.1f}s (Exit: {res.returncode}, Status: {status})", flush=True)
-
-print("\n" + "=" * 80, flush=True)
-print("4-MODEL BENCHMARK RESULTS SUMMARY (SVDMamba on GPU)", flush=True)
-print("=" * 80, flush=True)
-res_df = pd.DataFrame(final_stats)
-print(res_df.to_string(index=False), flush=True)
-print("=" * 80, flush=True)
-
-out_dir = Path("results")
-out_dir.mkdir(parents=True, exist_ok=True)
-out_csv = out_dir / "unified_svd_mamba_4models_summary.csv"
-out_json = out_dir / "unified_svd_mamba_4models_summary.json"
-res_df.to_csv(out_csv, index=False)
-with open(out_json, "w", encoding="utf-8") as f:
-    json.dump(final_stats, f, indent=2)
-print(f"\nSaved consolidated summaries to:\n- {out_csv}\n- {out_json}", flush=True)
-
-# Quality gate & export to HuggingFace
-print("\n" + "=" * 80, flush=True)
-print("STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (SVDMamba)", flush=True)
-print("=" * 80, flush=True)
-
-from huggingface_hub import HfApi
-
-hf_token = os.environ.get("HF_TOKEN")
-api = HfApi(token=hf_token)
 hf_org = "Hooshaai"
 pass_count = 0
 uploaded_repos = []
 
 for m in models:
     name = m["name"]
-    slug = m.get("slug", name)
+    slug = m["slug"]
     out_dir = Path(m["out_dir"])
-    weights_dir = out_dir / "checkpoints" / "svd_mamba"
-    if not weights_dir.exists():
-        weights_dir = out_dir / "checkpoints" / "svd_mamba_attention"
-    hf_export_dir = weights_dir / "hf_export"
+    summary_path = Path(m["summary_csv"])
+    weights_dir = out_dir / "weights"
+    hf_export_dir = out_dir / "hf_export"
 
-    csv_path = Path(m["summary_csv"])
+    if not summary_path.exists():
+        print(f"[Quality Gate: REJECTED] {name} summary CSV does not exist. Skipping export and cleaning up.", flush=True)
+        if weights_dir.exists():
+            shutil.rmtree(weights_dir, ignore_errors=True)
+        continue
+
     row = {}
-    if csv_path.exists():
-        try:
-            df = pd.read_csv(csv_path)
-            row_match = df[df["module_name"] == "svd_mamba"]
-            if row_match.empty:
-                row_match = df[df["module_name"] == "svd_mamba_attention"]
-            if not row_match.empty:
-                row = row_match.iloc[-1].to_dict()
-        except Exception as e:
-            print(f"Error reading summary for {name}: {e}", flush=True)
+    try:
+        df = pd.read_csv(summary_path)
+        if not df.empty:
+            if "status" in df.columns:
+                cand = df[df["module"] != "full"] if "module" in df.columns else df
+                if not cand.empty:
+                    row = cand.iloc[-1].to_dict()
+                else:
+                    row = df.iloc[-1].to_dict()
+            else:
+                row = df.iloc[-1].to_dict()
+    except Exception as e:
+        print(f"Error reading summary for {name}: {e}", flush=True)
 
     status = str(row.get("status", "FAIL"))
     try:
@@ -325,35 +291,58 @@ for m in models:
         if src_weights.resolve() != dst_weights.resolve():
             shutil.copy2(src_weights, dst_weights)
 
+    # Save complete publication-ready metrics
+    metrics_payload = {
+        "model_name": name,
+        "module": "svd_mamba",
+        "status": status,
+        "accuracy_pct": acc,
+        "f1": float(row.get("f1", row.get("mean_f1", 0.0))),
+        "precision": float(row.get("precision", 0.0)),
+        "recall": float(row.get("recall", 0.0)),
+        "eval_loss": float(row.get("eval_loss", 0.0)),
+        "params_total": row.get("params_total", None),
+        "params_active": row.get("params_active", None),
+        "param_reduction_pct": row.get("param_reduction_pct", None),
+        "peak_vram_mb": row.get("peak_vram_mb", None),
+        "tokens_per_sec": row.get("tokens_per_sec", None),
+        "elapsed_seconds": row.get("elapsed_seconds", None),
+        "full_metrics": row,
+    }
+    with open(hf_export_dir / "metrics.json", "w", encoding="utf-8") as mf:
+        json.dump(metrics_payload, mf, indent=2)
+
     card_content = f"""---
 tags:
 - svd-linear-attention
-- svd_mamba
-- svd-mamba
+- svd_mamba-attention
 - pytorch
 datasets:
 - sst2
 ---
-# SVDMamba (Random Projection Compressed Attention) - {name}
+# SVD_MAMBA - {name}
 - Benchmark Accuracy: {acc:.2f}%
+- F1 Score: {metrics_payload['f1']:.4f}
 - Status: {status}
 - Architecture: {name}
+- Hyperparameters: sparsity_ratio=0.5, lora_rank=16, lora_alpha=32
 """
     with open(hf_export_dir / "README.md", "w", encoding="utf-8") as f:
         f.write(card_content)
 
-    repo_id = f"{hf_org}/svd-linear-attention-{slug}-svdmamba"
-    try:
-        print(f"Uploading to Hugging Face: {repo_id}...", flush=True)
-        api.create_repo(repo_id=repo_id, private=True, exist_ok=True)
-        api.upload_folder(
-            folder_path=str(hf_export_dir),
-            repo_id=repo_id,
-            commit_message=f"Upload hardened SVDMamba model weights ({name}) - Acc: {acc:.2f}%",
-        )
-        print(f"Successfully uploaded {name} to {repo_id}", flush=True)
-        uploaded_repos.append(repo_id)
-    except Exception as e:
-        print(f"Upload failed for {repo_id}: {e}", flush=True)
+    repo_id = f"{hf_org}/svd-linear-attention-{slug}-svd_mamba"
+    if api is not None:
+        try:
+            print(f"Uploading to Hugging Face: {repo_id}...", flush=True)
+            api.create_repo(repo_id=repo_id, private=True, exist_ok=True)
+            api.upload_folder(
+                folder_path=str(hf_export_dir),
+                repo_id=repo_id,
+                commit_message=f"Upload hardened SVD_MAMBA model weights ({name}) - Acc: {acc:.2f}%",
+            )
+            print(f"Successfully uploaded {name} to {repo_id}", flush=True)
+            uploaded_repos.append(repo_id)
+        except Exception as e:
+            print(f"Upload failed for {repo_id}: {e}", flush=True)
 
 print(f"\nExport Complete: {pass_count}/{len(models)} passed quality gate.", flush=True)
