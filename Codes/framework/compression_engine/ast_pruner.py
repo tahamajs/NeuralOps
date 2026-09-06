@@ -33,6 +33,16 @@ from framework.compression_engine.pruning_utils import (
     recalibrate_layernorms,
 )
 
+
+def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
+    """Safely extract configuration attribute from None, dict, or object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -154,6 +164,7 @@ class ASTPruner(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
+        target_attention_only: bool = False,
         target_modules: Optional[List[str]] = None,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
@@ -192,6 +203,7 @@ class ASTPruner(BaseCompressor):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.target_attention_only = target_attention_only
         self.target_modules = target_modules
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -234,6 +246,8 @@ class ASTPruner(BaseCompressor):
         if not should_compress_linear(self.model, name):
             return False
         if self._is_gqa_asymmetric(name, module):
+            return False
+        if self.target_attention_only and not any(k in name.lower() for k in ["attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value", "c_attn", "c_proj"]):
             return False
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
@@ -332,18 +346,20 @@ class ASTPruner(BaseCompressor):
                     continue
                 w_id = id(module.weight)
                 if w_id in seen_weights:
+                    for p in module.parameters(): p.requires_grad = False
                     self.skipped_layers.append(name)
                     continue
                 seen_weights.add(w_id)
 
-                raw_w = module.weight.data
+                target_mod = getattr(module, 'base_layer', module)
+                raw_w = target_mod.weight.data
                 cls_name = module.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
 
                 W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
                 d_out, d_in = W.shape
                 device = W.device
-                dtype = module.weight.dtype
+                dtype = target_mod.weight.dtype
 
                 # 1. Derive PCA orthogonal coordinate rotation matrix Q
                 if self.use_pca and name in cov_map and cov_map[name].shape == (d_in, d_in):
@@ -399,12 +415,13 @@ class ASTPruner(BaseCompressor):
                     )
                     if self.fallback_to_original:
                         logger.info("Skipping AST pruning for %s (fallback to original).", name)
+                        for p in module.parameters(): p.requires_grad = False
                         self.fallback_layers.append(name)
                         continue
 
                 if self.lora_r > 0:
                     ast_layer = ASTPrunedLoRALinear.from_linear(
-                        module,
+                        target_mod,
                         weight=W_final,
                         lora_r=self.lora_r,
                         lora_alpha=self.lora_alpha,
@@ -412,12 +429,19 @@ class ASTPruner(BaseCompressor):
                     if name == "":
                         self.model = ast_layer
                     else:
+                        if hasattr(module, 'base_layer'):
+                            if hasattr(module, 'lora_A'):
+                                ast_layer.lora_A = module.lora_A
+                            if hasattr(module, 'lora_B'):
+                                ast_layer.lora_B = module.lora_B
+                            module.base_layer = ast_layer
+                            ast_layer = module
                         replace_module(self.model, name, ast_layer)
                 else:
                     if is_conv1d:
-                        module.weight.data.copy_(W_final.t().contiguous().to(dtype=dtype, device=device))
+                        target_mod.weight.data.copy_(W_final.t().contiguous().to(dtype=dtype, device=device))
                     else:
-                        module.weight.data.copy_(W_final.contiguous().to(dtype=dtype, device=device))
+                        target_mod.weight.data.copy_(W_final.contiguous().to(dtype=dtype, device=device))
 
                 self.compressed_layers.append(name)
 
