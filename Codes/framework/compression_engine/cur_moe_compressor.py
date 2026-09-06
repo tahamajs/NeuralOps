@@ -26,6 +26,15 @@ from .cur_linear import (
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract configuration attribute from dict, object, or namespace."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register("cur_moe_compressor")
 class CURMoECompressor(BaseCompressor):
     """
@@ -40,6 +49,7 @@ class CURMoECompressor(BaseCompressor):
         max_error: Maximum allowed relative Frobenius error (default 0.90).
         fallback_to_original: Whether to preserve original layer if error > max_error (default True).
         max_retries: Number of adaptive rank escalations (default 2).
+        target_attention_only: If True, skip attention projections and compress only FFN/MoE expert layers.
         cfg: Optional configuration object.
     """
 
@@ -53,31 +63,45 @@ class CURMoECompressor(BaseCompressor):
         max_error: float = 0.90,
         fallback_to_original: bool = True,
         max_retries: int = 2,
+        target_attention_only: bool = False,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cur_moe", **kwargs)
-        self.rank = rank or getattr(cfg, "cur_moe_rank", None) or getattr(cfg, "rank", 64)
-        self.min_rank = min_rank or getattr(cfg, "min_rank", 8)
-        self.method = method or getattr(cfg, "cur_moe_method", "leverage")
-        self.deterministic = deterministic
-        self.max_error = max_error if max_error is not None else getattr(cfg, "max_error", 0.90)
-        self.fallback_to_original = (
-            fallback_to_original if fallback_to_original is not None else getattr(cfg, "fallback_to_original", True)
-        )
+        c_rank = _cfg_get(cfg, "cur_moe_rank", _cfg_get(cfg, "rank", rank))
+        c_min_rank = _cfg_get(cfg, "cur_min_rank", _cfg_get(cfg, "min_rank", min_rank))
+        c_method = _cfg_get(cfg, "cur_moe_method", _cfg_get(cfg, "method", method))
+        c_det = _cfg_get(cfg, "cur_deterministic", _cfg_get(cfg, "deterministic", deterministic))
+        c_max_error = _cfg_get(cfg, "cur_moe_max_error", _cfg_get(cfg, "max_error", max_error))
+        c_fallback = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+        c_target_attn = _cfg_get(cfg, "cur_moe_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+
+        self.rank = int(c_rank) if c_rank is not None else 64
+        self.min_rank = int(c_min_rank) if c_min_rank is not None else 8
+        self.method = str(c_method)
+        self.deterministic = bool(c_det)
+        self.max_error = float(c_max_error) if c_max_error is not None else 0.90
+        self.fallback_to_original = bool(c_fallback)
         self.max_retries = max(0, int(max_retries))
+        self.target_attention_only = bool(c_target_attn)
         self.cfg = cfg
 
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
         self.layer_ranks: Dict[str, int] = {}
+        self.total_orig_decomp_params = 0
+        self.total_comp_decomp_params = 0
 
     def _compress_single_layer(self, name: str, module: nn.Module) -> bool:
         """Compress a single linear or Conv1D layer with Frobenius validation and adaptive retries."""
-        cls_name = module.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or hasattr(module, "nf")
-        raw_w = module.weight.data
+        target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+        cls_name = target_mod.__class__.__name__.lower()
+        wrapper_name = module.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or "conv1d" in wrapper_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
+        has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
+
+        raw_w = target_mod.weight.data
         orig_w = raw_w.t().float() if is_conv1d else raw_w.float()
         out_f, in_f = orig_w.shape
         max_rank = min(out_f, in_f)
@@ -102,7 +126,7 @@ class CURMoECompressor(BaseCompressor):
         for _ in range(self.max_retries + 1):
             try:
                 candidate = CURLinear.from_linear(
-                    module,
+                    target_mod,
                     rank=cur_r,
                     method=self.method,
                     deterministic=self.deterministic,
@@ -133,13 +157,27 @@ class CURMoECompressor(BaseCompressor):
             )
             if self.fallback_to_original:
                 self.fallback_layers.append(name)
+                # Freeze fallback layers
+                for p in module.parameters():
+                    p.requires_grad = False
                 return False
 
         if best_cur_layer is not None:
-            replace_module(self.model, name, best_cur_layer)
+            if has_lora:
+                module.base_layer = best_cur_layer
+                for p_name, p in module.named_parameters():
+                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                        p.requires_grad = True
+            elif name == "":
+                self.model = best_cur_layer
+            else:
+                replace_module(self.model, name, best_cur_layer)
+
             self.compressed_layers.append(name)
             self.layer_errors[name] = float(best_err)
             self.layer_ranks[name] = int(best_r)
+            self.total_orig_decomp_params += (in_f * out_f)
+            self.total_comp_decomp_params += (best_r * (in_f + out_f + best_r))
             return True
 
         return False
@@ -154,17 +192,20 @@ class CURMoECompressor(BaseCompressor):
         self.fallback_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
+        self.total_orig_decomp_params = 0
+        self.total_comp_decomp_params = 0
+        experts_detected = False
 
         # Scan for explicit MoE modules (module.experts or expert submodules)
         for name, module in list(self.model.named_modules()):
             name_lower = name.lower()
             if any(k in name_lower for k in ["router", "gate", "classifier", "score", "lm_head", "pooler", "embedding"]):
-                # Protect routers, gates, and classification heads
                 continue
 
             if hasattr(module, "experts"):
                 experts_container = module.experts
                 if isinstance(experts_container, (nn.ModuleList, list)):
+                    experts_detected = True
                     for exp_idx, expert in enumerate(experts_container):
                         for child_name, child_mod in list(expert.named_children()):
                             child_full_name = f"{name}.experts.{exp_idx}.{child_name}" if name else f"experts.{exp_idx}.{child_name}"
@@ -172,6 +213,7 @@ class CURMoECompressor(BaseCompressor):
                                 isinstance(child_mod, nn.Linear)
                                 or "conv1d" in child_mod.__class__.__name__.lower()
                                 or hasattr(child_mod, "nf")
+                                or hasattr(child_mod, "base_layer")
                             )
                             if is_linear_like and not isinstance(child_mod, CURLinear):
                                 self._compress_single_layer(child_full_name, child_mod)
@@ -180,8 +222,10 @@ class CURMoECompressor(BaseCompressor):
                     isinstance(module, nn.Linear)
                     or "conv1d" in module.__class__.__name__.lower()
                     or hasattr(module, "nf")
+                    or hasattr(module, "base_layer")
                 )
                 if is_linear_like and not isinstance(module, CURLinear):
+                    experts_detected = True
                     self._compress_single_layer(name, module)
 
         # Fallback to FFN linear layers if no explicit MoE structure was found
@@ -194,19 +238,26 @@ class CURMoECompressor(BaseCompressor):
         })
         if len(self.compressed_layers) == 0:
             for name, module in list(self.model.named_modules()):
-                if not should_compress_linear(self.model, name):
-                    continue
-                last_part = name.split(".")[-1]
-                if last_part in _ATTN_NAMES:
-                    continue  # preserve pretrained attention weights intact
                 name_lower = name.lower()
                 if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+                    continue
+
+                last_part = name.split(".")[-1]
+                is_attn_proj = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
+
+                # In target_attention_only mode (or default MoE behavior), we protect attention projections
+                if is_attn_proj:
+                    if self.target_attention_only:
+                        # Freeze attention layers to protect them during fine-tuning
+                        for p in module.parameters():
+                            p.requires_grad = False
                     continue
 
                 is_linear_like = (
                     isinstance(module, nn.Linear)
                     or "conv1d" in module.__class__.__name__.lower()
                     or hasattr(module, "nf")
+                    or hasattr(module, "base_layer")
                 )
                 if is_linear_like and not isinstance(module, CURLinear):
                     self._compress_single_layer(name, module)
@@ -214,6 +265,9 @@ class CURMoECompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        effective_param_ratio = (
+            self.total_comp_decomp_params / self.total_orig_decomp_params if self.total_orig_decomp_params > 0 else 1.0
+        )
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
@@ -228,6 +282,10 @@ class CURMoECompressor(BaseCompressor):
                 "cur_method": self.method,
                 "cur_moe_rank": self.rank,
                 "min_rank": self.min_rank,
+                "deterministic": self.deterministic,
+                "experts_detected": experts_detected,
+                "target_attention_only": self.target_attention_only,
+                "effective_parameter_ratio": round(effective_param_ratio, 4),
             }
         )
         return self.model, stats
@@ -243,12 +301,13 @@ def cur_moe_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for CUR-MoE compressor."""
-    effective_rank = kwargs.pop("rank", rank or getattr(comp_config, "cur_moe_rank", None) or getattr(comp_config, "rank", 64))
-    min_rank = kwargs.pop("min_rank", getattr(comp_config, "min_rank", 8))
-    method = kwargs.pop("method", getattr(comp_config, "cur_moe_method", "leverage"))
-    deterministic = kwargs.pop("deterministic", getattr(comp_config, "deterministic", True))
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.90))
-    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True))
+    effective_rank = kwargs.pop("rank", rank or _cfg_get(comp_config, "cur_moe_rank", _cfg_get(comp_config, "rank", 64)))
+    min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))
+    method = kwargs.pop("method", _cfg_get(comp_config, "cur_moe_method", _cfg_get(comp_config, "method", "leverage")))
+    deterministic = kwargs.pop("deterministic", _cfg_get(comp_config, "deterministic", True))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "cur_moe_max_error", _cfg_get(comp_config, "max_error", 0.90)))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "cur_moe_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = CURMoECompressor(
@@ -259,6 +318,7 @@ def cur_moe_factory(
         deterministic=deterministic,
         max_error=max_error,
         fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
         cfg=comp_config,
         **kwargs,
     )
