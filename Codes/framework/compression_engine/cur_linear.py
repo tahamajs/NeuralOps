@@ -184,11 +184,13 @@ class CURLinear(nn.Module):
         """
         Construct CURLinear from existing nn.Linear or Conv1D using leverage scores or energy sampling.
         """
-        raw_w = linear.weight.data
-        bias = linear.bias.data if getattr(linear, "bias", None) is not None else None
-        cls_name = linear.__class__.__name__
+        target_mod = getattr(linear, "base_layer", getattr(linear, "linear", linear))
+        raw_w = target_mod.weight.data
+        bias = target_mod.bias.data if getattr(target_mod, "bias", None) is not None else None
+        cls_name = target_mod.__class__.__name__.lower()
+        wrapper_name = linear.__class__.__name__.lower()
 
-        is_conv1d = "conv1d" in cls_name.lower() or hasattr(linear, "nf")
+        is_conv1d = "conv1d" in cls_name or "conv1d" in wrapper_name or hasattr(target_mod, "nf") or hasattr(linear, "nf")
         if is_conv1d:
             W = raw_w.t().contiguous()
         else:
