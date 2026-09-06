@@ -466,7 +466,17 @@ class ResSVDCompressor(BaseCompressor):
                     p.requires_grad = False
                 continue
 
-            replace_module(self.model, name, res_layer)
+            if hasattr(old_linear, "base_layer"):
+                old_linear.base_layer = res_layer
+                if hasattr(old_linear, "lora_A") and old_linear.lora_A is not None:
+                    for p in (old_linear.lora_A.parameters() if hasattr(old_linear.lora_A, "parameters") else [old_linear.lora_A]):
+                        p.requires_grad = True
+                if hasattr(old_linear, "lora_B") and old_linear.lora_B is not None:
+                    for p in (old_linear.lora_B.parameters() if hasattr(old_linear.lora_B, "parameters") else [old_linear.lora_B]):
+                        p.requires_grad = True
+            else:
+                replace_module(self.model, name, res_layer)
+
             self.replaced_layers.append({
                 "name": name,
                 "relative_error": float(err),
