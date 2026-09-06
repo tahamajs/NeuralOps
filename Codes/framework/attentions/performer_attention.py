@@ -6,7 +6,7 @@ Supports:
 - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
 - Trainable LoRA adapters with frozen base weights
 - GQA with repeat_kv
-- RoPE position embeddings
+- RoPE position embeddings with source_attn fallback
 - Exact causal FAVOR+ prefix scan for decoders
 - Nested encoder bypass
 - Frobenius norm verification (>= 1e-4)
@@ -15,6 +15,7 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -26,6 +27,16 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -51,20 +62,29 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
 
-    if rotary_dim < head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
-        k = torch.cat([k_rot_embed, k_pass], dim=-1)
-    else:
-        q = (q * cos) + (_rotate_half(q) * sin)
-        k = (k * cos) + (_rotate_half(k) * sin)
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
 
+    rotary_dim = min(cos.shape[-1], q.shape[-1])
+    rotary_dim = (rotary_dim // 2) * 2
+    if rotary_dim <= 0:
+        return q, k
+
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+    cos_cut = cos[..., :rotary_dim].to(q_rot.dtype)
+    sin_cut = sin[..., :rotary_dim].to(q_rot.dtype)
+
+    q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
+    k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
+
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q, k
 
 
@@ -158,26 +178,26 @@ class PerformerAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
-        hidden_size = kwargs.get("hidden_size", None)
-        num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", None))
+        hidden_size = kwargs.get("hidden_size", kwargs.get("dim", kwargs.get("d_model", None)))
+        num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", kwargs.get("n_heads", None)))
         num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", None))
 
         if hidden_size is None or num_heads is None:
             if config is not None:
                 if hidden_size is None:
-                    hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                    hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)))
                 if num_heads is None:
-                    num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+                    num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", 12)))
                 if num_kv_heads is None:
-                    num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", num_heads))
+                    num_kv_heads = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", num_heads))
             elif source_attn is not None:
                 if hidden_size is None:
                     out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                    hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                    hidden_size = getattr(out_layer, "out_features", getattr(source_attn, "hidden_size", getattr(source_attn, "embed_dim", 768)))
                 if num_heads is None:
-                    num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
+                    num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", getattr(source_attn, "num_heads", 12)))
                 if num_kv_heads is None:
-                    num_kv_heads = getattr(source_attn, "num_key_value_heads", num_heads)
+                    num_kv_heads = getattr(source_attn, "num_key_value_heads", getattr(source_attn, "num_kv_heads", num_heads))
             else:
                 if hidden_size is None:
                     hidden_size = 768
@@ -200,12 +220,24 @@ class PerformerAttention(BaseAttention):
         self.supports_gqa = True
         self.eps = eps
 
-        self.num_features = getattr(
-            config,
-            "performer_rank",
-            rank if rank is not None else getattr(config, "rank", 64),
-        ) if config is not None else 64
-        self.kernel_type = getattr(config, "performer_kernel_type", kwargs.get("kernel_type", "favor_plus")) if config is not None else "favor_plus"
+        # 1. num_features configuration: config -> comp_config -> kwargs
+        if config is not None:
+            self.num_features = getattr(
+                config,
+                "performer_rank",
+                rank if rank is not None else getattr(
+                    config,
+                    "rank",
+                    getattr(comp_config, "performer_rank", getattr(comp_config, "rank", kwargs.get("num_features", kwargs.get("rank", 64)))),
+                ),
+            )
+        elif comp_config is not None:
+            self.num_features = getattr(comp_config, "performer_rank", getattr(comp_config, "rank", kwargs.get("num_features", kwargs.get("rank", rank if rank is not None else 64))))
+        else:
+            self.num_features = kwargs.get("num_features", kwargs.get("rank", rank if rank is not None else 64))
+        self.num_features = int(self.num_features)
+
+        self.kernel_type = getattr(config, "performer_kernel_type", kwargs.get("kernel_type", "favor_plus")) if config is not None else kwargs.get("kernel_type", "favor_plus")
 
         # Decoder detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
@@ -220,9 +252,21 @@ class PerformerAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        # LoRA config
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        # 2. LoRA rank & alpha configuration: config -> comp_config -> kwargs independently
+        if config is not None:
+            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+        elif comp_config is not None:
+            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+        else:
+            self.lora_rank = kwargs.get("lora_rank", 16)
+        self.lora_rank = int(self.lora_rank)
+
+        if config is not None:
+            self.lora_alpha = float(getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))))
+        elif comp_config is not None:
+            self.lora_alpha = float(getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        else:
+            self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
         self.freeze_base = (self.lora_rank > 0)
 
         # Projections
@@ -240,6 +284,7 @@ class PerformerAttention(BaseAttention):
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -406,10 +451,14 @@ class PerformerAttention(BaseAttention):
 
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"PerformerAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    raise RuntimeError(f"PerformerAttention weight verification failed for {proj_key}: norm too small ({w_norm:.2e})")
 
-                if self.freeze_base:
-                    target_mod.freeze_base_weights()
+        # 4. Preserve LoRA adapters: guarantee base weights stay frozen while LoRA A/B are trainable
+        if self.lora_rank > 0:
+            self.query.freeze_base_weights()
+            self.key.freeze_base_weights()
+            self.value.freeze_base_weights()
+            self.out_proj.freeze_base_weights()
 
     def forward(
         self,
@@ -417,10 +466,18 @@ class PerformerAttention(BaseAttention):
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
         output_attentions: Optional[bool] = False,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if encoder_hidden_states is not None:
+            return hidden_states, None
+
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
+
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
         device = hidden_states.device
@@ -431,9 +488,19 @@ class PerformerAttention(BaseAttention):
         K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2) * scale
         V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
 
-        if position_embeddings is not None:
-            cos, sin = position_embeddings
-            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+        # 2. Rotary embeddings application with source_attn.rotary_emb fallback
+        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+            cos, sin = position_embeddings[0], position_embeddings[1]
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
+        elif self.rotary_emb is not None:
+            pos_ids = kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = self.rotary_emb(V, pos_ids)
+                Q, K = apply_rotary_pos_emb(Q, K, cos, sin, pos_ids)
+            except Exception:
+                pass
 
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
@@ -454,6 +521,8 @@ class PerformerAttention(BaseAttention):
             den = torch.einsum("bhnm,bhnm->bhn", Q_feat.float(), z_cum).unsqueeze(-1) + self.eps
             context = (num / den).to(dtype)
         else:
+            # 3. Mask Q_feat in bidirectional branch to prevent padding query tokens from influencing output
+            Q_feat = Q_feat * mask_expanded
             KV = torch.matmul(K_feat.float().transpose(-2, -1), V.float())
             K_sum = K_feat.float().sum(dim=-2, keepdim=True)
             num = torch.matmul(Q_feat.float(), KV)
@@ -480,68 +549,116 @@ class PerformerAttention(BaseAttention):
         else:
             out = self.out_proj(context)
 
+        if out.shape[-1] != hidden_states.shape[-1]:
+            if out.shape[-1] < hidden_states.shape[-1]:
+                out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+            else:
+                out = out[..., : hidden_states.shape[-1]]
+
         return out, None
 
 
 @ATTENTION_REGISTRY.register("performer_inject")
+@ATTENTION_REGISTRY.register("performer")
+@ATTENTION_REGISTRY.register("performer_attention")
 def inject_performer(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    lora_rank: int = 16,
     **kwargs: Any,
-) -> Optional[PerformerAttention]:
-    src_attn = old_attn
-    if src_attn is None and layer is not None:
-        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+) -> Optional[Any]:
+    r"""Injection hook for PerformerAttention supporting single layers and whole models."""
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
 
-    hidden_size = (
-        kwargs.get("hidden_size") or
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
-        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
-        (layer.in_features if hasattr(layer, 'in_features') else None) or
-        getattr(model_config, 'hidden_size', None) or
-        getattr(model_config, 'd_model', 64)
-    )
-    num_heads = (
-        kwargs.get("num_heads") or
-        kwargs.get("num_attention_heads") or
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        getattr(model_config, 'num_attention_heads', None) or
-        getattr(model_config, 'num_heads', 4)
-    )
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and not hasattr(target, "forward"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_performer(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    src_attn = old_attn
+    if src_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                src_attn = target.attention.self
+            else:
+                src_attn = target.attention
+        elif hasattr(target, "self"):
+            src_attn = target.self
+        elif hasattr(target, "attn"):
+            src_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            src_attn = target.self_attn
+
+    if src_attn is None and target is not None and hasattr(target, "forward"):
+        src_attn = target
+
+    if src_attn is None and cfg is None:
+        return None
+
     try:
-        rank = getattr(comp_config, "performer_rank", kwargs.get("rank", 64)) if comp_config else kwargs.get("rank", 64)
         new_attn = PerformerAttention(
-            config=model_config,
-            rank=rank,
+            config=cfg,
             comp_config=comp_config,
-            hidden_size=hidden_size,
-            num_heads=num_heads,
-            num_attention_heads=num_heads,
-            source_attn=src_attn,
+            old_attn=src_attn,
+            lora_rank=lora_rank,
             **kwargs,
         )
-        if src_attn is not None:
-            try:
-                new_attn.copy_weights(src_attn)
-            except Exception:
-                pass
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                layer.attention = new_attn
-            elif hasattr(layer, "self"):
-                layer.self = new_attn
-            elif hasattr(layer, "attn"):
-                layer.attn = new_attn
-            else:
-                layer.attention = new_attn
-        return new_attn
-    except Exception:
+    except Exception as e:
+        logger.warning("PerformerAttention construction/weight copying failed: %s", e)
         return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
+            else:
+                target.attention = new_attn
+        elif hasattr(target, "self"):
+            target.self = new_attn
+        elif hasattr(target, "attn"):
+            target.attn = new_attn
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+
+    return new_attn
