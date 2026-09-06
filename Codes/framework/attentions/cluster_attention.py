@@ -578,8 +578,6 @@ class ClusterAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("cluster_inject")
 @ATTENTION_REGISTRY.register("cluster_attention_inject")
-@ATTENTION_REGISTRY.register("cluster")
-@ATTENTION_REGISTRY.register("cluster_attention")
 def inject_cluster(
     layer: Any = None,
     model: Any = None,
