@@ -271,18 +271,19 @@ class ASVDAttention(nn.Module):
         super().__init__()
         self.config = config
         model = config
-        self.hidden_size: int = getattr(model, 'hidden_size', getattr(getattr(model, 'config', None), 'hidden_size', 64))
-        self.num_heads: int = getattr(model, 'num_attention_heads', getattr(getattr(model, 'config', None), 'num_attention_heads', 4))
-        self.num_kv_heads: int = getattr(model, "num_key_value_heads", getattr(getattr(model, "config", None), "num_key_value_heads", self.num_heads))
-        self.head_dim: int = getattr(model, "head_dim", getattr(getattr(model, "config", None), "head_dim", None)) or (self.hidden_size // max(1, self.num_heads))
+        self.hidden_size: int = kwargs.get("hidden_size", kwargs.get("d_model", getattr(model, 'hidden_size', getattr(getattr(model, 'config', None), 'hidden_size', 64))))
+        self.num_heads: int = kwargs.get("num_heads", kwargs.get("num_attention_heads", getattr(model, 'num_attention_heads', getattr(getattr(model, 'config', None), 'num_attention_heads', 4))))
+        self.num_kv_heads: int = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", getattr(model, "num_key_value_heads", getattr(getattr(model, "config", None), "num_key_value_heads", self.num_heads))))
+        self.head_dim: int = kwargs.get("head_dim", getattr(model, "head_dim", getattr(getattr(model, "config", None), "head_dim", None))) or (self.hidden_size // max(1, self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         # Rank configuration
         self.rank: int = getattr(
             config,
             "asvd_rank",
-            rank if rank is not None else getattr(config, "rank", 32),
+            rank if rank is not None else getattr(config, "rank", kwargs.get("rank", 32)),
         )
         self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 32))
         self.freeze_base: bool = getattr(config, "freeze_base", kwargs.get("freeze_base", self.lora_rank > 0))
@@ -344,6 +345,30 @@ class ASVDAttention(nn.Module):
 
     @property
     def o_proj(self) -> ASVDLinear:
+        return self.out_proj
+
+    @property
+    def q_lin(self) -> ASVDLinear:
+        return self.query
+
+    @property
+    def k_lin(self) -> ASVDLinear:
+        return self.key
+
+    @property
+    def v_lin(self) -> ASVDLinear:
+        return self.value
+
+    @property
+    def out_lin(self) -> ASVDLinear:
+        return self.out_proj
+
+    @property
+    def dense(self) -> ASVDLinear:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -> ASVDLinear:
         return self.out_proj
 
     def _decompose_and_set(
