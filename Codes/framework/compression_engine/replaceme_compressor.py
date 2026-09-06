@@ -294,8 +294,11 @@ def replaceme_factory(
     return compressed_model
 
 
+replaceme_compressor_factory = replaceme_factory
+
 __all__ = [
     'ReplacementBlock',
     'ReplaceMeCompressor',
     'replaceme_factory',
+    'replaceme_compressor_factory',
 ]
