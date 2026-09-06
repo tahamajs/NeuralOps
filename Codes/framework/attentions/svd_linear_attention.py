@@ -32,6 +32,29 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    if module is None:
+        return None, None
+    base = getattr(module, "base_layer", module)
+    w = getattr(base, "weight", None)
+    b = getattr(base, "bias", None)
+    if w is not None:
+        w = w.data.clone()
+        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+            w = w.t()
+    if b is not None:
+        b = b.data.clone()
+    return w, b
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
     x1 = x[..., : x.shape[-1] // 2]
@@ -47,17 +70,22 @@ def apply_rotary_pos_emb(
     position_ids: Optional[torch.Tensor] = None,
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and odd-dimension safety."""
     rotary_dim = cos.shape[-1]
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+    safe_rotary_dim = (rotary_dim // 2) * 2
 
-    while cos.dim() < q_rot.dim():
-        cos = cos.unsqueeze(unsqueeze_dim)
-        sin = sin.unsqueeze(unsqueeze_dim)
+    q_rot, q_pass = q[..., :safe_rotary_dim], q[..., safe_rotary_dim:]
+    k_rot, k_pass = k[..., :safe_rotary_dim], k[..., safe_rotary_dim:]
 
-    q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+    cos_safe = cos[..., :safe_rotary_dim]
+    sin_safe = sin[..., :safe_rotary_dim]
+
+    while cos_safe.dim() < q_rot.dim():
+        cos_safe = cos_safe.unsqueeze(unsqueeze_dim)
+        sin_safe = sin_safe.unsqueeze(unsqueeze_dim)
+
+    q_rot = (q_rot * cos_safe) + (_rotate_half(q_rot) * sin_safe)
+    k_rot = (k_rot * cos_safe) + (_rotate_half(k_rot) * sin_safe)
 
     q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
     k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
@@ -233,29 +261,31 @@ class SVDLinearAttention(BaseAttention):
         use_rms_norm: bool = False,
         **kwargs: Any,
     ) -> None:
-        actual_rank = rank or getattr(config, "svd_rank", getattr(config, "rank", 32))
+        actual_rank = rank or _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 32))
         super().__init__(config, rank=actual_rank)
 
         # 1. Dimensions & Architecture
-        self.hidden_size: int = getattr(
-            config, "hidden_size", kwargs.get("hidden_size", 768)
+        self.hidden_size: int = _cfg_get(
+            config, "hidden_size", getattr(old_attn, "embed_dim", kwargs.get("hidden_size", 768))
         )
-        self.num_heads: int = getattr(
+        self.num_heads: int = _cfg_get(
             config,
             "num_attention_heads",
-            getattr(config, "num_heads", kwargs.get("num_attention_heads", 12)),
+            _cfg_get(config, "num_heads", getattr(old_attn, "num_heads", kwargs.get("num_attention_heads", 12))),
         )
-        self.head_dim: int = getattr(
-            config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads)
+        self.head_dim: int = _cfg_get(
+            config, "head_dim", getattr(old_attn, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads))
         )
 
-        cfg_kv = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+        cfg_kv = _cfg_get(
+            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
         )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
             self.num_kv_heads = int(kwargs["num_kv_heads"])
+        elif hasattr(old_attn, "num_key_value_heads"):
+            self.num_kv_heads = int(old_attn.num_key_value_heads)
         else:
             self.num_kv_heads = self.num_heads
 
@@ -267,18 +297,18 @@ class SVDLinearAttention(BaseAttention):
 
         self.rank: int = actual_rank
         self.mode: str = mode.lower()
-        self.dropout_rate: float = getattr(
-            config, "attention_probs_dropout_prob", getattr(config, "dropout", 0.1)
+        self.dropout_rate: float = _cfg_get(
+            config, "attention_probs_dropout_prob", _cfg_get(config, "dropout", 0.1)
         )
-        self.eps: float = getattr(config, "linear_attention_eps", 1e-6)
+        self.eps: float = _cfg_get(config, "linear_attention_eps", 1e-6)
 
         # 2. Causal decoder flag detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
             self.is_decoder = (
-                getattr(config, "is_decoder", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                _cfg_get(config, "is_decoder", False)
+                or _cfg_get(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
             )
 
@@ -288,13 +318,13 @@ class SVDLinearAttention(BaseAttention):
 
         self.use_decay_gating: bool = (
             use_decay_gating
-            or getattr(config, "use_decay_gating", False)
+            or _cfg_get(config, "use_decay_gating", False)
             or (self.mode in ["decay_linear", "linear_decay", "decay", "gated_linear"])
         )
-        self.decay_activation: str = getattr(config, "decay_activation", decay_activation)
-        self.decay_channel_wise: bool = getattr(config, "decay_channel_wise", decay_channel_wise)
-        self.use_fused_kernel: bool = use_fused_kernel or getattr(config, "use_fused_kernel", False)
-        self.use_rms_norm: bool = use_rms_norm or getattr(config, "use_rms_norm", False)
+        self.decay_activation: str = _cfg_get(config, "decay_activation", decay_activation)
+        self.decay_channel_wise: bool = _cfg_get(config, "decay_channel_wise", decay_channel_wise)
+        self.use_fused_kernel: bool = use_fused_kernel or _cfg_get(config, "use_fused_kernel", False)
+        self.use_rms_norm: bool = use_rms_norm or _cfg_get(config, "use_rms_norm", False)
 
         # 3. Factorized projections
         self.q_proj = SVDLinear(
@@ -402,83 +432,72 @@ class SVDLinearAttention(BaseAttention):
 
             # Pattern 0: PyTorch MultiheadAttention (in_proj_weight, in_proj_bias)
             if hasattr(src, "in_proj_weight") and src.in_proj_weight is not None:
-                in_proj_w = src.in_proj_weight.detach()
-                in_proj_b = src.in_proj_bias.detach() if getattr(src, "in_proj_bias", None) is not None else None
-                chunks_w = in_proj_w.chunk(3, dim=0)
-                w_q, w_k, w_v = chunks_w[0], chunks_w[1], chunks_w[2]
+                in_proj_w, in_proj_b = _unpack_weight_bias(src)
+                if in_proj_w is None:
+                    in_proj_w = getattr(src, "in_proj_weight", None)
+                    in_proj_b = getattr(src, "in_proj_bias", None)
+                if in_proj_w is not None:
+                    chunks_w = in_proj_w.chunk(3, dim=0)
+                    w_q, w_k, w_v = chunks_w[0], chunks_w[1], chunks_w[2]
                 if in_proj_b is not None:
                     chunks_b = in_proj_b.chunk(3, dim=0)
                     b_q, b_k, b_v = chunks_b[0], chunks_b[1], chunks_b[2]
-                if hasattr(src, "out_proj") and hasattr(src.out_proj, "weight"):
-                    w_o = src.out_proj.weight.detach()
-                    b_o = src.out_proj.bias.detach() if src.out_proj.bias is not None else None
+                if hasattr(src, "out_proj"):
+                    w_o, b_o = _unpack_weight_bias(src.out_proj)
 
             # Pattern 1: GPT-2 Fused c_attn
             elif hasattr(src, "c_attn") and hasattr(src, "c_proj"):
-                c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-                    c_attn_w = c_attn_w.t()
+                c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
+                if c_attn_w is not None:
+                    if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+                        c_attn_w = c_attn_w.t()
 
-                q_dim = self.q_head_size
-                k_dim = self.hidden_size
-                v_dim = self.hidden_size
+                    q_dim = self.q_head_size
+                    k_dim = self.kv_head_size if hasattr(self, "kv_head_size") else self.hidden_size
+                    v_dim = self.kv_head_size if hasattr(self, "kv_head_size") else self.hidden_size
 
-                w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
-                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                    w_q = c_attn_w[:q_dim, :]
+                    w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                    w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
 
-                if c_attn_b is not None:
-                    b_q = c_attn_b[:q_dim]
-                    b_k = c_attn_b[q_dim : q_dim + k_dim]
-                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+                    if c_attn_b is not None:
+                        b_q = c_attn_b[:q_dim]
+                        b_k = c_attn_b[q_dim : q_dim + k_dim]
+                        b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
 
-                out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
-                    out_w = out_w.t()
-                w_o = out_w
-                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
+                if hasattr(src, "c_proj"):
+                    out_w, out_b = _unpack_weight_bias(src.c_proj)
+                    if out_w is not None and out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                        out_w = out_w.t()
+                    w_o, b_o = out_w, out_b
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
-                w_q = src.query.weight.detach()
-                b_q = src.query.bias.detach() if src.query.bias is not None else None
-                w_k = src.key.weight.detach()
-                b_k = src.key.bias.detach() if src.key.bias is not None else None
-                w_v = src.value.weight.detach()
-                b_v = src.value.bias.detach() if src.value.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.query)
+                w_k, b_k = _unpack_weight_bias(src.key)
+                w_v, b_v = _unpack_weight_bias(src.value)
 
                 if w_o is None:
                     for attr in ("dense", "out_proj", "o_proj"):
                         if hasattr(src, attr):
-                            proj = getattr(src, attr)
-                            w_o = proj.weight.detach()
-                            b_o = proj.bias.detach() if proj.bias is not None else None
+                            w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
-                w_q = src.q_proj.weight.detach()
-                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
-                w_k = src.k_proj.weight.detach()
-                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
-                w_v = src.v_proj.weight.detach()
-                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.q_proj)
+                w_k, b_k = _unpack_weight_bias(src.k_proj)
+                w_v, b_v = _unpack_weight_bias(src.v_proj)
                 if hasattr(src, "o_proj"):
-                    w_o = src.o_proj.weight.detach()
-                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                    w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
-                w_q = src.q_lin.weight.detach()
-                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
-                w_k = src.k_lin.weight.detach()
-                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
-                w_v = src.v_lin.weight.detach()
-                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.q_lin)
+                w_k, b_k = _unpack_weight_bias(src.k_lin)
+                w_v, b_v = _unpack_weight_bias(src.v_lin)
                 if hasattr(src, "out_lin"):
-                    w_o = src.out_lin.weight.detach()
-                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                    w_o, b_o = _unpack_weight_bias(src.out_lin)
 
             # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
