@@ -188,20 +188,33 @@ class Jamba2Block(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
+        d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or d_model
+        n_heads = kwargs.get("n_heads") or kwargs.get("num_heads") or kwargs.get("num_attention_heads") or n_heads
+
+        if d_model is None:
+            if config is not None:
+                d_model = getattr(config, "hidden_size", getattr(config, "d_model", 768))
+            elif source_attn is not None:
+                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+                d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+            else:
+                d_model = 768
+
+        if n_heads is None:
+            if config is not None:
+                n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+            elif source_attn is not None:
+                n_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
+            else:
+                n_heads = 12
+
         if config is not None:
-            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model or 768))
-            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", n_heads or 12))
             n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
             top_k = getattr(config, "top_k", top_k)
-        elif source_attn is not None:
-            out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-            d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            n_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
-        else:
-            d_model = d_model or 768
-            n_heads = n_heads or 12
 
         self.d_model = int(d_model)
+        self.dim = self.d_model
+        self.hidden_size = self.d_model
         self.n_heads = int(n_heads)
         self.num_heads = self.n_heads
         self.num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads)) if config else self.num_heads
@@ -482,12 +495,41 @@ def inject_jamba(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[Jamba2Block]:
+    src_attn = old_attn if old_attn is not None else (getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))) if layer is not None else None)
+
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', 64)
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', 4)
+    )
+
     try:
-        new_attn = Jamba2Block(config=model_config, comp_config=comp_config)
-        if old_attn is not None:
-            new_attn.copy_weights(old_attn)
+        new_attn = Jamba2Block(
+            d_model=hidden_size,
+            config=model_config,
+            comp_config=comp_config,
+            old_attn=src_attn,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
+            **kwargs,
+        )
+        if src_attn is not None:
+            new_attn.copy_weights(src_attn)
         if layer is not None:
-            layer.attention = new_attn
+            if hasattr(layer, "attention"):
+                layer.attention = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+            elif hasattr(layer, "attn"):
+                layer.attn = new_attn
         return new_attn
     except Exception:
         return None

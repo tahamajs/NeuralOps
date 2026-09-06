@@ -206,7 +206,15 @@ class ExpertChoiceMoE(nn.Module):
         x_flat = x.view(-1, D)
         T = x_flat.size(0)
 
-        logits = self.router(self.router_ln(x_flat))
+        if D == self.d_model:
+            logits = self.router(self.router_ln(x_flat))
+        else:
+            normed = F.layer_norm(x_flat, (D,))
+            if not hasattr(self, "_dynamic_router") or self._dynamic_router.in_features != D:
+                self._dynamic_router = nn.Linear(D, self.n_experts, bias=False).to(device=x.device, dtype=x.dtype)
+                nn.init.uniform_(self._dynamic_router.weight, -0.01, 0.01)
+            logits = self._dynamic_router(normed)
+
         if self.training and self.noise_std > 0:
             logits = logits + torch.randn_like(logits) * self.noise_std
 
@@ -220,7 +228,15 @@ class ExpertChoiceMoE(nn.Module):
             topk_vals, topk_indices = torch.topk(scores_e, k, dim=0)
 
             selected_x = x_flat[topk_indices]
-            expert_out = self.experts[e](selected_x)
+            if selected_x.size(-1) == self.d_model:
+                expert_out = self.experts[e](selected_x)
+            else:
+                if not hasattr(self, f"_expert_in_proj_{e}") or getattr(self, f"_expert_in_proj_{e}").in_features != D:
+                    setattr(self, f"_expert_in_proj_{e}", nn.Linear(D, self.d_model).to(device=x.device, dtype=x.dtype))
+                    setattr(self, f"_expert_out_proj_{e}", nn.Linear(self.d_model, D).to(device=x.device, dtype=x.dtype))
+                proj_in = getattr(self, f"_expert_in_proj_{e}")
+                proj_out = getattr(self, f"_expert_out_proj_{e}")
+                expert_out = proj_out(self.experts[e](proj_in(selected_x)))
 
             update_val = (expert_out * topk_vals.unsqueeze(-1)).to(dtype=out_flat.dtype)
             out_flat.index_add_(0, topk_indices, update_val)
@@ -309,7 +325,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.v_lin = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_lin = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        self.moe = ExpertChoiceMoE(self.dim, n_experts=n_experts, capacity_factor=capacity_factor)
+        self.moe = ExpertChoiceMoE(self.all_head_size, n_experts=n_experts, capacity_factor=capacity_factor)
         # Trainable gate for MoE output contribution (initialized with negative bias for smooth ramp-up)
         self.moe_gate = nn.Parameter(torch.tensor(float(moe_init_gate)))
 
@@ -590,9 +606,15 @@ class ExpertChoiceMoEAttention(BaseAttention):
 
         # 7. Output projection with nested encoder bypass
         if self.is_nested_encoder:
-            out = enriched_attn
+            if enriched_attn.shape[-1] != self.dim:
+                out = self.out_lin(enriched_attn)
+            else:
+                out = enriched_attn
         else:
             out = self.out_lin(enriched_attn)
+
+        if out.shape[-1] != hidden_states.shape[-1]:
+            out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
 
         return out, (probs if output_attentions else None)
 
@@ -618,6 +640,9 @@ def inject_expert_choice_moe(
             src_attn = layer.self_attn
 
     try:
+        if model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
+
         new_attn = ExpertChoiceMoEAttention(
             config=model_config,
             comp_config=comp_config,

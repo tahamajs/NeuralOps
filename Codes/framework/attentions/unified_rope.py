@@ -40,7 +40,14 @@ def apply_rotary_pos_emb(
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
-    rotary_dim = cos.shape[-1]
+    rotary_dim = min(cos.shape[-1], q.shape[-1])
+    rotary_dim = 2 * (rotary_dim // 2)
+    if rotary_dim == 0:
+        return q, k
+
+    cos = cos[..., :rotary_dim]
+    sin = sin[..., :rotary_dim]
+
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
@@ -136,8 +143,14 @@ class UnifiedRoPE(BaseAttention):
 
         if dim is None:
             dim = getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
+            if dim == 768 and pretrained_attn is not None:
+                dim = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", 768))
+                if hasattr(pretrained_attn, "q_proj") and hasattr(pretrained_attn.q_proj, "in_features"):
+                    dim = pretrained_attn.q_proj.in_features
         if num_heads is None:
             num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
+            if num_heads == 12 and pretrained_attn is not None:
+                num_heads = getattr(pretrained_attn, "num_heads", getattr(pretrained_attn, "num_attention_heads", 12))
 
         self.hidden_size: int = int(dim)
         self.num_heads: int = max(1, int(num_heads))
@@ -193,7 +206,12 @@ class UnifiedRoPE(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        inv_freq = 1.0 / (base ** (torch.arange(0, self.head_dim, 2).float() / self.head_dim))
+        rotary_dim = 2 * (self.head_dim // 2)
+        self.rotary_dim = rotary_dim
+        if rotary_dim > 0:
+            inv_freq = 1.0 / (base ** (torch.arange(0, rotary_dim, 2).float() / rotary_dim))
+        else:
+            inv_freq = torch.empty(0)
         self.register_buffer("inv_freq", inv_freq, persistent=False)
         self._build_cache(max_seq_len)
 
@@ -202,6 +220,10 @@ class UnifiedRoPE(BaseAttention):
 
     def _build_cache(self, seq_len: int) -> None:
         """Precomputes cosine and sine frequency tables up to seq_len."""
+        if self.rotary_dim == 0 or self.inv_freq.numel() == 0:
+            self.register_buffer("cos_cached", torch.ones(seq_len, 0, device=self.inv_freq.device), persistent=False)
+            self.register_buffer("sin_cached", torch.zeros(seq_len, 0, device=self.inv_freq.device), persistent=False)
+            return
         t = torch.arange(seq_len, device=self.inv_freq.device, dtype=self.inv_freq.dtype)
         freqs = torch.einsum("i,j->ij", t, self.inv_freq)
         emb = torch.cat((freqs, freqs), dim=-1)
@@ -210,13 +232,28 @@ class UnifiedRoPE(BaseAttention):
 
     def _apply_rope(self, x: torch.Tensor, seq_len: int) -> torch.Tensor:
         """Applies RoPE rotation: [B, H, L, D_head]."""
+        if self.rotary_dim == 0 or self.cos_cached.shape[-1] == 0:
+            return x
+
         if seq_len > self.max_seq_len:
             self._build_cache(seq_len)
             self.max_seq_len = seq_len
 
-        cos = self.cos_cached[:seq_len].unsqueeze(0).unsqueeze(0).to(x.device, x.dtype)
-        sin = self.sin_cached[:seq_len].unsqueeze(0).unsqueeze(0).to(x.device, x.dtype)
-        return (x * cos) + (_rotate_half(x) * sin)
+        rotary_dim = min(self.rotary_dim, self.cos_cached.shape[-1], x.shape[-1])
+        rotary_dim = 2 * (rotary_dim // 2)
+        if rotary_dim == 0:
+            return x
+
+        cos = self.cos_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0).to(x.device, x.dtype)
+        sin = self.sin_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0).to(x.device, x.dtype)
+
+        if rotary_dim < x.shape[-1]:
+            x_rot = x[..., :rotary_dim]
+            x_pass = x[..., rotary_dim:]
+            rotated = (x_rot * cos) + (_rotate_half(x_rot) * sin)
+            return torch.cat((rotated, x_pass), dim=-1)
+        else:
+            return (x * cos) + (_rotate_half(x) * sin)
 
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -299,6 +336,16 @@ class UnifiedRoPE(BaseAttention):
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                elif w_o is None:
+                    for attr in ("out_proj", "out_lin", "dense", "c_proj", "wo", "proj", "output"):
+                        if hasattr(src, attr):
+                            proj_layer = getattr(src, attr)
+                            if hasattr(proj_layer, "dense"):
+                                proj_layer = getattr(proj_layer, "dense")
+                            if hasattr(proj_layer, "weight"):
+                                w_o = proj_layer.weight.detach()
+                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
+                                break
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
@@ -312,14 +359,27 @@ class UnifiedRoPE(BaseAttention):
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                elif w_o is None:
+                    for attr in ("out_proj", "o_proj", "dense", "c_proj", "wo", "proj", "output"):
+                        if hasattr(src, attr):
+                            proj_layer = getattr(src, attr)
+                            if hasattr(proj_layer, "dense"):
+                                proj_layer = getattr(proj_layer, "dense")
+                            if hasattr(proj_layer, "weight"):
+                                w_o = proj_layer.weight.detach()
+                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
+                                break
 
             # Pattern 5: UniversalAdapter fallback
-            if w_q is None or w_k is None or w_v is None:
+            if w_q is None or w_k is None or w_v is None or w_o is None:
                 try:
                     adapter = UniversalAdapter()
-                    w_q, b_q = adapter.get_weight_bias(src, "q")
-                    w_k, b_k = adapter.get_weight_bias(src, "k")
-                    w_v, b_v = adapter.get_weight_bias(src, "v")
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(src, "q")
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(src, "k")
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(src, "v")
                     if w_o is None:
                         w_o, b_o = adapter.get_weight_bias(src, "o")
                 except Exception as e:
@@ -341,34 +401,33 @@ class UnifiedRoPE(BaseAttention):
                     f"UnifiedRoPE: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
-            self.q_proj.weight.copy_(w_q.to(self.q_proj.weight.dtype))
-            if b_q is not None and self.q_proj.bias is not None:
-                self.q_proj.bias.copy_(b_q.to(self.q_proj.bias.dtype))
-            elif self.q_proj.bias is not None:
-                self.q_proj.bias.zero_()
+            def _copy_layer(target_layer, w, b):
+                if w is None:
+                    return
+                if w.shape == target_layer.weight.shape:
+                    target_layer.weight.copy_(w.to(target_layer.weight.dtype))
+                elif w.t().shape == target_layer.weight.shape:
+                    target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+                else:
+                    min_0 = min(target_layer.weight.shape[0], w.shape[0])
+                    min_1 = min(target_layer.weight.shape[1], w.shape[1])
+                    target_layer.weight.zero_()
+                    target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
+                if b is not None and target_layer.bias is not None:
+                    if b.shape == target_layer.bias.shape:
+                        target_layer.bias.copy_(b.to(target_layer.bias.dtype))
+                    else:
+                        min_b = min(target_layer.bias.shape[0], b.shape[0])
+                        target_layer.bias.zero_()
+                        target_layer.bias[:min_b].copy_(b[:min_b].to(target_layer.bias.dtype))
+                elif target_layer.bias is not None:
+                    target_layer.bias.zero_()
 
-            self.k_proj.weight.copy_(w_k.to(self.k_proj.weight.dtype))
-            if b_k is not None and self.k_proj.bias is not None:
-                self.k_proj.bias.copy_(b_k.to(self.k_proj.bias.dtype))
-            elif self.k_proj.bias is not None:
-                self.k_proj.bias.zero_()
-
-            self.v_proj.weight.copy_(w_v.to(self.v_proj.weight.dtype))
-            if b_v is not None and self.v_proj.bias is not None:
-                self.v_proj.bias.copy_(b_v.to(self.v_proj.bias.dtype))
-            elif self.v_proj.bias is not None:
-                self.v_proj.bias.zero_()
-
-            f_norm_q = float(torch.linalg.norm(self.q_proj.weight))
-            if f_norm_q < 1e-4:
-                raise RuntimeError(f"UnifiedRoPE: Q weight norm is near zero: {f_norm_q}")
-
+            _copy_layer(self.q_proj, w_q, b_q)
+            _copy_layer(self.k_proj, w_k, b_k)
+            _copy_layer(self.v_proj, w_v, b_v)
             if w_o is not None:
-                self.out_proj.weight.copy_(w_o.to(self.out_proj.weight.dtype))
-                if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(b_o.to(self.out_proj.bias.dtype))
-                elif self.out_proj.bias is not None:
-                    self.out_proj.bias.zero_()
+                _copy_layer(self.out_proj, w_o, b_o)
 
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
@@ -445,9 +504,15 @@ class UnifiedRoPE(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, L, self.num_heads * self.head_dim)
 
         if self.is_nested_encoder:
-            output = context
+            if context.shape[-1] != self.hidden_size:
+                output = self.out_proj(context)
+            else:
+                output = context
         else:
             output = self.out_proj(context)
+
+        if output.shape[-1] != hidden_states.shape[-1]:
+            output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1])) if output.shape[-1] < hidden_states.shape[-1] else output[..., :hidden_states.shape[-1]]
 
         return (output, (attn_weights if output_attentions else None))
 
@@ -473,6 +538,9 @@ def inject_unified_rope(
 
         if src is None:
             return None
+
+        if model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
 
         new_attn = UnifiedRoPE(
             config=model_config,

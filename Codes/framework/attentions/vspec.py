@@ -113,7 +113,7 @@ class TokenRouter(nn.Module):
         # Guarantee preservation of first token (index 0)
         scores[:, 0] = 1e4
 
-        keep = max(self.min_tokens, min(N, int(N * self.keep_ratio)))
+        keep = min(N, max(1, min(self.min_tokens, N) if N <= self.min_tokens else max(self.min_tokens, int(N * self.keep_ratio))))
         idx = scores.topk(keep, dim=1).indices
         idx, _ = torch.sort(idx, dim=1)
 
@@ -177,12 +177,16 @@ class DynamicLowRankProjector(nn.Module):
             self.S.data.zero_()
             self.V.data.zero_()
 
-            self.U.data[:W.size(0), :eff_rank].copy_(U[:, :eff_rank])
+            min_u = min(self.U.size(0), U.size(0))
+            min_v = min(self.V.size(0), Vh.size(1))
+
+            self.U.data[:min_u, :eff_rank].copy_(U[:min_u, :eff_rank])
             self.S.data[:eff_rank].copy_(S[:eff_rank])
-            self.V.data[:W.size(1), :eff_rank].copy_(Vh[:eff_rank, :].t())
+            self.V.data[:min_v, :eff_rank].copy_(Vh[:eff_rank, :min_v].t())
 
             if bias is not None and self.bias is not None:
-                self.bias.data.copy_(bias[:self.out_dim])
+                min_b = min(self.bias.size(0), bias.size(0))
+                self.bias.data[:min_b].copy_(bias[:min_b])
 
             # Validation
             rec = (self.U[:, :eff_rank] * self.S[:eff_rank].unsqueeze(0)) @ self.V[:, :eff_rank].t()
@@ -378,6 +382,16 @@ class VSpecAttention(BaseAttention):
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                elif w_o is None:
+                    for attr in ("out_proj", "out_lin", "dense", "c_proj", "wo", "proj", "output"):
+                        if hasattr(src, attr):
+                            proj_layer = getattr(src, attr)
+                            if hasattr(proj_layer, "dense"):
+                                proj_layer = getattr(proj_layer, "dense")
+                            if hasattr(proj_layer, "weight"):
+                                w_o = proj_layer.weight.detach()
+                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
+                                break
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
@@ -391,14 +405,27 @@ class VSpecAttention(BaseAttention):
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                elif w_o is None:
+                    for attr in ("out_proj", "o_proj", "dense", "c_proj", "wo", "proj", "output"):
+                        if hasattr(src, attr):
+                            proj_layer = getattr(src, attr)
+                            if hasattr(proj_layer, "dense"):
+                                proj_layer = getattr(proj_layer, "dense")
+                            if hasattr(proj_layer, "weight"):
+                                w_o = proj_layer.weight.detach()
+                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
+                                break
 
             # Pattern 5: UniversalAdapter fallback
-            if w_q is None or w_k is None or w_v is None:
+            if w_q is None or w_k is None or w_v is None or w_o is None:
                 try:
                     adapter = UniversalAdapter()
-                    w_q, b_q = adapter.get_weight_bias(src, "q")
-                    w_k, b_k = adapter.get_weight_bias(src, "k")
-                    w_v, b_v = adapter.get_weight_bias(src, "v")
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(src, "q")
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(src, "k")
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(src, "v")
                     if w_o is None:
                         w_o, b_o = adapter.get_weight_bias(src, "o")
                 except Exception as e:
@@ -516,9 +543,15 @@ class VSpecAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, k_len, H * Dh)
 
         if self.is_nested_encoder:
-            out = context
+            if context.shape[-1] != D:
+                out = self.Po(context, gq)
+            else:
+                out = context
         else:
             out = self.Po(context, gq)
+
+        if out.shape[-1] != D:
+            out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
 
         # Vectorized reverse routing scatter
         output = hidden_states.clone()
@@ -528,6 +561,7 @@ class VSpecAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("vspec_inject")
+@ATTENTION_REGISTRY.register("vspec_attention_inject")
 def inject_vspec_attn(
     layer: nn.Module,
     model_config: Any = None,
@@ -548,6 +582,9 @@ def inject_vspec_attn(
 
         if src is None:
             return None
+
+        if model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
 
         rank = getattr(comp_config, "vspec_rank", getattr(comp_config, "rank", 64))
 

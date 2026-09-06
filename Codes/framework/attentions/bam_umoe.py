@@ -291,8 +291,9 @@ class BAMUMoEBlock(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
 
-        self.dim: int = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", kwargs.get("hidden_size", 768))))
-        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", kwargs.get("num_attention_heads", 12))))
+        self.dim: int = kwargs.get("hidden_size") or getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
+        self.hidden_size: int = self.dim
+        self.num_heads: int = kwargs.get("num_heads") or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12)))
         self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
         self.head_dim: int = getattr(config, "head_dim", getattr(config, "kv_channels", self.dim // max(1, self.num_heads)))
         self.all_head_size: int = self.num_heads * self.head_dim
@@ -672,18 +673,39 @@ def inject_bam_umoe(
     **kwargs: Any,
 ) -> Optional[BAMUMoEBlock]:
     r"""Injection factory function for BAM-UMoE attention blocks with safe pre-testing."""
-    if model_config is None and hasattr(layer, "attention"):
-        old_attn = layer.attention
+    if old_attn is None and layer is not None:
+        old_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+
+    hidden_size = (
+        getattr(old_attn, 'hidden_size', None) or
+        getattr(old_attn, 'embed_dim', None) or
+        (old_attn.q_proj.in_features if hasattr(old_attn, 'q_proj') and hasattr(old_attn.q_proj, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', 64)
+    )
+    num_heads = (
+        getattr(old_attn, 'num_heads', None) or
+        getattr(old_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', 4)
+    )
 
     try:
         new_attn = BAMUMoEBlock(
             config=model_config,
             old_attn=old_attn,
             comp_config=comp_config,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
+            layer_id=layer_idx,
             **kwargs,
         )
         if hasattr(layer, "attention"):
             layer.attention = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
         return new_attn
     except Exception:
         return None

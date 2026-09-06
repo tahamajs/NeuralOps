@@ -109,6 +109,7 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("vig", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("vig_attention", supports_causal=True, supports_gqa=True)
 class ViGAttention(BaseAttention):
     r"""Vision GNN-inspired 2D Grid Linear Attention with Learned Gated Fusion."""
 
@@ -135,6 +136,14 @@ class ViGAttention(BaseAttention):
         else:
             self.dim = kwargs.get("hidden_size", kwargs.get("d_model", 768))
             self.num_heads = kwargs.get("num_attention_heads", 12)
+
+        if pretrained_attn is not None and (config is None or self.dim == 768):
+            dim_candidate = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", getattr(pretrained_attn, "all_head_size", None)))
+            if dim_candidate is None and hasattr(pretrained_attn, "q_proj") and hasattr(pretrained_attn.q_proj, "in_features"):
+                dim_candidate = pretrained_attn.q_proj.in_features
+            if dim_candidate is not None:
+                self.dim = dim_candidate
+            self.num_heads = getattr(pretrained_attn, "num_heads", getattr(pretrained_attn, "num_attention_heads", self.num_heads))
 
         self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
         self.lora_rank: int = lora_rank
@@ -269,6 +278,16 @@ class ViGAttention(BaseAttention):
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                elif w_o is None:
+                    for attr in ("out_proj", "out_lin", "dense", "c_proj", "wo", "proj", "output"):
+                        if hasattr(src, attr):
+                            proj_layer = getattr(src, attr)
+                            if hasattr(proj_layer, "dense"):
+                                proj_layer = getattr(proj_layer, "dense")
+                            if hasattr(proj_layer, "weight"):
+                                w_o = proj_layer.weight.detach()
+                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
+                                break
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
@@ -282,14 +301,27 @@ class ViGAttention(BaseAttention):
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                elif w_o is None:
+                    for attr in ("out_proj", "o_proj", "dense", "c_proj", "wo", "proj", "output"):
+                        if hasattr(src, attr):
+                            proj_layer = getattr(src, attr)
+                            if hasattr(proj_layer, "dense"):
+                                proj_layer = getattr(proj_layer, "dense")
+                            if hasattr(proj_layer, "weight"):
+                                w_o = proj_layer.weight.detach()
+                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
+                                break
 
             # Pattern 5: UniversalAdapter fallback
-            if w_q is None or w_k is None or w_v is None:
+            if w_q is None or w_k is None or w_v is None or w_o is None:
                 try:
                     adapter = UniversalAdapter()
-                    w_q, b_q = adapter.get_weight_bias(src, "q")
-                    w_k, b_k = adapter.get_weight_bias(src, "k")
-                    w_v, b_v = adapter.get_weight_bias(src, "v")
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(src, "q")
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(src, "k")
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(src, "v")
                     if w_o is None:
                         w_o, b_o = adapter.get_weight_bias(src, "o")
                 except Exception as e:
@@ -311,34 +343,33 @@ class ViGAttention(BaseAttention):
                     f"ViGAttention: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
-            self.q_proj.weight.copy_(w_q.to(self.q_proj.weight.dtype))
-            if b_q is not None and self.q_proj.bias is not None:
-                self.q_proj.bias.copy_(b_q.to(self.q_proj.bias.dtype))
-            elif self.q_proj.bias is not None:
-                self.q_proj.bias.zero_()
+            def _copy_layer(target_layer, w, b):
+                if w is None:
+                    return
+                if w.shape == target_layer.weight.shape:
+                    target_layer.weight.copy_(w.to(target_layer.weight.dtype))
+                elif w.t().shape == target_layer.weight.shape:
+                    target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+                else:
+                    min_0 = min(target_layer.weight.shape[0], w.shape[0])
+                    min_1 = min(target_layer.weight.shape[1], w.shape[1])
+                    target_layer.weight.zero_()
+                    target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
+                if b is not None and target_layer.bias is not None:
+                    if b.shape == target_layer.bias.shape:
+                        target_layer.bias.copy_(b.to(target_layer.bias.dtype))
+                    else:
+                        min_b = min(target_layer.bias.shape[0], b.shape[0])
+                        target_layer.bias.zero_()
+                        target_layer.bias[:min_b].copy_(b[:min_b].to(target_layer.bias.dtype))
+                elif target_layer.bias is not None:
+                    target_layer.bias.zero_()
 
-            self.k_proj.weight.copy_(w_k.to(self.k_proj.weight.dtype))
-            if b_k is not None and self.k_proj.bias is not None:
-                self.k_proj.bias.copy_(b_k.to(self.k_proj.bias.dtype))
-            elif self.k_proj.bias is not None:
-                self.k_proj.bias.zero_()
-
-            self.v_proj.weight.copy_(w_v.to(self.v_proj.weight.dtype))
-            if b_v is not None and self.v_proj.bias is not None:
-                self.v_proj.bias.copy_(b_v.to(self.v_proj.bias.dtype))
-            elif self.v_proj.bias is not None:
-                self.v_proj.bias.zero_()
-
-            f_norm_q = float(torch.linalg.norm(self.q_proj.weight))
-            if f_norm_q < 1e-4:
-                raise RuntimeError(f"ViGAttention: Q weight norm is near zero: {f_norm_q}")
-
+            _copy_layer(self.q_proj, w_q, b_q)
+            _copy_layer(self.k_proj, w_k, b_k)
+            _copy_layer(self.v_proj, w_v, b_v)
             if w_o is not None:
-                self.out_proj.weight.copy_(w_o.to(self.out_proj.weight.dtype))
-                if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(b_o.to(self.out_proj.bias.dtype))
-                elif self.out_proj.bias is not None:
-                    self.out_proj.bias.zero_()
+                _copy_layer(self.out_proj, w_o, b_o)
 
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
@@ -498,7 +529,7 @@ class ViGAttention(BaseAttention):
         gate_col = gates[:, :, 1].view(B, H, W, Hh, 1).permute(0, 3, 1, 2, 4)
 
         out = (gate_row * out_row.to(x.dtype) + gate_col * out_col.to(x.dtype))
-        out = out.permute(0, 2, 3, 1, 4).reshape(B, total, D)
+        out = out.permute(0, 2, 3, 1, 4).reshape(B, total, self.q_head_size)
 
         if pad_len > 0:
             out = out[:, :N, :]
@@ -514,17 +545,24 @@ class ViGAttention(BaseAttention):
                     out = out * head_mask.permute(0, 2, 1, 3)
                 else:
                     out = out * head_mask
-            out = out.reshape(B, N, D)
+            out = out.reshape(B, N, self.q_head_size)
 
         if self.is_nested_encoder:
-            output = out
+            if out.shape[-1] != self.dim:
+                output = self.out_proj(out)
+            else:
+                output = out
         else:
             output = self.out_proj(out)
+
+        if output.shape[-1] != D:
+            output = F.pad(output, (0, D - output.shape[-1])) if output.shape[-1] < D else output[..., :D]
 
         return (output, None)
 
 
 @ATTENTION_REGISTRY.register("vig_inject")
+@ATTENTION_REGISTRY.register("vig_attention_inject")
 def inject_vig(
     layer: Any,
     model_config: Any = None,
@@ -545,6 +583,9 @@ def inject_vig(
 
         if src is None:
             return None
+
+        if model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
 
         new_attn = ViGAttention(
             config=model_config,

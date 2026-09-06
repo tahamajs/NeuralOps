@@ -321,6 +321,16 @@ class SAMBAM3Block(nn.Module):
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                elif w_o is None:
+                    for attr in ("out_proj", "out_lin", "dense", "c_proj", "wo", "proj", "output"):
+                        if hasattr(src, attr):
+                            proj_layer = getattr(src, attr)
+                            if hasattr(proj_layer, "dense"):
+                                proj_layer = getattr(proj_layer, "dense")
+                            if hasattr(proj_layer, "weight"):
+                                w_o = proj_layer.weight.detach()
+                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
+                                break
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
@@ -334,14 +344,27 @@ class SAMBAM3Block(nn.Module):
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                elif w_o is None:
+                    for attr in ("out_proj", "o_proj", "dense", "c_proj", "wo", "proj", "output"):
+                        if hasattr(src, attr):
+                            proj_layer = getattr(src, attr)
+                            if hasattr(proj_layer, "dense"):
+                                proj_layer = getattr(proj_layer, "dense")
+                            if hasattr(proj_layer, "weight"):
+                                w_o = proj_layer.weight.detach()
+                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
+                                break
 
             # Pattern 5: UniversalAdapter fallback
-            if w_q is None or w_k is None or w_v is None:
+            if w_q is None or w_k is None or w_v is None or w_o is None:
                 try:
                     adapter = UniversalAdapter()
-                    w_q, b_q = adapter.get_weight_bias(src, "q")
-                    w_k, b_k = adapter.get_weight_bias(src, "k")
-                    w_v, b_v = adapter.get_weight_bias(src, "v")
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(src, "q")
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(src, "k")
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(src, "v")
                     if w_o is None:
                         w_o, b_o = adapter.get_weight_bias(src, "o")
                 except Exception as e:
@@ -363,30 +386,33 @@ class SAMBAM3Block(nn.Module):
                     f"SAMBAM3Block: Failed to extract weights: {', '.join(missing)} from {type(pretrained_attn)}"
                 )
 
-            self.q_lin.weight.copy_(w_q.to(self.q_lin.weight.dtype))
-            if b_q is not None and self.q_lin.bias is not None:
-                self.q_lin.bias.copy_(b_q.to(self.q_lin.bias.dtype))
-            elif self.q_lin.bias is not None:
-                self.q_lin.bias.zero_()
+            def _copy_layer(target_layer, w, b):
+                if w is None:
+                    return
+                if w.shape == target_layer.weight.shape:
+                    target_layer.weight.copy_(w.to(target_layer.weight.dtype))
+                elif w.t().shape == target_layer.weight.shape:
+                    target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+                else:
+                    min_0 = min(target_layer.weight.shape[0], w.shape[0])
+                    min_1 = min(target_layer.weight.shape[1], w.shape[1])
+                    target_layer.weight.zero_()
+                    target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
+                if b is not None and target_layer.bias is not None:
+                    if b.shape == target_layer.bias.shape:
+                        target_layer.bias.copy_(b.to(target_layer.bias.dtype))
+                    else:
+                        min_b = min(target_layer.bias.shape[0], b.shape[0])
+                        target_layer.bias.zero_()
+                        target_layer.bias[:min_b].copy_(b[:min_b].to(target_layer.bias.dtype))
+                elif target_layer.bias is not None:
+                    target_layer.bias.zero_()
 
-            self.k_lin.weight.copy_(w_k.to(self.k_lin.weight.dtype))
-            if b_k is not None and self.k_lin.bias is not None:
-                self.k_lin.bias.copy_(b_k.to(self.k_lin.bias.dtype))
-            elif self.k_lin.bias is not None:
-                self.k_lin.bias.zero_()
-
-            self.v_lin.weight.copy_(w_v.to(self.v_lin.weight.dtype))
-            if b_v is not None and self.v_lin.bias is not None:
-                self.v_lin.bias.copy_(b_v.to(self.v_lin.bias.dtype))
-            elif self.v_lin.bias is not None:
-                self.v_lin.bias.zero_()
-
+            _copy_layer(self.q_lin, w_q, b_q)
+            _copy_layer(self.k_lin, w_k, b_k)
+            _copy_layer(self.v_lin, w_v, b_v)
             if w_o is not None:
-                self.out_lin.weight.copy_(w_o.to(self.out_lin.weight.dtype))
-                if b_o is not None and self.out_lin.bias is not None:
-                    self.out_lin.bias.copy_(b_o.to(self.out_lin.bias.dtype))
-                elif self.out_lin.bias is not None:
-                    self.out_lin.bias.zero_()
+                _copy_layer(self.out_lin, w_o, b_o)
 
             f_norm_q = float(torch.linalg.norm(self.q_lin.weight))
             if f_norm_q < 1e-4:
@@ -462,15 +488,74 @@ class SAMBAM3Block(nn.Module):
                 head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
             probs = probs * head_mask
 
-        attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, D)
+        attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, self.q_head_size)
 
         mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask, **kwargs)
         alpha = torch.sigmoid(self.alpha)
 
         if self.is_nested_encoder:
+            if attn_out.shape[-1] != self.d_model:
+                attn_out = self.out_lin(attn_out)
             out = alpha * attn_out + (1.0 - alpha) * mamba_out
         else:
             attn_proj = self.out_lin(attn_out)
             out = self.norm(hidden_states + alpha * attn_proj + (1.0 - alpha) * mamba_out)
 
+        if out.shape[-1] != D:
+            out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
+
         return (out, (probs if output_attentions else None))
+
+
+@ATTENTION_REGISTRY.register("samba_m3_inject")
+def inject_samba_m3(
+    layer: nn.Module,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> Optional[SAMBAM3Block]:
+    """Safe injection hook for SAMBAM3Block."""
+    try:
+        src = old_attn
+        if src is None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    src = getattr(layer, attr)
+                    break
+
+        d_model = 768
+        n_heads = 12
+        if src is not None:
+            d_model = getattr(src, "hidden_size", getattr(src, "embed_dim", getattr(src, "all_head_size", 768)))
+            if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
+                d_model = src.q_proj.in_features
+            n_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", 12))
+        elif model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
+        if model_config is not None:
+            d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", d_model))
+            n_heads = getattr(model_config, "num_attention_heads", n_heads)
+        elif hasattr(layer, "config"):
+            d_model = getattr(layer.config, "hidden_size", d_model)
+            n_heads = getattr(layer.config, "num_attention_heads", n_heads)
+
+        new_block = SAMBAM3Block(
+            config=model_config,
+            d_model=d_model,
+            n_heads=n_heads,
+            pretrained_attn=src,
+            **kwargs,
+        )
+
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(layer, attr):
+                setattr(layer, attr, new_block)
+                return new_block
+
+        return new_block
+    except Exception as e:
+        logger.error("inject_samba_m3 failed at layer %d: %s", layer_idx, e)
+        return None

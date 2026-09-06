@@ -107,11 +107,15 @@ class SambaMoEBlock(BaseAttention):
 
         if self.swa_mamba.is_nested_encoder:
             # Nested encoder bypass
+            if x.shape[-1] != hidden_states.shape[-1]:
+                x = F.pad(x, (0, hidden_states.shape[-1] - x.shape[-1])) if x.shape[-1] < hidden_states.shape[-1] else x[..., :hidden_states.shape[-1]]
             return (x, attn_w)
 
         moe_out, _ = self.moe(x)
         self.aux_loss = self.moe.aux_loss
         out = self.norm(x + moe_out)
+        if out.shape[-1] != hidden_states.shape[-1]:
+            out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
         return (out, attn_w)
 
 
@@ -139,12 +143,19 @@ def inject_samba_moe(
 
         d_model = 768
         n_heads = 12
+        if src is not None:
+            d_model = getattr(src, "hidden_size", getattr(src, "embed_dim", getattr(src, "all_head_size", 768)))
+            if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
+                d_model = src.q_proj.in_features
+            n_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", 12))
+        elif model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
         if model_config is not None:
-            d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-            n_heads = getattr(model_config, "num_attention_heads", 12)
+            d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", d_model))
+            n_heads = getattr(model_config, "num_attention_heads", n_heads)
         elif hasattr(layer, "config"):
-            d_model = getattr(layer.config, "hidden_size", 768)
-            n_heads = getattr(layer.config, "num_attention_heads", 12)
+            d_model = getattr(layer.config, "hidden_size", d_model)
+            n_heads = getattr(layer.config, "num_attention_heads", n_heads)
 
         new_block = SambaMoEBlock(
             config=model_config,

@@ -50,17 +50,21 @@ class HGRN2Layer(BaseAttention):
         
         # Resolve d_model
         if d_model is None:
-            if isinstance(config, int):
-                d_model = config
-            elif config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
-        if d_model is None:
-            d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 128)))
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size")
+            if d_model is None:
+                if isinstance(config, int):
+                    d_model = config
+                elif config is not None:
+                    d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))))
+            if d_model is None:
+                d_model = kwargs.get("dim", 128)
 
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
         self.d_model: int = int(d_model)
+        self.dim: int = self.d_model
+        self.hidden_size: int = self.d_model
         self.res_clip: float = res_clip
 
         self.forget_gate = nn.Linear(self.d_model, self.d_model, bias=True)
@@ -194,14 +198,29 @@ def inject_hgrn2_layer(
     **kwargs: Any,
 ) -> HGRN2Layer:
     r"""Injection hook for HGRN2Layer."""
-    d_model = 768
-    if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-    elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 768))
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
 
-    new_layer = HGRN2Layer(d_model=d_model, config=model_config, **kwargs)
-    src_attn = old_attn if old_attn is not None else layer
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', 64)
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', 4)
+    )
+
+    new_layer = HGRN2Layer(
+        d_model=hidden_size,
+        config=model_config,
+        hidden_size=hidden_size,
+        num_heads=num_heads,
+        num_attention_heads=num_heads,
+        **kwargs,
+    )
     if src_attn is not None and hasattr(new_layer, "copy_weights"):
         new_layer.copy_weights(src_attn)
 
@@ -209,5 +228,7 @@ def inject_hgrn2_layer(
         layer.attention = new_layer
     elif hasattr(layer, "self"):
         layer.self = new_layer
+    elif hasattr(layer, "attn"):
+        layer.attn = new_layer
 
     return new_layer

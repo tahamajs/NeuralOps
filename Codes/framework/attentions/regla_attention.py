@@ -276,7 +276,7 @@ class ReGLAAttention(BaseAttention):
                 "q": ["q_lin", "q_proj", "query"],
                 "k": ["k_lin", "k_proj", "key"],
                 "v": ["v_lin", "v_proj", "value"],
-                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj", "output", "proj"],
             }
             for proj_key, names in proj_candidates.items():
                 for name in names:
@@ -446,24 +446,73 @@ class ReGLAAttention(BaseAttention):
             x_pad = F.pad(x_in, (p, p))
             loc = self.conv(x_pad).permute(0, 2, 1)
 
-        fused = (out + loc) * pad_2d
+        if loc.shape[-1] != out.shape[-1]:
+            if loc.shape[-1] > out.shape[-1]:
+                loc_proj = loc[..., :out.shape[-1]]
+            else:
+                loc_proj = F.pad(loc, (0, out.shape[-1] - loc.shape[-1]))
+        else:
+            loc_proj = loc
+
+        fused = (out + loc_proj) * pad_2d
 
         if self.is_nested_encoder:
-            return fused, None
+            if fused.shape[-1] != self.dim:
+                output = self.out_proj(fused)
+            else:
+                output = fused
+            return output, None
 
         output = self.out_proj(fused)
+        if output.shape[-1] != hidden_states.shape[-1]:
+            output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1])) if output.shape[-1] < hidden_states.shape[-1] else output[..., :hidden_states.shape[-1]]
         return output, None
 
 
+@ATTENTION_REGISTRY.register("regla_inject")
+@ATTENTION_REGISTRY.register("regla_attention_inject")
+@ATTENTION_REGISTRY.register("inject_regla")
 def inject_regla(
-    model: nn.Module,
+    layer: Any,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     target_layer_idx: Optional[int] = None,
     **kwargs: Any,
 ) -> Optional[nn.Module]:
-    """Safely replace attention in model with ReGLAAttention."""
+    """Safely replace attention in model or layer with ReGLAAttention."""
     try:
+        model = layer
+        cfg = model_config or getattr(model, "config", None)
+        # Check if layer is a single layer container holding an attention sub-module
+        src = old_attn
+        if src is None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(model, attr) and not isinstance(getattr(model, attr), (nn.Dropout, nn.LayerNorm)):
+                    candidate = getattr(model, attr)
+                    if hasattr(candidate, "query") or hasattr(candidate, "q_lin") or hasattr(candidate, "q_proj") or hasattr(candidate, "c_attn") or hasattr(candidate, "dense") or hasattr(candidate, "out_proj"):
+                        src = candidate
+                        break
+
+        if src is not None:
+            new_attn = ReGLAAttention(
+                config=cfg,
+                pretrained_attn=src,
+                **kwargs,
+            )
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(model, attr) and getattr(model, attr) is src:
+                    setattr(model, attr, new_attn)
+                    return new_attn
+            return new_attn
+
+        # If model is a full transformer with named_modules
         replaced = 0
         for name, module in model.named_modules():
+            if not name:
+                continue
             is_attn = False
             if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
                 is_attn = True
@@ -474,7 +523,7 @@ def inject_regla(
                 parent = model.get_submodule(parent_name) if parent_name else model
 
                 new_attn = ReGLAAttention(
-                    config=getattr(model, "config", None),
+                    config=cfg,
                     pretrained_attn=module,
                     **kwargs,
                 )

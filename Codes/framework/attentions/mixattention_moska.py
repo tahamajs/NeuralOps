@@ -154,8 +154,9 @@ class MixAttentionMoSKA(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.dim: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
+        self.dim: int = kwargs.get("hidden_size") or getattr(config, "hidden_size", getattr(config, "dim", 768))
+        self.hidden_size: int = self.dim
+        self.num_heads: int = kwargs.get("num_heads") or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", getattr(config, "n_heads", 4))
         self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size: int = self.num_heads * self.head_dim
         self.fasa_keep_ratio: float = fasa_keep_ratio
@@ -524,9 +525,31 @@ def inject_mixattention_moska(
     **kwargs: Any,
 ) -> MixAttentionMoSKA:
     r"""Injection hook for MixAttentionMoSKA."""
+    src_attn = old_attn if old_attn is not None else (getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))) if layer is not None else None)
+
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', 64)
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', 4)
+    )
+
     keep_ratio = getattr(comp_config, "fasa_keep_ratio", 0.5) if comp_config is not None else 0.5
-    new_attn = MixAttentionMoSKA(config=model_config, fasa_keep_ratio=keep_ratio)
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    new_attn = MixAttentionMoSKA(
+        config=model_config,
+        fasa_keep_ratio=keep_ratio,
+        old_attn=src_attn,
+        hidden_size=hidden_size,
+        num_heads=num_heads,
+        num_attention_heads=num_heads,
+        **kwargs,
+    )
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)
@@ -539,7 +562,13 @@ def inject_mixattention_moska(
         layer.attention = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
+    elif hasattr(layer, "attn"):
+        layer.attn = new_attn
     return new_attn
+
+
+fasa_inject = inject_mixattention_moska
+
 
 
 FASA = MixAttentionMoSKA
