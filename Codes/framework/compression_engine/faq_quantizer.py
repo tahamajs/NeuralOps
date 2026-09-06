@@ -1,7 +1,8 @@
 """FAQ (Feature-Activation-Aware Quantization): adjusts quantization scales using activation statistics. Registered as 'faq'."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+import logging
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -10,7 +11,23 @@ from framework.compression_engine.astro_quantizer import (
     quantize_dequantize_tensor,
 )
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+from framework.utils.compat import should_compress_linear
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract config value from None, dict, or namespace/object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
 
 
 class FAQLinear(nn.Module):
@@ -70,16 +87,17 @@ class FAQLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: Union[nn.Linear, Any],
+        module: Union[nn.Linear, Any],
         act_scale: torch.Tensor,
         bits: int = 8,
         symmetric: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> FAQLinear:
-        cls_name = linear.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
-        raw_w = linear.weight.data
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        raw_w = target_mod.weight.data
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.t()
@@ -87,21 +105,41 @@ class FAQLinear(nn.Module):
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w
 
+        # Inherit LoRA adapter if module is already a LoRALinear wrapper
+        eff_lora_r = lora_r
+        eff_lora_alpha = lora_alpha
+        if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
+            if hasattr(module, "r") and module.r > 0:
+                eff_lora_r = module.r
+                eff_lora_alpha = getattr(module, "lora_alpha", 1.0)
+
         layer = cls(
             in_features=in_f,
             out_features=out_f,
-            bias=getattr(linear, "bias", None) is not None and linear.bias is not None,
+            bias=getattr(target_mod, "bias", None) is not None and target_mod.bias is not None,
             bits=bits,
             symmetric=symmetric,
-            lora_r=lora_r,
-            lora_alpha=lora_alpha,
+            lora_r=eff_lora_r,
+            lora_alpha=eff_lora_alpha,
             device=W.device,
             dtype=W.dtype,
         )
         layer.weight.data.copy_(W)
-        if getattr(linear, "bias", None) is not None and linear.bias is not None:
-            layer.bias.data.copy_(linear.bias.data)
+        if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None and layer.bias is not None:
+            layer.bias.data.copy_(target_mod.bias.data)
         layer.act_scale.copy_(act_scale.view(-1)[:in_f].to(device=W.device, dtype=W.dtype))
+
+        # Copy existing adapter weights if present
+        if hasattr(module, "lora_A") and hasattr(module, "lora_B") and layer.lora_A is not None and layer.lora_B is not None:
+            if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
+                layer.lora_A.data.copy_(module.lora_A.weight.data)
+            elif isinstance(module.lora_A, nn.Parameter):
+                layer.lora_A.data.copy_(module.lora_A.data)
+            if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
+                layer.lora_B.data.copy_(module.lora_B.weight.data)
+            elif isinstance(module.lora_B, nn.Parameter):
+                layer.lora_B.data.copy_(module.lora_B.data)
+
         return layer
 
     def get_weight(self) -> torch.Tensor:
@@ -117,7 +155,6 @@ class FAQLinear(nn.Module):
         return w_q / s
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Scale weights by activation sensitivity for quantization
         s = torch.clamp(self.act_scale, min=1e-6).unsqueeze(0).to(device=self.weight.device, dtype=self.weight.dtype)
         w_scaled = self.weight * s
         w_q = quantize_dequantize_tensor(
@@ -158,20 +195,11 @@ class FAQQuantizer(BaseCompressor):
     Collects activation statistics to scale channel-wise quantization step sizes,
     minimizing activation-weighted reconstruction distortion.
 
-    Args:
-        model: PyTorch model.
-        tokenizer: Optional tokenizer for text-based calibration.
-        bits: Quantization bit-width (4 or 8). Default 8.
-        calibration_texts: List of text strings for calibration.
-        calibration_data: Optional Tensor or DataLoader for calibration.
-        alpha: Activation scaling exponent. Default 0.5.
-        symmetric: Whether to use symmetric quantization. Default True.
-        use_ste: Whether to substitute nn.Linear with FAQLinear. Default False.
-        lora_r: Optional LoRA rank.
-        lora_alpha: LoRA scaling alpha.
-        max_error: Maximum reconstruction error before fallback.
-        fallback_to_original: If True, keep original layer on error excess.
-        skip_attention_qkv: Skip asymmetric GQA projections.
+    Hardening features:
+    - LoRALinear wrappers & Conv1D robust support.
+    - target_attention_only parameter filtering and freezing of non-target/fallback layers.
+    - Activation scales preserved in stats and layers.
+    - STE autograd wrapping and real compression metrics recording.
     """
 
     def __init__(
@@ -183,34 +211,65 @@ class FAQQuantizer(BaseCompressor):
         calibration_data: Optional[Any] = None,
         alpha: float = 0.5,
         symmetric: bool = True,
-        use_ste: bool = False,
-        lora_r: int = 0,
+        use_ste: bool = True,
+        lora_r: int = 16,
         lora_alpha: float = 1.0,
-        max_error: float = 0.25,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
         fallback_to_original: bool = True,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="faq", **kwargs)
+        cfg = cfg or kwargs.get("comp_config", None)
         self.tokenizer = tokenizer
-        self.bits = int(bits or getattr(cfg, "faq_bits", 8))
+        self.bits = int(_cfg_get(cfg, "faq_bits", _cfg_get(cfg, "bits", bits)))
         self.calibration_texts = calibration_texts
         self.calibration_data = calibration_data
-        self.alpha = float(alpha if alpha is not None else getattr(cfg, "faq_alpha", 0.5))
-        self.symmetric = bool(symmetric if symmetric is not None else getattr(cfg, "faq_symmetric", True))
-        self.use_ste = bool(use_ste if use_ste is not None else getattr(cfg, "faq_use_ste", False))
-        self.lora_r = int(getattr(cfg, "lora_r", getattr(cfg, "lora_rank", lora_r)))
-        self.lora_alpha = float(getattr(cfg, "lora_alpha", lora_alpha))
-        self.max_error = float(getattr(cfg, "max_error", max_error))
-        self.fallback_to_original = bool(getattr(cfg, "fallback_to_original", fallback_to_original))
-        self.skip_attention_qkv = bool(getattr(cfg, "skip_attention_qkv", skip_attention_qkv))
+        self.alpha = float(_cfg_get(cfg, "faq_alpha", _cfg_get(cfg, "alpha", alpha)))
+        self.symmetric = bool(_cfg_get(cfg, "faq_symmetric", _cfg_get(cfg, "symmetric", symmetric)))
+        self.use_ste = bool(_cfg_get(cfg, "faq_use_ste", _cfg_get(cfg, "use_ste", use_ste)))
+        self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
+        self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
+        self.max_error = float(_cfg_get(cfg, "faq_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.target_attention_only = bool(
+            _cfg_get(cfg, "faq_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(cfg, "faq_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+        )
+        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
         self.cfg = cfg
 
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
         self.layer_errors: Dict[str, float] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -> bool:
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+            return False
+        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate", "head", "output_layer"]):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
+        if not is_linear_like or isinstance(target_mod, FAQLinear):
+            return False
+
+        if not should_compress_linear(self.model, name):
+            return False
+
+        if self.target_attention_only:
+            last_part = name.split(".")[-1]
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
+            if not is_attn:
+                return False
+
+        return True
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
@@ -234,9 +293,10 @@ class FAQQuantizer(BaseCompressor):
             def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
-                    cls_name = module.__class__.__name__.lower()
-                    is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-                    in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
+                    target_mod = getattr(module, "base_layer", module)
+                    cls_name = target_mod.__class__.__name__.lower()
+                    is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                    in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
                     if x.ndim >= 2:
                         flat_x = x.reshape(-1, in_f)
                     else:
@@ -253,12 +313,8 @@ class FAQQuantizer(BaseCompressor):
 
             return hook
 
-        from framework.utils.compat import should_compress_linear
-
         for name, module in self.model.named_modules():
-            cls_name = module.__class__.__name__.lower()
-            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-            if is_linear_like and should_compress_linear(self.model, name) and not self._is_gqa_asymmetric(name, module):
+            if self._is_target_module(name, module) and not self._is_gqa_asymmetric(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         self.model.eval()
@@ -287,7 +343,6 @@ class FAQQuantizer(BaseCompressor):
                             if idx >= 32:
                                 break
                 else:
-                    # Synthetic calibration forward pass
                     first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
                     if first_linear is not None:
                         first_p = next(self.model.parameters(), None)
@@ -295,9 +350,9 @@ class FAQQuantizer(BaseCompressor):
                         dummy_x = torch.randn(2, 16, first_linear.in_features, device=dev)
                         try:
                             self.model(dummy_x)
-                        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+                        except Exception:
                             pass
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except Exception:
                 pass
 
         for h in hooks:
@@ -305,11 +360,12 @@ class FAQQuantizer(BaseCompressor):
 
         act_scales: Dict[str, torch.Tensor] = {}
         for name, module in self.model.named_modules():
-            cls_name = module.__class__.__name__.lower()
-            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-            if is_linear_like and hasattr(module, "weight"):
-                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-                in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
+            target_mod = getattr(module, "base_layer", module)
+            cls_name = target_mod.__class__.__name__.lower()
+            is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
+            if is_linear_like and hasattr(target_mod, "weight") and target_mod.weight is not None:
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
                 if name in running_cov and sample_counts.get(name, 0) > 0:
                     cov = running_cov[name] / float(max(sample_counts[name], 1))
                     var_diag = torch.diagonal(cov)
@@ -322,9 +378,6 @@ class FAQQuantizer(BaseCompressor):
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Quantize model weights using FAQ activation statistics."""
-        from framework.core.model_utils import replace_module
-        from framework.utils.compat import should_compress_linear
-
         act_scales = self._collect_activation_scales()
         self.compressed_layers = []
         self.fallback_layers = []
@@ -332,29 +385,35 @@ class FAQQuantizer(BaseCompressor):
         self.layer_errors = {}
         seen_weights: set[int] = set()
 
+        if self.target_attention_only:
+            for name, module in self.model.named_modules():
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+                    continue
+                target_mod = getattr(module, "base_layer", module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
+                if is_linear_like and not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
+
         for name, module in list(self.model.named_modules()):
-            cls_name = module.__class__.__name__.lower()
-            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-            if not is_linear_like or isinstance(module, FAQLinear):
+            if not self._is_target_module(name, module):
                 continue
 
-            if not should_compress_linear(self.model, name):
+            target_mod = getattr(module, "base_layer", module)
+            if not hasattr(target_mod, "weight") or target_mod.weight is None:
                 continue
 
-            if self._is_gqa_asymmetric(name, module):
-                continue
-
-            if not hasattr(module, "weight") or module.weight is None:
-                continue
-
-            w_id = id(module.weight)
+            w_id = id(target_mod.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
                 continue
             seen_weights.add(w_id)
 
-            raw_w = module.weight.data
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+            raw_w = target_mod.weight.data
             W_orig = raw_w.t().float() if is_conv1d else raw_w.float()
             in_f = W_orig.shape[1]
 
@@ -379,6 +438,8 @@ class FAQQuantizer(BaseCompressor):
                     if err > self.max_error:
                         if self.fallback_to_original:
                             self.fallback_layers.append(name)
+                            for p in module.parameters():
+                                p.requires_grad = False
                             continue
 
                     replace_module(self.model, name, faq_layer)
@@ -400,26 +461,42 @@ class FAQQuantizer(BaseCompressor):
                     if err > self.max_error:
                         if self.fallback_to_original:
                             self.fallback_layers.append(name)
+                            for p in module.parameters():
+                                p.requires_grad = False
                             continue
 
                     if is_conv1d:
-                        module.weight.data.copy_(W_recon.t().to(dtype=raw_w.dtype))
+                        target_mod.weight.data.copy_(W_recon.t().to(dtype=raw_w.dtype))
                     else:
-                        module.weight.data.copy_(W_recon.to(dtype=raw_w.dtype))
+                        target_mod.weight.data.copy_(W_recon.to(dtype=raw_w.dtype))
 
-                    if getattr(module, "bias", None) is not None and module.bias is not None:
-                        module.bias.data = quantize_dequantize_tensor(
-                            module.bias.data,
+                    if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
+                        target_mod.bias.data = quantize_dequantize_tensor(
+                            target_mod.bias.data,
                             bits=self.bits,
                             symmetric=self.symmetric,
                             per_channel=False,
                             use_ste=False,
                         )
+
+                    # Store act_scale as buffer so scales can be inspected/restored
+                    if not hasattr(target_mod, "act_scale"):
+                        target_mod.register_buffer("act_scale", s_act.to(dtype=raw_w.dtype, device=raw_w.device))
+
+                    # Preserve LoRA adapter trainability if wrapped
+                    if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
+                        if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
+                            module.lora_A.weight.requires_grad = True
+                        if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
+                            module.lora_B.weight.requires_grad = True
+
                     self.compressed_layers.append(name)
             except Exception as e:
+                logger.warning("FAQ quantization failed on %s: %s", name, e)
                 self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
 
-        # Post-compression forward sanity check
         forward_check_success = True
         try:
             with torch.no_grad():
@@ -434,12 +511,14 @@ class FAQQuantizer(BaseCompressor):
                     )
                     in_dim = getattr(first_linear, "in_features", 8)
                     self.model(torch.randn(1, 8, in_dim, device=dev))
-        except Exception as e:
+        except Exception:
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        effective_compression_rate = 16.0 / float(self.bits) if self.bits > 0 else 1.0
+
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
@@ -448,14 +527,20 @@ class FAQQuantizer(BaseCompressor):
                 "fallback_layer_count": len(self.fallback_layers),
                 "skipped_layers": self.skipped_layers,
                 "skipped_layer_count": len(self.skipped_layers),
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
                 "layer_errors": self.layer_errors,
                 "avg_reconstruction_error": avg_err,
                 "quantization_bits": self.bits,
                 "alpha": self.alpha,
                 "symmetric": self.symmetric,
+                "use_ste": self.use_ste,
                 "lora_r": self.lora_r,
                 "lora_alpha": self.lora_alpha,
+                "target_attention_only": self.target_attention_only,
                 "forward_check_success": forward_check_success,
+                "effective_compression_rate": round(effective_compression_rate, 2),
                 "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
             }
         )
@@ -468,12 +553,21 @@ class FAQQuantizer(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("faq_quantizer_factory")
 def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """FAQ compressor factory function."""
-    bits = kwargs.pop("bits", getattr(comp_config, "faq_bits", 8) if comp_config is not None else 8)
-    alpha = kwargs.pop("alpha", getattr(comp_config, "faq_alpha", 0.5) if comp_config is not None else 0.5)
-    symmetric = kwargs.pop("symmetric", getattr(comp_config, "faq_symmetric", True) if comp_config is not None else True)
-    use_ste = kwargs.pop("use_ste", getattr(comp_config, "faq_use_ste", False) if comp_config is not None else False)
-    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config is not None else 0)
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config is not None else 1.0)
+    bits = kwargs.pop("bits", _cfg_get(comp_config, "faq_bits", _cfg_get(comp_config, "bits", 8)))
+    alpha = kwargs.pop("alpha", _cfg_get(comp_config, "faq_alpha", _cfg_get(comp_config, "alpha", 0.5)))
+    symmetric = kwargs.pop("symmetric", _cfg_get(comp_config, "faq_symmetric", _cfg_get(comp_config, "symmetric", True)))
+    use_ste = kwargs.pop("use_ste", _cfg_get(comp_config, "faq_use_ste", _cfg_get(comp_config, "use_ste", True)))
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 16)))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "faq_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "faq_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(comp_config, "faq_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
+    )
     tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
@@ -486,6 +580,9 @@ def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         use_ste=use_ste,
         lora_r=lora_r,
         lora_alpha=lora_alpha,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
         cfg=comp_config,
         **kwargs,
     )
@@ -493,3 +590,6 @@ def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
+
+__all__ = ["FAQLinear", "FAQQuantizer", "faq_factory"]

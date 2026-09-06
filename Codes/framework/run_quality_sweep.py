@@ -861,6 +861,62 @@ def main():
                     help="Max relative Frobenius error threshold for Dynamic Entropy SVD before fallback")
     ap.add_argument("--dynamic_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict Dynamic Entropy SVD compression to attention projections only")
+    # ENLighten
+    ap.add_argument("--enlighten_rank", type=int, default=128,
+                    help="Rank for ENLighten low-rank SVD branch")
+    ap.add_argument("--enlighten_sparsity", type=float, default=0.5,
+                    help="Target sparsity ratio for ENLighten sparse branch")
+    ap.add_argument("--enlighten_structured_24", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Enable 2:4 structured sparsity for ENLighten")
+    ap.add_argument("--enlighten_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for ENLighten before fallback")
+    ap.add_argument("--enlighten_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict ENLighten compression to attention projections only")
+    # Entropy Budget SVD
+    ap.add_argument("--entropy_budget_rank", type=int, default=None,
+                    help="Base rank override for Entropy Budget SVD")
+    ap.add_argument("--entropy_budget_total_budget_ratio", type=float, default=0.7,
+                    help="Total parameter budget ratio for Entropy Budget SVD")
+    ap.add_argument("--entropy_budget_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for Entropy Budget SVD before fallback")
+    ap.add_argument("--entropy_budget_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Entropy Budget SVD compression to attention projections only")
+    # ERC-SVD
+    ap.add_argument("--erc_allowed_error", type=float, default=0.20,
+                    help="Allowed error tolerance for ERC-SVD rank selection")
+    ap.add_argument("--erc_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for ERC-SVD before fallback")
+    ap.add_argument("--erc_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict ERC-SVD compression to attention projections only")
+    ap.add_argument("--erc_rank", type=int, default=None,
+                    help="Explicit rank override for ERC-SVD")
+    # FAQ Quantizer
+    ap.add_argument("--faq_bits", type=int, default=8,
+                    help="Target bitwidth for FAQ Quantizer")
+    ap.add_argument("--faq_alpha", type=float, default=0.5,
+                    help="SmoothQuant alpha migration factor for FAQ Quantizer")
+    ap.add_argument("--faq_symmetric", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Use symmetric quantization for FAQ Quantizer")
+    ap.add_argument("--faq_use_ste", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Use Straight-Through Estimator for FAQ Quantizer")
+    ap.add_argument("--faq_lora_r", type=int, default=16,
+                    help="LoRA rank for FAQ Quantizer recovery branch")
+    ap.add_argument("--faq_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for FAQ Quantizer before fallback")
+    ap.add_argument("--faq_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict FAQ Quantizer compression to attention projections only")
+    # FLAP
+    ap.add_argument("--flap_sparsity", type=float, default=0.2,
+                    help="Target sparsity ratio for FLAP")
+    ap.add_argument("--flap_metric_type", type=str, default="WIFV",
+                    help="Importance metric type for FLAP (WIFV, WIFN, etc.)")
+    ap.add_argument("--flap_structured_24", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=False,
+                    help="Enable structured 2:4 sparsity for FLAP")
+    ap.add_argument("--flap_max_error", type=float, default=0.35,
+                    help="Max relative Frobenius error threshold for FLAP before fallback")
+    ap.add_argument("--flap_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict FLAP compression to attention projections only")
+
 
     
     # Pre-parse to check if a config file is provided
@@ -1544,13 +1600,93 @@ def main():
                         if getattr(args, "dynamic_target_attention_only", None) is not None:
                             setattr(model.config, "dynamic_target_attention_only", args.dynamic_target_attention_only)
                             setattr(model.config, "target_attention_only", args.dynamic_target_attention_only)
+                        # ENLighten
+                        if getattr(args, "enlighten_rank", None) is not None:
+                            setattr(model.config, "enlighten_rank", args.enlighten_rank)
+                            setattr(model.config, "rank", args.enlighten_rank)
+                        if getattr(args, "enlighten_sparsity", None) is not None:
+                            setattr(model.config, "enlighten_sparsity", args.enlighten_sparsity)
+                            setattr(model.config, "sparsity", args.enlighten_sparsity)
+                        if getattr(args, "enlighten_structured_24", None) is not None:
+                            setattr(model.config, "enlighten_structured_24", args.enlighten_structured_24)
+                            setattr(model.config, "structured_24", args.enlighten_structured_24)
+                        if getattr(args, "enlighten_max_error", None) is not None:
+                            setattr(model.config, "enlighten_max_error", args.enlighten_max_error)
+                            setattr(model.config, "max_error", args.enlighten_max_error)
+                        if getattr(args, "enlighten_target_attention_only", None) is not None:
+                            setattr(model.config, "enlighten_target_attention_only", args.enlighten_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.enlighten_target_attention_only)
+                        # Entropy Budget SVD
+                        if getattr(args, "entropy_budget_rank", None) is not None:
+                            setattr(model.config, "entropy_budget_rank", args.entropy_budget_rank)
+                            setattr(model.config, "rank", args.entropy_budget_rank)
+                        if getattr(args, "entropy_budget_total_budget_ratio", None) is not None:
+                            setattr(model.config, "entropy_budget_total_budget_ratio", args.entropy_budget_total_budget_ratio)
+                            setattr(model.config, "total_budget_ratio", args.entropy_budget_total_budget_ratio)
+                        if getattr(args, "entropy_budget_max_error", None) is not None:
+                            setattr(model.config, "entropy_budget_max_error", args.entropy_budget_max_error)
+                            setattr(model.config, "max_error", args.entropy_budget_max_error)
+                        if getattr(args, "entropy_budget_target_attention_only", None) is not None:
+                            setattr(model.config, "entropy_budget_target_attention_only", args.entropy_budget_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.entropy_budget_target_attention_only)
+                        # ERC-SVD
+                        if getattr(args, "erc_allowed_error", None) is not None:
+                            setattr(model.config, "erc_allowed_error", args.erc_allowed_error)
+                            setattr(model.config, "allowed_error", args.erc_allowed_error)
+                        if getattr(args, "erc_max_error", None) is not None:
+                            setattr(model.config, "erc_max_error", args.erc_max_error)
+                            setattr(model.config, "max_error", args.erc_max_error)
+                        if getattr(args, "erc_target_attention_only", None) is not None:
+                            setattr(model.config, "erc_target_attention_only", args.erc_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.erc_target_attention_only)
+                        if getattr(args, "erc_rank", None) is not None:
+                            setattr(model.config, "erc_rank", args.erc_rank)
+                            setattr(model.config, "rank", args.erc_rank)
+                        # FAQ Quantizer
+                        if getattr(args, "faq_bits", None) is not None:
+                            setattr(model.config, "faq_bits", args.faq_bits)
+                            setattr(model.config, "bits", args.faq_bits)
+                        if getattr(args, "faq_alpha", None) is not None:
+                            setattr(model.config, "faq_alpha", args.faq_alpha)
+                            setattr(model.config, "alpha", args.faq_alpha)
+                        if getattr(args, "faq_symmetric", None) is not None:
+                            setattr(model.config, "faq_symmetric", args.faq_symmetric)
+                            setattr(model.config, "symmetric", args.faq_symmetric)
+                        if getattr(args, "faq_use_ste", None) is not None:
+                            setattr(model.config, "faq_use_ste", args.faq_use_ste)
+                            setattr(model.config, "use_ste", args.faq_use_ste)
+                        if getattr(args, "faq_lora_r", None) is not None:
+                            setattr(model.config, "faq_lora_r", args.faq_lora_r)
+                            setattr(model.config, "lora_r", args.faq_lora_r)
+                        if getattr(args, "faq_max_error", None) is not None:
+                            setattr(model.config, "faq_max_error", args.faq_max_error)
+                            setattr(model.config, "max_error", args.faq_max_error)
+                        if getattr(args, "faq_target_attention_only", None) is not None:
+                            setattr(model.config, "faq_target_attention_only", args.faq_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.faq_target_attention_only)
+                        # FLAP
+                        if getattr(args, "flap_sparsity", None) is not None:
+                            setattr(model.config, "flap_sparsity", args.flap_sparsity)
+                            setattr(model.config, "sparsity", args.flap_sparsity)
+                        if getattr(args, "flap_metric_type", None) is not None:
+                            setattr(model.config, "flap_metric_type", args.flap_metric_type)
+                            setattr(model.config, "metric_type", args.flap_metric_type)
+                        if getattr(args, "flap_structured_24", None) is not None:
+                            setattr(model.config, "flap_structured_24", args.flap_structured_24)
+                            setattr(model.config, "structured_24", args.flap_structured_24)
+                        if getattr(args, "flap_max_error", None) is not None:
+                            setattr(model.config, "flap_max_error", args.flap_max_error)
+                            setattr(model.config, "max_error", args.flap_max_error)
+                        if getattr(args, "flap_target_attention_only", None) is not None:
+                            setattr(model.config, "flap_target_attention_only", args.flap_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.flap_target_attention_only)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
