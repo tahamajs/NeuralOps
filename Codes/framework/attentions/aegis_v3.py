@@ -325,11 +325,11 @@ class AegisAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         cfg = model_config if model_config is not None else config
-        super().__init__(cfg)
-        self.hidden_size: int = getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768))) if cfg is not None else 768
-        self.num_heads: int = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 4)) if cfg is not None else 4
-        self.head_dim: int = getattr(cfg, "head_dim", getattr(cfg, "d_kv", self.hidden_size // max(1, self.num_heads))) if cfg is not None else self.hidden_size // max(1, self.num_heads)
-        self.num_kv_heads: int = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", self.num_heads)) if cfg is not None else self.num_heads
+        super().__init__(cfg, **kwargs)
+        self.hidden_size: int = kwargs.get("hidden_size", kwargs.get("d_model", getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768))) if cfg is not None else 768))
+        self.num_heads: int = kwargs.get("num_heads", kwargs.get("num_attention_heads", getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 4)) if cfg is not None else 4))
+        self.head_dim: int = kwargs.get("head_dim", getattr(cfg, "head_dim", getattr(cfg, "d_kv", self.hidden_size // max(1, self.num_heads))) if cfg is not None else self.hidden_size // max(1, self.num_heads))
+        self.num_kv_heads: int = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", self.num_heads)) if cfg is not None else self.num_heads))
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -388,6 +388,34 @@ class AegisAttention(BaseAttention):
     @property
     def value(self) -> FactorisedLinear:
         return self.v_proj
+
+    @property
+    def q_lin(self) -> FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def dense(self) -> FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def o_proj(self) -> FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -> FactorisedLinear:
+        return self.out_proj
 
     def copy_weights(self, old_attn: Any) -> None:
         from framework.core.adapters import UniversalAdapter
@@ -465,10 +493,20 @@ class AegisAttention(BaseAttention):
 
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
+        if (
+            hasattr(old_attn, "self")
+            and hasattr(getattr(old_attn, "self"), "query")
+            and hasattr(old_attn, "output")
+            and hasattr(getattr(old_attn, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
+        elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
