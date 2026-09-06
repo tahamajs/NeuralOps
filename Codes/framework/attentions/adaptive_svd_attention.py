@@ -169,29 +169,39 @@ class AdaptiveSVDAttention(BaseAttention):
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(config)
-        self.adapter = ModelAdapter(config)
-        self.num_heads: int = self.adapter.num_heads
-        self.num_kv_heads: int = self.adapter.num_key_value_heads
-        self.hidden_size: int = self.adapter.hidden_size
-        self.head_dim: int = self.adapter.head_dim
+        super().__init__(config, **kwargs)
+        if config is not None:
+            self.adapter = ModelAdapter(config)
+            self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
+            self.num_kv_heads = kwargs.get("num_kv_heads", self.adapter.num_key_value_heads or self.num_heads)
+            self.hidden_size = kwargs.get("hidden_size", self.adapter.hidden_size or 768)
+            self.head_dim = kwargs.get("head_dim", self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads)))
+            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+            self.svd_rank = getattr(config, "svd_rank", svd_rank if svd_rank is not None else getattr(config, "rank", 32))
+            self.residual_rank = getattr(config, "residual_rank", residual_rank)
+            self.energy_threshold = float(getattr(config, "energy_threshold", kwargs.get("energy_threshold", energy_threshold)))
+            dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+            self.is_decoder = getattr(config, "is_decoder", False)
+            self.relative_attention_num_buckets = getattr(config, "relative_attention_num_buckets", 32)
+            self.relative_attention_max_distance = getattr(config, "relative_attention_max_distance", 128)
+        else:
+            self.adapter = None
+            self.hidden_size = kwargs.get("hidden_size", 768)
+            self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
+            self.num_kv_heads = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads))
+            self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
+            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+            self.svd_rank = svd_rank if svd_rank is not None else kwargs.get("rank", 32)
+            self.residual_rank = residual_rank
+            self.energy_threshold = float(kwargs.get("energy_threshold", energy_threshold))
+            dropout_p = kwargs.get("dropout", 0.1)
+            self.is_decoder = kwargs.get("is_decoder", False)
+            self.relative_attention_num_buckets = 32
+            self.relative_attention_max_distance = 128
+
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.kv_repeat: int = self.adapter.kv_repeat
         self.supports_gqa: bool = True
-        self.svd_rank: int = getattr(
-            config,
-            "svd_rank",
-            svd_rank if svd_rank is not None else getattr(config, "rank", 32),
-        )
-        self.residual_rank: int = getattr(config, "residual_rank", residual_rank)
-        self.energy_threshold: float = float(
-            getattr(
-                config,
-                "energy_threshold",
-                kwargs.get("energy_threshold", energy_threshold),
-            )
-        )
 
         self.query = AdaptiveSVDLinear(
             self.hidden_size,
@@ -221,24 +231,23 @@ class AdaptiveSVDAttention(BaseAttention):
             self.residual_rank,
             bias=True,
         )
-        dropout_p = getattr(
-            config,
-            "dropout",
-            getattr(
-                config,
-                "hidden_dropout_prob",
-                getattr(config, "attention_probs_dropout_prob", 0.1),
-            ),
-        )
+        self.q_lin = self.query
+        self.k_lin = self.key
+        self.v_lin = self.value
+        self.out_lin = self.out_proj
+        self.q_proj = self.query
+        self.k_proj = self.key
+        self.v_proj = self.value
+        self.dense = self.out_proj
+        self.o_proj = self.out_proj
+        self.c_proj = self.out_proj
+
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
-        self.is_decoder: bool = getattr(config, "is_decoder", False)
         self.is_nested_encoder: bool = False
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: Optional[nn.Embedding] = None
-        self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
-        self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -393,10 +402,19 @@ class AdaptiveSVDAttention(BaseAttention):
             hasattr(src, attr)
             for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
         )
-        is_nested_encoder = (
+        is_nested_encoder = False
+        if (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            is_nested_encoder = True
+        elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            is_nested_encoder = True
 
         if not extracted_all:
             # If it's a nested encoder, it's okay to miss 'o'
