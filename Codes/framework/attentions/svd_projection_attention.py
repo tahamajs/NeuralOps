@@ -561,39 +561,101 @@ class SVDProjectionAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
+        if output.shape[-1] != hidden_states.shape[-1]:
+            if output.shape[-1] < hidden_states.shape[-1]:
+                output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1]))
+            else:
+                output = output[..., :hidden_states.shape[-1]]
+
         return output, (attn_weights if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("svd_projection_attention")
+@ATTENTION_REGISTRY.register("svd_proj_attn")
 @ATTENTION_REGISTRY.register("svd_proj_attn_inject")
+@ATTENTION_REGISTRY.register("inject_svd_proj_attn")
+@ATTENTION_REGISTRY.register("inject_svd_projection")
 def inject_svd_proj_attn(
-    layer: nn.Module,
-    config: Optional[Any] = None,
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     lora_rank: int = 16,
     rank: Optional[int] = None,
     **kwargs: Any,
-) -> Optional[SVDProjectionAttention]:
-    """Safely constructs and injects SVDProjectionAttention into a transformer layer."""
-    old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
-    if old_attn is None:
-        return None
+) -> Optional[Any]:
+    """Safely constructs and injects SVDProjectionAttention into a model or transformer layer."""
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and not hasattr(target, "forward"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+
+        if layer_list is not None:
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                inject_svd_proj_attn(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    rank=rank,
+                    **kwargs,
+                )
+            return target
+
+    src = old_attn
+    if src is None and target is not None:
+        for attr in ("attention", "attn", "self_attn", "self"):
+            if hasattr(target, attr):
+                src = getattr(target, attr)
+                break
 
     try:
         new_attn = SVDProjectionAttention(
-            config=config,
-            old_attn=old_attn,
+            config=cfg,
+            old_attn=src,
             lora_rank=lora_rank,
             rank=rank,
+            comp_config=comp_config,
             **kwargs,
         )
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDProjectionAttention: {e}")
         return None
 
-    if hasattr(layer, "attention"):
-        layer.attention = new_attn
-    elif hasattr(layer, "attn"):
-        layer.attn = new_attn
-    elif hasattr(layer, "self_attn"):
-        layer.self_attn = new_attn
+    if target is not None:
+        for attr in ("attention", "attn", "self_attn", "self"):
+            if hasattr(target, attr):
+                if attr == "attention" and hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                else:
+                    setattr(target, attr, new_attn)
+                return new_attn
+        target.attention = new_attn
 
     return new_attn
