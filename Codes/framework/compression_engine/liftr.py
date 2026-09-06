@@ -256,6 +256,15 @@ class LIFTRCompressor(BaseCompressor):
 
         self._linearize_module(self.model)
 
+        # Freeze any weight-bearing modules in skipped layers (e.g. nn.Linear skipped due to
+        # target_attention_only) so their gradients don't flow unintentionally.
+        if self.skipped_layers:
+            skipped_set = set(self.skipped_layers)
+            for name, module in self.model.named_modules():
+                if name in skipped_set:
+                    for p in module.parameters(recurse=False):
+                        p.requires_grad = False
+
         validation_passed = True
         rel_diff = 0.0
         if self.validation_calibration and orig_out is not None:
