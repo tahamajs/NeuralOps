@@ -221,7 +221,13 @@ class GoldFinchAHNBlock(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
-        self.window_size = int(kwargs.get("window_size", window_size))
+        if config is not None:
+            self.window_size = getattr(config, "window_size", getattr(comp_config, "window_size", kwargs.get("window_size", window_size)))
+        elif comp_config is not None:
+            self.window_size = getattr(comp_config, "window_size", kwargs.get("window_size", window_size))
+        else:
+            self.window_size = kwargs.get("window_size", window_size)
+        self.window_size = int(self.window_size)
 
         # Decoder detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
