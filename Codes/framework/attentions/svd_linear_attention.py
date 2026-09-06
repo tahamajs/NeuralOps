@@ -838,6 +838,12 @@ class SVDLinearAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
+        if output.shape[-1] != hidden_states.shape[-1]:
+            if output.shape[-1] < hidden_states.shape[-1]:
+                output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1]))
+            else:
+                output = output[..., :hidden_states.shape[-1]]
+
         attn_out = attn_probs if output_attentions else None
 
         if return_state and updated_state is not None:
@@ -898,6 +904,12 @@ class SVDLinearAttention(BaseAttention):
         else:
             out_t = self.out_proj(context)
 
+        if out_t.shape[-1] != x_t.shape[-1]:
+            if out_t.shape[-1] < x_t.shape[-1]:
+                out_t = F.pad(out_t, (0, x_t.shape[-1] - out_t.shape[-1]))
+            else:
+                out_t = out_t[..., :x_t.shape[-1]]
+
         return out_t, (S_t, Z_t)
 
     def get_orthogonality_loss(self) -> torch.Tensor:
@@ -910,37 +922,100 @@ class SVDLinearAttention(BaseAttention):
         return base_loss
 
 
+@ATTENTION_REGISTRY.register("svd_linear_attn")
+@ATTENTION_REGISTRY.register("svd_linear_attention")
+@ATTENTION_REGISTRY.register("svd_linear_inject")
+@ATTENTION_REGISTRY.register("inject_svd_linear_attention")
 def inject_svd_linear_attention(
-    layer: nn.Module,
-    config: Optional[Any] = None,
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     lora_rank: int = 16,
-    rank: Optional[int] = None,
+    rank: Optional[int] = 32,
     mode: str = "exact",
     **kwargs: Any,
-) -> Optional[SVDLinearAttention]:
-    """Safely constructs and injects SVDLinearAttention into a transformer layer."""
-    old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
-    if old_attn is None:
+) -> Optional[Any]:
+    """Safely constructs and injects SVDLinearAttention into a model or transformer layer."""
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and not hasattr(target, "forward"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_svd_linear_attention(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    rank=rank,
+                    mode=mode,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    curr_attn = old_attn
+    if curr_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            curr_attn = target.attention
+        elif hasattr(target, "self_attn"):
+            curr_attn = target.self_attn
+        elif hasattr(target, "attn"):
+            curr_attn = target.attn
+
+    if curr_attn is None:
         return None
 
     try:
         new_attn = SVDLinearAttention(
-            config=config,
-            old_attn=old_attn,
-            lora_rank=lora_rank,
+            config=cfg,
+            old_attn=curr_attn,
             rank=rank,
             mode=mode,
+            lora_rank=lora_rank,
             **kwargs,
         )
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDLinearAttention: {e}")
         return None
 
-    if hasattr(layer, "attention"):
-        layer.attention = new_attn
-    elif hasattr(layer, "attn"):
-        layer.attn = new_attn
-    elif hasattr(layer, "self_attn"):
-        layer.self_attn = new_attn
+    if target is not None:
+        if hasattr(target, "attention"):
+            target.attention = new_attn
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+        elif hasattr(target, "attn"):
+            target.attn = new_attn
 
     return new_attn
