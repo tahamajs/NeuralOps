@@ -439,3 +439,10 @@ class AdaptiveSparseAttention(BaseAttention):
 >    For sequences $L > 4096$, dynamic sparsity cuts memory consumption by over $50\%$.
 > 3. **Non-Differentiable Index Isolation**:
 >    $\operatorname{detach}(\omega_h)$ isolates the step-function integer threshold mapping from gradient graph computation, preventing NaN or zero-gradient collapses during SGD / AdamW updates.
+
+## Unified 4-Architecture Benchmark Results (Adaptive Sparse Attention)
+Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery steps, lr 2e-4, LoRA rank 16):
+
+| Model Architecture | Baseline Acc | Adaptive Sparse Acc | Δ Acc | F1 Score | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:------------:|:--------------------:|:-----:|:--------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 88.76% | 87.39% | -1.37% | 0.8868 | 419.8 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive-sparse) |
