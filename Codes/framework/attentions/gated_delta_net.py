@@ -407,10 +407,8 @@ class GatedDeltaNet(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning(
-                "GatedDeltaNet copy_weights: missing projections %s from module %s. Initializing remaining weights.",
-                missing_after,
-                old_attn.__class__.__name__,
+            raise RuntimeError(
+                f"GatedDeltaNet copy_weights failed: missing mandatory projections {missing_after} from module {old_attn.__class__.__name__}."
             )
 
         target_map = {
