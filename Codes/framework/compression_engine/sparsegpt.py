@@ -35,6 +35,14 @@ from framework.compression_engine.pruning_utils import (
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 class SparseGPTCompressor(BaseCompressor):
     """
     In-memory PyTorch SparseGPT Compressor.
@@ -54,20 +62,22 @@ class SparseGPTCompressor(BaseCompressor):
         percdamp: float = 0.01,
         calibration_loader: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
+        target_attention_only: bool = False,
         device: Optional[Union[str, torch.device]] = None,
         structured_24: bool = False,
         max_error: float = 0.5,
-        fallback_to_original: bool = False,
+        fallback_to_original: bool = True,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="sparsegpt", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            sparsity = getattr(cfg, "sparsegpt_sparsity", getattr(cfg, "sparsity", sparsity))
-            structured_24 = getattr(cfg, "sparsegpt_structured_24", getattr(cfg, "structured_24", structured_24))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            sparsity = _cfg_get(cfg, "sparsegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+            structured_24 = _cfg_get(cfg, "sparsegpt_structured_24", _cfg_get(cfg, "structured_24", structured_24))
+            max_error = _cfg_get(cfg, "max_error", max_error)
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
@@ -77,6 +87,7 @@ class SparseGPTCompressor(BaseCompressor):
         self.percdamp = percdamp
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
+        self.target_attention_only = bool(target_attention_only)
         self.structured_24 = structured_24 or (prunen == 2 and prunem == 4 and sparsity == 0.5)
         self.target_device = (
             torch.device(device)
@@ -90,10 +101,18 @@ class SparseGPTCompressor(BaseCompressor):
         self.stats: Dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+        name_l = name.lower()
+        if any(k in name_l for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
             return False
-        cls_name = module.__class__.__name__
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower()
+
+        if self.target_attention_only:
+            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, "base_layer", module)
+        cls_name = base_mod.__class__.__name__
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name.lower() or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
@@ -157,12 +176,13 @@ class SparseGPTCompressor(BaseCompressor):
         activations: Optional[torch.Tensor],
     ) -> bool:
         """Executes second-order SparseGPT pruning on a single Linear or Conv1D layer."""
-        raw_w = module.weight.data
-        cls_name = module.__class__.__name__
-        is_conv1d = "conv1d" in cls_name.lower() or (
+        base_mod = getattr(module, "base_layer", module)
+        raw_w = base_mod.weight.data
+        cls_name = base_mod.__class__.__name__
+        is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_mod, "nf") or (
             raw_w.ndim == 2
-            and hasattr(module, "in_features")
-            and module.in_features == raw_w.shape[0]
+            and hasattr(base_mod, "in_features")
+            and base_mod.in_features == raw_w.shape[0]
             and raw_w.shape[0] < raw_w.shape[1]
         )
 
@@ -252,10 +272,12 @@ class SparseGPTCompressor(BaseCompressor):
                 name,
                 self.max_error,
             )
+            for p in module.parameters():
+                p.requires_grad = False
             return False
 
         final_w = W_pruned.t() if is_conv1d else W_pruned
-        module.weight.data = final_w.to(dtype=module.weight.dtype, device=module.weight.device)
+        base_mod.weight.data = final_w.to(dtype=base_mod.weight.dtype, device=base_mod.weight.device)
         return True
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
@@ -277,6 +299,9 @@ class SparseGPTCompressor(BaseCompressor):
             "sparsity_target": self.sparsity,
             "structured_24": self.structured_24,
             "layer_errors": self.layer_errors,
+            "target_attention_only": self.target_attention_only,
+            "fallback_to_original": self.fallback_to_original,
+            "max_error": self.max_error,
             "method": "sparsegpt_second_order",
         })
         self.stats = stats
@@ -284,20 +309,35 @@ class SparseGPTCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("sparsegpt")
-def sparsegpt_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
+def sparsegpt_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -> Any:
     """Factory function for SparseGPT compressor."""
-    sparsity = getattr(comp_config, "sparsegpt_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)
-    structured_24 = getattr(comp_config, "sparsegpt_structured_24", getattr(comp_config, "structured_24", False)) if comp_config else kwargs.get("structured_24", False)
-    tokenizer = getattr(model, "tokenizer", None) or (getattr(comp_config, "tokenizer", None) if comp_config else kwargs.get("tokenizer", None))
+    sparsity = kwargs.pop("sparsity", _cfg_get(comp_config, "sparsegpt_sparsity", _cfg_get(comp_config, "sparsity", 0.5)))
+    structured_24 = kwargs.pop("structured_24", _cfg_get(comp_config, "sparsegpt_structured_24", _cfg_get(comp_config, "structured_24", False)))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.5))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None))
 
     compressor = SparseGPTCompressor(
         model,
         tokenizer=tokenizer,
         sparsity=sparsity,
         structured_24=structured_24,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
+        comp_config=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop("return_both", False):
+        return compressed_model, stats
     return compressed_model
 
 
