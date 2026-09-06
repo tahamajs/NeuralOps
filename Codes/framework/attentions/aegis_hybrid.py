@@ -253,7 +253,7 @@ class AegisHybridAttention(BaseAttention):
                 use_global=use_glob,
             )
 
-        self.config = config
+        object.__setattr__(self, 'config', config)
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.head_dim
