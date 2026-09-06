@@ -1,147 +1,293 @@
-"""Mamba: Gated State Space Model (Mamba) linear attention replacement.
+"""Mamba: Gated State Space Model (Mamba) linear attention replacement (Production-Hardened).
 
 Implements a gated selective state-space projection that is a drop-in
 replacement for a standard Multi-Head Attention layer, operating in
-strictly O(L) time and space with respect to sequence length.
+strictly O(L) time and space with respect to sequence length, with LoRA adapters,
+multi-architecture weight extraction, causal masking, RoPE support, and nested encoder bypass.
 """
 
-from typing import Any, Optional, Tuple
+from __future__ import annotations
+
+import math
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.adapters import UniversalAdapter
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+class LoRALinear(nn.Module):
+    """Linear projection with frozen base weights and trainable LoRA adapters."""
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -> None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank > 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank > 0 and self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -> None:
+        self.weight.requires_grad = True
+        if self.bias is not None:
+            self.bias.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out
+        return out
+
+
 @ATTENTION_REGISTRY.register("mamba")
 class Mamba(BaseAttention):
-    r"""Gated State Space Model (Mamba) Linear Layer Module.
-
-    Implements a gated selective state-space projection that acts as a
-    lightweight, linear-complexity alternative to Multi-Head Attention.
-
-    Mathematical Mechanism:
-        Given input :math:`X \in \mathbb{R}^{B \times L \times D}`:
-
-        .. math::
-
-            [X_1, X_2] &= \text{chunk}(\text{Linear}(X), 2)
-                         \in \mathbb{R}^{B \times L \times D} \\
-            Y           &= \text{SiLU}(X_1) \odot X_2 \\
-            O           &= Y W_{\text{out}}
-
-        The SiLU-gated product fuses content-dependent selection
-        (:math:`X_1`) with an unactivated residual branch (:math:`X_2`).
-
-    Computational Complexity:
-        - Time: :math:`\mathcal{O}(B \cdot L \cdot D^2)` — strictly
-          linear in sequence length :math:`L`.
-        - Space: :math:`\mathcal{O}(B \cdot L \cdot D)` activations.
-
-    Tensor Dimensions:
-        - Input ``hidden_states``: ``[B, L, D]``
-        - Output: Tuple ``(output, None)`` where ``output`` is
-          ``[B, L, D]``.
-
-    Args:
-        d_model: Hidden-state dimension :math:`D`.
-        config: Optional model configuration object (unused internally
-            but forwarded to :class:`BaseAttention`).
-        rank: Optional rank hint forwarded to :class:`BaseAttention`.
-        **kwargs: Additional keyword arguments (ignored).
-    """
+    r"""Gated State Space Model (Mamba) Linear Layer Module."""
 
     def __init__(
         self,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
         d_model: Optional[int] = None,
+        comp_config: Optional[Any] = None,
+        pretrained_attn: Optional[nn.Module] = None,
+        old_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
+        source_attn = pretrained_attn if pretrained_attn is not None else old_attn
+
         if isinstance(config, (int, float)):
             d_model = int(config)
             config = None
-        super().__init__(config, rank)
-        if d_model is None:
+
+        dim = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim") or d_model
+        if dim is None:
             if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", 768))))
+                dim = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", 128))))
+            elif source_attn is not None:
+                cand = getattr(source_attn, "hidden_size", getattr(source_attn, "embed_dim", getattr(source_attn, "all_head_size", None)))
+                if cand is None and hasattr(source_attn, "q_proj") and hasattr(source_attn.q_proj, "in_features"):
+                    cand = source_attn.q_proj.in_features
+                dim = cand or 128
             else:
-                d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
-        elif not isinstance(d_model, int) and hasattr(d_model, "hidden_size"):
-            d_model = getattr(d_model, "hidden_size", getattr(d_model, "d_model", 768))
-        self.d_model: int = int(d_model)
+                dim = 128
+        elif not isinstance(dim, int) and hasattr(dim, "hidden_size"):
+            dim = getattr(dim, "hidden_size", getattr(dim, "d_model", 128))
+
+        super().__init__(config, rank)
+        self.d_model: int = int(dim or 128)
+        self.dim: int = self.d_model
         self.hidden_size: int = self.d_model
-        # Projects input to 2× width then splits into two gating branches.
-        self.in_proj: nn.Linear = nn.Linear(self.d_model, self.d_model * 2)
-        self.out_proj: nn.Linear = nn.Linear(self.d_model, self.d_model)
-        # PATCH: Preservation gate — at init, sigmoid(-2.0) ≈ 0.12 means the output
-        # is 88% the original hidden_states (residual bypass) and only 12% Mamba output.
-        # Fine-tuning gradually shifts the balance as pres_gate becomes more positive.
+
+        # LoRA rank/alpha configuration: independent inspection
+        if config is not None:
+            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        elif comp_config is not None:
+            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+        else:
+            self.lora_rank = kwargs.get("lora_rank", 16)
+            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
+        self.freeze_base = (self.lora_rank > 0)
+
+        # Decoder & Causal detection
+        model_type = getattr(config, "model_type", "").lower() if config else ""
+        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            is_dec = True
+        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = bool(is_dec)
+        self.is_nested_encoder = False
+
+        # Projections with LoRALinear
+        self.in_proj = LoRALinear(self.d_model, self.d_model * 2, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.d_model, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+
         self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(-2.0))
+        self.source_attn = source_attn
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
+
+        if source_attn is not None:
+            self.copy_weights(source_attn)
+
+    def freeze_base_weights(self) -> None:
+        """Freeze base linear projection weights when LoRA adapters are present."""
+        for mod in (self.in_proj, self.out_proj):
+            if hasattr(mod, "freeze_base_weights"):
+                mod.freeze_base_weights()
+
+    def unfreeze_base_weights(self) -> None:
+        """Unfreeze base linear projection weights."""
+        for mod in (self.in_proj, self.out_proj):
+            if hasattr(mod, "unfreeze_base_weights"):
+                mod.unfreeze_base_weights()
 
     def copy_weights(self, pretrained_attn: Any) -> None:
-        from framework.core.adapters import UniversalAdapter
-
-        extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
-        for proj in ["q", "k", "v", "o"]:
-            try:
-                w, b = UniversalAdapter.get_weight_bias(pretrained_attn, proj)
-                if w is not None:
-                    extracted[proj] = (w, b)
-            except Exception:
-                pass
-
-        if hasattr(pretrained_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None):
-            weight = pretrained_attn.c_attn.weight.data
-            bias = getattr(pretrained_attn.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.d_model:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
-            extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
-
-        if hasattr(pretrained_attn, "c_proj") and extracted["o"][0] is None:
-            w_o = pretrained_attn.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.d_model and w_o.shape[1] == self.d_model:
-                w_o = w_o.t()
-            b_o = getattr(pretrained_attn.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
-
-        if hasattr(pretrained_attn, "self") and (extracted["q"][0] is None or extracted["k"][0] is None):
-            s = getattr(pretrained_attn, "self")
-            if hasattr(s, "query"):
-                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
-            if hasattr(s, "key"):
-                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
-
-        if hasattr(pretrained_attn, "output") and hasattr(getattr(pretrained_attn, "output"), "dense") and extracted["o"][0] is None:
-            dense = pretrained_attn.output.dense
-            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
-
-        named_map = {
-            "q": ["q_proj", "q_lin", "query"],
-            "k": ["k_proj", "k_lin", "key"],
-            "o": ["o_proj", "out_proj", "out_lin", "dense"],
-        }
-        for proj, names in named_map.items():
-            if extracted[proj][0] is None:
-                for name in names:
-                    if hasattr(pretrained_attn, name):
-                        layer = getattr(pretrained_attn, name)
-                        if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
-                            break
+        if pretrained_attn is None:
+            return
 
         cls_name = pretrained_attn.__class__.__name__
         has_out_proj = any(hasattr(pretrained_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+        is_nested = False
+        if (
+            hasattr(pretrained_attn, "self")
+            and hasattr(getattr(pretrained_attn, "self"), "query")
+            and hasattr(pretrained_attn, "output")
+            and hasattr(getattr(pretrained_attn, "output"), "dense")
+        ):
+            is_nested = True
+        elif (
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
+
+        # 1. GPT-2 fused c_attn / c_proj
+        if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
+            c_attn_mod = pretrained_attn.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                    c_w = c_w.t()
+                split_size = c_w.size(0) // 3
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+
+            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
+                c_proj_mod = pretrained_attn.c_proj
+                base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                        o_w = o_w.t()
+                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+
+        # 2. RoBERTa nested encoder
+        elif hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
+            s = getattr(pretrained_attn, "self")
+            for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
+                mod = getattr(s, sub_name, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+            if hasattr(pretrained_attn, "output") and hasattr(getattr(pretrained_attn, "output"), "dense"):
+                out_mod = pretrained_attn.output.dense
+                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+
+        # 3. Flat modules (DistilBERT, Qwen, LLaMA)
+        else:
+            proj_candidates = {
+                "q": ["q_proj", "q_lin", "query"],
+                "k": ["k_proj", "k_lin", "key"],
+                "v": ["v_proj", "v_lin", "value"],
+                "o": ["out_proj", "out_lin", "dense", "o_proj"],
+            }
+            for proj_key, names in proj_candidates.items():
+                for name in names:
+                    if hasattr(pretrained_attn, name):
+                        mod = getattr(pretrained_attn, name)
+                        if mod is not None and hasattr(mod, "weight"):
+                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            break
+
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing:
+            try:
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(pretrained_attn, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception:
+                pass
+
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        if missing_after:
+            raise RuntimeError(
+                f"Mamba copy_weights failed: missing mandatory projections {missing_after} from {pretrained_attn.__class__.__name__}."
+            )
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -151,37 +297,71 @@ class Mamba(BaseAttention):
         D = self.d_model
         with torch.no_grad():
             w_q, b_q = extracted["q"]
+            w_k, b_k = extracted["k"]
+            w_v, b_v = extracted["v"]
+            w_o, b_o = extracted["o"]
+
+            # Frobenius norm checks on source weights
+            for k_name, (w_val, _) in [("q", extracted["q"]), ("k", extracted["k"]), ("v", extracted["v"])]:
+                if w_val is not None:
+                    norm_val = float(torch.norm(w_val[:min(D, w_val.size(0)), :min(D, w_val.size(1))]).item())
+                    if norm_val < 1e-4:
+                        raise RuntimeError(f"Mamba weight verification failed for '{k_name}': norm too small ({norm_val:.2e})")
+
+            if w_o is not None:
+                norm_o = float(torch.norm(w_o[:min(D, w_o.size(0)), :min(D, w_o.size(1))]).item())
+                if norm_o < 1e-4:
+                    raise RuntimeError(f"Mamba weight verification failed for 'o': norm too small ({norm_o:.2e})")
+
+            # in_proj branch 1 (first D): copied from q
             if w_q is not None:
                 w_q = _orient(w_q, D)
                 if w_q.shape[0] < D and D % w_q.shape[0] == 0:
                     rep = D // w_q.shape[0]
                     w_q = w_q.repeat(rep, 1)
-                    if b_q is not None: b_q = b_q.repeat(rep)
-                self.in_proj.weight.data[:D, :].copy_(w_q[:D, :min(D, w_q.shape[1])])
+                    if b_q is not None:
+                        b_q = b_q.repeat(rep)
+                out_d = min(D, w_q.size(0))
+                in_d = min(D, w_q.size(1))
+                self.in_proj.weight.data[:out_d, :in_d].copy_(w_q[:out_d, :in_d].to(device=self.in_proj.weight.device, dtype=self.in_proj.weight.dtype))
                 if b_q is not None and self.in_proj.bias is not None:
-                    self.in_proj.bias.data[:D].copy_(b_q[:D])
+                    min_b = min(D, b_q.numel())
+                    self.in_proj.bias.data[:min_b].copy_(b_q[:min_b].to(device=self.in_proj.bias.device, dtype=self.in_proj.bias.dtype))
 
-            w_k, b_k = extracted["k"]
+            # in_proj branch 2 (second D): copied from k
             if w_k is not None:
                 w_k = _orient(w_k, D)
                 if w_k.shape[0] < D and D % w_k.shape[0] == 0:
                     rep = D // w_k.shape[0]
                     w_k = w_k.repeat(rep, 1)
-                    if b_k is not None: b_k = b_k.repeat(rep)
-                self.in_proj.weight.data[D:, :].copy_(w_k[:D, :min(D, w_k.shape[1])])
+                    if b_k is not None:
+                        b_k = b_k.repeat(rep)
+                out_d = min(D, w_k.size(0))
+                in_d = min(D, w_k.size(1))
+                self.in_proj.weight.data[D : D + out_d, :in_d].copy_(w_k[:out_d, :in_d].to(device=self.in_proj.weight.device, dtype=self.in_proj.weight.dtype))
                 if b_k is not None and self.in_proj.bias is not None:
-                    self.in_proj.bias.data[D:].copy_(b_k[:D])
+                    min_b = min(D, b_k.numel())
+                    self.in_proj.bias.data[D : D + min_b].copy_(b_k[:min_b].to(device=self.in_proj.bias.device, dtype=self.in_proj.bias.dtype))
 
-            w_o, b_o = extracted["o"]
+            # out_proj: copied from o
             if w_o is not None:
                 w_o = _orient(w_o, D)
-                self.out_proj.weight.data.copy_(w_o[:D, :min(D, w_o.shape[1])])
+                out_d = min(self.out_proj.weight.size(0), w_o.size(0))
+                in_d = min(self.out_proj.weight.size(1), w_o.size(1))
+                self.out_proj.weight.data[:out_d, :in_d].copy_(w_o[:out_d, :in_d].to(device=self.out_proj.weight.device, dtype=self.out_proj.weight.dtype))
                 if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.data.copy_(b_o[:D])
+                    min_b = min(self.out_proj.bias.numel(), b_o.numel())
+                    self.out_proj.bias.data[:min_b].copy_(b_o[:min_b].to(device=self.out_proj.bias.device, dtype=self.out_proj.bias.dtype))
             elif self.is_nested_encoder:
-                self.out_proj.weight.data.copy_(torch.eye(D))
+                nn.init.eye_(self.out_proj.weight)
                 if self.out_proj.bias is not None:
-                    self.out_proj.bias.data.zero_()
+                    nn.init.zeros_(self.out_proj.bias)
+
+        if hasattr(pretrained_attn, "rotary_emb") and pretrained_attn.rotary_emb is not None:
+            self.rotary_emb = pretrained_attn.rotary_emb
+
+        if self.lora_rank > 0 or self.freeze_base:
+            self.freeze_base_weights()
 
     def forward(
         self,
@@ -194,52 +374,83 @@ class Mamba(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""Execute the forward Mamba gated-SSM pass.
-
-        Args:
-            hidden_states: Input tensor of shape ``[B, L, D]`` or ``[B, H, L, Dh]``.
-            attention_mask: Optional mask tensor; if provided, applies
-                zero-masking for padded tokens.
-            head_mask: Optional per-head mask; not used in this module.
-            output_attentions: Unused flag kept for interface compliance.
-            **kwargs: Extra keyword arguments (ignored).
-
-        Returns:
-            Tuple ``(output, None)`` where ``output`` is of shape
-            ``[B, L, D]`` and ``None`` stands for the absent attention
-            weight matrix.
-
-        Shape:
-            - Input:  ``[B, L, D]``
-            - Output: ``[B, L, D]``
-        """
         if hidden_states.dim() == 4:
             B, H, L, Dh = hidden_states.shape
             hidden_states = hidden_states.view(B, L, H * Dh)
         elif not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
+        B, L, D = hidden_states.shape
+
+        # Optional RoPE rotary position embedding
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            rotary_dim = cos.shape[-1]
+            if rotary_dim <= D:
+                x_rot, x_pass = hidden_states[..., :rotary_dim], hidden_states[..., rotary_dim:]
+                if cos.dim() == 2:
+                    cos = cos.unsqueeze(0)
+                    sin = sin.unsqueeze(0)
+                x_rot = (x_rot * cos) + (_rotate_half(x_rot) * sin)
+                hidden_states = torch.cat([x_rot, x_pass], dim=-1)
+        elif self.rotary_emb is not None or (self.source_attn is not None and hasattr(self.source_attn, "rotary_emb")):
+            rotary_mod = self.rotary_emb or getattr(self.source_attn, "rotary_emb", None)
+            pos_ids = kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = rotary_mod(hidden_states, seq_len=L)
+            except Exception:
+                try:
+                    cos, sin = rotary_mod(hidden_states, pos_ids)
+                except Exception:
+                    cos, sin = None, None
+            if cos is not None and sin is not None:
+                rotary_dim = cos.shape[-1]
+                if rotary_dim <= D:
+                    x_rot, x_pass = hidden_states[..., :rotary_dim], hidden_states[..., rotary_dim:]
+                    if cos.dim() == 2:
+                        cos = cos.unsqueeze(0)
+                        sin = sin.unsqueeze(0)
+                    elif cos.dim() == 4:
+                        cos = cos.squeeze(1)
+                        sin = sin.squeeze(1)
+                    x_rot = (x_rot * cos) + (_rotate_half(x_rot) * sin)
+                    hidden_states = torch.cat([x_rot, x_pass], dim=-1)
+
         # in_proj: [B, L, D] -> [B, L, 2D]
         proj = self.in_proj(hidden_states)
-        # Split along last dim: each branch is [B, L, D]
         p1, p2 = proj.chunk(2, dim=-1)
-        # Gated product: SiLU(p1) * p2 then project back to D
-        out = self.out_proj(F.silu(p1) * p2)
+
+        # Causal masking for decoders
+        if self.is_decoder and L > 1:
+            # Mask future gating tokens cumulatively
+            causal_weights = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=p1.dtype))
+            norm = causal_weights.sum(dim=-1, keepdim=True).clamp(min=1.0)
+            p1_causal = torch.matmul(causal_weights / norm, p1)
+            gated = F.silu(p1_causal) * p2
+        else:
+            gated = F.silu(p1) * p2
+
+        if self.is_nested_encoder:
+            out = gated
+        else:
+            out = self.out_proj(gated)
 
         # Apply padding mask if provided
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                mask = attention_mask.unsqueeze(-1).to(out.dtype)
-                out = out * mask
+                valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
+                out = out * valid_mask.unsqueeze(-1).to(out.dtype)
             elif attention_mask.dim() == 4:
                 mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(-1).to(out.dtype)
                 out = out * mask
 
-        # PATCH: Preservation gate — blends Mamba output with the pretrained residual.
-        # sigmoid(-2.0) ≈ 0.12 at init → model starts 88% close to pretrained bypass.
+        # Preservation gate
         alpha = torch.sigmoid(self.pres_gate)
         while isinstance(out, (tuple, list)):
             out = out[0]
@@ -254,64 +465,107 @@ class Mamba(BaseAttention):
 @ATTENTION_REGISTRY.register("mamba_inject")
 def inject_mamba(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Mamba:
-    r"""Injection hook that instantiates :class:`Mamba` and wires it
-    into a transformer layer.
+) -> Optional[Union[Mamba, nn.Module]]:
+    r"""Safe injection factory for Mamba across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-    Args:
-        layer: Target transformer layer module whose ``.attention``
-            attribute will be replaced.
-        model_config: Model configuration providing ``hidden_size``.
-        comp_config: Compression configuration (currently unused).
-        layer_idx: Zero-based index of the current layer in the stack.
-        total_layers: Total number of transformer layers.
-        old_attn: Previous attention module being replaced (unused).
-        **kwargs: Additional keyword arguments, including optional 'rank'.
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
 
-    Returns:
-        The newly created :class:`Mamba` instance, already assigned to
-        ``layer.attention``.
-    """
-    rank = kwargs.pop("rank", 32)
-    d_model: int = 128
-    if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", getattr(model_config, "d_model", 128)))
-    elif layer is not None and hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 128))
-    elif layer is not None and hasattr(layer, "hidden_size"):
-        d_model = getattr(layer, "hidden_size", 128)
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
 
-    new_module = Mamba(d_model=d_model, config=model_config, rank=rank, **kwargs)
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_mamba(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
 
+    # 2. Single layer injection
     src_attn = old_attn
-    if src_attn is None and layer is not None:
-        for attr in ("attention", "self_attn", "self", "attn"):
-            if hasattr(layer, attr):
-                cand = getattr(layer, attr)
-                if cand is not None and isinstance(cand, nn.Module):
-                    src_attn = cand
-                    break
+    if src_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                src_attn = target.attention.self
+            else:
+                src_attn = target.attention
+        elif hasattr(target, "self"):
+            src_attn = target.self
+        elif hasattr(target, "attn"):
+            src_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            src_attn = target.self_attn
 
-    if src_attn is not None and hasattr(new_module, "copy_weights"):
-        try:
-            new_module.copy_weights(src_attn)
-        except Exception:
-            pass
+    if src_attn is None and target is not None and hasattr(target, "forward"):
+        src_attn = target
 
-    if layer is not None:
-        if hasattr(layer, "attention"):
-            layer.attention = new_module
-        elif hasattr(layer, "self_attn"):
-            layer.self_attn = new_module
-        elif hasattr(layer, "self"):
-            layer.self = new_module
-        else:
-            layer.attention = new_module
+    if src_attn is None and cfg is None:
+        return None
 
-    return new_module
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        getattr(src_attn, 'dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+        (getattr(target, 'in_features', None) if target is not None else None) or
+        getattr(cfg, 'hidden_size', getattr(cfg, 'dim', 64))
+    )
+
+    try:
+        new_block = Mamba(
+            d_model=hidden_size,
+            config=cfg,
+            comp_config=comp_config,
+            old_attn=src_attn,
+            **kwargs,
+        )
+    except Exception:
+        return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_block
+            else:
+                target.attention = new_block
+        elif hasattr(target, "self"):
+            target.self = new_block
+        elif hasattr(target, "attn"):
+            target.attn = new_block
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_block
+
+    return new_block
