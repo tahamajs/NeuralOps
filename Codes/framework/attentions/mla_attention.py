@@ -505,3 +505,7 @@ def inject_mla(
     elif hasattr(layer, "self"):
         layer.self = new_attn
     return new_attn
+
+
+# Aliases
+inject_mla_attention = inject_mla

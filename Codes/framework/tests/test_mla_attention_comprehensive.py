@@ -72,9 +72,9 @@ def test_mla_basic():
 def test_mla_trainable_lora_weights():
     cfg = MockConfig(lora_rank=8)
     attn = MLAAttention(config=cfg)
-    assert attn.W_dq.weight.requires_grad is False
-    assert attn.W_dq.lora_A.requires_grad is True
-    assert attn.W_dq.lora_B.requires_grad is True
+    assert attn.q_proj.weight.requires_grad is False
+    assert attn.q_proj.lora_A.requires_grad is True
+    assert attn.q_proj.lora_B.requires_grad is True
 
 
 def test_mla_distilbert_weight_copy():
