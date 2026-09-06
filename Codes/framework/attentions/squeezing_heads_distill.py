@@ -600,3 +600,9 @@ def inject_squeezing_heads(
         layer.self = new_attn
 
     return new_attn
+
+
+inject_squeezing_heads_distill = inject_squeezing_heads
+inject_squeezing_heads_attention = inject_squeezing_heads
+inject_squeezing_heads_distill_attention = inject_squeezing_heads
+inject_squeezing_heads_distiller = inject_squeezing_heads
