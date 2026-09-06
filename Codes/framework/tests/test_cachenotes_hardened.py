@@ -199,6 +199,29 @@ class TestCacheNotesHardened(unittest.TestCase):
         self.assertIn("avg_reconstruction_error", stats)
         self.assertGreater(len(stats["compressed_layers"]), 0)
 
+    def test_07_cpt_generator_multiple_dimensions_and_training(self):
+        """Verify learnable CPTGenerator produces valid vectors across arbitrary dimensions and trains properly."""
+        model = DummyTransformerModel()
+        compressor = CacheNotesCompressor(
+            model,
+            task_type="qa",
+            task_description="question answering: answer questions from passage",
+            use_learned_cpt=True,
+            keep_ratio=0.5,
+            target_attention_only=True,
+        )
+        # Test generation across multiple dimensions
+        for dim in [32, 64, 128, 768, 1024, 2048]:
+            vec = compressor.get_importance(dim, device=torch.device("cpu"))
+            self.assertEqual(vec.shape, (dim,))
+            self.assertTrue(torch.isfinite(vec).all())
+            self.assertTrue((vec >= 0.1).all() and (vec <= 2.0).all())
+
+        # Test training procedure
+        loss = compressor.train_cpt_generator(epochs=2, lr=1e-3)
+        self.assertTrue(compressor.cpt_generator_trained)
+        self.assertGreater(loss, 0.0)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
