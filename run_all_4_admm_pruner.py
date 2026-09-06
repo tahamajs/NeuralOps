@@ -150,13 +150,16 @@ print(f"Settings: Sparsity=0.5 (2:4 Structured), lambda_distill=0.1, max_error=0
 print(f"Policy: Run ALL 4 models first, then execute quality gates, exports, & git commits.")
 print(f"================================================================================")
 
+export_only = "--export_only" in sys.argv
+
 # ==============================================================================
 # PHASE 1: EXECUTE ALL MODEL EVALUATIONS FIRST
 # ==============================================================================
-for m in models:
-    name = m["name"]
-    print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] >>> RUNNING ADMM PRUNER BENCHMARK FOR {name.upper()}...")
-    start_time = time.time()
+if not export_only:
+    for m in models:
+        name = m["name"]
+        print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] >>> RUNNING ADMM PRUNER BENCHMARK FOR {name.upper()}...")
+        start_time = time.time()
     
     proc = subprocess.Popen(
         m["cmd"],
