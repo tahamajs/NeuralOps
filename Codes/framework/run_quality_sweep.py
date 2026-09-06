@@ -1930,6 +1930,7 @@ def main():
                             "nha", "nha_attention",
                             "goldfinch_ahn", "goldfinch",
                             "jamba", "jamba2",
+                            "mamba_svd_flash",
                         }
                         if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
                             rec_steps = max(args.recovery_steps, 50)
