@@ -182,26 +182,37 @@ class GatedDeltaNet(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if d_model is None:
-            if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            elif source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            else:
-                d_model = kwargs.get("hidden_size", 768)
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
+            if d_model is None:
+                if config is not None:
+                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                elif source_attn is not None:
+                    out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", getattr(source_attn, "out_proj", None)))))
+                    if out_layer is not None:
+                        d_model = getattr(out_layer, "out_features", getattr(out_layer, "in_features", 768))
+                    else:
+                        q_l = getattr(source_attn, "q_proj", getattr(source_attn, "query", getattr(source_attn, "q_lin", None)))
+                        d_model = getattr(q_l, "in_features", getattr(q_l, "out_features", 768)) if q_l is not None else 768
+                else:
+                    d_model = 768
+
+        if hasattr(d_model, "hidden_size"):
+            d_model = d_model.hidden_size
 
         if num_heads is None:
-            if config is not None:
-                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
-            elif source_attn is not None:
-                num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
-            else:
-                num_heads = kwargs.get("num_attention_heads", 12)
+            num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
+            if num_heads is None:
+                if config is not None:
+                    num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", getattr(config, "num_heads", 12)))
+                elif source_attn is not None:
+                    num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
+                else:
+                    num_heads = 12
 
         super().__init__(config, rank)
         self.d_model: int = int(d_model)
         self.num_heads: int = int(num_heads)
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
+        self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads))) if config is not None else kwargs.get("num_kv_heads", self.num_heads)
         self.head_dim: int = getattr(config, "head_dim", None) or (self.d_model // max(1, self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -212,8 +223,15 @@ class GatedDeltaNet(BaseAttention):
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
-        self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        if config is not None:
+            self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        elif comp_config is not None:
+            self.lora_rank: int = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+            self.lora_alpha: float = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+        else:
+            self.lora_rank: int = kwargs.get("lora_rank", 16)
+            self.lora_alpha: float = kwargs.get("lora_alpha", 32.0)
         self.freeze_base: bool = (self.lora_rank > 0)
 
         # Decoder & nested encoder detection
@@ -243,11 +261,17 @@ class GatedDeltaNet(BaseAttention):
         nn.init.constant_(self.beta_proj.bias, 2.0)
         nn.init.constant_(self.alpha_proj.bias, 0.0)
 
-        self.rotary_emb = None
+        self.source_attn = source_attn
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config: Optional[Any] = comp_config
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    def freeze_base_weights(self) -> None:
+        for mod in (self.q_proj, self.k_proj, self.v_proj, self.z_proj, self.out_proj):
+            if hasattr(mod, "freeze_base_weights"):
+                mod.freeze_base_weights()
 
     # Compatibility properties
     @property
@@ -423,7 +447,7 @@ class GatedDeltaNet(BaseAttention):
                     nn.init.zeros_(target_mod.bias)
 
                 # Weight verification (Frobenius norm >= 1e-4)
-                w_norm = float(torch.norm(target_mod.weight.data).item())
+                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"GatedDeltaNet weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
@@ -441,6 +465,9 @@ class GatedDeltaNet(BaseAttention):
                     self.z_proj.bias.data[:min_bz].copy_(b_q[:min_bz].to(device=self.z_proj.bias.device, dtype=self.z_proj.bias.dtype))
                 if self.freeze_base:
                     self.z_proj.freeze_base_weights()
+
+        if self.lora_rank > 0 or self.freeze_base:
+            self.freeze_base_weights()
 
     def _delta_scan_linear(
         self,
@@ -559,9 +586,13 @@ class GatedDeltaNet(BaseAttention):
             if sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
         elif self.rotary_emb is not None and not is_cross_attention:
-            if position_ids is not None:
-                cos, sin = self.rotary_emb(v, seq_len=kv_len)
-                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
+            if position_ids is None:
+                position_ids = torch.arange(kv_len, device=hidden_states.device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = self.rotary_emb(k, seq_len=kv_len)
+            except TypeError:
+                cos, sin = self.rotary_emb(k, position_ids)
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
         # 3. Grouped Query Attention (GQA) head expansion
         if self.num_kv_heads != self.num_heads:
@@ -621,40 +652,118 @@ class GatedDeltaNet(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("gated_delta_net_inject")
+@ATTENTION_REGISTRY.register("gated_delta_net")
 def inject_gated_delta_net(
-    layer: nn.Module,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[GatedDeltaNet]:
+) -> Optional[Union[GatedDeltaNet, nn.Module]]:
     r"""Safe injection factory for GatedDeltaNet."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_gated_delta_net(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
     src_attn = old_attn
-    if src_attn is None:
-        if hasattr(layer, "attention"):
-            src_attn = layer.attention
-        elif hasattr(layer, "attn"):
-            src_attn = layer.attn
-        elif hasattr(layer, "self_attn"):
-            src_attn = layer.self_attn
+    if src_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                src_attn = target.attention.self
+            else:
+                src_attn = target.attention
+        elif hasattr(target, "self"):
+            src_attn = target.self
+        elif hasattr(target, "attn"):
+            src_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            src_attn = target.self_attn
+
+    if src_attn is None and target is not None and hasattr(target, "forward"):
+        src_attn = target
+
+    if src_attn is None and cfg is None:
+        return None
+
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        getattr(src_attn, 'dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (getattr(target, 'in_features', None) if target is not None else None) or
+        getattr(cfg, 'hidden_size', getattr(cfg, 'dim', 64))
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(src_attn, 'n_heads', None) or
+        getattr(cfg, 'num_attention_heads', getattr(cfg, 'n_heads', 4))
+    )
 
     try:
         new_block = GatedDeltaNet(
-            config=model_config,
+            config=cfg,
             comp_config=comp_config,
+            d_model=hidden_size,
+            num_heads=num_heads,
             layer_id=layer_idx,
             layer_idx=layer_idx,
             old_attn=src_attn,
             **kwargs,
         )
-        if hasattr(layer, "attention"):
-            layer.attention = new_block
-        elif hasattr(layer, "attn"):
-            layer.attn = new_block
-        elif hasattr(layer, "self_attn"):
-            layer.self_attn = new_block
-        return new_block
     except Exception:
         return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_block
+            else:
+                target.attention = new_block
+        elif hasattr(target, "self"):
+            target.self = new_block
+        elif hasattr(target, "attn"):
+            target.attn = new_block
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_block
+
+    return new_block
