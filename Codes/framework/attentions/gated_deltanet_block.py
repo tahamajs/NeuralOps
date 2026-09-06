@@ -163,11 +163,23 @@ def inject_gated_deltanet_block(
     total_layers: int = 6,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> GatedDeltaNetBlock:
+) -> Optional[GatedDeltaNetBlock]:
     r"""Injects GatedDeltaNetBlock into a transformer layer."""
+    src_attn = old_attn
+    if src_attn is None:
+        if hasattr(layer, "attention"):
+            src_attn = layer.attention
+        elif hasattr(layer, "attn"):
+            src_attn = layer.attn
+        elif hasattr(layer, "self_attn"):
+            src_attn = layer.self_attn
+        elif hasattr(layer, "self"):
+            src_attn = layer.self
+        else:
+            src_attn = layer
+
     d_model = 64
     num_heads = 4
-    src_attn = old_attn if old_attn is not None else layer
     if src_attn is not None:
         cand = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", getattr(src_attn, "all_head_size", None)))
         if cand is None and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features"):
@@ -184,17 +196,23 @@ def inject_gated_deltanet_block(
         d_model = getattr(layer.config, "hidden_size", d_model)
         num_heads = getattr(layer.config, "num_attention_heads", num_heads)
 
-    use_full = getattr(comp_config, "use_full_attention", False) if comp_config else False
-    new_block = GatedDeltaNetBlock(
-        config=model_config, d_model=d_model, num_heads=num_heads, use_full_attention=use_full, **kwargs
-    )
-    src_attn = old_attn if old_attn is not None else layer
-    if src_attn is not None and hasattr(new_block, "copy_weights"):
-        new_block.copy_weights(src_attn)
+    try:
+        use_full = getattr(comp_config, "use_full_attention", False) if comp_config else False
+        new_block = GatedDeltaNetBlock(
+            config=model_config, d_model=d_model, num_heads=num_heads, use_full_attention=use_full, **kwargs
+        )
+        if src_attn is not None and hasattr(new_block, "copy_weights"):
+            new_block.copy_weights(src_attn)
 
-    if hasattr(layer, "attention"):
-        layer.attention = new_block
-    elif hasattr(layer, "self"):
-        layer.self = new_block
+        if hasattr(layer, "attention"):
+            layer.attention = new_block
+        elif hasattr(layer, "attn"):
+            layer.attn = new_block
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_block
+        elif hasattr(layer, "self"):
+            layer.self = new_block
 
-    return new_block
+        return new_block
+    except Exception:
+        return None
