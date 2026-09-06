@@ -71,8 +71,8 @@ def apply_rotary_pos_emb(
         return q, k
 
     if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
@@ -81,10 +81,6 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        cos = cos[..., : q.shape[-2], :]
-        sin = sin[..., : q.shape[-2], :]
-
     head_dim = q.shape[-1]
     rotary_dim = 2 * (min(cos.shape[-1], head_dim) // 2)
     if rotary_dim == 0:
@@ -92,11 +88,15 @@ def apply_rotary_pos_emb(
 
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-    cos_cut = cos[..., :rotary_dim].to(q.dtype)
-    sin_cut = sin[..., :rotary_dim].to(q.dtype)
 
-    q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
-    k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.dtype)
+
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.dtype)
+
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
     q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
     k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
