@@ -54,45 +54,39 @@ def apply_rotary_pos_emb(
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
-    rotary_dim = min(cos.shape[-1], q.shape[-1], k.shape[-1])
-    rotary_dim = 2 * (rotary_dim // 2)
-    if rotary_dim == 0:
+    if cos is None or sin is None:
         return q, k
 
-    cos = cos[..., :rotary_dim]
-    sin = sin[..., :rotary_dim]
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
 
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
-    q_len = q.shape[-2]
-    k_len = k.shape[-2]
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
 
-    cos_q = cos
-    sin_q = sin
-    cos_k = cos
-    sin_k = sin
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
 
-    while cos_q.dim() < q_rot.dim():
-        cos_q = cos_q.unsqueeze(unsqueeze_dim)
-        sin_q = sin_q.unsqueeze(unsqueeze_dim)
-    while cos_k.dim() < k_rot.dim():
-        cos_k = cos_k.unsqueeze(unsqueeze_dim)
-        sin_k = sin_k.unsqueeze(unsqueeze_dim)
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
-    # Slice sequence length dimension if needed
-    if cos_q.shape[-2] != q_len:
-        cos_q = cos_q[..., :q_len, :]
-        sin_q = sin_q[..., :q_len, :]
-    if cos_k.shape[-2] != k_len:
-        cos_k = cos_k[..., :k_len, :]
-        sin_k = sin_k[..., :k_len, :]
-
-    q_rot = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_rot = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-
-    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
-    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q, k
 
 
