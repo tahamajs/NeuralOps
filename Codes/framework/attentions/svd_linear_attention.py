@@ -48,8 +48,11 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
-            w = w.t()
+        cls_name = getattr(module, "__class__", type(module)).__name__
+        base_cls_name = getattr(base, "__class__", type(base)).__name__
+        if "Conv1D" in cls_name or "Conv1D" in base_cls_name:
+            if w.ndim == 2 and w.shape[0] < w.shape[1]:
+                w = w.t()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -229,8 +232,10 @@ class SVDLinear(nn.Module):
             r = min(self.rank, U_factor.size(1), V_factor.size(0))
             self.U.data.zero_()
             self.V.data.zero_()
-            self.U.data[:, :r].copy_(U_factor[:, :r].to(device=self.U.device, dtype=self.U.dtype))
-            self.V.data[:r, :].copy_(V_factor[:r, :].to(device=self.V.device, dtype=self.V.dtype))
+            out_d = min(self.out_features, U_factor.size(0))
+            in_d = min(self.in_features, V_factor.size(1))
+            self.U.data[:out_d, :r].copy_(U_factor[:out_d, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.V.data[:r, :in_d].copy_(V_factor[:r, :in_d].to(device=self.V.device, dtype=self.V.dtype))
 
     def get_orthogonality_loss(self) -> torch.Tensor:
         U_orth = torch.matmul(self.U.t(), self.U) - torch.eye(self.rank, device=self.U.device, dtype=self.U.dtype)
@@ -540,36 +545,38 @@ class SVDLinearAttention(BaseAttention):
             # Set Q
             self._factorize_and_set(self.q_proj, w_q, b_q)
 
-            # Set K & V with GQA pooling if needed
-            if w_k.shape[0] == self.kv_head_size:
-                self._factorize_and_set(self.k_proj, w_k, b_k)
-            else:
-                rep = w_k.shape[0] // self.kv_head_size
-                w_k_pooled = (
-                    w_k.contiguous().reshape(self.num_kv_heads, rep, -1)
-                    .mean(dim=1)
-                )
-                b_k_pooled = (
-                    b_k.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1).reshape(-1)
-                    if b_k is not None
-                    else None
-                )
-                self._factorize_and_set(self.k_proj, w_k_pooled, b_k_pooled)
+            # Set K & V with GQA pooling or expansion if needed
+            def _adapt_to_kv_size(weight: torch.Tensor, bias: Optional[torch.Tensor]) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+                w = weight
+                b = bias
+                if w.shape[0] == self.kv_head_size:
+                    return w, b
+                if w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
+                    rep = w.shape[0] // self.kv_head_size
+                    w = w.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1)
+                    if b is not None:
+                        b = b.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1).reshape(-1)
+                elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
+                    rep = self.kv_head_size // w.shape[0]
+                    w = w.repeat(rep, 1)
+                    if b is not None:
+                        b = b.repeat(rep)
+                else:
+                    padded_w = torch.zeros(self.kv_head_size, w.shape[1], device=w.device, dtype=w.dtype)
+                    min_rows = min(self.kv_head_size, w.shape[0])
+                    padded_w[:min_rows, :] = w[:min_rows, :]
+                    w = padded_w
+                    if b is not None:
+                        padded_b = torch.zeros(self.kv_head_size, device=b.device, dtype=b.dtype)
+                        padded_b[:min_rows] = b[:min_rows]
+                        b = padded_b
+                return w, b
 
-            if w_v.shape[0] == self.kv_head_size:
-                self._factorize_and_set(self.v_proj, w_v, b_v)
-            else:
-                rep = w_v.shape[0] // self.kv_head_size
-                w_v_pooled = (
-                    w_v.contiguous().reshape(self.num_kv_heads, rep, -1)
-                    .mean(dim=1)
-                )
-                b_v_pooled = (
-                    b_v.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1).reshape(-1)
-                    if b_v is not None
-                    else None
-                )
-                self._factorize_and_set(self.v_proj, w_v_pooled, b_v_pooled)
+            w_k_adapt, b_k_adapt = _adapt_to_kv_size(w_k, b_k)
+            self._factorize_and_set(self.k_proj, w_k_adapt, b_k_adapt)
+
+            w_v_adapt, b_v_adapt = _adapt_to_kv_size(w_v, b_v)
+            self._factorize_and_set(self.v_proj, w_v_adapt, b_v_adapt)
 
             # Set out_proj if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
