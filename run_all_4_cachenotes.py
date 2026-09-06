@@ -296,6 +296,8 @@ print(f"\n[+] Master 4-model summary saved to {master_csv} and {master_json}")
 # ==============================================================================
 import huggingface_hub as hfh
 
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 api = hfh.HfApi()
 
 for res in collected_results:
@@ -328,9 +330,9 @@ for res in collected_results:
             shutil.copy2(src_weights, dst_weights)
             print(f"    Copied lean weights from {src_weights} ({dst_weights.stat().st_size / 1024 / 1024:.1f} MB)")
 
-    # Copy tokenizer and config files if available
+    # Copy tokenizer, config files, and CPT generator if available
     for f in ckpt_dir.glob("*"):
-        if f.is_file() and f.suffix in (".json", ".txt", ".jinja") and f.name != "pytorch_model.bin":
+        if f.is_file() and (f.suffix in (".json", ".txt", ".jinja") or f.name.endswith(".pt")) and f.name != "pytorch_model.bin":
             shutil.copy2(f, hf_export_dir / f.name)
 
     # If pytorch_model.bin exists in hf_export, delete it to keep payload lean
@@ -345,12 +347,17 @@ for res in collected_results:
     # Upload to private Hugging Face repo
     try:
         api.create_repo(repo_name, exist_ok=True, private=True)
-        print(f"    Uploading lean export from {hf_export_dir} to {repo_name}...")
-        api.upload_folder(
-            folder_path=str(hf_export_dir),
-            repo_id=repo_name,
-            repo_type="model",
-        )
+        print(f"    Uploading files from {hf_export_dir} to {repo_name}...")
+        for file_path in sorted(hf_export_dir.rglob("*")):
+            if file_path.is_file():
+                rel_p = file_path.relative_to(hf_export_dir).as_posix()
+                api.upload_file(
+                    path_or_fileobj=str(file_path),
+                    path_in_repo=rel_p,
+                    repo_id=repo_name,
+                    repo_type="model",
+                )
+                print(f"      Uploaded {rel_p}")
         print(f"    Uploaded successfully to https://huggingface.co/{repo_name}")
         res["hf_repo"] = f"https://huggingface.co/{repo_name}"
     except Exception as e:
