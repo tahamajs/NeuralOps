@@ -211,23 +211,35 @@ for m in models:
         print(f"[-] Error reading {csv_path}: {e}")
         continue
 
-    row_full = df[df["module"] == "full"]
-    row_come = df[df["module"] == "come"]
+    row_full = df[df.get("module_name", df.get("module", pd.Series())) == "full"]
+    row_come = df[df.get("module_name", df.get("module", pd.Series())) == "come"]
 
     if row_come.empty:
-        row_come = df[df["module"] != "full"]
+        mod_col = "module_name" if "module_name" in df.columns else "module"
+        row_come = df[df[mod_col] != "full"]
 
     if row_full.empty or row_come.empty:
         print(f"[-] Missing full baseline or come rows in {csv_path}")
         continue
 
-    baseline_acc = float(row_full.iloc[0].get("accuracy", 0.0))
-    come_acc = float(row_come.iloc[0].get("accuracy", 0.0))
-    come_f1 = float(row_come.iloc[0].get("f1", 0.0))
+    # Parse accuracy: could be 'accuracy_pct' (0..100) or 'accuracy' (0..1)
+    if "accuracy_pct" in row_full.columns:
+        baseline_acc = float(row_full.iloc[0].get("accuracy_pct", 0.0)) / 100.0
+    else:
+        raw_b = float(row_full.iloc[0].get("accuracy", 0.0))
+        baseline_acc = raw_b / 100.0 if raw_b > 1.0 else raw_b
+
+    if "accuracy_pct" in row_come.columns:
+        come_acc = float(row_come.iloc[0].get("accuracy_pct", 0.0)) / 100.0
+    else:
+        raw_a = float(row_come.iloc[0].get("accuracy", 0.0))
+        come_acc = raw_a / 100.0 if raw_a > 1.0 else raw_a
+
+    come_f1 = float(row_come.iloc[0].get("f1_score", row_come.iloc[0].get("f1", 0.0)))
     delta_acc = come_acc - baseline_acc
     status = str(row_come.iloc[0].get("status", "FAIL")).upper()
     lat_p95 = float(row_come.iloc[0].get("latency_p95_ms", 0.0))
-    vram_peak = float(row_come.iloc[0].get("vram_peak_mb", 0.0))
+    vram_peak = float(row_come.iloc[0].get("peak_vram_mb", row_come.iloc[0].get("vram_peak_mb", 0.0)))
 
     # Read detailed compressor stats
     stats_data = {}
@@ -238,6 +250,11 @@ for m in models:
         except Exception:
             pass
 
+    num_compressed = stats_data.get("num_compressed", len(stats_data.get("compressed_layers", [])))
+    num_fallback = stats_data.get("num_fallback", len(stats_data.get("fallback_layers", [])))
+    shed_layers = stats_data.get("shed_layers_count", stats_data.get("shed_layers", 0))
+    flops_reduction = stats_data.get("flops_reduction_pct", stats_data.get("estimated_flops_reduction_pct", 0.0))
+    avg_reconstruction_error = stats_data.get("avg_reconstruction_error", float(row_come.iloc[0].get("avg_reconstruction_error", 0.0) or 0.0))
     orig_layers = stats_data.get("original_layer_count", 12)
     kept_layers = stats_data.get("kept_layer_count", 9)
     shed_layers = stats_data.get("shed_layer_count", orig_layers - kept_layers)
