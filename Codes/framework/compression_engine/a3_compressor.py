@@ -97,6 +97,10 @@ class A3FactorizedLinear(nn.Module):
                 nn.init.zeros_(self.bias)
 
     # Fix 4: Framework Compatibility - Standard method instead of @property weight
+    @property
+    def weight(self) -> torch.Tensor:
+        return torch.matmul(self.U, self.V)
+
     def get_weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""
         return torch.matmul(self.U, self.V)
@@ -360,9 +364,9 @@ class A3Compressor(BaseCompressor):
             return None, 0.0, 0
 
         # Extract weights and orient as [out_features, in_features]
+        target_mod = getattr(module, 'base_layer', module)
         device = target_mod.weight.device
         dtype = target_mod.weight.dtype
-        target_mod = getattr(module, 'base_layer', module)
         raw_w = target_mod.weight.data.float()
         bias = getattr(module, "bias", None)
 
