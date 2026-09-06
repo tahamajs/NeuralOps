@@ -24,11 +24,29 @@ from framework.attentions.simple_ssm import SimpleSSM
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely retrieve attribute from dict, object, namespace, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    """Rotates half the hidden dimensions: [-x2, x1], safe for odd dimensions."""
+    d = x.shape[-1]
+    rotary_dim = 2 * (d // 2)
+    if rotary_dim == 0:
+        return x
+    x_rot = x[..., :rotary_dim]
+    half = rotary_dim // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if rotary_dim < d:
+        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -39,20 +57,40 @@ def apply_rotary_pos_emb(
     position_ids: Optional[torch.Tensor] = None,
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
-    rotary_dim = cos.shape[-1]
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
+
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
-    while cos.dim() < q_rot.dim():
-        cos = cos.unsqueeze(unsqueeze_dim)
-        sin = sin.unsqueeze(unsqueeze_dim)
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
 
-    q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
 
-    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
-    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q, k
 
 
@@ -156,26 +194,26 @@ class SAMBAM3Block(nn.Module):
             config = None
         if d_model is None:
             if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "d_model", 768))
+                d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", 768))
             else:
                 d_model = kwargs.get("hidden_size", 768)
         if n_heads is None:
-            n_heads = getattr(
+            n_heads = _cfg_get(
                 config,
                 "num_attention_heads",
-                getattr(config, "n_heads", kwargs.get("num_attention_heads", 12)),
+                _cfg_get(config, "n_heads", kwargs.get("num_attention_heads", 12)),
             )
-        window = getattr(config, "window_size", window)
+        window = _cfg_get(config, "window_size", window)
 
         self.d_model: int = int(d_model)
         self.n_heads: int = int(n_heads)
         self.head_dim: int = self.d_model // self.n_heads if self.n_heads > 0 else 64
         self.window: int = window
-        self.lora_rank: int = lora_rank
-        self.lora_alpha: float = lora_alpha
+        self.lora_rank: int = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        self.lora_alpha: float = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
         cfg_kv = (
-            getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+            _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
             if config is not None
             else None
         )
@@ -189,7 +227,7 @@ class SAMBAM3Block(nn.Module):
         if is_decoder is not None:
             self.is_decoder: bool = is_decoder
         elif config is not None:
-            self.is_decoder = bool(getattr(config, "is_decoder", False))
+            self.is_decoder = bool(_cfg_get(config, "is_decoder", False))
         else:
             self.is_decoder = False
 
@@ -229,10 +267,10 @@ class SAMBAM3Block(nn.Module):
         )
 
         self.mamba = SpectralMamba(self.d_model, config=config, is_decoder=self.is_decoder, **kwargs)
-        self.alpha = nn.Parameter(torch.tensor(0.5))
+        self.alpha = nn.Parameter(torch.tensor(1.0))
         self.norm = nn.LayerNorm(self.d_model)
         dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
+            _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -386,18 +424,17 @@ class SAMBAM3Block(nn.Module):
                     f"SAMBAM3Block: Failed to extract weights: {', '.join(missing)} from {type(pretrained_attn)}"
                 )
 
-            def _copy_layer(target_layer, w, b):
-                if w is None:
-                    return
-                if w.shape == target_layer.weight.shape:
-                    target_layer.weight.copy_(w.to(target_layer.weight.dtype))
-                elif w.t().shape == target_layer.weight.shape:
-                    target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
-                else:
-                    min_0 = min(target_layer.weight.shape[0], w.shape[0])
-                    min_1 = min(target_layer.weight.shape[1], w.shape[1])
-                    target_layer.weight.zero_()
-                    target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
+            def _copy_layer(target_layer, w, b, src_sub=None):
+                if w is not None:
+                    if w.shape == target_layer.weight.shape:
+                        target_layer.weight.copy_(w.to(target_layer.weight.dtype))
+                    elif w.t().shape == target_layer.weight.shape:
+                        target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+                    else:
+                        min_0 = min(target_layer.weight.shape[0], w.shape[0])
+                        min_1 = min(target_layer.weight.shape[1], w.shape[1])
+                        target_layer.weight.zero_()
+                        target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
                 if b is not None and target_layer.bias is not None:
                     if b.shape == target_layer.bias.shape:
                         target_layer.bias.copy_(b.to(target_layer.bias.dtype))
@@ -408,11 +445,33 @@ class SAMBAM3Block(nn.Module):
                 elif target_layer.bias is not None:
                     target_layer.bias.zero_()
 
-            _copy_layer(self.q_lin, w_q, b_q)
-            _copy_layer(self.k_lin, w_k, b_k)
-            _copy_layer(self.v_lin, w_v, b_v)
+                if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
+                    if src_sub.lora_A is not None and src_sub.lora_B is not None and target_layer.lora_A is not None and target_layer.lora_B is not None:
+                        src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
+                        src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
+                        if hasattr(src_lA, "data") and hasattr(src_lB, "data"):
+                            r_min = min(target_layer.lora_A.shape[0], src_lA.shape[0])
+                            in_min = min(target_layer.lora_A.shape[1], src_lA.shape[1])
+                            target_layer.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
+                            target_layer.lora_A.requires_grad = True
+
+                            out_min = min(target_layer.lora_B.shape[0], src_lB.shape[0])
+                            r_min_b = min(target_layer.lora_B.shape[1], src_lB.shape[1])
+                            target_layer.lora_B.data[:out_min, :r_min_b].copy_(src_lB.data[:out_min, :r_min_b])
+                            target_layer.lora_B.requires_grad = True
+                        if hasattr(src_sub, "lora_scaling"):
+                            target_layer.scaling = src_sub.lora_scaling
+
+            sub_q = getattr(src, "q_proj", getattr(src, "q_lin", getattr(src, "query", None)))
+            sub_k = getattr(src, "k_proj", getattr(src, "k_lin", getattr(src, "key", None)))
+            sub_v = getattr(src, "v_proj", getattr(src, "v_lin", getattr(src, "value", None)))
+            sub_o = getattr(src, "o_proj", getattr(src, "out_lin", getattr(src, "dense", getattr(src, "out_proj", None))))
+
+            _copy_layer(self.q_lin, w_q, b_q, sub_q)
+            _copy_layer(self.k_lin, w_k, b_k, sub_k)
+            _copy_layer(self.v_lin, w_v, b_v, sub_v)
             if w_o is not None:
-                _copy_layer(self.out_lin, w_o, b_o)
+                _copy_layer(self.out_lin, w_o, b_o, sub_o)
 
             f_norm_q = float(torch.linalg.norm(self.q_lin.weight))
             if f_norm_q < 1e-4:
@@ -507,9 +566,11 @@ class SAMBAM3Block(nn.Module):
         return (out, (probs if output_attentions else None))
 
 
+@ATTENTION_REGISTRY.register("samba_m3")
 @ATTENTION_REGISTRY.register("samba_m3_inject")
+@ATTENTION_REGISTRY.register("inject_samba_m3")
 def inject_samba_m3(
-    layer: nn.Module,
+    layer: Any,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -526,26 +587,37 @@ def inject_samba_m3(
                     src = getattr(layer, attr)
                     break
 
+        if src is None:
+            return None
+
+        if model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
+        if model_config is None and hasattr(src, "config"):
+            model_config = src.config
+
         d_model = 768
         n_heads = 12
         if src is not None:
             d_model = getattr(src, "hidden_size", getattr(src, "embed_dim", getattr(src, "all_head_size", 768)))
             if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
                 d_model = src.q_proj.in_features
+            elif hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features"):
+                d_model = src.q_lin.in_features
             n_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", 12))
-        elif model_config is None and hasattr(layer, "config"):
-            model_config = layer.config
+
         if model_config is not None:
-            d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", d_model))
-            n_heads = getattr(model_config, "num_attention_heads", n_heads)
-        elif hasattr(layer, "config"):
-            d_model = getattr(layer.config, "hidden_size", d_model)
-            n_heads = getattr(layer.config, "num_attention_heads", n_heads)
+            d_model = _cfg_get(model_config, "hidden_size", _cfg_get(model_config, "dim", d_model))
+            n_heads = _cfg_get(model_config, "num_attention_heads", n_heads)
+
+        lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
+        lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 32.0))
 
         new_block = SAMBAM3Block(
             config=model_config,
             d_model=d_model,
             n_heads=n_heads,
+            lora_rank=lora_rank,
+            lora_alpha=lora_alpha,
             pretrained_attn=src,
             **kwargs,
         )
@@ -555,6 +627,7 @@ def inject_samba_m3(
                 setattr(layer, attr, new_block)
                 return new_block
 
+        layer.attention = new_block
         return new_block
     except Exception as e:
         logger.error("inject_samba_m3 failed at layer %d: %s", layer_idx, e)
