@@ -161,13 +161,17 @@ class KDAAttention(BaseAttention):
         super().__init__(config, rank)
 
         if d_model is None:
-            d_model = kwargs.get("d_model") or kwargs.get("hidden_size")
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
             if d_model is None:
                 if config is not None:
                     d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
                 elif source_attn is not None:
-                    out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                    d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                    out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", getattr(source_attn, "out_proj", None)))))
+                    if out_layer is not None:
+                        d_model = getattr(out_layer, "out_features", getattr(out_layer, "in_features", 768))
+                    else:
+                        q_l = getattr(source_attn, "q_proj", getattr(source_attn, "query", getattr(source_attn, "q_lin", None)))
+                        d_model = getattr(q_l, "in_features", getattr(q_l, "out_features", 768)) if q_l is not None else 768
                 else:
                     d_model = 768
 
@@ -375,7 +379,7 @@ class KDAAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                w_norm = float(torch.norm(target_mod.weight.data).item())
+                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"KDAAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
