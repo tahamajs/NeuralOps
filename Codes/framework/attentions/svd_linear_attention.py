@@ -80,9 +80,13 @@ def apply_rotary_pos_emb(
     cos_safe = cos[..., :safe_rotary_dim]
     sin_safe = sin[..., :safe_rotary_dim]
 
-    while cos_safe.dim() < q_rot.dim():
-        cos_safe = cos_safe.unsqueeze(unsqueeze_dim)
-        sin_safe = sin_safe.unsqueeze(unsqueeze_dim)
+    if cos_safe.dim() == 2 and cos_safe.shape[0] == q_rot.shape[-2]:
+        cos_safe = cos_safe.unsqueeze(0).unsqueeze(1)
+        sin_safe = sin_safe.unsqueeze(0).unsqueeze(1)
+    else:
+        while cos_safe.dim() < q_rot.dim():
+            cos_safe = cos_safe.unsqueeze(unsqueeze_dim)
+            sin_safe = sin_safe.unsqueeze(unsqueeze_dim)
 
     q_rot = (q_rot * cos_safe) + (_rotate_half(q_rot) * sin_safe)
     k_rot = (k_rot * cos_safe) + (_rotate_half(k_rot) * sin_safe)
