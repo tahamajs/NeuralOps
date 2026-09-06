@@ -409,13 +409,19 @@ class FullAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("full_attention_inject")
 def inject_full_attention(
     layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Optional[nn.Module],
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[FullAttention]:
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
     try:
         new_attn = FullAttention(
             config=model_config,

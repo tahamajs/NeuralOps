@@ -470,13 +470,19 @@ class MLAAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("mla_inject")
 def inject_mla(
     layer: Any,
-    model_config: Any,
+    model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Any = None,
     **kwargs: Any,
 ) -> MLAAttention:
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
     r"""Dynamic bridge injecting MLAAttention into a transformer layer."""
     rank = getattr(comp_config, "mla_rank", 128) if comp_config is not None else 128
     new_attn = MLAAttention(model_config, rank=rank)
