@@ -191,18 +191,21 @@ class FlashAttention3FP8(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if config is not None:
-            d_model = getattr(config, "hidden_size", d_model)
-            n_heads = getattr(config, "num_attention_heads", n_heads)
+            d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", d_model)))
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", n_heads))
         elif source_attn is not None:
             out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
             d_model = getattr(out_layer, "out_features", d_model) if out_layer is not None else d_model
             n_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", n_heads)))
+        else:
+            d_model = kwargs.get("hidden_size", kwargs.get("d_model", d_model))
+            n_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", n_heads))
 
         super().__init__(config, rank)
         self.num_heads: int = int(n_heads)
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
+        self.num_kv_heads: int = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads)) if config is not None else self.num_heads))
         hidden_size: int = int(d_model)
-        self.head_dim: int = getattr(config, "head_dim", None) or (hidden_size // max(1, self.num_heads))
+        self.head_dim: int = kwargs.get("head_dim", getattr(config, "head_dim", None) or (hidden_size // max(1, self.num_heads)))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
