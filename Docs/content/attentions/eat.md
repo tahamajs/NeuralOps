@@ -13,7 +13,15 @@
 - **Architectural Repair**: Refactored EAT directly into the attention module interface with `from_distilbert_pretrained` and zero-shot weight inheritance.
 
 ## 3. Empirical Performance
-- **SST-2 Accuracy**: **84.06%** (restored from 50.92%).\n
+- **DistilBERT SST-2 Accuracy**: **84.06%** (restored from 50.92%).
+
+### Standardized RoBERTa SST-2 Quality Sweep (200 Recovery Steps)
+
+| Architecture | Model Family | Baseline Acc | Final Acc | Delta | F1 Score | Status | Peak VRAM | Recovery Steps | Checkpoint Artifact Repo |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **RoBERTa-Base** | Encoder (`roberta`) | 88.76% | **90.60%** | **+1.84%** | **0.9113** | **`PASS`** | 400.0 MB | 200 | [`Hooshaai/svd-linear-attention-roberta-eat`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-eat) |
+
+The module successfully passed the statistical quality gate ($\ge 56.00\%$) with a $+1.84\%$ accuracy improvement over the baseline. Model weights, metrics, and documentation were packaged and uploaded to Hugging Face Hub.
 
 ---
 
