@@ -201,21 +201,23 @@ class SVDProjectionAttention(BaseAttention):
         super().__init__(config, rank)
 
         # 1. Dimensions & Architecture
-        self.hidden_size: int = getattr(
-            config, "hidden_size", kwargs.get("hidden_size", 768)
+        self.hidden_size: int = kwargs.get(
+            "hidden_size",
+            _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)))
         )
-        self.num_heads: int = getattr(
-            config,
-            "num_attention_heads",
-            getattr(config, "num_heads", kwargs.get("num_attention_heads", 12)),
+        self.num_heads: int = kwargs.get(
+            "num_heads",
+            kwargs.get(
+                "num_attention_heads",
+                _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_heads", 12)))
+            )
         )
-        self.head_dim: int = getattr(
-            config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads)
+        self.head_dim: int = kwargs.get(
+            "head_dim",
+            _cfg_get(config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
         )
 
-        cfg_kv = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -233,19 +235,21 @@ class SVDProjectionAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
         else:
             self.is_decoder = (
-                getattr(config, "is_decoder", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                bool(_cfg_get(config, "is_decoder", False))
+                or _cfg_get(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
+                or bool(kwargs.get("is_causal", False))
             )
 
         self.is_nested_encoder: bool = False
+        comp_config = _cfg_get(config, "compression_config", kwargs.get("comp_config", None))
         self.rank: int = (
             rank
             if rank is not None
-            else getattr(config, "svd_rank", getattr(config, "rank", 32))
+            else _cfg_get(comp_config, "rank", _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 32)))
         )
-        self.lora_rank = lora_rank if lora_rank is not None else 16
-        self.lora_alpha = lora_alpha
+        self.lora_rank = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", lora_rank if lora_rank is not None else 16))
+        self.lora_alpha = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha))
 
         # 3. Factorized SVD linear projections
         self.q_proj = SVDProjectionLinear(
@@ -285,15 +289,23 @@ class SVDProjectionAttention(BaseAttention):
             freeze_base=True,
         )
 
-        dropout_p = getattr(
+        self.query = self.q_proj
+        self.key = self.k_proj
+        self.value = self.v_proj
+        self.q_lin = self.q_proj
+        self.k_lin = self.k_proj
+        self.v_lin = self.v_proj
+        self.out_lin = self.out_proj
+
+        dropout_p = _cfg_get(
             config,
             "dropout",
-            getattr(
+            _cfg_get(
                 config,
                 "hidden_dropout_prob",
-                getattr(config, "attention_probs_dropout_prob", dropout),
+                _cfg_get(config, "attention_probs_dropout_prob", dropout),
             ),
-        ) if config else dropout
+        )
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         # 4. Copy weights if old_attn passed
@@ -350,70 +362,46 @@ class SVDProjectionAttention(BaseAttention):
 
             # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
-                c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-                    c_attn_w = c_attn_w.t()
+                c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
+                if c_attn_w is not None:
+                    split_size = c_attn_w.size(0) // 3
+                    w_q = c_attn_w[:split_size, :]
+                    w_k = c_attn_w[split_size : 2 * split_size, :]
+                    w_v = c_attn_w[2 * split_size :, :]
+                    if c_attn_b is not None:
+                        b_q = c_attn_b[:split_size]
+                        b_k = c_attn_b[split_size : 2 * split_size]
+                        b_v = c_attn_b[2 * split_size :]
 
-                q_dim = self.q_head_size
-                k_dim = self.hidden_size
-                v_dim = self.hidden_size
-
-                w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
-                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
-
-                if c_attn_b is not None:
-                    b_q = c_attn_b[:q_dim]
-                    b_k = c_attn_b[q_dim : q_dim + k_dim]
-                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
-
-                out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
-                    out_w = out_w.t()
-                w_o = out_w
-                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
+                w_o, b_o = _unpack_weight_bias(src.c_proj)
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
-                w_q = src.query.weight.detach()
-                b_q = src.query.bias.detach() if src.query.bias is not None else None
-                w_k = src.key.weight.detach()
-                b_k = src.key.bias.detach() if src.key.bias is not None else None
-                w_v = src.value.weight.detach()
-                b_v = src.value.bias.detach() if src.value.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.query)
+                w_k, b_k = _unpack_weight_bias(src.key)
+                w_v, b_v = _unpack_weight_bias(src.value)
 
                 if w_o is None:
                     for attr in ("dense", "out_proj", "o_proj"):
                         if hasattr(src, attr):
-                            proj = getattr(src, attr)
-                            w_o = proj.weight.detach()
-                            b_o = proj.bias.detach() if proj.bias is not None else None
+                            w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
-                w_q = src.q_proj.weight.detach()
-                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
-                w_k = src.k_proj.weight.detach()
-                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
-                w_v = src.v_proj.weight.detach()
-                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.q_proj)
+                w_k, b_k = _unpack_weight_bias(src.k_proj)
+                w_v, b_v = _unpack_weight_bias(src.v_proj)
                 if hasattr(src, "o_proj"):
-                    w_o = src.o_proj.weight.detach()
-                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                    w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
-                w_q = src.q_lin.weight.detach()
-                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
-                w_k = src.k_lin.weight.detach()
-                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
-                w_v = src.v_lin.weight.detach()
-                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.q_lin)
+                w_k, b_k = _unpack_weight_bias(src.k_lin)
+                w_v, b_v = _unpack_weight_bias(src.v_lin)
                 if hasattr(src, "out_lin"):
-                    w_o = src.out_lin.weight.detach()
-                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                    w_o, b_o = _unpack_weight_bias(src.out_lin)
 
             # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
