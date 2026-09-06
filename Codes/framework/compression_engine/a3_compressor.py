@@ -672,6 +672,11 @@ def a3_compressor_factory(
         fallback = kwargs.get("fallback_to_original", True)
         norm_scale = kwargs.get("normalize_scale", True)
 
+    # Pop keys that were already extracted to avoid "multiple values for argument" errors
+    for _key in ("rank", "use_fisher", "recalibrate_ln", "target_attention_only",
+                 "max_error", "fallback_to_original", "normalize_scale"):
+        kwargs.pop(_key, None)
+
     compressor = A3Compressor(
         model,
         rank=max(1, int(r)),
