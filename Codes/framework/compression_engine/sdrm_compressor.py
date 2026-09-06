@@ -23,6 +23,14 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register('sdrm')
 class SDRMCompressor(BaseCompressor):
     """
@@ -36,7 +44,8 @@ class SDRMCompressor(BaseCompressor):
         model: nn.Module,
         total_param_ratio: float = 0.7,
         min_rank: int = 8,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
+        target_attention_only: bool = False,
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -51,16 +60,17 @@ class SDRMCompressor(BaseCompressor):
         super().__init__(model, name='sdrm', **kwargs)
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
-        self.total_param_ratio = max(0.05, min(float(total_param_ratio or getattr(cfg_obj, 'total_param_ratio', getattr(cfg_obj, 'ratio', 0.7))), 1.0))
-        self.min_rank = max(1, int(min_rank or getattr(cfg_obj, 'min_rank', 8)))
-        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else getattr(cfg_obj, 'skip_attention_qkv', True))
-        self.use_lora = bool(use_lora or getattr(cfg_obj, 'use_lora', False) or (lora_r > 0))
-        self.lora_r = int(lora_r or getattr(cfg_obj, 'lora_r', 0))
-        self.lora_alpha = float(lora_alpha or getattr(cfg_obj, 'lora_alpha', 1.0))
+        self.total_param_ratio = max(0.05, min(float(total_param_ratio or _cfg_get(cfg_obj, 'total_param_ratio', _cfg_get(cfg_obj, 'ratio', 0.7))), 1.0))
+        self.min_rank = max(1, int(min_rank or _cfg_get(cfg_obj, 'min_rank', 8)))
+        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, 'skip_attention_qkv', False))
+        self.target_attention_only = bool(target_attention_only if target_attention_only is not None else _cfg_get(cfg_obj, 'target_attention_only', False))
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, 'use_lora', False) or (lora_r > 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, 'lora_r', 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, 'lora_alpha', 1.0))
         self.target_modules = target_modules
-        self.max_error = float(max_error or getattr(cfg_obj, 'max_error', 0.50))
-        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else getattr(cfg_obj, 'fallback_to_original', True))
-        self.min_numel = max(1, int(min_numel or getattr(cfg_obj, 'min_numel', 16)))
+        self.max_error = float(max_error or _cfg_get(cfg_obj, 'max_error', 0.50))
+        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else _cfg_get(cfg_obj, 'fallback_to_original', True))
+        self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, 'min_numel', 16)))
 
         # Target device derivation
         if device is not None:
@@ -105,20 +115,27 @@ class SDRMCompressor(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
+        # Target attention only filter
+        if self.target_attention_only:
+            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
         # 2. GQA-aware skipping
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
         # 3. Check linear or Conv1D nature
-        cls_name = module.__class__.__name__
-        raw_w = getattr(module, 'weight', None)
+        base_mod = getattr(module, 'base_layer', module)
+        cls_name = base_mod.__class__.__name__
+        raw_w = getattr(base_mod, 'weight', None)
         if raw_w is None or not isinstance(raw_w, torch.Tensor):
             return False
 
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
-        is_linear_like = isinstance(module, nn.Linear) or is_conv1d
-        if not is_linear_like or isinstance(module, SVDLinear):
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
+        is_linear_like = isinstance(base_mod, nn.Linear) or is_conv1d
+        if not is_linear_like or isinstance(base_mod, SVDLinear):
             return False
 
         # 4. Tiny layer guard
@@ -142,17 +159,18 @@ class SDRMCompressor(BaseCompressor):
         rank: int,
     ) -> Optional[SVDLinear]:
         """Decompose a single linear or Conv1D layer into SVDLinear in FP32 with validation."""
-        raw_w = layer.weight.data
-        cls_name = layer.__class__.__name__
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(layer, 'nf')
+        base_layer = getattr(layer, 'base_layer', layer)
+        raw_w = base_layer.weight.data
+        cls_name = base_layer.__class__.__name__
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_layer, 'nf')
 
         if is_conv1d:
             W = raw_w.t().contiguous().float()
             out_f, in_f = W.shape
         else:
             W = raw_w.contiguous().float()
-            out_f = getattr(layer, 'out_features', W.shape[0])
-            in_f = getattr(layer, 'in_features', W.shape[1])
+            out_f = getattr(base_layer, 'out_features', W.shape[0])
+            in_f = getattr(base_layer, 'in_features', W.shape[1])
 
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
@@ -161,8 +179,8 @@ class SDRMCompressor(BaseCompressor):
             logger.debug('SDRM: rank %d >= max_r %d; skipping layer for no parameter reduction', r, max_r)
             return None
 
-        device = layer.weight.device
-        dtype = layer.weight.dtype
+        device = base_layer.weight.device
+        dtype = base_layer.weight.dtype
 
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -174,19 +192,34 @@ class SDRMCompressor(BaseCompressor):
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
 
+        has_existing_lora = hasattr(layer, 'lora_A') and hasattr(layer, 'lora_B')
+        effective_lora_r = self.lora_r
+        if has_existing_lora and getattr(layer, 'r', 0) > 0:
+            effective_lora_r = getattr(layer, 'r', self.lora_r)
+
         svd_layer = SVDLinear(
             in_features=in_f,
             out_features=out_f,
             rank=r,
-            bias=layer.bias is not None,
+            bias=base_layer.bias is not None,
             dtype=dtype,
             device=device,
-            lora_r=self.lora_r if self.use_lora else 0,
+            lora_r=effective_lora_r if (self.use_lora or has_existing_lora) else 0,
             lora_alpha=self.lora_alpha,
         )
         svd_layer.set_low_rank_factors(U_r, V_r)
-        if layer.bias is not None:
-            svd_layer.bias.data.copy_(layer.bias.data)
+        if base_layer.bias is not None:
+            svd_layer.bias.data.copy_(base_layer.bias.data)
+
+        # Preserve existing LoRA adapters
+        if has_existing_lora and svd_layer.use_lora:
+            try:
+                if hasattr(layer.lora_A, 'weight'):
+                    svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+                if hasattr(layer.lora_B, 'weight'):
+                    svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+            except Exception as e_lora:
+                logger.warning('Could not copy existing LoRA adapters in SDRM: %s', e_lora)
 
         # Frobenius reconstruction error check
         W_rec = torch.matmul(U_r.float(), V_r.float())
@@ -237,9 +270,10 @@ class SDRMCompressor(BaseCompressor):
             self.visited_modules.add(mod_id)
 
             try:
-                raw_w = module.weight.data
-                cls_name = module.__class__.__name__
-                is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
+                base_m = getattr(module, 'base_layer', module)
+                raw_w = base_m.weight.data
+                cls_name = base_m.__class__.__name__
+                is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_m, 'nf')
                 out_f = raw_w.shape[1] if is_conv1d else raw_w.shape[0]
                 in_f = raw_w.shape[0] if is_conv1d else raw_w.shape[1]
 
@@ -256,9 +290,13 @@ class SDRMCompressor(BaseCompressor):
                     self.compressed_layers.append(name)
                 else:
                     self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
             except Exception as e_comp:
                 logger.warning('Failed to compress %s: %s', name, e_comp)
                 self.failed_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -290,6 +328,7 @@ class SDRMCompressor(BaseCompressor):
             'forward_check_success': forward_check_success,
             'min_rank': self.min_rank,
             'skip_attention_qkv': self.skip_attention_qkv,
+            'target_attention_only': self.target_attention_only,
             'use_lora': self.use_lora,
             'lora_r': self.lora_r,
             'method': 'sdrm',
@@ -310,21 +349,23 @@ def sdrm_compressor_factory(
     """SDRM compressor factory returning (compressed_model, stats) when requested."""
     total_param_ratio = kwargs.pop(
         'total_param_ratio',
-        kwargs.pop('ratio', getattr(comp_config, 'total_param_ratio', 0.7) if comp_config is not None else 0.7),
+        kwargs.pop('ratio', _cfg_get(comp_config, 'total_param_ratio', _cfg_get(comp_config, 'ratio', 0.7))),
     )
-    min_rank = kwargs.pop('min_rank', getattr(comp_config, 'min_rank', 8) if comp_config is not None else 8)
-    skip_attention_qkv = kwargs.pop('skip_attention_qkv', getattr(comp_config, 'skip_attention_qkv', True) if comp_config else True)
-    use_lora = kwargs.pop('use_lora', getattr(comp_config, 'use_lora', False) if comp_config else False)
-    lora_r = kwargs.pop('lora_r', getattr(comp_config, 'lora_r', 0) if comp_config else 0)
-    lora_alpha = kwargs.pop('lora_alpha', getattr(comp_config, 'lora_alpha', 1.0) if comp_config else 1.0)
-    max_error = kwargs.pop('max_error', getattr(comp_config, 'max_error', 0.50) if comp_config else 0.50)
-    fallback = kwargs.pop('fallback_to_original', getattr(comp_config, 'fallback_to_original', True) if comp_config else True)
+    min_rank = kwargs.pop('min_rank', _cfg_get(comp_config, 'min_rank', 8))
+    skip_attention_qkv = kwargs.pop('skip_attention_qkv', _cfg_get(comp_config, 'skip_attention_qkv', False))
+    target_attention_only = kwargs.pop('target_attention_only', _cfg_get(comp_config, 'target_attention_only', False))
+    use_lora = kwargs.pop('use_lora', _cfg_get(comp_config, 'use_lora', False))
+    lora_r = kwargs.pop('lora_r', _cfg_get(comp_config, 'lora_r', 0))
+    lora_alpha = kwargs.pop('lora_alpha', _cfg_get(comp_config, 'lora_alpha', 1.0))
+    max_error = kwargs.pop('max_error', _cfg_get(comp_config, 'max_error', 0.50))
+    fallback = kwargs.pop('fallback_to_original', _cfg_get(comp_config, 'fallback_to_original', True))
 
     compressor = SDRMCompressor(
         model,
         total_param_ratio=total_param_ratio,
         min_rank=min_rank,
         skip_attention_qkv=skip_attention_qkv,
+        target_attention_only=target_attention_only,
         use_lora=use_lora,
         lora_r=lora_r,
         lora_alpha=lora_alpha,

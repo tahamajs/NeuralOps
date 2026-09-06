@@ -38,6 +38,15 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Helper to safely retrieve a configuration value from dict, object, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 class AstroQuantizer:
     """
     Astro Non-Uniform Quantization Codebook mapping supporting 2, 4, and 8 bits.
@@ -137,6 +146,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
         target_modules: Optional[List[str]] = None,
+        target_attention_only: bool = False,
         **kwargs: Any,
     ) -> None:
         kwargs.pop("max_error", None)
@@ -147,12 +157,13 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         target_model = model if model is not None else nn.Identity()
         super().__init__(target_model, name="rotational_slicegpt_int4", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            r_ratio = getattr(cfg, "rotational_slicegpt_r_ratio", getattr(cfg, "r_ratio", r_ratio))
-            lambda_reg = getattr(cfg, "lambda_reg", lambda_reg)
-            quant_bits = getattr(cfg, "quant_bits", quant_bits)
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+
+        r_ratio = _cfg_get(cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio))
+        lambda_reg = _cfg_get(cfg, "lambda_reg", lambda_reg)
+        quant_bits = _cfg_get(cfg, "quant_bits", quant_bits)
+        max_error = _cfg_get(cfg, "max_error", max_error)
+        fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+        target_attention_only = bool(target_attention_only or _cfg_get(cfg, "target_attention_only", False))
 
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
@@ -165,6 +176,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_modules = target_modules
+        self.target_attention_only = target_attention_only
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -178,10 +190,20 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         self.stats: Dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        """Fix 5: Unified critical-layer protection delegated solely to should_compress_linear."""
-        cls_name = module.__class__.__name__.lower()
-        # Fix 3: Reliable Conv1D check using class name and hasattr(nf)
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        """Critical-layer protection, target_attention_only check, and linear-like validation."""
+        name_l = name.lower()
+        if any(k in name_l for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+            return False
+
+        if self.target_attention_only:
+            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value", "dense"]
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, "base_layer", module)
+        cls_name = base_mod.__class__.__name__.lower()
+        # Conv1D check using class name and hasattr(nf)
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if isinstance(module, RotationalSliceGPTINT4Linear):
@@ -282,10 +304,11 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             if not self._is_target_module(name, module):
                 continue
 
-            raw_w = module.weight.data
-            cls_name = module.__class__.__name__.lower()
+            base_mod = getattr(module, "base_layer", module)
+            raw_w = base_mod.weight.data
+            cls_name = base_mod.__class__.__name__.lower()
             # Fix 3: Conv1D detection by class name and nf attribute
-            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+            is_conv1d = "conv1d" in cls_name or hasattr(base_mod, "nf")
             device = raw_w.device
             dtype = raw_w.dtype
 
@@ -321,13 +344,26 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                     ". Keeping original layer." if self.fallback_to_original else ". Proceeding with compressed weight.",
                 )
                 if self.fallback_to_original:
+                    for p in module.parameters():
+                        p.requires_grad = False
                     continue
 
             # Reconstruct full coordinate representation in-place
             W_recon = torch.matmul(W_quant, torch.matmul(P_r.T, Q.T))
             final_w = W_recon.t() if is_conv1d else W_recon
-            module.weight.data = final_w.to(dtype=dtype, device=device)
+            base_mod.weight.data = final_w.to(dtype=dtype, device=device)
             compressed_layers_count += 1
+
+        # Forward sanity check
+        forward_check_success = True
+        try:
+            device = next(self.model.parameters()).device
+            with torch.no_grad():
+                dummy_input = torch.randint(0, 100, (1, 8), device=device)
+                self.model(dummy_input)
+        except Exception as ex_sanity:
+            logger.warning("RotationalSliceGPT post-compression forward sanity check warning: %s", ex_sanity)
+            forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
@@ -341,6 +377,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             "fallback_to_original": self.fallback_to_original,
             "layer_errors": self.layer_errors,
             "layer_shapes": layer_shapes,
+            "target_attention_only": self.target_attention_only,
+            "forward_check_success": forward_check_success,
             "method": "rotational_slicegpt_int4",
         })
         self.stats = stats
@@ -426,13 +464,20 @@ RotationalSliceGPTCompressor = RotationalSliceGPTINT4Compressor
 
 @COMPRESSOR_REGISTRY.register("rotational_slicegpt_int4_factory")
 @COMPRESSOR_REGISTRY.register("rotational_slicegpt_factory")
-def rotational_slicegpt_int4_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
+def rotational_slicegpt_int4_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -> Any:
     """Factory function for Rotational-SliceGPT-INT4 compressor."""
-    r_ratio = kwargs.pop("r_ratio", getattr(comp_config, "rotational_slicegpt_r_ratio", getattr(comp_config, "r_ratio", 0.75)) if comp_config else 0.75)
-    lambda_reg = kwargs.pop("lambda_reg", getattr(comp_config, "lambda_reg", 1e-2) if comp_config else 1e-2)
-    quant_bits = kwargs.pop("quant_bits", getattr(comp_config, "quant_bits", 4) if comp_config else 4)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config else 0.20)
-    fallback_to_original = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
+    r_ratio = kwargs.pop("r_ratio", _cfg_get(comp_config, "rotational_slicegpt_r_ratio", _cfg_get(comp_config, "r_ratio", 0.75)))
+    lambda_reg = kwargs.pop("lambda_reg", _cfg_get(comp_config, "lambda_reg", 1e-2))
+    quant_bits = kwargs.pop("quant_bits", _cfg_get(comp_config, "quant_bits", 4))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
+    fallback_to_original = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
 
     compressor = RotationalSliceGPTINT4Compressor(
         model,
@@ -441,10 +486,13 @@ def rotational_slicegpt_int4_factory(model: Any, comp_config: Any = None, **kwar
         quant_bits=quant_bits,
         max_error=max_error,
         fallback_to_original=fallback_to_original,
+        target_attention_only=target_attention_only,
         comp_config=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop("return_both", False):
+        return compressed_model, stats
     return compressed_model
 
 

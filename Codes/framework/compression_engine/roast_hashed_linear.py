@@ -22,6 +22,15 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Helper to safely retrieve a configuration value from dict, object, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 class ROASTLinear(nn.Module):
     """
     Linear layer with weight sharing based on tiles (blocks) rather than
@@ -114,10 +123,11 @@ class ROASTLinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> ROASTLinear:
-        """Initialize from a pretrained nn.Linear or Conv1D."""
-        raw_w = linear.weight.data
-        cls_name = linear.__class__.__name__
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(linear, 'nf')
+        """Initialize from a pretrained nn.Linear, Conv1D, or LoRALinear base_layer."""
+        base_mod = getattr(linear, "base_layer", linear)
+        raw_w = base_mod.weight.data
+        cls_name = base_mod.__class__.__name__
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
 
         if is_conv1d:
             W = raw_w.t().contiguous().float()
@@ -126,7 +136,7 @@ class ROASTLinear(nn.Module):
             W = raw_w.contiguous().float()
             out_f, in_f = W.shape
 
-        bias = getattr(linear, 'bias', None) is not None
+        bias = getattr(base_mod, 'bias', None) is not None
         roast = cls(
             in_features=in_f,
             out_features=out_f,
@@ -138,8 +148,18 @@ class ROASTLinear(nn.Module):
             device=raw_w.device,
             dtype=raw_w.dtype,
         )
-        if bias and linear.bias is not None:
-            roast.bias.data.copy_(linear.bias.data)
+        if bias and base_mod.bias is not None:
+            roast.bias.data.copy_(base_mod.bias.data)
+
+        # Preserve existing source LoRA weights if present
+        if hasattr(linear, "lora_A") and hasattr(linear, "lora_B") and linear.lora_A is not None and linear.lora_B is not None:
+            src_A = getattr(linear.lora_A, "weight", linear.lora_A)
+            src_B = getattr(linear.lora_B, "weight", linear.lora_B)
+            if roast.lora_A is not None and roast.lora_B is not None:
+                if src_A.shape == roast.lora_A.shape:
+                    roast.lora_A.data.copy_(src_A.data)
+                if src_B.shape == roast.lora_B.shape:
+                    roast.lora_B.data.copy_(src_B.data)
 
         ts = max(1, tile_size)
         tiles_out = (out_f + ts - 1) // ts
@@ -176,6 +196,7 @@ class ROASTCompressor(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         target_modules: Optional[List[str]] = None,
+        target_attention_only: bool = False,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         min_numel: int = 16,
@@ -186,16 +207,17 @@ class ROASTCompressor(BaseCompressor):
         super().__init__(model, name='roast', **kwargs)
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
-        self.n_buckets = max(1, int(n_buckets or getattr(cfg_obj, 'n_buckets', 1024)))
-        self.tile_size = max(1, int(tile_size or getattr(cfg_obj, 'tile_size', 32)))
-        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else getattr(cfg_obj, 'skip_attention_qkv', True))
-        self.use_lora = bool(use_lora or getattr(cfg_obj, 'use_lora', False) or (lora_r > 0))
-        self.lora_r = int(lora_r or getattr(cfg_obj, 'lora_r', 0))
-        self.lora_alpha = float(lora_alpha or getattr(cfg_obj, 'lora_alpha', 1.0))
+        self.n_buckets = max(1, int(n_buckets if n_buckets is not None else _cfg_get(cfg_obj, 'n_buckets', 1024)))
+        self.tile_size = max(1, int(tile_size if tile_size is not None else _cfg_get(cfg_obj, 'tile_size', 32)))
+        self.target_attention_only = bool(target_attention_only or _cfg_get(cfg_obj, 'target_attention_only', kwargs.get('target_attention_only', False)))
+        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, 'skip_attention_qkv', True)) and not self.target_attention_only
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, 'use_lora', False) or (lora_r > 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, 'lora_r', 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, 'lora_alpha', 1.0))
         self.target_modules = target_modules
-        self.max_error = float(max_error or getattr(cfg_obj, 'max_error', 0.50))
-        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else getattr(cfg_obj, 'fallback_to_original', True))
-        self.min_numel = max(1, int(min_numel or getattr(cfg_obj, 'min_numel', 16)))
+        self.max_error = float(max_error if max_error is not None else _cfg_get(cfg_obj, 'max_error', 0.50))
+        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else _cfg_get(cfg_obj, 'fallback_to_original', True))
+        self.min_numel = max(1, int(min_numel if min_numel is not None else _cfg_get(cfg_obj, 'min_numel', 16)))
 
         # Target device derivation
         if device is not None:
@@ -217,6 +239,8 @@ class ROASTCompressor(BaseCompressor):
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
+        if self.target_attention_only:
+            return False
         cfg = getattr(self.model, 'config', None)
         num_heads = getattr(cfg, 'num_attention_heads', None)
         num_kv_heads = getattr(cfg, 'num_key_value_heads', None)
@@ -238,17 +262,24 @@ class ROASTCompressor(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
+        if self.target_attention_only:
+            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value", "dense"]
+            if not any(k in name_l for k in attn_keywords):
+                self.skipped_layers.append(name)
+                return False
+
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
-        cls_name = module.__class__.__name__
-        raw_w = getattr(module, 'weight', None)
+        base_mod = getattr(module, "base_layer", module)
+        cls_name = base_mod.__class__.__name__
+        raw_w = getattr(base_mod, 'weight', None)
         if raw_w is None or not isinstance(raw_w, torch.Tensor):
             return False
 
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
-        is_linear_like = isinstance(module, nn.Linear) or is_conv1d
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
+        is_linear_like = isinstance(base_mod, nn.Linear) or is_conv1d
         if not is_linear_like or isinstance(module, ROASTLinear):
             return False
 
@@ -284,9 +315,10 @@ class ROASTCompressor(BaseCompressor):
                 self.visited_modules.add(mod_id)
 
                 try:
-                    raw_w = module.weight.data
-                    cls_name = module.__class__.__name__
-                    is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
+                    base_mod = getattr(module, "base_layer", module)
+                    raw_w = base_mod.weight.data
+                    cls_name = base_mod.__class__.__name__
+                    is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
                     W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
 
                     new_layer = ROASTLinear.from_linear(
@@ -311,6 +343,8 @@ class ROASTCompressor(BaseCompressor):
 
                     if is_invalid and self.fallback_to_original:
                         self.fallback_layers.append(name)
+                        for p in module.parameters():
+                            p.requires_grad = False
                         continue
 
                     replace_module(self.model, name, new_layer)
@@ -319,6 +353,8 @@ class ROASTCompressor(BaseCompressor):
                 except Exception as e_roast:
                     logger.warning('ROAST: Failed to process %s: %s', name, e_roast)
                     self.failed_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -347,6 +383,7 @@ class ROASTCompressor(BaseCompressor):
             'layer_errors': self.layer_errors,
             'avg_reconstruction_error': avg_err,
             'forward_check_success': forward_check_success,
+            'target_attention_only': self.target_attention_only,
             'n_buckets': self.n_buckets,
             'tile_size': self.tile_size,
             'skip_attention_qkv': self.skip_attention_qkv,
@@ -368,19 +405,21 @@ def roast_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """ROAST compressor factory function returning (compressed_model, stats) when requested."""
-    n_buckets = kwargs.pop('n_buckets', getattr(comp_config, 'n_buckets', 1024) if comp_config else 1024)
-    tile_size = kwargs.pop('tile_size', getattr(comp_config, 'tile_size', 32) if comp_config else 32)
-    skip_attention_qkv = kwargs.pop('skip_attention_qkv', getattr(comp_config, 'skip_attention_qkv', True) if comp_config else True)
-    use_lora = kwargs.pop('use_lora', getattr(comp_config, 'use_lora', False) if comp_config else False)
-    lora_r = kwargs.pop('lora_r', getattr(comp_config, 'lora_r', 0) if comp_config else 0)
-    lora_alpha = kwargs.pop('lora_alpha', getattr(comp_config, 'lora_alpha', 1.0) if comp_config else 1.0)
-    max_error = kwargs.pop('max_error', getattr(comp_config, 'max_error', 0.50) if comp_config else 0.50)
-    fallback = kwargs.pop('fallback_to_original', getattr(comp_config, 'fallback_to_original', True) if comp_config else True)
+    n_buckets = kwargs.pop('n_buckets', _cfg_get(comp_config, 'n_buckets', 1024))
+    tile_size = kwargs.pop('tile_size', _cfg_get(comp_config, 'tile_size', 32))
+    target_attention_only = kwargs.pop('target_attention_only', _cfg_get(comp_config, 'target_attention_only', False))
+    skip_attention_qkv = kwargs.pop('skip_attention_qkv', _cfg_get(comp_config, 'skip_attention_qkv', True))
+    use_lora = kwargs.pop('use_lora', _cfg_get(comp_config, 'use_lora', False))
+    lora_r = kwargs.pop('lora_r', _cfg_get(comp_config, 'lora_r', 0))
+    lora_alpha = kwargs.pop('lora_alpha', _cfg_get(comp_config, 'lora_alpha', 1.0))
+    max_error = kwargs.pop('max_error', _cfg_get(comp_config, 'max_error', 0.50))
+    fallback = kwargs.pop('fallback_to_original', _cfg_get(comp_config, 'fallback_to_original', True))
 
     compressor = ROASTCompressor(
         model,
         n_buckets=n_buckets,
         tile_size=tile_size,
+        target_attention_only=target_attention_only,
         skip_attention_qkv=skip_attention_qkv,
         use_lora=use_lora,
         lora_r=lora_r,
