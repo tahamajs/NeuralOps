@@ -33,6 +33,20 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {
+    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+}
+
+
 class _LinearizedGELU(nn.Module):
     """Linear approximation of GELU / SiLU: f(x) ≈ alpha * x."""
 
@@ -105,32 +119,32 @@ class _LinearizedAttentionWrapper(nn.Module):
             output = self.original_attn.out_lin(context)
             return _fmt(output)
 
-        # 3. GPT-2 style fused Conv1D attention
+        # 3. RoBERTa SelfAttention
+        elif hasattr(self.original_attn, "value") and hasattr(self.original_attn, "query"):
+            v = self.original_attn.value(x)
+            context = v.float().mean(dim=1, keepdim=True).expand_as(v).to(x.dtype)
+            return _fmt(context)
+
+        # 4. GPT-2 Attention (Conv1D)
         elif hasattr(self.original_attn, "c_attn") and hasattr(self.original_attn, "c_proj"):
             qkv = self.original_attn.c_attn(x)
-            q, k, v = torch.chunk(qkv, 3, dim=-1)
+            hidden_size = x.shape[-1]
+            if qkv.shape[-1] >= hidden_size * 3:
+                _, _, v = torch.split(qkv, hidden_size, dim=-1)
+            else:
+                v = qkv
             context = v.float().mean(dim=1, keepdim=True).expand_as(v).to(x.dtype)
             output = self.original_attn.c_proj(context)
             return _fmt(output)
 
-        # 4. BERT / RoBERTa BertSelfAttention
-        elif hasattr(self.original_attn, "query") and hasattr(self.original_attn, "value"):
-            v = self.original_attn.value(x)
-            context = v.float().mean(dim=1, keepdim=True).expand_as(v).to(x.dtype)
-            out_layer = getattr(self.original_attn, "dense", None)
-            output = out_layer(context) if out_layer is not None else context
-            return _fmt(output)
-
-        # 5. Generic fallback
-        else:
-            try:
-                m = mask if mask is not None else attention_mask
-                res = self.original_attn(x, attention_mask=m, **kwargs)
-                if isinstance(res, tuple):
-                    res = res[0]
-                return _fmt(res)
-            except Exception:
-                return _fmt(x)
+        # Fallback: pass through underlying attention layer
+        try:
+            res = self.original_attn(x, **kwargs)
+            if isinstance(res, (tuple, list)):
+                res = res[0]
+            return _fmt(res)
+        except Exception:
+            return _fmt(x)
 
 
 class LIFTRCompressor(BaseCompressor):
@@ -154,31 +168,33 @@ class LIFTRCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        replace_attention: bool = True,
+        replace_attention: bool = False,
         gelu_coefficient: float = 0.8,
         validation_calibration: bool = False,
         calibration_threshold: float = 0.20,
+        target_attention_only: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="liftr", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            replace_attention = getattr(cfg, "replace_attention", replace_attention)
-            gelu_coefficient = getattr(cfg, "gelu_coefficient", gelu_coefficient)
-            validation_calibration = getattr(cfg, "validation_calibration", validation_calibration)
-            calibration_threshold = getattr(cfg, "calibration_threshold", calibration_threshold)
+        self.cfg = cfg
 
-        self.replace_attention = bool(replace_attention)
-        self.gelu_coefficient = float(gelu_coefficient)
-        self.validation_calibration = bool(validation_calibration)
-        self.calibration_threshold = float(calibration_threshold)
+        self.replace_attention = bool(_cfg_get(cfg, "liftr_replace_attention", _cfg_get(cfg, "replace_attention", replace_attention)))
+        self.gelu_coefficient = float(_cfg_get(cfg, "liftr_gelu_coefficient", _cfg_get(cfg, "gelu_coefficient", gelu_coefficient)))
+        self.validation_calibration = bool(_cfg_get(cfg, "validation_calibration", validation_calibration))
+        self.calibration_threshold = float(_cfg_get(cfg, "calibration_threshold", calibration_threshold))
+        self.target_attention_only = bool(_cfg_get(cfg, "liftr_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only)))
+
         self.linearized_activations_count = 0
         self.linearized_attentions_count = 0
         self.replaced_modules: List[str] = []
+        self.skipped_layers: List[str] = []
         self.stats: Dict[str, Any] = {}
 
     def _is_critical(self, name: str) -> bool:
         low = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B"]):
+            return True
         return any(kw in low for kw in self.CRITICAL_MODULE_KEYWORDS)
 
     def _linearize_module(self, module: nn.Module, prefix: str = "") -> None:
@@ -188,17 +204,29 @@ class LIFTRCompressor(BaseCompressor):
             if self._is_critical(full_name):
                 continue
 
+            # Skip LoRALinear adapters themselves
+            if hasattr(child, "lora_A") or child.__class__.__name__.lower() == "loralinear":
+                continue
+
+            is_attn_layer = any(k in full_name.lower() for k in _ATTN_NAMES)
+
             if isinstance(child, nn.ReLU):
+                if self.target_attention_only and not is_attn_layer:
+                    self.skipped_layers.append(full_name)
+                    continue
                 setattr(module, name, nn.Identity())
                 self.linearized_activations_count += 1
                 self.replaced_modules.append(full_name)
             elif isinstance(child, (nn.GELU, nn.SiLU)):
+                if self.target_attention_only and not is_attn_layer:
+                    self.skipped_layers.append(full_name)
+                    continue
                 setattr(module, name, _LinearizedGELU(alpha=self.gelu_coefficient))
                 self.linearized_activations_count += 1
                 self.replaced_modules.append(full_name)
             elif (
                 self.replace_attention
-                and ("attention" in name.lower() or "self_attn" in name.lower() or "attn" in name.lower())
+                and is_attn_layer
                 and "norm" not in name.lower()
                 and not isinstance(child, (nn.Linear, nn.LayerNorm, nn.RMSNorm, nn.Embedding))
             ):
@@ -255,9 +283,12 @@ class LIFTRCompressor(BaseCompressor):
             "replace_attention": self.replace_attention,
             "replaced_modules": self.replaced_modules,
             "gelu_coefficient": self.gelu_coefficient,
+            "target_attention_only": self.target_attention_only,
             "validation_calibration": self.validation_calibration,
             "validation_passed": validation_passed,
             "calibration_rel_diff": rel_diff,
+            "effective_parameter_ratio": 1.0,
+            "flops_reduction_pct": 0.0,
             "method": "liftr_linearization",
         })
         self.stats = stats
@@ -268,9 +299,22 @@ class LIFTRCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("liftr_compressor")
 def liftr_compressor_entry(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for LIFTR compressor."""
-    replace_attention = getattr(comp_config, "replace_attention", True) if comp_config else kwargs.get("replace_attention", True)
-    compressor = LIFTRCompressor(model, replace_attention=replace_attention, comp_config=comp_config, **kwargs)
-    compressed_model, _ = compressor.compress()
+    replace_attention = _cfg_get(comp_config, "liftr_replace_attention", _cfg_get(comp_config, "replace_attention", kwargs.pop("replace_attention", False)))
+    gelu_coefficient = _cfg_get(comp_config, "liftr_gelu_coefficient", _cfg_get(comp_config, "gelu_coefficient", kwargs.pop("gelu_coefficient", 0.8)))
+    target_attention_only = _cfg_get(comp_config, "liftr_target_attention_only", _cfg_get(comp_config, "target_attention_only", kwargs.pop("target_attention_only", False)))
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+
+    compressor = LIFTRCompressor(
+        model,
+        replace_attention=replace_attention,
+        gelu_coefficient=gelu_coefficient,
+        target_attention_only=target_attention_only,
+        comp_config=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
 
 

@@ -81,19 +81,41 @@ class MLoRQLoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> MLoRQLoRALinear:
-        b = bias if bias is not None else (linear.bias.detach() if hasattr(linear, "bias") and linear.bias is not None else None)
-        in_features = getattr(linear, "in_features", weight.shape[1])
-        out_features = getattr(linear, "out_features", weight.shape[0])
-        return cls(
+        base_layer = getattr(linear, "base_layer", linear)
+        b = bias if bias is not None else (base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None)
+        in_features = getattr(base_layer, "in_features", weight.shape[1])
+        out_features = getattr(base_layer, "out_features", weight.shape[0])
+
+        existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
+        eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
+        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
+
+        layer = cls(
             in_features=in_features,
             out_features=out_features,
             weight=weight,
             bias=b,
-            lora_r=lora_r,
-            lora_alpha=lora_alpha,
+            lora_r=eff_lora_r,
+            lora_alpha=eff_lora_alpha,
             device=weight.device,
             dtype=weight.dtype,
         )
+
+        # Preserve existing LoRA weights if present
+        if hasattr(linear, "lora_A") and hasattr(linear, "lora_B") and layer.lora_A is not None and layer.lora_B is not None:
+            with torch.no_grad():
+                src_A = linear.lora_A.weight.data if hasattr(linear.lora_A, "weight") else linear.lora_A.data
+                src_B = linear.lora_B.weight.data if hasattr(linear.lora_B, "weight") else linear.lora_B.data
+                if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
+                    layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
+                    layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
+
+        if layer.lora_A is not None:
+            layer.lora_A.requires_grad = True
+        if layer.lora_B is not None:
+            layer.lora_B.requires_grad = True
+
+        return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
@@ -102,6 +124,20 @@ class MLoRQLoRALinear(nn.Module):
                 F.linear(x.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
         return out
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {
+    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+}
 
 
 @COMPRESSOR_REGISTRY.register("mlorq")
@@ -132,7 +168,8 @@ class MLoRQCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
+        target_attention_only: bool = False,
         min_rank: int = 4,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
@@ -140,20 +177,21 @@ class MLoRQCompressor(BaseCompressor):
         super().__init__(model, name="mlorq", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            total_memory_budget_mb = getattr(
-                cfg, "mlorq_budget_mb", getattr(cfg, "total_memory_budget_mb", total_memory_budget_mb)
+            total_memory_budget_mb = _cfg_get(
+                cfg, "mlorq_budget_mb", _cfg_get(cfg, "total_memory_budget_mb", total_memory_budget_mb)
             )
-            bits_candidates = getattr(
-                cfg, "mlorq_bits_candidates", getattr(cfg, "bits_candidates", bits_candidates)
+            bits_candidates = _cfg_get(
+                cfg, "mlorq_bits_candidates", _cfg_get(cfg, "bits_candidates", bits_candidates)
             )
-            max_error = getattr(cfg, "mlorq_max_error", getattr(cfg, "max_error", max_error))
-            fallback_to_original = getattr(
-                cfg, "mlorq_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
+            max_error = _cfg_get(cfg, "mlorq_max_error", _cfg_get(cfg, "max_error", max_error))
+            fallback_to_original = _cfg_get(
+                cfg, "mlorq_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             )
-            lora_r = getattr(cfg, "lora_r", lora_r)
-            lora_alpha = getattr(cfg, "lora_alpha", lora_alpha)
-            skip_attention_qkv = getattr(cfg, "skip_attention_qkv", skip_attention_qkv)
-            min_rank = getattr(cfg, "min_rank", min_rank)
+            lora_r = _cfg_get(cfg, "lora_r", lora_r)
+            lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
+            skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         self.total_budget = float(total_memory_budget_mb) * 8 * 1024 * 1024  # bits
         self.bits_candidates = bits_candidates or [4, 8]
@@ -162,6 +200,7 @@ class MLoRQCompressor(BaseCompressor):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.target_attention_only = bool(target_attention_only)
         self.min_rank = max(1, int(min_rank))
         self.target_modules = target_modules
 
@@ -187,13 +226,22 @@ class MLoRQCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         cls_name = module.__class__.__name__.lower()
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or "conv1d" in cls_name
+            or hasattr(module, "nf")
+            or hasattr(module, "base_layer")
+        )
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
             return False
         if self._is_gqa_asymmetric(name, module):
             return False
+        if self.target_attention_only:
+            is_attn = any(k in name.lower() for k in _ATTN_NAMES)
+            if not is_attn:
+                return False
         if self.target_modules is None:
             return True
         return any(t in name for t in self.target_modules)
@@ -220,38 +268,51 @@ class MLoRQCompressor(BaseCompressor):
         self.layer_bits = {}
         seen_weights: Set[int] = set()
 
+        total_orig_params = sum(p.numel() for p in self.model.parameters())
+        total_comp_params = 0
+
         layers = []
         for name, module in list(self.model.named_modules()):
             if self._is_target_module(name, module):
-                if not hasattr(module, "weight") or module.weight is None:
+                target_layer = getattr(module, "base_layer", module)
+                if not hasattr(target_layer, "weight") or target_layer.weight is None:
+                    for p in module.parameters(recurse=False):
+                        total_comp_params += p.numel()
                     continue
 
-                w_id = id(module.weight)
+                w_id = id(target_layer.weight)
                 if w_id in seen_weights:
                     self.skipped_layers.append(name)
+                    for p in module.parameters(recurse=False):
+                        total_comp_params += p.numel()
                     continue
                 seen_weights.add(w_id)
 
-                raw_w = module.weight.data
-                cls_name = module.__class__.__name__.lower()
-                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                raw_w = target_layer.weight.data
+                cls_name = target_layer.__class__.__name__.lower()
+                is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
                 W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
                 out_f, in_f = W.shape
 
                 layers.append({
                     "name": name,
                     "module": module,
+                    "target_layer": target_layer,
                     "shape": (out_f, in_f),
                     "W": W,
                     "device": raw_w.device,
                     "dtype": raw_w.dtype,
                     "is_conv1d": is_conv1d,
                 })
+            else:
+                for p in module.parameters(recurse=False):
+                    total_comp_params += p.numel()
 
         total_cost = 0.0
         for info in layers:
             name = info["name"]
             module = info["module"]
+            target_layer = info["target_layer"]
             W_orig = info["W"]
             out_f, in_f = info["shape"]
             max_rank = min(out_f, in_f)
@@ -300,25 +361,34 @@ class MLoRQCompressor(BaseCompressor):
                     )
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
+                        for p in module.parameters(recurse=False):
+                            p.requires_grad = False
+                            total_comp_params += p.numel()
                         continue
 
                 bias = None
-                if module.bias is not None:
-                    bias = self._quantize(module.bias.data.float(), b).to(dtype=info["dtype"], device=info["device"])
+                if target_layer.bias is not None:
+                    bias = self._quantize(target_layer.bias.data.float(), b).to(dtype=info["dtype"], device=info["device"])
 
+                final_w = W_new.t() if info["is_conv1d"] else W_new
                 new_layer = MLoRQLoRALinear.from_linear(
                     module,
-                    weight=W_new.to(dtype=info["dtype"], device=info["device"]),
+                    weight=final_w.to(dtype=info["dtype"], device=info["device"]),
                     bias=bias,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
                 )
                 replace_module(self.model, name, new_layer)
                 self.compressed_layers.append(name)
+                for p in new_layer.parameters(recurse=False):
+                    total_comp_params += p.numel()
             except Exception as e:
                 logger.warning("MLoRQ compression exception on %s: %s", name, e)
                 self.fallback_layers.append(name)
                 self.layer_errors[name] = 1.0
+                for p in module.parameters(recurse=False):
+                    p.requires_grad = False
+                    total_comp_params += p.numel()
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -340,6 +410,7 @@ class MLoRQCompressor(BaseCompressor):
             if self.compressed_layers
             else 0.0
         )
+        eff_ratio = total_comp_params / max(1, total_orig_params)
         stats = self.get_compression_stats()
         stats.update({
             "compressed_layers": self.compressed_layers,
@@ -354,6 +425,7 @@ class MLoRQCompressor(BaseCompressor):
             "avg_reconstruction_error": avg_err,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
+            "effective_parameter_ratio": eff_ratio,
             "lora_r": self.lora_r,
             "lora_alpha": self.lora_alpha,
             "forward_check_success": forward_check_success,
@@ -366,14 +438,15 @@ class MLoRQCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("mlorq_factory")
 def mlorq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """MLoRQ compressor factory function."""
-    total_budget_mb = getattr(comp_config, "mlorq_budget_mb", kwargs.pop("total_memory_budget_mb", 500))
-    bits_candidates = getattr(comp_config, "mlorq_bits_candidates", kwargs.pop("bits_candidates", [4, 8]))
-    max_error = kwargs.pop("max_error", getattr(comp_config, "mlorq_max_error", getattr(comp_config, "max_error", 0.50)))
-    fallback = kwargs.pop("fallback_to_original", getattr(
-        comp_config, "mlorq_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    total_budget_mb = _cfg_get(comp_config, "mlorq_budget_mb", kwargs.pop("total_memory_budget_mb", 500))
+    bits_candidates = _cfg_get(comp_config, "mlorq_bits_candidates", kwargs.pop("bits_candidates", [4, 8]))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "mlorq_max_error", _cfg_get(comp_config, "max_error", 0.50)))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(
+        comp_config, "mlorq_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
     ))
-    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0))
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0))
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = MLoRQCompressor(
@@ -384,6 +457,7 @@ def mlorq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         fallback_to_original=fallback,
         lora_r=lora_r,
         lora_alpha=lora_alpha,
+        target_attention_only=target_attention_only,
         comp_config=comp_config,
         **kwargs,
     )

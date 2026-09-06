@@ -60,6 +60,20 @@ class NLISoftmax(nn.Module):
         return nli_softmax(x, dim=self.dim)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {
+    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
+    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+}
+
+
 @COMPRESSOR_REGISTRY.register("nli_softmax")
 @COMPRESSOR_REGISTRY.register("nli_softmax_compressor")
 class NLISoftmaxCompressor(BaseCompressor):
@@ -81,19 +95,22 @@ class NLISoftmaxCompressor(BaseCompressor):
         model: nn.Module,
         max_error: float = 0.20,
         fallback_to_original: bool = True,
+        target_attention_only: bool = False,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="nli_softmax", **kwargs)
         conf = cfg or kwargs.get("comp_config", None)
         if conf is not None:
-            max_error = getattr(conf, "nli_max_error", getattr(conf, "max_error", max_error))
-            fallback_to_original = getattr(
-                conf, "nli_fallback_to_original", getattr(conf, "fallback_to_original", fallback_to_original)
+            max_error = _cfg_get(conf, "nli_max_error", _cfg_get(conf, "max_error", max_error))
+            fallback_to_original = _cfg_get(
+                conf, "nli_fallback_to_original", _cfg_get(conf, "fallback_to_original", fallback_to_original)
             )
+            target_attention_only = _cfg_get(conf, "target_attention_only", target_attention_only)
 
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
+        self.target_attention_only = bool(target_attention_only)
         self.compressed_layers: List[str] = []
         self.fallback_layers: List[str] = []
         self.skipped_layers: List[str] = []
@@ -103,7 +120,11 @@ class NLISoftmaxCompressor(BaseCompressor):
     def _should_skip(self, name: str) -> bool:
         lower = name.lower()
         skip_patterns = ["classifier", "score", "lm_head", "pooler", "head", "loss", "crit"]
-        return any(pat in lower for pat in skip_patterns)
+        if any(pat in lower for pat in skip_patterns):
+            return True
+        if self.target_attention_only and not any(k in lower for k in _ATTN_NAMES):
+            return True
+        return False
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Replace nn.Softmax modules with validated NLISoftmax."""
@@ -155,6 +176,15 @@ class NLISoftmaxCompressor(BaseCompressor):
                 replace_module(self.model, name, new_mod)
                 self.compressed_layers.append(name)
 
+        # Ensure any LoRA parameters remain trainable
+        for name, module in self.model.named_modules():
+            if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
+                for p in [module.lora_A, module.lora_B]:
+                    if hasattr(p, "weight"):
+                        p.weight.requires_grad = True
+                    elif isinstance(p, nn.Parameter):
+                        p.requires_grad = True
+
         # Post-compression forward sanity check
         forward_check_success = True
         try:
@@ -190,6 +220,7 @@ class NLISoftmaxCompressor(BaseCompressor):
             "layer_errors": self.layer_errors,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
+            "effective_parameter_ratio": 1.0,
             "forward_check_success": forward_check_success,
             "method": "nli_softmax",
         })
@@ -199,16 +230,18 @@ class NLISoftmaxCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("nli_softmax_factory")
 def nli_softmax_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """NLI Softmax compressor factory function."""
-    max_error = kwargs.pop("max_error", getattr(comp_config, "nli_max_error", getattr(comp_config, "max_error", 0.20)))
-    fallback = kwargs.pop("fallback_to_original", getattr(
-        comp_config, "nli_fallback_to_original", getattr(comp_config, "fallback_to_original", True)
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "nli_max_error", _cfg_get(comp_config, "max_error", 0.20)))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(
+        comp_config, "nli_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
     ))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = NLISoftmaxCompressor(
         model,
         max_error=max_error,
         fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
         cfg=comp_config,
         **kwargs,
     )
