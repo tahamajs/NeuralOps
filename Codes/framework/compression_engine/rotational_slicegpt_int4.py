@@ -496,8 +496,11 @@ def rotational_slicegpt_int4_factory(
     return compressed_model
 
 
+RotationalSliceGPTInt4Compressor = RotationalSliceGPTINT4Compressor
+
 __all__ = [
     "RotationalSliceGPTINT4Compressor",
+    "RotationalSliceGPTInt4Compressor",
     "RotationalSliceGPTCompressor",
     "RotationalSliceGPTINT4Linear",
     "AstroQuantizer",
