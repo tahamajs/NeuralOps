@@ -191,6 +191,8 @@ class RALALinearAttention(BaseAttention):
         self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
         self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
         self.freeze_base = (self.lora_rank > 0)
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
 
         # Projections
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -560,4 +562,8 @@ def inject_rala_model(
         return model if replaced > 0 else None
     except Exception:
         return None
+
+
+inject_rala_attention = inject_rala
+inject_rala_linear_attention = inject_rala
 
