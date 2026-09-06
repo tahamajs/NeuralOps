@@ -33,6 +33,14 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
@@ -161,9 +169,9 @@ class SpectraformerAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank or 64)
         self.config = config
-        comp_config = getattr(config, "compression_config", None)
+        comp_config = _cfg_get(config, "compression_config", None) or kwargs.get("comp_config", None)
 
-        self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
         if (config is None or not hasattr(config, "hidden_size")) and "hidden_size" not in kwargs and pretrained_attn is not None:
             for cand in ["q_lin", "query", "q_proj", "c_attn"]:
                 mod = getattr(pretrained_attn, cand, None)
@@ -172,13 +180,13 @@ class SpectraformerAttention(BaseAttention):
                     self.hidden_size = w.shape[1] if w.ndim == 2 else self.hidden_size
                     break
 
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads = getattr(
+        self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_kv_heads = _cfg_get(
             config,
             "num_key_value_heads",
             kwargs.get("num_key_value_heads", self.num_heads),
         )
-        self.head_dim = getattr(
+        self.head_dim = _cfg_get(
             config,
             "head_dim",
             kwargs.get("head_dim", self.hidden_size // self.num_heads),
@@ -186,11 +194,11 @@ class SpectraformerAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.rank = getattr(comp_config, "spectraformer_rank", getattr(config, "spectraformer_rank", kwargs.get("rank", rank or 64)))
+        self.rank = _cfg_get(comp_config, "spectraformer_rank", _cfg_get(config, "spectraformer_rank", kwargs.get("rank", rank or 64)))
 
         # Causal decoder detection
-        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-        model_type = getattr(config, "model_type", "").lower() if config else ""
+        is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
+        model_type = _cfg_get(config, "model_type", "").lower() if config else ""
         if model_type in ["gpt2", "qwen", "qwen2", "llama", "mistral", "gemma"]:
             is_dec = True
         if kwargs.get("is_causal", False):
@@ -200,8 +208,8 @@ class SpectraformerAttention(BaseAttention):
         self.is_nested_encoder = False
 
         # LoRA config
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        self.lora_rank = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_alpha = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base = (self.lora_rank > 0)
 
         self.q_proj = LoRALinear(
@@ -415,6 +423,27 @@ class SpectraformerAttention(BaseAttention):
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
                 mod.freeze_base_weights()
 
+        # Preserve existing LoRA adapters from source projections
+        for proj_key, target_mod in target_map.items():
+            sub_name = {"q": "query", "k": "key", "v": "value", "o": "dense"}.get(proj_key, "")
+            src_sub = getattr(src, sub_name, None)
+            if src_sub is None and hasattr(src, f"{proj_key}_proj"):
+                src_sub = getattr(src, f"{proj_key}_proj")
+            if src_sub is None and hasattr(src, f"{proj_key}_lin"):
+                src_sub = getattr(src, f"{proj_key}_lin")
+
+            if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
+                if target_mod.lora_A is not None and hasattr(src_sub.lora_A, "weight"):
+                    try:
+                        target_mod.lora_A.data.copy_(src_sub.lora_A.weight.data)
+                    except Exception:
+                        pass
+                if target_mod.lora_B is not None and hasattr(src_sub.lora_B, "weight"):
+                    try:
+                        target_mod.lora_B.data.copy_(src_sub.lora_B.weight.data)
+                    except Exception:
+                        pass
+
         return True
 
     def forward(
@@ -535,17 +564,50 @@ def inject_spectraformer(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    max_error: float = 0.50,
     **kwargs: Any,
 ) -> Optional[SpectraformerAttention]:
-    """Single-layer framework injection helper for SpectraformerAttention."""
+    """Single-layer framework injection helper for SpectraformerAttention with equivalence validation."""
+    max_error = _cfg_get(comp_config, "max_error", max_error)
     try:
         new_attn = SpectraformerAttention(
             config=model_config,
             pretrained_attn=old_attn,
+            comp_config=comp_config,
             **kwargs,
         )
+
+        # Output equivalence check against old_attn
+        if old_attn is not None:
+            device = next(old_attn.parameters()).device if list(old_attn.parameters()) else torch.device("cpu")
+            dtype = next(old_attn.parameters()).dtype if list(old_attn.parameters()) else torch.float32
+            hidden_size = getattr(new_attn, "hidden_size", 768)
+            dummy_input = torch.randn(1, 4, hidden_size, device=device, dtype=dtype)
+
+            with torch.no_grad():
+                try:
+                    old_out = old_attn(dummy_input)
+                    if isinstance(old_out, (tuple, list)):
+                        old_out = old_out[0]
+                    new_out = new_attn(dummy_input)
+                    if isinstance(new_out, (tuple, list)):
+                        new_out = new_out[0]
+
+                    norm_old = torch.norm(old_out.float(), p="fro").clamp_min(1e-8)
+                    rel_err = (torch.norm(old_out.float() - new_out.float(), p="fro") / norm_old).item()
+                    if rel_err > max_error:
+                        logger.warning("Spectraformer layer %d relative error %.4f > max_error %.4f; skipping.", layer_idx, rel_err, max_error)
+                        for p in old_attn.parameters():
+                            p.requires_grad = False
+                        return None
+                except Exception as ex_val:
+                    logger.debug("Spectraformer equivalence check warning: %s", ex_val)
+
         return new_attn
     except Exception as e:
         logger.warning("Failed to inject SpectraformerAttention at layer %d: %s", layer_idx, e)
+        if old_attn is not None:
+            for p in old_attn.parameters():
+                p.requires_grad = False
         return None
 

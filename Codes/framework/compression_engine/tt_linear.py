@@ -205,16 +205,17 @@ class TTLinearLayer(nn.Module):
         lora_alpha: float = 1.0,
     ) -> "TTLinearLayer":
         """
-        Decompose a pretrained nn.Linear or Conv1D layer into TT-cores using TT-SVD.
+        Decompose a pretrained nn.Linear, Conv1D, or LoRALinear layer into TT-cores using TT-SVD.
         Production-hardened with FP32 stability, Conv1D support, adaptive rank retry,
         relative Frobenius error validation, and trainable LoRA adapters.
         """
-        raw_w = linear_layer.weight.data
+        base_layer = getattr(linear_layer, "base_layer", linear_layer)
+        raw_w = base_layer.weight.data
         orig_dtype = raw_w.dtype
         orig_device = raw_w.device
 
-        cls_name = linear_layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(linear_layer, "nf")
+        cls_name = base_layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
         if is_conv1d:
             W = raw_w.t().float().contiguous()
@@ -224,8 +225,16 @@ class TTLinearLayer(nn.Module):
             W = raw_w.float().contiguous()
             out_f, in_f = W.shape[0], W.shape[1]
 
-        bias = linear_layer.bias.data if getattr(linear_layer, "bias", None) is not None else None
+        bias = base_layer.bias.data if getattr(base_layer, "bias", None) is not None else None
         norm_orig = torch.linalg.norm(W).item() + 1e-8
+
+        # Check for existing LoRA in linear_layer
+        has_orig_lora = hasattr(linear_layer, "lora_A") and hasattr(linear_layer, "lora_B")
+        effective_lora_r = lora_r
+        if has_orig_lora and getattr(linear_layer, "r", 0) > 0:
+            effective_lora_r = getattr(linear_layer, "r", lora_r)
+
+        lora_r = effective_lora_r
 
         # Factorize dimensions
         p_dims, q_dims = factorize_dimension_pair(in_f, out_f, num_factors=num_factors)
@@ -340,5 +349,20 @@ class TTLinearLayer(nn.Module):
 
         best_layer.reconstruction_error = float(best_err)
         best_layer.tt_rank = best_rank
+
+        if has_orig_lora and best_layer.lora_r > 0 and best_layer.lora_A is not None and best_layer.lora_B is not None:
+            try:
+                if hasattr(linear_layer.lora_A, "weight") and linear_layer.lora_A.weight.shape == best_layer.lora_A.shape:
+                    best_layer.lora_A.data.copy_(linear_layer.lora_A.weight.data)
+                elif hasattr(linear_layer, "lora_A") and linear_layer.lora_A.shape == best_layer.lora_A.shape:
+                    best_layer.lora_A.data.copy_(linear_layer.lora_A.data)
+
+                if hasattr(linear_layer.lora_B, "weight") and linear_layer.lora_B.weight.shape == best_layer.lora_B.shape:
+                    best_layer.lora_B.data.copy_(linear_layer.lora_B.weight.data)
+                elif hasattr(linear_layer, "lora_B") and linear_layer.lora_B.shape == best_layer.lora_B.shape:
+                    best_layer.lora_B.data.copy_(linear_layer.lora_B.data)
+            except Exception:
+                pass
+
         return best_layer
 
