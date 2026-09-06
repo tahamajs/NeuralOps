@@ -260,6 +260,8 @@ def upload_to_huggingface(
     old_offline = os.environ.pop("HF_HUB_OFFLINE", None)
     old_tr_offline = os.environ.pop("TRANSFORMERS_OFFLINE", None)
     old_ds_offline = os.environ.pop("HF_DATASETS_OFFLINE", None)
+    os.environ["HF_HUB_DISABLE_XET"] = "1"
+    os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
     try:
         from huggingface_hub import HfApi
         api = HfApi()
@@ -282,16 +284,29 @@ def upload_to_huggingface(
             except Exception:
                 pass
 
-        # 4. Upload folder to private repo
+        # 4. Upload to private repo (robust against CAS/XetHub network restrictions)
         acc = float(perf_metrics.get("accuracy_pct", 0.0))
         f1 = perf_metrics.get("f1_score", "N/A")
         commit_msg = f"feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})"
-        api.upload_folder(
-            folder_path=str(export_dir),
-            repo_id=repo_id,
-            repo_type="model",
-            commit_message=commit_msg,
-        )
+        try:
+            api.upload_folder(
+                folder_path=str(export_dir),
+                repo_id=repo_id,
+                repo_type="model",
+                commit_message=commit_msg,
+            )
+        except Exception as e_folder:
+            LOG.warning("upload_folder encountered issue (%s); falling back to per-file direct upload...", e_folder)
+            for file_path in sorted(export_dir.rglob("*")):
+                if file_path.is_file():
+                    rel_path = file_path.relative_to(export_dir).as_posix()
+                    api.upload_file(
+                        path_or_fileobj=str(file_path),
+                        path_in_repo=rel_path,
+                        repo_id=repo_id,
+                        repo_type="model",
+                        commit_message=f"feat: upload {rel_path} for {module_name}",
+                    )
         url = f"https://huggingface.co/{repo_id}"
         LOG.info("Successfully uploaded private model to Hugging Face: %s", url)
         return url
