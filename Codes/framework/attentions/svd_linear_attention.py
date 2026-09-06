@@ -546,12 +546,11 @@ class SVDLinearAttention(BaseAttention):
             else:
                 rep = w_k.shape[0] // self.kv_head_size
                 w_k_pooled = (
-                    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+                    w_k.contiguous().reshape(self.num_kv_heads, rep, -1)
                     .mean(dim=1)
-                    .view(self.kv_head_size, -1)
                 )
                 b_k_pooled = (
-                    b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                    b_k.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1).reshape(-1)
                     if b_k is not None
                     else None
                 )
@@ -562,12 +561,11 @@ class SVDLinearAttention(BaseAttention):
             else:
                 rep = w_v.shape[0] // self.kv_head_size
                 w_v_pooled = (
-                    w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
+                    w_v.contiguous().reshape(self.num_kv_heads, rep, -1)
                     .mean(dim=1)
-                    .view(self.kv_head_size, -1)
                 )
                 b_v_pooled = (
-                    b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                    b_v.contiguous().reshape(self.num_kv_heads, rep, -1).mean(dim=1).reshape(-1)
                     if b_v is not None
                     else None
                 )

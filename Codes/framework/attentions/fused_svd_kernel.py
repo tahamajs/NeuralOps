@@ -436,10 +436,10 @@ def inject_fused_svd_kernel(
     **kwargs: Any,
 ) -> Any:
     """Safe injection hook for fused SVD kernel attention."""
-    from framework.attentions.svd_linear_attention import inject_svd_linear
-    return inject_svd_linear(
-        target=layer,
-        cfg=model_config,
+    from framework.attentions.svd_linear_attention import inject_svd_linear_attention
+    return inject_svd_linear_attention(
+        layer=layer,
+        model_config=model_config,
         layer_idx=layer_idx,
         total_layers=total_layers,
         old_attn=old_attn,
