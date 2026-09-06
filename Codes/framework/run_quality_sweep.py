@@ -685,6 +685,12 @@ def main():
                     help="Energy retention threshold for AdaptiveRanks")
     ap.add_argument("--adaptive_ranks_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict AdaptiveRanks compression to attention projections only")
+    ap.add_argument("--adasvd_max_error", type=float, default=0.70,
+                    help="Maximum relative Frobenius reconstruction error threshold for AdaSVD before fallback")
+    ap.add_argument("--adasvd_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict AdaSVD compression to attention projections only")
+    ap.add_argument("--adasvd_min_rank", type=int, default=16,
+                    help="Minimum rank floor for AdaSVD layers")
 
     
     # Pre-parse to check if a config file is provided
@@ -1105,15 +1111,24 @@ def main():
                         if getattr(args, "adaptive_ranks_target_attention_only", None) is not None:
                             setattr(model.config, "adaptive_ranks_target_attention_only", args.adaptive_ranks_target_attention_only)
                             setattr(model.config, "target_attention_only", args.adaptive_ranks_target_attention_only)
+                        if getattr(args, "adasvd_max_error", None) is not None:
+                            setattr(model.config, "adasvd_max_error", args.adasvd_max_error)
+                            setattr(model.config, "max_error", args.adasvd_max_error)
+                        if getattr(args, "adasvd_target_attention_only", None) is not None:
+                            setattr(model.config, "adasvd_target_attention_only", args.adasvd_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.adasvd_target_attention_only)
+                        if getattr(args, "adasvd_min_rank", None) is not None:
+                            setattr(model.config, "adasvd_min_rank", args.adasvd_min_rank)
+                            setattr(model.config, "min_rank", args.adasvd_min_rank)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name == "aasvd":
+                    if name in ("aasvd", "adasvd"):
                         try:
-                            with open(out / "aasvd_stats.json", "w", encoding="utf-8") as sf:
+                            with open(out / f"{name}_stats.json", "w", encoding="utf-8") as sf:
                                 json.dump({"num_compressed_layers": num_svd_layers}, sf, indent=2)
                         except Exception:
                             pass
