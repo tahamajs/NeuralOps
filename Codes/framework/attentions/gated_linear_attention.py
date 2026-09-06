@@ -214,9 +214,11 @@ class GatedLinearAttention(BaseAttention):
 
         nn.init.constant_(self.decay_gate.bias, 3.0)
 
-        pretrained_attn = kwargs.get("pretrained_attn", None)
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        src_attn = kwargs.get("pretrained_attn", None)
+        if src_attn is None:
+            src_attn = kwargs.get("old_attn", None)
+        if src_attn is not None:
+            self.copy_weights(src_attn)
 
     @property
     def query(self) -> LoRALinear:
@@ -307,10 +309,15 @@ class GatedLinearAttention(BaseAttention):
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
+        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query") and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            self.is_nested_encoder = True
+        elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        ) and not has_out_proj:
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
