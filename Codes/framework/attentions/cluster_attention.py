@@ -150,37 +150,88 @@ class ClusterAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Any,
+        config: Optional[Any] = None,
         rank: Optional[int] = None,
         num_clusters: int = 16,
         n_iters: int = 3,
         window_size: int = 32,
         lora_rank: int = 16,
+        comp_config: Optional[Any] = None,
         pretrained_attn: Optional[nn.Module] = None,
+        old_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
+        source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
-        self.adapter = ModelAdapter(config)
-        self.num_heads: int = self.adapter.num_heads
-        self.num_kv_heads: int = self.adapter.num_key_value_heads
-        self.hidden_size: int = self.adapter.hidden_size
-        self.head_dim: int = self.adapter.head_dim
+
+        # Resolve hidden_size and num_heads safely even if config is None
+        hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
+        num_heads = kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
+        num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
+
+        head_dim = 0
+        if config is not None:
+            adapter = ModelAdapter(config)
+            hidden_size = hidden_size or adapter.hidden_size
+            num_heads = num_heads or adapter.num_heads
+            num_kv_heads = num_kv_heads or adapter.num_key_value_heads
+            head_dim = getattr(adapter, "head_dim", 0)
+
+        if not hidden_size and source_attn is not None:
+            cand = getattr(source_attn, "hidden_size", getattr(source_attn, "embed_dim", getattr(source_attn, "all_head_size", None)))
+            if cand is None and hasattr(source_attn, "q_proj") and hasattr(source_attn.q_proj, "in_features"):
+                cand = source_attn.q_proj.in_features
+            hidden_size = cand
+
+        hidden_size = int(hidden_size or 768)
+        num_heads = int(num_heads or 12)
+        num_kv_heads = int(num_kv_heads or num_heads)
+        head_dim = head_dim if head_dim > 0 else (hidden_size // num_heads if num_heads > 0 else 64)
+
+        self.hidden_size: int = hidden_size
+        self.d_model: int = hidden_size
+        self.num_heads: int = num_heads
+        self.num_kv_heads: int = num_kv_heads
+        self.head_dim: int = head_dim
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.kv_repeat: int = self.adapter.kv_repeat
-        self.num_clusters: int = getattr(config, "cluster_num_clusters", num_clusters)
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+        if config is not None:
+            self.num_clusters = getattr(config, "cluster_num_clusters", num_clusters)
+        else:
+            self.num_clusters = num_clusters
         self.n_iters: int = n_iters
         self.window_size: int = window_size
         self.local_residual = nn.Parameter(torch.tensor(0.5))
-        self.is_decoder: bool = getattr(config, "is_decoder", False)
+
+        model_type = getattr(config, "model_type", "").lower() if config else ""
+        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            is_dec = True
+        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
+            is_dec = True
+        self.is_decoder: bool = bool(is_dec)
+        self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
 
-        self.lora_rank = getattr(config, "lora_rank", lora_rank)
+        if config is not None:
+            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
+            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        elif comp_config is not None:
+            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
+            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+        else:
+            self.lora_rank = kwargs.get("lora_rank", lora_rank)
+            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
+        self.freeze_base: bool = (self.lora_rank > 0)
 
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
+        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         dropout_p = getattr(
             config,
@@ -190,12 +241,13 @@ class ClusterAttention(BaseAttention):
                 "hidden_dropout_prob",
                 getattr(config, "attention_probs_dropout_prob", 0.1),
             ),
-        )
+        ) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
-        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
+        self.source_attn = source_attn
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        if source_attn is not None:
+            self.copy_weights(source_attn)
 
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
@@ -216,30 +268,42 @@ class ClusterAttention(BaseAttention):
             except Exception:
                 pass
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
-        if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+        # 2. GPT-2 Fused c_attn Conv1D handling (including LoRALinear wrappers)
+        if hasattr(src, "c_attn") and src.c_attn is not None and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+            c_attn_mod = src.c_attn
+            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
+                try:
+                    c_attn_mod.merge()
+                except Exception:
+                    pass
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (weight.ndim == 2 and weight.shape[0] < weight.shape[1]):
+                    weight = weight.t()
+                split_size = weight.shape[0] // 3
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                bias_data = bias_mod.data.clone() if bias_mod is not None else None
+                extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
+                extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
+                extracted["v"] = (weight[2 * split_size :, :], bias_data[2 * split_size :] if bias_data is not None else None)
 
-        if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(src.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+        if hasattr(src, "c_proj") and src.c_proj is not None and extracted["o"][0] is None:
+            c_proj_mod = src.c_proj
+            if hasattr(c_proj_mod, "merge") and not getattr(c_proj_mod, "merged", False):
+                try:
+                    c_proj_mod.merge()
+                except Exception:
+                    pass
+            base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+            w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1]):
+                    w_o = w_o.t()
+                bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                extracted["o"] = (w_o, bias_o.data.clone() if bias_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -320,6 +384,9 @@ class ClusterAttention(BaseAttention):
 
                 target.freeze_base_weights()
 
+        if hasattr(src, "rotary_emb") and src.rotary_emb is not None:
+            self.rotary_emb = src.rotary_emb
+
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
@@ -366,6 +433,7 @@ class ClusterAttention(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
@@ -383,11 +451,25 @@ class ClusterAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)
 
-        # Apply RoPE
-        position_embeddings = kwargs.get("position_embeddings", None)
-        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
-            cos, sin = position_embeddings[0], position_embeddings[1]
+        # Apply RoPE (accept from position_embeddings or fallback to rotary_emb)
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+            cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
+        elif self.rotary_emb is not None or (hasattr(self, "source_attn") and getattr(self.source_attn, "rotary_emb", None) is not None):
+            rotary_mod = self.rotary_emb or getattr(self.source_attn, "rotary_emb", None)
+            pos_ids = kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(L, device=device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = rotary_mod(K, seq_len=N_k)
+            except Exception:
+                try:
+                    cos, sin = rotary_mod(K, pos_ids)
+                except Exception:
+                    cos, sin = None, None
+            if cos is not None and sin is not None:
+                Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
@@ -496,29 +578,123 @@ class ClusterAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("cluster_inject")
 @ATTENTION_REGISTRY.register("cluster_attention_inject")
+@ATTENTION_REGISTRY.register("cluster")
+@ATTENTION_REGISTRY.register("cluster_attention")
 def inject_cluster(
-    layer: nn.Module,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[ClusterAttention]:
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+) -> Optional[Union[ClusterAttention, nn.Module]]:
+    r"""Safe injection factory for ClusterAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_cluster(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    src_attn = old_attn
+    if src_attn is None and target is not None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if hasattr(cand, "self"):
+                    src_attn = cand.self
+                else:
+                    src_attn = cand
+                break
+
+    if src_attn is None and target is not None and hasattr(target, "forward"):
+        src_attn = target
+
+    if src_attn is None and cfg is None:
+        return None
+
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        getattr(src_attn, 'dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+        (getattr(target, 'in_features', None) if target is not None else None) or
+        getattr(cfg, 'hidden_size', getattr(cfg, 'dim', 64))
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(src_attn, 'n_heads', None) or
+        getattr(cfg, 'num_attention_heads', getattr(cfg, 'n_heads', 4))
+    )
+
+    num_clusters = getattr(comp_config, "num_clusters", getattr(comp_config, "cluster_num_clusters", kwargs.get("num_clusters", 16)))
+    n_iters = getattr(comp_config, "n_iters", kwargs.get("n_iters", 3))
+    window_size = getattr(comp_config, "window_size", kwargs.get("window_size", 32))
 
     try:
-        num_clusters = getattr(comp_config, "num_clusters", 16)
-        new_attn = ClusterAttention(
-            config=model_config,
+        new_block = ClusterAttention(
+            config=cfg,
+            comp_config=comp_config,
+            d_model=hidden_size,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
             num_clusters=num_clusters,
-            pretrained_attn=old_attn,
+            n_iters=n_iters,
+            window_size=window_size,
+            pretrained_attn=src_attn,
+            **kwargs,
         )
-        layer.attention = new_attn
-        return new_attn
     except Exception:
         return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_block
+            else:
+                target.attention = new_block
+        elif hasattr(target, "self"):
+            target.self = new_block
+        elif hasattr(target, "attn"):
+            target.attn = new_block
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_block
+
+    return new_block
