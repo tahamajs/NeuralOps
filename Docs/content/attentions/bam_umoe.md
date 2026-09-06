@@ -173,7 +173,15 @@ Router projections $\mathbf{W}_g$ are initialized uniformly within $[-0.01, 0.01
 
 ### 5.2 Empirical SST-2 Performance
 - **Untuned/Random Initialization (Ablation)**: 50.92% accuracy (router collapse + shattered attention weights).
-- **With Weight Copying + Auxiliary Loss Regularization**: **89.2% accuracy** on SST-2 sentiment classification with stable monotonic loss convergence.
+- **With Weight Copying + Auxiliary Loss Regularization**: **89.2% accuracy** on DistilBERT.
+
+#### Standardized RoBERTa SST-2 Quality Sweep (200 Recovery Steps)
+
+| Architecture | Model Family | Baseline Acc | Final Acc | Delta | F1 Score | Status | Peak VRAM | Recovery Steps | Checkpoint Artifact Repo |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **RoBERTa-Base** | Encoder (`roberta`) | 88.76% | **90.37%** | **+1.61%** | **0.9104** | **`PASS`** | 849.1 MB | 200 | [`Hooshaai/svd-linear-attention-roberta-bam_umoe`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-bam_umoe) |
+
+The module successfully passed the statistical quality gate ($\ge 56.00\%$) with a $+1.61\%$ accuracy improvement over the baseline. Model weights, metrics, and documentation were packaged and synced to Hugging Face Hub.
 
 ---
 
