@@ -25,14 +25,26 @@ from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
 logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    rotary_dim = 2 * (d // 2)
+    x1 = x[..., : rotary_dim // 2]
+    x2 = x[..., rotary_dim // 2 : rotary_dim]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if rotary_dim < d:
+        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -43,21 +55,41 @@ def apply_rotary_pos_emb(
     position_ids: Optional[torch.Tensor] = None,
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
-    rotary_dim = cos.shape[-1]
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
+
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
-    while cos.dim() < q_rot.dim():
-        cos = cos.unsqueeze(unsqueeze_dim)
-        sin = sin.unsqueeze(unsqueeze_dim)
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
 
-    q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
 
-    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
-    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
-    return q, k
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+
+    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
+    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
+    return q_out, k_out
 
 
 class LoRALinear(nn.Module):
@@ -114,7 +146,8 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("svd", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_sequence_attention")
+@ATTENTION_REGISTRY.register("svd_sequence", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("svd_sequence_attention", supports_causal=True, supports_gqa=True)
 class SVDLinearAttention(BaseAttention):
     r"""Low-Rank SVD-Compressed Sequence Attention Mechanism.
     Hardened for production use across diverse transformer architectures.
@@ -136,20 +169,20 @@ class SVDLinearAttention(BaseAttention):
         super().__init__(config, rank)
 
         # 1. Dimensions & Architecture
-        self.hidden_size: int = getattr(
+        self.hidden_size: int = int(_cfg_get(
             config, "hidden_size", kwargs.get("hidden_size", 768)
-        )
-        self.num_heads: int = getattr(
+        ))
+        self.num_heads: int = int(_cfg_get(
             config,
             "num_attention_heads",
-            getattr(config, "num_heads", kwargs.get("num_attention_heads", 12)),
-        )
-        self.head_dim: int = getattr(
-            config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads)
-        )
+            _cfg_get(config, "num_heads", kwargs.get("num_attention_heads", 12)),
+        ))
+        self.head_dim: int = int(_cfg_get(
+            config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
+        ))
 
-        cfg_kv = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+        cfg_kv = _cfg_get(
+            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
         )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
@@ -159,13 +192,14 @@ class SVDLinearAttention(BaseAttention):
             self.num_kv_heads = self.num_heads
 
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
-        self.kv_repeat: int = self.num_heads // self.num_kv_heads
+        self.kv_repeat: int = max(1, self.num_heads // self.num_kv_heads)
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.q_head_size: int = self.num_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
 
-        self.rank: Optional[int] = rank if rank is not None else 64
-        self.lora_rank: int = lora_rank if lora_rank is not None else 16
+        default_r = int(_cfg_get(config, "svd_rank", _cfg_get(config, "rank", 64)))
+        self.rank: Optional[int] = rank if rank is not None else default_r
+        self.lora_rank: int = int(lora_rank if lora_rank is not None else 16)
         self.lora_alpha: float = lora_alpha
 
         # 2. Causal decoder flag detection
@@ -173,8 +207,8 @@ class SVDLinearAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
         else:
             self.is_decoder = (
-                getattr(config, "is_decoder", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                bool(_cfg_get(config, "is_decoder", False))
+                or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama")
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
             )
 
@@ -521,6 +555,12 @@ class SVDLinearAttention(BaseAttention):
         else:
             out = self.out_proj(context)
 
+        if out.shape[-1] != hidden_states.shape[-1]:
+            if out.shape[-1] < hidden_states.shape[-1]:
+                out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+            else:
+                out = out[..., :hidden_states.shape[-1]]
+
         return (out, attn_ret)
 
     def get_ortho_loss(self) -> torch.Tensor:
@@ -534,24 +574,74 @@ class SVDLinearAttention(BaseAttention):
         return F.mse_loss(gram, I.expand_as(gram))
 
 
+LowRankSVDSequenceAttention = SVDLinearAttention
+
+
+@ATTENTION_REGISTRY.register("svd_sequence_inject")
+@ATTENTION_REGISTRY.register("svd_sequence_attention_inject")
+@ATTENTION_REGISTRY.register("inject_svd_sequence_attention")
+@ATTENTION_REGISTRY.register("inject_svd_linear_attention")
 def inject_svd_linear_attention(
-    layer: nn.Module,
+    layer: Any = None,
     config: Optional[Any] = None,
-    lora_rank: int = 16,
-    rank: Optional[int] = 64,
+    comp_config: Optional[Any] = None,
+    layer_idx: int = 0,
+    total_layers: int = 1,
+    old_attn: Optional[Any] = None,
+    lora_rank: Optional[int] = None,
+    rank: Optional[int] = None,
     **kwargs: Any,
-) -> Optional[SVDLinearAttention]:
-    """Safely constructs and injects SVDLinearAttention into a transformer layer."""
-    old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
+) -> Optional[Any]:
+    """Safely constructs and injects SVDLinearAttention into a transformer layer or model."""
+    # Dual injector: whole model traversal
+    if layer is not None and (hasattr(layer, "transformer") or hasattr(layer, "distilbert") or hasattr(layer, "roberta") or (hasattr(layer, "model") and not hasattr(layer, "forward"))):
+        cfg = config or getattr(layer, "config", None)
+        layers = None
+        for path in ("distilbert.transformer.layer", "roberta.encoder.layer", "bert.encoder.layer", "transformer.h", "model.layers"):
+            parts = path.split(".")
+            curr = layer
+            for p in parts:
+                curr = getattr(curr, p, None)
+                if curr is None:
+                    break
+            if curr is not None:
+                layers = curr
+                break
+        if layers is not None:
+            for lid, l in enumerate(layers):
+                inject_svd_linear_attention(
+                    layer=l,
+                    config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=lid,
+                    total_layers=len(layers),
+                    **kwargs,
+                )
+        return layer
+
+    if old_attn is None and layer is not None:
+        old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
+        if old_attn is None and hasattr(layer, "self"):
+            old_attn = layer
     if old_attn is None:
         return None
+
+    if config is None and hasattr(layer, "config"):
+        config = layer.config
+    if config is None and hasattr(old_attn, "config"):
+        config = old_attn.config
+
+    r = rank if rank is not None else _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", 64))
+    lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, "lora_rank", 16)
+    dropout = _cfg_get(comp_config, "dropout", 0.1)
 
     try:
         new_attn = SVDLinearAttention(
             config=config,
             old_attn=old_attn,
-            lora_rank=lora_rank,
-            rank=rank,
+            lora_rank=lr,
+            rank=r,
+            dropout=dropout,
             **kwargs,
         )
     except Exception as e:
@@ -564,5 +654,7 @@ def inject_svd_linear_attention(
         layer.attn = new_attn
     elif hasattr(layer, "self_attn"):
         layer.self_attn = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
 
     return new_attn

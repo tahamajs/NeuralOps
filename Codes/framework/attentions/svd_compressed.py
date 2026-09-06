@@ -36,7 +36,13 @@ from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from scipy.linalg import svd
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 try:
     from transformers import (
@@ -56,12 +62,6 @@ except Exception:
     Trainer = object
     TrainingArguments = object
     def set_seed(s): pass
-
-try:
-    from datasets import Dataset, DatasetDict
-except Exception:
-    Dataset = object
-    DatasetDict = object
 
 warnings.filterwarnings("ignore", category=UserWarning)
 log = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ def lagrangian_rank_allocation(
         max_r = min(d_in, d_out, int(max_rank_factor * min(d_in, d_out)))
         max_r = max(1, max_r)
 
-        _, s, _ = svd(W.astype(np.float64), full_matrices=False)
+        s = np.linalg.svd(W.astype(np.float64), compute_uv=False)
         cum_ent = compute_cumulative_entropy(s, max_r)
         cost = 1.0 - cum_ent
         cost_table.append(cost)
@@ -161,9 +161,14 @@ def lagrangian_rank_allocation(
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    rotary_dim = 2 * (d // 2)
+    x1 = x[..., : rotary_dim // 2]
+    x2 = x[..., rotary_dim // 2 : rotary_dim]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if rotary_dim < d:
+        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -174,25 +179,62 @@ def apply_rotary_pos_emb(
     position_ids: Optional[torch.Tensor] = None,
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
-    rotary_dim = cos.shape[-1]
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
+
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
-    while cos.dim() < q_rot.dim():
-        cos = cos.unsqueeze(unsqueeze_dim)
-        sin = sin.unsqueeze(unsqueeze_dim)
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
 
-    q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
 
-    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
-    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
-    return q, k
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+
+    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
+    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
+    return q_out, k_out
 
 
-@ATTENTION_REGISTRY.register("svd_compressed_module", supports_causal=True, supports_gqa=True)
+def _unpack_weight_bias(proj: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    if proj is None:
+        return None, None
+    if hasattr(proj, "base_layer"):
+        proj = proj.base_layer
+    w = getattr(proj, "weight", None)
+    b = getattr(proj, "bias", None)
+    if w is not None:
+        w = w.detach()
+        if hasattr(proj, "nf") or proj.__class__.__name__ == "Conv1D":
+            w = w.t().contiguous()
+    if b is not None:
+        b = b.detach()
+    return w, b
+
+
 @ATTENTION_REGISTRY.register("svd_compressed", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("svd_compressed_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("svd_compressed_module", supports_causal=True, supports_gqa=True)
 class SVDCompressedAttention(BaseAttention):
     r"""Multi-head attention with truncated SVD projections, trainable LoRA adapters,
     GQA support, RoPE support, and optional sparse residuals.
@@ -218,20 +260,20 @@ class SVDCompressedAttention(BaseAttention):
         super().__init__(model_config)
 
         # 1. Dimensions & Architecture
-        self.hidden_size: int = getattr(
+        self.hidden_size: int = int(_cfg_get(
             model_config, "hidden_size", kwargs.get("hidden_size", 768)
-        )
-        self.num_heads: int = getattr(
+        ))
+        self.num_heads: int = int(_cfg_get(
             model_config,
             "num_attention_heads",
-            getattr(model_config, "num_heads", kwargs.get("num_attention_heads", 12)),
-        )
-        self.head_dim: int = getattr(
-            model_config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads)
-        )
+            _cfg_get(model_config, "num_heads", kwargs.get("num_attention_heads", 12)),
+        ))
+        self.head_dim: int = int(_cfg_get(
+            model_config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
+        ))
 
-        cfg_kv = getattr(
-            model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", None)
+        cfg_kv = _cfg_get(
+            model_config, "num_key_value_heads", _cfg_get(model_config, "num_kv_heads", None)
         )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
@@ -241,7 +283,7 @@ class SVDCompressedAttention(BaseAttention):
             self.num_kv_heads = self.num_heads
 
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
-        self.kv_repeat: int = self.num_heads // self.num_kv_heads
+        self.kv_repeat: int = max(1, self.num_heads // self.num_kv_heads)
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.q_head_size: int = self.num_heads * self.head_dim
         self.all_head_size: int = self.q_head_size
@@ -251,17 +293,22 @@ class SVDCompressedAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
         else:
             self.is_decoder = (
-                getattr(model_config, "is_decoder", False)
-                or getattr(model_config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                bool(_cfg_get(model_config, "is_decoder", False))
+                or str(_cfg_get(model_config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama")
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
             )
 
         self.is_nested_encoder: bool = False
-        default_r = getattr(model_config, "svd_rank", getattr(model_config, "rank", 64)) if model_config else 64
-        self.ranks: Dict[str, int] = ranks or {"q": default_r, "k": default_r, "v": default_r, "o": default_r}
+        default_r = int(_cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64)))
+        default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
+        self.ranks: Dict[str, int] = {}
+        for k in ("q", "k", "v", "o"):
+            val = ranks.get(k, default_r) if ranks else default_r
+            self.ranks[k] = max(1, min(int(val), self.hidden_size, self.all_head_size))
+
         self.add_sparse: bool = add_sparse
         self.sparsity_level: float = sparsity_level
-        self.lora_rank = lora_rank if lora_rank is not None else 16
+        self.lora_rank = max(1, min(int(lora_rank if lora_rank is not None else 16), self.hidden_size, self.all_head_size))
         self.lora_alpha = lora_alpha
         self.scaling = lora_alpha / max(1, self.lora_rank)
 
@@ -320,16 +367,16 @@ class SVDCompressedAttention(BaseAttention):
             self.register_parameter("v_sparse_weight", None)
             self.register_parameter("o_sparse_weight", None)
 
-        dropout_p = getattr(
+        dropout_p = _cfg_get(
             model_config,
             "dropout",
-            getattr(
+            _cfg_get(
                 model_config,
                 "hidden_dropout_prob",
-                getattr(model_config, "attention_probs_dropout_prob", dropout),
+                _cfg_get(model_config, "attention_probs_dropout_prob", dropout),
             ),
-        ) if model_config else dropout
-        self.dropout = nn.Dropout(dropout_p)
+        )
+        self.dropout = nn.Dropout(float(dropout_p) if dropout_p is not None else 0.1)
 
         src_attn = old_attn or kwargs.get("pretrained_attn", None)
         if src_attn is not None:
@@ -341,7 +388,7 @@ class SVDCompressedAttention(BaseAttention):
         with torch.no_grad():
             W = W_tensor.float()
             d_out, d_in = W.shape
-            r = min(rank, min(d_out, d_in), down.out_features, up.in_features)
+            r = min(rank, d_out, d_in, down.out_features, up.in_features)
             r = max(r, 1)
 
             U, s, VT = torch.linalg.svd(W, full_matrices=False)
@@ -366,10 +413,9 @@ class SVDCompressedAttention(BaseAttention):
 
             # Detect nested encoder container or inner self-attention
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
+            has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and not has_out_proj
             ):
                 self.is_nested_encoder = True
 
@@ -377,77 +423,64 @@ class SVDCompressedAttention(BaseAttention):
                 self.is_nested_encoder = True
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
-                    w_o = old_attn.output.dense.weight
-                    b_o = old_attn.output.dense.bias
+                    w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
             else:
                 src = old_attn
 
             # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
-                c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-                    c_attn_w = c_attn_w.t()
+                c_w, c_b = _unpack_weight_bias(src.c_attn)
+                if c_w is not None:
+                    if c_w.shape[0] == self.hidden_size and c_w.shape[1] != self.hidden_size:
+                        c_w = c_w.t()
 
-                q_dim = self.q_head_size
-                k_dim = self.hidden_size
-                v_dim = self.hidden_size
+                    q_dim = self.q_head_size
+                    k_dim = self.hidden_size
+                    v_dim = self.hidden_size
 
-                w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
-                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                    w_q = c_w[:q_dim, :]
+                    w_k = c_w[q_dim : q_dim + k_dim, :]
+                    w_v = c_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
 
-                if c_attn_b is not None:
-                    b_q = c_attn_b[:q_dim]
-                    b_k = c_attn_b[q_dim : q_dim + k_dim]
-                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+                    if c_b is not None:
+                        b_q = c_b[:q_dim]
+                        b_k = c_b[q_dim : q_dim + k_dim]
+                        b_v = c_b[q_dim + k_dim : q_dim + k_dim + v_dim]
 
-                out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
-                    out_w = out_w.t()
-                w_o = out_w
-                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
+                out_w, out_b = _unpack_weight_bias(src.c_proj)
+                if out_w is not None:
+                    if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                        out_w = out_w.t()
+                    w_o = out_w
+                    b_o = out_b
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
-                w_q = src.query.weight.detach()
-                b_q = src.query.bias.detach() if src.query.bias is not None else None
-                w_k = src.key.weight.detach()
-                b_k = src.key.bias.detach() if src.key.bias is not None else None
-                w_v = src.value.weight.detach()
-                b_v = src.value.bias.detach() if src.value.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.query)
+                w_k, b_k = _unpack_weight_bias(src.key)
+                w_v, b_v = _unpack_weight_bias(src.value)
 
                 if w_o is None:
                     for attr in ("dense", "out_proj", "o_proj"):
                         if hasattr(src, attr):
-                            proj = getattr(src, attr)
-                            w_o = proj.weight.detach()
-                            b_o = proj.bias.detach() if proj.bias is not None else None
+                            w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
-                w_q = src.q_proj.weight.detach()
-                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
-                w_k = src.k_proj.weight.detach()
-                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
-                w_v = src.v_proj.weight.detach()
-                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.q_proj)
+                w_k, b_k = _unpack_weight_bias(src.k_proj)
+                w_v, b_v = _unpack_weight_bias(src.v_proj)
                 if hasattr(src, "o_proj"):
-                    w_o = src.o_proj.weight.detach()
-                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                    w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
-                w_q = src.q_lin.weight.detach()
-                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
-                w_k = src.k_lin.weight.detach()
-                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
-                w_v = src.v_lin.weight.detach()
-                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.q_lin)
+                w_k, b_k = _unpack_weight_bias(src.k_lin)
+                w_v, b_v = _unpack_weight_bias(src.v_lin)
                 if hasattr(src, "out_lin"):
-                    w_o = src.out_lin.weight.detach()
-                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                    w_o, b_o = _unpack_weight_bias(src.out_lin)
 
             # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
@@ -483,14 +516,24 @@ class SVDCompressedAttention(BaseAttention):
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
                     raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
-            # Set Q
+            # Orient weights if needed
+            def _orient(w: torch.Tensor, out_dim: int, in_dim: int) -> torch.Tensor:
+                if w.shape == (out_dim, in_dim):
+                    return w
+                if w.shape == (in_dim, out_dim):
+                    return w.t().contiguous()
+                return w
+
+            w_q = _orient(w_q, self.q_head_size, self.hidden_size)
+            # Factorize and set Q
             self._set_factorised_weights(w_q, b_q, self.q_down, self.q_up, self.ranks["q"])
 
-            # Set K & V with GQA pooling if needed
+            # Factorize and set K & V with GQA pooling if needed
             if w_k.shape[0] == self.kv_head_size:
+                w_k = _orient(w_k, self.kv_head_size, self.hidden_size)
                 self._set_factorised_weights(w_k, b_k, self.k_down, self.k_up, self.ranks["k"])
             else:
-                rep = w_k.shape[0] // self.kv_head_size
+                rep = max(1, w_k.shape[0] // self.kv_head_size)
                 w_k_pooled = (
                     w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
                     .mean(dim=1)
@@ -504,9 +547,10 @@ class SVDCompressedAttention(BaseAttention):
                 self._set_factorised_weights(w_k_pooled, b_k_pooled, self.k_down, self.k_up, self.ranks["k"])
 
             if w_v.shape[0] == self.kv_head_size:
+                w_v = _orient(w_v, self.kv_head_size, self.hidden_size)
                 self._set_factorised_weights(w_v, b_v, self.v_down, self.v_up, self.ranks["v"])
             else:
-                rep = w_v.shape[0] // self.kv_head_size
+                rep = max(1, w_v.shape[0] // self.kv_head_size)
                 w_v_pooled = (
                     w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
                     .mean(dim=1)
@@ -523,6 +567,7 @@ class SVDCompressedAttention(BaseAttention):
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
                     raise RuntimeError("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
+                w_o = _orient(w_o, self.hidden_size, self.q_head_size)
                 self._set_factorised_weights(w_o, b_o, self.o_down, self.o_up, self.ranks["o"])
 
             # Initialize sparse residuals if enabled
@@ -658,6 +703,12 @@ class SVDCompressedAttention(BaseAttention):
         else:
             output = proj_o(context)
 
+        if output.shape[-1] != hidden_states.shape[-1]:
+            if output.shape[-1] < hidden_states.shape[-1]:
+                output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1]))
+            else:
+                output = output[..., :hidden_states.shape[-1]]
+
         return output, (attn_weights if output_attentions else None)
 
 
@@ -729,8 +780,9 @@ GLUE_TASK_KEYS: Dict[str, Tuple[str, Optional[str]]] = {
 }
 
 
-def load_glue_local(task_name: str) -> DatasetDict:
+def load_glue_local(task_name: str) -> Any:
     r"""Load GLUE benchmark dataset from local offline storage."""
+    from datasets import Dataset, DatasetDict
     from framework.utils.paths import get_glue_dir
 
     base_path = str(get_glue_dir())
@@ -936,25 +988,65 @@ def main() -> None:
 
 
 @ATTENTION_REGISTRY.register("svd_compressed_inject")
+@ATTENTION_REGISTRY.register("svd_compressed_attention_inject")
+@ATTENTION_REGISTRY.register("inject_svd_compressed")
+@ATTENTION_REGISTRY.register("inject_svd_compressed_attention")
 def inject_svd_compressed(
-    layer: Any,
+    layer: Any = None,
     model_config: Optional[Any] = None,
     comp_config: Optional[Any] = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Optional[Any] = None,
-    lora_rank: int = 16,
+    lora_rank: Optional[int] = None,
     **kwargs: Any,
-) -> Optional[SVDCompressedAttention]:
-    r"""Bridge helper safely injecting SVDCompressedAttention into a transformer layer."""
-    if old_attn is None:
+) -> Optional[Any]:
+    r"""Bridge helper safely injecting SVDCompressedAttention into a transformer layer or model."""
+    # Dual injector: whole model traversal
+    if layer is not None and (hasattr(layer, "transformer") or hasattr(layer, "distilbert") or hasattr(layer, "roberta") or (hasattr(layer, "model") and not hasattr(layer, "forward"))):
+        cfg = model_config or getattr(layer, "config", None)
+        layers = None
+        for path in ("distilbert.transformer.layer", "roberta.encoder.layer", "bert.encoder.layer", "transformer.h", "model.layers"):
+            parts = path.split(".")
+            curr = layer
+            for p in parts:
+                curr = getattr(curr, p, None)
+                if curr is None:
+                    break
+            if curr is not None:
+                layers = curr
+                break
+        if layers is not None:
+            for lid, l in enumerate(layers):
+                inject_svd_compressed(
+                    layer=l,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=lid,
+                    total_layers=len(layers),
+                    **kwargs,
+                )
+        return layer
+
+    if old_attn is None and layer is not None:
         old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
+        if old_attn is None and hasattr(layer, "self"):
+            old_attn = layer
     if old_attn is None:
         return None
 
-    rank = getattr(comp_config, "rank", getattr(comp_config, "svd_rank", 32)) if comp_config else 32
-    dropout = getattr(comp_config, "dropout", 0.1) if comp_config else 0.1
-    ranks = {"q": rank, "k": rank, "v": rank, "o": rank}
+    if model_config is None and hasattr(layer, "config"):
+        model_config = layer.config
+    if model_config is None and hasattr(old_attn, "config"):
+        model_config = old_attn.config
+
+    rank = _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", kwargs.get("rank", 32)))
+    ranks = kwargs.pop("ranks", None)
+    if ranks is None:
+        ranks = {"q": rank, "k": rank, "v": rank, "o": rank}
+
+    dropout = _cfg_get(comp_config, "dropout", 0.1)
+    lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, "lora_rank", 16)
 
     try:
         new_attn = SVDCompressedAttention(
@@ -963,7 +1055,7 @@ def inject_svd_compressed(
             dropout=dropout,
             layer_idx=layer_idx,
             ranks=ranks,
-            lora_rank=lora_rank,
+            lora_rank=lr,
             **kwargs,
         )
     except Exception as e:
@@ -976,5 +1068,7 @@ def inject_svd_compressed(
         layer.attn = new_attn
     elif hasattr(layer, "self_attn"):
         layer.self_attn = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
 
     return new_attn
