@@ -21,6 +21,18 @@ from framework.utils.compat import should_compress_linear, get_dynamic_compressi
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely extract config value from None, dict, or namespace/object."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
+
+
 @COMPRESSOR_REGISTRY.register("direct_svd")
 @COMPRESSOR_REGISTRY.register("direct_svd_compressor")
 class DirectSVDCompressor(BaseCompressor):
@@ -38,11 +50,13 @@ class DirectSVDCompressor(BaseCompressor):
     - Relative Frobenius reconstruction error validation with configurable max_error.
     - Automatic rank escalation retries when error threshold is exceeded.
     - Safe fallback to original layer if error remains high or decomposition fails.
+    - Fallback and non-target layers frozen (requires_grad=False) during recovery.
+    - Robust LoRALinear and Conv1D support (with transpose and adapter preservation).
+    - target_attention_only parameter: restricts SVD factorization to attention projections.
     - Strict rank safeguard: enforces r < min(in_f, out_f) and parameter reduction r * (in + out) < in * out.
-    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
     - Unified critical-layer protection via should_compress_linear.
     - Full FP32 computation for numerical stability.
-    - Detailed per-layer statistics and error logging.
+    - Real metrics recording: original_layer_count, compressed_layer_count, fallback_layer_count, effective_parameter_ratio.
     """
 
     def __init__(
@@ -51,30 +65,36 @@ class DirectSVDCompressor(BaseCompressor):
         rank: Optional[int] = 32,
         min_rank: int = 16,
         rank_ratio: Optional[float] = None,
-        max_error: float = 0.85,
+        max_error: float = 0.35,
         fallback_to_original: bool = True,
         protect_critical: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
+        target_attention_only: bool = False,
         max_retries: int = 2,
         target_modules: Optional[List[str]] = None,
+        cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="direct_svd", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
-        if cfg is not None:
-            rank = getattr(cfg, "direct_svd_rank", getattr(cfg, "svd_rank", getattr(cfg, "rank", rank)))
-            min_rank = getattr(cfg, "min_rank", min_rank)
-            rank_ratio = getattr(cfg, "direct_svd_rank_ratio", getattr(cfg, "rank_ratio", rank_ratio))
-            max_error = getattr(cfg, "direct_svd_max_error", getattr(cfg, "max_error", max_error))
-            fallback_to_original = getattr(
-                cfg, "direct_svd_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original)
-            )
-            protect_critical = getattr(cfg, "protect_critical", protect_critical)
-            lora_r = getattr(cfg, "lora_r", getattr(cfg, "lora_rank", lora_r))
-            lora_alpha = getattr(cfg, "lora_alpha", lora_alpha)
-            skip_attention_qkv = getattr(cfg, "skip_attention_qkv", skip_attention_qkv)
+        cfg_obj = cfg if cfg is not None else kwargs.get("comp_config", None)
+        self.cfg = cfg_obj
+
+        rank = _cfg_get(cfg_obj, "direct_svd_rank", _cfg_get(cfg_obj, "svd_rank", _cfg_get(cfg_obj, "rank", rank)))
+        min_rank = _cfg_get(cfg_obj, "min_rank", min_rank)
+        rank_ratio = _cfg_get(cfg_obj, "direct_svd_rank_ratio", _cfg_get(cfg_obj, "rank_ratio", rank_ratio))
+        max_error = _cfg_get(cfg_obj, "direct_svd_max_error", _cfg_get(cfg_obj, "max_error", max_error))
+        fallback_to_original = _cfg_get(
+            cfg_obj, "direct_svd_fallback_to_original", _cfg_get(cfg_obj, "fallback_to_original", fallback_to_original)
+        )
+        protect_critical = _cfg_get(cfg_obj, "protect_critical", protect_critical)
+        lora_r = _cfg_get(cfg_obj, "lora_r", _cfg_get(cfg_obj, "lora_rank", lora_r))
+        lora_alpha = _cfg_get(cfg_obj, "lora_alpha", lora_alpha)
+        skip_attention_qkv = _cfg_get(cfg_obj, "skip_attention_qkv", skip_attention_qkv)
+        target_attention_only = _cfg_get(
+            cfg_obj, "direct_svd_target_attention_only", _cfg_get(cfg_obj, "target_attention_only", target_attention_only)
+        )
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -88,6 +108,7 @@ class DirectSVDCompressor(BaseCompressor):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.target_attention_only = bool(target_attention_only)
         self.max_retries = int(max_retries)
         self.target_modules = target_modules
 
@@ -110,19 +131,31 @@ class DirectSVDCompressor(BaseCompressor):
         return False
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if self.protect_critical and any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor"]):
+        name_lower = name.lower()
+        if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        cls_name = module.__class__.__name__.lower()
-        is_linear = isinstance(module, nn.Linear)
-        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+        if self.protect_critical and any(k in name_lower for k in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor"]):
+            return False
+
+        target_mod = getattr(module, "base_layer", module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not (is_linear or is_conv1d):
             return False
-        if isinstance(module, SVDLinear):
+        if isinstance(target_mod, SVDLinear) or isinstance(module, SVDLinear):
             return False
         if not should_compress_linear(self.model, name):
             return False
-        if self._is_gqa_asymmetric(name, module):
+        if self._is_gqa_asymmetric(name, target_mod):
             return False
+
+        if self.target_attention_only:
+            last_part = name.split(".")[-1]
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
+            if not is_attn:
+                return False
+
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         return True
@@ -159,9 +192,10 @@ class DirectSVDCompressor(BaseCompressor):
         Decompose a single linear or Conv1D layer via SVD with symmetric factor distribution.
         Returns: (svd_layer, relative_reconstruction_error, chosen_rank)
         """
-        cls_name = layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(layer, "nf")
-        raw_w = layer.weight.data
+        target_mod = getattr(layer, "base_layer", layer)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+        raw_w = target_mod.weight.data
 
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -204,19 +238,36 @@ class DirectSVDCompressor(BaseCompressor):
             best_err = err
             chosen_r = r
 
+            # Determine LoRA parameters to preserve or initialize
+            eff_lora_r = self.lora_r
+            eff_lora_alpha = self.lora_alpha
+            if hasattr(layer, "lora_A") and hasattr(layer, "r"):
+                eff_lora_r = getattr(layer, "r", self.lora_r)
+                eff_lora_alpha = getattr(layer, "lora_alpha", self.lora_alpha)
+
             svd_layer = SVDLinear(
                 in_features=in_f,
                 out_features=out_f,
                 rank=r,
-                bias=layer.bias is not None,
+                bias=target_mod.bias is not None,
                 dtype=dtype,
                 device=device,
-                lora_r=self.lora_r,
-                lora_alpha=self.lora_alpha,
+                lora_r=eff_lora_r,
+                lora_alpha=eff_lora_alpha,
             )
             svd_layer.set_low_rank_factors(U_r, V_r)
-            if layer.bias is not None and svd_layer.bias is not None:
-                svd_layer.bias.data.copy_(layer.bias.data)
+            if target_mod.bias is not None and svd_layer.bias is not None:
+                svd_layer.bias.data.copy_(target_mod.bias.data)
+
+            # If the original layer was a LoRALinear wrapper, copy over existing adapter weights
+            if hasattr(layer, "lora_A") and hasattr(layer, "lora_B") and svd_layer.lora_A is not None:
+                try:
+                    if hasattr(layer.lora_A, "weight") and svd_layer.lora_A.weight.shape == layer.lora_A.weight.shape:
+                        svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+                    if hasattr(layer.lora_B, "weight") and svd_layer.lora_B.weight.shape == layer.lora_B.weight.shape:
+                        svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+                except Exception as e:
+                    logger.debug("DirectSVD adapter preservation notice: %s", e)
 
             best_svd_layer = svd_layer
 
@@ -240,6 +291,9 @@ class DirectSVDCompressor(BaseCompressor):
         self.layer_errors = {}
         seen_weights: set[int] = set()
 
+        total_orig_decomp_params = 0
+        total_comp_decomp_params = 0
+
         target_layers = [
             (name, mod)
             for name, mod in list(self.model.named_modules())
@@ -250,14 +304,39 @@ class DirectSVDCompressor(BaseCompressor):
             logger.warning("DirectSVD: No compressible linear layers found.")
             return self.model, self.get_compression_stats()
 
+        # Handle freezing of non-target layers when target_attention_only=True
+        if self.target_attention_only:
+            for name, module in list(self.model.named_modules()):
+                target_mod = getattr(module, "base_layer", module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+                if is_linear or is_conv1d:
+                    if not self._is_target_module(name, module):
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        self.skipped_layers.append(name)
+
         for name, module in target_layers:
-            if not hasattr(module, "weight") or module.weight is None:
+            target_mod = getattr(module, "base_layer", module)
+            if not hasattr(target_mod, "weight") or target_mod.weight is None:
                 continue
-            w_id = id(module.weight)
+            w_id = id(target_mod.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
                 continue
             seen_weights.add(w_id)
+
+            raw_w = target_mod.weight.data
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+            if is_conv1d:
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+            orig_params = out_f * in_f
+            total_orig_decomp_params += orig_params
 
             svd_layer, err, r = self.compress_linear(module, rank=self.rank)
             self.layer_errors[name] = err
@@ -271,12 +350,16 @@ class DirectSVDCompressor(BaseCompressor):
                     self.max_error,
                 )
                 if self.fallback_to_original:
-                    logger.info("Skipping DirectSVD compression for %s (fallback to original).", name)
+                    logger.info("Skipping DirectSVD compression for %s (fallback to original and frozen).", name)
                     self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    total_comp_decomp_params += orig_params
                     continue
 
             replace_module(self.model, name, svd_layer)
             self.compressed_layers.append(name)
+            total_comp_decomp_params += (r * (in_f + out_f))
 
         # Post-compression forward sanity check
         forward_check_success = False
@@ -290,6 +373,9 @@ class DirectSVDCompressor(BaseCompressor):
         except Exception as e:
             logger.debug("DirectSVD post-compression forward sanity check exception: %s", e)
 
+        effective_ratio = (
+            total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
+        )
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
@@ -299,15 +385,21 @@ class DirectSVDCompressor(BaseCompressor):
         )
         stats.update({
             "compressed_layers": self.compressed_layers,
+            "compressed_layer_count": len(self.compressed_layers),
             "fallback_layers": self.fallback_layers,
+            "fallback_layer_count": len(self.fallback_layers),
             "skipped_layers": self.skipped_layers,
+            "skipped_layer_count": len(self.skipped_layers),
+            "original_layer_count": len(target_layers),
             "layer_ranks": self.layer_ranks,
             "layer_errors": self.layer_errors,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
+            "target_attention_only": self.target_attention_only,
             "lora_r": self.lora_r,
             "lora_alpha": self.lora_alpha,
             "avg_reconstruction_error": avg_err,
+            "effective_parameter_ratio": round(effective_ratio, 4),
             "num_compressed": len(self.compressed_layers),
             "num_fallback": len(self.fallback_layers),
             "num_skipped": len(self.skipped_layers),
@@ -330,16 +422,20 @@ class DirectSVDCompressor(BaseCompressor):
 def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Direct SVD factory function."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    rank = kwargs.pop("rank", getattr(comp_config, "direct_svd_rank", getattr(comp_config, "rank", 32)) if comp_config is not None else 32)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "direct_svd_max_error", getattr(comp_config, "max_error", 0.85)) if comp_config is not None else 0.85)
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "direct_svd_rank", _cfg_get(comp_config, "rank", 32)))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "direct_svd_max_error", _cfg_get(comp_config, "max_error", 0.35)))
     fallback = kwargs.pop(
         "fallback_to_original",
-        getattr(comp_config, "direct_svd_fallback_to_original", getattr(comp_config, "fallback_to_original", True)) if comp_config is not None else True,
+        _cfg_get(comp_config, "direct_svd_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
     )
-    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", getattr(comp_config, "lora_rank", 0)) if comp_config is not None else 0)
-    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config is not None else 1.0)
-    skip_attention_qkv = kwargs.pop("skip_attention_qkv", getattr(comp_config, "skip_attention_qkv", True) if comp_config is not None else True)
-    protect_critical = kwargs.pop("protect_critical", getattr(comp_config, "protect_critical", True) if comp_config is not None else True)
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0)))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", True))
+    protect_critical = kwargs.pop("protect_critical", _cfg_get(comp_config, "protect_critical", True))
+    target_attention_only = kwargs.pop(
+        "target_attention_only",
+        _cfg_get(comp_config, "direct_svd_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+    )
 
     compressor = DirectSVDCompressor(
         model,
@@ -350,7 +446,8 @@ def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
         lora_alpha=lora_alpha,
         skip_attention_qkv=skip_attention_qkv,
         protect_critical=protect_critical,
-        comp_config=comp_config,
+        target_attention_only=target_attention_only,
+        cfg=comp_config,
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
@@ -362,3 +459,4 @@ def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
 direct_svd_compressor_factory = direct_svd_factory
 
 __all__ = ["DirectSVDCompressor", "direct_svd_factory", "direct_svd_compressor_factory"]
+
