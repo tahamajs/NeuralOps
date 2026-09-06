@@ -226,6 +226,10 @@ class HGRN2OuterBlock(BaseAttention):
 
         nn.init.constant_(self.W_f.bias, -3.0)
 
+        old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
+        if old_attn is not None:
+            self.copy_weights(old_attn)
+
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
         with torch.no_grad():
@@ -344,18 +348,35 @@ class HGRN2OuterBlock(BaseAttention):
                     f"HGRN2OuterBlock: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
-            self.q_proj.weight.copy_(w_q.to(self.q_proj.weight.dtype))
-            self.k_proj.weight.copy_(w_k.to(self.k_proj.weight.dtype))
-            self.v_proj.weight.copy_(w_v.to(self.v_proj.weight.dtype))
+            for target_mod, w_src in [(self.q_proj, w_q), (self.k_proj, w_k), (self.v_proj, w_v)]:
+                tw = target_mod.weight
+                w_cast = w_src.to(tw.dtype)
+                if w_cast.shape == tw.shape:
+                    tw.data.copy_(w_cast)
+                else:
+                    min_r = min(tw.shape[0], w_cast.shape[0])
+                    min_c = min(tw.shape[1], w_cast.shape[1])
+                    tw.data[:min_r, :min_c].copy_(w_cast[:min_r, :min_c])
 
             f_norm_q = float(torch.linalg.norm(self.q_proj.weight))
             if f_norm_q < 1e-4:
                 raise RuntimeError(f"HGRN2OuterBlock: Q weight norm is near zero: {f_norm_q}")
 
             if w_o is not None:
-                self.out_proj.weight.copy_(w_o.to(self.out_proj.weight.dtype))
+                tw_o = self.out_proj.weight
+                w_o_cast = w_o.to(tw_o.dtype)
+                if w_o_cast.shape == tw_o.shape:
+                    tw_o.data.copy_(w_o_cast)
+                else:
+                    min_r = min(tw_o.shape[0], w_o_cast.shape[0])
+                    min_c = min(tw_o.shape[1], w_o_cast.shape[1])
+                    tw_o.data[:min_r, :min_c].copy_(w_o_cast[:min_r, :min_c])
+
                 if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(b_o.to(self.out_proj.bias.dtype))
+                    tb_o = self.out_proj.bias
+                    b_o_cast = b_o.to(tb_o.dtype)
+                    min_b = min(tb_o.numel(), b_o_cast.numel())
+                    tb_o.data[:min_b].copy_(b_o_cast[:min_b])
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
                     raise RuntimeError(f"HGRN2OuterBlock: Out projection norm is near zero: {f_norm_o}")
