@@ -425,11 +425,35 @@ def fused_svd_kernel_factory(config: Any, **kwargs: Any) -> nn.Module:
     return SVDLinearAttention(config, use_fused_kernel=True, **kwargs)
 
 
+@ATTENTION_REGISTRY.register("fused_svd_kernel_inject")
+def inject_fused_svd_kernel(
+    layer: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+) -> Any:
+    """Safe injection hook for fused SVD kernel attention."""
+    from framework.attentions.svd_linear_attention import inject_svd_linear
+    return inject_svd_linear(
+        target=layer,
+        cfg=model_config,
+        layer_idx=layer_idx,
+        total_layers=total_layers,
+        old_attn=old_attn,
+        use_fused_kernel=True,
+        **kwargs,
+    )
+
+
 __all__ = [
     "_fused_svd_linear_fwd_kernel",
     "_FusedSVDLinearAutogradFunction",
     "fused_svd_linear",
     "FusedSVDLinear",
     "fused_svd_kernel_factory",
+    "inject_fused_svd_kernel",
     "HAS_TRITON",
 ]
