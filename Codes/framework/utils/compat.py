@@ -145,8 +145,8 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     trainable_params = []
     for name, param in model.named_parameters():
         n_low = name.lower()
-        layer_prefix = name.rsplit(".", 1)[0]
-        layer_has_lora = any(k.startswith(layer_prefix) and any(t in k.lower() for t in (".lora_", ".lora_a", ".lora_b")) for k, _ in model.named_parameters())
+        parent_module_prefix = name.split(".base_layer.")[0] if ".base_layer." in name else name.rsplit(".", 1)[0]
+        layer_has_lora = any(k.startswith(parent_module_prefix) and any(t in k.lower() for t in (".lora_", ".lora_a", ".lora_b")) for k, _ in model.named_parameters())
 
         # 1. LoRA adapter parameters are always trainable
         if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt")):

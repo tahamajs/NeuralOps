@@ -311,10 +311,11 @@ class AASVDCompressor(BaseCompressor):
             cls_name = layer.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
-            if not hasattr(layer, "weight") or layer.weight is None:
+            weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
+            if weight_tensor is None:
                 return None, float("inf"), 0
 
-            raw_w = layer.weight.data
+            raw_w = weight_tensor.data
 
             if is_conv1d:
                 in_feat, out_feat = raw_w.shape[0], raw_w.shape[1]
@@ -372,22 +373,26 @@ class AASVDCompressor(BaseCompressor):
             W_recon = torch.matmul(U_r, V_r)
             err = float(torch.norm(W - W_recon, p="fro").item() / max(W_norm, 1e-12))
 
+            dtype = weight_tensor.dtype
+            device = weight_tensor.device
+            bias_tensor = getattr(target_mod, "bias", getattr(layer, "bias", None))
+
             svd_layer = SVDLinear(
                 in_features=in_feat,
                 out_features=out_feat,
                 rank=r,
-                bias=layer.bias is not None,
-                dtype=layer.weight.dtype,
-                device=layer.weight.device,
+                bias=bias_tensor is not None,
+                dtype=dtype,
+                device=device,
                 lora_r=getattr(self, "lora_r", 0),
                 lora_alpha=getattr(self, "lora_alpha", 1.0),
             )
             svd_layer.set_low_rank_factors(
-                U_r.to(device=layer.weight.device, dtype=layer.weight.dtype),
-                V_r.to(device=layer.weight.device, dtype=layer.weight.dtype),
+                U_r.to(device=device, dtype=dtype),
+                V_r.to(device=device, dtype=dtype),
             )
-            if layer.bias is not None:
-                svd_layer.bias.data.copy_(layer.bias.data)
+            if bias_tensor is not None and svd_layer.bias is not None:
+                svd_layer.bias.data.copy_(bias_tensor.data)
 
             svd_layer.reconstruction_error = err
             svd_layer.rank = r
@@ -428,7 +433,10 @@ class AASVDCompressor(BaseCompressor):
                         cls_name = module.__class__.__name__.lower()
                         target_cls = target_mod.__class__.__name__.lower()
                         is_conv1d = "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
-                        in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
+                        weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
+                        if weight_tensor is None:
+                            return
+                        in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
                         x_fp32 = x.float()
                         x_flat = x_fp32.reshape(-1, in_f)
                         # Filter out padding / zero tokens
@@ -514,13 +522,23 @@ class AASVDCompressor(BaseCompressor):
                             self.fallback_layers.append(name)
                             continue
 
-                replace_module(self.model, name, svd_layer)
+                if hasattr(module, "base_layer"):
+                    module.base_layer = svd_layer
+                    if hasattr(module, "lora_A") and module.lora_A is not None:
+                        for p in (module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]):
+                            p.requires_grad = True
+                    if hasattr(module, "lora_B") and module.lora_B is not None:
+                        for p in (module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]):
+                            p.requires_grad = True
+                else:
+                    replace_module(self.model, name, svd_layer)
                 self.compressed_layers.append(name)
 
         # Explicitly freeze all parameters in fallback layers so recovery fine-tuning only trains compressed/LoRA layers
         for name, mod in self.model.named_modules():
             if name in self.fallback_layers:
-                for p in mod.parameters():
+                target = getattr(mod, "base_layer", mod)
+                for p in target.parameters():
                     p.requires_grad = False
 
         # Clear covariances and factor cache to immediately free memory
