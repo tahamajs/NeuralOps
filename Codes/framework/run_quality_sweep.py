@@ -1150,10 +1150,11 @@ def main():
                             rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
                             rec_lr = args.learning_rate if args.learning_rate else (5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4)
                         LOG.info("Running %d recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
-                        for m in model.modules():
-                            if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
-                                m.reset_parameters()
-                                m.merged = False
+                        if typ == "attention":
+                            for m in model.modules():
+                                if hasattr(m, "merged") and hasattr(m, "reset_parameters"):
+                                    m.reset_parameters()
+                                    m.merged = False
 
                         from framework.utils.compat import get_recovery_params
                         trainable = get_recovery_params(model)
