@@ -26,11 +26,40 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    if module is None:
+        return None, None
+    base = getattr(module, "base_layer", module)
+    w = getattr(base, "weight", None)
+    b = getattr(base, "bias", None)
+    if w is not None:
+        w = w.data.clone()
+        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+            w = w.t()
+    if b is not None:
+        b = b.data.clone()
+    return w, b
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    rotary_dim = x.shape[-1]
+    rotary_dim = rotary_dim - (rotary_dim % 2)
+    x_rot = x[..., :rotary_dim]
+    x1 = x_rot[..., : rotary_dim // 2]
+    x2 = x_rot[..., rotary_dim // 2 :]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if x.shape[-1] > rotary_dim:
+        return torch.cat([rotated, x[..., rotary_dim:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -43,8 +72,11 @@ def apply_rotary_pos_emb(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
     rotary_dim = cos.shape[-1]
+    rotary_dim = rotary_dim - (rotary_dim % 2)
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+    cos = cos[..., :rotary_dim]
+    sin = sin[..., :rotary_dim]
 
     while cos.dim() < q_rot.dim():
         cos = cos.unsqueeze(unsqueeze_dim)
@@ -79,29 +111,32 @@ class SVDLLMV2Attention(BaseAttention):
         dropout: float = 0.1,
         **kwargs: Any,
     ) -> None:
+        comp_config = _cfg_get(config, "compression_config", kwargs.get("comp_config", None))
         actual_rank = (
             rank
             if rank is not None
-            else getattr(config, "svd_rank", getattr(config, "rank", 64))
+            else _cfg_get(comp_config, "rank", _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 64)))
         )
         super().__init__(config, actual_rank)
 
         # 1. Dimensions & Architecture
-        self.hidden_size: int = getattr(
-            config, "hidden_size", kwargs.get("hidden_size", 768)
+        self.hidden_size: int = kwargs.get(
+            "hidden_size",
+            _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)))
         )
-        self.num_heads: int = getattr(
-            config,
-            "num_attention_heads",
-            getattr(config, "num_heads", kwargs.get("num_attention_heads", 12)),
+        self.num_heads: int = kwargs.get(
+            "num_heads",
+            kwargs.get(
+                "num_attention_heads",
+                _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_heads", 12)))
+            )
         )
-        self.head_dim: int = getattr(
-            config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads)
+        self.head_dim: int = kwargs.get(
+            "head_dim",
+            _cfg_get(config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
         )
 
-        cfg_kv = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -117,18 +152,19 @@ class SVDLLMV2Attention(BaseAttention):
 
         self.rank: int = actual_rank
         self.energy_threshold: float = energy_threshold
-        self.lora_rank: int = lora_rank if lora_rank is not None else 16
-        self.lora_alpha: float = lora_alpha
-        self.scaling: float = lora_alpha / max(1, self.lora_rank)
+        self.lora_rank: int = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", lora_rank if lora_rank is not None else 16))
+        self.lora_alpha: float = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha))
+        self.scaling: float = self.lora_alpha / max(1, self.lora_rank)
 
         # 2. Causal decoder flag detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
             self.is_decoder = (
-                getattr(config, "is_decoder", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                bool(_cfg_get(config, "is_decoder", False))
+                or _cfg_get(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
+                or bool(kwargs.get("is_causal", False))
             )
 
         self.is_nested_encoder: bool = False
@@ -276,70 +312,46 @@ class SVDLLMV2Attention(BaseAttention):
 
             # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
-                c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-                    c_attn_w = c_attn_w.t()
+                c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
+                if c_attn_w is not None:
+                    split_size = c_attn_w.size(0) // 3
+                    w_q = c_attn_w[:split_size, :]
+                    w_k = c_attn_w[split_size : 2 * split_size, :]
+                    w_v = c_attn_w[2 * split_size :, :]
+                    if c_attn_b is not None:
+                        b_q = c_attn_b[:split_size]
+                        b_k = c_attn_b[split_size : 2 * split_size]
+                        b_v = c_attn_b[2 * split_size :]
 
-                q_dim = self.q_head_size
-                k_dim = self.hidden_size
-                v_dim = self.hidden_size
-
-                w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
-                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
-
-                if c_attn_b is not None:
-                    b_q = c_attn_b[:q_dim]
-                    b_k = c_attn_b[q_dim : q_dim + k_dim]
-                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
-
-                out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
-                    out_w = out_w.t()
-                w_o = out_w
-                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
+                w_o, b_o = _unpack_weight_bias(src.c_proj)
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
-                w_q = src.query.weight.detach()
-                b_q = src.query.bias.detach() if src.query.bias is not None else None
-                w_k = src.key.weight.detach()
-                b_k = src.key.bias.detach() if src.key.bias is not None else None
-                w_v = src.value.weight.detach()
-                b_v = src.value.bias.detach() if src.value.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.query)
+                w_k, b_k = _unpack_weight_bias(src.key)
+                w_v, b_v = _unpack_weight_bias(src.value)
 
                 if w_o is None:
                     for attr in ("dense", "out_proj", "o_proj"):
                         if hasattr(src, attr):
-                            proj = getattr(src, attr)
-                            w_o = proj.weight.detach()
-                            b_o = proj.bias.detach() if proj.bias is not None else None
+                            w_o, b_o = _unpack_weight_bias(getattr(src, attr))
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
-                w_q = src.q_proj.weight.detach()
-                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
-                w_k = src.k_proj.weight.detach()
-                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
-                w_v = src.v_proj.weight.detach()
-                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.q_proj)
+                w_k, b_k = _unpack_weight_bias(src.k_proj)
+                w_v, b_v = _unpack_weight_bias(src.v_proj)
                 if hasattr(src, "o_proj"):
-                    w_o = src.o_proj.weight.detach()
-                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                    w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
-                w_q = src.q_lin.weight.detach()
-                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
-                w_k = src.k_lin.weight.detach()
-                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
-                w_v = src.v_lin.weight.detach()
-                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+                w_q, b_q = _unpack_weight_bias(src.q_lin)
+                w_k, b_k = _unpack_weight_bias(src.k_lin)
+                w_v, b_v = _unpack_weight_bias(src.v_lin)
                 if hasattr(src, "out_lin"):
-                    w_o = src.out_lin.weight.detach()
-                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                    w_o, b_o = _unpack_weight_bias(src.out_lin)
 
             # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
@@ -520,39 +532,100 @@ class SVDLLMV2Attention(BaseAttention):
         else:
             out = self._project(context, self.out_proj_vh, self.out_proj_s, self.out_proj_u, self.out_proj_bias, self.out_lora_A, self.out_lora_B)
 
+        if out.shape[-1] != hidden_states.shape[-1]:
+            if out.shape[-1] < hidden_states.shape[-1]:
+                out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+            else:
+                out = out[..., :hidden_states.shape[-1]]
+
         return out, (probs if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("svd_llm_v2")
+@ATTENTION_REGISTRY.register("svd_llm_v2_attention")
 @ATTENTION_REGISTRY.register("svd_llm_v2_inject")
+@ATTENTION_REGISTRY.register("inject_svd_llm_v2")
 def inject_svd_llm_v2(
-    layer: nn.Module,
-    config: Optional[Any] = None,
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     lora_rank: int = 16,
     rank: Optional[int] = 64,
     **kwargs: Any,
-) -> Optional[SVDLLMV2Attention]:
-    """Safely constructs and injects SVDLLMV2Attention into a target transformer layer."""
-    old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
-    if old_attn is None:
-        return None
+) -> Optional[Any]:
+    """Safely constructs and injects SVDLLMV2Attention into a model or transformer layer."""
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and not hasattr(target, "forward"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+
+        if layer_list is not None:
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                inject_svd_llm_v2(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    rank=rank,
+                    **kwargs,
+                )
+            return target
+
+    src = old_attn
+    if src is None and target is not None:
+        for attr in ("attention", "attn", "self_attn", "self"):
+            if hasattr(target, attr):
+                src = getattr(target, attr)
+                break
 
     try:
         new_attn = SVDLLMV2Attention(
-            config=config,
-            old_attn=old_attn,
+            config=cfg,
+            old_attn=src,
             lora_rank=lora_rank,
             rank=rank,
+            comp_config=comp_config,
             **kwargs,
         )
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDLLMV2Attention: {e}")
         return None
 
-    if hasattr(layer, "attention"):
-        layer.attention = new_attn
-    elif hasattr(layer, "attn"):
-        layer.attn = new_attn
-    elif hasattr(layer, "self_attn"):
-        layer.self_attn = new_attn
+    if target is not None:
+        for attr in ("attention", "attn", "self_attn", "self"):
+            if hasattr(target, attr):
+                if attr == "attention" and hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                else:
+                    setattr(target, attr, new_attn)
+                return new_attn
+        target.attention = new_attn
 
     return new_attn
