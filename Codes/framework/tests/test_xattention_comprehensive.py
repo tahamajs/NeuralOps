@@ -123,11 +123,11 @@ def test_rope_and_even_odd_dim_safety():
 def test_lora_adapters_and_freezing():
     cfg = make_config(hidden_size=64, num_heads=4)
     dummy = DummyAttn(64)
-    dummy.q_proj.lora_A = nn.Parameter(torch.randn(8, 64))
-    dummy.q_proj.lora_B = nn.Parameter(torch.randn(64, 8))
+    dummy.q_proj.lora_A = nn.Parameter(torch.randn(16, 64))
+    dummy.q_proj.lora_B = nn.Parameter(torch.randn(64, 16))
     dummy.q_proj.lora_scaling = 2.0
 
-    attn = XAttention(cfg, pretrained_attn=dummy, lora_rank=8)
+    attn = XAttention(cfg, pretrained_attn=dummy)
 
     assert attn.query.weight.requires_grad is False
     assert attn.query.lora_A.requires_grad is True
