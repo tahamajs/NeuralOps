@@ -384,9 +384,7 @@ class TPAttention(BaseAttention):
                 )
 
             # SVD factorized initialization for Q and K factor pairs
-            def _init_tp(W: torch.Tensor, proj1: LoRALinear, proj2: LoRALinear, num_heads: int, r: int) -> None:
-                # W: [H * head_dim, D]
-                # Factorize into proj1 [H * r, D] and proj2 [H * r, D]
+            def _init_tp(W: torch.Tensor, proj1: LoRALinear, proj2: LoRALinear, num_heads: int, r: int, src_sub=None) -> None:
                 W_f = W.float()
                 U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
                 eff_r = min(num_heads * r, U.size(1), Vt.size(0))
@@ -398,34 +396,86 @@ class TPAttention(BaseAttention):
                 p1 = (U[:num_heads * r, :eff_r] @ S_sqrt)
                 p2 = (S_sqrt @ Vt[:eff_r, :])
 
-                proj1.weight[:p1.size(0), :p1.size(1)].copy_(p1.to(proj1.weight.dtype))
-                proj2.weight[:min(num_heads * r, p2.size(0)), :p2.size(1)].copy_(p2[:num_heads * r, :].to(proj2.weight.dtype))
+                min_p1_0 = min(proj1.weight.shape[0], p1.size(0))
+                min_p1_1 = min(proj1.weight.shape[1], p1.size(1))
+                proj1.weight[:min_p1_0, :min_p1_1].copy_(p1[:min_p1_0, :min_p1_1].to(proj1.weight.dtype))
+
+                min_p2_0 = min(proj2.weight.shape[0], p2.size(0))
+                min_p2_1 = min(proj2.weight.shape[1], p2.size(1))
+                proj2.weight[:min_p2_0, :min_p2_1].copy_(p2[:min_p2_0, :min_p2_1].to(proj2.weight.dtype))
 
                 if float(torch.linalg.norm(proj1.weight)) < 1e-4:
                     nn.init.normal_(proj1.weight, std=0.02)
                 if float(torch.linalg.norm(proj2.weight)) < 1e-4:
                     nn.init.normal_(proj2.weight, std=0.02)
 
-            _init_tp(w_q, self.q_proj1, self.q_proj2, self.num_heads, self.rank)
-            _init_tp(w_k, self.k_proj1, self.k_proj2, self.num_kv_heads, self.rank)
+                if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
+                    if src_sub.lora_A is not None and src_sub.lora_B is not None:
+                        s_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
+                        s_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
+                        if hasattr(s_lA, "data") and hasattr(s_lB, "data"):
+                            if proj1.lora_A is not None and proj1.lora_B is not None:
+                                r_min = min(proj1.lora_A.shape[0], s_lA.shape[0])
+                                in_min = min(proj1.lora_A.shape[1], s_lA.shape[1])
+                                proj1.lora_A.data[:r_min, :in_min].copy_(s_lA.data[:r_min, :in_min])
+                                proj1.lora_A.requires_grad = True
 
-            self.v_proj.weight.copy_(w_v.to(self.v_proj.weight.dtype))
-            if b_v is not None and self.v_proj.bias is not None:
-                self.v_proj.bias.copy_(b_v.to(self.v_proj.bias.dtype))
-            elif self.v_proj.bias is not None:
-                self.v_proj.bias.zero_()
+                                out_min = min(proj1.lora_B.shape[0], s_lB.shape[0])
+                                r_min_b = min(proj1.lora_B.shape[1], s_lB.shape[1])
+                                proj1.lora_B.data[:out_min, :r_min_b].copy_(s_lB.data[:out_min, :r_min_b])
+                                proj1.lora_B.requires_grad = True
 
+            def _copy_layer(target_layer, w, b, src_sub=None):
+                if w is not None:
+                    if w.shape == target_layer.weight.shape:
+                        target_layer.weight.copy_(w.to(target_layer.weight.dtype))
+                    elif w.t().shape == target_layer.weight.shape:
+                        target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+                    else:
+                        min_0 = min(target_layer.weight.shape[0], w.shape[0])
+                        min_1 = min(target_layer.weight.shape[1], w.shape[1])
+                        target_layer.weight.zero_()
+                        target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
+                if b is not None and target_layer.bias is not None:
+                    if b.shape == target_layer.bias.shape:
+                        target_layer.bias.copy_(b.to(target_layer.bias.dtype))
+                    else:
+                        min_b = min(target_layer.bias.shape[0], b.shape[0])
+                        target_layer.bias.zero_()
+                        target_layer.bias[:min_b].copy_(b[:min_b].to(target_layer.bias.dtype))
+                elif target_layer.bias is not None:
+                    target_layer.bias.zero_()
+
+                if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
+                    if src_sub.lora_A is not None and src_sub.lora_B is not None and target_layer.lora_A is not None and target_layer.lora_B is not None:
+                        src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
+                        src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
+                        if hasattr(s_lA, "data") and hasattr(s_lB, "data"):
+                            r_min = min(target_layer.lora_A.shape[0], src_lA.shape[0])
+                            in_min = min(target_layer.lora_A.shape[1], src_lA.shape[1])
+                            target_layer.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
+                            target_layer.lora_A.requires_grad = True
+
+                            out_min = min(target_layer.lora_B.shape[0], src_lB.shape[0])
+                            r_min_b = min(target_layer.lora_B.shape[1], src_lB.shape[1])
+                            target_layer.lora_B.data[:out_min, :r_min_b].copy_(src_lB.data[:out_min, :r_min_b])
+                            target_layer.lora_B.requires_grad = True
+
+            sub_q = getattr(src, "q_proj", getattr(src, "q_lin", getattr(src, "query", None)))
+            sub_k = getattr(src, "k_proj", getattr(src, "k_lin", getattr(src, "key", None)))
+            sub_v = getattr(src, "v_proj", getattr(src, "v_lin", getattr(src, "value", None)))
+            sub_o = getattr(src, "o_proj", getattr(src, "out_lin", getattr(src, "dense", getattr(src, "out_proj", None))))
+
+            _init_tp(w_q, self.q_proj1, self.q_proj2, self.num_heads, self.rank, sub_q)
+            _init_tp(w_k, self.k_proj1, self.k_proj2, self.num_kv_heads, self.rank, sub_k)
+
+            _copy_layer(self.v_proj, w_v, b_v, sub_v)
             f_norm_v = float(torch.linalg.norm(self.v_proj.weight))
             if f_norm_v < 1e-4:
                 raise RuntimeError(f"TPAttention: V weight norm is near zero: {f_norm_v}")
 
             if w_o is not None:
-                self.out_proj.weight.copy_(w_o.to(self.out_proj.weight.dtype))
-                if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(b_o.to(self.out_proj.bias.dtype))
-                elif self.out_proj.bias is not None:
-                    self.out_proj.bias.zero_()
-
+                _copy_layer(self.out_proj, w_o, b_o, sub_o)
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
                     raise RuntimeError(f"TPAttention: Out projection norm is near zero: {f_norm_o}")
@@ -509,10 +559,15 @@ class TPAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
+        if output.shape[-1] != hidden_states.shape[-1]:
+            output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1])) if output.shape[-1] < hidden_states.shape[-1] else output[..., :hidden_states.shape[-1]]
+
         return (output, (attn_weights if output_attentions else None))
 
 
 @ATTENTION_REGISTRY.register("tpa_inject")
+@ATTENTION_REGISTRY.register("tp_attention_inject")
+@ATTENTION_REGISTRY.register("inject_tpa")
 def inject_tpa(
     layer: Any,
     model_config: Any = None,
@@ -534,11 +589,18 @@ def inject_tpa(
         if src is None:
             return None
 
-        rank = getattr(comp_config, "tpa_rank", getattr(comp_config, "rank", 8))
+        if model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
+        if model_config is None and hasattr(src, "config"):
+            model_config = src.config
+
+        rank = kwargs.pop("rank", _cfg_get(comp_config, "tpa_rank", _cfg_get(comp_config, "rank", 8)))
+        lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
 
         new_attn = TPAttention(
             config=model_config,
             rank=rank,
+            lora_rank=lora_rank,
             pretrained_attn=src,
             **kwargs,
         )
@@ -548,6 +610,7 @@ def inject_tpa(
                 setattr(layer, attr, new_attn)
                 return new_attn
 
+        layer.attention = new_attn
         return new_attn
     except Exception as e:
         logger.error("inject_tpa failed at layer %d: %s", layer_idx, e)
