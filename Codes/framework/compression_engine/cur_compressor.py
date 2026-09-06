@@ -16,7 +16,18 @@ from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
-from .cur_linear import CURLinear
+try:
+    from transformers.pytorch_utils import Conv1D
+except ImportError:
+    Conv1D = None
+
+try:
+    from .cur_linear import CURLinear
+except ImportError:
+    try:
+        from framework.compression_engine.cur_linear import CURLinear
+    except ImportError:
+        from cur_linear import CURLinear
 
 logger = logging.getLogger(__name__)
 
@@ -182,9 +193,15 @@ class CURCompressor(BaseCompressor):
             has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
             # Check tied weights
+            if not hasattr(target_mod, "weight") or target_mod.weight is None:
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
             weight_id = id(target_mod.weight)
             if weight_id in visited_weight_ids:
                 logger.info("CURCompressor: Skipping tied weight layer %s", name)
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
             raw_w = target_mod.weight.data
@@ -193,6 +210,8 @@ class CURCompressor(BaseCompressor):
             max_rank = min(out_f, in_f)
 
             if max_rank < self.min_rank:
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
             # Parameter reduction check: r*(in_f + out_f + r) < in_f * out_f
@@ -202,6 +221,8 @@ class CURCompressor(BaseCompressor):
 
             if target_r < self.min_rank:
                 logger.debug("CURCompressor: Skipping %s as target rank %d violates parameter reduction constraint", name, target_r)
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
             cur_r = target_r
@@ -209,6 +230,7 @@ class CURCompressor(BaseCompressor):
             best_err = float("inf")
             best_r = cur_r
             norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
+            effective_lora_r = 0 if has_lora else self.lora_r
 
             for _ in range(self.max_retries + 1):
                 try:
@@ -217,7 +239,7 @@ class CURCompressor(BaseCompressor):
                         rank=cur_r,
                         method=self.method,
                         deterministic=self.deterministic,
-                        lora_r=self.lora_r,
+                        lora_r=effective_lora_r,
                         lora_alpha=self.lora_alpha,
                         freeze_skeletons=self.freeze_skeletons,
                     )
