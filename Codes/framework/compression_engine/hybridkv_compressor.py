@@ -266,6 +266,10 @@ class HybridKVCompressor(BaseCompressor):
                 total_heads += num_heads
                 static_heads_count += num_static
                 dynamic_heads_count += num_dynamic
+            elif hasattr(module, 'weight') or list(module.parameters(recurse=False)):
+                # Freeze fallback/skipped layers to prevent unintended gradient flow
+                for p in module.parameters(recurse=False):
+                    p.requires_grad = False
 
         # Forward sanity check
         forward_check_success = True
