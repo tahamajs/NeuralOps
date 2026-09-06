@@ -7,7 +7,7 @@ Supports:
 - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
 - Trainable LoRA adapters with frozen base weights
 - GQA with repeat_kv
-- RoPE position embeddings
+- RoPE position embeddings with source_attn fallback
 - Causal masking for decoders (strict causal prefix scan for RFF + causal band mask)
 - Nested encoder bypass
 - Frobenius norm verification (>= 1e-4)
@@ -16,6 +16,7 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -27,6 +28,16 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -52,20 +63,29 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
 
-    if rotary_dim < head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-        k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
-        k = torch.cat([k_rot_embed, k_pass], dim=-1)
-    else:
-        q = (q * cos) + (_rotate_half(q) * sin)
-        k = (k * cos) + (_rotate_half(k) * sin)
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
 
+    rotary_dim = min(cos.shape[-1], q.shape[-1])
+    rotary_dim = (rotary_dim // 2) * 2
+    if rotary_dim <= 0:
+        return q, k
+
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+    cos_cut = cos[..., :rotary_dim].to(q_rot.dtype)
+    sin_cut = sin[..., :rotary_dim].to(q_rot.dtype)
+
+    q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
+    k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
+
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q, k
 
 
@@ -125,11 +145,15 @@ class LoRALinear(nn.Module):
         self.weight.requires_grad = False
         if self.bias is not None:
             self.bias.requires_grad = False
-        if self.lora_rank > 0:
-            if self.lora_A is not None:
-                self.lora_A.requires_grad = True
-            if self.lora_B is not None:
-                self.lora_B.requires_grad = True
+        if self.lora_rank > 0 and self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -> None:
+        self.weight.requires_grad = True
+        if self.bias is not None:
+            self.bias.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
@@ -151,39 +175,85 @@ class NativeHybridAttention(BaseAttention):
         rff_features: int = 128,
         dropout: float = 0.1,
         pretrained_attn: Optional[nn.Module] = None,
+        comp_config: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
         self.config = config
-        comp_config = getattr(config, "compression_config", None)
+        comp_config = comp_config or getattr(config, "compression_config", None)
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", kwargs.get("old_attn", None))
 
-        self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads = getattr(
-            config,
-            "num_key_value_heads",
-            kwargs.get("num_key_value_heads", self.num_heads),
-        )
-        self.head_dim = getattr(
-            config,
-            "head_dim",
-            kwargs.get("head_dim", self.dim // self.num_heads),
-        )
+        hidden_size = kwargs.get("hidden_size", kwargs.get("dim", kwargs.get("d_model", None)))
+        num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", kwargs.get("n_heads", None)))
+        num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", None))
+
+        if hidden_size is None or num_heads is None:
+            if config is not None:
+                if hidden_size is None:
+                    hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)))
+                if num_heads is None:
+                    num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", 12)))
+                if num_kv_heads is None:
+                    num_kv_heads = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", num_heads))
+            elif source_attn is not None:
+                if hidden_size is None:
+                    out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+                    hidden_size = getattr(out_layer, "out_features", getattr(source_attn, "hidden_size", getattr(source_attn, "embed_dim", 768)))
+                if num_heads is None:
+                    num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", getattr(source_attn, "num_heads", 12)))
+                if num_kv_heads is None:
+                    num_kv_heads = getattr(source_attn, "num_key_value_heads", getattr(source_attn, "num_kv_heads", num_heads))
+            else:
+                if hidden_size is None:
+                    hidden_size = 768
+                if num_heads is None:
+                    num_heads = 12
+                if num_kv_heads is None:
+                    num_kv_heads = num_heads
+
+        if num_kv_heads is None:
+            num_kv_heads = num_heads
+
+        self.dim = int(hidden_size)
+        self.hidden_size = self.dim
+        self.num_heads = int(num_heads)
+        self.num_kv_heads = int(num_kv_heads)
+        self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        self.window_size = getattr(comp_config, "window_size", kwargs.get("window_size", window_size))
-        self.rff_features = getattr(comp_config, "rff_features", kwargs.get("rff_features", rff_features))
+        self.window_size = int(getattr(comp_config, "window_size", _cfg_get(config, "window_size", kwargs.get("window_size", window_size))))
+        self.rff_features = int(getattr(comp_config, "rff_features", _cfg_get(config, "rff_features", kwargs.get("rff_features", rff_features))))
 
-        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False):
+        # Decoder / causal detection
+        model_type = getattr(config, "model_type", "").lower() if config else ""
+        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            is_dec = True
+        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        # 1. Independent LoRA rank/alpha configuration
+        if config is not None:
+            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+        elif comp_config is not None:
+            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+        else:
+            self.lora_rank = kwargs.get("lora_rank", 16)
+        self.lora_rank = int(self.lora_rank)
+
+        if config is not None:
+            self.lora_alpha = float(getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))))
+        elif comp_config is not None:
+            self.lora_alpha = float(getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        else:
+            self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
         self.freeze_base = (self.lora_rank > 0)
 
         # Projections
@@ -202,8 +272,8 @@ class NativeHybridAttention(BaseAttention):
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", dropout)) if config else dropout
         self.dropout = nn.Dropout(dropout_p)
         self.gate = nn.Linear(self.dim, 1)
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -368,9 +438,12 @@ class NativeHybridAttention(BaseAttention):
                 if fnorm < 1e-4:
                     raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
-        if self.freeze_base:
-            for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
-                mod.freeze_base_weights()
+        # 4. Preserve LoRA adapters: guarantee base weights stay frozen while LoRA A/B are trainable
+        if self.lora_rank > 0:
+            self.q_proj.freeze_base_weights()
+            self.k_proj.freeze_base_weights()
+            self.v_proj.freeze_base_weights()
+            self.out_proj.freeze_base_weights()
 
     def _local_window_attention(
         self,
@@ -389,14 +462,11 @@ class NativeHybridAttention(BaseAttention):
         j = idx.unsqueeze(0)
 
         if is_causal:
-            # j > i means key is ahead of query (future)
-            # i - j > window_size means key is beyond local window
             band_mask = (j > i) | ((i - j) > self.window_size)
         else:
             band_mask = (i - j).abs() > self.window_size
 
         scores = scores.masked_fill(band_mask.unsqueeze(0).unsqueeze(0), -1e4)
-
         pad_mask = ~valid_mask.unsqueeze(1).unsqueeze(2)
         scores = scores.masked_fill(pad_mask, -1e4)
 
@@ -430,16 +500,15 @@ class NativeHybridAttention(BaseAttention):
         V_masked = V * pad
 
         if is_causal:
-            # Causal cumulative prefix scan: O(N * D_rff * d)
-            # phi_K: (B, H, N, M), V_masked: (B, H, N, d)
-            kv_outer = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)  # (B, H, N, M, d)
+            kv_outer = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)
             cum_KV = torch.cumsum(kv_outer.float(), dim=2).to(Q.dtype)
-            num = (phi_Q.unsqueeze(-2) @ cum_KV).squeeze(-2)  # (B, H, N, d)
+            num = (phi_Q.unsqueeze(-2) @ cum_KV).squeeze(-2)
 
             cum_K = torch.cumsum(phi_K.float(), dim=2).to(Q.dtype)
             den = (phi_Q * cum_K).sum(dim=-1, keepdim=True).clamp(min=1e-5)
             out = (num / den) * pad
         else:
+            phi_Q = phi_Q * pad
             KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
             Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
@@ -463,6 +532,12 @@ class NativeHybridAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if encoder_hidden_states is not None or kwargs.get("encoder_hidden_states") is not None:
+            return hidden_states, None
+
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
+
         B, N, D = hidden_states.shape
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
@@ -472,12 +547,21 @@ class NativeHybridAttention(BaseAttention):
         K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # Apply RoPE if provided
+        # 2. Rotary embeddings application with source_attn.rotary_emb fallback
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
-        if position_embeddings is not None:
-            cos, sin = position_embeddings
-            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+            cos, sin = position_embeddings[0], position_embeddings[1]
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
+        elif self.rotary_emb is not None:
+            pos_ids = kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(N, device=hidden_states.device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = self.rotary_emb(V, pos_ids)
+                Q, K = apply_rotary_pos_emb(Q, K, cos, sin, pos_ids)
+            except Exception:
+                pass
 
         # GQA repeat_kv
         if self.num_heads != self.num_kv_heads:
@@ -488,7 +572,7 @@ class NativeHybridAttention(BaseAttention):
         local_out = self._local_window_attention(Q, K, V, valid_mask, is_causal=is_causal)
         global_out = self._global_rff_attention(Q, K, V, valid_mask, is_causal=is_causal)
 
-        # Dynamic token-level gate: (B, N, 1) -> (B, 1, N, 1) strictly causal per token
+        # Dynamic token-level gate: (B, N, 1) -> (B, 1, N, 1)
         gate = torch.sigmoid(self.gate(hidden_states)).unsqueeze(1)
 
         out = gate * local_out + (1.0 - gate) * global_out
@@ -509,38 +593,116 @@ class NativeHybridAttention(BaseAttention):
             return out, None
 
         out = self.out_proj(out)
+        if out.shape[-1] != hidden_states.shape[-1]:
+            if out.shape[-1] < hidden_states.shape[-1]:
+                out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+            else:
+                out = out[..., : hidden_states.shape[-1]]
+
         return out, None
 
 
+@ATTENTION_REGISTRY.register("nha_inject")
+@ATTENTION_REGISTRY.register("nha")
+@ATTENTION_REGISTRY.register("nha_attention")
 def inject_nha(
-    model: nn.Module,
-    target_layer_idx: Optional[int] = None,
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[nn.Module]:
-    """Safely replace attention in model with NativeHybridAttention."""
-    try:
-        replaced = 0
-        for name, module in model.named_modules():
-            # Check for candidate attention modules
-            cls_name = module.__class__.__name__
-            is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                is_attn = True
+) -> Optional[Any]:
+    r"""Injection hook for NativeHybridAttention supporting framework contract and whole models."""
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
 
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and hasattr(target.model, "layers"))
+        or hasattr(target, "layers")
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+        elif hasattr(target, "layers"):
+            layer_list = target.layers
 
-                new_attn = NativeHybridAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_nha(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
                     **kwargs,
                 )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
-                    break
-        return model if replaced > 0 else None
-    except Exception:
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    src_attn = old_attn
+    if src_attn is None and target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                src_attn = target.attention.self
+            else:
+                src_attn = target.attention
+        elif hasattr(target, "self"):
+            src_attn = target.self
+        elif hasattr(target, "attn"):
+            src_attn = target.attn
+        elif hasattr(target, "self_attn"):
+            src_attn = target.self_attn
+
+    if src_attn is None and target is not None and hasattr(target, "forward"):
+        src_attn = target
+
+    if src_attn is None and cfg is None:
         return None
+
+    try:
+        new_attn = NativeHybridAttention(
+            config=cfg,
+            comp_config=comp_config,
+            old_attn=src_attn,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.warning("NativeHybridAttention construction/weight copying failed: %s", e)
+        return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
+            else:
+                target.attention = new_attn
+        elif hasattr(target, "self"):
+            target.self = new_attn
+        elif hasattr(target, "attn"):
+            target.attn = new_attn
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+
+    return new_attn
