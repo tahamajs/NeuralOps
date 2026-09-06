@@ -111,6 +111,14 @@ class SALRLayer(nn.Module):
         return f'in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, sparsity={self.sparsity}, lora_r={self.lora_r}'
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register('salr')
 class SALRCompressor(BaseCompressor):
     """
@@ -127,7 +135,8 @@ class SALRCompressor(BaseCompressor):
         rank: int = 64,
         sparsity: float = 0.5,
         min_rank: int = 8,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
+        target_attention_only: bool = False,
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -145,19 +154,20 @@ class SALRCompressor(BaseCompressor):
         if 'rank' in kwargs and kwargs['rank'] is not None:
             rank = kwargs['rank']
         elif cfg_obj is not None:
-            rank = getattr(cfg_obj, 'salr_rank', getattr(cfg_obj, 'rank', rank))
+            rank = _cfg_get(cfg_obj, 'salr_rank', _cfg_get(cfg_obj, 'rank', rank))
 
         self.rank = int(rank)
-        self.sparsity = max(0.0, min(float(sparsity or getattr(cfg_obj, 'salr_sparsity', getattr(cfg_obj, 'sparsity', 0.5))), 0.90))
-        self.min_rank = max(1, int(min_rank or getattr(cfg_obj, 'min_rank', 8)))
-        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else getattr(cfg_obj, 'skip_attention_qkv', True))
-        self.use_lora = bool(use_lora or getattr(cfg_obj, 'use_lora', False) or (lora_r > 0))
-        self.lora_r = int(lora_r or getattr(cfg_obj, 'lora_r', 0))
-        self.lora_alpha = float(lora_alpha or getattr(cfg_obj, 'lora_alpha', 1.0))
+        self.sparsity = max(0.0, min(float(sparsity or _cfg_get(cfg_obj, 'salr_sparsity', _cfg_get(cfg_obj, 'sparsity', 0.5))), 0.90))
+        self.min_rank = max(1, int(min_rank or _cfg_get(cfg_obj, 'min_rank', 8)))
+        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, 'skip_attention_qkv', False))
+        self.target_attention_only = bool(target_attention_only if target_attention_only is not None else _cfg_get(cfg_obj, 'target_attention_only', False))
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, 'use_lora', False) or (lora_r > 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, 'lora_r', 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, 'lora_alpha', 1.0))
         self.target_modules = target_modules
-        self.max_error = float(max_error or getattr(cfg_obj, 'max_error', 0.50))
-        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else getattr(cfg_obj, 'fallback_to_original', True))
-        self.min_numel = max(1, int(min_numel or getattr(cfg_obj, 'min_numel', 16)))
+        self.max_error = float(max_error or _cfg_get(cfg_obj, 'max_error', 0.50))
+        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else _cfg_get(cfg_obj, 'fallback_to_original', True))
+        self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, 'min_numel', 16)))
 
         # Target device derivation
         if device is not None:
@@ -202,20 +212,27 @@ class SALRCompressor(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
+        # Target attention only filter
+        if self.target_attention_only:
+            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
         # 2. GQA-aware skipping
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
         # 3. Check linear or Conv1D nature
-        cls_name = module.__class__.__name__
-        raw_w = getattr(module, 'weight', None)
+        base_mod = getattr(module, 'base_layer', module)
+        cls_name = base_mod.__class__.__name__
+        raw_w = getattr(base_mod, 'weight', None)
         if raw_w is None or not isinstance(raw_w, torch.Tensor):
             return False
 
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
-        is_linear_like = isinstance(module, nn.Linear) or is_conv1d
-        if not is_linear_like or isinstance(module, SALRLayer):
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
+        is_linear_like = isinstance(base_mod, nn.Linear) or is_conv1d
+        if not is_linear_like or isinstance(base_mod, SALRLayer):
             return False
 
         # 4. Tiny layer guard
@@ -239,17 +256,18 @@ class SALRCompressor(BaseCompressor):
         rank: int,
     ) -> Optional[SALRLayer]:
         """Decompose a single linear or Conv1D layer into SALRLayer with validation."""
-        raw_w = layer.weight.data
-        cls_name = layer.__class__.__name__
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(layer, 'nf')
+        base_layer = getattr(layer, 'base_layer', layer)
+        raw_w = base_layer.weight.data
+        cls_name = base_layer.__class__.__name__
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_layer, 'nf')
 
         if is_conv1d:
             W = raw_w.t().contiguous().float()
             out_f, in_f = W.shape
         else:
             W = raw_w.contiguous().float()
-            out_f = getattr(layer, 'out_features', W.shape[0])
-            in_f = getattr(layer, 'in_features', W.shape[1])
+            out_f = getattr(base_layer, 'out_features', W.shape[0])
+            in_f = getattr(base_layer, 'in_features', W.shape[1])
 
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
@@ -258,8 +276,8 @@ class SALRCompressor(BaseCompressor):
             logger.debug('SALR: rank %d >= max_r %d; skipping layer for no parameter reduction', r, max_r)
             return None
 
-        device = layer.weight.device
-        dtype = layer.weight.dtype
+        device = base_layer.weight.device
+        dtype = base_layer.weight.dtype
 
         # SVD in FP32
         try:
@@ -272,20 +290,39 @@ class SALRCompressor(BaseCompressor):
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
 
+        has_existing_lora = hasattr(layer, 'lora_A') and hasattr(layer, 'lora_B')
+        effective_lora_r = self.lora_r
+        if has_existing_lora and getattr(layer, 'r', 0) > 0:
+            effective_lora_r = getattr(layer, 'r', self.lora_r)
+
         salr_layer = SALRLayer(
             in_features=in_f,
             out_features=out_f,
             rank=r,
             sparsity=self.sparsity,
-            bias=layer.bias is not None,
+            bias=base_layer.bias is not None,
             dtype=dtype,
             device=device,
-            lora_r=self.lora_r if self.use_lora else 0,
+            lora_r=effective_lora_r if (self.use_lora or has_existing_lora) else 0,
             lora_alpha=self.lora_alpha,
         )
         salr_layer.set_low_rank_factors(U_r, V_r)
-        if layer.bias is not None:
-            salr_layer.bias.data.copy_(layer.bias.data)
+        if base_layer.bias is not None:
+            salr_layer.bias.data.copy_(base_layer.bias.data)
+
+        # Preserve existing LoRA adapters
+        if has_existing_lora and salr_layer.lora_r > 0:
+            try:
+                if hasattr(layer.lora_A, 'weight') and salr_layer.lora_A is not None:
+                    salr_layer.lora_A.data.copy_(layer.lora_A.weight.data)
+                elif hasattr(layer, 'lora_A') and isinstance(layer.lora_A, torch.Tensor) and salr_layer.lora_A is not None:
+                    salr_layer.lora_A.data.copy_(layer.lora_A.data)
+                if hasattr(layer.lora_B, 'weight') and salr_layer.lora_B is not None:
+                    salr_layer.lora_B.data.copy_(layer.lora_B.weight.data)
+                elif hasattr(layer, 'lora_B') and isinstance(layer.lora_B, torch.Tensor) and salr_layer.lora_B is not None:
+                    salr_layer.lora_B.data.copy_(layer.lora_B.data)
+            except Exception as e_lora:
+                logger.warning('Could not copy existing LoRA adapters: %s', e_lora)
 
         # Frobenius reconstruction error check
         W_rec = salr_layer.weight.float()
@@ -345,9 +382,13 @@ class SALRCompressor(BaseCompressor):
                     self.compressed_layers.append(name)
                 else:
                     self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
             except Exception as e_comp:
                 logger.warning('Failed to compress %s: %s', name, e_comp)
                 self.failed_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -380,6 +421,7 @@ class SALRCompressor(BaseCompressor):
             'min_rank': self.min_rank,
             'sparsity': self.sparsity,
             'skip_attention_qkv': self.skip_attention_qkv,
+            'target_attention_only': self.target_attention_only,
             'use_lora': self.use_lora,
             'lora_r': self.lora_r,
             'method': 'salr',
@@ -398,15 +440,16 @@ def salr_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """SALR factory function returning (compressed_model, stats) when requested."""
-    rank = kwargs.pop('rank', getattr(comp_config, 'salr_rank', getattr(comp_config, 'rank', 64)) if comp_config else 64)
-    sparsity = kwargs.pop('sparsity', getattr(comp_config, 'salr_sparsity', getattr(comp_config, 'sparsity', 0.5)) if comp_config else 0.5)
-    min_rank = kwargs.pop('min_rank', getattr(comp_config, 'min_rank', 8) if comp_config else 8)
-    skip_attention_qkv = kwargs.pop('skip_attention_qkv', getattr(comp_config, 'skip_attention_qkv', True) if comp_config else True)
-    use_lora = kwargs.pop('use_lora', getattr(comp_config, 'use_lora', False) if comp_config else False)
-    lora_r = kwargs.pop('lora_r', getattr(comp_config, 'lora_r', 0) if comp_config else 0)
-    lora_alpha = kwargs.pop('lora_alpha', getattr(comp_config, 'lora_alpha', 1.0) if comp_config else 1.0)
-    max_error = kwargs.pop('max_error', getattr(comp_config, 'max_error', 0.50) if comp_config else 0.50)
-    fallback = kwargs.pop('fallback_to_original', getattr(comp_config, 'fallback_to_original', True) if comp_config else True)
+    rank = kwargs.pop('rank', _cfg_get(comp_config, 'salr_rank', _cfg_get(comp_config, 'rank', 64)))
+    sparsity = kwargs.pop('sparsity', _cfg_get(comp_config, 'salr_sparsity', _cfg_get(comp_config, 'sparsity', 0.5)))
+    min_rank = kwargs.pop('min_rank', _cfg_get(comp_config, 'min_rank', 8))
+    skip_attention_qkv = kwargs.pop('skip_attention_qkv', _cfg_get(comp_config, 'skip_attention_qkv', False))
+    target_attention_only = kwargs.pop('target_attention_only', _cfg_get(comp_config, 'target_attention_only', False))
+    use_lora = kwargs.pop('use_lora', _cfg_get(comp_config, 'use_lora', False))
+    lora_r = kwargs.pop('lora_r', _cfg_get(comp_config, 'lora_r', 0))
+    lora_alpha = kwargs.pop('lora_alpha', _cfg_get(comp_config, 'lora_alpha', 1.0))
+    max_error = kwargs.pop('max_error', _cfg_get(comp_config, 'max_error', 0.50))
+    fallback = kwargs.pop('fallback_to_original', _cfg_get(comp_config, 'fallback_to_original', True))
 
     compressor = SALRCompressor(
         model,
@@ -414,6 +457,7 @@ def salr_factory(
         sparsity=sparsity,
         min_rank=min_rank,
         skip_attention_qkv=skip_attention_qkv,
+        target_attention_only=target_attention_only,
         use_lora=use_lora,
         lora_r=lora_r,
         lora_alpha=lora_alpha,

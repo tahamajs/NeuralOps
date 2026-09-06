@@ -87,19 +87,36 @@ class SliceGPTPCALoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> SliceGPTPCALoRALinear:
-        bias = linear.bias.detach() if hasattr(linear, 'bias') and linear.bias is not None else None
-        in_features = getattr(linear, 'in_features', sliced_weight.shape[1])
-        out_features = getattr(linear, 'out_features', sliced_weight.shape[0])
-        return cls(
+        base_mod = getattr(linear, 'base_layer', linear)
+        bias = base_mod.bias.detach() if hasattr(base_mod, 'bias') and base_mod.bias is not None else None
+        in_features = getattr(base_mod, 'in_features', sliced_weight.shape[1])
+        out_features = getattr(base_mod, 'out_features', sliced_weight.shape[0])
+        
+        has_existing_lora = hasattr(linear, 'lora_A') and hasattr(linear, 'lora_B')
+        effective_lora_r = lora_r
+        if has_existing_lora and getattr(linear, 'r', 0) > 0:
+            effective_lora_r = getattr(linear, 'r', lora_r)
+
+        layer = cls(
             in_features=in_features,
             out_features=out_features,
             weight=sliced_weight,
             bias=bias,
-            lora_r=lora_r,
+            lora_r=effective_lora_r,
             lora_alpha=lora_alpha,
             device=sliced_weight.device,
             dtype=sliced_weight.dtype,
         )
+
+        if has_existing_lora and layer.lora_r > 0:
+            try:
+                if hasattr(linear.lora_A, 'weight') and layer.lora_A is not None:
+                    layer.lora_A.data.copy_(linear.lora_A.weight.data)
+                if hasattr(linear.lora_B, 'weight') and layer.lora_B is not None:
+                    layer.lora_B.data.copy_(linear.lora_B.weight.data)
+            except Exception as e_lora:
+                logger.warning('Could not copy existing LoRA adapters in SliceGPTPCA: %s', e_lora)
+        return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight.to(x.dtype), self.bias.to(x.dtype) if self.bias is not None else None)
@@ -110,6 +127,14 @@ class SliceGPTPCALoRALinear(nn.Module):
             ) * self.scaling
             out = out + lora_delta.to(out.dtype)
         return out
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 
 @COMPRESSOR_REGISTRY.register('slicegpt_pca')
@@ -126,7 +151,8 @@ class SliceGPTPCACompressor(BaseCompressor):
         sparsity: float = 0.3,
         tokenizer: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
+        target_attention_only: bool = False,
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -142,16 +168,17 @@ class SliceGPTPCACompressor(BaseCompressor):
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
         self.calibration_loader = calibration_loader
-        self.sparsity = max(0.0, min(float(sparsity or getattr(cfg_obj, 'slicegpt_pca_sparsity', getattr(cfg_obj, 'sparsity', 0.3))), 0.95))
-        self.tokenizer = tokenizer or getattr(model, 'tokenizer', None) or (getattr(cfg_obj, 'tokenizer', None) if cfg_obj else None)
-        self.calibration_texts = calibration_texts or (getattr(cfg_obj, 'calibration_texts', None) if cfg_obj else None)
-        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else getattr(cfg_obj, 'skip_attention_qkv', True))
-        self.use_lora = bool(use_lora or getattr(cfg_obj, 'use_lora', False) or (lora_r > 0))
-        self.lora_r = int(lora_r or getattr(cfg_obj, 'lora_r', 0))
-        self.lora_alpha = float(lora_alpha or getattr(cfg_obj, 'lora_alpha', 1.0))
-        self.max_error = float(max_error or getattr(cfg_obj, 'max_error', 0.50))
-        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else getattr(cfg_obj, 'fallback_to_original', True))
-        self.min_numel = max(1, int(min_numel or getattr(cfg_obj, 'min_numel', 16)))
+        self.sparsity = max(0.0, min(float(sparsity or _cfg_get(cfg_obj, 'slicegpt_pca_sparsity', _cfg_get(cfg_obj, 'sparsity', 0.3))), 0.95))
+        self.tokenizer = tokenizer or getattr(model, 'tokenizer', None) or _cfg_get(cfg_obj, 'tokenizer', None)
+        self.calibration_texts = calibration_texts or _cfg_get(cfg_obj, 'calibration_texts', None)
+        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, 'skip_attention_qkv', False))
+        self.target_attention_only = bool(target_attention_only if target_attention_only is not None else _cfg_get(cfg_obj, 'target_attention_only', False))
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, 'use_lora', False) or (lora_r > 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, 'lora_r', 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, 'lora_alpha', 1.0))
+        self.max_error = float(max_error or _cfg_get(cfg_obj, 'max_error', 0.50))
+        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else _cfg_get(cfg_obj, 'fallback_to_original', True))
+        self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, 'min_numel', 16)))
         self.target_modules = target_modules
 
         # Target device derivation
@@ -197,19 +224,26 @@ class SliceGPTPCACompressor(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
+        # Target attention only filter
+        if self.target_attention_only:
+            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
         # 2. GQA-aware skipping
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
         # 3. Check linear or Conv1D nature
-        cls_name = module.__class__.__name__
-        raw_w = getattr(module, 'weight', None)
+        base_mod = getattr(module, 'base_layer', module)
+        cls_name = base_mod.__class__.__name__
+        raw_w = getattr(base_mod, 'weight', None)
         if raw_w is None or not isinstance(raw_w, torch.Tensor):
             return False
 
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
-        is_linear_like = isinstance(module, nn.Linear) or is_conv1d
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
+        is_linear_like = isinstance(base_mod, nn.Linear) or is_conv1d
         if not is_linear_like:
             return False
 
@@ -315,9 +349,10 @@ class SliceGPTPCACompressor(BaseCompressor):
             self.visited_modules.add(mod_id)
 
             try:
-                raw_w = module.weight.data
-                cls_name = module.__class__.__name__
-                is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
+                base_mod = getattr(module, 'base_layer', module)
+                raw_w = base_mod.weight.data
+                cls_name = base_mod.__class__.__name__
+                is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
                 device = raw_w.device
                 dtype = raw_w.dtype
 
@@ -397,6 +432,8 @@ class SliceGPTPCACompressor(BaseCompressor):
 
                 if is_invalid and self.fallback_to_original:
                     self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
                     continue
 
                 if keep < d_in:
@@ -413,7 +450,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                     replace_module(self.model, name, lora_layer)
                 else:
                     final_w = W_reconstructed.t().contiguous() if is_conv1d else W_reconstructed.contiguous()
-                    module.weight.data.copy_(final_w.to(dtype=dtype, device=device))
+                    base_mod.weight.data.copy_(final_w.to(dtype=dtype, device=device))
 
                 self.sliced_layers.append(name)
                 sliced_layers_count += 1
@@ -421,6 +458,8 @@ class SliceGPTPCACompressor(BaseCompressor):
             except Exception as e_layer:
                 logger.warning('SliceGPTPCA: Failed to compress %s: %s', name, e_layer)
                 self.failed_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -452,6 +491,7 @@ class SliceGPTPCACompressor(BaseCompressor):
             'avg_reconstruction_error': avg_err,
             'forward_check_success': forward_check_success,
             'skip_attention_qkv': self.skip_attention_qkv,
+            'target_attention_only': self.target_attention_only,
             'use_lora': self.use_lora,
             'lora_r': self.lora_r,
             'method': 'slicegpt_pca',
@@ -472,15 +512,16 @@ def slicegpt_pca_factory(
     Factory function for SliceGPT PCA compressor.
     Returns (compressed_model, stats) if return_stats or return_tuple is True, else compressed_model.
     """
-    sparsity = kwargs.pop('sparsity', getattr(comp_config, 'slicegpt_pca_sparsity', getattr(comp_config, 'sparsity', 0.3)) if comp_config else 0.3)
-    calibration_texts = kwargs.pop('calibration_texts', getattr(comp_config, 'slicegpt_pca_calib_texts', getattr(comp_config, 'calibration_texts', None)) if comp_config else None)
-    tokenizer = kwargs.pop('tokenizer', getattr(model, 'tokenizer', None) or (getattr(comp_config, 'tokenizer', None) if comp_config else None))
-    skip_attention_qkv = kwargs.pop('skip_attention_qkv', getattr(comp_config, 'skip_attention_qkv', True) if comp_config else True)
-    use_lora = kwargs.pop('use_lora', getattr(comp_config, 'use_lora', False) if comp_config else False)
-    lora_r = kwargs.pop('lora_r', getattr(comp_config, 'lora_r', 0) if comp_config else 0)
-    lora_alpha = kwargs.pop('lora_alpha', getattr(comp_config, 'lora_alpha', 1.0) if comp_config else 1.0)
-    max_error = kwargs.pop('max_error', getattr(comp_config, 'max_error', 0.50) if comp_config else 0.50)
-    fallback = kwargs.pop('fallback_to_original', getattr(comp_config, 'fallback_to_original', True) if comp_config else True)
+    sparsity = kwargs.pop('sparsity', _cfg_get(comp_config, 'slicegpt_pca_sparsity', _cfg_get(comp_config, 'sparsity', 0.3)))
+    calibration_texts = kwargs.pop('calibration_texts', _cfg_get(comp_config, 'slicegpt_pca_calib_texts', _cfg_get(comp_config, 'calibration_texts', None)))
+    tokenizer = kwargs.pop('tokenizer', getattr(model, 'tokenizer', None) or _cfg_get(comp_config, 'tokenizer', None))
+    skip_attention_qkv = kwargs.pop('skip_attention_qkv', _cfg_get(comp_config, 'skip_attention_qkv', False))
+    target_attention_only = kwargs.pop('target_attention_only', _cfg_get(comp_config, 'target_attention_only', False))
+    use_lora = kwargs.pop('use_lora', _cfg_get(comp_config, 'use_lora', False))
+    lora_r = kwargs.pop('lora_r', _cfg_get(comp_config, 'lora_r', 0))
+    lora_alpha = kwargs.pop('lora_alpha', _cfg_get(comp_config, 'lora_alpha', 1.0))
+    max_error = kwargs.pop('max_error', _cfg_get(comp_config, 'max_error', 0.50))
+    fallback = kwargs.pop('fallback_to_original', _cfg_get(comp_config, 'fallback_to_original', True))
 
     compressor = SliceGPTPCACompressor(
         model,
@@ -488,6 +529,7 @@ def slicegpt_pca_factory(
         tokenizer=tokenizer,
         calibration_texts=calibration_texts,
         skip_attention_qkv=skip_attention_qkv,
+        target_attention_only=target_attention_only,
         use_lora=use_lora,
         lora_r=lora_r,
         lora_alpha=lora_alpha,

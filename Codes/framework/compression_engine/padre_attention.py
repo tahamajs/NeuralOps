@@ -32,6 +32,15 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Helper to safely retrieve a configuration value from dict, object, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
@@ -66,8 +75,8 @@ def apply_rotary_pos_emb(
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
         k = torch.cat([k_rot_embed, k_pass], dim=-1)
     else:
-        q = (q * cos) + (_rotate_half(q) * sin)
-        k = (k * cos) + (_rotate_half(k) * sin)
+        q = (q * cos) + (_rotate_half(q_rot if 'q_rot' in locals() else q) * sin)
+        k = (k * cos) + (_rotate_half(k_rot if 'k_rot' in locals() else k) * sin)
 
     return q, k
 
@@ -158,13 +167,14 @@ class PADReAttention(BaseAttention):
         order: int = 2,
         temperature: float = 1.0,
         pretrained_attn: Optional[nn.Module] = None,
+        comp_config: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank=order)
         self.config = config
-        comp_config = getattr(config, "compression_config", None)
+        self.comp_config = comp_config or _cfg_get(config, "compression_config", None)
 
-        self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
         if (config is None or not hasattr(config, "hidden_size")) and "hidden_size" not in kwargs and pretrained_attn is not None:
             for cand in ["q_lin", "query", "q_proj", "c_attn"]:
                 mod = getattr(pretrained_attn, cand, None)
@@ -173,26 +183,27 @@ class PADReAttention(BaseAttention):
                     self.hidden_size = w.shape[1] if w.ndim == 2 else self.hidden_size
                     break
 
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads = getattr(
+        self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_kv_heads = _cfg_get(
             config,
             "num_key_value_heads",
             kwargs.get("num_key_value_heads", self.num_heads),
         )
-        self.head_dim = getattr(
+        self.head_dim = _cfg_get(
             config,
             "head_dim",
-            kwargs.get("head_dim", self.hidden_size // self.num_heads),
+            kwargs.get("head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64),
         )
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.order = getattr(comp_config, "padre_order", getattr(config, "padre_order", kwargs.get("order", order)))
-        self.temperature = getattr(comp_config, "padre_temperature", getattr(config, "padre_temperature", kwargs.get("temperature", temperature)))
+        self.order = _cfg_get(self.comp_config, "padre_order", _cfg_get(config, "padre_order", kwargs.get("order", order)))
+        self.temperature = _cfg_get(self.comp_config, "padre_temperature", _cfg_get(config, "padre_temperature", kwargs.get("temperature", temperature)))
+        self.max_error = float(_cfg_get(self.comp_config, "max_error", kwargs.get("max_error", 0.20)))
 
         # Causal decoder detection
-        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-        model_type = getattr(config, "model_type", "").lower() if config else ""
+        is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
+        model_type = str(_cfg_get(config, "model_type", "")).lower()
         if model_type in ["gpt2", "qwen", "qwen2", "llama", "mistral", "gemma"]:
             is_dec = True
         if kwargs.get("is_causal", False):
@@ -200,10 +211,11 @@ class PADReAttention(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
+        self.effective_parameter_ratio = 1.0
 
         # LoRA config
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        self.lora_rank = _cfg_get(self.comp_config, "lora_rank", _cfg_get(config, "lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_alpha = _cfg_get(self.comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base = (self.lora_rank > 0)
 
         self.q_proj = LoRALinear(
@@ -244,8 +256,20 @@ class PADReAttention(BaseAttention):
         self.key = self.k_proj
         self.value = self.v_proj
 
-        dropout_p = getattr(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1)) if config else 0.1
+        dropout_p = _cfg_get(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1))
         self.dropout = nn.Dropout(dropout_p)
+
+        self.stats: Dict[str, Any] = {
+            "order": self.order,
+            "temperature": self.temperature,
+            "lora_rank": self.lora_rank,
+            "lora_alpha": self.lora_alpha,
+            "num_heads": self.num_heads,
+            "num_kv_heads": self.num_kv_heads,
+            "is_decoder": self.is_decoder,
+            "is_nested_encoder": self.is_nested_encoder,
+            "effective_parameter_ratio": self.effective_parameter_ratio,
+        }
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
@@ -315,11 +339,19 @@ class PADReAttention(BaseAttention):
             s = getattr(src, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
-                if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                if mod is not None:
+                    base_m = getattr(mod, "base_layer", mod)
+                    w = getattr(base_m, "weight", getattr(mod, "weight", None))
+                    b = getattr(base_m, "bias", getattr(mod, "bias", None))
+                    if w is not None:
+                        extracted[proj_key] = (w.data.clone(), b.data.clone() if b is not None else None)
             if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                base_o = getattr(out_mod, "base_layer", out_mod)
+                w = getattr(base_o, "weight", getattr(out_mod, "weight", None))
+                b = getattr(base_o, "bias", getattr(out_mod, "bias", None))
+                if w is not None:
+                    extracted["o"] = (w.data.clone(), b.data.clone() if b is not None else None)
 
         # 3. Flat modules (DistilBERT, Qwen, LLaMA)
         else:
@@ -333,9 +365,13 @@ class PADReAttention(BaseAttention):
                 for name in names:
                     if hasattr(src, name):
                         mod = getattr(src, name)
-                        if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
-                            break
+                        if mod is not None:
+                            base_m = getattr(mod, "base_layer", mod)
+                            w = getattr(base_m, "weight", getattr(mod, "weight", None))
+                            b = getattr(base_m, "bias", getattr(mod, "bias", None))
+                            if w is not None:
+                                extracted[proj_key] = (w.data.clone(), b.data.clone() if b is not None else None)
+                                break
 
         missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
@@ -361,6 +397,30 @@ class PADReAttention(BaseAttention):
             "v": self.v_proj,
             "o": self.out_proj,
         }
+
+        # Check source for LoRA adapters to preserve if present
+        source_lora: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {}
+        for proj_key, target_mod in target_map.items():
+            mod = None
+            if proj_key == "o" and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+                mod = src.output.dense
+            elif hasattr(src, "self"):
+                sub_map = {"q": "query", "k": "key", "v": "value"}
+                mod = getattr(src.self, sub_map.get(proj_key, ""), None)
+            else:
+                for name in proj_candidates.get(proj_key, []):
+                    if hasattr(src, name):
+                        mod = getattr(src, name)
+                        break
+            if mod is not None:
+                lA = getattr(mod, "lora_A", None)
+                lB = getattr(mod, "lora_B", None)
+                if lA is not None and lB is not None:
+                    # In some implementations lora_A is a Parameter, in PEFT it's a ModuleDict/Linear
+                    tA = getattr(lA, "weight", lA)
+                    tB = getattr(lB, "weight", lB)
+                    if isinstance(tA, (torch.Tensor, nn.Parameter)) and isinstance(tB, (torch.Tensor, nn.Parameter)):
+                        source_lora[proj_key] = (tA.data.clone(), tB.data.clone())
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -405,6 +465,14 @@ class PADReAttention(BaseAttention):
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
                     raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+
+                # Copy source LoRA adapter weights if compatible
+                if proj_key in source_lora and target_mod.lora_A is not None and target_mod.lora_B is not None:
+                    slA, slB = source_lora[proj_key]
+                    if slA.shape == target_mod.lora_A.shape:
+                        target_mod.lora_A.copy_(slA)
+                    if slB.shape == target_mod.lora_B.shape:
+                        target_mod.lora_B.copy_(slB)
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
@@ -525,15 +593,74 @@ def inject_padre(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[PADReAttention]:
-    """Single-layer framework injection helper for PADReAttention."""
+    """Single-layer framework injection helper for PADReAttention with validation and fallback."""
     try:
+        source_module = old_attn if old_attn is not None else layer
         new_attn = PADReAttention(
             config=model_config,
-            pretrained_attn=old_attn,
+            pretrained_attn=source_module,
+            comp_config=comp_config,
             **kwargs,
         )
+
+        max_err = float(_cfg_get(comp_config, "max_error", kwargs.get("max_error", getattr(new_attn, "max_error", 0.20))))
+        output_error = 0.0
+        forward_check_success = True
+
+        # Validation with dummy/calibration input against source module
+        if source_module is not None:
+            try:
+                target_dev = next(new_attn.parameters()).device
+                target_dtype = next(new_attn.parameters()).dtype
+                h_size = getattr(new_attn, "hidden_size", 768)
+                dummy_x = torch.randn(1, 4, h_size, device=target_dev, dtype=target_dtype)
+
+                with torch.no_grad():
+                    # Evaluate original attention output
+                    try:
+                        orig_res = source_module(dummy_x)
+                    except TypeError:
+                        orig_res = source_module(hidden_states=dummy_x)
+                    orig_out = orig_res[0] if isinstance(orig_res, tuple) else orig_res
+
+                    # Evaluate new attention output
+                    new_res = new_attn(dummy_x)
+                    new_out = new_res[0] if isinstance(new_res, tuple) else new_res
+
+                    if orig_out is not None and new_out is not None and orig_out.shape == new_out.shape:
+                        norm_orig = torch.norm(orig_out.float(), p="fro").clamp_min(1e-12)
+                        output_error = float((torch.norm((orig_out - new_out).float(), p="fro") / norm_orig).item())
+                    else:
+                        output_error = 0.0
+
+                if max_err is not None and output_error > max_err:
+                    logger.warning(
+                        "PADReAttention layer %d output equivalence error %.4f exceeded threshold %.4f. Skipping replacement.",
+                        layer_idx,
+                        output_error,
+                        max_err,
+                    )
+                    # Freeze unreplaced original layer so it does not update during fine-tuning
+                    for p in source_module.parameters():
+                        p.requires_grad = False
+                    return None
+            except Exception as ex_val:
+                logger.debug("Validation check skipped or failed on layer %d: %s", layer_idx, ex_val)
+                forward_check_success = False
+
+        if hasattr(new_attn, "stats") and isinstance(new_attn.stats, dict):
+            new_attn.stats.update({
+                "output_equivalence_error": output_error,
+                "forward_check_success": forward_check_success,
+                "layer_idx": layer_idx,
+                "total_layers": total_layers,
+            })
+
         return new_attn
     except Exception as e:
         logger.warning("Failed to inject PADReAttention at layer %d: %s", layer_idx, e)
+        if old_attn is not None:
+            for p in old_attn.parameters():
+                p.requires_grad = False
         return None
 

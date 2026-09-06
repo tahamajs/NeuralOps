@@ -21,6 +21,14 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 class ReplacementBlock(nn.Module):
     """
     Drop-in replacement for a transformer layer.
@@ -64,19 +72,26 @@ class ReplacementBlock(nn.Module):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Union[torch.Tensor, Tuple[torch.Tensor, ...], Any],
         *args: Any,
         **kwargs: Any,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
-        if isinstance(hidden_states, tuple):
-            hidden_states = hidden_states[0]
-        normed = self.ln(hidden_states)
+        primary_tensor = hidden_states
+        if isinstance(hidden_states, (tuple, list)):
+            primary_tensor = hidden_states[0]
+        elif hasattr(hidden_states, "last_hidden_state"):
+            primary_tensor = hidden_states.last_hidden_state
+
+        normed = self.ln(primary_tensor)
         delta = self.linear(normed)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_delta = F.linear(F.linear(normed.float(), self.lora_A), self.lora_B) * self.scaling
             delta = delta + lora_delta.to(delta.dtype)
-        out = hidden_states + delta
-        if self.return_tuple:
+        out = primary_tensor + delta
+
+        if self.return_tuple or isinstance(hidden_states, (tuple, list)):
+            if isinstance(hidden_states, tuple) and len(hidden_states) > 1:
+                return (out,) + hidden_states[1:]
             return (out,)
         return out
 
@@ -95,6 +110,9 @@ class ReplaceMeCompressor(BaseCompressor):
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
+        max_error: Optional[float] = None,
+        fallback_to_original: bool = True,
+        target_attention_only: bool = False,
         device: Optional[Union[str, torch.device]] = None,
         config: Optional[Any] = None,
         cfg: Optional[Any] = None,
@@ -102,16 +120,14 @@ class ReplaceMeCompressor(BaseCompressor):
     ) -> None:
         super().__init__(model, name='replaceme', **kwargs)
         cfg_obj = cfg or config or kwargs.get('comp_config', None)
-        if cfg_obj is not None:
-            remove_layers = getattr(cfg_obj, 'remove_layers', remove_layers)
-            use_lora = getattr(cfg_obj, 'use_lora', use_lora)
-            lora_r = getattr(cfg_obj, 'lora_r', lora_r)
-            lora_alpha = getattr(cfg_obj, 'lora_alpha', lora_alpha)
 
-        self.remove_layers = max(1, int(remove_layers))
-        self.use_lora = bool(use_lora or (lora_r > 0))
-        self.lora_r = int(lora_r)
-        self.lora_alpha = float(lora_alpha)
+        self.remove_layers = max(1, int(remove_layers if remove_layers is not None else _cfg_get(cfg_obj, 'remove_layers', 2)))
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, 'use_lora', False) or (lora_r > 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, 'lora_r', 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, 'lora_alpha', 1.0))
+        self.max_error = _cfg_get(cfg_obj, 'max_error', max_error)
+        self.fallback_to_original = bool(fallback_to_original if fallback_to_original is not None else _cfg_get(cfg_obj, 'fallback_to_original', True))
+        self.target_attention_only = bool(target_attention_only or _cfg_get(cfg_obj, 'target_attention_only', False))
 
         if device is not None:
             try:
@@ -160,19 +176,29 @@ class ReplaceMeCompressor(BaseCompressor):
         hidden_size = 768
         cfg = getattr(self.model, 'config', None)
         if cfg is not None:
-            hidden_size = getattr(cfg, 'hidden_size', getattr(cfg, 'dim', getattr(cfg, 'd_model', 768)))
+            hidden_size = _cfg_get(cfg, 'hidden_size', _cfg_get(cfg, 'dim', _cfg_get(cfg, 'd_model', 768)))
 
         layers = self._find_transformer_layers()
         layers_replaced = 0
+        fallback_layers = 0
 
         target_dtype = next(self.model.parameters()).dtype if list(self.model.parameters()) else torch.float32
 
         if layers is not None:
             num_layers = len(layers)
             n_remove = min(self.remove_layers, num_layers)
-            return_tuple = False
             for i in range(num_layers - n_remove, num_layers):
-                layers[i] = ReplacementBlock(
+                old_layer = layers[i]
+                # Test whether layer outputs tuple
+                dummy_h = torch.randn(1, 4, hidden_size, device=self.target_device, dtype=target_dtype)
+                try:
+                    with torch.no_grad():
+                        old_out = old_layer(dummy_h)
+                    return_tuple = isinstance(old_out, (tuple, list))
+                except Exception:
+                    return_tuple = True
+
+                new_block = ReplacementBlock(
                     hidden_size,
                     lora_r=self.lora_r if self.use_lora else 0,
                     lora_alpha=self.lora_alpha,
@@ -180,6 +206,26 @@ class ReplaceMeCompressor(BaseCompressor):
                     device=self.target_device,
                     dtype=target_dtype,
                 )
+
+                # Equivalence / Reconstruction test
+                if self.max_error is not None:
+                    try:
+                        with torch.no_grad():
+                            orig_res = old_layer(dummy_h)
+                            orig_t = orig_res[0] if isinstance(orig_res, tuple) else orig_res
+                            new_res = new_block(dummy_h)
+                            new_t = new_res[0] if isinstance(new_res, tuple) else new_res
+                            norm_o = torch.norm(orig_t.float(), p='fro').clamp_min(1e-12)
+                            err = float((torch.norm((orig_t - new_t).float(), p='fro') / norm_o).item())
+                        if err > float(self.max_error) and self.fallback_to_original:
+                            fallback_layers += 1
+                            for p in old_layer.parameters():
+                                p.requires_grad = False
+                            continue
+                    except Exception:
+                        pass
+
+                layers[i] = new_block
                 layers_replaced += 1
         else:
             logger.warning('ReplaceMe: Could not locate transformer layer list to replace.')
@@ -198,11 +244,14 @@ class ReplaceMeCompressor(BaseCompressor):
         stats = self.get_compression_stats()
         stats.update({
             'layers_removed': layers_replaced,
+            'layers_replaced': layers_replaced,
+            'fallback_layers': fallback_layers,
             'target_removed': self.remove_layers,
             'hidden_size': hidden_size,
             'forward_check_success': forward_check_success,
             'use_lora': self.use_lora,
             'lora_r': self.lora_r,
+            'target_attention_only': self.target_attention_only,
             'method': 'replaceme',
         })
         self.stats = stats
@@ -219,10 +268,13 @@ def replaceme_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """ReplaceMe compressor factory function returning (compressed_model, stats) when requested."""
-    remove_layers = kwargs.pop('remove_layers', getattr(comp_config, 'remove_layers', 2) if comp_config else 2)
-    use_lora = kwargs.pop('use_lora', getattr(comp_config, 'use_lora', False) if comp_config else False)
-    lora_r = kwargs.pop('lora_r', getattr(comp_config, 'lora_r', 0) if comp_config else 0)
-    lora_alpha = kwargs.pop('lora_alpha', getattr(comp_config, 'lora_alpha', 1.0) if comp_config else 1.0)
+    remove_layers = kwargs.pop('remove_layers', _cfg_get(comp_config, 'remove_layers', 2))
+    use_lora = kwargs.pop('use_lora', _cfg_get(comp_config, 'use_lora', False))
+    lora_r = kwargs.pop('lora_r', _cfg_get(comp_config, 'lora_r', 0))
+    lora_alpha = kwargs.pop('lora_alpha', _cfg_get(comp_config, 'lora_alpha', 1.0))
+    max_error = kwargs.pop('max_error', _cfg_get(comp_config, 'max_error', None))
+    fallback = kwargs.pop('fallback_to_original', _cfg_get(comp_config, 'fallback_to_original', True))
+    target_attention_only = kwargs.pop('target_attention_only', _cfg_get(comp_config, 'target_attention_only', False))
 
     compressor = ReplaceMeCompressor(
         model,
@@ -230,6 +282,9 @@ def replaceme_factory(
         use_lora=use_lora,
         lora_r=lora_r,
         lora_alpha=lora_alpha,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
         cfg=comp_config,
         **kwargs,
     )

@@ -41,6 +41,14 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register("slim")
 @COMPRESSOR_REGISTRY.register("slim_compressor")
 class SLiMCompressor(BaseCompressor):
@@ -55,6 +63,7 @@ class SLiMCompressor(BaseCompressor):
         sparsity: float = 0.5,
         rank: int = 8,
         structured_24: bool = True,
+        target_attention_only: bool = False,
         max_error: float = 0.5,
         fallback_to_original: bool = True,  # Fix 1: Default changed to True
         target_modules: Optional[List[str]] = None,
@@ -63,12 +72,13 @@ class SLiMCompressor(BaseCompressor):
         super().__init__(model, name="slim", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            bits = getattr(cfg, "slim_bits", getattr(cfg, "bits", bits))
-            sparsity = getattr(cfg, "slim_sparsity", getattr(cfg, "sparsity", sparsity))
-            rank = getattr(cfg, "slim_rank", getattr(cfg, "rank", rank))
-            structured_24 = getattr(cfg, "slim_structured_24", getattr(cfg, "structured_24", structured_24))
-            max_error = getattr(cfg, "max_error", max_error)
-            fallback_to_original = getattr(cfg, "fallback_to_original", fallback_to_original)
+            bits = _cfg_get(cfg, "slim_bits", _cfg_get(cfg, "bits", bits))
+            sparsity = _cfg_get(cfg, "slim_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+            rank = _cfg_get(cfg, "slim_rank", _cfg_get(cfg, "rank", rank))
+            structured_24 = _cfg_get(cfg, "slim_structured_24", _cfg_get(cfg, "structured_24", structured_24))
+            max_error = _cfg_get(cfg, "max_error", max_error)
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
@@ -77,6 +87,7 @@ class SLiMCompressor(BaseCompressor):
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.rank = max(1, int(rank))
         self.structured_24 = structured_24
+        self.target_attention_only = bool(target_attention_only)
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_modules = target_modules
@@ -88,9 +99,16 @@ class SLiMCompressor(BaseCompressor):
         Fix 4: Unified critical-layer protection delegated to should_compress_linear.
         Eliminates duplicate keyword matching.
         """
-        cls_name = module.__class__.__name__.lower()
+        name_l = name.lower()
+        if self.target_attention_only:
+            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, "base_layer", module)
+        cls_name = base_mod.__class__.__name__.lower()
         # Fix 2: Reliable Conv1D check using class name and hasattr(nf)
-        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
@@ -119,10 +137,11 @@ class SLiMCompressor(BaseCompressor):
 
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
-                raw_w = module.weight.data
-                cls_name = module.__class__.__name__.lower()
+                base_mod = getattr(module, "base_layer", module)
+                raw_w = base_mod.weight.data
+                cls_name = base_mod.__class__.__name__.lower()
                 # Fix 2: Check for Conv1D via class name and nf attribute
-                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
+                is_conv1d = "conv1d" in cls_name or hasattr(base_mod, "nf")
                 device = raw_w.device
                 dtype = raw_w.dtype
 
@@ -171,10 +190,12 @@ class SLiMCompressor(BaseCompressor):
                         ". Skipping (fallback to original)." if self.fallback_to_original else ". Proceeding with compressed weight.",
                     )
                     if self.fallback_to_original:
+                        for p in module.parameters():
+                            p.requires_grad = False
                         continue
 
                 final_w = W_final.t() if is_conv1d else W_final
-                module.weight.data = final_w.to(dtype=dtype, device=device)
+                base_mod.weight.data = final_w.to(dtype=dtype, device=device)
                 pruned_layers_count += 1
 
         self._compressed_params = self._count_params(self.model)
@@ -189,6 +210,7 @@ class SLiMCompressor(BaseCompressor):
             "layer_errors": self.layer_errors,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
+            "target_attention_only": self.target_attention_only,
             "biases_quantized": False,  # Fix 5: Explicitly document bias policy
             "method": "slim_quant_sparse_lowrank",
         })
@@ -197,14 +219,21 @@ class SLiMCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("slim_factory")
-def slim_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
+def slim_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -> Any:
     """Factory function for SLiM compressor."""
-    bits = kwargs.pop("bits", getattr(comp_config, "slim_bits", getattr(comp_config, "bits", 4)) if comp_config else 4)
-    sparsity = kwargs.pop("sparsity", getattr(comp_config, "slim_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else 0.5)
-    rank = kwargs.pop("rank", getattr(comp_config, "slim_rank", getattr(comp_config, "rank", 8)) if comp_config else 8)
-    structured_24 = kwargs.pop("structured_24", getattr(comp_config, "slim_structured_24", getattr(comp_config, "structured_24", True)) if comp_config else True)
-    max_error = kwargs.pop("max_error", getattr(comp_config, "max_error", 0.20) if comp_config else 0.20)
-    fallback = kwargs.pop("fallback_to_original", getattr(comp_config, "fallback_to_original", True) if comp_config else True)
+    bits = kwargs.pop("bits", _cfg_get(comp_config, "slim_bits", _cfg_get(comp_config, "bits", 4)))
+    sparsity = kwargs.pop("sparsity", _cfg_get(comp_config, "slim_sparsity", _cfg_get(comp_config, "sparsity", 0.5)))
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "slim_rank", _cfg_get(comp_config, "rank", 8)))
+    structured_24 = kwargs.pop("structured_24", _cfg_get(comp_config, "slim_structured_24", _cfg_get(comp_config, "structured_24", True)))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
 
     compressor = SLiMCompressor(
         model,
@@ -212,12 +241,15 @@ def slim_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         sparsity=sparsity,
         rank=rank,
         structured_24=structured_24,
+        target_attention_only=target_attention_only,
         max_error=max_error,
         fallback_to_original=fallback,
         comp_config=comp_config,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop("return_both", False):
+        return compressed_model, stats
     return compressed_model
 
 

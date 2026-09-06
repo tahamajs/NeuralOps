@@ -37,6 +37,15 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Helper to safely retrieve configuration values from dict, object, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 class ProxSparsePrunedLoRALinear(nn.Module):
     """
     Linear layer containing sparse proximal-gradient pruned base weights (frozen)
@@ -96,10 +105,11 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> ProxSparsePrunedLoRALinear:
-        bias = linear.bias.detach() if hasattr(linear, 'bias') and linear.bias is not None else None
-        in_features = getattr(linear, 'in_features', pruned_weight.shape[1])
-        out_features = getattr(linear, 'out_features', pruned_weight.shape[0])
-        return cls(
+        base_mod = getattr(linear, "base_layer", linear)
+        bias = base_mod.bias.detach() if hasattr(base_mod, 'bias') and base_mod.bias is not None else None
+        in_features = getattr(base_mod, 'in_features', getattr(linear, 'in_features', pruned_weight.shape[1]))
+        out_features = getattr(base_mod, 'out_features', getattr(linear, 'out_features', pruned_weight.shape[0]))
+        instance = cls(
             in_features=in_features,
             out_features=out_features,
             pruned_weight=pruned_weight,
@@ -110,6 +120,16 @@ class ProxSparsePrunedLoRALinear(nn.Module):
             device=pruned_weight.device,
             dtype=pruned_weight.dtype,
         )
+        # Preserve existing source LoRA parameters if present
+        if hasattr(linear, "lora_A") and hasattr(linear, "lora_B") and linear.lora_A is not None and linear.lora_B is not None:
+            src_A = getattr(linear.lora_A, "weight", linear.lora_A)
+            src_B = getattr(linear.lora_B, "weight", linear.lora_B)
+            if instance.lora_A is not None and instance.lora_B is not None:
+                if src_A.shape == instance.lora_A.shape:
+                    instance.lora_A.data.copy_(src_A.data)
+                if src_B.shape == instance.lora_B.shape:
+                    instance.lora_B.data.copy_(src_B.data)
+        return instance
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         effective_w = (self.weight * self.mask.to(dtype=self.weight.dtype)).to(dtype=x.dtype)
@@ -146,6 +166,7 @@ class ProxSparsePruner(BaseCompressor):
         fallback_to_original: bool = True,
         min_numel: int = 16,
         target_modules: Optional[List[str]] = None,
+        target_attention_only: bool = False,
         device: Optional[Union[str, torch.device]] = None,
         cfg: Optional[Any] = None,
         **kwargs: Any,
@@ -153,27 +174,28 @@ class ProxSparsePruner(BaseCompressor):
         super().__init__(model, name='proxsparse', **kwargs)
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
-        self.sparsity = max(0.0, min(float(sparsity or getattr(cfg_obj, 'proxsparse_sparsity', getattr(cfg_obj, 'sparsity', 0.5))), 0.95))
-        self.lambda_prox = max(0.0, float(lambda_prox or getattr(cfg_obj, 'proxsparse_lambda', getattr(cfg_obj, 'lambda_prox', 0.01))))
-        self.steps = max(1, int(steps or getattr(cfg_obj, 'proxsparse_steps', getattr(cfg_obj, 'steps', 5))))
-        self.structured_24 = bool(structured_24 if structured_24 is not None else getattr(cfg_obj, 'proxsparse_structured_24', getattr(cfg_obj, 'structured_24', False)))
-        self.block_size = block_size or getattr(cfg_obj, 'block_size', (4, 4))
-        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else getattr(cfg_obj, 'skip_attention_qkv', True))
-        self.use_lora = bool(use_lora or getattr(cfg_obj, 'use_lora', False) or (lora_r > 0))
-        self.lora_r = int(lora_r or getattr(cfg_obj, 'lora_r', 0))
-        self.lora_alpha = float(lora_alpha or getattr(cfg_obj, 'lora_alpha', 1.0))
-        self.min_numel = max(1, int(min_numel or getattr(cfg_obj, 'min_numel', 16)))
+        self.sparsity = max(0.0, min(float(sparsity if sparsity is not None else _cfg_get(cfg_obj, 'proxsparse_sparsity', _cfg_get(cfg_obj, 'sparsity', 0.5))), 0.95))
+        self.lambda_prox = max(0.0, float(lambda_prox if lambda_prox is not None else _cfg_get(cfg_obj, 'proxsparse_lambda', _cfg_get(cfg_obj, 'lambda_prox', 0.01))))
+        self.steps = max(1, int(steps if steps is not None else _cfg_get(cfg_obj, 'proxsparse_steps', _cfg_get(cfg_obj, 'steps', 5))))
+        self.structured_24 = bool(structured_24 if structured_24 is not None else _cfg_get(cfg_obj, 'proxsparse_structured_24', _cfg_get(cfg_obj, 'structured_24', False)))
+        self.block_size = block_size or _cfg_get(cfg_obj, 'block_size', (4, 4))
+        self.target_attention_only = bool(target_attention_only or _cfg_get(cfg_obj, 'target_attention_only', kwargs.get('target_attention_only', False)))
+        self.skip_attention_qkv = bool(skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, 'skip_attention_qkv', True)) and not self.target_attention_only
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, 'use_lora', False) or (lora_r > 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, 'lora_r', 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, 'lora_alpha', 1.0))
+        self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, 'min_numel', 16)))
         self.target_modules = target_modules
 
         if max_error is not None:
             self.max_error: Optional[float] = float(max_error)
-        elif hasattr(cfg_obj, 'max_error') and getattr(cfg_obj, 'max_error') is not None:
-            self.max_error = float(getattr(cfg_obj, 'max_error'))
+        elif _cfg_get(cfg_obj, 'max_error', None) is not None:
+            self.max_error = float(_cfg_get(cfg_obj, 'max_error'))
         else:
             self.max_error = None
 
         self.fallback_to_original = bool(
-            fallback_to_original if fallback_to_original is not None else getattr(cfg_obj, 'fallback_to_original', True)
+            fallback_to_original if fallback_to_original is not None else _cfg_get(cfg_obj, 'fallback_to_original', True)
         )
 
         # Target device derivation
@@ -197,6 +219,8 @@ class ProxSparsePruner(BaseCompressor):
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
+        if self.target_attention_only:
+            return False
         cfg = getattr(self.model, 'config', None)
         num_heads = getattr(cfg, 'num_attention_heads', None)
         num_kv_heads = getattr(cfg, 'num_key_value_heads', None)
@@ -219,19 +243,27 @@ class ProxSparsePruner(BaseCompressor):
             self.protected_layers.append(name)
             return False
 
+        # target_attention_only check
+        if self.target_attention_only:
+            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value", "dense"]
+            if not any(k in name_l for k in attn_keywords):
+                self.skipped_layers.append(name)
+                return False
+
         # 2. GQA-aware skipping
         if self._is_gqa_asymmetric(name, module):
             self.skipped_layers.append(name)
             return False
 
-        # 3. Check linear or Conv1D nature
-        cls_name = module.__class__.__name__
-        raw_w = getattr(module, 'weight', None)
+        # 3. Check linear, Conv1D, or LoRALinear nature
+        base_mod = getattr(module, "base_layer", module)
+        cls_name = base_mod.__class__.__name__
+        raw_w = getattr(base_mod, 'weight', None)
         if raw_w is None or not isinstance(raw_w, torch.Tensor):
             return False
 
-        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
-        is_linear_like = isinstance(module, nn.Linear) or is_conv1d
+        is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
+        is_linear_like = isinstance(base_mod, nn.Linear) or is_conv1d
         if not is_linear_like or isinstance(module, ProxSparsePrunedLoRALinear):
             return False
 
@@ -251,7 +283,7 @@ class ProxSparsePruner(BaseCompressor):
         return True
 
     def _soft_threshold(self, tensor: torch.Tensor, threshold: float) -> torch.Tensor:
-        """Soft-thresholding operator prox_{\lambda ||.||_1}."""
+        r"""Soft-thresholding operator prox_{\lambda ||.||_1}."""
         return torch.sign(tensor) * torch.clamp(torch.abs(tensor) - threshold, min=0.0)
 
     def _project_sparse(self, tensor: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -289,9 +321,10 @@ class ProxSparsePruner(BaseCompressor):
                 self.visited_modules.add(mod_id)
 
                 try:
-                    raw_w = module.weight.data
-                    cls_name = module.__class__.__name__
-                    is_conv1d = 'conv1d' in cls_name.lower() or hasattr(module, 'nf')
+                    base_mod = getattr(module, "base_layer", module)
+                    raw_w = base_mod.weight.data
+                    cls_name = base_mod.__class__.__name__
+                    is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_mod, 'nf')
                     device = raw_w.device
                     dtype = raw_w.dtype
 
@@ -321,6 +354,8 @@ class ProxSparsePruner(BaseCompressor):
 
                     if is_invalid and self.fallback_to_original:
                         self.fallback_layers.append(name)
+                        for p in module.parameters():
+                            p.requires_grad = False
                         continue
 
                     # Commit pruned layer with optional LoRA adapter
@@ -335,13 +370,15 @@ class ProxSparsePruner(BaseCompressor):
                         replace_module(self.model, name, lora_layer)
                     else:
                         final_w = W_final.t().contiguous() if is_conv1d else W_final.contiguous()
-                        module.weight.data.copy_(final_w.to(dtype=dtype, device=device))
+                        base_mod.weight.data.copy_(final_w.to(dtype=dtype, device=device))
 
                     self.compressed_layers.append(name)
 
                 except Exception as e_comp:
                     logger.warning('ProxSparse: Failed to process %s: %s', name, e_comp)
                     self.failed_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
 
         # Post-compression forward sanity check
         forward_check_success = True
@@ -403,18 +440,19 @@ def proxsparse_factory(
     **kwargs: Any,
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Factory function for ProxSparse pruner returning (compressed_model, stats) when requested."""
-    sparsity = kwargs.pop('sparsity', getattr(comp_config, 'proxsparse_sparsity', getattr(comp_config, 'sparsity', 0.5)) if comp_config else 0.5)
-    lambda_prox = kwargs.pop('lambda_prox', getattr(comp_config, 'proxsparse_lambda', getattr(comp_config, 'lambda_prox', 0.01)) if comp_config else 0.01)
-    steps = kwargs.pop('steps', getattr(comp_config, 'proxsparse_steps', getattr(comp_config, 'steps', 5)) if comp_config else 5)
-    structured_24 = kwargs.pop('structured_24', getattr(comp_config, 'proxsparse_structured_24', getattr(comp_config, 'structured_24', False)) if comp_config else False)
-    skip_attention_qkv = kwargs.pop('skip_attention_qkv', getattr(comp_config, 'skip_attention_qkv', True) if comp_config else True)
-    use_lora = kwargs.pop('use_lora', getattr(comp_config, 'use_lora', False) if comp_config else False)
-    lora_r = kwargs.pop('lora_r', getattr(comp_config, 'lora_r', 0) if comp_config else 0)
-    lora_alpha = kwargs.pop('lora_alpha', getattr(comp_config, 'lora_alpha', 1.0) if comp_config else 1.0)
-    max_error = kwargs.pop('max_error', getattr(comp_config, 'max_error', None) if comp_config else None)
-    fallback = kwargs.pop('fallback_to_original', getattr(
-        comp_config, 'proxsparse_fallback_to_original', getattr(comp_config, 'fallback_to_original', True)
-    ) if comp_config else True)
+    sparsity = kwargs.pop('sparsity', _cfg_get(comp_config, 'proxsparse_sparsity', _cfg_get(comp_config, 'sparsity', 0.5)))
+    lambda_prox = kwargs.pop('lambda_prox', _cfg_get(comp_config, 'proxsparse_lambda', _cfg_get(comp_config, 'lambda_prox', 0.01)))
+    steps = kwargs.pop('steps', _cfg_get(comp_config, 'proxsparse_steps', _cfg_get(comp_config, 'steps', 5)))
+    structured_24 = kwargs.pop('structured_24', _cfg_get(comp_config, 'proxsparse_structured_24', _cfg_get(comp_config, 'structured_24', False)))
+    target_attention_only = kwargs.pop('target_attention_only', _cfg_get(comp_config, 'target_attention_only', False))
+    skip_attention_qkv = kwargs.pop('skip_attention_qkv', _cfg_get(comp_config, 'skip_attention_qkv', True))
+    use_lora = kwargs.pop('use_lora', _cfg_get(comp_config, 'use_lora', False))
+    lora_r = kwargs.pop('lora_r', _cfg_get(comp_config, 'lora_r', 0))
+    lora_alpha = kwargs.pop('lora_alpha', _cfg_get(comp_config, 'lora_alpha', 1.0))
+    max_error = kwargs.pop('max_error', _cfg_get(comp_config, 'max_error', None))
+    fallback = kwargs.pop('fallback_to_original', _cfg_get(
+        comp_config, 'proxsparse_fallback_to_original', _cfg_get(comp_config, 'fallback_to_original', True)
+    ))
 
     compressor = ProxSparsePruner(
         model,
@@ -422,6 +460,7 @@ def proxsparse_factory(
         lambda_prox=lambda_prox,
         steps=steps,
         structured_24=structured_24,
+        target_attention_only=target_attention_only,
         skip_attention_qkv=skip_attention_qkv,
         use_lora=use_lora,
         lora_r=lora_r,
