@@ -303,16 +303,16 @@ class AegisSpectronFP8Attention(BaseAttention):
                 is_dec = config.get("is_decoder", False)
                 fp8_fmt = config.get("fp8_format", "e4m3")
             else:
-                h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768
-                n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12
-                h_dim = getattr(config, "head_dim", getattr(config, "kv_channels", getattr(config, "d_kv", h_size // max(1, n_heads)))) if config is not None else h_size // max(1, n_heads)
-                n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads
-                rank = getattr(config, "svd_rank", getattr(config, "rank", min(128, h_size))) if config is not None else 128
-                lora_rank = getattr(config, "lora_rank", getattr(config, "lora_r", 32)) if config is not None else 32
-                w_size = getattr(config, "window_size", getattr(config, "local_window", getattr(config, "block_size", 64))) if config is not None else 64
-                drop = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config is not None else 0.1
-                is_dec = getattr(config, "is_decoder", False) if config is not None else False
-                fp8_fmt = getattr(config, "fp8_format", "e4m3") if config is not None else "e4m3"
+                h_size = hidden_size or kwargs.get("hidden_size", kwargs.get("d_model", getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768))
+                n_heads = num_heads or kwargs.get("num_heads", kwargs.get("num_attention_heads", getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12))
+                h_dim = kwargs.get("head_dim", getattr(config, "head_dim", getattr(config, "kv_channels", getattr(config, "d_kv", h_size // max(1, n_heads)))) if config is not None else h_size // max(1, n_heads))
+                n_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", n_heads)) if config is not None else n_heads))
+                rank = rank or kwargs.get("rank", getattr(config, "svd_rank", getattr(config, "rank", min(128, h_size))) if config is not None else 128)
+                lora_rank = lora_rank or kwargs.get("lora_rank", getattr(config, "lora_rank", getattr(config, "lora_r", 32)) if config is not None else 32)
+                w_size = kwargs.get("window_size", kwargs.get("local_window", getattr(config, "window_size", getattr(config, "local_window", getattr(config, "block_size", 64))) if config is not None else 64))
+                drop = kwargs.get("dropout", getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config is not None else 0.1)
+                is_dec = kwargs.get("is_decoder", getattr(config, "is_decoder", False) if config is not None else False)
+                fp8_fmt = kwargs.get("fp8_format", getattr(config, "fp8_format", "e4m3") if config is not None else "e4m3")
 
             config = AegisSpectronFP8Config(
                 hidden_size=h_size,
@@ -598,20 +598,24 @@ class AegisSpectronFP8Attention(BaseAttention):
             extracted_weights[proj] = (w, b)
 
         cls_name = old_attn.__class__.__name__
-        
-        # 1. Hardcoded explicit check for known nested encoders (immune to dummy monkey-patching)
+        has_out_proj = any(
+            hasattr(old_attn, attr)
+            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
+        )
         if (
+            hasattr(old_attn, "self")
+            and hasattr(getattr(old_attn, "self"), "query")
+            and hasattr(old_attn, "output")
+            and hasattr(getattr(old_attn, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
+        elif (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention"]
             or "RobertaSelfAttention" in str(type(old_attn))
             or "BertSelfAttention" in str(type(old_attn))
         ):
             self.is_nested_encoder = True
         else:
-            # 2. Dynamic fallback for other architectures
-            has_out_proj = any(
-                hasattr(old_attn, attr)
-                for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
-            )
             self.is_nested_encoder = cls_name.endswith("SelfAttention") and not has_out_proj
 
         # Strict check for essential missing weights
