@@ -207,23 +207,35 @@ for m in models:
         print(f"[-] Error reading {csv_path}: {e}")
         continue
 
-    row_full = df[df["module"] == "full"]
-    row_armor = df[df["module"] == "armor_pruner"]
+    row_full = df[df.get("module_name", df.get("module", pd.Series())) == "full"]
+    row_armor = df[df.get("module_name", df.get("module", pd.Series())) == "armor_pruner"]
 
     if row_armor.empty:
-        row_armor = df[df["module"] != "full"]
+        mod_col = "module_name" if "module_name" in df.columns else "module"
+        row_armor = df[df[mod_col] != "full"]
 
     if row_full.empty or row_armor.empty:
         print(f"[-] Missing full baseline or armor_pruner rows in {csv_path}")
         continue
 
-    baseline_acc = float(row_full.iloc[0].get("accuracy", 0.0))
-    armor_acc = float(row_armor.iloc[0].get("accuracy", 0.0))
-    armor_f1 = float(row_armor.iloc[0].get("f1", 0.0))
+    # Parse accuracy: could be 'accuracy_pct' (0..100) or 'accuracy' (0..1)
+    if "accuracy_pct" in row_full.columns:
+        baseline_acc = float(row_full.iloc[0].get("accuracy_pct", 0.0)) / 100.0
+    else:
+        raw_b = float(row_full.iloc[0].get("accuracy", 0.0))
+        baseline_acc = raw_b / 100.0 if raw_b > 1.0 else raw_b
+
+    if "accuracy_pct" in row_armor.columns:
+        armor_acc = float(row_armor.iloc[0].get("accuracy_pct", 0.0)) / 100.0
+    else:
+        raw_a = float(row_armor.iloc[0].get("accuracy", 0.0))
+        armor_acc = raw_a / 100.0 if raw_a > 1.0 else raw_a
+
+    armor_f1 = float(row_armor.iloc[0].get("f1_score", row_armor.iloc[0].get("f1", 0.0)))
     delta_acc = armor_acc - baseline_acc
     status = str(row_armor.iloc[0].get("status", "FAIL")).upper()
     lat_p95 = float(row_armor.iloc[0].get("latency_p95_ms", 0.0))
-    vram_peak = float(row_armor.iloc[0].get("vram_peak_mb", 0.0))
+    vram_peak = float(row_armor.iloc[0].get("peak_vram_mb", row_armor.iloc[0].get("vram_peak_mb", 0.0)))
 
     # Read detailed compressor stats
     stats_data = {}
@@ -238,7 +250,7 @@ for m in models:
     num_fallback = stats_data.get("num_fallback", len(stats_data.get("fallback_layers", [])))
     actual_sparsity = stats_data.get("actual_sparsity", 0.5)
     effective_parameter_ratio = stats_data.get("effective_parameter_ratio", 1.0)
-    avg_reconstruction_error = stats_data.get("avg_reconstruction_error", 0.0)
+    avg_reconstruction_error = stats_data.get("avg_reconstruction_error", float(row_armor.iloc[0].get("avg_reconstruction_error", 0.0) or 0.0))
 
     # Quality Gate Check: Status must be PASS and Accuracy >= 56.0%
     is_passing = (status == "PASS") and (armor_acc >= 0.56)

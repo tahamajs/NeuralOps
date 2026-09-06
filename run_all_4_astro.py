@@ -215,23 +215,35 @@ for m in models:
         print(f"[-] Error reading {csv_path}: {e}")
         continue
 
-    row_full = df[df["module"] == "full"]
-    row_astro = df[df["module"] == "astro"]
+    row_full = df[df.get("module_name", df.get("module", pd.Series())) == "full"]
+    row_astro = df[df.get("module_name", df.get("module", pd.Series())) == "astro"]
 
     if row_astro.empty:
-        row_astro = df[df["module"] != "full"]
+        mod_col = "module_name" if "module_name" in df.columns else "module"
+        row_astro = df[df[mod_col] != "full"]
 
     if row_full.empty or row_astro.empty:
         print(f"[-] Missing full baseline or astro rows in {csv_path}")
         continue
 
-    baseline_acc = float(row_full.iloc[0].get("accuracy", 0.0))
-    astro_acc = float(row_astro.iloc[0].get("accuracy", 0.0))
-    astro_f1 = float(row_astro.iloc[0].get("f1", 0.0))
+    # Parse accuracy: could be 'accuracy_pct' (0..100) or 'accuracy' (0..1)
+    if "accuracy_pct" in row_full.columns:
+        baseline_acc = float(row_full.iloc[0].get("accuracy_pct", 0.0)) / 100.0
+    else:
+        raw_b = float(row_full.iloc[0].get("accuracy", 0.0))
+        baseline_acc = raw_b / 100.0 if raw_b > 1.0 else raw_b
+
+    if "accuracy_pct" in row_astro.columns:
+        astro_acc = float(row_astro.iloc[0].get("accuracy_pct", 0.0)) / 100.0
+    else:
+        raw_a = float(row_astro.iloc[0].get("accuracy", 0.0))
+        astro_acc = raw_a / 100.0 if raw_a > 1.0 else raw_a
+
+    astro_f1 = float(row_astro.iloc[0].get("f1_score", row_astro.iloc[0].get("f1", 0.0)))
     delta_acc = astro_acc - baseline_acc
     status = str(row_astro.iloc[0].get("status", "FAIL")).upper()
     lat_p95 = float(row_astro.iloc[0].get("latency_p95_ms", 0.0))
-    vram_peak = float(row_astro.iloc[0].get("vram_peak_mb", 0.0))
+    vram_peak = float(row_astro.iloc[0].get("peak_vram_mb", row_astro.iloc[0].get("vram_peak_mb", 0.0)))
 
     # Read detailed compressor stats
     stats_data = {}
@@ -244,10 +256,10 @@ for m in models:
 
     num_compressed = stats_data.get("num_compressed", len(stats_data.get("compressed_layers", [])))
     num_fallback = stats_data.get("num_fallback", len(stats_data.get("fallback_layers", [])))
-    actual_avg_bits = stats_data.get("actual_average_bits", 6.0)
-    effective_compression_rate = stats_data.get("effective_compression_rate", 16.0 / max(actual_avg_bits, 1e-3))
-    avg_reconstruction_error = stats_data.get("avg_reconstruction_error", 0.0)
-    theoretical_vram_saving = stats_data.get("theoretical_vram_saving", f"{(1.0 - actual_avg_bits / 16.0) * 100:.1f}% vs FP16")
+    mean_bits = stats_data.get("mean_allocated_bits", 4.0)
+    effective_compression_ratio = stats_data.get("effective_compression_ratio", 4.0)
+    avg_reconstruction_error = stats_data.get("avg_reconstruction_error", float(row_astro.iloc[0].get("avg_reconstruction_error", 0.0) or 0.0))
+    theoretical_vram_saving = stats_data.get("theoretical_vram_saving", f"{(1.0 - mean_bits / 16.0) * 100:.1f}% vs FP16")
 
     # Quality Gate Check: Status must be PASS and Accuracy >= 56.0%
     is_passing = (status == "PASS") and (astro_acc >= 0.56)

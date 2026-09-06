@@ -211,23 +211,35 @@ for m in models:
         print(f"[-] Error reading {csv_path}: {e}")
         continue
 
-    row_full = df[df["module"] == "full"]
-    row_cn = df[df["module"] == "cachenotes"]
+    row_full = df[df.get("module_name", df.get("module", pd.Series())) == "full"]
+    row_cn = df[df.get("module_name", df.get("module", pd.Series())) == "cachenotes"]
 
     if row_cn.empty:
-        row_cn = df[df["module"] != "full"]
+        mod_col = "module_name" if "module_name" in df.columns else "module"
+        row_cn = df[df[mod_col] != "full"]
 
     if row_full.empty or row_cn.empty:
         print(f"[-] Missing full baseline or cachenotes rows in {csv_path}")
         continue
 
-    baseline_acc = float(row_full.iloc[0].get("accuracy", 0.0))
-    cn_acc = float(row_cn.iloc[0].get("accuracy", 0.0))
-    cn_f1 = float(row_cn.iloc[0].get("f1", 0.0))
+    # Parse accuracy: could be 'accuracy_pct' (0..100) or 'accuracy' (0..1)
+    if "accuracy_pct" in row_full.columns:
+        baseline_acc = float(row_full.iloc[0].get("accuracy_pct", 0.0)) / 100.0
+    else:
+        raw_b = float(row_full.iloc[0].get("accuracy", 0.0))
+        baseline_acc = raw_b / 100.0 if raw_b > 1.0 else raw_b
+
+    if "accuracy_pct" in row_cn.columns:
+        cn_acc = float(row_cn.iloc[0].get("accuracy_pct", 0.0)) / 100.0
+    else:
+        raw_a = float(row_cn.iloc[0].get("accuracy", 0.0))
+        cn_acc = raw_a / 100.0 if raw_a > 1.0 else raw_a
+
+    cn_f1 = float(row_cn.iloc[0].get("f1_score", row_cn.iloc[0].get("f1", 0.0)))
     delta_acc = cn_acc - baseline_acc
     status = str(row_cn.iloc[0].get("status", "FAIL")).upper()
     lat_p95 = float(row_cn.iloc[0].get("latency_p95_ms", 0.0))
-    vram_peak = float(row_cn.iloc[0].get("vram_peak_mb", 0.0))
+    vram_peak = float(row_cn.iloc[0].get("peak_vram_mb", row_cn.iloc[0].get("vram_peak_mb", 0.0)))
 
     # Read detailed compressor stats
     stats_data = {}
@@ -240,8 +252,10 @@ for m in models:
 
     num_compressed = stats_data.get("num_compressed", len(stats_data.get("compressed_layers", [])))
     num_fallback = stats_data.get("num_fallback", len(stats_data.get("fallback_layers", [])))
-    avg_rank = stats_data.get("avg_rank", 0.0)
-    avg_reconstruction_error = stats_data.get("avg_reconstruction_error", 0.0)
+    weight_compression_ratio = stats_data.get("weight_compression_ratio", 2.0)
+    kv_cache_budget_ratio = stats_data.get("kv_cache_budget_ratio", 0.5)
+    cpt_dim = stats_data.get("cpt_dim", 64)
+    avg_reconstruction_error = stats_data.get("avg_reconstruction_error", float(row_cn.iloc[0].get("avg_reconstruction_error", 0.0) or 0.0))
     kv_cache_saving = stats_data.get("kv_cache_budget_saving", "50.0% Footprint Reduction")
 
     # Quality Gate Check: Status must be PASS and Accuracy >= 56.0%
