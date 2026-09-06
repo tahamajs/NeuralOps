@@ -37,8 +37,11 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
-            w = w.t()
+        cls_name = getattr(module, "__class__", type(module)).__name__
+        base_cls_name = getattr(base, "__class__", type(base)).__name__
+        if "Conv1D" in cls_name or "Conv1D" in base_cls_name:
+            if w.ndim == 2 and w.shape[0] < w.shape[1]:
+                w = w.t()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -122,6 +125,11 @@ class HGRN2Layer(BaseAttention):
             self.register_parameter("v_lora_B", None)
             self.register_parameter("out_lora_A", None)
             self.register_parameter("out_lora_B", None)
+
+        if self.freeze_base:
+            for mod in (self.forget_gate, self.input_gate, self.v_proj, self.g_proj, self.out_proj):
+                for p in mod.parameters():
+                    p.requires_grad = False
 
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
