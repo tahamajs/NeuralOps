@@ -256,7 +256,11 @@ for m in models:
         df = pd.read_csv(summary_path)
         if not df.empty:
             if "status" in df.columns:
-                cand = df[df["module"] != "full"] if "module" in df.columns else df
+                mod_col = "module" if "module" in df.columns else ("module_name" if "module_name" in df.columns else None)
+                if mod_col is not None:
+                    cand = df[df[mod_col] != "full"]
+                else:
+                    cand = df
                 if not cand.empty:
                     row = cand.iloc[-1].to_dict()
                 else:
@@ -341,8 +345,73 @@ datasets:
                 commit_message=f"Upload hardened AdaptiveSparseAttention model weights ({name}) - Acc: {acc:.2f}%",
             )
             print(f"Successfully uploaded {name} to {repo_id}", flush=True)
-            uploaded_repos.append(repo_id)
-        except Exception as e:
-            print(f"Upload failed for {repo_id}: {e}", flush=True)
+    res_item = {
+        "model": name,
+        "slug": slug,
+        "baseline_acc": float(df[df[mod_col] == "full"].iloc[0].get("accuracy_pct", 0.0)) / 100.0 if not df.empty and mod_col in df.columns and not df[df[mod_col] == "full"].empty else 0.0,
+        "acc": acc / 100.0,
+        "delta_acc": (acc - float(df[df[mod_col] == "full"].iloc[0].get("accuracy_pct", 0.0))) / 100.0 if not df.empty and mod_col in df.columns and not df[df[mod_col] == "full"].empty else 0.0,
+        "f1": float(row.get("f1", row.get("f1_score", 0.0))),
+        "status": status,
+        "passed_gate": is_successful,
+        "vram_peak_mb": float(row.get("peak_vram_mb", 0.0)),
+        "out_dir": m["out_dir"],
+        "hf_repo": repo_id if is_successful else "N/A",
+    }
+    uploaded_repos.append(res_item)
+
+# Save master summary CSV and JSON
+master_csv = Path(r"results\unified_adaptive_sparse_4models_summary.csv")
+master_json = Path(r"results\unified_adaptive_sparse_4models_summary.json")
+if uploaded_repos:
+    summary_df = pd.DataFrame(uploaded_repos)
+    summary_df.to_csv(master_csv, index=False)
+    with open(master_json, "w", encoding="utf-8") as jf:
+        json.dump(uploaded_repos, jf, indent=2)
+    print(f"\n[+] Master 4-model summary saved to {master_csv} and {master_json}")
+
+# Update Documentation with Benchmark Table
+doc_path = Path(r"Docs\content\attentions\adaptive_sparse_attention.md")
+if doc_path.exists() and uploaded_repos:
+    table_lines = [
+        "\n## Unified 4-Architecture Benchmark Results (Adaptive Sparse Attention)\n",
+        "Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery steps, lr 2e-4, LoRA rank 16):\n\n",
+        "| Model Architecture | Baseline Acc | Adaptive Sparse Acc | Δ Acc | F1 Score | Peak VRAM | Gate Status | Hugging Face Repository |\n",
+        "|:-------------------|:------------:|:--------------------:|:-----:|:--------:|:---------:|:-----------:|:------------------------|\n",
+    ]
+    for r in uploaded_repos:
+        m_name = r["model"]
+        b_acc = f"{r.get('baseline_acc', 0.0):.2%}"
+        p_acc = f"{r.get('acc', 0.0):.2%}"
+        d_acc = f"{r.get('delta_acc', 0.0):+.2%}"
+        f1_sc = f"{r.get('f1', 0.0):.4f}"
+        pvram = f"{r.get('vram_peak_mb', 0.0):.1f} MB"
+        st = r.get("status", "FAIL")
+        hf_link = f"[`{r.get('slug', m_name)}`](https://huggingface.co/{r.get('hf_repo')})" if r.get("passed_gate", False) and r.get("hf_repo") != "N/A" else "N/A"
+        table_lines.append(f"| {m_name.upper()} | {b_acc} | {p_acc} | {d_acc} | {f1_sc} | {pvram} | `{st}` | {hf_link} |\n")
+
+    content = doc_path.read_text(encoding="utf-8")
+    if "## Unified 4-Architecture Benchmark Results" in content:
+        content = content.split("## Unified 4-Architecture Benchmark Results")[0]
+    content = content.rstrip() + "\n" + "".join(table_lines)
+    doc_path.write_text(content, encoding="utf-8")
+    print(f"\n[+] Updated documentation benchmark table in {doc_path}")
+
+# Git commit and push to branch
+branch_name = "benchmark-results-adaptive_sparse"
+print(f"\n[+] Committing and pushing results to branch '{branch_name}'...")
+try:
+    subprocess.run(["git", "checkout", "-b", branch_name], check=False)
+    subprocess.run(["git", "checkout", branch_name], check=False)
+    add_files = [str(doc_path)]
+    if master_csv.exists(): add_files.append(str(master_csv))
+    if master_json.exists(): add_files.append(str(master_json))
+    subprocess.run(["git", "add"] + add_files, check=True)
+    subprocess.run(["git", "commit", "-m", "Add unified 4-model benchmark results and documentation for Adaptive Sparse Attention"], check=True)
+    subprocess.run(["git", "push", "origin", branch_name], check=True)
+    print(f"[+] Successfully committed and pushed results to GitHub branch '{branch_name}'.")
+    subprocess.run(["git", "checkout", "main"], check=False)
+except Exception as e:
+    print(f"[-] Git branch commit/push warning: {e}")
 
 print(f"\nExport Complete: {pass_count}/{len(models)} passed quality gate.", flush=True)
