@@ -495,15 +495,7 @@ class AdaSplashAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-        cls_name = src.__class__.__name__
-        has_out_proj = any(
-            hasattr(src, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
-        )
-        if (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
-            self.is_nested_encoder = True
-        else:
-            self.is_nested_encoder = False
+        self.is_nested_encoder = is_nested_encoder
 
     def forward(
         self,
