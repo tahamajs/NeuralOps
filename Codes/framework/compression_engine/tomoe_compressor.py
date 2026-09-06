@@ -62,26 +62,28 @@ class ToMoELinear(nn.Module):
     ):
         super().__init__()
 
-        # Fix 2: Handle both nn.Linear and Conv1D (or pre-extracted weights)
+        # Fix 2: Handle both nn.Linear, Conv1D, and LoRALinear wrappers
         if original is not None:
-            if isinstance(original, nn.Linear):
-                in_feat = original.in_features
-                out_feat = original.out_features
-                orig_w = original.weight.data.clone()
-                orig_b = original.bias.data.clone() if original.bias is not None else None
-            elif type(original).__name__ == "Conv1D" or (hasattr(original, "nx") and hasattr(original, "nf")):
+            base_layer = getattr(original, "base_layer", original)
+            if isinstance(base_layer, nn.Linear):
+                in_feat = base_layer.in_features
+                out_feat = base_layer.out_features
+                orig_w = base_layer.weight.data.clone()
+                orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
+            elif type(base_layer).__name__ == "Conv1D" or (hasattr(base_layer, "nx") and hasattr(base_layer, "nf")):
                 # Conv1D stores weight as (nx, nf) where nx=in_features, nf=out_features
-                in_feat = original.weight.shape[0]
-                out_feat = original.weight.shape[1]
-                orig_w = original.weight.data.t().clone()  # Transpose to (out_features, in_features)
-                orig_b = original.bias.data.clone() if original.bias is not None else None
-            elif hasattr(original, "weight") and original.weight.ndim == 2:
-                out_feat, in_feat = original.weight.shape
-                orig_w = original.weight.data.clone()
-                orig_b = original.bias.data.clone() if getattr(original, "bias", None) is not None else None
+                in_feat = base_layer.weight.shape[0]
+                out_feat = base_layer.weight.shape[1]
+                orig_w = base_layer.weight.data.t().clone()  # Transpose to (out_features, in_features)
+                orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
+            elif hasattr(base_layer, "weight") and base_layer.weight.ndim == 2:
+                out_feat, in_feat = base_layer.weight.shape
+                orig_w = base_layer.weight.data.clone()
+                orig_b = base_layer.bias.data.clone() if getattr(base_layer, "bias", None) is not None else None
             else:
-                raise TypeError(f"Unsupported module type: {type(original)}")
+                raise TypeError(f"Unsupported module type: {type(base_layer)}")
         else:
+            base_layer = None
             if in_features is None or out_features is None or weight is None:
                 raise ValueError("Either 'original' module or ('in_features', 'out_features', 'weight') must be provided.")
             in_feat = in_features
@@ -95,6 +97,12 @@ class ToMoELinear(nn.Module):
         # Guard against num_experts > out_features
         self.num_experts = max(1, min(num_experts, out_feat))
         self.top_k = max(1, min(top_k, self.num_experts))
+
+        # Check for existing LoRA in original
+        has_orig_lora = original is not None and hasattr(original, "lora_A") and hasattr(original, "lora_B")
+        if has_orig_lora and getattr(original, "r", 0) > 0:
+            lora_r = getattr(original, "r", lora_r)
+
         self.lora_r = lora_r
         self.lora_alpha = lora_alpha
         self.lora_scale = (lora_alpha / lora_r) if lora_r > 0 else 1.0
@@ -302,21 +310,30 @@ class ToMoELinear(nn.Module):
         return out.reshape(*orig_shape[:-1], self.out_features)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 @COMPRESSOR_REGISTRY.register("tomoe")
 @COMPRESSOR_REGISTRY.register("tomoe_compressor")
 class ToMoECompressor(BaseCompressor):
     """
-    Converts dense Linear and Conv1D layers (e.g. FFN and projections)
-    into a Mixture of Experts using weight clustering.
+    ToMoE Compressor: dynamically replaces dense feed-forward and projection layers
+    with an MoE-fied equivalent.
 
     Args:
         model: PyTorch model.
-        num_experts: Number of experts per MoE layer (default 4).
-        top_k: Number of active experts per token (default 2).
-        max_error: Maximum allowed relative Frobenius error (default 0.20).
-        lora_r: LoRA adapter rank on experts/router (default 0 = disabled).
-        lora_alpha: LoRA scaling factor (default 16.0).
-        freeze_experts: If True and lora_r==0, train only the router (default True).
+        num_experts: Number of expert sub-layers to form (default: 4).
+        top_k: Number of experts to route each token to (default: 2).
+        max_error: Maximum allowed relative Frobenius error on reconstruction (default: 0.20).
+        lora_r: LoRA adapter rank on experts and router (0 = disabled).
+        lora_alpha: LoRA scaling factor (default: 16.0).
+        freeze_experts: Whether to freeze expert base weights (default: True).
+        target_attention_only: Whether to restrict to attention layers only.
         target_modules: Optional list of target layer name substrings.
     """
 
@@ -344,17 +361,20 @@ class ToMoECompressor(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 16.0,
         freeze_experts: bool = True,
+        target_attention_only: bool = False,
         target_modules: Optional[List[str]] = None,
         **kwargs: Any,
     ):
         super().__init__(model, name="tomoe", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            num_experts = getattr(cfg, "num_experts", getattr(cfg, "tomoe_num_experts", num_experts))
-            top_k = getattr(cfg, "top_k", getattr(cfg, "tomoe_top_k", top_k))
-            max_error = getattr(cfg, "max_error", getattr(cfg, "max_reconstruction_error", max_error))
-            lora_r = getattr(cfg, "lora_r", getattr(cfg, "tomoe_lora_r", lora_r))
-            freeze_experts = getattr(cfg, "freeze_experts", freeze_experts)
+            num_experts = _cfg_get(cfg, "num_experts", _cfg_get(cfg, "tomoe_num_experts", num_experts))
+            top_k = _cfg_get(cfg, "top_k", _cfg_get(cfg, "tomoe_top_k", top_k))
+            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error))
+            lora_r = _cfg_get(cfg, "lora_r", _cfg_get(cfg, "tomoe_lora_r", lora_r))
+            lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
+            freeze_experts = _cfg_get(cfg, "freeze_experts", freeze_experts)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "num_experts" in kwargs and kwargs["num_experts"] is not None:
             num_experts = int(kwargs["num_experts"])
@@ -364,8 +384,12 @@ class ToMoECompressor(BaseCompressor):
             max_error = float(kwargs["max_error"])
         if "lora_r" in kwargs and kwargs["lora_r"] is not None:
             lora_r = int(kwargs["lora_r"])
+        if "lora_alpha" in kwargs and kwargs["lora_alpha"] is not None:
+            lora_alpha = float(kwargs["lora_alpha"])
         if "freeze_experts" in kwargs:
             freeze_experts = bool(kwargs["freeze_experts"])
+        if "target_attention_only" in kwargs:
+            target_attention_only = bool(kwargs["target_attention_only"])
 
         self.num_experts = max(1, num_experts)
         self.top_k = max(1, min(top_k, self.num_experts))
@@ -373,6 +397,7 @@ class ToMoECompressor(BaseCompressor):
         self.lora_r = max(0, lora_r)
         self.lora_alpha = float(lora_alpha)
         self.freeze_experts = bool(freeze_experts)
+        self.target_attention_only = target_attention_only
         self.target_modules = target_modules
         self.stats: Dict[str, Any] = {}
 
@@ -387,8 +412,11 @@ class ToMoECompressor(BaseCompressor):
             return False
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
-        # Default: target FFN, MLP, and linear projections across all supported families
         low = name.lower()
+        if self.target_attention_only:
+            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"]
+            return any(k in low for k in attn_keywords)
+        # Default: target FFN, MLP, and linear projections across all supported families
         return any(
             t in low
             for t in [
@@ -508,6 +536,8 @@ class ToMoECompressor(BaseCompressor):
                     self.max_error,
                 )
                 skipped_layers.append((name, f"error_threshold_exceeded_{err:.4f}"))
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
             # Replace layer in parent module
@@ -561,20 +591,27 @@ class ToMoECompressor(BaseCompressor):
         return self.model, self.stats
 
 
+@COMPRESSOR_REGISTRY.register("tomoe_factory")
+@COMPRESSOR_REGISTRY.register("tomoe_compressor_factory")
 def tomoe_compressor_factory(
     model: nn.Module,
     comp_config: Any = None,
     num_experts: int = 4,
     top_k: int = 2,
     **kwargs: Any,
-) -> nn.Module:
+) -> Any:
     """Factory function for ToMoE compressor."""
+    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     compressor = ToMoECompressor(
         model,
         num_experts=num_experts,
         top_k=top_k,
         comp_config=comp_config,
+        target_attention_only=target_attn,
         **kwargs,
     )
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
     return compressed_model
