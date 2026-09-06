@@ -6,6 +6,7 @@ orthogonal singular vector preservation, singular value rescaling ($\gamma$), an
 Hardened for multi-architecture production deployment.
 """
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -19,10 +20,32 @@ from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely retrieve attribute from dict, object, namespace, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    """Rotates half the hidden dimensions: [-x2, x1], safe for odd dimensions."""
+    d = x.shape[-1]
+    rotary_dim = 2 * (d // 2)
+    if rotary_dim == 0:
+        return x
+    x_rot = x[..., :rotary_dim]
+    half = rotary_dim // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if rotary_dim < d:
+        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -30,10 +53,16 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+    unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
+    if cos is None or sin is None:
+        return q, k
+
     if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
@@ -42,25 +71,25 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        cos = cos[..., : q.shape[-2], :]
-        sin = sin[..., : q.shape[-2], :]
-
-    rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
 
-    if rotary_dim <= head_dim:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-    else:
-        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
-        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
-        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q, k
 
 
@@ -150,16 +179,16 @@ class SALTAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        self.num_heads: int = getattr(
-            config, "num_attention_heads", getattr(config, "num_heads", kwargs.get("num_attention_heads", 4))
-        )
-        self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.head_dim: int = getattr(
+        self.num_heads: int = int(_cfg_get(
+            config, "num_attention_heads", _cfg_get(config, "num_heads", kwargs.get("num_attention_heads", 4))
+        ))
+        self.hidden_size: int = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
+        self.head_dim: int = int(_cfg_get(
             config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64
-        )
+        ))
         self.all_head_size: int = self.num_heads * self.head_dim
 
-        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -168,18 +197,18 @@ class SALTAttention(BaseAttention):
             self.num_kv_heads = self.num_heads
 
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
-        self.kv_repeat: int = self.num_heads // self.num_kv_heads
+        self.kv_repeat: int = max(1, self.num_heads // self.num_kv_heads)
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        self.rank: int = rank if rank is not None else getattr(config, "salt_rank", getattr(config, "rank", 16))
+        self.rank: int = rank if rank is not None else int(_cfg_get(config, "salt_rank", _cfg_get(config, "rank", kwargs.get("rank", 16))))
 
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
-            self.is_decoder = (
-                getattr(config, "is_decoder", False)
-                or getattr(config, "causal", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+            self.is_decoder = bool(
+                _cfg_get(config, "is_decoder", False)
+                or _cfg_get(config, "causal", False)
+                or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama")
             )
 
         self.is_nested_encoder: bool = False
@@ -451,38 +480,61 @@ class SALTAttention(BaseAttention):
         else:
             out = self.out_proj(context)
 
+        if out.shape[-1] != hidden_states.shape[-1]:
+            out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
+
         return out, (attn if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("salt")
+@ATTENTION_REGISTRY.register("salt_attention")
 @ATTENTION_REGISTRY.register("salt_inject")
+@ATTENTION_REGISTRY.register("salt_attention_inject")
+@ATTENTION_REGISTRY.register("inject_salt_attention")
 def inject_salt_attention(
     layer: Any,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
-    total_layers: int = 1,
+    total_layers: int = 12,
     old_attn: Any = None,
     **kwargs: Any,
-) -> SALTAttention:
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+) -> Optional[SALTAttention]:
+    """Safe injection hook for SALTAttention."""
+    try:
+        src = old_attn
+        if src is None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    src = getattr(layer, attr)
+                    break
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+        if src is None:
+            return None
 
-    rank = getattr(comp_config, "rank", getattr(comp_config, "salt_rank", 16)) if comp_config is not None else 16
-    new_attn = SALTAttention(config=model_config, rank=rank)
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
-    if src_attn is not None:
-        try:
-            new_attn.copy_weights(src_attn)
-        except Exception:
-            pass
-        p = next(src_attn.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
-    if hasattr(layer, "attention"):
+        if model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
+        if model_config is None and hasattr(src, "config"):
+            model_config = src.config
+
+        rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", _cfg_get(comp_config, "salt_rank", 16)))
+        if rank is None:
+            rank = 16
+
+        new_attn = SALTAttention(
+            config=model_config,
+            rank=rank,
+            pretrained_attn=src,
+            **kwargs,
+        )
+
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(layer, attr):
+                setattr(layer, attr, new_attn)
+                return new_attn
+
         layer.attention = new_attn
-    elif hasattr(layer, "self"):
-        layer.self = new_attn
-    return new_attn
+        return new_attn
+    except Exception as e:
+        logger.error("inject_salt_attention failed at layer %d: %s", layer_idx, e)
+        return None
