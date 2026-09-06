@@ -398,6 +398,7 @@ class ProxSparsePruner(BaseCompressor):
         )
         stats = self.get_compression_stats()
         stats.update({
+            'effective_parameter_ratio': stats.get('compression_ratio', 1.0),
             'pruned_layers': self.compressed_layers,
             'compressed_layers': self.compressed_layers,
             'compressed_layer_count': len(self.compressed_layers),
