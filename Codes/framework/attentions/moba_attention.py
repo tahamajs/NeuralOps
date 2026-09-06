@@ -560,13 +560,19 @@ class MoBAAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("moba_inject")
 def inject_moba(
     layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
+    model_config: Any = None,
+    comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> MoBAAttention:
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
+    if model_config is None:
+        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
     r"""Injection hook for MoBAAttention into transformer layer."""
     block_size: int = getattr(comp_config, "block_size", 64)
     top_k: int = getattr(comp_config, "top_k", 4)
