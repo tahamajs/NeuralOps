@@ -232,6 +232,13 @@ class NystromAttention(BaseAttention):
         self.q_proj = self.query
         self.k_proj = self.key
         self.v_proj = self.value
+        self.q_lin = self.query
+        self.k_lin = self.key
+        self.v_lin = self.value
+        self.out_lin = self.out_proj
+        self.dense = self.out_proj
+        self.o_proj = self.out_proj
+        self.c_proj = self.out_proj
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
