@@ -207,7 +207,17 @@ class TTCompressor(BaseCompressor):
                     p.requires_grad = False
                 continue
 
-            replace_module(self.model, name, tt_layer)
+            if hasattr(module, "base_layer"):
+                module.base_layer = tt_layer
+                if hasattr(module, "lora_A") and module.lora_A is not None:
+                    for p in (module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]):
+                        p.requires_grad = True
+                if hasattr(module, "lora_B") and module.lora_B is not None:
+                    for p in (module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]):
+                        p.requires_grad = True
+            else:
+                replace_module(self.model, name, tt_layer)
+
             self.compressed_layers.append(
                 {
                     "name": name,
