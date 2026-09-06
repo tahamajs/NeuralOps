@@ -37,7 +37,13 @@ from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
-from scipy.linalg import svd
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 try:
     from transformers import (
@@ -111,7 +117,7 @@ def allocate_ranks_spectron(
         d_out, d_in = W.shape
         max_r = min(d_in, d_out, int(max_rank_factor * min(d_in, d_out)))
         max_r = max(1, max_r)
-        _, s, _ = svd(W.astype(np.float64), full_matrices=False)
+        s = np.linalg.svd(W.astype(np.float64), compute_uv=False)
         cum_ent = cumulative_entropy_fraction(s, max_r)
         cost = 1.0 - cum_ent
         cost_tables.append(cost)
