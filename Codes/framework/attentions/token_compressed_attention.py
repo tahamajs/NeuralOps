@@ -24,11 +24,29 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely retrieve attribute from dict, object, namespace, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    """Rotates half the hidden dimensions: [-x2, x1], safe for odd dimensions."""
+    d = x.shape[-1]
+    rotary_dim = 2 * (d // 2)
+    if rotary_dim == 0:
+        return x
+    x_rot = x[..., :rotary_dim]
+    half = rotary_dim // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if rotary_dim < d:
+        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -39,20 +57,40 @@ def apply_rotary_pos_emb(
     position_ids: Optional[torch.Tensor] = None,
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
-    rotary_dim = cos.shape[-1]
+    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    head_dim = q.shape[-1]
+    rotary_dim = 2 * (min(cos.shape[-1], head_dim, k.shape[-1]) // 2)
+    if rotary_dim == 0:
+        return q, k
+
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
-    while cos.dim() < q_rot.dim():
-        cos = cos.unsqueeze(unsqueeze_dim)
-        sin = sin.unsqueeze(unsqueeze_dim)
+    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
 
-    q_rot = (q_rot * cos) + (_rotate_half(q_rot) * sin)
-    k_rot = (k_rot * cos) + (_rotate_half(k_rot) * sin)
+    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
 
-    q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot
-    k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot
+    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q, k
 
 
@@ -92,6 +130,8 @@ class LoRALinear(nn.Module):
             self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -110,8 +150,8 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("token_compressed", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("token_compressed_attention")
-@ATTENTION_REGISTRY.register("token_compressed_module")
+@ATTENTION_REGISTRY.register("token_compressed_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("token_compressed_module", supports_causal=True, supports_gqa=True)
 class TokenCompressedAttention(BaseAttention):
     r"""Token-Compressed Attention Module.
 
