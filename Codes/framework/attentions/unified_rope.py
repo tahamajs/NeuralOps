@@ -177,16 +177,31 @@ class UnifiedRoPE(BaseAttention):
     ) -> None:
         super().__init__(config=config, rank=rank)
 
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
+
         if dim is None:
-            dim = getattr(config, "hidden_size", getattr(config, "dim", 768)) if config is not None else 768
-            if dim == 768 and pretrained_attn is not None:
-                dim = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", 768))
-                if hasattr(pretrained_attn, "q_proj") and hasattr(pretrained_attn.q_proj, "in_features"):
-                    dim = pretrained_attn.q_proj.in_features
+            if config is not None and not isinstance(config, int):
+                dim = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", None)))
+            if dim is None and src is not None:
+                dim = getattr(src, "hidden_size", getattr(src, "embed_dim", None))
+                if dim is None and hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
+                    dim = src.q_proj.in_features
+                elif dim is None and hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features"):
+                    dim = src.q_lin.in_features
+                elif dim is None and hasattr(src, "query") and hasattr(src.query, "in_features"):
+                    dim = src.query.in_features
+                elif dim is None and hasattr(src, "c_attn") and hasattr(src.c_attn, "weight"):
+                    dim = src.c_attn.weight.shape[0] if src.c_attn.weight.shape[0] != 3 * src.c_attn.weight.shape[1] else src.c_attn.weight.shape[1]
+            if dim is None:
+                dim = kwargs.get("hidden_size", 768)
+
         if num_heads is None:
-            num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12)) if config is not None else 12
-            if num_heads == 12 and pretrained_attn is not None:
-                num_heads = getattr(pretrained_attn, "num_heads", getattr(pretrained_attn, "num_attention_heads", 12))
+            if config is not None and not isinstance(config, int):
+                num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", None)))
+            if num_heads is None and src is not None:
+                num_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", getattr(src, "n_head", None)))
+            if num_heads is None:
+                num_heads = 12
 
         self.hidden_size: int = int(dim)
         self.num_heads: int = max(1, int(num_heads))
@@ -194,14 +209,16 @@ class UnifiedRoPE(BaseAttention):
         self.max_seq_len: int = max_seq_len
         self.base: int = base
         self.scale: float = 1.0 / math.sqrt(self.head_dim)
-        self.lora_rank: int = lora_rank
-        self.lora_alpha: float = lora_alpha
+        self.lora_rank: int = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        self.lora_alpha: float = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
         cfg_kv = (
-            getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+            _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
             if config is not None
             else None
         )
+        if cfg_kv is None and src is not None:
+            cfg_kv = getattr(src, "num_key_value_heads", getattr(src, "num_kv_heads", None))
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
@@ -212,7 +229,7 @@ class UnifiedRoPE(BaseAttention):
         if is_decoder is not None:
             self.is_decoder: bool = is_decoder
         elif config is not None:
-            self.is_decoder = bool(getattr(config, "is_decoder", False))
+            self.is_decoder = bool(_cfg_get(config, "is_decoder", False))
         else:
             self.is_decoder = False
 
@@ -437,18 +454,17 @@ class UnifiedRoPE(BaseAttention):
                     f"UnifiedRoPE: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
-            def _copy_layer(target_layer, w, b):
-                if w is None:
-                    return
-                if w.shape == target_layer.weight.shape:
-                    target_layer.weight.copy_(w.to(target_layer.weight.dtype))
-                elif w.t().shape == target_layer.weight.shape:
-                    target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
-                else:
-                    min_0 = min(target_layer.weight.shape[0], w.shape[0])
-                    min_1 = min(target_layer.weight.shape[1], w.shape[1])
-                    target_layer.weight.zero_()
-                    target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
+            def _copy_layer(target_layer, w, b, src_sub=None):
+                if w is not None:
+                    if w.shape == target_layer.weight.shape:
+                        target_layer.weight.copy_(w.to(target_layer.weight.dtype))
+                    elif w.t().shape == target_layer.weight.shape:
+                        target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+                    else:
+                        min_0 = min(target_layer.weight.shape[0], w.shape[0])
+                        min_1 = min(target_layer.weight.shape[1], w.shape[1])
+                        target_layer.weight.zero_()
+                        target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
                 if b is not None and target_layer.bias is not None:
                     if b.shape == target_layer.bias.shape:
                         target_layer.bias.copy_(b.to(target_layer.bias.dtype))
@@ -459,11 +475,33 @@ class UnifiedRoPE(BaseAttention):
                 elif target_layer.bias is not None:
                     target_layer.bias.zero_()
 
-            _copy_layer(self.q_proj, w_q, b_q)
-            _copy_layer(self.k_proj, w_k, b_k)
-            _copy_layer(self.v_proj, w_v, b_v)
+                if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
+                    if src_sub.lora_A is not None and src_sub.lora_B is not None and target_layer.lora_A is not None and target_layer.lora_B is not None:
+                        src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
+                        src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
+                        if hasattr(src_lA, "data") and hasattr(src_lB, "data"):
+                            r_min = min(target_layer.lora_A.shape[0], src_lA.shape[0])
+                            in_min = min(target_layer.lora_A.shape[1], src_lA.shape[1])
+                            target_layer.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
+                            target_layer.lora_A.requires_grad = True
+
+                            out_min = min(target_layer.lora_B.shape[0], src_lB.shape[0])
+                            r_min_b = min(target_layer.lora_B.shape[1], src_lB.shape[1])
+                            target_layer.lora_B.data[:out_min, :r_min_b].copy_(src_lB.data[:out_min, :r_min_b])
+                            target_layer.lora_B.requires_grad = True
+                        if hasattr(src_sub, "lora_scaling"):
+                            target_layer.scaling = src_sub.lora_scaling
+
+            sub_q = getattr(src, "q_proj", getattr(src, "q_lin", getattr(src, "query", None)))
+            sub_k = getattr(src, "k_proj", getattr(src, "k_lin", getattr(src, "key", None)))
+            sub_v = getattr(src, "v_proj", getattr(src, "v_lin", getattr(src, "value", None)))
+            sub_o = getattr(src, "o_proj", getattr(src, "out_lin", getattr(src, "dense", getattr(src, "out_proj", None))))
+
+            _copy_layer(self.q_proj, w_q, b_q, sub_q)
+            _copy_layer(self.k_proj, w_k, b_k, sub_k)
+            _copy_layer(self.v_proj, w_v, b_v, sub_v)
             if w_o is not None:
-                _copy_layer(self.out_proj, w_o, b_o)
+                _copy_layer(self.out_proj, w_o, b_o, sub_o)
 
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
@@ -554,6 +592,8 @@ class UnifiedRoPE(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("unified_rope_inject")
+@ATTENTION_REGISTRY.register("compression_unified_rope_inject")
+@ATTENTION_REGISTRY.register("inject_unified_rope")
 def inject_unified_rope(
     layer: Any,
     model_config: Any = None,
@@ -577,9 +617,16 @@ def inject_unified_rope(
 
         if model_config is None and hasattr(layer, "config"):
             model_config = layer.config
+        if model_config is None and hasattr(src, "config"):
+            model_config = src.config
+
+        lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
+        rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
 
         new_attn = UnifiedRoPE(
             config=model_config,
+            rank=rank,
+            lora_rank=lora_rank,
             pretrained_attn=src,
             **kwargs,
         )
@@ -589,6 +636,7 @@ def inject_unified_rope(
                 setattr(layer, attr, new_attn)
                 return new_attn
 
+        layer.attention = new_attn
         return new_attn
     except Exception as e:
         logger.error("inject_unified_rope failed at layer %d: %s", layer_idx, e)
