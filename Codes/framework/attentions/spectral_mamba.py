@@ -180,7 +180,6 @@ class SpectralMamba(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("spectral_mamba")
-@ATTENTION_REGISTRY.register("spectral_mamba_inject")
 class SpectralMambaAttention(BaseAttention):
     def __init__(
         self,
@@ -191,20 +190,30 @@ class SpectralMambaAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank or 64)
         self.config = config
-        comp_config = getattr(config, "compression_config", None)
+        comp_config = getattr(config, "compression_config", None) or kwargs.get("comp_config", None)
 
-        self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.dim = self.hidden_size
-        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads: int = getattr(
-            config,
-            "num_key_value_heads",
-            kwargs.get("num_key_value_heads", self.num_heads),
+        self.hidden_size: int = kwargs.get(
+            "hidden_size",
+            getattr(config, "hidden_size", getattr(config, "dim", getattr(config, "d_model", 768)))
         )
-        self.head_dim: int = getattr(
-            config,
+        self.dim = self.hidden_size
+        self.num_heads: int = kwargs.get(
+            "num_heads",
+            kwargs.get(
+                "num_attention_heads",
+                getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12)))
+            )
+        )
+        self.num_kv_heads: int = kwargs.get(
+            "num_kv_heads",
+            kwargs.get(
+                "num_key_value_heads",
+                getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+            )
+        )
+        self.head_dim: int = kwargs.get(
             "head_dim",
-            kwargs.get("head_dim", self.dim // self.num_heads),
+            getattr(config, "head_dim", self.dim // self.num_heads if self.num_heads > 0 else 64)
         )
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -487,33 +496,86 @@ class SpectralMambaAttention(BaseAttention):
         return out, (attn_weights if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("spectral_mamba_inject")
+@ATTENTION_REGISTRY.register("spectraformer_inject")
 def inject_spectral_mamba(
-    model: nn.Module,
-    target_layer_idx: Optional[int] = None,
+    layer: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[nn.Module]:
-    """Safely replace attention in model with SpectralMambaAttention."""
+) -> Optional[Any]:
+    """Safely replace attention in model or layer with SpectralMambaAttention."""
+    src_attn = old_attn
+    if src_attn is None and layer is not None:
+        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+
+    # If layer is a full model (has named_modules and not an attention layer)
+    if src_attn is None and layer is not None and hasattr(layer, "named_modules") and not (hasattr(layer, "attention") or hasattr(layer, "self") or hasattr(layer, "attn") or hasattr(layer, "q_proj") or hasattr(layer, "q_lin") or hasattr(layer, "query")):
+        try:
+            replaced = 0
+            for name, module in layer.named_modules():
+                if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
+                    parent_name = name.rsplit(".", 1)[0] if "." in name else ""
+                    child_name = name.rsplit(".", 1)[-1] if "." in name else name
+                    parent = layer.get_submodule(parent_name) if parent_name else layer
+                    new_attn = inject_spectral_mamba(
+                        layer=None,
+                        model_config=model_config or getattr(layer, "config", None),
+                        comp_config=comp_config,
+                        old_attn=module,
+                        **kwargs,
+                    )
+                    if new_attn is not None:
+                        setattr(parent, child_name, new_attn)
+                        replaced += 1
+            return layer if replaced > 0 else None
+        except Exception:
+            return None
+
+    hidden_size = (
+        kwargs.get("hidden_size") or
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
+        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', None) or
+        getattr(model_config, 'd_model', 64)
+    )
+    num_heads = (
+        kwargs.get("num_heads") or
+        kwargs.get("num_attention_heads") or
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', None) or
+        getattr(model_config, 'num_heads', 4)
+    )
     try:
-        replaced = 0
-        for name, module in model.named_modules():
-            is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                is_attn = True
-
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
-
-                new_attn = SpectralMambaAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
-                    **kwargs,
-                )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
-                    break
-        return model if replaced > 0 else None
+        new_attn = SpectralMambaAttention(
+            config=model_config,
+            pretrained_attn=src_attn,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
+            comp_config=comp_config,
+            **kwargs,
+        )
+        if layer is not None:
+            if hasattr(layer, "attention"):
+                layer.attention = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+            elif hasattr(layer, "attn"):
+                layer.attn = new_attn
+            else:
+                layer.attention = new_attn
+        return new_attn
     except Exception:
         return None
+
+
+spectraformer_inject = inject_spectral_mamba

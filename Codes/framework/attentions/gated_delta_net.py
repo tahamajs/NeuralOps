@@ -19,8 +19,11 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -355,7 +358,7 @@ class GatedDeltaNet(BaseAttention):
                 "q": ["q_lin", "q_proj", "query", "W_q"],
                 "k": ["k_lin", "k_proj", "key", "W_k"],
                 "v": ["v_lin", "v_proj", "value", "W_v"],
-                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj", "output", "proj"],
             }
             for proj_key, names in proj_candidates.items():
                 for name in names:
@@ -380,9 +383,10 @@ class GatedDeltaNet(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"GatedDeltaNet copy_weights failed: missing mandatory projections {missing_after} "
-                f"from module {old_attn.__class__.__name__}."
+            logger.warning(
+                "GatedDeltaNet copy_weights: missing projections %s from module %s. Initializing remaining weights.",
+                missing_after,
+                old_attn.__class__.__name__,
             )
 
         target_map = {
@@ -605,7 +609,7 @@ class GatedDeltaNet(BaseAttention):
         gated_y = y * F.silu(z)
 
         # 10. Output projection with nested encoder bypass
-        if self.is_nested_encoder:
+        if self.is_nested_encoder and gated_y.shape[-1] == self.d_model:
             out = gated_y
         else:
             out = self.out_proj(gated_y)

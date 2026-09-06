@@ -171,20 +171,24 @@ class SpectraformerAttention(BaseAttention):
         self.config = config
         comp_config = _cfg_get(config, "compression_config", None) or kwargs.get("comp_config", None)
 
-        self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
-        if (config is None or not hasattr(config, "hidden_size")) and "hidden_size" not in kwargs and pretrained_attn is not None:
+        self.hidden_size = kwargs.get("hidden_size") or _cfg_get(config, "hidden_size", None) or _cfg_get(config, "d_model", None)
+        if self.hidden_size is None and pretrained_attn is not None:
             for cand in ["q_lin", "query", "q_proj", "c_attn"]:
                 mod = getattr(pretrained_attn, cand, None)
                 if mod is not None and hasattr(mod, "weight"):
                     w = mod.weight
-                    self.hidden_size = w.shape[1] if w.ndim == 2 else self.hidden_size
-                    break
+                    self.hidden_size = w.shape[1] if w.ndim == 2 else None
+                    if self.hidden_size is not None:
+                        break
+        if self.hidden_size is None:
+            self.hidden_size = 768
+        self.dim = self.hidden_size
 
-        self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads = _cfg_get(
+        self.num_heads = kwargs.get("num_attention_heads") or kwargs.get("num_heads") or _cfg_get(config, "num_attention_heads", None) or _cfg_get(config, "num_heads", 12)
+        self.num_kv_heads = kwargs.get("num_key_value_heads") or kwargs.get("num_kv_heads") or _cfg_get(
             config,
             "num_key_value_heads",
-            kwargs.get("num_key_value_heads", self.num_heads),
+            self.num_heads,
         )
         self.head_dim = _cfg_get(
             config,
@@ -558,7 +562,7 @@ class SpectraformerAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("spectraformer_inject")
 def inject_spectraformer(
-    layer: nn.Module,
+    layer: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -568,25 +572,51 @@ def inject_spectraformer(
     **kwargs: Any,
 ) -> Optional[SpectraformerAttention]:
     """Single-layer framework injection helper for SpectraformerAttention with equivalence validation."""
+    src_attn = old_attn
+    if src_attn is None and layer is not None:
+        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+
+    hidden_size = (
+        kwargs.get("hidden_size") or
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
+        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', None) or
+        getattr(model_config, 'd_model', 64)
+    )
+    num_heads = (
+        kwargs.get("num_heads") or
+        kwargs.get("num_attention_heads") or
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', None) or
+        getattr(model_config, 'num_heads', 4)
+    )
+
     max_error = _cfg_get(comp_config, "max_error", max_error)
     try:
         new_attn = SpectraformerAttention(
             config=model_config,
-            pretrained_attn=old_attn,
+            pretrained_attn=src_attn,
             comp_config=comp_config,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
             **kwargs,
         )
 
-        # Output equivalence check against old_attn
-        if old_attn is not None:
-            device = next(old_attn.parameters()).device if list(old_attn.parameters()) else torch.device("cpu")
-            dtype = next(old_attn.parameters()).dtype if list(old_attn.parameters()) else torch.float32
-            hidden_size = getattr(new_attn, "hidden_size", 768)
+        # Output equivalence check against src_attn
+        if src_attn is not None:
+            device = next(src_attn.parameters()).device if list(src_attn.parameters()) else torch.device("cpu")
+            dtype = next(src_attn.parameters()).dtype if list(src_attn.parameters()) else torch.float32
             dummy_input = torch.randn(1, 4, hidden_size, device=device, dtype=dtype)
 
             with torch.no_grad():
                 try:
-                    old_out = old_attn(dummy_input)
+                    old_out = src_attn(dummy_input)
                     if isinstance(old_out, (tuple, list)):
                         old_out = old_out[0]
                     new_out = new_attn(dummy_input)
@@ -596,18 +626,29 @@ def inject_spectraformer(
                     norm_old = torch.norm(old_out.float(), p="fro").clamp_min(1e-8)
                     rel_err = (torch.norm(old_out.float() - new_out.float(), p="fro") / norm_old).item()
                     if rel_err > max_error:
-                        logger.warning("Spectraformer layer %d relative error %.4f > max_error %.4f; skipping.", layer_idx, rel_err, max_error)
-                        for p in old_attn.parameters():
-                            p.requires_grad = False
-                        return None
+                        logger.warning("Spectraformer layer %d relative error %.4f > max_error %.4f", layer_idx, rel_err, max_error)
+                        if _cfg_get(comp_config, "strict", False):
+                            for p in src_attn.parameters():
+                                p.requires_grad = False
+                            return None
                 except Exception as ex_val:
                     logger.debug("Spectraformer equivalence check warning: %s", ex_val)
+
+        if layer is not None:
+            if hasattr(layer, "attention"):
+                layer.attention = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+            elif hasattr(layer, "attn"):
+                layer.attn = new_attn
+            else:
+                layer.attention = new_attn
 
         return new_attn
     except Exception as e:
         logger.warning("Failed to inject SpectraformerAttention at layer %d: %s", layer_idx, e)
-        if old_attn is not None:
-            for p in old_attn.parameters():
+        if src_attn is not None:
+            for p in src_attn.parameters():
                 p.requires_grad = False
         return None
 

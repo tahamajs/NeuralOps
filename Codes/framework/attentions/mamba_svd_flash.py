@@ -288,11 +288,18 @@ def inject_mamba_svd_flash(
     **kwargs: Any,
 ) -> MambaSVDFlash:
     r"""Injection hook for :class:`MambaSVDFlash`."""
-    d_model = 128
-    if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 128))
+    d_model = 64
+    src_attn = old_attn if old_attn is not None else layer
+    if src_attn is not None:
+        cand = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", getattr(src_attn, "all_head_size", None)))
+        if cand is None and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features"):
+            cand = src_attn.q_proj.in_features
+        if cand is not None:
+            d_model = cand
+    elif model_config is not None:
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 64))
     elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 128))
+        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 64))
 
     new_module = MambaSVDFlash(d_model=d_model, config=model_config, **kwargs)
     src_attn = old_attn if old_attn is not None else layer

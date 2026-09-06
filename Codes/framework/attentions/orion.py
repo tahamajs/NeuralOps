@@ -233,19 +233,36 @@ class ORIONAttention(BaseAttention):
             if rank is not None:
                 orion_cfg.svd_max_rank = max(rank, orion_cfg.svd_min_rank)
 
-        if cfg is not None:
-            hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768)))
-            num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 12))
-            num_kv_heads = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", num_heads))
-        elif source_attn is not None:
-            out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-            hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
-            num_kv_heads = getattr(source_attn, "num_key_value_heads", num_heads)
-        else:
-            hidden_size = kwargs.get("hidden_size", 768)
-            num_heads = kwargs.get("num_attention_heads", 12)
-            num_kv_heads = kwargs.get("num_key_value_heads", num_heads)
+        hidden_size = kwargs.get("hidden_size", None)
+        num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", None))
+        num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", None))
+
+        if hidden_size is None or num_heads is None:
+            if cfg is not None:
+                if hidden_size is None:
+                    hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768)))
+                if num_heads is None:
+                    num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 12))
+                if num_kv_heads is None:
+                    num_kv_heads = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", num_heads))
+            elif source_attn is not None:
+                if hidden_size is None:
+                    out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+                    hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                if num_heads is None:
+                    num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
+                if num_kv_heads is None:
+                    num_kv_heads = getattr(source_attn, "num_key_value_heads", num_heads)
+            else:
+                if hidden_size is None:
+                    hidden_size = 768
+                if num_heads is None:
+                    num_heads = 12
+                if num_kv_heads is None:
+                    num_kv_heads = num_heads
+
+        if num_kv_heads is None:
+            num_kv_heads = num_heads
 
         self.num_heads = max(1, int(num_heads))
         self.num_kv_heads = max(1, int(num_kv_heads))
@@ -562,7 +579,7 @@ class ORIONAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("orion_inject")
 def inject_orion(
-    layer: Any,
+    layer: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -570,12 +587,53 @@ def inject_orion(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[ORIONAttention]:
+    src_attn = old_attn
+    if src_attn is None and layer is not None:
+        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+
+    hidden_size = (
+        kwargs.get("hidden_size") or
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
+        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', None) or
+        getattr(model_config, 'd_model', 64)
+    )
+    num_heads = (
+        kwargs.get("num_heads") or
+        kwargs.get("num_attention_heads") or
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', None) or
+        getattr(model_config, 'num_heads', 4)
+    )
     try:
-        new_attn = ORIONAttention(config=model_config, comp_config=comp_config)
-        if old_attn is not None:
-            new_attn.copy_weights(old_attn)
+        new_attn = ORIONAttention(
+            config=model_config,
+            comp_config=comp_config,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
+            source_attn=src_attn,
+            **kwargs,
+        )
+        if src_attn is not None:
+            try:
+                new_attn.copy_weights(src_attn)
+            except Exception:
+                pass
         if layer is not None:
-            layer.attention = new_attn
+            if hasattr(layer, "attention"):
+                layer.attention = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+            elif hasattr(layer, "attn"):
+                layer.attn = new_attn
+            else:
+                layer.attention = new_attn
         return new_attn
     except Exception:
         return None

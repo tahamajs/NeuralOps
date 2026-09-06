@@ -14,12 +14,21 @@ logger = logging.getLogger(__name__)
 class BaseAttention(nn.Module):
     """Every custom attention module must inherit from this."""
 
-    def __init__(self, config: Optional[Any] = None, rank: Optional[int] = None) -> None:
+    def __init__(self, config: Optional[Any] = None, rank: Optional[int] = None, **kwargs: Any) -> None:
         super().__init__()
         self.config = config
         self.rank = rank
-        self.num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12
-        self.hidden_size = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768
+        self.num_heads = (
+            kwargs.get("num_heads") or
+            kwargs.get("num_attention_heads") or
+            (getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_heads", 12))) if config is not None else 12)
+        )
+        self.hidden_size = (
+            kwargs.get("hidden_size") or
+            kwargs.get("dim") or
+            kwargs.get("d_model") or
+            (getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768))) if config is not None else 768)
+        )
         self.head_dim = getattr(config, "d_kv", getattr(config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64))
 
     @abstractmethod

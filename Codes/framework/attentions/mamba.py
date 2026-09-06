@@ -253,12 +253,13 @@ class Mamba(BaseAttention):
 
 @ATTENTION_REGISTRY.register("mamba_inject")
 def inject_mamba(
-    layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
+    layer: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
 ) -> Mamba:
     r"""Injection hook that instantiates :class:`Mamba` and wires it
     into a transformer layer.
@@ -271,17 +272,46 @@ def inject_mamba(
         layer_idx: Zero-based index of the current layer in the stack.
         total_layers: Total number of transformer layers.
         old_attn: Previous attention module being replaced (unused).
+        **kwargs: Additional keyword arguments, including optional 'rank'.
 
     Returns:
         The newly created :class:`Mamba` instance, already assigned to
         ``layer.attention``.
     """
-    d_model: int = model_config.hidden_size
-    new_module = Mamba(d_model=d_model, config=model_config)
-    # PATCH: Copy pretrained weights — original code ignored old_attn entirely,
-    # leaving all weights at random Kaiming-uniform initialisation and causing
-    # complete representation collapse (50.92% majority-class accuracy on MRPC).
-    if old_attn is not None:
-        new_module.copy_weights(old_attn)
-    layer.attention = new_module
+    rank = kwargs.pop("rank", 32)
+    d_model: int = 128
+    if model_config is not None:
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", getattr(model_config, "d_model", 128)))
+    elif layer is not None and hasattr(layer, "config"):
+        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 128))
+    elif layer is not None and hasattr(layer, "hidden_size"):
+        d_model = getattr(layer, "hidden_size", 128)
+
+    new_module = Mamba(d_model=d_model, config=model_config, rank=rank, **kwargs)
+
+    src_attn = old_attn
+    if src_attn is None and layer is not None:
+        for attr in ("attention", "self_attn", "self", "attn"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None and isinstance(cand, nn.Module):
+                    src_attn = cand
+                    break
+
+    if src_attn is not None and hasattr(new_module, "copy_weights"):
+        try:
+            new_module.copy_weights(src_attn)
+        except Exception:
+            pass
+
+    if layer is not None:
+        if hasattr(layer, "attention"):
+            layer.attention = new_module
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_module
+        elif hasattr(layer, "self"):
+            layer.self = new_module
+        else:
+            layer.attention = new_module
+
     return new_module

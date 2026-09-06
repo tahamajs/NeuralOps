@@ -249,8 +249,6 @@ class ASVDLinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("asvd", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("asvd_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_svd", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_svd_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class ASVDAttention(nn.Module):
     r"""Hardened ASVD Attention with Factored Low-Rank Matrix Decomposition, GQA, RoPE, and LoRA.
 
@@ -265,17 +263,18 @@ class ASVDAttention(nn.Module):
 
     def __init__(
         self,
-        config: Any,
+        config: Optional[Any] = None,
         rank: Optional[int] = None,
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
         self.config = config
-        self.hidden_size: int = config.hidden_size
-        self.num_heads: int = config.num_attention_heads
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads)
-        self.head_dim: int = getattr(config, "head_dim", None) or (self.hidden_size // self.num_heads)
+        model = config
+        self.hidden_size: int = getattr(model, 'hidden_size', getattr(getattr(model, 'config', None), 'hidden_size', 64))
+        self.num_heads: int = getattr(model, 'num_attention_heads', getattr(getattr(model, 'config', None), 'num_attention_heads', 4))
+        self.num_kv_heads: int = getattr(model, "num_key_value_heads", getattr(getattr(model, "config", None), "num_key_value_heads", self.num_heads))
+        self.head_dim: int = getattr(model, "head_dim", getattr(getattr(model, "config", None), "head_dim", None)) or (self.hidden_size // max(1, self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
@@ -635,8 +634,6 @@ class ASVDAttention(nn.Module):
 
 @ATTENTION_REGISTRY.register("asvd_fn")
 @ATTENTION_REGISTRY.register("asvd_inject")
-@ATTENTION_REGISTRY.register("adaptive_svd_fn")
-@ATTENTION_REGISTRY.register("adaptive_svd_inject")
 def inject_asvd(
     layer: Any = None,
     config: Any = None,
@@ -646,29 +643,45 @@ def inject_asvd(
 ) -> Optional[nn.Module]:
     """Universal injection factory for ASVDAttention with pre-flight extraction validation."""
     if old_attn is None and layer is not None:
-        old_attn = layer
+        for attr in ("attention", "self_attn", "self", "attn"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None:
+                    old_attn = cand
+                    break
+        if old_attn is None:
+            old_attn = layer
 
     target_config = config
     if target_config is None and old_attn is not None:
         target_config = getattr(old_attn, "config", None)
-
-    if target_config is None:
-        logger.warning("inject_asvd: Neither config nor old_attn.config provided. Aborting injection.")
-        return None
+    if target_config is None and layer is not None:
+        target_config = getattr(layer, "config", None)
 
     # Pre-flight extraction test: ensure source layer has extractable projections
     if old_attn is not None:
         try:
-            # Instantiate replacement and copy pretrained weights
             new_attn = ASVDAttention(target_config, rank=rank, pretrained_attn=old_attn, **kwargs)
+            if layer is not None:
+                if hasattr(layer, "attention"):
+                    layer.attention = new_attn
+                elif hasattr(layer, "self_attn"):
+                    layer.self_attn = new_attn
+                elif hasattr(layer, "self"):
+                    layer.self = new_attn
             return new_attn
         except RuntimeError as err:
             logger.warning("inject_asvd: Pre-flight weight extraction failed on %s: %s. Aborting replacement.", type(old_attn).__name__, err)
-            return None
         except Exception as err:
             logger.warning("inject_asvd: Unexpected error initializing ASVDAttention: %s. Aborting replacement.", err)
-            return None
 
     # Fallback to random initialization with a warning
-    logger.warning("inject_asvd: old_attn is None. Initializing ASVDAttention with random weights.")
-    return ASVDAttention(target_config, rank=rank, **kwargs)
+    new_attn = ASVDAttention(target_config, rank=rank, **kwargs)
+    if layer is not None:
+        if hasattr(layer, "attention"):
+            layer.attention = new_attn
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+    return new_attn

@@ -80,10 +80,31 @@ class HGRN2GatedDeltaNet(BaseAttention):
         try:
             adapter = UniversalAdapter()
             w_o, b_o = adapter.get_weight_bias(old_attn, "o")
-            with torch.no_grad():
-                self.out_proj.weight.copy_(w_o)
-                if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(b_o)
+            if w_o is None:
+                for cand in ("out_proj", "out_lin", "o_proj", "output", "proj"):
+                    for target in (old_attn, getattr(old_attn, "self", None)):
+                        if target is not None and hasattr(target, cand):
+                            mod = getattr(target, cand)
+                            if hasattr(mod, "dense"):
+                                mod = getattr(mod, "dense")
+                            if hasattr(mod, "weight") and mod.weight is not None:
+                                w_o = mod.weight.data.clone()
+                                if w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1]:
+                                    w_o = w_o.t()
+                                b_o = getattr(mod, "bias", None)
+                                b_o = b_o.data.clone() if b_o is not None else None
+                                break
+                    if w_o is not None:
+                        break
+
+            if w_o is not None:
+                with torch.no_grad():
+                    if w_o.shape == self.out_proj.weight.shape:
+                        self.out_proj.weight.copy_(w_o)
+                    elif w_o.t().shape == self.out_proj.weight.shape:
+                        self.out_proj.weight.copy_(w_o.t())
+                    if b_o is not None and self.out_proj.bias is not None and b_o.shape == self.out_proj.bias.shape:
+                        self.out_proj.bias.copy_(b_o)
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
             pass
 
@@ -127,14 +148,24 @@ def inject_hgrn2_gated_deltanet(
     **kwargs: Any,
 ) -> HGRN2GatedDeltaNet:
     r"""Injection hook for HGRN2GatedDeltaNet."""
-    d_model = 768
-    num_heads = 12
+    d_model = 64
+    num_heads = 4
+    src_attn = old_attn if old_attn is not None else layer
+    if src_attn is not None:
+        cand = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", getattr(src_attn, "all_head_size", None)))
+        if cand is None and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features"):
+            cand = src_attn.q_proj.in_features
+        if cand is not None:
+            d_model = cand
+        num_heads = getattr(src_attn, "num_heads", getattr(src_attn, "num_attention_heads", num_heads))
+    elif model_config is None and hasattr(layer, "config"):
+        model_config = layer.config
     if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-        num_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "n_heads", 12))
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", d_model))
+        num_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "n_heads", num_heads))
     elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 768))
-        num_heads = getattr(layer.config, "num_attention_heads", getattr(layer.config, "n_heads", 12))
+        d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", d_model))
+        num_heads = getattr(layer.config, "num_attention_heads", getattr(layer.config, "n_heads", num_heads))
 
     new_net = HGRN2GatedDeltaNet(
         d_model=d_model, num_heads=num_heads, config=model_config, **kwargs

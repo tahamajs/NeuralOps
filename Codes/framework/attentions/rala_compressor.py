@@ -39,12 +39,36 @@ class RALALinearAttention(nn.Module):
         config: Model configuration specifying `hidden_size`, `num_attention_heads`, and optional `rala_rank`.
     """
 
-    def __init__(self, config: Any,
-        **kwargs) -> None:
+    def __init__(self, config: Optional[Any] = None, **kwargs: Any) -> None:
         super().__init__()
-        self.hidden_size: int = config.hidden_size
-        self.num_heads: int = config.num_attention_heads
-        self.head_dim: int = self.hidden_size // self.num_heads
+        model = config
+        self.hidden_size: int = getattr(
+            model,
+            "hidden_size",
+            getattr(
+                getattr(model, "config", None),
+                "hidden_size",
+                kwargs.get("hidden_size", 64),
+            ),
+        )
+        self.num_heads: int = getattr(
+            model,
+            "num_attention_heads",
+            getattr(
+                getattr(model, "config", None),
+                "num_attention_heads",
+                getattr(model, "num_heads", kwargs.get("num_attention_heads", 4)),
+            ),
+        )
+        self.head_dim: int = getattr(
+            model,
+            "head_dim",
+            getattr(
+                getattr(model, "config", None),
+                "head_dim",
+                kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads)),
+            ),
+        )
         self.scaling: float = self.head_dim**-0.5
 
         self.q_proj = nn.Linear(self.hidden_size, self.hidden_size)
@@ -52,7 +76,7 @@ class RALALinearAttention(nn.Module):
         self.v_proj = nn.Linear(self.hidden_size, self.hidden_size)
         self.out_proj = nn.Linear(self.hidden_size, self.hidden_size)
 
-        self.rank_r: int = int(getattr(config, "rala_rank", 8))
+        self.rank_r: int = int(getattr(config, "rala_rank", kwargs.get("rala_rank", kwargs.get("rank", 8))))
         self.U = nn.Parameter(
             torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.02
         )

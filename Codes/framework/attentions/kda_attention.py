@@ -161,26 +161,31 @@ class KDAAttention(BaseAttention):
         super().__init__(config, rank)
 
         if d_model is None:
-            if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            elif source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            else:
-                d_model = kwargs.get("hidden_size", 768)
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size")
+            if d_model is None:
+                if config is not None:
+                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                elif source_attn is not None:
+                    out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+                    d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+                else:
+                    d_model = 768
 
         if hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
         if num_heads is None:
-            if config is not None:
-                num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
-            elif source_attn is not None:
-                num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
-            else:
-                num_heads = kwargs.get("num_attention_heads", 12)
+            num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
+            if num_heads is None:
+                if config is not None:
+                    num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+                elif source_attn is not None:
+                    num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
+                else:
+                    num_heads = 12
 
         self.dim = int(d_model)
+        self.hidden_size = self.dim
         self.num_heads = int(num_heads)
         self.num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads)) if config else self.num_heads
         self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
@@ -474,12 +479,41 @@ def inject_kda(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[KDAAttention]:
+    src_attn = old_attn if old_attn is not None else (getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))) if layer is not None else None)
+
+    hidden_size = (
+        getattr(src_attn, 'hidden_size', None) or
+        getattr(src_attn, 'embed_dim', None) or
+        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+        (layer.in_features if hasattr(layer, 'in_features') else None) or
+        getattr(model_config, 'hidden_size', 64)
+    )
+    num_heads = (
+        getattr(src_attn, 'num_heads', None) or
+        getattr(src_attn, 'num_attention_heads', None) or
+        getattr(model_config, 'num_attention_heads', 4)
+    )
+
     try:
-        new_attn = KDAAttention(config=model_config, comp_config=comp_config)
-        if old_attn is not None:
-            new_attn.copy_weights(old_attn)
+        new_attn = KDAAttention(
+            config=model_config,
+            comp_config=comp_config,
+            d_model=hidden_size,
+            num_heads=num_heads,
+            old_attn=src_attn,
+            hidden_size=hidden_size,
+            num_attention_heads=num_heads,
+            **kwargs,
+        )
+        if src_attn is not None:
+            new_attn.copy_weights(src_attn)
         if layer is not None:
-            layer.attention = new_attn
+            if hasattr(layer, "attention"):
+                layer.attention = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+            elif hasattr(layer, "attn"):
+                layer.attn = new_attn
         return new_attn
     except Exception:
         return None

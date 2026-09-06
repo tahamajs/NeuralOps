@@ -222,13 +222,21 @@ def inject_griffin_ssd(
     **kwargs: Any,
 ) -> GriffinSSDBlock:
     r"""Injection hook for GriffinSSDBlock."""
-    d_model = 128  # fixed: was hardcoded 768
+    d_model = 64
     num_heads = 4
-    if model_config is not None:
-        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
+    src_attn = old_attn if old_attn is not None else layer
+    if src_attn is not None:
+        cand = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", getattr(src_attn, "all_head_size", None)))
+        if cand is None and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features"):
+            cand = src_attn.q_proj.in_features
+        if cand is not None:
+            d_model = cand
+        num_heads = getattr(src_attn, "num_heads", getattr(src_attn, "num_attention_heads", 4))
+    elif model_config is not None:
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 64))
         num_heads = getattr(model_config, "num_attention_heads", 4)
     elif hasattr(layer, "config"):
-        d_model = getattr(layer.config, "hidden_size", 768)
+        d_model = getattr(layer.config, "hidden_size", 64)
         num_heads = getattr(layer.config, "num_attention_heads", 4)
 
     new_block = GriffinSSDBlock(config=model_config, d_model=d_model, num_heads=num_heads, **kwargs)
