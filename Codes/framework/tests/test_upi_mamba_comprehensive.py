@@ -119,3 +119,68 @@ def test_upi_mamba_inject():
     # Test None graceful handling
     res = inject_upi_mamba(layer, model_config=cfg, old_attn=None)
     assert res is None
+
+
+def test_upi_mamba_copy_weights_all_4_architectures():
+    d = 64
+    cfg = make_config(hidden_size=d)
+
+    # 1. DistilBERT
+    class DummyDistilBert(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_lin = nn.Linear(d, d)
+            self.k_lin = nn.Linear(d, d)
+            self.v_lin = nn.Linear(d, d)
+            self.out_lin = nn.Linear(d, d)
+
+    m_distil = UPIMambaBlock(cfg, pretrained_attn=DummyDistilBert())
+    x = torch.randn(2, 8, d)
+    out1, _ = m_distil(x)
+    assert out1.shape == (2, 8, d)
+
+    # 2. RoBERTa nested
+    class DummyRoberta(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self = nn.Module()
+            self.self.query = nn.Linear(d, d)
+            self.self.key = nn.Linear(d, d)
+            self.self.value = nn.Linear(d, d)
+            self.output = nn.Module()
+            self.output.dense = nn.Linear(d, d)
+
+    m_roberta = UPIMambaBlock(cfg, pretrained_attn=DummyRoberta())
+    out2, _ = m_roberta(x)
+    assert out2.shape == (2, 8, d)
+
+    # 3. GPT-2 Conv1D
+    class Conv1D(nn.Module):
+        def __init__(self, nf, nx):
+            super().__init__()
+            self.weight = nn.Parameter(torch.randn(nx, nf))
+            self.bias = nn.Parameter(torch.zeros(nf))
+
+    class DummyGPT2(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.c_attn = Conv1D(3 * d, d)
+            self.c_proj = Conv1D(d, d)
+
+    m_gpt2 = UPIMambaBlock(cfg, pretrained_attn=DummyGPT2(), is_decoder=True)
+    out3, _ = m_gpt2(x)
+    assert out3.shape == (2, 8, d)
+
+    # 4. Qwen GQA
+    class DummyQwen(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(d, d)
+            self.k_proj = nn.Linear(d, d // 2)
+            self.v_proj = nn.Linear(d, d // 2)
+            self.o_proj = nn.Linear(d, d)
+
+    m_qwen = UPIMambaBlock(cfg, pretrained_attn=DummyQwen())
+    out4, _ = m_qwen(x)
+    assert out4.shape == (2, 8, d)
+
