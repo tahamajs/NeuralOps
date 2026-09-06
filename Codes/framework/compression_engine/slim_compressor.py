@@ -253,7 +253,10 @@ def slim_factory(
     return compressed_model
 
 
+slim_compressor_factory = slim_factory
+
 __all__ = [
     "SLiMCompressor",
     "slim_factory",
+    "slim_compressor_factory",
 ]
