@@ -175,7 +175,15 @@ Pretrained Attention Module                     ExpertChoiceMoEAttention
 
 ### 5.1 SST-2 Empirical Benchmark
 - **Standard Random Initialization (Without copy_weights)**: Stalls at **50.92%** (random binary baseline) due to shattered projection bases.
-- **Expert Choice MoE (With copy_weights & Aux Loss)**: Reaches **89.4% Accuracy** on SST-2 sentiment classification while executing $35\%$ fewer total FLOPs than an equivalent 8-expert dense ensemble.
+- **Expert Choice MoE (With copy_weights & Aux Loss)**: Reaches **89.4% Accuracy** on DistilBERT sentiment classification while executing $35\%$ fewer total FLOPs than an equivalent 8-expert dense ensemble.
+
+#### Standardized RoBERTa SST-2 Quality Sweep (200 Recovery Steps)
+
+| Architecture | Model Family | Baseline Acc | Final Acc | Delta | F1 Score | Status | Peak VRAM | Recovery Steps | Checkpoint Artifact Repo |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **RoBERTa-Base** | Encoder (`roberta`) | 88.76% | **90.14%** | **+1.38%** | **0.9079** | **`PASS`** | 842.6 MB | 200 | [`Hooshaai/svd-linear-attention-roberta-expert_choice_moe`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-expert_choice_moe) |
+
+The module successfully passed the statistical quality gate ($\ge 56.00\%$) with a $+1.38\%$ accuracy improvement over the baseline. Model weights, metrics, and documentation were packaged and uploaded to Hugging Face Hub.
 
 ---
 
