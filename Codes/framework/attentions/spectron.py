@@ -65,9 +65,6 @@ except Exception:
     TrainerCallback = object
     TrainingArguments = object
     def set_seed(s): pass
-
-from datasets import Dataset, DatasetDict
-
 warnings.filterwarnings("ignore", category=UserWarning)
 log = logging.getLogger(__name__)
 
@@ -911,8 +908,9 @@ GLUE_TASK_KEYS: Dict[str, Tuple[str, Optional[str]]] = {
 }
 
 
-def load_glue_local(task: str) -> DatasetDict:
+def load_glue_local(task: str) -> Any:
     r"""Load GLUE benchmark dataset from local path."""
+    from datasets import Dataset, DatasetDict
     from framework.utils.paths import get_glue_dir
 
     base = str(get_glue_dir())
