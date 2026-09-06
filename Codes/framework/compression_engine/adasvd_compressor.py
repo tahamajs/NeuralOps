@@ -18,6 +18,14 @@ from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
+try:
+    from transformers.pytorch_utils import Conv1D
+except ImportError:
+    try:
+        from transformers.modeling_utils import Conv1D
+    except ImportError:
+        Conv1D = None
+
 logger = logging.getLogger(__name__)
 
 
