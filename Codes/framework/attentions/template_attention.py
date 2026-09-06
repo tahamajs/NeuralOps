@@ -525,6 +525,8 @@ class YourCustomAttention(BaseAttention):
         return (output, (attn_weights if output_attentions else None))
 
 
+@ATTENTION_REGISTRY.register("custom_attn")
+@ATTENTION_REGISTRY.register("template_attention")
 @ATTENTION_REGISTRY.register("custom_attn_inject")
 @ATTENTION_REGISTRY.register("template_attention_inject")
 @ATTENTION_REGISTRY.register("inject_custom_attn")
