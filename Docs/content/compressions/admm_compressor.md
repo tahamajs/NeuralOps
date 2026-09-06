@@ -155,6 +155,15 @@ def admm_joint_prune_quant_kernel(
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | 90.48% | **88.53%** | -1.95% | 0.8922 | 1.00x | 11 | [svd-linear-attention-distilbert-admm](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-admm) | 2026-09-06 |
+| **roberta** | sst2 | `PASS` | 88.76% | **89.11%** | +0.35% | 0.8966 | 1.00x | 27 | [svd-linear-attention-roberta-admm](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-admm) | 2026-09-06 |
+| **gpt2** | sst2 | `PASS` | 81.31% | **84.63%** | +3.32% | 0.8537 | 1.00x | 0 | [svd-linear-attention-gpt2-admm](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-admm) | 2026-09-06 |
+
+
 The empirical evaluation of `admm_compressor` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
@@ -354,4 +363,3 @@ def admm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
 >    Splitting $\Sigma_r^{1/2}$ equally across factorized matrices balances spectral condition numbers $\kappa(U_r) \approx \kappa(V_r) = \sqrt{\kappa(W)}$, preventing FP16/BF16 gradient underflow.
 > 3. **Lyapunov Stability**:
 >    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
-
