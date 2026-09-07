@@ -477,3 +477,10 @@ torchrun --nproc_per_node=4 -m framework.main \
 1. **Kusupati, A., Bhatt, G., Shen, A., Simhadri, H., & Jain, P. (2022)**. *Matryoshka Representation Learning*. In Advances in Neural Information Processing Systems (NeurIPS 2022).
 2. **Sharma, P., et al. (2023)**. *Truthful Low-Rank Adaptation for Large Language Models*.
 3. **Eckart, C., & Young, G. (1936)**. *The approximation of one matrix by another of lower rank*. Psychometrika, 1(3), 211-218.
+
+## Unified 4-Architecture Benchmark Results (ERC-SVD)
+Evaluated on SST-2 sentiment classification (FP16, allowed error 0.20, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 88.42% | 0.8924 | 1.0 | 0 | 321.64 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-erc) |
