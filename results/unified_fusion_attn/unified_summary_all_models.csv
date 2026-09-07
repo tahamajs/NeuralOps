@@ -1,0 +1,4 @@
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp,model
+fusion_attn,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.5529,2.83,328.08,116367.68,66955010,67646222,1181960,0.9898,-1.03,0.0,0,0,,,6,589824,,legacy_bert,2026-09-08T00:22:09.305688,distilbert
+fusion_attn,PASS,84.52,0.8635,0.8423,0.8657,0.843,0.4132,6.92,399.52,46342.58,127325954,134910746,3565838,0.9438,-5.96,0.0,0,0,,,12,2973696,,adapted_roberta,2026-09-08T00:22:33.071165,roberta
+fusion_attn,PASS,82.11,0.8274,0.8209,0.8216,0.8207,0.4045,7.07,340.92,45401.23,126800640,127298328,2655756,0.9961,-0.39,0.0,0,0,,,12,2654208,,adapted_gpt,2026-09-08T00:22:56.715641,gpt2

@@ -59,3 +59,6 @@ fms,run_all_4_fms.py,0,1548.5,PASS,,2026-09-08T00:07:41.467744
 frandi,run_all_4_frandi.py,0,491.5,PASS,,2026-09-08T00:15:52.976654
 full,run_all_4_full.py,0,90.61,PASS,,2026-09-08T00:17:23.594299
 fused_svd_kernel,run_all_4_fused_svd_kernel.py,0,269.1,PASS,,2026-09-08T00:21:52.697848
+fusion_attn,run_all_4_fusion_attn.py,0,69.97,PASS,,2026-09-08T00:23:02.669714
+galerkin,run_all_4_galerkin.py,0,77.22,PASS,,2026-09-08T00:24:19.894355
+galerkin_attention,run_all_4_galerkin_attention.py,0,67.69,PASS,,2026-09-08T00:25:27.588545

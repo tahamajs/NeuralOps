@@ -538,5 +538,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T00:21:52.697848"
+  },
+  {
+    "module": "fusion_attn",
+    "runner": "run_all_4_fusion_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 69.97,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T00:23:02.669714"
+  },
+  {
+    "module": "galerkin",
+    "runner": "run_all_4_galerkin.py",
+    "exit_code": 0,
+    "elapsed_s": 77.22,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T00:24:19.894355"
+  },
+  {
+    "module": "galerkin_attention",
+    "runner": "run_all_4_galerkin_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 67.69,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T00:25:27.588545"
   }
 ]
