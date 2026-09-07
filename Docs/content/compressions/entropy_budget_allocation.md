@@ -617,3 +617,10 @@ torchrun --nproc_per_node=4 -m framework.main \
 1. **Zhang, Y., et al. (2023)**. *Pruning Meets Low-Rank: Adaptive Budget Allocation for Deep Neural Networks*.
 2. **Cover, T. M., & Thomas, J. A. (2006)**. *Elements of Information Theory* (2nd ed.). Wiley-Interscience.
 3. **Eckart, C., & Young, G. (1936)**. *The approximation of one matrix by another of lower rank*. Psychometrika, 1(3), 211-218.
+
+## Unified 4-Architecture Benchmark Results (Entropy Budget SVD)
+Evaluated on SST-2 sentiment classification (FP16, total budget ratio 0.7, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 88.65% | 0.8941 | 1.0 | 0 | 321.14 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-entropy-budget) |
