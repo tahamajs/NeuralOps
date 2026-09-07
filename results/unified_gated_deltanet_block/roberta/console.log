@@ -57,3 +57,4 @@ Notes:
 2026-09-08 00:57:44,051 [INFO] QwenQualitySweep: LoRA fine-tuning: 4745474 trainable parameters across 270 tensors (lr=2.0e-04, optimizer=adamw)
 2026-09-08 00:59:06,466 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7234 (bs=8, micro_bs=8)
 2026-09-08 01:03:26,721 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7140 (bs=8, micro_bs=8)
+2026-09-08 01:08:55,576 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7395 (bs=8, micro_bs=8)
