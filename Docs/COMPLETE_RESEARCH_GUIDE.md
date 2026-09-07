@@ -19,7 +19,7 @@ Choose the constraint that matters most:
 | Numerical stability | [Verification reports](./reports/) and [framework docs](./content/framework/) | Dtype behavior, finite outputs, gradient checks |
 | Throughput and latency | [Benchmark reports](./reports/) and [results](./results/) | Device, batch, sequence length, precision, warm-up policy |
 | Interpretability | [Visualization dashboard](./Attention_Visualization_Dashboard/Attention_Visualization_Dashboard.md) and [circuit tracer](./Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/CIRCUIT_TRACER.md) | Attention/state traces, intervention definition, reproducible inputs |
-| Production operation | [Deployment guide](./DEPLOYMENT.md) and [Kaggle/GPU guide](./Kaggle_Deployment_Guide.md) | Environment, worker topology, telemetry, rollback path |
+| Production operation | [Deployment guide](./DEPLOYMENT.md) and [Kaggle/GPU guide](./DEPLOYMENT.md) | Environment, worker topology, telemetry, rollback path |
 
 ## 2. Read an architecture specification correctly
 
