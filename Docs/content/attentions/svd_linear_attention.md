@@ -193,6 +193,27 @@ y = (x V_{\text{frozen}}^\top) U_{\text{frozen}}^\top + \frac{\alpha}{r_{\text{l
 
 ---
 
+
+## Architecture & Data Flow
+
+The `SVDLinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Step-by-Step Tensor Execution Trace
 
 ### Tensor Shape Transformation Table
@@ -1151,3 +1172,72 @@ torchrun --nproc_per_node=4 -m framework.main \
 2. **Katharopoulos, A., Vyas, A., Pappas, N., & Fleuret, F. (2020)**. *Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention*. In Proceedings of the 37th International Conference on Machine Learning (ICML 2020). [arXiv:2006.16236](https://arxiv.org/abs/2006.16236).
 3. **Wang, S., Li, B. Z., Khabsa, M., Fang, H., & Ma, H. (2020)**. *Linformer: Self-Attention with Linear Complexity*. arXiv preprint [arXiv:2006.04768](https://arxiv.org/abs/2006.04768).
 4. **Golub, G. H., & Van Loan, C. F. (2013)**. *Matrix Computations* (4th ed.). Johns Hopkins University Press.
+
+## Configuration & Hyperparameters
+
+The `SVDLinear` module (registered under `svd_linear`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `SVDLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `SVDLinear`. |
+| `SVDLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `SVDLinear`. |
+| `SVDLinear` | `rank` | `Any` | **Required** | Low-rank bottleneck projection rank. |
+| `SVDLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `SVDLinear`. |
+| `SVDLinear` | `freeze_svd` | `bool` | `False` | Controls `freeze_svd` configuration in `SVDLinear`. |
+| `SVDLinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `SVDLinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `SVDLinear` | `use_fused_kernel` | `bool` | `False` | Controls `use_fused_kernel` configuration in `SVDLinear`. |
+| `SVDLinear` | `use_rms_norm` | `bool` | `False` | Controls `use_rms_norm` configuration in `SVDLinear`. |
+| `SVDLinear` | `eps` | `float` | `1e-06` | Controls `eps` configuration in `SVDLinear`. |
+| `SVDLinear` | `dtype` | `str` | `torch.float32` | Controls `dtype` configuration in `SVDLinear`. |
+| `SVDLinear` | `device` | `Any` | `None` | Controls `device` configuration in `SVDLinear`. |
+| `SVDLinearAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `SVDLinearAttention` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `SVDLinearAttention`. |
+| `SVDLinearAttention` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `SVDLinearAttention` | `mode` | `str` | `exact` | Controls `mode` configuration in `SVDLinearAttention`. |
+| `SVDLinearAttention` | `freeze_svd` | `bool` | `False` | Controls `freeze_svd` configuration in `SVDLinearAttention`. |
+| `SVDLinearAttention` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `SVDLinearAttention` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `SVDLinearAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `SVDLinearAttention`. |
+| `SVDLinearAttention` | `use_decay_gating` | `bool` | `False` | Controls `use_decay_gating` configuration in `SVDLinearAttention`. |
+| `SVDLinearAttention` | `decay_activation` | `str` | `softplus` | Controls `decay_activation` configuration in `SVDLinearAttention`. |
+| `SVDLinearAttention` | `decay_channel_wise` | `bool` | `False` | Controls `decay_channel_wise` configuration in `SVDLinearAttention`. |
+| `SVDLinearAttention` | `use_fused_kernel` | `bool` | `False` | Controls `use_fused_kernel` configuration in `SVDLinearAttention`. |
+| `SVDLinearAttention` | `use_rms_norm` | `bool` | `False` | Controls `use_rms_norm` configuration in `SVDLinearAttention`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject SVDLinear dynamically
+model = inject_attention(model, attn_type='svd_linear', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

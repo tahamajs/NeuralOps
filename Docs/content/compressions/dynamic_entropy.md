@@ -17,6 +17,27 @@ The `dynamic_entropy` engine provides post-training model compression through ad
 
 ---
 
+
+## Architecture & Data Flow
+
+The `A3Compressor` pipeline executes structured factorization and model transformation through coordinated stages:
+
+```
+Dense Weight Matrix W [D_out, D_in]
+   │
+   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
+   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
+   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
+   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+```
+
+### Step-by-Step Execution Trace
+
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
+2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
+3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
+4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+
 ## 2. Mathematical Formulation & Compression Pipeline
 
 Given weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ and calibration activation covariance $C_X = \frac{1}{N} X^\top X + \lambda I$:
@@ -112,3 +133,79 @@ assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
 print('Verification successful: logits shape', out.logits.shape)
 "
 ```
+
+## Configuration & Hyperparameters
+
+The `DynamicEntropySVDCompressor` module (registered under `dynamic_entropy`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `DynamicEntropySVDCompressor` | `model` | `Any` | **Required** | The PyTorch HuggingFace model instance to compress or inject. |
+| `DynamicEntropySVDCompressor` | `min_rank` | `int` | `16` | Controls `min_rank` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `max_rank` | `int` | `128` | Controls `max_rank` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `target_param_ratio` | `Any` | `None` | Controls `target_param_ratio` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `total_rank_budget` | `Any` | `None` | Controls `total_rank_budget` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `target_rank` | `Any` | `None` | Controls `target_rank` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `max_error` | `float` | `0.35` | Upper bound on relative Frobenius reconstruction error before fallback. |
+| `DynamicEntropySVDCompressor` | `target_attention_only` | `bool` | `False` | Controls `target_attention_only` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `fallback_to_original` | `bool` | `True` | Whether to revert to dense weights if decomposition exceeds error threshold. |
+| `DynamicEntropySVDCompressor` | `calibration_loader` | `Any` | `None` | Controls `calibration_loader` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `calibration_texts` | `Any` | `None` | Controls `calibration_texts` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `target_modules` | `Any` | `None` | Controls `target_modules` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `tokenizer` | `Any` | `None` | Controls `tokenizer` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressor` | `cfg` | `Any` | `None` | Controls `cfg` configuration in `DynamicEntropySVDCompressor`. |
+| `DynamicEntropySVDCompressorRegistered` | `model` | `Any` | **Required** | The PyTorch HuggingFace model instance to compress or inject. |
+| `DynamicEntropySVDCompressorRegistered` | `min_rank` | `int` | `16` | Controls `min_rank` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `max_rank` | `int` | `128` | Controls `max_rank` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `target_param_ratio` | `Any` | `None` | Controls `target_param_ratio` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `total_rank_budget` | `Any` | `None` | Controls `total_rank_budget` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `target_rank` | `Any` | `None` | Controls `target_rank` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `max_error` | `float` | `0.35` | Upper bound on relative Frobenius reconstruction error before fallback. |
+| `DynamicEntropySVDCompressorRegistered` | `target_attention_only` | `bool` | `False` | Controls `target_attention_only` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `fallback_to_original` | `bool` | `True` | Whether to revert to dense weights if decomposition exceeds error threshold. |
+| `DynamicEntropySVDCompressorRegistered` | `calibration_loader` | `Any` | `None` | Controls `calibration_loader` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `calibration_texts` | `Any` | `None` | Controls `calibration_texts` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `target_modules` | `Any` | `None` | Controls `target_modules` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `tokenizer` | `Any` | `None` | Controls `tokenizer` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicEntropySVDCompressorRegistered` | `cfg` | `Any` | `None` | Controls `cfg` configuration in `DynamicEntropySVDCompressorRegistered`. |
+| `DynamicSVDLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `DynamicSVDLinear`. |
+| `DynamicSVDLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `DynamicSVDLinear`. |
+| `DynamicSVDLinear` | `rank` | `Any` | **Required** | Low-rank bottleneck projection rank. |
+| `DynamicSVDLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `DynamicSVDLinear`. |
+| `DynamicSVDLinear` | `dtype` | `str` | `torch.float32` | Controls `dtype` configuration in `DynamicSVDLinear`. |
+| `DynamicSVDLinear` | `device` | `Any` | `None` | Controls `device` configuration in `DynamicSVDLinear`. |
+| `EntropyRankAllocatorRegistered` | `model` | `Any` | **Required** | The PyTorch HuggingFace model instance to compress or inject. |
+| `EntropyRankAllocatorRegistered` | `min_rank` | `int` | `16` | Controls `min_rank` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `max_rank` | `int` | `128` | Controls `max_rank` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `target_param_ratio` | `Any` | `None` | Controls `target_param_ratio` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `total_rank_budget` | `Any` | `None` | Controls `total_rank_budget` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `target_rank` | `Any` | `None` | Controls `target_rank` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `max_error` | `float` | `0.35` | Upper bound on relative Frobenius reconstruction error before fallback. |
+| `EntropyRankAllocatorRegistered` | `target_attention_only` | `bool` | `False` | Controls `target_attention_only` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `fallback_to_original` | `bool` | `True` | Whether to revert to dense weights if decomposition exceeds error threshold. |
+| `EntropyRankAllocatorRegistered` | `calibration_loader` | `Any` | `None` | Controls `calibration_loader` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `calibration_texts` | `Any` | `None` | Controls `calibration_texts` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `target_modules` | `Any` | `None` | Controls `target_modules` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `tokenizer` | `Any` | `None` | Controls `tokenizer` configuration in `EntropyRankAllocatorRegistered`. |
+| `EntropyRankAllocatorRegistered` | `cfg` | `Any` | `None` | Controls `cfg` configuration in `EntropyRankAllocatorRegistered`. |
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/dynamic_entropy-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

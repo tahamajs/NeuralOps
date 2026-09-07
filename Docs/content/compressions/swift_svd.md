@@ -13,6 +13,27 @@ This method serves as a fast, minimal baseline for low‑rank compression. It is
 
 ---
 
+
+## Architecture & Data Flow
+
+The `SwiftSVDCompressor` pipeline executes structured factorization and model transformation through coordinated stages:
+
+```
+Dense Weight Matrix W [D_out, D_in]
+   │
+   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
+   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
+   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
+   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+```
+
+### Step-by-Step Execution Trace
+
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
+2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
+3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
+4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+
 ## 2. Mathematical Formulations & Rigorous Theoretical Derivations
 
 ### 2.1 Exact Low-Rank SVD & Eckart-Young-Mirsky Optimality
@@ -387,3 +408,16 @@ torchrun --nproc_per_node=4 -m framework.main \
     --batch_size 8 \
     --distributed
 ```
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/swift_svd-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

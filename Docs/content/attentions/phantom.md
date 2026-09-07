@@ -68,6 +68,27 @@ $$Y = \text{FactorisedLinear\_CUR}_{\text{out}}\left( \text{Reshape}(O^{\text{fu
 
 ---
 
+
+## Architecture & Data Flow
+
+The `FactorisedLinear_CUR` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
@@ -672,4 +693,60 @@ def inject_phantom(
 > Benchmarks Pending — run `bash run_on_gpu_server.sh suite` to populate results.
 > See [Empirical Validation Protocol](../empirical_validation_protocol.md).
 
+## Configuration & Hyperparameters
+
+The `FactorisedLinear_CUR` module (registered under `phantom`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `FactorisedLinear_CUR` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `FactorisedLinear_CUR`. |
+| `FactorisedLinear_CUR` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `FactorisedLinear_CUR`. |
+| `FactorisedLinear_CUR` | `cur_rank` | `int` | `16` | Controls `cur_rank` configuration in `FactorisedLinear_CUR`. |
+| `FactorisedLinear_CUR` | `bias` | `bool` | `True` | Controls `bias` configuration in `FactorisedLinear_CUR`. |
+| `FactorisedLinear_CUR` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `FactorisedLinear_CUR` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `FactorisedLinear_CUR` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `FactorisedLinear_CUR`. |
+| `FactorisedLinear_CUR` | `device` | `Any` | `None` | Controls `device` configuration in `FactorisedLinear_CUR`. |
+| `FactorisedLinear_CUR` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `FactorisedLinear_CUR`. |
+| `PHANTOMAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `PHANTOMAttention` | `rank` | `int` | `16` | Low-rank bottleneck projection rank. |
+| `PHANTOMAttention` | `phantom_cfg` | `Any` | `None` | Controls `phantom_cfg` configuration in `PHANTOMAttention`. |
+| `PHANTOMAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `PHANTOMAttention`. |
+| `PHANTOMAttention` | `bert_mode` | `bool` | `False` | Controls `bert_mode` configuration in `PHANTOMAttention`. |
+| `PHANTOMConfig` | `cur_rank` | `int` | `16` | Controls `cur_rank` configuration in `PHANTOMConfig`. |
+| `PHANTOMConfig` | `lsh_rounds` | `int` | `4` | Controls `lsh_rounds` configuration in `PHANTOMConfig`. |
+| `PHANTOMConfig` | `lsh_bucket_size` | `int` | `4` | Controls `lsh_bucket_size` configuration in `PHANTOMConfig`. |
+| `PHANTOMConfig` | `softpick_enabled` | `bool` | `True` | Controls `softpick_enabled` configuration in `PHANTOMConfig`. |
+| `PHANTOMConfig` | `softpick_temperature` | `float` | `1.0` | Controls `softpick_temperature` configuration in `PHANTOMConfig`. |
+| `PHANTOMConfig` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `PHANTOMConfig`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject FactorisedLinear_CUR dynamically
+model = inject_attention(model, attn_type='phantom', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `FactorisedLinear_CUR` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/phantom/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
 

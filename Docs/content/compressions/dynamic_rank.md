@@ -11,6 +11,27 @@ Layers with flat singular spectra (high entropy, indicating distributed informat
 
 ---
 
+
+## Architecture & Data Flow
+
+The `DynamicEntropySVDCompressor` pipeline executes structured factorization and model transformation through coordinated stages:
+
+```
+Dense Weight Matrix W [D_out, D_in]
+   │
+   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
+   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
+   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
+   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+```
+
+### Step-by-Step Execution Trace
+
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
+2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
+3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
+4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+
 ## 2. Mathematical Formulations
 
 ### 2.1 Empirical Singular Entropy Computation
@@ -827,3 +848,31 @@ Evaluated on BERT-Base (110M) and LLaMA-7B across GLUE benchmarks and Long Range
 | **GLUE MNLI Accuracy (m/mm)** | 84.6% / 85.0% | **84.0% / 84.3%** | $-0.6\%$ / $-0.7\%$ |
 | **Inference Latency (seq=512)** | 14.2 ms | **6.1 ms** | **$2.3\times$ Speedup** |
 | **Peak GPU VRAM** | 3.8 GB | **1.9 GB** | **$50.0\%$ VRAM Saved** |
+
+## Attention Maps & Activation Diagnostics
+
+The `DynamicEntropySVDCompressor` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/dynamic_rank/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/dynamic_rank-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

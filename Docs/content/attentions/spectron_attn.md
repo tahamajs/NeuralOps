@@ -17,6 +17,27 @@ The `spectron_attn` module provides an efficient, hardware-aligned attention mec
 
 ---
 
+
+## Architecture & Data Flow
+
+The `LowRankSparseLinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Formulation & Tensor Mechanics
 
 Given an input activation sequence $X \in \mathbb{R}^{B \times N \times D}$ where $B$ is the batch size, $N$ is the sequence length, and $D$ is the hidden dimension:
@@ -114,3 +135,42 @@ assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
 print('Verification successful: logits shape', out.logits.shape)
 "
 ```
+
+## Configuration & Hyperparameters
+
+The `LowRankSparseLinear` module (registered under `inject_spectron`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `LowRankSparseLinear` | `down` | `Any` | **Required** | Controls `down` configuration in `LowRankSparseLinear`. |
+| `LowRankSparseLinear` | `up` | `Any` | **Required** | Controls `up` configuration in `LowRankSparseLinear`. |
+| `LowRankSparseLinear` | `sparse_weight` | `Any` | **Required** | Controls `sparse_weight` configuration in `LowRankSparseLinear`. |
+| `LowRankSparseLinear` | `bias` | `Any` | `None` | Controls `bias` configuration in `LowRankSparseLinear`. |
+| `SparsePruningCallback` | `model` | `Any` | **Required** | The PyTorch HuggingFace model instance to compress or inject. |
+| `SparsePruningCallback` | `prune_freq` | `int` | `200` | Controls `prune_freq` configuration in `SparsePruningCallback`. |
+| `SparsePruningCallback` | `final_sparsity` | `float` | `0.7` | Controls `final_sparsity` configuration in `SparsePruningCallback`. |
+| `SpectronAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `SpectronAttention` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `layer_idx` | `int` | `0` | Controls `layer_idx` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `ranks` | `Any` | `None` | Controls `ranks` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `SpectronAttention` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `SpectronAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `add_sparse` | `bool` | `False` | Controls `add_sparse` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `sparsity_level` | `float` | `0.7` | Controls `sparsity_level` configuration in `SpectronAttention`. |
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

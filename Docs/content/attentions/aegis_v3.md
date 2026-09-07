@@ -12,6 +12,27 @@ Key architectural mechanisms:
 
 ---
 
+
+## Architecture & Data Flow
+
+The `AegisAttention` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Formulations & Architecture
 
 ```
@@ -448,3 +469,87 @@ def inject_aegis_v3(
         layer.attention = new_attn
     return new_attn
 ```
+
+## Configuration & Hyperparameters
+
+The `AegisAttention` module (registered under `aegis_v3`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `AegisAttention` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `AegisAttention`. |
+| `AegisAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `AegisAttention` | `aegis_cfg` | `Any` | `None` | Controls `aegis_cfg` configuration in `AegisAttention`. |
+| `AegisAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `AegisAttention`. |
+| `AegisAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `AegisAttention`. |
+| `AegisAttentionV3` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `AegisAttentionV3`. |
+| `AegisAttentionV3` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `AegisAttentionV3` | `aegis_cfg` | `Any` | `None` | Controls `aegis_cfg` configuration in `AegisAttentionV3`. |
+| `AegisAttentionV3` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `AegisAttentionV3`. |
+| `AegisAttentionV3` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `AegisAttentionV3`. |
+| `AegisConfig` | `svd_energy` | `float` | `0.95` | Controls `svd_energy` configuration in `AegisConfig`. |
+| `AegisConfig` | `min_rank` | `int` | `4` | Controls `min_rank` configuration in `AegisConfig`. |
+| `AegisConfig` | `max_rank` | `int` | `64` | Controls `max_rank` configuration in `AegisConfig`. |
+| `AegisConfig` | `num_local_heads` | `int` | `8` | Controls `num_local_heads` configuration in `AegisConfig`. |
+| `AegisConfig` | `num_global_heads` | `int` | `4` | Controls `num_global_heads` configuration in `AegisConfig`. |
+| `AegisConfig` | `local_window` | `int` | `64` | Controls `local_window` configuration in `AegisConfig`. |
+| `AegisConfig` | `softpick_temperature` | `float` | `1.0` | Controls `softpick_temperature` configuration in `AegisConfig`. |
+| `AegisConfig` | `rff_features` | `int` | `128` | Controls `rff_features` configuration in `AegisConfig`. |
+| `AegisConfig` | `use_zero_sum_keys` | `bool` | `True` | Controls `use_zero_sum_keys` configuration in `AegisConfig`. |
+| `AegisConfig` | `use_adaptive_gate` | `bool` | `True` | Controls `use_adaptive_gate` configuration in `AegisConfig`. |
+| `AegisConfig` | `gate_init_bias` | `float` | `1.8` | Controls `gate_init_bias` configuration in `AegisConfig`. |
+| `AegisConfig` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `AegisConfig`. |
+| `AegisConfig` | `is_decoder` | `bool` | `False` | Controls `is_decoder` configuration in `AegisConfig`. |
+| `FactorisedLinear` | `in_features_or_weight` | `Any` | **Required** | Controls `in_features_or_weight` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `out_features_or_bias` | `Any` | `None` | Controls `out_features_or_bias` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `energy` | `float` | `0.95` | Controls `energy` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `min_rank` | `int` | `4` | Controls `min_rank` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `max_rank` | `int` | `64` | Controls `max_rank` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `FactorisedLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `FactorisedLinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject AegisAttention dynamically
+model = inject_attention(model, attn_type='aegis_v3', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `AegisAttention` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/aegis_v3/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

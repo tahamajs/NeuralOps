@@ -3,6 +3,27 @@
 ## 1. Overview
 Spectron dynamically allocates non-uniform low-rank capacities across attention projection matrices under a global parameter budget via Lagrangian spectral entropy optimization, optionally augmented by trainable magnitude-pruned sparse residuals.
 
+
+## Architecture & Data Flow
+
+The `LowRankSparseLinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Formulation
 1. **Lagrangian Spectral Allocation**:
    $$\min_{\{r_i\}} \sum_{i=1}^M \left(1 - \frac{\sum_{k=1}^{r_i} \sigma_{i, k}^2}{\sum_k \sigma_{i, k}^2}\right) \quad \text{s.t.} \quad \sum_{i=1}^M r_i (d_{i, \text{in}} + d_{i, \text{out}}) \le B_{\text{target}}$$
@@ -710,4 +731,58 @@ if __name__ == "__main__":
 >    Splitting $\Sigma_r^{1/2}$ equally across factorized matrices balances spectral condition numbers $\kappa(U_r) \approx \kappa(V_r) = \sqrt{\kappa(W)}$, preventing FP16/BF16 gradient underflow.
 > 3. **Lyapunov Stability**:
 >    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
+
+## Configuration & Hyperparameters
+
+The `LowRankSparseLinear` module (registered under `inject_spectron`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `LowRankSparseLinear` | `down` | `Any` | **Required** | Controls `down` configuration in `LowRankSparseLinear`. |
+| `LowRankSparseLinear` | `up` | `Any` | **Required** | Controls `up` configuration in `LowRankSparseLinear`. |
+| `LowRankSparseLinear` | `sparse_weight` | `Any` | **Required** | Controls `sparse_weight` configuration in `LowRankSparseLinear`. |
+| `LowRankSparseLinear` | `bias` | `Any` | `None` | Controls `bias` configuration in `LowRankSparseLinear`. |
+| `SparsePruningCallback` | `model` | `Any` | **Required** | The PyTorch HuggingFace model instance to compress or inject. |
+| `SparsePruningCallback` | `prune_freq` | `int` | `200` | Controls `prune_freq` configuration in `SparsePruningCallback`. |
+| `SparsePruningCallback` | `final_sparsity` | `float` | `0.7` | Controls `final_sparsity` configuration in `SparsePruningCallback`. |
+| `SpectronAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `SpectronAttention` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `layer_idx` | `int` | `0` | Controls `layer_idx` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `ranks` | `Any` | `None` | Controls `ranks` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `SpectronAttention` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `SpectronAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `add_sparse` | `bool` | `False` | Controls `add_sparse` configuration in `SpectronAttention`. |
+| `SpectronAttention` | `sparsity_level` | `float` | `0.7` | Controls `sparsity_level` configuration in `SpectronAttention`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject LowRankSparseLinear dynamically
+model = inject_attention(model, attn_type='inject_spectron', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `LowRankSparseLinear` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/spectron/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
 

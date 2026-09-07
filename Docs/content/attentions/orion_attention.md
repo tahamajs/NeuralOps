@@ -17,6 +17,27 @@ The `orion_attention` module provides an efficient, hardware-aligned attention m
 
 ---
 
+
+## Architecture & Data Flow
+
+The `FactorisedLinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Formulation & Tensor Mechanics
 
 Given an input activation sequence $X \in \mathbb{R}^{B \times N \times D}$ where $B$ is the batch size, $N$ is the sequence length, and $D$ is the hidden dimension:
@@ -114,3 +135,52 @@ assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
 print('Verification successful: logits shape', out.logits.shape)
 "
 ```
+
+## Configuration & Hyperparameters
+
+The `FactorisedLinear` module (registered under `orion`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `FactorisedLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `energy` | `float` | `0.95` | Controls `energy` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `min_rank` | `int` | `4` | Controls `min_rank` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `max_rank` | `int` | `64` | Controls `max_rank` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `FactorisedLinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `FactorisedLinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `device` | `Any` | `None` | Controls `device` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `FactorisedLinear`. |
+| `ORIONAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `ORIONAttention` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `ORIONAttention` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `orion_cfg` | `Any` | `None` | Controls `orion_cfg` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `bert_mode` | `bool` | `False` | Controls `bert_mode` configuration in `ORIONAttention`. |
+| `ORIONConfig` | `svd_energy` | `float` | `0.95` | Controls `svd_energy` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `svd_min_rank` | `int` | `4` | Controls `svd_min_rank` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `svd_max_rank` | `int` | `64` | Controls `svd_max_rank` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `num_kernel_heads` | `int` | `8` | Controls `num_kernel_heads` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `num_full_heads` | `int` | `4` | Controls `num_full_heads` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `rff_features` | `int` | `256` | Controls `rff_features` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `softpick_temperature` | `float` | `1.0` | Controls `softpick_temperature` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `ORIONConfig`. |
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

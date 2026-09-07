@@ -11,6 +11,27 @@ Fine-tuning large pre-trained Transformer architectures via full parameter updat
 
 ---
 
+
+## Architecture & Data Flow
+
+The `SALTAttention` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Derivations & Formulations
 
 ### 2.1 Weight Factorization & Singular Value Rescaling (`SALTLinear`)
@@ -293,4 +314,50 @@ def inject_salt_attention(
 >    Splitting $\Sigma_r^{1/2}$ equally across factorized matrices balances spectral condition numbers $\kappa(U_r) \approx \kappa(V_r) = \sqrt{\kappa(W)}$, preventing FP16/BF16 gradient underflow.
 > 3. **Lyapunov Stability**:
 >    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
+
+## Configuration & Hyperparameters
+
+The `SALTAttention` module (registered under `inject_salt_attention`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `SALTAttention` | `config` | `Any` | **Required** | HuggingFace architecture configuration instance. |
+| `SALTAttention` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `SALTAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `SALTAttention`. |
+| `SALTAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `SALTAttention`. |
+| `SALTLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `SALTLinear`. |
+| `SALTLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `SALTLinear`. |
+| `SALTLinear` | `rank` | `int` | `16` | Low-rank bottleneck projection rank. |
+| `SALTLinear` | `original_weight` | `Any` | `None` | Controls `original_weight` configuration in `SALTLinear`. |
+| `SALTLinear` | `original_bias` | `Any` | `None` | Controls `original_bias` configuration in `SALTLinear`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject SALTAttention dynamically
+model = inject_attention(model, attn_type='inject_salt_attention', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `SALTAttention` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/salt_attention/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
 

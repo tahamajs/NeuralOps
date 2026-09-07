@@ -55,6 +55,27 @@ where:
 
 ---
 
+
+## Architecture & Data Flow
+
+The `FactorisedMatrixState` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Theoretical Justification of Cumulative Energy Thresholding ($\tau = 0.92$)
 
 When initializing the low-rank factors $L, R$ from a pretrained dense projection $W_O$, Singular Value Decomposition is applied:
@@ -155,3 +176,56 @@ Evaluated on BERT-Base (110M) across GLUE benchmarks and Long Range Arena (LRA) 
 - Registry Key: `factorised_matrix_state`
 - Low-Rank Parameters: `L` ($D \times r$), `R` ($D \times r$), `W_res` ($D \times D$)
 - Recurrence State: `_matrix_scan` supporting bidirectional forward/reverse scans with masked updates.
+
+## Configuration & Hyperparameters
+
+The `FactorisedMatrixState` module (registered under `factorised_matrix_state`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `FactorisedMatrixState` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `FactorisedMatrixState` | `rank` | `int` | `32` | Low-rank bottleneck projection rank. |
+| `FactorisedMatrixState` | `d_model` | `Any` | `None` | Controls `d_model` configuration in `FactorisedMatrixState`. |
+| `FactorisedMatrixState` | `num_heads` | `Any` | `None` | Controls `num_heads` configuration in `FactorisedMatrixState`. |
+| `FactorisedMatrixState` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `FactorisedMatrixState`. |
+| `FactorisedMatrixState` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `FactorisedMatrixState`. |
+| `FactorisedMatrixState` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `FactorisedMatrixState`. |
+| `FactorisedMatrixState` | `layer_id` | `Any` | `None` | Controls `layer_id` configuration in `FactorisedMatrixState`. |
+| `FactorisedMatrixState` | `layer_idx` | `Any` | `None` | Controls `layer_idx` configuration in `FactorisedMatrixState`. |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+
+
+## Attention Maps & Activation Diagnostics
+
+The `FactorisedMatrixState` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/factorised_matrix_state/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/factorised_matrix_state-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

@@ -7,6 +7,27 @@ Self-Attention projection matrices ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{d_{\text
 
 ---
 
+
+## Architecture & Data Flow
+
+The `AdaptiveTransformerCompressor` pipeline executes structured factorization and model transformation through coordinated stages:
+
+```
+Dense Weight Matrix W [D_out, D_in]
+   │
+   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
+   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
+   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
+   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+```
+
+### Step-by-Step Execution Trace
+
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
+2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
+3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
+4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+
 ## 2. Mathematical Formulations & Matrix Decompositions
 
 ### 2.1 Multihead Attention Projection Matrix Factorization
@@ -386,3 +407,38 @@ __all__ = [
     "adaptive_compressor_factory",
 ]
 ```
+
+## Configuration & Hyperparameters
+
+The `AdaptiveTransformerCompressor` module (registered under `adaptive_compressor`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `AdaptiveTransformerCompressor` | `model` | `Any` | **Required** | The PyTorch HuggingFace model instance to compress or inject. |
+| `AdaptiveTransformerCompressor` | `energy_threshold` | `float` | `0.92` | Controls `energy_threshold` configuration in `AdaptiveTransformerCompressor`. |
+| `AdaptiveTransformerCompressor` | `min_rank` | `int` | `16` | Controls `min_rank` configuration in `AdaptiveTransformerCompressor`. |
+| `AdaptiveTransformerCompressor` | `max_error` | `float` | `0.2` | Upper bound on relative Frobenius reconstruction error before fallback. |
+| `AdaptiveTransformerCompressor` | `fallback_to_original` | `bool` | `True` | Whether to revert to dense weights if decomposition exceeds error threshold. |
+| `AdaptiveTransformerCompressor` | `target_modules` | `Any` | `None` | Controls `target_modules` configuration in `AdaptiveTransformerCompressor`. |
+
+
+## Attention Maps & Activation Diagnostics
+
+The `AdaptiveTransformerCompressor` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/adaptive_compressor/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/adaptive_compressor-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+
