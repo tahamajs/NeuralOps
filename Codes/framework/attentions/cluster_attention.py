@@ -592,6 +592,10 @@ class ClusterAttention(BaseAttention):
         else:
             output = self.out_proj(out)
 
+        valid_out = get_token_valid_mask(attention_mask, B, L, device)
+        if valid_out is not None:
+            output = output * valid_out.unsqueeze(-1).to(output.dtype)
+
         return output, attn_ret
 
 
