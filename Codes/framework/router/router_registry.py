@@ -1,3 +1,9 @@
+"""
+Router registry – centralized registration and lookup for all router implementations.
+
+Maintains a global registry of available routers and provides factory methods.
+"""
+
 # framework/routing/router_registry.py
 from typing import Any, List
 from typing import Dict, Optional, Type

@@ -1,3 +1,9 @@
+"""
+Serving base – abstract interface for model serving implementations.
+
+Defines the contract for serving implementations (Ray Serve, vLLM, TGI, Triton, etc.).
+"""
+
 from abc import ABC, abstractmethod
 
 from framework.core.registry import Registry

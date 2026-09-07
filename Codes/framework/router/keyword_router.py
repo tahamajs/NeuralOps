@@ -1,3 +1,9 @@
+"""
+Keyword router – rule-based routing using pattern matching and keywords.
+
+Routes tasks based on input text patterns and predefined rules.
+"""
+
 # framework/routing/keyword_router.py
 import re
 from collections import defaultdict
