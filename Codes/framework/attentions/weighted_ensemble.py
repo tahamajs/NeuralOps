@@ -79,7 +79,8 @@ class TaskAwareAttention(nn.Module):
         scores = torch.matmul(cur_emb, all_embs.t()) * scale  # (1, M)
 
         # Add task similarity bias
-        bias = self.sim_mat[valid_model_tasks, task_id].unsqueeze(0)  # (1, M)
+        valid_model_tasks_tensor = torch.tensor(valid_model_tasks, device=device)
+        bias = self.sim_mat[valid_model_tasks_tensor, task_id].unsqueeze(0)  # (1, M)
         scores = scores + bias
         weights = F.softmax(scores, dim=-1)  # (1, M)
 
@@ -201,10 +202,9 @@ class SmartWeightedEnsemble(nn.Module):
             with torch.no_grad():
                 raw_weights = _forward_all()
 
-        sum_w = raw_weights.sum()
-        if sum_w > 0:
-            return raw_weights / sum_w
-        return torch.ones(self.num_models, device=self.device) / self.num_models
+        if raw_weights.numel() == 0 or raw_weights.sum() <= 0:
+            return torch.ones(self.num_models, device=self.device) / self.num_models
+        return raw_weights / raw_weights.sum()
 
     def combine_logits(
         self,
@@ -304,6 +304,7 @@ class SmartWeightedEnsemble(nn.Module):
             all_logits.append(logits)
 
         stacked = torch.stack(all_logits, dim=0)
+        stacked = stacked.to(self.device)
 
         return self.combine_logits(
             task_id=task_id,
