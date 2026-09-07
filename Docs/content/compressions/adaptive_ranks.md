@@ -120,6 +120,21 @@ U_r^* = U_r \sqrt{\Sigma_r}, \qquad V_r^* = (\sqrt{\Sigma_r} V_r^\top) C_X^{-1/2
 \]
 Outlier channels correspond to large eigenvalues $\sqrt{\lambda_j} \gg 1$, heavily scaling their columns in $M$. SVD on $M$ automatically aligns principal singular vectors $(U_r, V_r)$ with these critical outlier directions, preserving outlier channels with zero truncation damage.
 
+### 2.5 Built-In LoRA Adapters for Recovery Fine-Tuning
+To enable recovery fine-tuning without updating the frozen decomposed backbone, `AdaptiveSVDLinear` integrates trainable low-rank adaptation parameters directly into the factorized module:
+\[
+y = (x V_r^\top) U_r^\top + \left((x A^\top) B^\top\right) \cdot \frac{\alpha}{r_{\text{LoRA}}} + b
+\]
+where:
+- $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$, $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$, and $b \in \mathbb{R}^{d_{\text{out}}}$ are the frozen base factorization weights (`requires_grad = False`).
+- $A \in \mathbb{R}^{r_{\text{LoRA}} \times d_{\text{in}}}$ and $B \in \mathbb{R}^{d_{\text{out}} \times r_{\text{LoRA}}}$ are trainable LoRA adapters (`requires_grad = True`), initialized with Kaiming uniform for $A$ and zeros for $B$.
+- When replacing existing `LoRALinear` wrappers, the compressor copies the original wrapper's `lora_A` and `lora_B` tensors directly into `AdaptiveSVDLinear`, guaranteeing seamless end-to-end differentiability and gradient updates during post-compression recovery.
+
+### 2.6 Full Support for Hugging Face `Conv1D` and `LoRALinear` Wrappers
+1. **Transposition Invariance**: HuggingFace GPT-2 style `Conv1D` stores weight tensors with orientation $[d_{\text{in}}, d_{\text{out}}]$. The compressor detects `Conv1D` via class naming and the `.nf` / `.nx` attributes, transposing weights to standard $[d_{\text{out}}, d_{\text{in}}]$ prior to SVD.
+2. **LoRA Wrapper Unpacking & Preservation**: Modules with a `.base_layer` attribute have their underlying linear base replaced while retaining wrapper adapters, ensuring PEFT workflows run without code modifications.
+3. **Pipeline & Nested Encoder Compatibility**: Because `AdaptiveRanksCompressor` performs module-level linear substitutions, it integrates cleanly into higher-level pipelines (such as nested encoders or block transformers) without disrupting attention or encoder structure detection.
+
 ---
 
 ## 3. Step-by-Step Calibration & Execution Trace
@@ -279,24 +294,8 @@ Continuously monitor output activation norms during inference to adjust $\eta$ d
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
-The empirical evaluation of `adaptive_ranks` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
-
-### 8.1 Language Modeling Quality & Throughput
-| Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Relative Delta |
-| :--- | :--- | :--- | :--- |
-| **WikiText-2 Perplexity ($PPL \downarrow$)** | **11.2** | 11.20 | $+0.00$ |
-| **C4 Perplexity ($PPL \downarrow$)** | **14.6** | 14.60 | $+0.00$ |
-| **Inference Throughput ($tok/sec \uparrow$)** | **1,250 tok/s** | 1,250 tok/s | **1,250 tok/s** |
-| **Triton Hardware Acceleration** | ✅ Native PyTorch SDPA / Flash-2 | PyTorch SDPA | High Tensor Core Occupancy |
-
-### 8.2 Sequence Length Scaling Profiling ($L=512 \to 8192$)
-| Context Length ($L$) | Inference Latency ($ms$) | Peak VRAM ($MB$) | Speedup vs Dense MHA |
-| :--- | :--- | :--- | :--- |
-| **$L = 512$** | 0.32 ms | 95 MB | $1.14\times$ |
-| **$L = 1024$** | 0.54 ms | 150 MB | $1.85\times$ |
-| **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
-| **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
-| **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
+> [!NOTE]
+> Empirical benchmark results are currently **pending re-evaluation** following the production hardening and bug fixes (LoRA parameter preservation, Conv1D transposition, DataLoader multi-batch streaming, and rank floor adjustments). Prior evaluations on unhardened checkpoints are superseded. Full 4-architecture evaluation across DistilBERT, RoBERTa, GPT-2, and Qwen/LLaMA will be reported in the upcoming benchmarking sweep.
 
 ---
 

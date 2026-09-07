@@ -230,3 +230,7 @@ results_kaggle_gpu/
 .huggingfaceignore
 results/all_compressors_gpu_summary.csv
 
+# Temporary combined modules and documentation folder
+temp_modules_docs/
+
+
