@@ -1,3 +1,9 @@
+"""
+Router manager – lifecycle management and orchestration of routing systems.
+
+Manages router creation, configuration, caching, and performance monitoring.
+"""
+
 # framework/routing/router_manager.py
 import hashlib
 import time
