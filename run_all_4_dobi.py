@@ -137,6 +137,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Unified 4-Model Hardened Dobi-SVD Benchmark")
 parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
 parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,dobi_svd)")
+parser.add_argument("--batch_size", type=int, default=None, help="Batch size override")
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--init_rank_ratio", type=float, default=None, help="Initial rank ratio")
 parser.add_argument("--init_gate_val", type=float, default=None, help="Initial gate value")
@@ -172,6 +173,8 @@ def update_cmd_arg(cmd: list[str], flag: str, new_val: str):
 for m in models:
     if args.modules is not None:
         update_cmd_arg(m["cmd"], "--modules", args.modules)
+    if args.batch_size is not None:
+        update_cmd_arg(m["cmd"], "--batch_size", str(args.batch_size))
     if args.recovery_steps is not None:
         update_cmd_arg(m["cmd"], "--recovery_steps", str(args.recovery_steps))
     if args.init_rank_ratio is not None:
