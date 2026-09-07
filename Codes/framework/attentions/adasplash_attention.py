@@ -538,20 +538,21 @@ class AdaSplashAttention(BaseAttention):
                 cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
             while cos.dim() < q.dim():
                 cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
-            if cos.shape[-2] != q.shape[-2]:
-                cos, sin = cos[..., :q.shape[-2], :], sin[..., :q.shape[-2], :]
             rotary_dim = cos.shape[-1]
+            cos_q, sin_q = (cos[..., :q.shape[-2], :], sin[..., :q.shape[-2], :]) if cos.shape[-2] != q.shape[-2] else (cos, sin)
+            cos_k, sin_k = (cos[..., :k.shape[-2], :], sin[..., :k.shape[-2], :]) if cos.shape[-2] != k.shape[-2] else (cos, sin)
             if rotary_dim <= q.shape[-1]:
                 q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
                 k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-                q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-                k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+                q_rot = (q_rot * cos_q.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin_q.to(q_rot.dtype))
+                k_rot = (k_rot * cos_k.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin_k.to(k_rot.dtype))
                 q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
                 k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
             else:
-                cos_cut, sin_cut = cos[..., :q.shape[-1]], sin[..., :q.shape[-1]]
-                q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
-                k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+                cos_cut_q, sin_cut_q = cos_q[..., :q.shape[-1]], sin_q[..., :q.shape[-1]]
+                cos_cut_k, sin_cut_k = cos_k[..., :k.shape[-1]], sin_k[..., :k.shape[-1]]
+                q = (q * cos_cut_q.to(q.dtype)) + (_rotate_half(q) * sin_cut_q.to(q.dtype))
+                k = (k * cos_cut_k.to(k.dtype)) + (_rotate_half(k) * sin_cut_k.to(k.dtype))
         elif hasattr(self, "rotary_emb") and self.rotary_emb is not None:
             try:
                 q, k = maybe_apply_rotary(q, k, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
@@ -587,16 +588,13 @@ class AdaSplashAttention(BaseAttention):
             causal_tril = torch.tril(torch.ones((L_q, L_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             logits = logits.masked_fill(~causal_tril, -10000.0)
 
-        # Apply Local Splash Radius Masking
-        # Retains local tokens within window radius W while heavily penalizing tokens outside the window.
-        # Applied exclusively to autoregressive decoders where sliding-window causality is natural.
-        # For bidirectional encoders (e.g. RoBERTa, DistilBERT), splash masking is skipped by default
-        # to allow full-sequence sparse alpha-entmax attention without severing global context (e.g. [CLS]).
+        # Apply Local Splash Radius Masking with Sink Token preservation
+        # Retains local tokens within window radius W plus initial 4 attention sink tokens.
         if is_decoder and self.splash_radius > 0 and not is_cross_attention and L_k > self.splash_radius:
             q_idx = torch.arange(L_q, device=device).unsqueeze(1)
             k_idx = torch.arange(L_k, device=device).unsqueeze(0)
             dist = q_idx - k_idx
-            splash_local = (dist >= 0) & (dist <= self.splash_radius)
+            splash_local = ((dist >= 0) & (dist <= self.splash_radius)) | (k_idx < 4)
             logits = logits.masked_fill(~splash_local.unsqueeze(0).unsqueeze(0), -10000.0)
 
         # Apply α-entmax or softmax
