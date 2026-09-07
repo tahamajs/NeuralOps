@@ -32,7 +32,7 @@ models = [
             "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,adaptive_sparse",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
             "--rank", "32",

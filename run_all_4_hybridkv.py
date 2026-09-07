@@ -32,7 +32,7 @@ models = [
             "--parent_checkpoint", r"results\unified_asvd\distilbert\finetuned_model.pt",
             "--modules", "full,hybridkv",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--rank", "128",
             "--hybridkv_budget", "0.3",
@@ -60,7 +60,7 @@ models = [
             "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,hybridkv",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--rank", "128",
             "--hybridkv_budget", "0.3",
@@ -88,7 +88,7 @@ models = [
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,hybridkv",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--rank", "128",
             "--hybridkv_budget", "0.3",
@@ -116,7 +116,7 @@ models = [
             "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
             "--modules", "full,hybridkv",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--rank", "128",
             "--hybridkv_budget", "0.3",
@@ -287,6 +287,66 @@ res_df.to_csv(out_csv, index=False)
 with open(out_json, "w", encoding="utf-8") as f:
     json.dump(final_stats, f, indent=2)
 print(f"\nSaved consolidated summaries to:\n- {out_csv}\n- {out_json}", flush=True)
+
+# Generate and save comparative plots in results directory
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    _mod_slug = res_df.columns[2].replace(" Acc", "").lower() if len(res_df.columns) > 2 else "module"
+    _plots_dir = out_dir / f"unified_{_mod_slug}"
+    _plots_dir.mkdir(parents=True, exist_ok=True)
+
+    _p_models = [str(s.get("Model", "")) for s in final_stats]
+    _b_accs = [float(str(s.get("Baseline Acc", "0")).replace("%", "")) if str(s.get("Baseline Acc", "N/A")) != "N/A" else 0.0 for s in final_stats]
+    _m_acc_col = [k for k in final_stats[0].keys() if "Acc" in k and k not in ("Baseline Acc", "Delta Acc")][0] if final_stats else "Acc"
+    _m_accs = [float(str(s.get(_m_acc_col, "0")).replace("%", "")) if str(s.get(_m_acc_col, "N/A")) != "N/A" else 0.0 for s in final_stats]
+    _c_rates = [float(str(s.get("Comp Rate", "1.0")).replace("x", "")) if str(s.get("Comp Rate", "N/A")) != "N/A" else 1.0 for s in final_stats]
+
+    # Chart 1: Accuracy Comparison
+    _x = np.arange(len(_p_models))
+    _w = 0.35
+    _fig, _ax1 = plt.subplots(figsize=(9, 5))
+    _r1 = _ax1.bar(_x - _w/2, _b_accs, _w, label='Baseline Acc', color='#4C72B0')
+    _r2 = _ax1.bar(_x + _w/2, _m_accs, _w, label=f'{_mod_slug.upper()} Acc', color='#55A868')
+    _ax1.set_ylabel('Accuracy (%)', fontweight='bold')
+    _ax1.set_title(f'Unified 4-Model Quality Evaluation ({_mod_slug.upper()})', fontweight='bold')
+    _ax1.set_xticks(_x)
+    _ax1.set_xticklabels(_p_models, fontweight='bold')
+    _ax1.set_ylim(0, 105)
+    _ax1.legend(loc='upper right')
+    _ax1.grid(axis='y', linestyle='--', alpha=0.5)
+
+    for _rect in _r1:
+        _h = _rect.get_height()
+        if _h > 0: _ax1.annotate(f'{_h:.1f}%', xy=(_rect.get_x() + _rect.get_width()/2, _h), xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=8)
+    for _rect in _r2:
+        _h = _rect.get_height()
+        if _h > 0: _ax1.annotate(f'{_h:.1f}%', xy=(_rect.get_x() + _rect.get_width()/2, _h), xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=8, fontweight='bold')
+
+    plt.tight_layout()
+    plt.savefig(_plots_dir / f"{_mod_slug}_4models_accuracy_comparison.png", dpi=300)
+    plt.close()
+
+    # Chart 2: Pareto Frontier
+    _fig, _ax2 = plt.subplots(figsize=(8, 5))
+    for _i, _m_name in enumerate(_p_models):
+        if _m_accs[_i] > 0:
+            _ax2.scatter(_c_rates[_i], _m_accs[_i], s=160, label=_m_name, zorder=5)
+            _ax2.annotate(f"{_m_name} ({_c_rates[_i]:.2f}x, {_m_accs[_i]:.1f}%)", (_c_rates[_i], _m_accs[_i]), xytext=(7, -4), textcoords='offset points', fontsize=9)
+    _ax2.set_xlabel('Compression Rate (x)', fontweight='bold')
+    _ax2.set_ylabel('Accuracy (%)', fontweight='bold')
+    _ax2.set_title(f'Pareto Frontier: Accuracy vs Compression ({_mod_slug.upper()})', fontweight='bold')
+    _ax2.grid(True, linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plt.savefig(_plots_dir / f"{_mod_slug}_pareto_accuracy_vs_compression.png", dpi=300)
+    plt.close()
+    print(f"Generated and saved comparative visualization charts to {_plots_dir}", flush=True)
+except Exception as _e_p:
+    print(f"[WARN] Could not generate comparative plots: {_e_p}", flush=True)
+
 
 # Quality gate & export
 print("\n" + "=" * 80, flush=True)
