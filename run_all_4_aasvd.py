@@ -246,6 +246,11 @@ for m in models:
                         recall = float(row["recall"].values[-1]) if "recall" in row.columns and not pd.isna(row["recall"].values[-1]) else None
                         tokens_per_sec = float(row["tokens_per_sec"].values[-1]) if "tokens_per_sec" in row.columns and not pd.isna(row["tokens_per_sec"].values[-1]) else None
                         flops_reduction = float(row["flops_reduction_pct"].values[-1]) if "flops_reduction_pct" in row.columns and not pd.isna(row["flops_reduction_pct"].values[-1]) else None
+                        if "elapsed_s" in row.columns and not pd.isna(row["elapsed_s"].values[-1]):
+                            try:
+                                elapsed = float(row["elapsed_s"].values[-1])
+                            except Exception:
+                                pass
         except Exception as e:
             print(f"Error reading summary CSV for {m['name']}: {e}", flush=True)
 
