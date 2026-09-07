@@ -466,5 +466,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T23:25:06.335597"
+  },
+  {
+    "module": "flap",
+    "runner": "run_all_4_flap.py",
+    "exit_code": 0,
+    "elapsed_s": 272.94,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T23:29:39.280643"
+  },
+  {
+    "module": "flash3",
+    "runner": "run_all_4_flash3.py",
+    "exit_code": 0,
+    "elapsed_s": 114.34,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T23:31:33.622763"
   }
 ]

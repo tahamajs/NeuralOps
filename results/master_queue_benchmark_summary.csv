@@ -51,3 +51,5 @@ expert_choice_moe,run_all_4_expert_choice_moe.py,0,126.46,PASS,,2026-09-07T22:54
 factorised_matrix_state,run_all_4_factorised_matrix_state.py,0,1488.72,PASS,,2026-09-07T23:18:52.723513
 faq,run_all_4_faq.py,0,260.31,PASS,,2026-09-07T23:23:13.038549
 fasa,run_all_4_fasa.py,0,113.29,PASS,,2026-09-07T23:25:06.335597
+flap,run_all_4_flap.py,0,272.94,PASS,,2026-09-07T23:29:39.280643
+flash3,run_all_4_flash3.py,0,114.34,PASS,,2026-09-07T23:31:33.622763
