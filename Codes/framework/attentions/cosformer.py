@@ -367,11 +367,13 @@ class CosformerAttention(BaseAttention):
             s = getattr(src, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
-                if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                base_mod = getattr(mod, "base_layer", mod)
+                if base_mod is not None and hasattr(base_mod, "weight"):
+                    extracted[proj_key] = (base_mod.weight.data.clone(), base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None)
             if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                base_out = getattr(out_mod, "base_layer", out_mod)
+                extracted["o"] = (base_out.weight.data.clone(), base_out.bias.data.clone() if getattr(base_out, "bias", None) is not None else None)
 
         # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
@@ -379,14 +381,19 @@ class CosformerAttention(BaseAttention):
                 "q": ["q_lin", "q_proj", "query", "W_q"],
                 "k": ["k_lin", "k_proj", "key", "W_k"],
                 "v": ["v_lin", "v_proj", "value", "W_v"],
-                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj", "c_proj", "wo"],
             }
             for proj_key, names in proj_candidates.items():
                 for name in names:
                     if hasattr(src, name):
                         mod = getattr(src, name)
-                        if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                        base_mod = getattr(mod, "base_layer", mod)
+                        if hasattr(base_mod, "weight"):
+                            w_data = base_mod.weight.data.clone()
+                            if (base_mod.__class__.__name__ == "Conv1D") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
+                                w_data = w_data.t()
+                            b_data = getattr(base_mod, "bias", None)
+                            extracted[proj_key] = (w_data, b_data.data.clone() if b_data is not None else None)
                             break
 
         # Fallback via UniversalAdapter
@@ -490,17 +497,31 @@ class CosformerAttention(BaseAttention):
         V = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2)
 
         # 2. Rotary Position Embeddings (RoPE)
-        if position_embeddings is not None and not is_cross_attention:
-            if isinstance(position_embeddings, tuple):
-                cos, sin = position_embeddings
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        if pos_emb is not None and not is_cross_attention:
+            if isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+                cos, sin = pos_emb[0], pos_emb[1]
             else:
-                cos, sin = position_embeddings, None
-            if sin is not None:
+                cos, sin = pos_emb, None
+            if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
         elif self.rotary_emb is not None and not is_cross_attention:
-            if position_ids is not None:
-                cos, sin = self.rotary_emb(V, seq_len=kv_len)
-                Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
+            rotary_mod = self.rotary_emb
+            pos_ids = position_ids if position_ids is not None else kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = rotary_mod(Q, seq_len=kv_len)
+            except Exception:
+                try:
+                    cos, sin = rotary_mod(Q, pos_ids)
+                except Exception:
+                    try:
+                        cos, sin = rotary_mod(Q)
+                    except Exception:
+                        cos, sin = None, None
+            if cos is not None and sin is not None:
+                Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
         # 3. Grouped Query Attention (GQA) head expansion
         if self.num_kv_heads != self.num_heads:
