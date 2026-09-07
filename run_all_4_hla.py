@@ -359,7 +359,7 @@ import torch
 
 # Load the factorized model weights
 checkpoint = torch.load("weights.pt", map_location="cpu")
-print(f"Loaded {len(checkpoint)} parameter tensors successfully.")
+print("Loaded parameter tensors successfully.")
 ```
 
 Part of the SVD Linear Attention and LLM Compression Benchmark Suite.
