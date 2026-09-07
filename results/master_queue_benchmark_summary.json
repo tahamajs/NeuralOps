@@ -52,5 +52,338 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T22:27:02.608268"
+  },
+  {
+    "module": "adaptive_svd_attention",
+    "runner": "run_all_4_adaptive_svd_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.067730"
+  },
+  {
+    "module": "adaptive_svd_attn",
+    "runner": "run_all_4_adaptive_svd_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.067971"
+  },
+  {
+    "module": "adasplash",
+    "runner": "run_all_4_adasplash.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.068225"
+  },
+  {
+    "module": "adasvd",
+    "runner": "run_all_4_adasvd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.068427"
+  },
+  {
+    "module": "admm",
+    "runner": "run_all_4_admm.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.068615"
+  },
+  {
+    "module": "admm_pruner",
+    "runner": "run_all_4_admm_pruner.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.068817"
+  },
+  {
+    "module": "aegis_hybrid",
+    "runner": "run_all_4_aegis_hybrid.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.069018"
+  },
+  {
+    "module": "aegis_spectron_fp8",
+    "runner": "run_all_4_aegis_spectron_fp8.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.069206"
+  },
+  {
+    "module": "aegis_v1",
+    "runner": "run_all_4_aegis_v1.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.069358"
+  },
+  {
+    "module": "aegis_v1_module",
+    "runner": "run_all_4_aegis_v1_module.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.069551"
+  },
+  {
+    "module": "aegis_v2",
+    "runner": "run_all_4_aegis_v2.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.069695"
+  },
+  {
+    "module": "aegis_v3",
+    "runner": "run_all_4_aegis_v3.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.069869"
+  },
+  {
+    "module": "aegis_v3_module",
+    "runner": "run_all_4_aegis_v3_module.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.070018"
+  },
+  {
+    "module": "aegis_v4",
+    "runner": "run_all_4_aegis_v4.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.070331"
+  },
+  {
+    "module": "aegis_v4_module",
+    "runner": "run_all_4_aegis_v4_module.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.070500"
+  },
+  {
+    "module": "aegis_v5",
+    "runner": "run_all_4_aegis_v5.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.070684"
+  },
+  {
+    "module": "aegis_v5_module",
+    "runner": "run_all_4_aegis_v5_module.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.070905"
+  },
+  {
+    "module": "aegis_v6",
+    "runner": "run_all_4_aegis_v6.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.071025"
+  },
+  {
+    "module": "armor",
+    "runner": "run_all_4_armor.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.071240"
+  },
+  {
+    "module": "astro",
+    "runner": "run_all_4_astro.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.071410"
+  },
+  {
+    "module": "asvd",
+    "runner": "run_all_4_asvd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.071579"
+  },
+  {
+    "module": "bam_umoe",
+    "runner": "run_all_4_bam_umoe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.071766"
+  },
+  {
+    "module": "block_transformer_hiba",
+    "runner": "run_all_4_block_transformer_hiba.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.071895"
+  },
+  {
+    "module": "cachenotes",
+    "runner": "run_all_4_cachenotes.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.072016"
+  },
+  {
+    "module": "chela_slay",
+    "runner": "run_all_4_chela_slay.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.072130"
+  },
+  {
+    "module": "cluster",
+    "runner": "run_all_4_cluster.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.072420"
+  },
+  {
+    "module": "come",
+    "runner": "run_all_4_come.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.072598"
+  },
+  {
+    "module": "compressed_attention",
+    "runner": "run_all_4_compressed_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.072725"
+  },
+  {
+    "module": "compressed_attention_layer",
+    "runner": "run_all_4_compressed_attention_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.072844"
+  },
+  {
+    "module": "compressed_mha",
+    "runner": "run_all_4_compressed_mha.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.072958"
+  },
+  {
+    "module": "cosformer",
+    "runner": "run_all_4_cosformer.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.073072"
+  },
+  {
+    "module": "cur",
+    "runner": "run_all_4_cur.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.073193"
+  },
+  {
+    "module": "cur_moe",
+    "runner": "run_all_4_cur_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.073310"
+  },
+  {
+    "module": "decay_linear_attention",
+    "runner": "run_all_4_decay_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.073446"
+  },
+  {
+    "module": "delta_kv",
+    "runner": "run_all_4_delta_kv.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.073608"
+  },
+  {
+    "module": "direct_svd",
+    "runner": "run_all_4_direct_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-07T22:27:03.073783"
+  },
+  {
+    "module": "dobi",
+    "runner": "run_all_4_dobi.py",
+    "exit_code": 0,
+    "elapsed_s": 314.57,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T22:32:17.647105"
   }
 ]
