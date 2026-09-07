@@ -584,25 +584,33 @@ class AdaSplashAttention(BaseAttention):
             or getattr(self.config, "is_decoder", False)
             or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
+        causal_tril = None
         if is_decoder:
             causal_tril = torch.tril(torch.ones((L_q, L_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             logits = logits.masked_fill(~causal_tril, -10000.0)
 
         # Apply Local Splash Radius Masking with Sink Token preservation
         # Retains local tokens within window radius W plus initial 4 attention sink tokens.
+        splash_mask_4d = None
         if is_decoder and self.splash_radius > 0 and not is_cross_attention and L_k > self.splash_radius:
             q_idx = torch.arange(L_q, device=device).unsqueeze(1)
             k_idx = torch.arange(L_k, device=device).unsqueeze(0)
             dist = q_idx - k_idx
             splash_local = ((dist >= 0) & (dist <= self.splash_radius)) | (k_idx < 4)
-            logits = logits.masked_fill(~splash_local.unsqueeze(0).unsqueeze(0), -10000.0)
+            splash_mask_4d = splash_local.unsqueeze(0).unsqueeze(0)
+            logits = logits.masked_fill(~splash_mask_4d, -10000.0)
+
+        # Build comprehensive valid_mask for entmax_bisect
+        valid_mask_entmax = None
+        if not is_cross_attention:
+            valid_mask_entmax = (logits > -5000.0)
 
         # Apply α-entmax or softmax
         if not is_cross_attention:
             attn = entmax_bisect(
                 logits,
                 alpha=self.alpha,
-                valid_mask=None,
+                valid_mask=valid_mask_entmax,
                 dim=-1,
                 n_iter=self.n_iter,
             ).to(dtype)
