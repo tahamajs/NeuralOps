@@ -22,7 +22,7 @@ Each entry is formulated as a complete standalone analysis comprising:
 \label{sec:app_module_adaptive_span_attention}
 
 \subsubsection*{3.1 Module Overview}
-Adaptive Span Attention (Sukhbaatar et al., 2019).  Mathematical Formulation:     1. Query-Key Attention Scores:        \$\$S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d}}\$\$          2. Dynamic Per-Head Span Masking:        Let \$z\_h = \sigma(\text{logit}\_h) \cdot S\_{\max}\$.        \$\$M\_{ij}^{(h)} = \begin{cases
+Adaptive Span Attention (Sukhbaatar et al., 2019).  Mathematical Formulation:     1. Query-Key Attention Scores:        \$\$S\_{ij} = 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/adaptive\_span\_attention.py}
@@ -1460,7 +1460,7 @@ Figure~\ref{fig:module_chela_slay} provides the complete 3-panel architectural v
 \label{sec:app_module_cluster_attention}
 
 \subsubsection*{3.1 Module Overview}
-ClusterFormer Attention Layer (Fast Transformers with Clustered Attention).  Mathematical Formulation:     1. Query Clustering via \$K\$-Means:        Partitions queries \$Q \in \mathbb{R}^{B \times H \times L \times d}\$ into \$K \ll L\$ centroids:        \$\$\mu\_k = \frac{\sum\_{i=1}^L \mathbb{I}(c\_i = k) 
+ClusterFormer Attention Layer (Fast Transformers with Clustered Attention).  Mathematical Formulation:     1. Query Clustering via \$K\$-Means:        Partitions queries \$Q \in \mathbb{R}^{B \times H \times L \times d}\$ into \$K \ll L\$ centroids:        \$\$\mu\_k = 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/cluster\_attention.py}
@@ -2808,7 +2808,7 @@ Figure~\ref{fig:module_fusion_attn} provides the complete 3-panel architectural 
 \label{sec:app_module_galerkin_attention}
 
 \subsubsection*{3.1 Module Overview}
-Petrov-Galerkin Projection Attention.  Mathematical Formulation:     Let the continuous self-attention operator be \$\mathcal{K} V(x) = \int \operatorname{Softmax}\left(\frac{Q(x) K(y)^\top}{\sqrt{d}}\right) V(y) dy\$.     Projecting onto an \$r\$-dimensional orthonormal basis \$\Phi \in \mathbb{R}^{N \t
+Petrov-Galerkin Projection Attention.  Mathematical Formulation:     Let the continuous self-attention operator be \$\mathcal{K} V(x) = \int \operatorname{Softmax}\left(
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 4: Kernelized & Spectral Attention
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/galerkin\_attention.py}
@@ -3438,7 +3438,7 @@ Figure~\ref{fig:module_granite_hybrid} provides the complete 3-panel architectur
 \label{sec:app_module_griffin_ssd}
 
 \subsubsection*{3.1 Module Overview}
-Griffin Hybrid Block combining local window attention with global SSD linear attention.  Mathematical Mechanism:     Combines a bidirectional local sliding-window attention with window size \$W\$ and a global linear SSD kernel:     \$\$\begin{aligned}     \text{Local Attn: } \& S\_{\text{local}} = \frac{Q
+Griffin Hybrid Block combining local window attention with global SSD linear attention.  Mathematical Mechanism:     Combines a bidirectional local sliding-window attention with window size \$W\$ and a global linear SSD kernel:     \$\$\begin{aligned}     \text{Local Attn: } \& S\_{\text{local}} = 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models & Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/griffin\_ssd.py}
@@ -4527,7 +4527,7 @@ Figure~\ref{fig:module_kda_attention} provides the complete 3-panel architectura
 \label{sec:app_module_leka_v1}
 
 \subsubsection*{3.1 Module Overview}
-LEKAv1: Linear-time Efficient Kernel Attention (Basic Random Fourier Features).  Mathematical Mechanism:     Approximates the Gaussian RBF kernel via Random Fourier Feature (RFF) mapping \$\phi(x)\$:     \$\$\begin{aligned}     \phi(x) \&= \frac{1}{\sqrt{F}} \left[\cos(x W\_{\text{proj}}), \; \sin(x W\_{\t
+LEKAv1: Linear-time Efficient Kernel Attention (Basic Random Fourier Features).  Mathematical Mechanism:     Approximates the Gaussian RBF kernel via Random Fourier Feature (RFF) mapping \$\phi(x)\$:     \$\$\begin{aligned}     \phi(x) \&= 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/leka\_v1.py}
@@ -4985,7 +4985,7 @@ Figure~\ref{fig:module_lola_attention} provides the complete 3-panel architectur
 \label{sec:app_module_lora_attention}
 
 \subsubsection*{3.1 Module Overview}
-LoRA Parameter-Efficient Fine-Tuning Attention Module.  Mathematical Mechanism:     Replaces standard query, key, value, and output linear projections with LoRA adapters:     \$\$\begin{aligned}     Q \&= \text{LoRA}\_Q(X), \quad K = \text{LoRA}\_K(X), \quad V = \text{LoRA}\_V(X) \\     S \&= \frac{Q K^\to
+LoRA Parameter-Efficient Fine-Tuning Attention Module.  Mathematical Mechanism:     Replaces standard query, key, value, and output linear projections with LoRA adapters:     \$\$\begin{aligned}     Q \&= \text{LoRA}\_Q(X), \quad K = \text{LoRA}\_K(X), \quad V = \text{LoRA}\_V(X) \\     S \&= 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/lora\_attention.py}
@@ -6167,7 +6167,7 @@ Figure~\ref{fig:module_moba} provides the complete 3-panel architectural visuali
 \label{sec:app_module_moba_attention}
 
 \subsubsection*{3.1 Module Overview}
-MoBA: Mixture of Block Attention for Long-Context Modeling.  Mathematical Mechanism:     Partitions the sequence into blocks of size \$B\_{\text{sz}}\$ and routes each query block     to top-\$k\$ key-value blocks based on centroid cosine affinity:     \$\$\begin{aligned}     \bar{Q}\_i \&= \frac{1}{B\_{\text
+MoBA: Mixture of Block Attention for Long-Context Modeling.  Mathematical Mechanism:     Partitions the sequence into blocks of size \$B\_{\text{sz}}\$ and routes each query block     to top-\$k\$ key-value blocks based on centroid cosine affinity:     \$\$\begin{aligned}     \bar{Q}\_i \&= 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts & Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/moba\_attention.py}
@@ -6892,7 +6892,7 @@ Figure~\ref{fig:module_nystrom_attention} provides the complete 3-panel architec
 \label{sec:app_module_optimized_hybrid_attention}
 
 \subsubsection*{3.1 Module Overview}
-Optimized Hybrid Attention (OHA) combining sliding-window local and compressed global attention.  Mathematical Formulation:     1. Local Sliding-Window Path:        \$\$S^{\text{local}}\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d}} + M^{\text{band}}\_{ij}\$\$        \$\$O^{\text{local}} = \operatorname{Softmax}(S^{
+Optimized Hybrid Attention (OHA) combining sliding-window local and compressed global attention.  Mathematical Formulation:     1. Local Sliding-Window Path:        \$\$S^{\text{local}}\_{ij} = 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/optimized\_hybrid\_attention.py}
@@ -8246,7 +8246,7 @@ Figure~\ref{fig:module_salt} provides the complete 3-panel architectural visuali
 \label{sec:app_module_salt_attention}
 
 \subsubsection*{3.1 Module Overview}
-SALT Attention module replacing standard linear projections with SALTLinear.  Mathematical Formulation:     1. SVD \& LoRA Factorized Linear Projections:        \$\$Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V\$\$     2. Scaled Dot-Product Attention:        \$\$O = \operatorname{Softmax}\left(\frac{Q K^\top
+SALT Attention module replacing standard linear projections with SALTLinear.  Mathematical Formulation:     1. SVD \& LoRA Factorized Linear Projections:        \$\$Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V\$\$     2. Scaled Dot-Product Attention:        \$\$O = \operatorname{Softmax}\left(
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/salt\_attention.py}
@@ -9975,7 +9975,7 @@ Figure~\ref{fig:module_svd_proj_attn} provides the complete 3-panel architectura
 \label{sec:app_module_svd_projection_attention}
 
 \subsubsection*{3.1 Module Overview}
-Multi-Head Attention using Factorized SVD Linear Projections.  Constructs low-rank projection operators from singular subspaces with zero-shot initialization from pretrained checkpoints: \$\$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{(X V\_q^\top U\_q^\top)(X V\_k^\top U\_k^\top)^\top}{\sqrt{d\_
+Multi-Head Attention using Factorized SVD Linear Projections.  Constructs low-rank projection operators from singular subspaces with zero-shot initialization from pretrained checkpoints: \$\$\text{Attention}(Q, K, V) = \text{softmax}\left(
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/svd\_projection\_attention.py}
@@ -11418,7 +11418,7 @@ Figure~\ref{fig:module_wgqa_attention} provides the complete 3-panel architectur
 \label{sec:app_module_xattention}
 
 \subsubsection*{3.1 Module Overview}
-XAttention: Block-Sparse Attention Mechanism with Unified Probability Normalization.  Mathematical Formulation:     1. Block Partitioning:        Sequence \$N\$ is divided into \$M = \lceil N / B\_s \rceil\$ blocks of size \$B\_s\$.          2. Coarse Block Summaries \& Routing:        \$\bar{Q}\_i = \frac{1}{
+XAttention: Block-Sparse Attention Mechanism with Unified Probability Normalization.  Mathematical Formulation:     1. Block Partitioning:        Sequence \$N\$ is divided into \$M = \lceil N / B\_s \rceil\$ blocks of size \$B\_s\$.          2. Coarse Block Summaries \& Routing:        \$\bar{Q}\_i = 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts & Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/xattention.py}
