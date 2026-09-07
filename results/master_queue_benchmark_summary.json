@@ -1,308 +1,56 @@
 [
   {
-    "module": "adaptive_svd_attention",
-    "runner": "run_all_4_adaptive_svd_attention.py",
+    "module": "a3",
+    "runner": "run_all_4_a3.py",
     "exit_code": 0,
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-07T17:52:05.653744"
+    "timestamp": "2026-09-07T21:29:57.711317"
   },
   {
-    "module": "adaptive_svd_attn",
-    "runner": "run_all_4_adaptive_svd_attn.py",
+    "module": "aasvd",
+    "runner": "run_all_4_aasvd.py",
     "exit_code": 0,
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-07T17:52:05.653873"
+    "timestamp": "2026-09-07T21:29:57.711402"
   },
   {
-    "module": "adasplash",
-    "runner": "run_all_4_adasplash.py",
+    "module": "adaptive_ranks",
+    "runner": "run_all_4_adaptive_ranks.py",
     "exit_code": 0,
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-07T17:52:05.653943"
+    "timestamp": "2026-09-07T21:29:57.711469"
   },
   {
-    "module": "adasvd",
-    "runner": "run_all_4_adasvd.py",
+    "module": "adaptive_span",
+    "runner": "run_all_4_adaptive_span.py",
     "exit_code": 0,
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-07T17:52:05.654010"
+    "timestamp": "2026-09-07T21:29:57.711532"
   },
   {
-    "module": "admm",
-    "runner": "run_all_4_admm.py",
+    "module": "adaptive_sparse",
+    "runner": "run_all_4_adaptive_sparse.py",
     "exit_code": 0,
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-07T17:52:05.654078"
+    "timestamp": "2026-09-07T21:29:57.711651"
   },
   {
-    "module": "admm_pruner",
-    "runner": "run_all_4_admm_pruner.py",
+    "module": "adaptive_sparse_attention",
+    "runner": "run_all_4_adaptive_sparse_attention.py",
     "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-07T17:52:05.654145"
-  },
-  {
-    "module": "aegis_hybrid",
-    "runner": "run_all_4_aegis_hybrid.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-07T17:52:05.654219"
-  },
-  {
-    "module": "aegis_spectron_fp8",
-    "runner": "run_all_4_aegis_spectron_fp8.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-07T17:52:05.654289"
-  },
-  {
-    "module": "aegis_v1",
-    "runner": "run_all_4_aegis_v1.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-07T17:52:05.654354"
-  },
-  {
-    "module": "aegis_v1_module",
-    "runner": "run_all_4_aegis_v1_module.py",
-    "exit_code": 0,
-    "elapsed_s": 243.34,
+    "elapsed_s": 94.45,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-07T17:56:08.992162"
-  },
-  {
-    "module": "aegis_v2",
-    "runner": "run_all_4_aegis_v2.py",
-    "exit_code": 0,
-    "elapsed_s": 223.4,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T17:59:52.878576"
-  },
-  {
-    "module": "aegis_v3",
-    "runner": "run_all_4_aegis_v3.py",
-    "exit_code": 0,
-    "elapsed_s": 248.53,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:04:01.413502"
-  },
-  {
-    "module": "aegis_v3_module",
-    "runner": "run_all_4_aegis_v3_module.py",
-    "exit_code": 0,
-    "elapsed_s": 240.96,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:08:02.380158"
-  },
-  {
-    "module": "aegis_v4",
-    "runner": "run_all_4_aegis_v4.py",
-    "exit_code": 0,
-    "elapsed_s": 242.91,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:12:05.288938"
-  },
-  {
-    "module": "aegis_v4_module",
-    "runner": "run_all_4_aegis_v4_module.py",
-    "exit_code": 0,
-    "elapsed_s": 238.27,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:16:03.557232"
-  },
-  {
-    "module": "aegis_v5",
-    "runner": "run_all_4_aegis_v5.py",
-    "exit_code": 0,
-    "elapsed_s": 236.74,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:20:00.300185"
-  },
-  {
-    "module": "aegis_v5_module",
-    "runner": "run_all_4_aegis_v5_module.py",
-    "exit_code": 0,
-    "elapsed_s": 243.37,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:24:03.668373"
-  },
-  {
-    "module": "aegis_v6",
-    "runner": "run_all_4_aegis_v6.py",
-    "exit_code": 0,
-    "elapsed_s": 240.57,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:28:04.237270"
-  },
-  {
-    "module": "armor",
-    "runner": "run_all_4_armor.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-07T18:28:04.239347"
-  },
-  {
-    "module": "astro",
-    "runner": "run_all_4_astro.py",
-    "exit_code": 1,
-    "elapsed_s": 743.63,
-    "status": "FAIL",
-    "error": null,
-    "timestamp": "2026-09-07T18:40:27.872854"
-  },
-  {
-    "module": "asvd",
-    "runner": "run_all_4_asvd.py",
-    "exit_code": 0,
-    "elapsed_s": 335.58,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:46:03.456726"
-  },
-  {
-    "module": "bam_umoe",
-    "runner": "run_all_4_bam_umoe.py",
-    "exit_code": 0,
-    "elapsed_s": 225.49,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:49:48.947664"
-  },
-  {
-    "module": "block_transformer_hiba",
-    "runner": "run_all_4_block_transformer_hiba.py",
-    "exit_code": 0,
-    "elapsed_s": 165.28,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T18:52:34.232899"
-  },
-  {
-    "module": "cachenotes",
-    "runner": "run_all_4_cachenotes.py",
-    "exit_code": 1,
-    "elapsed_s": 750.79,
-    "status": "FAIL",
-    "error": null,
-    "timestamp": "2026-09-07T19:05:05.024659"
-  },
-  {
-    "module": "chela_slay",
-    "runner": "run_all_4_chela_slay.py",
-    "exit_code": 0,
-    "elapsed_s": 375.51,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:11:20.534489"
-  },
-  {
-    "module": "cluster",
-    "runner": "run_all_4_cluster.py",
-    "exit_code": 0,
-    "elapsed_s": 198.71,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:14:39.245506"
-  },
-  {
-    "module": "come",
-    "runner": "run_all_4_come.py",
-    "exit_code": 0,
-    "elapsed_s": 337.15,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:20:16.397878"
-  },
-  {
-    "module": "compressed_attention",
-    "runner": "run_all_4_compressed_attention.py",
-    "exit_code": 0,
-    "elapsed_s": 158.86,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:22:55.256594"
-  },
-  {
-    "module": "compressed_attention_layer",
-    "runner": "run_all_4_compressed_attention_layer.py",
-    "exit_code": 0,
-    "elapsed_s": 153.39,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:25:28.650169"
-  },
-  {
-    "module": "compressed_mha",
-    "runner": "run_all_4_compressed_mha.py",
-    "exit_code": 0,
-    "elapsed_s": 154.82,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:28:03.470785"
-  },
-  {
-    "module": "cosformer",
-    "runner": "run_all_4_cosformer.py",
-    "exit_code": 0,
-    "elapsed_s": 229.96,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:31:53.433130"
-  },
-  {
-    "module": "cur",
-    "runner": "run_all_4_cur.py",
-    "exit_code": 0,
-    "elapsed_s": 212.34,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:35:25.773220"
-  },
-  {
-    "module": "cur_moe",
-    "runner": "run_all_4_cur_moe.py",
-    "exit_code": 0,
-    "elapsed_s": 179.57,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T19:38:25.349173"
-  },
-  {
-    "module": "decay_linear_attention",
-    "runner": "run_all_4_decay_linear_attention.py",
-    "exit_code": 0,
-    "elapsed_s": 2973.33,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-07T20:27:58.679599"
+    "timestamp": "2026-09-07T21:31:32.166819"
   }
 ]
