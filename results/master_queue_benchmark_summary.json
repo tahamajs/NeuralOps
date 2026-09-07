@@ -205,5 +205,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T18:52:34.232899"
+  },
+  {
+    "module": "cachenotes",
+    "runner": "run_all_4_cachenotes.py",
+    "exit_code": 1,
+    "elapsed_s": 750.79,
+    "status": "FAIL",
+    "error": null,
+    "timestamp": "2026-09-07T19:05:05.024659"
   }
 ]
