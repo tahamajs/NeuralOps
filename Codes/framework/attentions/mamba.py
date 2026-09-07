@@ -172,7 +172,6 @@ class Mamba(BaseAttention):
         self.out_proj = LoRALinear(self.d_model, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(-2.0))
-        self.source_attn = source_attn
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         if source_attn is not None:
@@ -397,8 +396,8 @@ class Mamba(BaseAttention):
                     sin = sin.unsqueeze(0)
                 x_rot = (x_rot * cos) + (_rotate_half(x_rot) * sin)
                 hidden_states = torch.cat([x_rot, x_pass], dim=-1)
-        elif self.rotary_emb is not None or (self.source_attn is not None and hasattr(self.source_attn, "rotary_emb")):
-            rotary_mod = self.rotary_emb or getattr(self.source_attn, "rotary_emb", None)
+        elif self.rotary_emb is not None:
+            rotary_mod = self.rotary_emb
             pos_ids = kwargs.get("position_ids", None)
             if pos_ids is None:
                 pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
