@@ -247,3 +247,50 @@ def test_cluster_num_kv_heads_from_source_attn():
     assert p.num_kv_heads == 2, f"Expected num_kv_heads=2, got {p.num_kv_heads}"
     assert p.kv_repeat == 2
 
+
+def test_cluster_head_dim_fallback():
+    class DummySourceAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.head_dim = 256
+            self.hidden_size = 1024
+            self.num_heads = 4
+            self.q_proj = nn.Linear(1024, 1024)
+            self.k_proj = nn.Linear(1024, 1024)
+            self.v_proj = nn.Linear(1024, 1024)
+            self.out_proj = nn.Linear(1024, 1024)
+
+    src = DummySourceAttn()
+    p = ClusterAttention(config=None, pretrained_attn=src)
+    assert p.head_dim == 256
+    assert p.all_head_size == 4 * 256
+
+
+def test_cluster_padding_mask_query_zeroing():
+    # 2D attention_mask with zeros at pad tokens
+    p_dec = ClusterAttention(d_model=64, num_heads=4, is_decoder=True, is_causal=True)
+    x = torch.randn(2, 6, 64)
+    mask = torch.tensor([[1, 1, 1, 1, 0, 0], [1, 1, 1, 0, 0, 0]])
+    out_dec, _ = p_dec(x, attention_mask=mask)
+    # Positions 4, 5 in sample 0 and 3, 4, 5 in sample 1 must be exactly zero
+    assert torch.all(out_dec[0, 4:] == 0.0)
+    assert torch.all(out_dec[1, 3:] == 0.0)
+
+    p_enc = ClusterAttention(d_model=64, num_heads=4, is_decoder=False, is_causal=False, num_clusters=2)
+    out_enc, _ = p_enc(x, attention_mask=mask)
+    assert torch.all(out_enc[0, 4:] == 0.0)
+    assert torch.all(out_enc[1, 3:] == 0.0)
+
+
+def test_cluster_third_rope_fallback_signature():
+    # Mock rotary that only accepts rotary_mod(Q) without arguments
+    class MinimalRotary(nn.Module):
+        def forward(self, q):
+            return torch.ones_like(q), torch.zeros_like(q)
+
+    p = ClusterAttention(d_model=64, num_heads=4)
+    p.rotary_emb = MinimalRotary()
+    x = torch.randn(2, 6, 64)
+    out, _ = p(x)
+    assert out.shape == (2, 6, 64)
+    assert torch.isfinite(out).all()

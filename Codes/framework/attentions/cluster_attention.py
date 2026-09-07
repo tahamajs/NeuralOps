@@ -183,11 +183,17 @@ class ClusterAttention(BaseAttention):
                 cand = source_attn.q_proj.in_features
             hidden_size = cand
 
+        if not num_heads and source_attn is not None:
+            num_heads = getattr(source_attn, "num_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", None)))
+
         if not num_kv_heads and source_attn is not None:
             num_kv_heads = (
                 getattr(source_attn, "num_key_value_heads", None)
                 or getattr(source_attn, "num_kv_heads", None)
             )
+
+        if head_dim == 0 and source_attn is not None:
+            head_dim = getattr(source_attn, "head_dim", 0)
 
         hidden_size = int(hidden_size or 768)
         num_heads = int(num_heads or 12)
@@ -472,7 +478,10 @@ class ClusterAttention(BaseAttention):
                 try:
                     cos, sin = rotary_mod(Q, pos_ids)
                 except Exception:
-                    cos, sin = None, None
+                    try:
+                        cos, sin = rotary_mod(Q)
+                    except Exception:
+                        cos, sin = None, None
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
@@ -513,12 +522,15 @@ class ClusterAttention(BaseAttention):
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
                 elif head_mask.dim() == 2:
-                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                    head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(1)
                 attn = attn * head_mask
 
             out_context = torch.matmul(attn, V)
+            valid_q = get_token_valid_mask(attention_mask, B, L, device)
+            if valid_q is not None:
+                out_context = out_context * valid_q.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = attn if output_attentions else None
         else:
             # Bidirectional clustering attention
