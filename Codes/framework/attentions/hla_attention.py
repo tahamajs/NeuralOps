@@ -112,6 +112,7 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("hla", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("hla_attention", supports_causal=True, supports_gqa=True)
 class HLAAttention(BaseAttention):
     r"""Hadamard Linear Attention (HLA) Bidirectional / Causal Module.
 
