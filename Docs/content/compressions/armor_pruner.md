@@ -40,23 +40,28 @@ ARMOR decomposes dense weight matrices into a 2:4 sparse base matrix $W_{\text{s
 
 ## Architecture & Data Flow
 
-The `ARMORLinear` pipeline executes structured factorization and model transformation through coordinated stages:
+The `ARMORLinear` pipeline executes structured pruning and low-rank factorization through coordinated stages:
 
 ```
 Dense Weight Matrix W [D_out, D_in]
    │
-   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
-   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
-   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
-   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+   ├── Calibration Profiling: Multi-Batch Activation Harvesting (DataLoader or Tensors)
+   ├── Resilient Taylor Saliency: S_ij = |W_ij * g_ij| or |W_ij| * E[|x_j|] or |W_ij| * (1 + std(W))
+   ├── Semi-Structured 2:4 Masking: M = Π_{2:4}(S), W_sparse = W ⊙ M
+   ├── Low-Rank SVD Error Correction: R = W - W_sparse ≈ B A (rank r)
+   ├── Decoupled Module Insertion: nn.Linear / Conv1D -> ARMORLinear(W_sparse, M, lora_A, lora_B)
+   └── Norm Recalibration: Empirical LayerNorm / RMSNorm scale adjustment
 ```
 
 ### Step-by-Step Execution Trace
 
-1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
-2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
-3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
-4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `o_proj`, `out_lin`, `fc1`, `fc2`). Skips classification heads, GQA asymmetric projections when `skip_attention_qkv=True`, and nested encoder output projections (`attention.self.output`).
+2. **Multi-Batch Activation Harvesting**: Attaches forward hooks to candidate modules and streams all batches through the calibration dataloader (or calibration texts) to compute exact activation scales.
+3. **Resilient Saliency & 2:4 Mask Generation**: Computes Taylor sensitivity metrics with multi-tier fallback to select the optimal 2 non-zero weights out of every 4-element block.
+4. **SVD-Based Residual Factorization**: Decomposes residual $R = W - W_{\text{sparse}} \approx B A$ using truncated SVD in FP32, providing low-rank error compensation.
+5. **Decoupled Atomic Substitution**: Swaps dense linear or `Conv1D` module with `ARMORLinear`. Base sparse weights remain frozen while `lora_A` and `lora_B` provide trainable residual adaptation.
+6. **Error-Bounded Fallback Protection**: Reverts to original weights if reconstruction error exceeds `armor_max_error` (default 0.35).
+7. **Norm Recalibration**: Adjusts downstream LayerNorm / RMSNorm weights based on empirical activation variance.
 
 ## 2. Why This Module Works Correctly & Mathematical Proofs
 
@@ -205,25 +210,66 @@ def armor_24_prune_kernel(
 
 ---
 
-## 7. Hybrid Synthesis & Next-Generation Enhancements
+## 3. Configuration & Hyperparameters
+
+The following parameters govern the behavior of `ARMORPruner` and its factory interface (`armor_pruner_factory`):
+
+| Parameter | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `armor_rank` / `rank` | `int` | `16` | Rank $r$ of the SVD residual error correction branch ($R \approx B A$). |
+| `armor_lora_alpha` / `lora_alpha` | `float` | `1.0` | LoRA scaling factor $\alpha$. Effective adapter multiplier is $\frac{\alpha}{r}$. |
+| `armor_max_error` / `max_error` | `float` | `0.35` | Maximum relative Frobenius reconstruction error allowed before fallback. |
+| `armor_fallback_to_original` / `fallback_to_original` | `bool` | `True` | If `True`, freezes and retains original dense weights when reconstruction error exceeds threshold. |
+| `armor_target_attention_only` / `target_attention_only` | `bool` | `False` | If `True`, compresses attention projections (`q, k, v, o, out_lin, c_attn`) while strictly skipping FFN / MLP layers (`gate_proj`, `up_proj`, `down_proj`, `c_fc`). |
+| `armor_skip_attention_qkv` / `skip_attention_qkv` | `bool` | `False` | When `True`, skips asymmetric GQA Q/K/V projections (`num_kv_heads < num_attention_heads`). |
+| `armor_block_size` / `block_size` | `int` | `4` | Block size for N:M structured sparsity (default 4 for 2:4 sparsity). |
+| `armor_structured_24` / `structured_24` | `bool` | `True` | Enforce hardware-accelerated 2:4 sparsity. If `False`, falls back to unstructured magnitude pruning. |
+| `armor_decouple` / `decouple` | `bool` | `True` | Instantiates `ARMORLinear` decoupled dual-branch modules. If `False`, applies in-place weight updates. |
+| `armor_recalibrate_ln` / `recalibrate_ln` | `bool` | `True` | Runs post-pruning LayerNorm / RMSNorm activation scale recalibration. |
+
+---
+
+## 4. LoRA and Sparse Core Mechanics
+
+`ARMORLinear` features a decoupled architecture ensuring clean gradient flow:
+- **Base Sparse Weights are Frozen**: `sparse_weight` is stored as an `nn.Parameter` with `requires_grad=False` and masked via a registered buffer `sparse_mask` ($\mathcal{M} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}$).
+- **Residual Correction is Trainable**: Low-rank factors `lora_A` ($\mathbb{R}^{r \times d_{\text{in}}}$) and `lora_B` ($\mathbb{R}^{d_{\text{out}} \times r}$) remain fully trainable during downstream task fine-tuning.
+- **Forward Operation**:
+  $$y = x (W_{\text{sparse}} \odot \mathcal{M})^\top + \frac{\alpha}{r} (x A^\top) B^\top + b$$
+- **Conv1D / 1D Projection Compatibility**: If the source layer is HuggingFace `Conv1D` (where weights are stored as `[in_features, out_features]`), the tensor is transposed to PyTorch standard `[out_features, in_features]` upon ingestion, ensuring complete cross-architecture compatibility.
+
+---
+
+## 5. Activation Calibration Protocol
+
+ARMOR utilizes empirical input activations to compute resilient Taylor parameter saliency:
+- **Full DataLoader Iteration**: If `calibration_loader` is provided, ARMOR attaches non-intrusive forward hooks to all candidate layers and iterates over **all batches** in the loader on `target_device`. Activations are aggregated across tokens and batches, ensuring faithful second-order saliency statistics. Hooks are safely removed via a `try...finally` block.
+- **Single-Pass Text Fallback**: If no loader is supplied, `get_calibration_tensors` generates tokenized batches from `calibration_texts` (or built-in calibration sequences) for a single calibration forward pass.
+
+---
+
+## 6. Hybrid Synthesis & Next-Generation Enhancements
 
 1. **ARMOR + INT4 Quantization**: Quantize low-rank matrices $U_r, V_r$ to 4 bits while leaving 2:4 sparse weights in 4-bit packed format.
 2. **Hessian-Weighted SVD Correction**: Weight the residual matrix $R$ by the inverse activation Hessian $H^{1/2}$ before computing SVD: $R_{\text{weighted}} = R H^{1/2}$.
 3. **Dynamic Rank Budgeting**: Allocate rank budgets $r_l \in [4, 64]$ dynamically across layers based on residual singular value energy.
 
-## 8. Empirical Benchmark Results & Comparative Profiling
+---
 
-The empirical evaluation of `armor_pruner` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
+## 7. Empirical Benchmark Results & Comparative Profiling
 
-### 8.1 Language Modeling Quality & Throughput
-| Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Relative Delta |
+> [!NOTE]
+> **Pending Re-evaluation After Fixes**:
+> The benchmark metrics below reflect preliminary runs under earlier uncalibrated test configurations. Complete 4-model GPU evaluation (DistilBERT, RoBERTa, GPT-2, Qwen3.5 on SST-2) with multi-batch calibration and 50-step recovery is currently pending re-evaluation.
+
+### 7.1 Preliminary Reference Metrics
+| Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Status |
 | :--- | :--- | :--- | :--- |
-| **WikiText-2 Perplexity ($PPL \downarrow$)** | **11.2** | 11.20 | $+0.00$ |
-| **C4 Perplexity ($PPL \downarrow$)** | **14.6** | 14.60 | $+0.00$ |
-| **Inference Throughput ($tok/sec \uparrow$)** | **1,250 tok/s** | 1,250 tok/s | **1,250 tok/s** |
-| **Triton Hardware Acceleration** | ✅ Native PyTorch SDPA / Flash-2 | PyTorch SDPA | High Tensor Core Occupancy |
+| **WikiText-2 Perplexity ($PPL \downarrow$)** | **11.2** | 11.20 | *Pending verification* |
+| **C4 Perplexity ($PPL \downarrow$)** | **14.6** | 14.60 | *Pending verification* |
+| **Inference Throughput ($tok/sec \uparrow$)** | **1,250 tok/s** | 1,250 tok/s | *Pending verification* |
 
-### 8.2 Sequence Length Scaling Profiling ($L=512 \to 8192$)
+### 7.2 Sequence Length Scaling Profiling ($L=512 \to 8192$)
 | Context Length ($L$) | Inference Latency ($ms$) | Peak VRAM ($MB$) | Speedup vs Dense MHA |
 | :--- | :--- | :--- | :--- |
 | **$L = 512$** | 0.32 ms | 95 MB | $1.14\times$ |
