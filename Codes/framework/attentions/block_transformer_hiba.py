@@ -539,7 +539,7 @@ class BlockTransformerHIBA(BaseAttention):
         scores = torch.matmul(q_b.float(), k_neighbors.float().transpose(-2, -1)) * scale
 
         pad_mask = ~valid_neighbors.unsqueeze(1).unsqueeze(2)
-        scores = scores.masked_fill(pad_mask, float("-inf"))
+        scores = scores.masked_fill(pad_mask, -10000.0)
 
         # Guarantee CLS block inclusion for block_idx > 0
         scores_for_topk = scores.clone()
@@ -549,7 +549,7 @@ class BlockTransformerHIBA(BaseAttention):
         top_k = min(self.top_k_inter, k_neighbors.size(2))
         _, topk_idx = torch.topk(scores_for_topk, top_k, dim=-1)
         sparse_mask = torch.zeros_like(scores).scatter_(-1, topk_idx, 1.0)
-        scores = scores.masked_fill(sparse_mask == 0, float("-inf"))
+        scores = scores.masked_fill(sparse_mask == 0, -10000.0)
 
         probs = F.softmax(scores, dim=-1)
         probs = torch.nan_to_num(probs, nan=0.0, posinf=1.0, neginf=0.0)
@@ -626,17 +626,24 @@ class BlockTransformerHIBA(BaseAttention):
             scale = 1.0 / math.sqrt(self.head_dim)
             scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
 
-            # Causal mask for decoders
-            if self.is_decoder and not is_cross_attention:
-                causal_mask = torch.triu(
-                    torch.full((L, S), float("-inf"), device=scores.device, dtype=torch.float32),
-                    diagonal=1 + (S - L),
-                )
-                scores = scores + causal_mask.unsqueeze(0).unsqueeze(1)
+            # If a 4D attention mask is provided, it already incorporates causal + padding constraints
+            if active_mask is not None and active_mask.dim() == 4:
+                if active_mask.dtype == torch.bool:
+                    scores = scores.masked_fill(~active_mask, -10000.0)
+                else:
+                    scores = scores + active_mask.to(scores.dtype)
+            else:
+                # Causal mask for decoders
+                if self.is_decoder and not is_cross_attention:
+                    causal_mask = torch.triu(
+                        torch.full((L, S), -10000.0, device=scores.device, dtype=torch.float32),
+                        diagonal=1 + (S - L),
+                    )
+                    scores = scores + causal_mask.unsqueeze(0).unsqueeze(1)
 
-            # Padding mask
-            pad_mask = ~valid_mask.unsqueeze(1).unsqueeze(2)
-            scores = scores.masked_fill(pad_mask, float("-inf"))
+                # Padding mask
+                pad_mask = ~valid_mask.unsqueeze(1).unsqueeze(2)
+                scores = scores.masked_fill(pad_mask, -10000.0)
 
             attn_probs = F.softmax(scores, dim=-1)
             attn_probs = torch.nan_to_num(attn_probs, nan=0.0, posinf=1.0, neginf=0.0)
