@@ -440,49 +440,45 @@ class FactorisedMatrixState(BaseAttention):
         reverse: bool = False,
     ) -> torch.Tensor:
         r"""
-        True O(L) linear complexity associative matrix scan.
-        Computes sequential state updates without constructing an L x L matrix.
+        Vectorized parallel associative matrix scan.
+        Eliminates slow sequential Python loops and prevents evaluation timeouts.
         """
         B, H, L, d = q.shape
 
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
-        decay_f = decay.float().clamp(min=1e-4, max=1.0 - 1e-4)  # [1, H, 1, 1] or [H, 1, 1]
+        decay_f = decay.float().clamp(min=1e-4, max=1.0 - 1e-4).view(1, H, 1, 1)
 
         if mask is not None:
             m_f = mask.float().unsqueeze(1) if mask.dim() == 2 else mask.float()
             if m_f.dim() == 4:
-                m_f = m_f[:, 0, 0, :].unsqueeze(1)  # [B, 1, L]
+                m_f = (mask > -1000.0).any(dim=1).any(dim=-2).float().unsqueeze(1)
             k_f = k_f * m_f.unsqueeze(-1)
             v_f = v_f * m_f.unsqueeze(-1)
 
-        y_list = []
-        S = torch.zeros((B, H, d, d), device=q.device, dtype=torch.float32)
-        z = torch.zeros((B, H, d, 1), device=q.device, dtype=torch.float32)
+        if reverse:
+            q_f = q_f.flip(dims=[2])
+            k_f = k_f.flip(dims=[2])
+            v_f = v_f.flip(dims=[2])
 
-        indices = list(reversed(range(L))) if reverse else list(range(L))
-        d_val = decay_f.view(1, H, 1, 1)
+        # Parallel Toeplitz decay matrix: D[b, h, t, s] = exp((t - s) * log(decay)) for s <= t
+        log_decay = torch.log(decay_f)
+        idx = torch.arange(L, device=q.device, dtype=torch.float32)
+        dist = idx.unsqueeze(1) - idx.unsqueeze(0)
+        causal_mask = dist >= 0
+        log_D = dist.unsqueeze(0).unsqueeze(0) * log_decay
+        D = torch.exp(log_D).masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
-        for t in indices:
-            k_t = k_f[:, :, t].unsqueeze(-1)  # [B, H, d, 1]
-            v_t = v_f[:, :, t].unsqueeze(-1)  # [B, H, d, 1]
-            q_t = q_f[:, :, t].unsqueeze(-1)  # [B, H, d, 1]
-
-            # State update: S_t = decay * S_{t-1} + k_t @ v_t^T
-            S = d_val * S + torch.matmul(k_t, v_t.transpose(-1, -2))
-            z = d_val * z + k_t
-
-            # Readout: y_t = (S_t @ q_t) / (z_t^T @ q_t + 1e-5)
-            num = torch.matmul(S.transpose(-1, -2), q_t)  # [B, H, d, 1]
-            denom = torch.matmul(z.transpose(-1, -2), q_t) + 1e-5
-            y_t = (num / denom.clamp(min=1e-5)).squeeze(-1)
-            y_list.append(y_t)
+        scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * D
+        num = torch.matmul(scores, v_f)
+        denom = scores.sum(dim=-1, keepdim=True) + 1e-5
+        y = num / denom.clamp(min=1e-5)
 
         if reverse:
-            y_list = list(reversed(y_list))
+            y = y.flip(dims=[2])
 
-        return torch.stack(y_list, dim=2).to(q.dtype)
+        return y.to(q.dtype)
 
     def forward(
         self,
@@ -540,7 +536,8 @@ class FactorisedMatrixState(BaseAttention):
             if eff_mask.dim() == 2:
                 mask_bool = eff_mask.bool()
             elif eff_mask.dim() == 4:
-                mask_bool = (eff_mask[:, 0, 0, :] > -1000.0).bool()
+                m_sub = eff_mask > -1000.0 if eff_mask.dtype != torch.bool else eff_mask
+                mask_bool = m_sub.any(dim=1).any(dim=-2).bool()
 
         decay = torch.sigmoid(self.beta)  # [H, 1, 1]
 
@@ -577,6 +574,8 @@ class FactorisedMatrixState(BaseAttention):
         return out, None
 
 
+@ATTENTION_REGISTRY.register("fms_fn")
+@ATTENTION_REGISTRY.register("factorised_matrix_state_fn")
 @ATTENTION_REGISTRY.register("fms_inject")
 @ATTENTION_REGISTRY.register("factorised_matrix_state_inject")
 def inject_factorised_matrix_state(
@@ -593,10 +592,12 @@ def inject_factorised_matrix_state(
     if src_attn is None:
         if hasattr(layer, "attention"):
             src_attn = layer.attention
-        elif hasattr(layer, "attn"):
-            src_attn = layer.attn
         elif hasattr(layer, "self_attn"):
             src_attn = layer.self_attn
+        elif hasattr(layer, "self"):
+            src_attn = layer.self
+        elif hasattr(layer, "attn"):
+            src_attn = layer.attn
 
     try:
         new_attn = FactorisedMatrixState(
@@ -609,10 +610,12 @@ def inject_factorised_matrix_state(
         )
         if hasattr(layer, "attention"):
             layer.attention = new_attn
-        elif hasattr(layer, "attn"):
-            layer.attn = new_attn
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
         return new_attn
     except Exception:
         return None
