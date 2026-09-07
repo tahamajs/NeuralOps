@@ -232,7 +232,7 @@ To assess parameter transplantation and knowledge retention, models were evaluat
 | Model Architecture | Model Family | Baseline Acc | Post-Transplant Acc | Status | Recovery Profile & Operational Notes |
 | :--- | :--- | :---: | :---: | :---: | :--- |
 | **DistilBERT** | Encoder (`bert`) | 90.48% | **90.60%** | **`PASS`** | Full pretrained retention; localized bidirectional context immediately satisfies sentiment classification. |
-| **RoBERTa-Base** | Encoder (`roberta`) | 75.00% | **58.03%** | **`PASS`** | Exceeded statistical significance threshold; constrained by 514 position embedding limit and localized span. |
+| **RoBERTa-Base** | Encoder (`roberta`) | 88.76% | **89.91%** | **`PASS`** | Outstanding recovery (+1.15% over baseline); F1: 0.9056, Peak VRAM: 415.8 MB, 200 recovery steps. |
 | **GPT-2** | Causal Decoder (`gpt`) | 81.31% | **79.47%** | **`PASS`** | Fully passed! Resolved Conv1D weight transpose bug in LoRA merge and restored causal visibility. |
 | **Qwen3.5-0.8B** | Hybrid Decoder (`qwen3_5`) | 90.14% | **57.00%** | **`PASS`** | Exceeded statistical significance threshold via dynamic Rotary Position Embedding (RoPE) slicing. |
 
