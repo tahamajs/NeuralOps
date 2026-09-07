@@ -99,17 +99,15 @@ docker run --gpus all -it -v $(pwd)/results:/workspace/results neuralops:2026 ba
 ## ⚡ Commands to Reproduce Benchmarks
 
 ### Phase 1: Efficiency & Micro-Benchmarking Sweep
-Measures forward latency, backward latency, peak VRAM allocation, and arithmetic throughput across sequence lengths:
+Measures forward latency, backward latency, peak VRAM allocation, and arithmetic throughput across sequence lengths for every registered module, then selects the top-K for the quality phase:
 
 ```bash
-python Codes/framework/run_benchmarks_optimized.py \
-  --tracks 1,2,3,4,5 \
-  --batch_sizes 1,16,64 \
-  --seq_lens 128,512,1024 \
-  --runs_per_combo 5 \
-  --precision fp16 \
-  --output_dir results/run_phase1_efficiency
+python Codes/framework/benchmarks/two_phase_benchmark.py \
+  --phase 1 \
+  --precision fp16
 ```
+
+Phase 2 of the same orchestrator (`--phase 2` or `--phase all`, with `--models`, `--datasets`, `--seeds`, `--max_steps`) fine-tunes the top-selected modules and writes the quality tables below.
 
 ### Phase 2: Multi-Seed Quality Sweep (Pretrained Fine-Tuning)
 Fine-tunes base transformer backbones (`distilbert-base-uncased` or `bert-base-uncased`) with injected modules across 3 random seeds (`42, 123, 777`) with AdamW and linear learning rate warmup:
@@ -186,17 +184,17 @@ results/run_quality_pretrained/
 
 ## 📄 Automated Publication Artifact Generation
 
-Generate publication-ready NeurIPS/ICLR LaTeX tables and vector figures directly from any benchmark output folder:
+Generate publication-ready LaTeX tables, figures, and a comprehensive markdown report directly from any benchmark output folder:
 
 ```bash
-python Codes/framework/generate_publication_report.py \
+python Codes/framework/analysis/generate_sweep_publication_artifacts.py \
   --results_dir results/run_quality_pretrained/
 ```
 
-This compiles:
-- `LATEX_QUALITY_TABLE.tex`: Booktabs LaTeX markup for academic submissions.
-- `LATEX_EFFICIENCY_TABLE.tex`: Hardware efficiency table (Latency, Speedup, VRAM compression).
-- `QUALITY_BENCHMARK_REPORT.md`: Comprehensive markdown audit report with automated architectural advice.
+This compiles (into the same results directory):
+- `paper_tables.tex`: Booktabs LaTeX markup for academic submissions.
+- `comprehensive_report.md`: Detailed markdown audit report.
+- PNG figures (accuracy/compression distributions and Pareto views) rendered with matplotlib.
 
 ---
 
