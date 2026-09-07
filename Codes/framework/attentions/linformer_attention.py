@@ -216,9 +216,16 @@ class LinformerAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        # LoRA config
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        # LoRA config (three-branch to handle config=None properly)
+        if config is not None:
+            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)) if comp_config else kwargs.get("lora_rank", 16))
+            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)) if comp_config else kwargs.get("lora_alpha", 32.0))
+        elif comp_config is not None:
+            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+        else:
+            self.lora_rank = kwargs.get("lora_rank", 16)
+            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
         self.freeze_base = (self.lora_rank > 0)
 
         # Projections
@@ -388,8 +395,16 @@ class LinformerAttention(BaseAttention):
                 if w_norm < 1e-4:
                     raise RuntimeError(f"LinformerAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
-                if self.freeze_base:
-                    target_mod.freeze_base_weights()
+        if self.freeze_base:
+            for target_mod in (self.query, self.key, self.value, self.out_proj):
+                target_mod.freeze_base_weights()
+
+        # Store rotary embeddings if available
+        if hasattr(src, "rotary_emb") and src.rotary_emb is not None:
+            self.rotary_emb = src.rotary_emb
+        else:
+            if not hasattr(self, "rotary_emb"):
+                self.rotary_emb = None
 
     def forward(
         self,
@@ -410,10 +425,25 @@ class LinformerAttention(BaseAttention):
         k = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
         v = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2)
 
-        # Apply RoPE if provided
-        if position_embeddings is not None:
-            cos, sin = position_embeddings
+        # Apply RoPE — prefer position_embeddings tuple, fallback to self.rotary_emb
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+            cos, sin = pos_emb[0], pos_emb[1]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
+        elif getattr(self, "rotary_emb", None) is not None:
+            rotary_mod = self.rotary_emb
+            pos_ids = kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = rotary_mod(q, seq_len=N)
+            except Exception:
+                try:
+                    cos, sin = rotary_mod(q, pos_ids)
+                except Exception:
+                    cos, sin = None, None
+            if cos is not None and sin is not None:
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
         # GQA expansion
         if self.kv_repeat > 1:
@@ -481,7 +511,8 @@ class LinformerAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("linformer_inject")
 def inject_linformer(
-    layer: Any,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -489,27 +520,75 @@ def inject_linformer(
     old_attn: Any = None,
     **kwargs: Any,
 ) -> Optional[LinformerAttention]:
-    """Safe injection hook for LinformerAttention."""
-    src_attn = old_attn if old_attn is not None else (getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))) if layer is not None else None)
+    """Safe injection hook for LinformerAttention — handles full-model traversal and all architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole-model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_linformer(
+                layer=lyr, model_config=cfg, comp_config=comp_config,
+                layer_idx=idx, total_layers=tot, **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single-layer injection
+    src_attn = old_attn
+    if src_attn is None and target is not None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if hasattr(cand, "self"):
+                    src_attn = cand.self
+                else:
+                    src_attn = cand
+                break
+
+    if src_attn is None and cfg is None:
+        return None
 
     hidden_size = (
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (layer.in_features if hasattr(layer, 'in_features') else None) or
-        getattr(model_config, 'hidden_size', 64)
+        getattr(src_attn, "hidden_size", None) if src_attn else None
+        or getattr(src_attn, "embed_dim", None) if src_attn else None
+        or (src_attn.q_proj.in_features if src_attn and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features") else None)
+        or (src_attn.q_lin.in_features if src_attn and hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features") else None)
+        or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64) if cfg else 64)
     )
     num_heads = (
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        getattr(model_config, 'num_attention_heads', 4)
+        getattr(src_attn, "num_heads", None) if src_attn else None
+        or getattr(src_attn, "num_attention_heads", None) if src_attn else None
+        or getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", 4) if cfg else 4)
     )
 
     try:
-        k = getattr(comp_config, "linformer_k", getattr(comp_config, "k", 64)) if comp_config else 64
-        max_seq_len = getattr(model_config, "max_position_embeddings", 512) if model_config else 512
+        k = getattr(comp_config, "linformer_k", getattr(comp_config, "k", 64)) if comp_config else kwargs.get("linformer_k", 64)
+        max_seq_len = getattr(cfg, "max_position_embeddings", 512) if cfg else 512
         new_attn = LinformerAttention(
-            model_config,
+            cfg,
             k=k,
             max_seq_len=max_seq_len,
             comp_config=comp_config,
@@ -519,15 +598,19 @@ def inject_linformer(
             num_attention_heads=num_heads,
             **kwargs,
         )
-        if src_attn is not None:
-            new_attn.copy_weights(src_attn)
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                layer.attention = new_attn
-            elif hasattr(layer, "self"):
-                layer.self = new_attn
-            elif hasattr(layer, "attn"):
-                layer.attn = new_attn
-        return new_attn
     except Exception:
         return None
+
+    if target is not None:
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
+            else:
+                target.attention = new_attn
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+        elif hasattr(target, "attn"):
+            target.attn = new_attn
+        elif hasattr(target, "self"):
+            target.self = new_attn
+    return new_attn

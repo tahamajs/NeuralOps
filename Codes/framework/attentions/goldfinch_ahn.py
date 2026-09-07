@@ -215,8 +215,27 @@ class GoldFinchAHNBlock(BaseAttention):
         self.dim = int(d_model)
         self.hidden_size = self.dim
         self.num_heads = int(num_heads)
-        self.num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads))) if config else kwargs.get("num_kv_heads", self.num_heads)
-        self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
+
+        # num_kv_heads: three-branch fallback including source_attn
+        if config is not None:
+            self.num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads)))
+        elif source_attn is not None:
+            self.num_kv_heads = (
+                getattr(source_attn, "num_key_value_heads", None)
+                or getattr(source_attn, "num_kv_heads", None)
+                or kwargs.get("num_kv_heads", self.num_heads)
+            )
+        else:
+            self.num_kv_heads = kwargs.get("num_kv_heads", self.num_heads)
+        self.num_kv_heads = int(self.num_kv_heads)
+
+        # head_dim: prefer config, then source_attn, then divide
+        _head_dim = getattr(config, "head_dim", None) if config else None
+        if _head_dim is None and source_attn is not None:
+            _head_dim = getattr(source_attn, "head_dim", None)
+        if _head_dim is None:
+            _head_dim = self.dim // max(1, self.num_heads)
+        self.head_dim = int(_head_dim)
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -457,15 +476,18 @@ class GoldFinchAHNBlock(BaseAttention):
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
         elif self.rotary_emb is not None:
             rotary_module = self.rotary_emb
-            if rotary_module is not None:
-                pos_ids = kwargs.get("position_ids", None)
-                if pos_ids is None:
-                    pos_ids = torch.arange(L, device=x.device).unsqueeze(0).expand(B, -1)
+            pos_ids = kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(L, device=x.device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = rotary_module(q, seq_len=L)
+            except Exception:
                 try:
-                    cos, sin = rotary_module(k, pos_ids)
-                    q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
+                    cos, sin = rotary_module(q, pos_ids)
                 except Exception:
-                    pass
+                    cos, sin = None, None
+            if cos is not None and sin is not None:
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
