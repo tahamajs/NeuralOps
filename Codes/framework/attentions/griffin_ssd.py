@@ -15,9 +15,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.attentions.gated_delta_net import LoRALinear, repeat_kv
+from framework.attentions.gated_delta_net import LoRALinear
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -111,21 +112,24 @@ class GriffinSSDBlock(BaseAttention):
         d_model: Optional[Union[int, Any]] = None,
         num_heads: Optional[int] = None,
         old_attn: Optional[nn.Module] = None,
+        comp_config: Optional[Any] = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
 
+        def _get(k: str, default: Any = None) -> Any:
+            for obj in (config, comp_config, getattr(config, "compression_config", None)):
+                if obj is not None and hasattr(obj, k):
+                    val = getattr(obj, k)
+                    if val is not None:
+                        return val
+            return kwargs.get(k, default)
+
         # Resolve d_model
         if d_model is None:
-            if config is not None:
-                d_model = (
-                    _cfg_get(config, "hidden_size", None)
-                    or _cfg_get(config, "d_model", None)
-                    or _cfg_get(config, "n_embd", None)
-                    or _cfg_get(config, "dim", None)
-                )
+            d_model = _get("hidden_size", _get("d_model", _get("n_embd", _get("dim", None))))
         if d_model is None and old_attn is not None:
             d_model = (
                 getattr(old_attn, "hidden_size", None)
@@ -143,13 +147,12 @@ class GriffinSSDBlock(BaseAttention):
 
         # Resolve num_heads
         if num_heads is None:
-            if config is not None:
-                num_heads = (
-                    _cfg_get(config, "num_attention_heads", None)
-                    or _cfg_get(config, "num_heads", None)
-                    or _cfg_get(config, "n_heads", None)
-                    or _cfg_get(config, "n_head", None)
-                )
+            num_heads = (
+                _get("num_attention_heads", None)
+                or _get("num_heads", None)
+                or _get("n_heads", None)
+                or _get("n_head", None)
+            )
         if num_heads is None and old_attn is not None:
             num_heads = getattr(old_attn, "num_heads", getattr(old_attn, "num_attention_heads", None))
         if num_heads is None:
@@ -157,24 +160,36 @@ class GriffinSSDBlock(BaseAttention):
 
         self.dim: int = int(d_model)
         self.num_heads: int = int(num_heads)
-        self.num_kv_heads: int = int(_cfg_get(config, "num_key_value_heads", kwargs.get("num_key_value_heads", self.num_heads)))
-        self.head_dim: int = int(_cfg_get(config, "head_dim", kwargs.get("head_dim", self.dim // max(1, self.num_heads))))
+
+        resolved_head_dim = _get("head_dim", None)
+        if resolved_head_dim is None and old_attn is not None:
+            resolved_head_dim = getattr(old_attn, "head_dim", None)
+        if resolved_head_dim is None:
+            resolved_head_dim = self.dim // max(1, self.num_heads)
+        self.head_dim: int = int(resolved_head_dim)
+
+        kv_heads = _get("num_key_value_heads", None)
+        if kv_heads is None and old_attn is not None:
+            kv_heads = getattr(old_attn, "num_key_value_heads", getattr(old_attn, "num_kv_heads", getattr(old_attn, "n_kv_heads", None)))
+            if kv_heads is None and hasattr(old_attn, "k_proj") and hasattr(old_attn.k_proj, "out_features") and self.head_dim > 0:
+                kv_heads = old_attn.k_proj.out_features // self.head_dim
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
+
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
         self.window_size: int = window_size
 
         # Decoder / causal detection
-        model_type = str(_cfg_get(config, "model_type", "")).lower()
-        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+        model_type = str(_get("model_type", "")).lower()
+        is_dec = _get("is_decoder", _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
         if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
 
         # LoRA setup
-        comp_config = getattr(config, "compression_config", None)
-        self.lora_rank: int = int(_cfg_get(comp_config, "lora_rank", _cfg_get(config, "lora_rank", kwargs.get("lora_rank", lora_rank))))
-        self.lora_alpha: float = float(_cfg_get(comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha))))
+        self.lora_rank: int = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
+        self.lora_alpha: float = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base: bool = (self.lora_rank > 0)
 
         # Multi-head projections
@@ -186,6 +201,9 @@ class GriffinSSDBlock(BaseAttention):
 
         # Learnable decay gate for global SSD branch
         self.decay_param = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
+
+        self.rotary_emb = getattr(old_attn, "rotary_emb", None) if old_attn is not None else None
+        self.comp_config = comp_config
 
         if old_attn is not None:
             self.copy_weights(old_attn)
@@ -378,12 +396,33 @@ class GriffinSSDBlock(BaseAttention):
         v = self.W_v(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2)
         q_ssd = self.ssd_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
 
-        # Apply RoPE if provided
-        if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
-        if position_embeddings is not None:
-            cos, sin = position_embeddings
-            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+        # Apply RoPE if provided or probe from rotary_emb
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        pos_ids = kwargs.get("position_ids", None)
+        if pos_emb is not None:
+            if isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+                cos, sin = pos_emb[0], pos_emb[1]
+            else:
+                cos, sin = pos_emb, None
+            if cos is not None and sin is not None:
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
+        elif self.rotary_emb is not None:
+            rotary_mod = self.rotary_emb
+            if pos_ids is None:
+                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
+            cos, sin = None, None
+            try:
+                cos, sin = rotary_mod(q, seq_len=L)
+            except Exception:
+                try:
+                    cos, sin = rotary_mod(q, pos_ids)
+                except Exception:
+                    try:
+                        cos, sin = rotary_mod(q)
+                    except Exception:
+                        cos, sin = None, None
+            if cos is not None and sin is not None:
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
         # GQA repeat
         if self.num_heads != self.num_kv_heads:
