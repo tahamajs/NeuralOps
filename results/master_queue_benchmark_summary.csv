@@ -62,3 +62,4 @@ fused_svd_kernel,run_all_4_fused_svd_kernel.py,0,269.1,PASS,,2026-09-08T00:21:52
 fusion_attn,run_all_4_fusion_attn.py,0,69.97,PASS,,2026-09-08T00:23:02.669714
 galerkin,run_all_4_galerkin.py,0,77.22,PASS,,2026-09-08T00:24:19.894355
 galerkin_attention,run_all_4_galerkin_attention.py,0,67.69,PASS,,2026-09-08T00:25:27.588545
+gated_delta_net,run_all_4_gated_delta_net.py,0,1764.03,PASS,,2026-09-08T00:54:51.621950

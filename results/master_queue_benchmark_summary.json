@@ -565,5 +565,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T00:25:27.588545"
+  },
+  {
+    "module": "gated_delta_net",
+    "runner": "run_all_4_gated_delta_net.py",
+    "exit_code": 0,
+    "elapsed_s": 1764.03,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T00:54:51.621950"
   }
 ]
