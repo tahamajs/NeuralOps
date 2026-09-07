@@ -315,12 +315,22 @@ for m in models:
     print(f"[Quality Gate: PASSED] {name} passed criteria (status={status}, acc={acc:.2f}% >= 56.0%). Packaging for export...", flush=True)
 
     hf_export_dir.mkdir(parents=True, exist_ok=True)
-    weights_candidates = list(weights_dir.glob("**/weights.pt")) + list(weights_dir.glob("weights.pt"))
+    checkpoints_dir = out_dir / "checkpoints"
+    weights_candidates = (
+        list(checkpoints_dir.glob("**/weights.pt"))
+        + list(weights_dir.glob("**/weights.pt"))
+        + list(out_dir.glob("**/weights.pt"))
+    )
     if weights_candidates:
         src_weights = weights_candidates[0]
         dst_weights = hf_export_dir / "weights.pt"
         if src_weights.resolve() != dst_weights.resolve():
             shutil.copy2(src_weights, dst_weights)
+        # Also copy config and tokenizer files from the checkpoint directory
+        src_parent = src_weights.parent
+        for f_extra in src_parent.glob("*"):
+            if f_extra.is_file() and f_extra.name not in ("weights.pt", "pytorch_model.bin"):
+                shutil.copy2(f_extra, hf_export_dir / f_extra.name)
 
     # Comprehensive, publication-ready model card
     card_content = f"""---
