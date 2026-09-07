@@ -71,15 +71,16 @@ Orthogonality regularization loss is evaluated on the extracted basis $U_r \in \
 
 ## Architecture & Data Flow
 
-The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
-
 ```
-Input Activation X [B, N, D]
+Input Sequence X [B, L, D]
    │
-   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
-   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
-   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
-   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+   ├── SVD-Factorized Projections (U @ diag(S) @ V^T):
+   │     ├── Q = (X @ V_q) @ (diag(S_q) @ U_q^T)  [B, L, d_k]
+   │     ├── K = (X @ V_k) @ (diag(S_k) @ U_k^T)  [B, L, d_k]
+   │     └── V = (X @ V_v) @ (diag(S_v) @ U_v^T)  [B, L, d_v]
+   ├── Parallel LoRA Residual Adaptation: Delta_W = (X @ A) @ B * scaling
+   ├── Scaled Dot-Product Scoring: A = Softmax((Q @ K^T)/sqrt(d) + Mask)
+   └── Fused Output Mapping: Out = A @ V @ W_O
 ```
 
 ### Step-by-Step Tensor Shape Trace
