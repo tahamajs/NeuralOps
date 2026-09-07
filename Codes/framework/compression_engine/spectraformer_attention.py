@@ -512,25 +512,14 @@ class SpectraformerAttention(BaseAttention):
             v = v * v_mask_4d
 
         if self.is_decoder:
-            # Recurrent linear causal attention: exact O(N·r·d) computation
-            out_list = []
-            feat_dim = Q_proj.shape[-1]
-            state = torch.zeros(B, self.num_heads, feat_dim, self.head_dim, device=Q_proj.device, dtype=torch.float32)
-            z_state = torch.zeros(B, self.num_heads, feat_dim, 1, device=Q_proj.device, dtype=torch.float32)
+            # Recurrent linear causal attention: exact vectorized computation
+            causal_mask = torch.tril(torch.ones(N, N, device=Q_proj.device, dtype=torch.bool))
+            aff = torch.matmul(Q_proj.float(), K_proj.float().transpose(-2, -1))  # (B, H, N, N)
+            aff = aff.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
-            for t in range(N):
-                kt = K_proj[:, :, t : t + 1, :].float()  # (B, H, 1, r)
-                vt = v[:, :, t : t + 1, :].float()       # (B, H, 1, d)
-                qt = Q_proj[:, :, t : t + 1, :].float()  # (B, H, 1, r)
-
-                state = state + torch.matmul(kt.transpose(-2, -1), vt)  # (B, H, r, d)
-                z_state = z_state + kt.transpose(-2, -1)                # (B, H, r, 1)
-
-                num_t = torch.matmul(qt, state)                         # (B, H, 1, d)
-                den_t = torch.matmul(qt, z_state) + 1e-8                # (B, H, 1, 1)
-                out_list.append((num_t / den_t).to(hidden_states.dtype))
-
-            context = torch.cat(out_list, dim=2)  # (B, H, N, d)
+            num = torch.matmul(aff, v.float())  # (B, H, N, d)
+            den = aff.sum(dim=-1, keepdim=True) + 1e-8  # (B, H, N, 1)
+            context = (num / den).to(hidden_states.dtype)
         else:
             # Bidirectional linear attention: exact O(N·r·d) computation
             KV = torch.matmul(K_proj.transpose(-2, -1).float(), v.float())  # (B, H, r, d)
