@@ -194,3 +194,13 @@ def test_mamba_injection_all_4_architectures():
     res_q = inject_mamba(model=q_model, lora_rank=8)
     assert res_q is not None
     assert isinstance(q_model.model.layers[0].self_attn, Mamba)
+
+
+def test_mamba_causal_recurrence_long_sequence_stability():
+    p = Mamba(d_model=64, is_causal=True, is_decoder=True, lora_rank=8)
+    x = torch.randn(2, 512, 64)
+    out, _ = p(x)
+    assert out.shape == (2, 512, 64)
+    assert torch.isfinite(out).all()
+    assert not torch.isnan(out).any()
+
