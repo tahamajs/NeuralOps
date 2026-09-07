@@ -421,5 +421,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T22:46:02.103723"
+  },
+  {
+    "module": "erc",
+    "runner": "run_all_4_erc.py",
+    "exit_code": 0,
+    "elapsed_s": 355.42,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T22:51:57.533940"
+  },
+  {
+    "module": "expert_choice_moe",
+    "runner": "run_all_4_expert_choice_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 126.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T22:54:03.999756"
   }
 ]
