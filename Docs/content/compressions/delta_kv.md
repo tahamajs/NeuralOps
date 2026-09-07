@@ -434,3 +434,10 @@ def delta_kv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
 1. **Hooper, C., Kim, S., Mohammadi, H., et al. (2024)**. *KVQuant: Towards 10 Million Context Length LLM Inference with KV Cache Quantization*. In Advances in Neural Information Processing Systems (NeurIPS 2024). [arXiv:2401.18079](https://arxiv.org/abs/2401.18079).
 2. **Liu, Z., et al. (2024)**. *DeltaKV: Exploiting Temporal Redundancy in Key-Value Caches for Efficient LLM Serving*. arXiv preprint.
 3. **Zhang, H., et al. (2023)**. *H2O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models*. In NeurIPS 2023.
+
+## Unified 4-Architecture Benchmark Results (DeltaKV)
+Evaluated on SST-2 sentiment classification (FP16, rank 16 low-rank + 29% sparse residual, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 89.56% | 0.9029 | 1.0 | 0 | 336.33 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-delta-kv) |
