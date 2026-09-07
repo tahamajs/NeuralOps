@@ -1,0 +1,2 @@
+Model,Exit Code,Baseline Acc,DirectSVD Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+roberta,0,88.76%,84.06%,-4.70%,0.8609,PASS,23,1.03x,347.0 MB,87.4
