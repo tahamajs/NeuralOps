@@ -201,18 +201,15 @@ Because $KV$ and $K_{\text{sum}}$ can be accumulated in $\mathcal{O}(L \cdot m \
 
 ## Architecture & Data Flow
 
+The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
 ```
-Input Sequences Q, K, V [B, L, D]
+Input Activation X [B, N, D]
    │
-   ├── Positive Random Feature Mapping (FAVOR+):
-   │     ├── phi(Q) = exp(Q @ Omega^T - ||Q||^2/2) / sqrt(m)
-   │     └── phi(K) = exp(K @ Omega^T - ||K||^2/2) / sqrt(m)
-   │
-   ├── Associative Linear Accumulation (O(L) Complexity):
-   │     ├── KV Buffer: S = sum_t (phi(K_t)^T @ V_t)  [r, d_v]
-   │     ├── Normalizer: z = sum_t phi(K_t)          [r]
-   │     └── Output Context: Y_t = (phi(Q_t) @ S) / (phi(Q_t) @ z + eps)
-   └── Dense Output Mapping: Out = out_lin(Y)
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
 ```
 
 ### Step-by-Step Tensor Shape Trace

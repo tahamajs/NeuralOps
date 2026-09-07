@@ -12,17 +12,15 @@ Applying pure State Space Models (SSMs) from scratch to pretrained bidirectional
 
 ## Architecture & Data Flow
 
+The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
 ```
-Input State X [B, L, D]
+Input Activation X [B, N, D]
    │
-   ├── In-Projection: (x_proj, z) = in_proj(X) -> 2 * D_inner
-   ├── 1D Causal Convolution: conv_out = SiLU(Conv1d(x_proj))
-   ├── Continuous to Discrete SSM Discretization:
-   │     ├── Time-step parameter: delta = softplus(Parameter + delta_proj(conv_out))
-   │     ├── Discretized state: A_bar = exp(delta * A), B_bar = delta * B
-   │     └── Associative Linear State Scan: h_t = A_bar_t * h_{t-1} + B_bar_t * x_t
-   ├── Output Gating & Modulation: y = (C * h_t) * SiLU(z)
-   └── Out-Projection: out = out_proj(y) [B, L, D]
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
 ```
 
 ### Step-by-Step Tensor Shape Trace
