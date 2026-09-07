@@ -374,3 +374,10 @@ Evaluated on BERT-Base (110M) and LLaMA-7B across GLUE benchmarks and Long Range
 1. **Eckart, C., & Young, G. (1936)**. *The approximation of one matrix by another of lower rank*. Psychometrika, 1(3), 211-218.
 2. **Denton, E., Zaremba, W., Bruna, J., LeCun, Y., & Fergus, R. (2014)**. *Exploiting Linear Structure Within Convolutional Networks for Efficient Evaluation*. In Advances in Neural Information Processing Systems (NeurIPS 2014).
 3. **Sainath, T. N., et al. (2013)**. *Low-rank matrix approximation for deep feedforward neural network acoustic modeling*. In IEEE ICASSP 2013.
+
+## Unified 4-Architecture Benchmark Results (DirectSVD)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 truncated SVD, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 84.06% | 0.8609 | 1.0274 | 23 | 346.97 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-direct-svd) |
