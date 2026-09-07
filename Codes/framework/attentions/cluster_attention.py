@@ -402,31 +402,63 @@ class ClusterAttention(BaseAttention):
             self.is_decoder = bool(src.is_decoder)
 
     def _kmeans_cluster(
-        self, Q: torch.Tensor, K_num: int, iters: int = 3
+        self,
+        Q: torch.Tensor,
+        K_num: int,
+        iters: int = 3,
+        valid_mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         r"""
-        Deterministic Lloyd's $K$-means clustering for queries.
-        Q: [B, H, L, d] -> centroids: [B, H, K, d], cluster_ids: [B, H, L]
+        Deterministic Lloyd's $K$-means clustering for queries with padding token filtering.
+        Q: [B, H, L, d], valid_mask: Optional[torch.Tensor] of shape [B, L] (True for real tokens)
+        -> centroids: [B, H, K, d], cluster_ids: [B, H, L]
         """
         B, H, L, d = Q.shape
         K = min(K_num, L)
 
-        step = max(1, L // K)
-        init_indices = torch.arange(0, L, step, device=Q.device)[:K]
-        if len(init_indices) < K:
-            pad_idx = torch.zeros(K - len(init_indices), dtype=torch.long, device=Q.device)
-            init_indices = torch.cat([init_indices, pad_idx])
-
-        centroids = Q[:, :, init_indices, :].clone()
+        # Build initial centroids using valid tokens only to prevent [PAD] tokens from poisoning centroids
+        if valid_mask is not None:
+            # valid_mask: [B, L]
+            centroids_list = []
+            for b in range(B):
+                valid_idx = valid_mask[b].nonzero(as_tuple=False).squeeze(-1)
+                num_valid = len(valid_idx)
+                if num_valid > 0:
+                    step = max(1, num_valid // K)
+                    chosen_idx = valid_idx[torch.arange(0, num_valid, step, device=Q.device)[:K]]
+                    if len(chosen_idx) < K:
+                        repeats = (K + len(chosen_idx) - 1) // len(chosen_idx)
+                        chosen_idx = chosen_idx.repeat(repeats)[:K]
+                else:
+                    chosen_idx = torch.arange(K, device=Q.device) % L
+                centroids_list.append(Q[b:b+1, :, chosen_idx, :])
+            centroids = torch.cat(centroids_list, dim=0)
+        else:
+            step = max(1, L // K)
+            init_indices = torch.arange(0, L, step, device=Q.device)[:K]
+            if len(init_indices) < K:
+                pad_idx = torch.zeros(K - len(init_indices), dtype=torch.long, device=Q.device)
+                init_indices = torch.cat([init_indices, pad_idx])
+            centroids = Q[:, :, init_indices, :].clone()
 
         cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=Q.device)
         Q_f = Q.float()
+
+        # Mask Q for clustering if valid_mask is present
+        weights_mask = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype=Q.dtype) if valid_mask is not None else 1.0
+
         for _ in range(iters):
             centroids_f = centroids.float()
             dist = torch.cdist(Q_f, centroids_f)
+            if valid_mask is not None:
+                # Disincentivize padding tokens from pulling centroids
+                dist = dist.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(-1), 1e6)
             cluster_ids = torch.argmin(dist, dim=-1)
 
             one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=Q.dtype)
+            if valid_mask is not None:
+                one_hot = one_hot * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype=Q.dtype)
+
             counts = one_hot.sum(dim=2).unsqueeze(-1)
             sum_q = torch.einsum("bhlk,bhld->bhkd", one_hot, Q)
             centroids = torch.where(counts > 0, sum_q / counts.clamp(min=1.0), centroids)
@@ -539,8 +571,8 @@ class ClusterAttention(BaseAttention):
 
             K_num = min(max(1, self.num_clusters), L)
 
-            # 1. Cluster Queries into K centroids
-            centroids, cluster_ids = self._kmeans_cluster(Q, K_num, self.n_iters)
+            # 1. Cluster Queries into K centroids with padding mask filtering
+            centroids, cluster_ids = self._kmeans_cluster(Q, K_num, self.n_iters, valid_mask=valid_mask_2d)
 
             # 2. Centroid-to-Key Global Cross-Attention [B, H, K, L]
             scores_cent = torch.matmul(centroids, K.transpose(-2, -1)) * scale

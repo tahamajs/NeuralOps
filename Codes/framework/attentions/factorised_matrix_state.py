@@ -223,8 +223,15 @@ class FactorisedMatrixState(BaseAttention):
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
-        self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        if config is not None:
+            self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        elif comp_config is not None:
+            self.lora_rank: int = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+            self.lora_alpha: float = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+        else:
+            self.lora_rank: int = kwargs.get("lora_rank", 16)
+            self.lora_alpha: float = kwargs.get("lora_alpha", 32.0)
         self.freeze_base: bool = (self.lora_rank > 0)
 
         # Decoder & nested encoder detection
@@ -449,13 +456,14 @@ class FactorisedMatrixState(BaseAttention):
         reverse: bool = False,
     ) -> torch.Tensor:
         r"""
-        Vectorized parallel associative matrix scan.
-        Eliminates slow sequential Python loops and prevents evaluation timeouts.
+        Vectorized parallel associative matrix scan with non-negative ELU+1 feature maps.
+        Eliminates slow sequential Python loops, prevents negative denominators, and avoids evaluation timeouts.
         """
         B, H, L, d = q.shape
 
-        q_f = q.float()
-        k_f = k.float()
+        # Positive kernel feature mapping to guarantee non-negative attention weights
+        q_f = F.elu(q.float()) + 1.0
+        k_f = (F.elu(k.float()) + 1.0) / math.sqrt(d)
         v_f = v.float()
         decay_f = decay.float().clamp(min=1e-4, max=1.0 - 1e-4).view(1, H, 1, 1)
 
@@ -481,8 +489,8 @@ class FactorisedMatrixState(BaseAttention):
 
         scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * D
         num = torch.matmul(scores, v_f)
-        denom = scores.sum(dim=-1, keepdim=True) + 1e-5
-        y = num / denom.clamp(min=1e-5)
+        denom = scores.sum(dim=-1, keepdim=True).clamp_min(1e-5)
+        y = num / denom
 
         if reverse:
             y = y.flip(dims=[2])
@@ -534,10 +542,6 @@ class FactorisedMatrixState(BaseAttention):
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
-
-        # 4. Normalization
-        q = F.normalize(q, p=2, dim=-1)
-        k = F.normalize(k, p=2, dim=-1) / math.sqrt(d)
 
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         mask_bool = None
