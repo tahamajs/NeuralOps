@@ -177,6 +177,7 @@ class SVDProjectionLinear(nn.Module):
             self.V.data[:r, :].copy_(V[:r, :].to(device=self.V.device, dtype=self.V.dtype))
 
 
+@ATTENTION_REGISTRY.register("svd_proj", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_proj_attn", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_projection_attention")
 @ATTENTION_REGISTRY.register("svd_projection")
