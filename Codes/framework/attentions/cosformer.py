@@ -212,17 +212,19 @@ class CosformerAttention(BaseAttention):
         self.hidden_size: int = self.dim
         self.num_heads: int = int(num_heads)
 
-        kv_heads = _cfg_get("num_key_value_heads", None)
-        if kv_heads is None and source_attn is not None:
-            kv_heads = getattr(source_attn, "num_key_value_heads", getattr(source_attn, "num_kv_heads", getattr(source_attn, "n_kv_heads", None)))
-        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
-
         resolved_head_dim = _cfg_get("head_dim", None)
         if resolved_head_dim is None and source_attn is not None:
             resolved_head_dim = getattr(source_attn, "head_dim", None)
         if resolved_head_dim is None:
             resolved_head_dim = self.dim // max(1, self.num_heads)
         self.head_dim: int = int(resolved_head_dim)
+
+        kv_heads = _cfg_get("num_key_value_heads", None)
+        if kv_heads is None and source_attn is not None:
+            kv_heads = getattr(source_attn, "num_key_value_heads", getattr(source_attn, "num_kv_heads", getattr(source_attn, "n_kv_heads", None)))
+            if kv_heads is None and hasattr(source_attn, "k_proj") and hasattr(source_attn.k_proj, "out_features") and self.head_dim > 0:
+                kv_heads = source_attn.k_proj.out_features // self.head_dim
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
 
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
