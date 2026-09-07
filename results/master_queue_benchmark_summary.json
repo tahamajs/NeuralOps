@@ -664,5 +664,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T01:39:21.035839"
+  },
+  {
+    "module": "hgrn2",
+    "runner": "run_all_4_hgrn2.py",
+    "exit_code": 0,
+    "elapsed_s": 3784.12,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T02:42:25.163984"
   }
 ]
