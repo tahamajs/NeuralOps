@@ -321,3 +321,11 @@ The `ENLightenCompressor` architecture incorporates telemetry hooks for tracking
 - **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
 
+## Unified 4-Architecture Benchmark Results (ENLighten)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 89.33% | 0.897 | 1.0 | 36 | 338.84 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-enlighten) |
+| ROBERTA | 80.73% | 0.8197 | 1.0 | 72 | 337.21 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-enlighten) |
+| GPT2 | 73.85% | 0.7824 | 1.0 | 48 | 413.5 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-enlighten) |
