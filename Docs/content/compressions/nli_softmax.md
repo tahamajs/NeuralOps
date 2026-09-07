@@ -65,6 +65,27 @@ The sigmoid derivative `σ(x)(1-σ(x))` is often used as a cheap approximation f
 
 ---
 
+
+## Architecture & Data Flow
+
+The `NLISoftmax` pipeline executes structured factorization and model transformation through coordinated stages:
+
+```
+Dense Weight Matrix W [D_out, D_in]
+   │
+   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
+   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
+   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
+   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+```
+
+### Step-by-Step Execution Trace
+
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
+2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
+3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
+4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+
 ## 3. Implementation Details
 
 ### `NLISoftmaxFunction` class
@@ -281,3 +302,17 @@ def nli_softmax_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> A
     compressed_model, _ = compressor.compress()
     return compressed_model
 ```
+
+## Attention Maps & Activation Diagnostics
+
+The `NLISoftmax` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/nli_softmax/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/nli_softmax-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+

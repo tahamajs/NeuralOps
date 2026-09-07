@@ -147,6 +147,27 @@ $$
 
 ---
 
+
+## Architecture & Data Flow
+
+The `AdaptiveSVDAttention` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Step-by-Step Tensor Execution Trace
 
 ### Tensor Shape Transformation Table
@@ -993,3 +1014,60 @@ torchrun --nproc_per_node=4 -m framework.main \
 1. **Eckart, C., & Young, G. (1936)**. *The approximation of one matrix by another of lower rank*. Psychometrika, 1(3), 211-218.
 2. **Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., & Chen, W. (2021)**. *LoRA: Low-Rank Adaptation of Large Language Models*. ICLR 2022 / arXiv:2106.09685.
 3. **Golub, G. H., & Reinsch, C. (1970)**. *Singular value decomposition and least squares solutions*. Numerische Mathematik, 14(5), 403-420.
+
+## Configuration & Hyperparameters
+
+The `AdaptiveSVDAttention` module (registered under `adaptive_svd`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `AdaptiveSVDAttention` | `config` | `Any` | **Required** | HuggingFace architecture configuration instance. |
+| `AdaptiveSVDAttention` | `svd_rank` | `Any` | `None` | Controls `svd_rank` configuration in `AdaptiveSVDAttention`. |
+| `AdaptiveSVDAttention` | `residual_rank` | `int` | `16` | Controls `residual_rank` configuration in `AdaptiveSVDAttention`. |
+| `AdaptiveSVDAttention` | `energy_threshold` | `float` | `0.92` | Controls `energy_threshold` configuration in `AdaptiveSVDAttention`. |
+| `AdaptiveSVDAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `AdaptiveSVDAttention`. |
+| `AdaptiveSVDLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `AdaptiveSVDLinear`. |
+| `AdaptiveSVDLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `AdaptiveSVDLinear`. |
+| `AdaptiveSVDLinear` | `svd_rank` | `Any` | **Required** | Controls `svd_rank` configuration in `AdaptiveSVDLinear`. |
+| `AdaptiveSVDLinear` | `residual_rank` | `int` | `16` | Controls `residual_rank` configuration in `AdaptiveSVDLinear`. |
+| `AdaptiveSVDLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `AdaptiveSVDLinear`. |
+| `AdaptiveSVDLinear` | `trainable_svd` | `bool` | `False` | Controls `trainable_svd` configuration in `AdaptiveSVDLinear`. |
+| `AdaptiveSVDLinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `AdaptiveSVDLinear`. |
+| `AdaptiveSVDLinear` | `device` | `Any` | `None` | Controls `device` configuration in `AdaptiveSVDLinear`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject AdaptiveSVDAttention dynamically
+model = inject_attention(model, attn_type='adaptive_svd', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

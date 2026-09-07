@@ -10,6 +10,27 @@
 
 ---
 
+
+## Architecture & Data Flow
+
+The `AegisAttentionV3` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Formulations & Architecture
 
 ```
@@ -503,3 +524,90 @@ def inject_aegis_v6(
         layer.attention = new_attn
     return new_attn
 ```
+
+## Configuration & Hyperparameters
+
+The `AegisAttentionV3` module (registered under `aegis_v6`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `AegisAttentionV3` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `AegisAttentionV3` | `pretrained_qkv` | `Any` | `None` | Controls `pretrained_qkv` configuration in `AegisAttentionV3`. |
+| `AegisAttentionV3` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `AegisAttentionV3`. |
+| `AegisAttentionV3` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `AegisAttentionV3`. |
+| `AegisAttentionV6` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `AegisAttentionV6` | `pretrained_qkv` | `Any` | `None` | Controls `pretrained_qkv` configuration in `AegisAttentionV6`. |
+| `AegisAttentionV6` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `AegisAttentionV6`. |
+| `AegisAttentionV6` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `AegisAttentionV6`. |
+| `ContextFusionGate` | `hidden_size` | `Any` | **Required** | Controls `hidden_size` configuration in `ContextFusionGate`. |
+| `ContextFusionGate` | `num_heads` | `Any` | **Required** | Controls `num_heads` configuration in `ContextFusionGate`. |
+| `ContextFusionGate` | `head_dim` | `Any` | **Required** | Controls `head_dim` configuration in `ContextFusionGate`. |
+| `ContextFusionGate` | `init_bias` | `float` | `1.8` | Controls `init_bias` configuration in `ContextFusionGate`. |
+| `FactorisedLowRankProjection` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `FactorisedLowRankProjection`. |
+| `FactorisedLowRankProjection` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `FactorisedLowRankProjection`. |
+| `FactorisedLowRankProjection` | `svd_rank` | `Any` | **Required** | Controls `svd_rank` configuration in `FactorisedLowRankProjection`. |
+| `FactorisedLowRankProjection` | `lora_rank` | `Any` | **Required** | Rank of the residual LoRA parameter update matrix. |
+| `FactorisedLowRankProjection` | `pretrained_weight` | `Any` | `None` | Controls `pretrained_weight` configuration in `FactorisedLowRankProjection`. |
+| `FactorisedLowRankProjection` | `pretrained_bias` | `Any` | `None` | Controls `pretrained_bias` configuration in `FactorisedLowRankProjection`. |
+| `GatingModule` | `hidden_size` | `Any` | **Required** | Controls `hidden_size` configuration in `GatingModule`. |
+| `GatingModule` | `num_heads` | `Any` | **Required** | Controls `num_heads` configuration in `GatingModule`. |
+| `GatingModule` | `head_dim` | `Any` | **Required** | Controls `head_dim` configuration in `GatingModule`. |
+| `GatingModule` | `use_query` | `Any` | **Required** | Controls `use_query` configuration in `GatingModule`. |
+| `GatingModule` | `use_input` | `Any` | **Required** | Controls `use_input` configuration in `GatingModule`. |
+| `KernelFeatureConfig` | `head_dim` | `Any` | **Required** | Controls `head_dim` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `num_features` | `Any` | **Required** | Controls `num_features` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `method` | `str` | `orthogonal` | Controls `method` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `clamp_min` | `float` | `-20.0` | Controls `clamp_min` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `clamp_max` | `float` | `20.0` | Controls `clamp_max` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `use_float64_exp` | `bool` | `False` | Controls `use_float64_exp` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `eps` | `float` | `1e-05` | Controls `eps` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `scaling` | `Any` | `None` | Controls `scaling` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `projection_scale` | `Any` | `None` | Controls `projection_scale` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `seed` | `Any` | `None` | Controls `seed` configuration in `KernelFeatureConfig`. |
+| `KernelFeatureConfig` | `custom_proj` | `Any` | `None` | Controls `custom_proj` configuration in `KernelFeatureConfig`. |
+| `StableKernelFeatureMap` | `config` | `Any` | **Required** | HuggingFace architecture configuration instance. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject AegisAttentionV3 dynamically
+model = inject_attention(model, attn_type='aegis_v6', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `AegisAttentionV3` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/aegis_v6/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

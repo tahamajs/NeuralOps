@@ -8,6 +8,27 @@ To circumvent the parameter redundancy and quadratic operational scaling of unco
 
 ---
 
+
+## Architecture & Data Flow
+
+The `FactorisedLinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Derivations & Formulations
 
 ### 2.1 SVD-Factorized Linear Transformation (`FactorisedLinear`)
@@ -426,4 +447,48 @@ def inject_minimal_nova(
 >    Splitting $\Sigma_r^{1/2}$ equally across factorized matrices balances spectral condition numbers $\kappa(U_r) \approx \kappa(V_r) = \sqrt{\kappa(W)}$, preventing FP16/BF16 gradient underflow.
 > 3. **Lyapunov Stability**:
 >    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
+
+## Configuration & Hyperparameters
+
+The `FactorisedLinear` module (registered under `minimal_nova`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `FactorisedLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
+| `FactorisedLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `energy` | `float` | `0.95` | Controls `energy` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `FactorisedLinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `MinimalNOVAAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `MinimalNOVAAttention` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `MinimalNOVAAttention`. |
+| `MinimalNOVAAttention` | `energy` | `float` | `0.95` | Controls `energy` configuration in `MinimalNOVAAttention`. |
+| `MinimalNOVAAttention` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `MinimalNOVAAttention`. |
+| `MinimalNOVAAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `MinimalNOVAAttention`. |
+| `MinimalNOVAAttention` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `MinimalNOVAAttention` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `MinimalNOVAAttention` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `MinimalNOVAAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `MinimalNOVAAttention`. |
+
+
+## Attention Maps & Activation Diagnostics
+
+The `FactorisedLinear` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/minimal_nova/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/minimal_nova-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
 

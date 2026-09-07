@@ -5,6 +5,27 @@ Combines block-level Seer gating with fine-grained selected attention:
 $$\mathbf{S}_{\text{blk}} = \frac{\mathbf{G}_Q(\mathbf{Q}_{\text{blk}}) \mathbf{G}_K(\mathbf{K}_{\text{blk}})^T}{\tau}$$
 Block 0 ($[\text{CLS}]$) is permanently retained in top-$k$ block selection.
 
+
+## Architecture & Data Flow
+
+The `FUSIONATTN` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. SST-2 Evaluation
 Reaches 88.6% Acc on SST-2.
 
@@ -232,3 +253,66 @@ assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
 print('Verification successful: logits shape', out.logits.shape)
 "
 ```
+
+## Configuration & Hyperparameters
+
+The `FUSIONATTN` module (registered under `fusion_attn`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `FUSIONATTN` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `FUSIONATTN` | `hidden_size` | `int` | `768` | Controls `hidden_size` configuration in `FUSIONATTN`. |
+| `FUSIONATTN` | `num_heads` | `int` | `12` | Controls `num_heads` configuration in `FUSIONATTN`. |
+| `FUSIONATTN` | `block_size` | `int` | `64` | Controls `block_size` configuration in `FUSIONATTN`. |
+| `FUSIONATTN` | `top_k_blocks` | `int` | `4` | Controls `top_k_blocks` configuration in `FUSIONATTN`. |
+| `FUSIONATTN` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
+| `FUSIONATTN` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `FUSIONATTN`. |
+| `FUSIONATTN` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `FUSIONATTN`. |
+| `FUSIONATTN` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `FUSIONATTN`. |
+| `FUSIONATTN` | `layer_id` | `Any` | `None` | Controls `layer_id` configuration in `FUSIONATTN`. |
+| `FUSIONATTN` | `layer_idx` | `Any` | `None` | Controls `layer_idx` configuration in `FUSIONATTN`. |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject FUSIONATTN dynamically
+model = inject_attention(model, attn_type='fusion_attn', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

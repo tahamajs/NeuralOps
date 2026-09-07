@@ -7,6 +7,27 @@ Standard Singular Value Decomposition (SVD) generates orthogonal basis vectors c
 
 ---
 
+
+## Architecture & Data Flow
+
+The `NMFCompressor` pipeline executes structured factorization and model transformation through coordinated stages:
+
+```
+Dense Weight Matrix W [D_out, D_in]
+   │
+   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
+   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
+   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
+   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+```
+
+### Step-by-Step Execution Trace
+
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
+2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
+3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
+4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+
 ## 2. Mathematical Formulations & Matrix Decompositions
 
 ### 2.1 Non-Negative Domain Transformation
@@ -473,3 +494,67 @@ def nmf_factory(
     compressed_model, _ = compressor.compress()
     return compressed_model
 ```
+
+## Configuration & Hyperparameters
+
+The `NMFCompressor` module (registered under `nmf`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `NMFCompressor` | `model` | `Any` | `None` | The PyTorch HuggingFace model instance to compress or inject. |
+| `NMFCompressor` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
+| `NMFCompressor` | `max_iter` | `int` | `100` | Controls `max_iter` configuration in `NMFCompressor`. |
+| `NMFCompressor` | `lora_r` | `int` | `0` | Rank of the residual LoRA parameter update matrix. |
+| `NMFCompressor` | `lora_alpha` | `float` | `1.0` | Scaling multiplier for LoRA weight updates. |
+| `NMFCompressor` | `cfg` | `Any` | `None` | Controls `cfg` configuration in `NMFCompressor`. |
+| `NMFCompressor` | `target_layers` | `Any` | `None` | Controls `target_layers` configuration in `NMFCompressor`. |
+| `NMFCompressor` | `target_attention_only` | `bool` | `False` | Controls `target_attention_only` configuration in `NMFCompressor`. |
+| `NMFCompressor` | `max_error` | `float` | `0.35` | Upper bound on relative Frobenius reconstruction error before fallback. |
+| `NMFCompressor` | `fallback_to_original` | `bool` | `True` | Whether to revert to dense weights if decomposition exceeds error threshold. |
+| `NMFLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `NMFLinear`. |
+| `NMFLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `NMFLinear`. |
+| `NMFLinear` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
+| `NMFLinear` | `shift` | `float` | `0.0` | Controls `shift` configuration in `NMFLinear`. |
+| `NMFLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `NMFLinear`. |
+| `NMFLinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `NMFLinear`. |
+| `NMFLinear` | `device` | `Any` | `None` | Controls `device` configuration in `NMFLinear`. |
+| `NMFLinear` | `lora_r` | `int` | `0` | Rank of the residual LoRA parameter update matrix. |
+| `NMFLinear` | `lora_alpha` | `float` | `1.0` | Scaling multiplier for LoRA weight updates. |
+
+
+## Usage & Integration Examples
+
+### Compression Pipeline Execution
+
+```python
+import torch
+from transformers import AutoModelForCausalLM
+from framework.compression_engine.nmf_compressor import NMFCompressor
+
+# 1. Initialize model
+model = AutoModelForCausalLM.from_pretrained('gpt2')
+
+# 2. Apply compressor
+compressor = NMFCompressor(model=model, rank=64)
+compressed_model = compressor.compress() if hasattr(compressor, 'compress') else model
+
+# 3. Verify output fidelity
+input_ids = torch.randint(0, 1000, (1, 64))
+with torch.no_grad():
+    outputs = compressed_model(input_ids)
+print('Compressed output logits:', outputs.logits.shape)
+```
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/nmf_compressor-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

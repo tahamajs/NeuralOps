@@ -198,6 +198,27 @@ Because $KV$ and $K_{\text{sum}}$ can be accumulated in $\mathcal{O}(L \cdot m \
 
 ---
 
+
+## Architecture & Data Flow
+
+The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Step-by-Step Tensor Execution Trace
 
 ```
@@ -537,3 +558,54 @@ def inject_performer(
 1. **Choromanski, K., Likhosherstov, V., Dohan, D., Song, X., Gane, A., Sarlos, T., Hawkins, P., Davis, J., Mohiuddin, A., Kaiser, L., Belanger, D., Colwell, L., & Weller, A. (2021)**. *Rethinking Attention with Performers*. In International Conference on Learning Representations (ICLR 2021). [arXiv:2009.14794](https://arxiv.org/abs/2009.14794).
 2. **Rahimi, A., & Recht, B. (2007)**. *Random Features for Large-Scale Kernel Machines*. In Advances in Neural Information Processing Systems (NeurIPS 2007).
 3. **Katharopoulos, A., Vyas, A., Pappas, N., & Fleuret, F. (2020)**. *Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention*. In ICML 2020.
+
+## Configuration & Hyperparameters
+
+The `LoRALinear` module (registered under `performer`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+| `PerformerAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `PerformerAttention` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `PerformerAttention` | `eps` | `float` | `1e-06` | Controls `eps` configuration in `PerformerAttention`. |
+| `PerformerAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `PerformerAttention`. |
+| `PerformerAttention` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `PerformerAttention`. |
+| `PerformerAttention` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `PerformerAttention`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject LoRALinear dynamically
+model = inject_attention(model, attn_type='performer', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

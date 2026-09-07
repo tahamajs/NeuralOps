@@ -4,6 +4,27 @@
 Employs Differential Attention $\mathbf{A}_{\text{diff}} = \text{Softmax}(\mathbf{Q}_1 \mathbf{K}_1^T) - 0.2 \cdot \text{Softmax}(\mathbf{Q}_2 \mathbf{K}_2^T)$ combined with a Concept Bottleneck SSM:
 $$\mathbf{Y} = \mathbf{W}_O \left(\mathbf{A}_{\text{diff}} \mathbf{V} + 0.1 \cdot \text{SimpleSSM}(\text{MLP}_{\text{down-up}}(\mathbf{X}))\right)$$
 
+
+## Architecture & Data Flow
+
+The `InfoMambaConceptBottleneck` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Positive Normalization
 Differential attention rows are normalized with $\text{ReLU}$ and row sum division to prevent negative attention weights.
 
@@ -206,3 +227,64 @@ assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
 print('Verification successful: logits shape', out.logits.shape)
 "
 ```
+
+## Configuration & Hyperparameters
+
+The `InfoMambaConceptBottleneck` module (registered under `jamba_info`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `InfoMambaConceptBottleneck` | `dim` | `Any` | **Required** | Controls `dim` configuration in `InfoMambaConceptBottleneck`. |
+| `InfoMambaConceptBottleneck` | `bottleneck_dim` | `int` | `64` | Controls `bottleneck_dim` configuration in `InfoMambaConceptBottleneck`. |
+| `JambaInfoBlock` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `JambaInfoBlock` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
+| `JambaInfoBlock` | `mode` | `str` | `retrieval` | Controls `mode` configuration in `JambaInfoBlock`. |
+| `JambaInfoBlock` | `sparsity` | `float` | `0.5` | Controls `sparsity` configuration in `JambaInfoBlock`. |
+| `JambaInfoBlock` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `JambaInfoBlock`. |
+| `JambaInfoBlock` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `JambaInfoBlock`. |
+| `JambaInfoBlock` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `JambaInfoBlock`. |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject InfoMambaConceptBottleneck dynamically
+model = inject_attention(model, attn_type='jamba_info', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

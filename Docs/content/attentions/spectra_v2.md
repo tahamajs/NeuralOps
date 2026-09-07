@@ -9,6 +9,27 @@
 
 ---
 
+
+## Architecture & Data Flow
+
+The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Formulations & Architecture
 
 ```
@@ -325,3 +346,83 @@ def inject_spectra_v2(
         layer.attention = new_attn
     return new_attn
 ```
+
+## Configuration & Hyperparameters
+
+The `LoRALinear` module (registered under `inject_spectra_v2`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+| `SpectraConfig` | `hidden_size` | `int` | `768` | Controls `hidden_size` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `num_attention_heads` | `int` | `12` | Controls `num_attention_heads` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `block_size` | `int` | `64` | Controls `block_size` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `top_k_inter` | `int` | `16` | Controls `top_k_inter` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `use_rel_pos_bias` | `bool` | `True` | Controls `use_rel_pos_bias` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `rel_pos_max_distance` | `int` | `128` | Controls `rel_pos_max_distance` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `adaptive_span` | `bool` | `True` | Controls `adaptive_span` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `max_span` | `float` | `512.0` | Controls `max_span` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `rectify_interval` | `int` | `4` | Controls `rectify_interval` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `rff_features` | `int` | `128` | Controls `rff_features` configuration in `SpectraConfig`. |
+| `SpectraConfig` | `aks_enabled` | `bool` | `True` | Controls `aks_enabled` configuration in `SpectraConfig`. |
+| `SpectraV2Attention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `SpectraV2Attention` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `SpectraV2Attention`. |
+| `SpectraV2Attention` | `spectra_cfg` | `Any` | `None` | Controls `spectra_cfg` configuration in `SpectraV2Attention`. |
+| `SpectraV2Attention` | `layer_idx` | `int` | `0` | Controls `layer_idx` configuration in `SpectraV2Attention`. |
+| `SpectraV2Attention` | `total_layers` | `int` | `12` | Controls `total_layers` configuration in `SpectraV2Attention`. |
+| `SpectraV2Attention` | `bert_mode` | `bool` | `False` | Controls `bert_mode` configuration in `SpectraV2Attention`. |
+| `SpectraV2Attention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `SpectraV2Attention`. |
+| `SpectraV2Attention` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject LoRALinear dynamically
+model = inject_attention(model, attn_type='inject_spectra_v2', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `LoRALinear` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/spectra_v2/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

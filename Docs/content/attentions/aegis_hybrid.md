@@ -157,6 +157,27 @@ $$\frac{\partial O_t}{\partial X_{t+k}} \equiv 0, \quad \forall k \ge 1$$
 
 ---
 
+
+## Architecture & Data Flow
+
+The `AegisHybridAttention` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. The Five Critical Failure Modes & Architectural Refactoring
 
 During extensive empirical verification on NVIDIA RTX GPUs across 4 distinct transformer architectures, five critical failure modes were identified and systematically resolved:
@@ -1293,3 +1314,40 @@ Aegis-Hybrid Attention delivers an optimal synthesis of high parameter compressi
 - **Linear Feature Map**: $\operatorname{ELU}(u) + 1.0$ (strictly positive, avoids numerical instability of exponential kernels).
 - **Fusion Gate Bias Initialization**: $+1.8$ (initializes local weight to $\sim 86\%$, ensuring stable initial transfer from pretrained checkpoints).
 - **Recovery Fine-Tuning**: 200 recovery steps with AdamW at learning rate $2.0 \times 10^{-4}$ achieves full convergence across all transformer architectures.
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject AegisHybridAttention dynamically
+model = inject_attention(model, attn_type='aegis_hybrid', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `AegisHybridAttention` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/aegis_hybrid/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

@@ -61,6 +61,27 @@ with $\mathbf{W}_{1,e} \in \mathbb{R}^{D \times 2D_{\text{out}}}$ and $\mathbf{W
 
 ---
 
+
+## Architecture & Data Flow
+
+The `BAMUMoEBlock` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Routing Dynamics: Token-Choice vs. Expert-Choice & Load Balancing
 
 ### 2.1 Token-Choice Top-$k$ Routing
@@ -415,3 +436,77 @@ class BAMUMoEBlock(BaseAttention):
 1. **Shazeer, N., Mirhoseini, A., Maziarz, K., et al. (2017)**. *Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer*. In International Conference on Learning Representations (ICLR 2017). [arXiv:1701.06538](https://arxiv.org/abs/1701.06538).
 2. **Fedus, W., Zoph, B., & Shazeer, N. (2022)**. *Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity*. Journal of Machine Learning Research (JMLR 2022).
 3. **Lepikhin, D., et al. (2021)**. *GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding*. In ICLR 2021.
+
+## Configuration & Hyperparameters
+
+The `BAMUMoEBlock` module (registered under `bam_umoe`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `BAMUMoEBlock` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `BAMUMoEBlock` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
+| `BAMUMoEBlock` | `num_experts` | `int` | `8` | Controls `num_experts` configuration in `BAMUMoEBlock`. |
+| `BAMUMoEBlock` | `top_k` | `int` | `2` | Controls `top_k` configuration in `BAMUMoEBlock`. |
+| `BAMUMoEBlock` | `layer_id` | `Any` | `None` | Controls `layer_id` configuration in `BAMUMoEBlock`. |
+| `BAMUMoEBlock` | `num_layers` | `Any` | `None` | Controls `num_layers` configuration in `BAMUMoEBlock`. |
+| `BAMUMoEBlock` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `BAMUMoEBlock`. |
+| `BAMUMoEBlock` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `BAMUMoEBlock`. |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+| `UnifiedMoE` | `dim` | `Any` | **Required** | Controls `dim` configuration in `UnifiedMoE`. |
+| `UnifiedMoE` | `num_experts` | `int` | `8` | Controls `num_experts` configuration in `UnifiedMoE`. |
+| `UnifiedMoE` | `top_k` | `int` | `2` | Controls `top_k` configuration in `UnifiedMoE`. |
+| `UnifiedMoE` | `output_dim` | `Any` | `None` | Controls `output_dim` configuration in `UnifiedMoE`. |
+| `UnifiedMoE` | `noise_std` | `float` | `0.1` | Controls `noise_std` configuration in `UnifiedMoE`. |
+| `UnifiedMoE` | `expert_multiplier` | `int` | `2` | Controls `expert_multiplier` configuration in `UnifiedMoE`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject BAMUMoEBlock dynamically
+model = inject_attention(model, attn_type='bam_umoe', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `BAMUMoEBlock` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/bam_umoe/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

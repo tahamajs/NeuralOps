@@ -81,6 +81,27 @@ $$\mathbf{O}_{\text{rect}} = \frac{\phi(\mathbf{Q}) \left(\phi(\mathbf{K})^\top 
 
 ---
 
+
+## Architecture & Data Flow
+
+The `DualStageStripeAttention` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Theoretical Analysis of Softpick Rectified Activation
 
 ### 2.1 Formulation of Softpick
@@ -560,3 +581,92 @@ class NEXUSAttention(BaseAttention):
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.tensor(0.0, device=self.query.weight.device)
 ```
+
+## Configuration & Hyperparameters
+
+The `DualStageStripeAttention` module (registered under `nexus`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `DualStageStripeAttention` | `cfg` | `Any` | **Required** | Controls `cfg` configuration in `DualStageStripeAttention`. |
+| `DualStageStripeAttention` | `head_dim` | `Any` | **Required** | Controls `head_dim` configuration in `DualStageStripeAttention`. |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+| `NEXUSAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `NEXUSAttention` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `NEXUSAttention`. |
+| `NEXUSAttention` | `nexus_cfg` | `Any` | `None` | Controls `nexus_cfg` configuration in `NEXUSAttention`. |
+| `NEXUSAttention` | `layer_idx` | `int` | `0` | Controls `layer_idx` configuration in `NEXUSAttention`. |
+| `NEXUSAttention` | `total_layers` | `int` | `6` | Controls `total_layers` configuration in `NEXUSAttention`. |
+| `NEXUSAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `NEXUSAttention`. |
+| `NEXUSAttention` | `bert_mode` | `bool` | `False` | Controls `bert_mode` configuration in `NEXUSAttention`. |
+| `NEXUSAttention` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `NEXUSAttention` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `NEXUSAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `NEXUSAttention`. |
+| `NEXUSConfig` | `block_size` | `int` | `32` | Controls `block_size` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `top_k_blocks` | `int` | `4` | Controls `top_k_blocks` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `xattn_enabled` | `bool` | `True` | Controls `xattn_enabled` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `xattn_stride` | `int` | `2` | Controls `xattn_stride` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `seer_enabled` | `bool` | `True` | Controls `seer_enabled` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `seer_gate_rank` | `int` | `16` | Controls `seer_gate_rank` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `seer_top_k_blocks` | `int` | `4` | Controls `seer_top_k_blocks` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `seer_temperature` | `float` | `1.0` | Controls `seer_temperature` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `dual_stage_enabled` | `bool` | `True` | Controls `dual_stage_enabled` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `intra_block_full` | `bool` | `True` | Controls `intra_block_full` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `stripe_enabled` | `bool` | `True` | Controls `stripe_enabled` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `stripe_width` | `int` | `4` | Controls `stripe_width` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `rectify_interval` | `int` | `4` | Controls `rectify_interval` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `rff_features` | `int` | `128` | Controls `rff_features` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `softpick_enabled` | `bool` | `True` | Controls `softpick_enabled` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `softpick_temperature` | `float` | `1.0` | Controls `softpick_temperature` configuration in `NEXUSConfig`. |
+| `NEXUSConfig` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `NEXUSConfig`. |
+| `SeerGating` | `head_dim` | `Any` | **Required** | Controls `head_dim` configuration in `SeerGating`. |
+| `SeerGating` | `num_heads` | `Any` | **Required** | Controls `num_heads` configuration in `SeerGating`. |
+| `SeerGating` | `gate_rank` | `Any` | **Required** | Controls `gate_rank` configuration in `SeerGating`. |
+| `SeerGating` | `top_k` | `Any` | **Required** | Controls `top_k` configuration in `SeerGating`. |
+| `SeerGating` | `temperature` | `float` | `1.0` | Controls `temperature` configuration in `SeerGating`. |
+| `SpectraformerRectify` | `head_dim` | `Any` | **Required** | Controls `head_dim` configuration in `SpectraformerRectify`. |
+| `SpectraformerRectify` | `rff_features` | `int` | `128` | Controls `rff_features` configuration in `SpectraformerRectify`. |
+| `XAttentionScorer` | `args` | `Any` | **Required** | Controls `args` configuration in `XAttentionScorer`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject DualStageStripeAttention dynamically
+model = inject_attention(model, attn_type='nexus', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

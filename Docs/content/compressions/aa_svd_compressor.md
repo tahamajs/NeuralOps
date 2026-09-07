@@ -7,6 +7,27 @@ Standard SVD acts purely on static weight matrices $W \in \mathbb{R}^{d_{\text{o
 
 ---
 
+
+## Architecture & Data Flow
+
+The `AASVDCompressor` pipeline executes structured factorization and model transformation through coordinated stages:
+
+```
+Dense Weight Matrix W [D_out, D_in]
+   │
+   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
+   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
+   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
+   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+```
+
+### Step-by-Step Execution Trace
+
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
+2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
+3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
+4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+
 ## 2. Mathematical Formulations & Matrix Decompositions
 
 ### 2.1 Empirical Activation Subspace Extraction
@@ -625,3 +646,43 @@ torchrun --nproc_per_node=4 -m framework.main \
 1. **Yuan, Z., Shang, Y., Song, Y., Wu, Q., Yan, Y., & Dong, G. (2023)**. *ASVD: Activation-aware Singular Value Decomposition for Compressing Large Language Models*. arXiv preprint [arXiv:2310.13545](https://arxiv.org/abs/2310.13545).
 2. **Xiao, G., Lin, J., Seznec, J., Wu, H., Demouth, J., & Han, S. (2023)**. *SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models*. In International Conference on Machine Learning (ICML 2023). [arXiv:2211.10438](https://arxiv.org/abs/2211.10438).
 3. **Frantar, E., & Alistarh, D. (2023)**. *SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot*. In ICML 2023.
+
+## Configuration & Hyperparameters
+
+The `AASVDCompressor` module (registered under `aa_svd`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `AASVDCompressor` | `model` | `Any` | **Required** | The PyTorch HuggingFace model instance to compress or inject. |
+| `AASVDCompressor` | `tokenizer` | `Any` | `None` | Controls `tokenizer` configuration in `AASVDCompressor`. |
+| `AASVDCompressor` | `rank` | `int` | `288` | Low-rank bottleneck projection rank. |
+| `AASVDCompressor` | `ema_beta` | `float` | `0.9` | Controls `ema_beta` configuration in `AASVDCompressor`. |
+| `AASVDCompressor` | `max_error` | `float` | `0.5` | Upper bound on relative Frobenius reconstruction error before fallback. |
+| `AASVDCompressor` | `fallback_to_original` | `bool` | `True` | Whether to revert to dense weights if decomposition exceeds error threshold. |
+| `AASVDCompressor` | `calibration_texts` | `Any` | `None` | Controls `calibration_texts` configuration in `AASVDCompressor`. |
+| `AASVDCompressor` | `device` | `Any` | `None` | Controls `device` configuration in `AASVDCompressor`. |
+| `AASVDCompressor` | `target_modules` | `Any` | `None` | Controls `target_modules` configuration in `AASVDCompressor`. |
+| `AASVDCompressor` | `target_attention_only` | `bool` | `True` | Controls `target_attention_only` configuration in `AASVDCompressor`. |
+| `SVDLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `SVDLinear`. |
+| `SVDLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `SVDLinear`. |
+| `SVDLinear` | `rank` | `Any` | **Required** | Low-rank bottleneck projection rank. |
+| `SVDLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `SVDLinear`. |
+| `SVDLinear` | `use_fused_kernel` | `bool` | `False` | Controls `use_fused_kernel` configuration in `SVDLinear`. |
+| `SVDLinear` | `dtype` | `str` | `torch.float32` | Controls `dtype` configuration in `SVDLinear`. |
+| `SVDLinear` | `device` | `Any` | `None` | Controls `device` configuration in `SVDLinear`. |
+| `SVDLinear` | `lora_r` | `int` | `0` | Rank of the residual LoRA parameter update matrix. |
+| `SVDLinear` | `lora_alpha` | `float` | `1.0` | Scaling multiplier for LoRA weight updates. |
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/aa_svd_compressor-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+
