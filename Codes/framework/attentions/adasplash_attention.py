@@ -357,24 +357,26 @@ class AdaSplashAttention(BaseAttention):
                         w = mod.weight
                         b = getattr(mod, "bias", None)
                     elif hasattr(src, "c_proj"):
-                        w = src.c_proj.weight.T
-                        b = getattr(src.c_proj, "bias", None)
+                        c_proj_mod = getattr(src.c_proj, "base_layer", src.c_proj)
+                        w = c_proj_mod.weight.T
+                        b = getattr(c_proj_mod, "bias", None)
                     elif hasattr(src, "out_lin"):
-                        mod = src.out_lin
+                        mod = getattr(src.out_lin, "base_layer", src.out_lin)
                         w = mod.weight
                         b = getattr(mod, "bias", None)
                     elif hasattr(src, "o_proj"):
-                        mod = src.o_proj
+                        mod = getattr(src.o_proj, "base_layer", src.o_proj)
                         w = mod.weight
                         b = getattr(mod, "bias", None)
                     elif hasattr(src, "wo"):
-                        mod = src.wo
+                        mod = getattr(src.wo, "base_layer", src.wo)
                         w = mod.weight
                         b = getattr(mod, "bias", None)
                 # 2. GPT-2 Fused c_attn Conv1D for Q, K, V
                 elif hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
-                    fused_w = src.c_attn.weight.T  # [3 * D, D]
-                    fused_b = getattr(src.c_attn, "bias", None)
+                    c_attn_mod = getattr(src.c_attn, "base_layer", src.c_attn)
+                    fused_w = c_attn_mod.weight.T  # [3 * D, D]
+                    fused_b = getattr(c_attn_mod, "bias", None)
                     split_size = fused_w.size(0) // 3
                     idx = {"q": 0, "k": 1, "v": 2}[proj]
                     w = fused_w[idx * split_size : (idx + 1) * split_size, :]
