@@ -561,7 +561,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
     model.train()
     curr_batch_size = batch_size
-    micro_bs = min(curr_batch_size, 4 if device.type == "cuda" else curr_batch_size)
+    micro_bs = min(curr_batch_size, 8 if device.type == "cuda" else curr_batch_size)
     had_nan = False
     step = 0
     t_start = time.monotonic()
@@ -624,6 +624,10 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
 def main():
     import os
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     ap.add_argument("--dataset_dir", default=None); ap.add_argument("--dataset", default="sst2")
