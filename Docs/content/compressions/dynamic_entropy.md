@@ -112,3 +112,10 @@ assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
 print('Verification successful: logits shape', out.logits.shape)
 "
 ```
+
+## Unified 4-Architecture Benchmark Results (Dynamic Entropy SVD)
+Evaluated on SST-2 sentiment classification (FP16, singular entropy dynamic rank allocation, min rank 16, max rank 256, target param ratio 0.5, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 88.42% | 0.8924 | 1.0 | 0 | 321.64 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-dynamic-entropy-svd) |
