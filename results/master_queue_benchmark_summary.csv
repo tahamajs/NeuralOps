@@ -32,3 +32,4 @@ compressed_mha,run_all_4_compressed_mha.py,0,154.82,PASS,,2026-09-07T19:28:03.47
 cosformer,run_all_4_cosformer.py,0,229.96,PASS,,2026-09-07T19:31:53.433130
 cur,run_all_4_cur.py,0,212.34,PASS,,2026-09-07T19:35:25.773220
 cur_moe,run_all_4_cur_moe.py,0,179.57,PASS,,2026-09-07T19:38:25.349173
+decay_linear_attention,run_all_4_decay_linear_attention.py,0,2973.33,PASS,,2026-09-07T20:27:58.679599

@@ -295,5 +295,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T19:38:25.349173"
+  },
+  {
+    "module": "decay_linear_attention",
+    "runner": "run_all_4_decay_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 2973.33,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T20:27:58.679599"
   }
 ]
