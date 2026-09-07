@@ -261,9 +261,6 @@ class ARMORPruner(BaseCompressor):
         """Determines if layer is asymmetric GQA projection that should be skipped."""
         if not self.skip_attention_qkv:
             return False
-        if self.target_attention_only:
-            # If target_attention_only is True, we explicitly compress attention projections
-            return False
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
@@ -305,11 +302,15 @@ class ARMORPruner(BaseCompressor):
         if any(skip in name_lower for skip in ["lm_head", "classifier", "head", "output_layer", "score", "pooler", "pre_classifier"]):
             return False
 
+        # Nested encoder awareness: skip out_proj if nested inside attention.self.output or self.output
+        if any(nested in name_lower for nested in ["attention.self.output", "self.output.dense"]):
+            return False
+
         if self._is_gqa_asymmetric(name, module):
             return False
 
         if self.target_attention_only:
-            # Skip FFN / MLP layers
+            # Skip FFN / MLP layers (including Qwen/LLaMA gate/up/down and GPT c_fc)
             ffn_patterns = [
                 "ffn", "mlp", "lin1", "lin2", "intermediate",
                 "gate_proj", "up_proj", "down_proj", "c_fc"
@@ -355,27 +356,41 @@ class ARMORPruner(BaseCompressor):
                 target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
                 hooks.append(target_mod.register_forward_hook(make_hook(name)))
 
-        calib_inputs = get_calibration_tensors(
-            self.model,
-            tokenizer=self.tokenizer,
-            calibration_loader=self.calibration_loader,
-            calibration_texts=self.calibration_texts,
-            device=self.target_device,
-        )
-
-        with torch.no_grad():
-            try:
-                if isinstance(calib_inputs, dict):
-                    self.model(**calib_inputs)
-                elif isinstance(calib_inputs, torch.Tensor):
-                    self.model(calib_inputs)
-                elif isinstance(calib_inputs, (list, tuple)):
-                    self.model(*calib_inputs)
-            except Exception as e:
-                logger.debug("ARMOR calibration pass exception: %s", e)
-
-        for h in hooks:
-            h.remove()
+        try:
+            with torch.no_grad():
+                if self.calibration_loader is not None:
+                    for batch in self.calibration_loader:
+                        try:
+                            if isinstance(batch, dict):
+                                b_dev = {k: v.to(self.target_device) if torch.is_tensor(v) else v for k, v in batch.items()}
+                                self.model(**b_dev)
+                            elif torch.is_tensor(batch):
+                                self.model(batch.to(self.target_device))
+                            elif isinstance(batch, (list, tuple)):
+                                b_dev = [v.to(self.target_device) if torch.is_tensor(v) else v for v in batch]
+                                self.model(*b_dev)
+                        except Exception as b_err:
+                            logger.debug("Batch forward failed in ARMOR calibration: %s", b_err)
+                else:
+                    calib_inputs = get_calibration_tensors(
+                        self.model,
+                        tokenizer=self.tokenizer,
+                        calibration_loader=None,
+                        calibration_texts=self.calibration_texts,
+                        device=self.target_device,
+                    )
+                    try:
+                        if isinstance(calib_inputs, dict):
+                            self.model(**calib_inputs)
+                        elif isinstance(calib_inputs, torch.Tensor):
+                            self.model(calib_inputs)
+                        elif isinstance(calib_inputs, (list, tuple)):
+                            self.model(*calib_inputs)
+                    except Exception as e:
+                        logger.debug("ARMOR calibration pass exception: %s", e)
+        finally:
+            for h in hooks:
+                h.remove()
 
         aggregated: Dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
@@ -518,8 +533,15 @@ class ARMORPruner(BaseCompressor):
                         lora_alpha=self.lora_alpha,
                     )
                     if has_lora:
-                        # Keep original LoRALinear wrapper and replace its base_layer
+                        # Keep original LoRALinear wrapper, replace base_layer with ARMORLinear.
+                        # Zero out outer wrapper's LoRA to avoid double correction;
+                        # ARMORLinear's internal LoRA remains the dedicated trainable residual branch.
                         module.base_layer = armor_layer
+                        for p_name, p in module.named_parameters():
+                            if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                                if not p_name.startswith("base_layer"):
+                                    p.data.zero_()
+                                    p.requires_grad = False
                     elif name == "":
                         self.model = armor_layer
                     else:
@@ -529,12 +551,6 @@ class ARMORPruner(BaseCompressor):
                         target_mod.weight.data.copy_(W_recon.t().to(dtype=dtype, device=device))
                     else:
                         target_mod.weight.data.copy_(W_recon.to(dtype=dtype, device=device))
-
-                # Preserve LoRA adapter parameters if original layer had LoRA
-                if has_lora:
-                    for p_name, p in module.named_parameters():
-                        if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
-                            p.requires_grad = True
 
                 self.compressed_layers.append(name)
 
@@ -560,18 +576,27 @@ class ARMORPruner(BaseCompressor):
         # Post-compression forward sanity check
         forward_check_success = True
         try:
+            self.model.eval()
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                cfg = getattr(self.model, "config", None)
+                hidden_size = getattr(cfg, "hidden_size", None)
                 try:
-                    self.model(dummy)
+                    # Preferred: for text sequence classification models expecting integer tokens
+                    dummy_ids = torch.zeros((1, 8), dtype=torch.long, device=dev)
+                    self.model(dummy_ids)
                 except Exception:
-                    first_linear = next(
-                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, ARMORLinear))),
-                        None,
-                    )
-                    in_dim = getattr(first_linear, "in_features", 8)
-                    self.model(torch.randn(1, 8, in_dim, device=dev))
+                    # Secondary: float input matching hidden size or first linear in_features
+                    if hidden_size is not None:
+                        dummy_embeds = torch.randn(1, 8, hidden_size, device=dev)
+                    else:
+                        first_linear = next(
+                            (m for m in self.model.modules() if isinstance(m, (nn.Linear, ARMORLinear))),
+                            None,
+                        )
+                        in_dim = getattr(first_linear, "in_features", 8)
+                        dummy_embeds = torch.randn(1, 8, in_dim, device=dev)
+                    self.model(dummy_embeds)
         except Exception as e:
             logger.warning("ARMOR post-compression forward check warning: %s", e)
             forward_check_success = False
@@ -637,7 +662,7 @@ def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> 
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "armor_lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0)))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "armor_max_error", _cfg_get(comp_config, "max_error", 0.35)))
     fallback_to_original = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "armor_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "armor_target_attention_only", _cfg_get(comp_config, "target_attention_only", True)))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "armor_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)))
     skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "armor_skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
