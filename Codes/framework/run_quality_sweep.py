@@ -686,6 +686,10 @@ def main():
                     help="Maximum reconstruction error threshold for AASVD before fallback")
     ap.add_argument("--aasvd_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict AASVD compression to attention layers only")
+    ap.add_argument("--aasvd_ema_beta", type=float, default=0.9,
+                    help="EMA beta momentum for AASVD covariance accumulation")
+    ap.add_argument("--aasvd_fallback_to_original", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Fallback to original weights if reconstruction error exceeds threshold")
     ap.add_argument("--defer_export", action="store_true", default=False,
                     help="Defer Hugging Face upload and Git commit to orchestrator script")
     ap.add_argument("--adaptive_ranks_max_error", type=float, default=0.85,
@@ -1443,8 +1447,16 @@ def main():
                             setattr(model.config, "asvd_error_threshold", args.asvd_error_threshold)
                         if getattr(args, "aasvd_max_error", None) is not None:
                             setattr(model.config, "aasvd_max_error", args.aasvd_max_error)
+                            setattr(model.config, "max_error", args.aasvd_max_error)
                         if getattr(args, "aasvd_target_attention_only", None) is not None:
                             setattr(model.config, "aasvd_target_attention_only", args.aasvd_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.aasvd_target_attention_only)
+                        if getattr(args, "aasvd_ema_beta", None) is not None:
+                            setattr(model.config, "aasvd_ema_beta", args.aasvd_ema_beta)
+                            setattr(model.config, "ema_beta", args.aasvd_ema_beta)
+                        if getattr(args, "aasvd_fallback_to_original", None) is not None:
+                            setattr(model.config, "aasvd_fallback_to_original", args.aasvd_fallback_to_original)
+                            setattr(model.config, "fallback_to_original", args.aasvd_fallback_to_original)
                         if getattr(args, "adaptive_ranks_max_error", None) is not None:
                             setattr(model.config, "adaptive_ranks_max_error", args.adaptive_ranks_max_error)
                             setattr(model.config, "max_error", args.adaptive_ranks_max_error)

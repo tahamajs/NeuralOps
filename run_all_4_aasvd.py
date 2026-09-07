@@ -135,6 +135,8 @@ parser.add_argument("--recovery_steps", type=int, default=None, help="Number of 
 parser.add_argument("--rank", type=int, default=None, help="Compression rank override")
 parser.add_argument("--max_error", type=float, default=None, help="AASVD max reconstruction error threshold")
 parser.add_argument("--attention_only", type=str, default=None, help="Target attention layers only (true/false)")
+parser.add_argument("--ema_beta", type=float, default=None, help="EMA beta momentum for covariance accumulation")
+parser.add_argument("--fallback_to_original", type=str, default=None, help="Fallback to original weights (true/false)")
 parser.add_argument("positional_models", nargs="*", default=None, help="Positional model names for backwards compatibility")
 
 args = parser.parse_args()
@@ -179,6 +181,14 @@ for m in models:
             update_cmd_arg(m["cmd"], "--aasvd_target_attention_only", "true")
         elif val in ("0", "false", "no"):
             update_cmd_arg(m["cmd"], "--aasvd_target_attention_only", "false")
+    if args.ema_beta is not None:
+        update_cmd_arg(m["cmd"], "--aasvd_ema_beta", str(args.ema_beta))
+    if args.fallback_to_original is not None:
+        val = str(args.fallback_to_original).strip().lower()
+        if val in ("1", "true", "yes"):
+            update_cmd_arg(m["cmd"], "--aasvd_fallback_to_original", "true")
+        elif val in ("0", "false", "no"):
+            update_cmd_arg(m["cmd"], "--aasvd_fallback_to_original", "false")
 
 print("=" * 80, flush=True)
 print("STARTING UNIFIED 4-MODEL HARDENED AASVD BENCHMARK ON GPU SERVER", flush=True)
@@ -229,15 +239,27 @@ for m in models:
                             except Exception: pass
                         if "num_compressed_layers" in row.columns and not pd.isna(row["num_compressed_layers"].values[-1]):
                             num_compressed_layers = str(row["num_compressed_layers"].values[-1])
+                        num_fallback_layers = str(row.get("num_fallback_layers", pd.Series(["0"])).values[-1]) if "num_fallback_layers" in row.columns else "0"
+                        avg_error = str(row.get("avg_reconstruction_error", pd.Series(["N/A"])).values[-1]) if "avg_reconstruction_error" in row.columns else "N/A"
+                        val_loss = float(row["val_loss"].values[-1]) if "val_loss" in row.columns and not pd.isna(row["val_loss"].values[-1]) else None
+                        precision = float(row["precision"].values[-1]) if "precision" in row.columns and not pd.isna(row["precision"].values[-1]) else None
+                        recall = float(row["recall"].values[-1]) if "recall" in row.columns and not pd.isna(row["recall"].values[-1]) else None
+                        tokens_per_sec = float(row["tokens_per_sec"].values[-1]) if "tokens_per_sec" in row.columns and not pd.isna(row["tokens_per_sec"].values[-1]) else None
+                        flops_reduction = float(row["flops_reduction_pct"].values[-1]) if "flops_reduction_pct" in row.columns and not pd.isna(row["flops_reduction_pct"].values[-1]) else None
         except Exception as e:
             print(f"Error reading summary CSV for {m['name']}: {e}", flush=True)
 
     stats_path = Path(m.get("stats_json", ""))
-    if stats_path.exists() and num_compressed_layers == "N/A":
+    if stats_path.exists():
         try:
             with open(stats_path, "r", encoding="utf-8") as sf:
                 s_data = json.load(sf)
-                num_compressed_layers = s_data.get("num_compressed_layers", "N/A")
+                if num_compressed_layers == "N/A":
+                    num_compressed_layers = s_data.get("num_compressed_layers", "N/A")
+                if 'num_fallback_layers' not in locals() or num_fallback_layers == "0":
+                    num_fallback_layers = str(s_data.get("num_fallback_layers", num_fallback_layers if 'num_fallback_layers' in locals() else "0"))
+                if 'avg_error' not in locals() or avg_error == "N/A":
+                    avg_error = str(s_data.get("avg_reconstruction_error", avg_error if 'avg_error' in locals() else "N/A"))
         except Exception as e:
             print(f"Error reading stats JSON for {m['name']}: {e}", flush=True)
 
@@ -245,6 +267,8 @@ for m in models:
     f1_str = f"{f1:.4f}" if f1 is not None else "N/A"
     comp_rate_str = f"{comp_rate:.2f}x" if comp_rate is not None else "1.00x"
     vram_str = f"{peak_vram:.1f} MB" if peak_vram is not None else "N/A"
+    num_fallback_str = num_fallback_layers if 'num_fallback_layers' in locals() else "0"
+    avg_error_str = avg_error if 'avg_error' in locals() else "N/A"
 
     final_stats.append({
         "Model": m["name"],
@@ -253,10 +277,17 @@ for m in models:
         "AASVD Acc": f"{acc:.2f}%" if acc is not None else "N/A",
         "Delta Acc": delta_acc_str,
         "F1": f1_str,
+        "Precision": f"{precision:.4f}" if ('precision' in locals() and precision is not None) else "N/A",
+        "Recall": f"{recall:.4f}" if ('recall' in locals() and recall is not None) else "N/A",
+        "Val Loss": f"{val_loss:.4f}" if ('val_loss' in locals() and val_loss is not None) else "N/A",
         "Status": status,
         "Compressed Layers": num_compressed_layers,
+        "Fallback Layers": num_fallback_str,
+        "Avg Error": avg_error_str,
         "Comp Rate": comp_rate_str,
+        "FLOPs Red": f"{flops_reduction:.1f}%" if ('flops_reduction' in locals() and flops_reduction is not None) else "N/A",
         "Peak VRAM": vram_str,
+        "Throughput (tok/s)": f"{tokens_per_sec:.1f}" if ('tokens_per_sec' in locals() and tokens_per_sec is not None) else "N/A",
         "Time (s)": f"{elapsed:.1f}",
     })
     print(f"\n>>> FINISHED MODEL: {m['name']} in {elapsed:.1f}s (Exit: {res.returncode}, Status: {status}, Compressed Layers: {num_compressed_layers}, Comp Rate: {comp_rate_str})", flush=True)
@@ -307,9 +338,15 @@ for m in models:
 
     csv_path = Path(m["summary_csv"])
     row = {}
+    base_acc = None
     if csv_path.exists():
         try:
             df = pd.read_csv(csv_path)
+            row_base = df[df["module_name"] == "full"]
+            if not row_base.empty:
+                col_b = "accuracy_pct" if "accuracy_pct" in row_base.columns else ("mean_accuracy" if "mean_accuracy" in row_base.columns else None)
+                if col_b:
+                    base_acc = float(row_base[col_b].values[-1])
             row_match = df[df["module_name"] == "aasvd"]
             if not row_match.empty:
                 row = row_match.iloc[-1].to_dict()
@@ -394,7 +431,7 @@ for m in models:
             module_name="aasvd",
             dataset_name="sst2",
             status=status,
-            baseline_acc=None,
+            baseline_acc=base_acc,
             acc=acc,
             f1=f1_val,
             comp_rate=comp_val,
