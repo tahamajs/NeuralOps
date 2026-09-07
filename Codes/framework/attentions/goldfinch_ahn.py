@@ -289,6 +289,10 @@ class GoldFinchAHNBlock(BaseAttention):
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.dropout = nn.Dropout(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config is not None else 0.1)
 
+        # Preservation gate: sigmoid(-3) ≈ 0.047 → ~95% passthrough at init.
+        # Prevents majority-baseline collapse; trained jointly with LoRA.
+        self.output_gate = nn.Parameter(torch.tensor(-3.0))
+
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -536,6 +540,10 @@ class GoldFinchAHNBlock(BaseAttention):
             out = fused
         else:
             out = self.out_proj(fused)
+
+        # Preservation gate: blend with original hidden_states to preserve pretrained activations at init.
+        alpha = torch.sigmoid(self.output_gate)
+        out = alpha * out + (1.0 - alpha) * x
 
         return out, (attn_weights if output_attentions else None)
 
