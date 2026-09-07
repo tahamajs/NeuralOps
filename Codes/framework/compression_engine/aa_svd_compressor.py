@@ -70,9 +70,10 @@ def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
 
 class SVDLinear(nn.Module):
     """
-    FIX: True Low-Rank Factorized Linear Layer executing as:
-    y = (x @ V.T) @ U.T + b
+    True Low-Rank Factorized Linear Layer executing as:
+    y = (x @ V.T) @ U.T + ((x @ lora_A.T) @ lora_B.T) * lora_scaling + b
     Achieving physical parameter reduction from d_in * d_out to r * (d_in + d_out).
+    Supports optional LoRA adapters for recovery fine-tuning.
     """
 
     def __init__(
@@ -84,31 +85,41 @@ class SVDLinear(nn.Module):
         use_fused_kernel: bool = False,
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None,
-        lora_r: int = 0,
+        lora_rank: int = 0,
         lora_alpha: float = 1.0,
+        lora_r: Optional[int] = None,
+        freeze_base: bool = False,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.rank = rank
+        self.rank = max(1, min(rank, in_features, out_features))
         self.use_fused_kernel = use_fused_kernel
-        self.lora_r = int(lora_r)
+        
+        # Support both lora_rank and legacy lora_r argument names
+        if lora_r is not None and lora_r > 0:
+            self.lora_rank = int(lora_r)
+        else:
+            self.lora_rank = max(0, int(lora_rank))
+        self.lora_r = self.lora_rank
         self.lora_alpha = float(lora_alpha)
-        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
+        self.scaling = self.lora_scaling
 
-        # Factorized low-rank parameter tensors (frozen if LoRA enabled)
-        requires_grad = not (self.lora_r > 0)
-        self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device), requires_grad=requires_grad)
-        self.U = nn.Parameter(torch.empty(out_features, rank, dtype=dtype, device=device), requires_grad=requires_grad)
+        # Factorized low-rank parameter tensors (frozen if LoRA enabled or freeze_base requested)
+        requires_grad = not (self.lora_rank > 0 or freeze_base)
+        factory_kwargs = {"dtype": dtype, "device": device}
+        self.V = nn.Parameter(torch.empty(self.rank, in_features, **factory_kwargs), requires_grad=requires_grad)
+        self.U = nn.Parameter(torch.empty(out_features, self.rank, **factory_kwargs), requires_grad=requires_grad)
 
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device), requires_grad=requires_grad)
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs), requires_grad=requires_grad)
         else:
             self.register_parameter("bias", None)
 
-        if self.lora_r > 0:
-            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=dtype, device=device))
-            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=dtype, device=device))
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_rank), **factory_kwargs))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
@@ -119,46 +130,64 @@ class SVDLinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix for compatibility."""
-        return torch.matmul(self.U, self.V)
+        w = torch.matmul(self.U, self.V)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
+        return w
+
+    def get_weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix."""
+        w = torch.matmul(self.U, self.V)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
+        return w
 
     @property
     def use_lora(self) -> bool:
         """Indicates whether trainable LoRA adapters are enabled."""
-        return bool(self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None)
+        return bool(self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None)
+
+    def freeze_base_weights(self) -> None:
+        """Freeze factorized base weights while leaving LoRA adapter parameters trainable."""
+        self.V.requires_grad = False
+        self.U.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True
 
     def reset_parameters(self) -> None:
         with torch.no_grad():
-            if self.U.dtype in (torch.float16, torch.bfloat16):
-                u_fp32 = torch.empty_like(self.U, dtype=torch.float32, device="cpu")
-                nn.init.orthogonal_(u_fp32)
-                self.U.copy_(u_fp32.to(dtype=self.U.dtype, device=self.U.device))
-            else:
-                nn.init.orthogonal_(self.U)
-
-            if self.V.dtype in (torch.float16, torch.bfloat16):
-                v_fp32 = torch.empty_like(self.V, dtype=torch.float32, device="cpu")
-                nn.init.orthogonal_(v_fp32)
-                self.V.copy_(v_fp32.to(dtype=self.V.dtype, device=self.V.device))
-            else:
-                nn.init.orthogonal_(self.V)
+            for param in (self.V, self.U):
+                if param.dtype in (torch.float16, torch.bfloat16):
+                    tmp = torch.empty_like(param, dtype=torch.float32, device="cpu")
+                    nn.init.orthogonal_(tmp)
+                    param.copy_(tmp.to(dtype=param.dtype, device=param.device))
+                else:
+                    nn.init.orthogonal_(param)
 
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
 
+            if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.use_fused_kernel and (self.lora_r == 0 or self.lora_A is None):
-            # RESEARCH FIX: Accelerated fused kernel dispatch
+        if self.use_fused_kernel and (self.lora_rank == 0 or self.lora_A is None):
             from framework.attentions.fused_svd_kernel import fused_svd_linear
             return fused_svd_linear(x=x, V=self.V, U=self.U, bias=self.bias, use_rms_norm=False)
 
-        # Sequential two-stage projection
-        latent = F.linear(x, self.V)  # [..., rank]
-        out = F.linear(latent, self.U)  # [..., out_features]
+        latent = F.linear(x, self.V)
+        out = F.linear(latent, self.U)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_latent = F.linear(x.to(self.lora_A.dtype), self.lora_A)
+            lora_delta = F.linear(lora_latent, self.lora_B) * self.lora_scaling
+            out = out + lora_delta.to(out.dtype)
         if self.bias is not None:
             out = out + self.bias
-        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_delta = F.linear(F.linear(x.to(self.lora_A.dtype), self.lora_A), self.lora_B) * self.scaling
-            out = out + lora_delta.to(out.dtype)
         return out
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
