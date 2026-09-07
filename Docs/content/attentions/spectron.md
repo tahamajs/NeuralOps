@@ -732,6 +732,8 @@ if __name__ == "__main__":
 > 3. **Lyapunov Stability**:
 >    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
 
+**Registered Aliases**: , 
+
 ## Configuration & Hyperparameters
 
 The `LowRankSparseLinear` module (registered under `inject_spectron`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:

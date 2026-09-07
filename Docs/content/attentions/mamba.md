@@ -290,6 +290,8 @@ def inject_mamba(
     return new_module
 ```
 
+**Registered Aliases**: , 
+
 ## Configuration & Hyperparameters
 
 The `LoRALinear` module (registered under `mamba`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:

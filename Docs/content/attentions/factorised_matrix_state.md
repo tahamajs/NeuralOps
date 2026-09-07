@@ -177,6 +177,8 @@ Evaluated on BERT-Base (110M) across GLUE benchmarks and Long Range Arena (LRA) 
 - Low-Rank Parameters: `L` ($D \times r$), `R` ($D \times r$), `W_res` ($D \times D$)
 - Recurrence State: `_matrix_scan` supporting bidirectional forward/reverse scans with masked updates.
 
+**Registered Aliases**: , 
+
 ## Configuration & Hyperparameters
 
 The `FactorisedMatrixState` module (registered under `factorised_matrix_state`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:

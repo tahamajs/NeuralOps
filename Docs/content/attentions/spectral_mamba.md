@@ -328,6 +328,8 @@ def inject_spectral_mamba(
     return new_attn
 ```
 
+**Registered Aliases**: , 
+
 ## Configuration & Hyperparameters
 
 The `LoRALinear` module (registered under `inject_spectral_mamba`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
