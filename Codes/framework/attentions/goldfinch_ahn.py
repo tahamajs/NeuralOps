@@ -258,7 +258,6 @@ class GoldFinchAHNBlock(BaseAttention):
             self.lora_alpha = kwargs.get("lora_alpha", 32.0)
 
         self.freeze_base = (self.lora_rank > 0)
-        self.source_attn = source_attn
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         # Projections
@@ -456,8 +455,8 @@ class GoldFinchAHNBlock(BaseAttention):
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
-        elif self.rotary_emb is not None or (self.source_attn is not None and hasattr(self.source_attn, "rotary_emb")):
-            rotary_module = self.rotary_emb if self.rotary_emb is not None else getattr(self.source_attn, "rotary_emb", None)
+        elif self.rotary_emb is not None:
+            rotary_module = self.rotary_emb
             if rotary_module is not None:
                 pos_ids = kwargs.get("position_ids", None)
                 if pos_ids is None:
