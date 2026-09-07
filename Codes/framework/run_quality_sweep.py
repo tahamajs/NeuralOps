@@ -134,8 +134,13 @@ def compute_confidence_interval_95(accs: list[float]) -> tuple[float, float]:
 
 def modules() -> list[str]:
     # Reuse the canonical de-duplicated discovery used by the zero-shot
-    # runner. This is the project’s fixed 188-entry sweep universe.
-    from framework.run_qwen_zero_shot_sweep import available_modules
+    # runner. This is the sweep universe; counts are maintained by
+    # scripts/count_modules.py, not hand-typed.
+    try:
+        from framework.run_qwen_zero_shot_sweep import available_modules
+    except ImportError:
+        # The zero-shot runner lives under framework/scripts/ (no top-level shim).
+        from framework.scripts.run_qwen_zero_shot_sweep import available_modules
     return available_modules()
 
     # Kept below for older standalone imports.

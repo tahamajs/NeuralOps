@@ -448,7 +448,7 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
 
 def main():
     parser = argparse.ArgumentParser(description="Generate publication-grade artifacts from sweep results.")
-    parser.add_argument("--results_dir", type=str, default=r"D:\SVD_Project\results\qwen3_5_sst2_final_paper_run", help="Path to sweep directory")
+    parser.add_argument("--results_dir", type=str, default="results/final_paper_run", help="Path to sweep directory")
     parser.add_argument("--watch", type=int, default=0, help="If > 0, continuously watch and regenerate every N seconds")
     args = parser.parse_args()
     
