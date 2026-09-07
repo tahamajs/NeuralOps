@@ -1002,8 +1002,20 @@ def main():
                     help="LoRA rank for KMeans recovery adapter")
     ap.add_argument("--kmeans_max_error", type=float, default=0.20,
                     help="Max relative Frobenius error threshold for KMeans before fallback")
-    ap.add_argument("--kmeans_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
-                    help="Restrict KMeans compression to attention projections only")
+    # Kronecker
+    ap.add_argument("--kronecker_rank", type=int, default=128,
+                    help="Target rank for Kronecker decomposition")
+    ap.add_argument("--kronecker_max_error", type=float, default=0.50,
+                    help="Max relative Frobenius error for Kronecker before fallback")
+    ap.add_argument("--kronecker_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Kronecker compression to attention projections only")
+    # Kronecker TT LoRA
+    ap.add_argument("--tt_ranks", type=str, default="1,2,2,1",
+                    help="Tensor Train ranks for Kronecker-TT-LoRA")
+    ap.add_argument("--kronecker_tt_lora_max_error", type=float, default=0.50,
+                    help="Max relative Frobenius error for Kronecker-TT-LoRA before fallback")
+    ap.add_argument("--kronecker_tt_lora_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict Kronecker-TT-LoRA compression to attention projections only")
 
 
 
@@ -1893,13 +1905,32 @@ def main():
                         if getattr(args, "kmeans_target_attention_only", None) is not None:
                             setattr(model.config, "kmeans_target_attention_only", args.kmeans_target_attention_only)
                             setattr(model.config, "target_attention_only", args.kmeans_target_attention_only)
+                        # Kronecker
+                        if getattr(args, "kronecker_rank", None) is not None:
+                            setattr(model.config, "kronecker_rank", args.kronecker_rank)
+                            setattr(model.config, "rank", args.kronecker_rank)
+                        if getattr(args, "kronecker_max_error", None) is not None:
+                            setattr(model.config, "kronecker_max_error", args.kronecker_max_error)
+                            setattr(model.config, "max_error", args.kronecker_max_error)
+                        if getattr(args, "kronecker_target_attention_only", None) is not None:
+                            setattr(model.config, "kronecker_target_attention_only", args.kronecker_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.kronecker_target_attention_only)
+                        # Kronecker TT LoRA
+                        if getattr(args, "tt_ranks", None) is not None:
+                            setattr(model.config, "tt_ranks", args.tt_ranks)
+                        if getattr(args, "kronecker_tt_lora_max_error", None) is not None:
+                            setattr(model.config, "kronecker_tt_lora_max_error", args.kronecker_tt_lora_max_error)
+                            setattr(model.config, "max_error", args.kronecker_tt_lora_max_error)
+                        if getattr(args, "kronecker_tt_lora_target_attention_only", None) is not None:
+                            setattr(model.config, "kronecker_tt_lora_target_attention_only", args.kronecker_tt_lora_target_attention_only)
+                            setattr(model.config, "target_attention_only", args.kronecker_tt_lora_target_attention_only)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
-                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize"):
+                    if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora"):
                         try:
                             sdata = getattr(model, "compression_stats", {})
                             if not sdata and name in ("aasvd", "adasvd"):
