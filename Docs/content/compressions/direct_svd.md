@@ -415,3 +415,11 @@ Evaluated on BERT-Base (110M) and LLaMA-7B across GLUE benchmarks and Long Range
 - **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
 
+## Unified 4-Architecture Benchmark Results (DirectSVD)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 truncated SVD, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 89.33% | 0.8959 | 1.0248 | 11 | 357.79 | `PASS` | [`distilbert`](Upload error: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond) |
+| ROBERTA | 84.98% | 0.8665 | 1.0274 | 23 | 346.97 | `PASS` | [`roberta`](Upload error: [Errno 11001] getaddrinfo failed) |
+| GPT2 | 81.77% | 0.8239 | 1.0082 | 6 | 406.32 | `PASS` | [`gpt2`](Upload error: [Errno 11001] getaddrinfo failed) |
