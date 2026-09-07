@@ -25,3 +25,5 @@ block_transformer_hiba,run_all_4_block_transformer_hiba.py,0,165.28,PASS,,2026-0
 cachenotes,run_all_4_cachenotes.py,1,750.79,FAIL,,2026-09-07T19:05:05.024659
 chela_slay,run_all_4_chela_slay.py,0,375.51,PASS,,2026-09-07T19:11:20.534489
 cluster,run_all_4_cluster.py,0,198.71,PASS,,2026-09-07T19:14:39.245506
+come,run_all_4_come.py,0,337.15,PASS,,2026-09-07T19:20:16.397878
+compressed_attention,run_all_4_compressed_attention.py,0,158.86,PASS,,2026-09-07T19:22:55.256594
