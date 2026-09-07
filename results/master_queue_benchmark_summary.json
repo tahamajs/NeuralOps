@@ -439,5 +439,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T22:54:03.999756"
+  },
+  {
+    "module": "factorised_matrix_state",
+    "runner": "run_all_4_factorised_matrix_state.py",
+    "exit_code": 0,
+    "elapsed_s": 1488.72,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T23:18:52.723513"
   }
 ]

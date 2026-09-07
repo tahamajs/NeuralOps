@@ -48,3 +48,4 @@ enlighten,run_all_4_enlighten.py,0,181.04,PASS,,2026-09-07T22:41:20.700919
 entropy_budget,run_all_4_entropy_budget.py,0,281.4,PASS,,2026-09-07T22:46:02.103723
 erc,run_all_4_erc.py,0,355.42,PASS,,2026-09-07T22:51:57.533940
 expert_choice_moe,run_all_4_expert_choice_moe.py,0,126.46,PASS,,2026-09-07T22:54:03.999756
+factorised_matrix_state,run_all_4_factorised_matrix_state.py,0,1488.72,PASS,,2026-09-07T23:18:52.723513
