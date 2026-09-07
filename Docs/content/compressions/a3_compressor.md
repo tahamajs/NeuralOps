@@ -140,7 +140,10 @@ Unlike non-structural low-rank approximations, [`A3FactorizedLinear`](file:///Us
 
 Because standard PyTorch autograd tracks forward operations through $V$ and $U$, the compressed model is:
 1. **Fully differentiable out of the box**: Ready for post-compression fine-tuning or distillation.
-2. **Compatible with PEFT / LoRA recovery**: LoRA adapters or recovery fine-tuning heads can be trained directly on top of the factorized architecture without requiring weight re-densification.
+2. **Integrated LoRA Adapters & Fine-Tuning**: `A3FactorizedLinear` natively supports built-in low-rank adaptation:
+   $$y = (x V^\top) U^\top + \left((x A^\top) B^\top\right) \cdot \frac{\alpha}{r_{\text{LoRA}}} + b$$
+   where $A \in \mathbb{R}^{r_{\text{LoRA}} \times d_{\text{in}}}$ and $B \in \mathbb{R}^{d_{\text{out}} \times r_{\text{LoRA}}}$. Base factorized parameters $U, V, b$ can be frozen via `freeze_base_weights()` while adapter weights $A, B$ remain trainable.
+3. **Seamless Handling of HF `Conv1D` and PEFT `LoRALinear` Wrappers**: The engine automatically inspects underlying `base_layer` instances, correctly transposes 1D convolution weights ($[n, m] \to [m, n]$), extracts bias from either the wrapper or base layer, and preserves existing LoRA adapters during structural replacement.
 
 ---
 
