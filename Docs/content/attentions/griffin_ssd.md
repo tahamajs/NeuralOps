@@ -352,12 +352,14 @@ The `GriffinSSDBlock` module (registered under `griffin_ssd`) provides configura
 | Class | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `GriffinSSDBlock` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `GriffinSSDBlock` | `comp_config` | `Any` | `None` | Compression or benchmark configuration dict/object. |
 | `GriffinSSDBlock` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
-| `GriffinSSDBlock` | `window_size` | `int` | `64` | Controls `window_size` configuration in `GriffinSSDBlock`. |
-| `GriffinSSDBlock` | `d_model` | `Any` | `None` | Controls `d_model` configuration in `GriffinSSDBlock`. |
-| `GriffinSSDBlock` | `num_heads` | `Any` | `None` | Controls `num_heads` configuration in `GriffinSSDBlock`. |
-| `GriffinSSDBlock` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `GriffinSSDBlock`. |
-| `GriffinSSDBlock` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `GriffinSSDBlock` | `window_size` | `int` | `64` | Sliding-window attention local receptive field window size. |
+| `GriffinSSDBlock` | `d_model` | `Any` | `None` | Hidden embedding dimension (defaults to config.hidden_size or 768). |
+| `GriffinSSDBlock` | `num_heads` | `Any` | `None` | Number of query attention heads. |
+| `GriffinSSDBlock` | `num_kv_heads` | `Any` | `None` | Number of key/value heads for GQA (inferred from old_attn or config). |
+| `GriffinSSDBlock` | `old_attn` | `Any` | `None` | Source attention module for weight extraction, GQA detection, and RoPE rotary_emb. |
+| `GriffinSSDBlock` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix (freezes base weights when > 0). |
 | `GriffinSSDBlock` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
 
 
