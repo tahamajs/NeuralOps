@@ -29,7 +29,7 @@ models = [
             "--parent_checkpoint", r"results\unified_asvd\distilbert\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--rank", "288",
             "--aasvd_max_error", "0.50",
@@ -56,10 +56,10 @@ models = [
             "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--rank", "288",
-            "--aasvd_max_error", "0.70",
+            "--aasvd_max_error", "0.50",
             "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
@@ -83,10 +83,10 @@ models = [
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
-            "--rank", "432",
-            "--aasvd_max_error", "0.70",
+            "--rank", "288",
+            "--aasvd_max_error", "0.50",
             "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
@@ -110,7 +110,7 @@ models = [
             "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "200",
+            "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--rank", "384",
             "--aasvd_max_error", "0.50",
@@ -131,7 +131,7 @@ parser = argparse.ArgumentParser(description="Unified 4-Model Hardened AASVD Ben
 parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
 parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,aasvd)")
 parser.add_argument("--batch_size", type=int, default=None, help="Batch size override")
-parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
+parser.add_argument("--recovery_steps", type=int, default=50, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Compression rank override")
 parser.add_argument("--max_error", type=float, default=None, help="AASVD max reconstruction error threshold")
 parser.add_argument("--attention_only", type=str, default=None, help="Target attention layers only (true/false)")
@@ -308,6 +308,66 @@ res_df.to_csv(out_csv, index=False)
 with open(out_json, "w", encoding="utf-8") as f:
     json.dump(final_stats, f, indent=2)
 print(f"\nSaved consolidated summaries to:\n- {out_csv}\n- {out_json}", flush=True)
+
+# Generate and save comparative plots in results directory
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    plots_dir = out_dir / "unified_aasvd"
+    plots_dir.mkdir(parents=True, exist_ok=True)
+
+    plot_models = [s["Model"] for s in final_stats]
+    base_accs = [float(s["Baseline Acc"].replace("%", "")) if s["Baseline Acc"] != "N/A" else 0.0 for s in final_stats]
+    aasvd_accs = [float(s["AASVD Acc"].replace("%", "")) if s["AASVD Acc"] != "N/A" else 0.0 for s in final_stats]
+    f1_scores = [float(s["F1"]) if s["F1"] != "N/A" else 0.0 for s in final_stats]
+    comp_rates = [float(s["Comp Rate"].replace("x", "")) if s["Comp Rate"] != "N/A" else 1.0 for s in final_stats]
+
+    # Chart 1: Accuracy & F1 Comparison
+    x = np.arange(len(plot_models))
+    width = 0.35
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    rects1 = ax1.bar(x - width/2, base_accs, width, label='Baseline Acc', color='#4C72B0')
+    rects2 = ax1.bar(x + width/2, aasvd_accs, width, label='AASVD Acc', color='#55A868')
+    ax1.set_ylabel('Accuracy (%)')
+    ax1.set_title('AASVD 4-Model Quality & Performance Evaluation (SST-2)')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(plot_models, fontweight='bold')
+    ax1.set_ylim(0, 105)
+    ax1.legend(loc='upper right')
+    ax1.grid(axis='y', linestyle='--', alpha=0.5)
+
+    for rect in rects1:
+        h = rect.get_height()
+        if h > 0: ax1.annotate(f'{h:.1f}%', xy=(rect.get_x() + rect.get_width()/2, h), xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=9)
+    for rect in rects2:
+        h = rect.get_height()
+        if h > 0: ax1.annotate(f'{h:.1f}%', xy=(rect.get_x() + rect.get_width()/2, h), xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+    plt.tight_layout()
+    plot_path1 = plots_dir / "aasvd_4models_accuracy_comparison.png"
+    plt.savefig(plot_path1, dpi=300)
+    plt.close()
+
+    # Chart 2: Pareto Frontier (Accuracy vs Compression Rate)
+    fig, ax2 = plt.subplots(figsize=(8, 6))
+    for i, model_name in enumerate(plot_models):
+        if aasvd_accs[i] > 0:
+            ax2.scatter(comp_rates[i], aasvd_accs[i], s=180, label=model_name, zorder=5)
+            ax2.annotate(f"{model_name}\n({comp_rates[i]:.2f}x, {aasvd_accs[i]:.1f}%)", (comp_rates[i], aasvd_accs[i]), xytext=(7, -5), textcoords='offset points', fontsize=9)
+    ax2.set_xlabel('Physical Compression Rate (x)', fontweight='bold')
+    ax2.set_ylabel('AASVD Accuracy (%)', fontweight='bold')
+    ax2.set_title('AASVD Efficiency vs. Task Performance Tradeoff (Pareto Frontier)')
+    ax2.grid(True, linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plot_path2 = plots_dir / "aasvd_pareto_accuracy_vs_compression.png"
+    plt.savefig(plot_path2, dpi=300)
+    plt.close()
+    print(f"Generated and saved comparative visualization charts to:\n- {plot_path1}\n- {plot_path2}", flush=True)
+except Exception as e_plot:
+    print(f"[WARN] Could not generate comparative plots: {e_plot}", flush=True)
 
 # ==============================================================================
 # BATCH QUALITY GATE & DEFERRED EXPORT
