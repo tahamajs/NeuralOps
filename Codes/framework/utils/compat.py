@@ -179,7 +179,28 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
 
         # 4. If model is configured in LoRA mode without SVDLinear:
         # Only LoRA parameters and heads are trainable; backbone/factor weights remain frozen.
+        # EXCEPTION: injected attention module parameters that are NOT part of the LoRA base
+        # layers must also be trainable (e.g. preservation gates, Linformer E/F projections,
+        # GoldFinch delta memory, etc.).
         if has_lora:
+            # Allow preservation gate (output_gate) — always trainable when present
+            if n_low.endswith(".output_gate"):
+                trainable_params.append(param)
+                continue
+            # Allow Linformer E / F projection matrices (named .inner.e and .inner.f)
+            if ".inner.e" in n_low or ".inner.f" in n_low:
+                trainable_params.append(param)
+                continue
+            # Allow any custom injected parameter inside an .inner. attention submodule
+            # but NOT the base weight/bias of a linear layer (those stay frozen)
+            if ".inner." in n_low and not (n_low.endswith(".weight") or n_low.endswith(".bias")):
+                trainable_params.append(param)
+                continue
+            # Allow GoldFinch delta-memory / gate parameters
+            if any(tag in n_low for tag in (".delta_mem.", ".beta_gate.", ".forget_gate.",
+                                             ".input_gate.", ".output_proj.", ".mem_proj.")):
+                trainable_params.append(param)
+                continue
             continue
 
         # 5. Non-LoRA, non-SVD models (custom attention replacements, SSM, CUR, etc.):
