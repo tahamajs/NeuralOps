@@ -159,12 +159,19 @@ class TokenRouter(nn.Module):
         self.min_tokens = min_tokens
 
     def forward(
-        self, x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None
+        self,
+        x: torch.Tensor,
+        valid_mask: Optional[torch.Tensor] = None,
+        is_decoder: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         B, N, D = x.shape
         scores = torch.sigmoid(self.net(x.float()).squeeze(-1))  # (B, N)
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask, -10000.0)
+
+        if is_decoder and N > 1:
+            causal_mask = torch.tril(torch.ones(N, N, device=x.device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal_mask[0], -10000.0)
 
         # Guarantee preservation of first token (index 0)
         scores[:, 0] = 1e4
@@ -549,8 +556,14 @@ class VSpecAttention(BaseAttention):
             else:
                 valid = get_token_valid_mask(mask, B, N, device)
 
+        is_decoder = (
+            self.is_decoder
+            or getattr(self.config, "is_decoder", False)
+            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+        )
+
         # Token routing
-        routed, idx = self.router(hidden_states, valid)
+        routed, idx = self.router(hidden_states, valid, is_decoder=is_decoder)
         k_len = routed.shape[1]
 
         # Variational spectral gates using masked mean
@@ -597,17 +610,18 @@ class VSpecAttention(BaseAttention):
         scores = torch.matmul(Q.float(), K.float().transpose(-1, -2)) * scale * hg.float()
 
         # Check causal decoder
-        is_decoder = (
-            self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
-        )
         if is_decoder and k_len > 1:
             causal_mask = torch.triu(
                 torch.full((k_len, k_len), float("-inf"), device=device, dtype=scores.dtype),
                 diagonal=1,
             )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+
+        # Apply padding mask to attention scores over routed tokens
+        if valid is not None:
+            valid_routed = torch.gather(valid, 1, idx)
+            pad_mask = (~valid_routed).unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
+            scores = scores.masked_fill(pad_mask, float("-inf"))
 
         attn_weights = torch.softmax(scores, dim=-1)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0).to(dtype)
@@ -637,9 +651,10 @@ class VSpecAttention(BaseAttention):
         if out.shape[-1] != D:
             out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
 
-        # Scatter back to full sequence length
+        # Scatter back to full sequence length preserving residual
         output = hidden_states.clone()
-        output.scatter_(1, idx.unsqueeze(-1).expand(-1, -1, D), out.to(output.dtype))
+        out_diff = out.to(output.dtype) - torch.gather(hidden_states, 1, idx.unsqueeze(-1).expand(-1, -1, D))
+        output.scatter_add_(1, idx.unsqueeze(-1).expand(-1, -1, D), out_diff)
 
         return (output, (attn_weights if output_attentions else None))
 

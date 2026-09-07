@@ -4,232 +4,176 @@
 
 Combining multi-model predictions across heterogeneous downstream tasks typically relies on static averaging or scalar voting weights. However, static ensemble strategies fail to account for task-domain alignment or sample-specific predictive uncertainty.
 
-Smart Weighted Ensemble (`SmartWeightedEnsemble`) presents a multi-model fusion framework powered by Task-Aware Attention (`TaskAwareAttention`) and dynamic instance-level confidence weighting. By embedding task IDs into a shared metric subspace and incorporating a learnable pairwise task similarity matrix $\Sigma \in \mathbb{R}^{T \times T}$, the architecture computes task-conditioned attention weights $w^{\text{attn}}$ over model logit streams $\{L_m\}_{m=1}^M$. Combined with real-time per-sample softmax confidence scores $w^{\text{dyn}}$, the hybrid ensemble dynamically adapts model weights based on task relevance and sample certainty.
+**Smart Weighted Ensemble (`SmartWeightedEnsemble`)** provides a multi-model fusion framework powered by Task-Aware Attention (`TaskAwareAttention`) and dynamic instance-level confidence weighting. By embedding task IDs into a shared metric subspace and incorporating a learnable pairwise task similarity matrix $\Sigma \in \mathbb{R}^{T \times T}$, the architecture computes task-conditioned attention weights $w^{\text{attn}}$ over model logit streams $\{L_m\}_{m=1}^M$. Combined with real-time per-sample softmax confidence scores $w^{\text{dyn}}$, the hybrid ensemble dynamically adapts model weights based on task relevance and sample certainty.
+
+*(Note: `SmartWeightedEnsemble` is an ensemble fusion utility, not a standard attention layer registered under `ATTENTION_REGISTRY`).*
 
 ---
 
-
-## Architecture & Data Flow
-
-The `SmartWeightedEnsemble` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+## 2. Architecture & Data Flow
 
 ```
-Input Activation X [B, N, D]
+Inputs: input_ids [B, N], attention_mask [B, N], task_id (int), model_task_ids (List[int])
    │
-   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
-   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
-   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
-   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+   ├── Forward each sub-model in self.models:
+   │     ├── Model 1 (input_ids, attention_mask) ──> Logits_1 [B, C]
+   │     ├── Model 2 (input_ids, attention_mask) ──> Logits_2 [B, C]
+   │     └── ... Model M (input_ids, attention_mask) ──> Logits_M [B, C]
+   │
+   ├── Stack Logits: all_logits = stack([Logits_1, ..., Logits_M]) ──> [M, B, C]
+   │
+   ├── Logit Combination Strategy (method):
+   │     ├── 'simple_average':
+   │     │      Output = all_logits.mean(dim=0) ──> [B, C]
+   │     │
+   │     ├── 'weighted':
+   │     │      Output = sum_m (perf_weights[m] * all_logits[m]) ──> [B, C]
+   │     │
+   │     ├── 'task_aware_attention':
+   │     │      Compute w_attn via TaskAwareAttention(task_id, all_logits, model_task_ids)
+   │     │      Output = sum_m (w_attn[m] * all_logits[m]) ──> [B, C]
+   │     │
+   │     └── 'hybrid' (Default):
+   │            w_attn = TaskAwareAttention(task_id, all_logits, model_task_ids)
+   │            w_dyn  = DynamicConfidence(all_logits)
+   │            Output = 0.6 * Logits_attn + 0.4 * Logits_dyn ──> [B, C]
+   │
+   └── Return Fused Logits: [B, C]
 ```
 
-### Step-by-Step Tensor Shape Trace
+### Execution Trace & Tensor Shapes
+1. **Model Forward Passes**: Each model $m \in \{1, \dots, M\}$ consumes tokens `[B, N]` and produces logits `[B, C]`.
+2. **Logit Stacking**: Logits are stacked into `all_logits: [M, B, C]` on `self.device`.
+3. **Weight Computation**:
+   - Task Attention: Evaluates dot product between query task embedding $e_t$ `[1, d_emb]` and model prototype task embeddings $e_m$ `[M, d_emb]`, added to similarity bias $\Sigma_{m, t}$, yielding `[1, M]`.
+   - Dynamic Confidence: Computes average peak Softmax confidence `[M]` across the batch.
+4. **Logit Blending**: Convex combination yields fused output logits `[B, C]`.
 
-1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
-2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
-3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
-4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+---
 
-## 2. Mathematical Derivations & Formulations
+## 3. Mathematical Derivations & Formulations
 
-Let $M$ be the number of ensemble models, $T$ the total number of tasks, $B$ the evaluation batch size, and $C$ the number of target classification categories. Let $\{L_m\}_{m=1}^M \in \mathbb{R}^{M \times B \times C}$ be the logit outputs generated by the $M$ ensemble models.
+Let $M$ be the number of models, $T$ the total number of tasks, $B$ the batch size, and $C$ the number of output classes. Let $\{L_m\}_{m=1}^M \in \mathbb{R}^{M \times B \times C}$ denote per-model logits.
 
-### Task-Aware Attention Weighting:
-Let $E \in \mathbb{R}^{T \times d_{\text{emb}}}$ be the task embedding matrix with hidden dimension $d_{\text{emb}}$ (default $d_{\text{emb}} = 64$). For target task ID $t \in \{0, \dots, T-1\}$ and model prototype task indices $\{m_1, \dots, m_M\} \in \{0, \dots, T-1\}^M$:
-
+### 1. Task-Aware Attention Weighting
+Let $E \in \mathbb{R}^{T \times d_{\text{emb}}}$ be the task embedding matrix. For target task $t \in \{0, \dots, T-1\}$ and model prototype assignments $\{t_1, \dots, t_M\}$:
 \[
-e_t = W_Q E[t] \in \mathbb{R}^{1 \times d_{\text{emb}}}, \quad W_Q \in \mathbb{R}^{d_{\text{emb}} \times d_{\text{emb}}}
+e_t = W_Q E[t] \in \mathbb{R}^{1 \times d_{\text{emb}}}, \quad e_m = W_K E[t_m] \in \mathbb{R}^{M \times d_{\text{emb}}}
+\]
+Raw attention scores combine scaled dot-product affinity with the task similarity bias parameter $\Sigma \in \mathbb{R}^{T \times T}$:
+\[
+S_m = \frac{e_t \cdot e_m^\top}{\sqrt{d_{\text{emb}}}} + \Sigma_{t_m, t} \in \mathbb{R}^{1 \times M}
 \]
 \[
-e_m = W_K E[m] \in \mathbb{R}^{M \times d_{\text{emb}}}, \quad W_K \in \mathbb{R}^{d_{\text{emb}} \times d_{\text{emb}}}
+w_m^{\text{attn}} = \operatorname{Softmax}_m (S_m) = \frac{\exp(S_m)}{\sum_{j=1}^M \exp(S_j)}
+\]
+\[
+L^{\text{attn}} = \sum_{m=1}^M w_m^{\text{attn}} \cdot L_m \in \mathbb{R}^{B \times C}
 \]
 
-Raw attention scores incorporate scaled dot-product similarity and task similarity bias $\Sigma \in \mathbb{R}^{T \times T}$:
-
+### 2. Dynamic Instance Confidence Weighting
+For each model $m$, instance-level confidence $c_m$ is determined by the mean maximum class probability:
 \[
-S_{m} = \frac{e_t \cdot e_m^\top}{\sqrt{d_{\text{emb}}}} + \Sigma_{m, t} \in \mathbb{R}^{1 \times M}
-\]
-
-where $\Sigma$ is initialized as identity matrix $\mathbf{I}_{T \times T}$. Applying Softmax yields task attention weights $w^{\text{attn}} \in \mathbb{R}^M$:
-
-\[
-w_m^{\text{attn}} = \text{Softmax}_m (S_m) = \frac{\exp(S_m)}{\sum_{j=1}^M \exp(S_j)}
-\]
-
-The task-attention weighted logit vector $L^{\text{attn}} \in \mathbb{R}^{B \times C}$ is:
-
-\[
-L^{\text{attn}} = \sum_{m=1}^M w_m^{\text{attn}} \cdot L_m
-\]
-
-### Dynamic Instance Confidence Weighting:
-For each model $m$, input-dependent confidence $c_m \in \mathbb{R}$ is computed by evaluating average peak Softmax class probability over batch $B$:
-
-\[
-p_{m, b, c} = \text{Softmax}_c (L_{m, b, c}) = \frac{\exp(L_{m, b, c})}{\sum_{c'=1}^C \exp(L_{m, b, c'})}
+p_{m, b, c} = \operatorname{Softmax}_c(L_{m, b, c}) = \frac{\exp(L_{m, b, c})}{\sum_{c'=1}^C \exp(L_{m, b, c'})}
 \]
 \[
 c_m = \frac{1}{B} \sum_{b=1}^B \max_{c \in \{1, \dots, C\}} p_{m, b, c}
 \]
-
-Normalizing dynamic confidence weights $w^{\text{dyn}} \in \mathbb{R}^M$:
-
 \[
-w_m^{\text{dyn}} = \frac{c_m}{\sum_{m'=1}^M c_{m'} + \epsilon}
+w_m^{\text{dyn}} = \frac{c_m}{\sum_{j=1}^M c_j + \epsilon}
+\]
+\[
+L^{\text{dyn}} = \sum_{m=1}^M w_m^{\text{dyn}} \cdot L_m \in \mathbb{R}^{B \times C}
 \]
 
-The dynamic confidence-weighted logit vector $L^{\text{dyn}} \in \mathbb{R}^{B \times C}$ is:
-
-\[
-L^{\text{dyn}} = \sum_{m=1}^M w_m^{\text{dyn}} \cdot L_m
-\]
-
-### Hybrid Fusion & Performance Tracking:
-The hybrid ensemble combines task-aware attention and dynamic confidence logits using convex scalar blending ($\alpha = 0.6, \beta = 0.4$):
-
+### 3. Hybrid Logit Fusion
 \[
 L^{\text{hybrid}} = 0.6 \cdot L^{\text{attn}} + 0.4 \cdot L^{\text{dyn}} \in \mathbb{R}^{B \times C}
 \]
 
-During evaluation, model task performance matrix $P \in \mathbb{R}^{M \times T}$ is updated via Exponential Moving Average (EMA) with smoothing factor $\gamma = 0.9$:
-
-\[
-P_{m, t} \leftarrow 0.9 \cdot P_{m, t} + 0.1 \cdot \text{Acc}_{m, t}
-\]
-
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 4. Configuration & Hyperparameters
 
-```
-Input: task_id (t), all_logits [M, B, C], input_ids [B, L], attention_mask [B, L]
-  │
-  ├──> Task-Aware Attention Branch:
-  │      task_emb[t] ──> Linear(d_emb, d_emb) [W_q] ──> cur_emb: [1, d_emb]
-  │      task_emb[model_task_ids] ──> Linear(d_emb, d_emb) [W_k] ──> all_embs: [M, d_emb]
-  │      MatMul: (cur_emb @ all_embs.T) / sqrt(d_emb) ──> [1, M]
-  │      Add sim_mat[model_task_ids, t] ──> scores: [1, M]
-  │      Softmax(dim=-1) ──> weights_attn: [1, M]
-  │      Weighted Logits: L_attn = sum_m (weights_attn[m] * all_logits[m]) ──> [B, C]
-  │
-  ├──> Dynamic Confidence Branch:
-  │      Forward models on input_ids ──> Softmax(dim=-1) ──> probs: [M, B, C]
-  │      probs.max(dim=-1).mean(dim=0) ──> conf: [M]
-  │      Normalize: dyn_weights = conf / sum(conf) ──> [M]
-  │      Weighted Logits: L_dyn = sum_m (dyn_weights[m] * all_logits[m]) ──> [B, C]
-  │
-  └──> Hybrid Convex Fusion:
-         L_hybrid = 0.6 * L_attn + 0.4 * L_dyn ──> Output Logits: [B, C]
-```
-
----
-
-## 4. Analytical Complexity Profiling
-
-### Computational Overhead & Workload Breakdown
-The computational overhead introduced by the Smart Weighted Ensemble is exceptionally lightweight compared to the underlying backbone model passes. For an ensemble consisting of $M$ constituent models evaluated across $T$ downstream tasks with batch size $B$, output class dimension $C$, and task embedding rank $d_{\text{emb}}$:
-
-The Task-Aware Attention pathway projects task embeddings via query and key matrices $W_Q, W_K \in \mathbb{R}^{d_{\text{emb}} \times d_{\text{emb}}}$, requiring $2(M + 1)d_{\text{emb}}^2$ FLOPs. Evaluating dot-product compatibility scores $e_t \cdot e_m^\top$ incurs $2 M d_{\text{emb}}$ FLOPs ($M d_{\text{emb}}$ MACs), followed by $5 M + M B C$ operations for Softmax normalization and logit weighting. Concurrently, the Dynamic Confidence module processes the output logits of each model, incurring $5 M B C$ FLOPs for class-wise Softmax evaluation and maximum-probability reduction. Finally, the convex hybrid blending step combines both logit streams via $2 M B C$ operations.
-
-Excluding the baseline forward passes of the individual models, the total fusion overhead amounts to:
-\[
-\text{Total FLOPs} = 2(M + 1)d_{\text{emb}}^2 + 2 M d_{\text{emb}} + 4 M B C
-\]
-which corresponds to $M d_{\text{emb}} + M B C$ Multiply-Accumulate (MAC) operations. The auxiliary parameter footprint scales modestly as $T \cdot d_{\text{emb}} + 2 d_{\text{emb}}^2 + T^2$ floats. For typical configurations ($T=10, d_{\text{emb}}=64$), this introduces merely $16,576$ parameters, ensuring that multi-model fusion imposes virtually zero memory pressure on host accelerators.
-
----
-
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-
-### Computational Latency and Forward Pass Serialization
-A primary operational bottleneck within naive multi-model fusion pipelines stems from the sequential serialization of inference forward passes. When evaluating dynamic confidence scores $c_m$, standard implementations iterate through all $M$ candidate architectures sequentially in eager execution mode. For large language model ensembles ($M \ge 8$), this sequential pipeline multiplies latency by a factor of $M\times$, severely bottlenecking real-time serving. Furthermore, evaluating full model activations solely to extract scalar certainty metrics represents an asymptotic resource inefficiency when early-exit or speculative routing mechanisms could prune unpromising model pathways.
-
-### Uncalibrated Softmax Overconfidence and Loss Landscape Distortion
-A critical failure mode arises from the widespread phenomenon of predictive miscalibration in modern deep networks. Deep overparameterized models frequently exhibit extreme overconfidence, assigning near-unity maximum Softmax probabilities ($\max_c p_{m, c} \approx 1.0$) even when generating erroneous predictions out-of-distribution. Consequently, uncalibrated ensemble members can dominate the dynamic confidence weighting $w_m^{\text{dyn}}$, overriding superior predictions from better-calibrated models. This induces severe optimization instability in the fused loss landscape, where noisy logit gradients from overconfident experts distort the blended objective.
-
-### Prototype Task Space Misalignment and Degenerate Similarity Priors
-The structural fidelity of the task-aware attention mechanism hinges upon accurate alignment between the learnable task embeddings and the true empirical provenance of each model. If model prototype assignments `model_task_ids` are initialized arbitrarily (e.g., through round-robin indexing) rather than grounded in actual fine-tuning data distributions, the task similarity matrix $\Sigma \in \mathbb{R}^{T \times T}$ learns spurious cross-task correlations. This misalignment flattens the attention distribution $w^{\text{attn}}$, collapsing the task routing mechanism into uniform averaging and negating the specialized inductive biases of individual experts.
-
----
-
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-
-### Fused Parallel Logit Blending Triton Kernel
-To eliminate sequential model iteration and memory round trips, Triton kernels parallelize ensemble logit loading and dynamic confidence reduction directly in GPU SRAM.
-
-```
-       Global Memory (HBM)
-      ┌────────────────────────────────────────────────────────┐
-      │ Stact Logits all_logits [M, B, C]                      │
-      │ Task Attention Weights w_attn [M]                      │
-      │ Task Embedding & Similarity Matrix Σ [T, T]            │
-      └───────────────────────────┬────────────────────────────┘
-                                  │ Coalesced Direct Tile Load
-                                  ▼
- ┌──────────────────────────────────────────────────────────────────┐
- │                   Triton SRAM Scratchpad                         │
- │ 1. Load Logit Tile across M models: Logits_tile [M, BLOCK_B, C] │
- │ 2. Compute Softmax Probabilities: P_tile = Softmax(Logits_tile)  │
- │ 3. Compute In-Register Dynamic Confidence: c_m = Max(P_tile).mean│
- │ 4. Compute Hybrid Weights: w_hybrid = 0.6 * w_attn + 0.4 * w_dyn │
- │ 5. Fused Reduction: L_final = sum_m (w_hybrid[m] * Logits_tile[m])│
- └────────────────────────────────┬─────────────────────────────────┘
-                                  │ Stream Fused Logits
-                                  ▼
-      ┌────────────────────────────────────────────────────────┐
-      │ Fused Output Logits [B, C]                             │
-      └────────────────────────────────────────────────────────┘
-```
-
-### High-Throughput Memory Coalescing and Vectorized Execution
-To maximize memory bandwidth utilization during logit fusion, model outputs are structured into contiguous memory layouts of shape $[B, M, C]$. This arrangement facilitates 128-bit SIMD vectorized loads across ensemble members directly within a single CUDA warp, eliminating scattered memory reads across separate tensor allocations.
-
-### Temperature-Scaled Confidence Calibration
-To counteract the destructive effects of uncalibrated overconfidence, dynamic logit reduction integrates learnable per-model temperature scaling factors $\tau_m > 0$. Evaluating temperature-adjusted probabilities:
-\[
-p_{m, b, c} = \text{Softmax}\left( \frac{L_{m, b, c}}{\tau_m} \right)
-\]
-smooths overconfident outlier logits, guaranteeing that dynamic weights $w_m^{\text{dyn}}$ faithfully mirror genuine Bayesian predictive certainty rather than uncalibrated Softmax sharpness.
-
-### Asynchronous Multi-Stream Model Concurrency
-To eradicate sequential iteration bottlenecks, concurrent forward execution distributes individual model workloads across independent CUDA streams. By overlapping compute kernels and memory transfers asynchronously across physical streaming multiprocessors (SMs), the fusion runtime achieves near-ideal hardware occupancy and minimizes end-to-end inference latency.
-
----
-
-## 7. Next-Generation Innovations & Synthesis Opportunities
-
-### Bayesian Dynamic Routing with Evidential Uncertainty
-Future iterations of task-aware fusion can replace heuristic maximum-probability confidence with formal evidential deep learning or Dirichlet prior networks. By parameterizing higher-order probability distributions over class logits, the ensemble can analytically decouple epistemic uncertainty (data scarcity) from aleatoric uncertainty (intrinsic class overlap). This enables rigorous routing decisions that dynamically suppress models suffering from domain shift while prioritizing experts with provable epistemic confidence.
-
-### Learnable Gradient-Optimized Metric Task Subspaces
-Rather than relying on static scalar task embeddings, task compatibility can be formulated through continuous Riemannian metric learning. Projecting task attributes and model representations onto a manifold parameterized by learnable hyperbolic distances allows hierarchical task taxonomies to be captured naturally, accelerating transfer learning across hundreds of downstream tasks without quadratic similarity matrix blowup.
-
-### Speculative Ensemble Cascading and Early Exit
-To dramatically amortize computational overhead, the fusion framework can implement speculative ensemble cascading. Lightweight anchor models evaluate initial confidence thresholds; full forward evaluation of heavier ensemble constituents is triggered only when input ambiguity exceeds a dynamic tolerance limit. This speculative execution model preserves the full generative capacity of the collective ensemble while reducing average inference latency to that of a single compact model.
-
-## 8. Empirical Benchmark Results & Comparative Profiling
-
-The empirical evaluation of `weighted_ensemble` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
-
-### 8.1 Language Modeling Quality & Throughput
-| Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Relative Delta |
+### `SmartWeightedEnsemble` Parameters
+| Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| **WikiText-2 Perplexity ($PPL \downarrow$)** | **11.2** | 11.20 | $+0.00$ |
-| **C4 Perplexity ($PPL \downarrow$)** | **14.6** | 14.60 | $+0.00$ |
-| **Inference Throughput ($tok/sec \uparrow$)** | **1,250 tok/s** | 1,250 tok/s | **1,250 tok/s** |
-| **Triton Hardware Acceleration** | ✅ Native PyTorch SDPA / Flash-2 | PyTorch SDPA | High Tensor Core Occupancy |
+| `models` | `List[nn.Module]` | **Required** | List of constituent PyTorch models to ensemble. |
+| `num_tasks` | `int` | `1` | Total number of distinct downstream task IDs ($T$). |
+| `device` | `Optional[torch.device]` | `None` | Target device for ensemble buffers and execution. |
+| `trainable_dynamic` | `bool` | `False` | Whether to maintain gradient tracking during dynamic confidence forward passes. |
 
-### 8.2 Sequence Length Scaling Profiling ($L=512 \to 8192$)
-| Context Length ($L$) | Inference Latency ($ms$) | Peak VRAM ($MB$) | Speedup vs Dense MHA |
+### `TaskAwareAttention` Parameters
+| Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| **$L = 512$** | 0.32 ms | 95 MB | $1.14\times$ |
-| **$L = 1024$** | 0.54 ms | 150 MB | $1.85\times$ |
-| **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
-| **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
-| **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
+| `num_tasks` | `int` | **Required** | Total number of task embedding indices ($T$). |
+| `hidden_dim` | `int` | `64` | Embedding dimensionality for task projections ($d_{\text{emb}}$). |
+
+*(Note: `SmartWeightedEnsemble` is not registered under `ATTENTION_REGISTRY`; it is an ensemble wrapper operating over model logits).*
 
 ---
 
-## Complete Source Code Implementation (`weighted_ensemble.py`)
+## 5. Usage & Integration Examples
+
+```python
+import torch
+import torch.nn as nn
+from transformers import AutoModelForSequenceClassification
+from framework.attentions.weighted_ensemble import SmartWeightedEnsemble
+
+# 1. Initialize constituent models
+model1 = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
+model2 = AutoModelForSequenceClassification.from_pretrained("roberta-base", num_labels=2)
+
+# 2. Wrap into SmartWeightedEnsemble
+ensemble = SmartWeightedEnsemble(
+    models=[model1, model2],
+    num_tasks=2,
+    trainable_dynamic=False,
+)
+
+# 3. Forward pass with hybrid task-aware fusion
+input_ids = torch.randint(0, 1000, (4, 128))
+attention_mask = torch.ones((4, 128), dtype=torch.long)
+logits = ensemble(
+    input_ids=input_ids,
+    attention_mask=attention_mask,
+    task_id=0,
+    model_task_ids=[0, 1],
+    method="hybrid",
+)
+print("Ensemble fused logits:", logits.shape)
+```
+
+---
+
+## 6. Empirical Benchmark Results & Verification
+
+| Evaluation Suite | Ensemble Composition | Aggregation Method | Benchmark Metric | Result | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| GLUE Suite | BERT + RoBERTa | Simple Average | Accuracy | Pending actual benchmark results | Pending Sweep |
+| GLUE Suite | BERT + RoBERTa | Task-Aware Attention | Accuracy | Pending actual benchmark results | Pending Sweep |
+| GLUE Suite | BERT + RoBERTa | Hybrid Fusion (60/40) | Accuracy | Pending actual benchmark results | Pending Sweep |
+
+---
+
+## 7. Architectural Bottlenecks & Failure Modes
+
+1. **Sequential Model Forward Overhead**: In eager execution mode, iterating across $M$ separate transformer backbones multiplies latency by $M\times$. Deploying model concurrency across separate CUDA streams or asynchronous worker pools is recommended for large ensembles.
+2. **Uncalibrated Softmax Overconfidence**: Deep neural networks can assign near-1.0 confidence to misclassified samples. Uncalibrated models can skew dynamic confidence weights $w_m^{\text{dyn}}$, dominating better-calibrated models. Temperature scaling per model is advised when calibration varies significantly.
+3. **Task Prototype ID Assignment Mismatch**: If `model_task_ids` is omitted or incorrectly set to arbitrary round-robin indices rather than the true task domain of each model, task similarity matrix $\Sigma$ cannot establish meaningful domain-expert alignments, degrading attention weights toward uniform distribution.
+
+---
+
+## 8. Proposed Future Optimizations
+
+- **Asynchronous Concurrent CUDA Streams**: Execute constituent model forward passes across non-blocking CUDA streams to parallelize GPU execution.
+- **Batched Fused Logit Reduction**: A lightweight GPU kernel to compute class-wise Softmax confidence and convex logit weighting directly in SRAM scratchpads.
+- **Temperature Calibration Tuning**: Calibrate temperature scalar parameters $\tau_m$ per model on a validation split prior to dynamic confidence weighting.
+
+---
+
+## 9. Complete Source Code Implementation (`weighted_ensemble.py`)
 
 ```python
 r"""
@@ -241,30 +185,26 @@ Implements multi-model ensemble fusion strategies combining:
 - Task-aware scaled dot-product attention over learned task embeddings.
 - Hybrid fusion combining task attention and per-input dynamic confidence.
 
-Mathematical Mechanism:
-    Given $M$ model logit outputs $\{L_m\}_{m=1}^M \in \mathbb{R}^{B \times C}$ for task $t$:
-    1. **Task-Aware Attention Weighting:**
-       Let task embeddings $e_t = W_Q E[t]$ and model embeddings $e_m = W_K E[\text{task}_m]$:
-       $$w_m^{\text{attn}} = \text{Softmax}\left(\frac{e_t e_m^\top}{\sqrt{D}} + S_{m, t}\right)$$
-       $$L^{\text{attn}} = \sum_{m=1}^M w_m^{\text{attn}} L_m$$
-    2. **Dynamic Confidence Weighting:**
-       $$c_m = \mathbb{E}_B\left[\max_c p_{m, c}\right], \quad w_m^{\text{dyn}} = \frac{c_m}{\sum_{m'} c_{m'}}$$
-       $$L^{\text{dyn}} = \sum_{m=1}^M w_m^{\text{dyn}} L_m$$
-    3. **Hybrid Fusion:**
-       $$L^{\text{hybrid}} = 0.6 \cdot L^{\text{attn}} + 0.4 \cdot L^{\text{dyn}}$$
-
-Computational Complexity:
-    - Task attention: $\mathcal{O}(M^2 \cdot D)$.
-    - Dynamic confidence: $\mathcal{O}(M \cdot B \cdot C)$.
-    - Ensemble combination: $\mathcal{O}(M \cdot B \cdot C)$.
+Hardened with:
+- Subclassing nn.Module with nn.ModuleList for full PyTorch compatibility.
+- Automatic device placement and input tensor movement to self.device.
+- Complete attention_mask propagation to all sub-models.
+- trainable_dynamic flag for optional end-to-end gradient flow.
+- Strict model_task_ids length validation.
+- Unified 60/40 hybrid combination.
 """
 
-from typing import List
+from __future__ import annotations
+
+import math
+from typing import Any, List, Optional, Union
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+__all__ = ["TaskAwareAttention", "SmartWeightedEnsemble", "run_smart_ensemble"]
 
 
 class TaskAwareAttention(nn.Module):
@@ -275,10 +215,12 @@ class TaskAwareAttention(nn.Module):
 
     def __init__(self, num_tasks: int, hidden_dim: int = 64):
         super().__init__()
-        self.task_emb = nn.Embedding(num_tasks, hidden_dim)
+        self.num_tasks = max(1, num_tasks)
+        self.hidden_dim = hidden_dim
+        self.task_emb = nn.Embedding(self.num_tasks, hidden_dim)
         self.q_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
         self.k_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
-        self.sim_mat = nn.Parameter(torch.eye(num_tasks))  # (num_tasks, num_tasks)
+        self.sim_mat = nn.Parameter(torch.eye(self.num_tasks))  # (num_tasks, num_tasks)
 
     def forward(
         self, task_id: int, all_logits: torch.Tensor, model_task_ids: List[int]
@@ -293,56 +235,89 @@ class TaskAwareAttention(nn.Module):
             weighted_logits: (batch_size, num_labels)
         """
         device = all_logits.device
-        all_logits.shape[0]
+        num_models = all_logits.shape[0]
 
-        # Current task embedding
+        if len(model_task_ids) != num_models:
+            raise ValueError(
+                f"model_task_ids length ({len(model_task_ids)}) must match all_logits.shape[0] ({num_models})"
+            )
+
+        # Clamp task_id within bounds
+        task_id = max(0, min(self.num_tasks - 1, task_id))
         cur_id = torch.tensor([task_id], device=device)
         cur_emb = self.q_proj(self.task_emb(cur_id))  # (1, H)
-        # All model task embeddings
-        all_ids = torch.tensor(model_task_ids, device=device)  # (M,)
+
+        # Clamped model task embeddings
+        valid_model_tasks = [max(0, min(self.num_tasks - 1, tid)) for tid in model_task_ids]
+        all_ids = torch.tensor(valid_model_tasks, device=device)  # (M,)
         all_embs = self.k_proj(self.task_emb(all_ids))  # (M, H)
 
         # Attention scores (dot product)
-        scores = torch.matmul(cur_emb, all_embs.T) / np.sqrt(
-            self.task_emb.embedding_dim
-        )  # (1, M)
+        scale = 1.0 / math.sqrt(self.hidden_dim)
+        scores = torch.matmul(cur_emb, all_embs.t()) * scale  # (1, M)
+
         # Add task similarity bias
-        bias = self.sim_mat[model_task_ids, task_id].unsqueeze(0)  # (1, M)
+        valid_model_tasks_tensor = torch.tensor(valid_model_tasks, device=device)
+        bias = self.sim_mat[valid_model_tasks_tensor, task_id].unsqueeze(0)  # (1, M)
         scores = scores + bias
         weights = F.softmax(scores, dim=-1)  # (1, M)
 
-        # Weighted sum
-        weighted = (all_logits * weights.unsqueeze(-1).unsqueeze(-1)).sum(dim=0)
+        # Correctly weight the models' logits: (M, 1, 1) * (M, B, C) -> sum -> (B, C)
+        weighted = (weights.view(num_models, 1, 1) * all_logits).sum(dim=0)
         return weighted
 
 
-class SmartWeightedEnsemble:
+class SmartWeightedEnsemble(nn.Module):
     """
     Ensemble that combines multiple model predictions using various strategies:
         - simple_average
         - weighted by performance history
-        - task‑aware attention
+        - task-aware attention
         - hybrid (attention + dynamic confidence)
     """
 
     def __init__(
-        self, models: List[nn.Module], num_tasks: int, device: torch.device = None
+        self,
+        models: List[nn.Module],
+        num_tasks: int = 1,
+        device: Optional[torch.device] = None,
+        trainable_dynamic: bool = False,
     ):
-        """
-        Args:
-            models: list of PyTorch models (each should have a forward method returning logits)
-            num_tasks: total number of tasks (for task embeddings)
-        """
-        self.models = models
-        self.num_models = len(models)
-        self.device = device or next(models[0].parameters()).device
+        super().__init__()
+        if not models:
+            raise ValueError("SmartWeightedEnsemble: 'models' list cannot be empty.")
 
-        # Performance tracking: (num_models, num_tasks) matrix
-        self.performance = (
-            torch.ones(self.num_models, num_tasks, device=self.device) * 0.5
+        self.models = nn.ModuleList(models)
+        self.num_models = len(models)
+        self.num_tasks = max(1, num_tasks)
+        self.trainable_dynamic = trainable_dynamic
+
+        if device is None:
+            try:
+                self.device = next(models[0].parameters()).device
+            except (StopIteration, AttributeError):
+                self.device = torch.device("cpu")
+        else:
+            self.device = device
+
+        # Performance tracking buffer: (num_models, num_tasks) matrix
+        self.register_buffer(
+            "performance",
+            torch.ones(self.num_models, self.num_tasks, device=self.device) * 0.5,
         )
 
-        self.attention = TaskAwareAttention(num_tasks).to(self.device)
+        self.attention = TaskAwareAttention(self.num_tasks).to(self.device)
+        self.to(self.device)
+
+    def to(self, *args: Any, **kwargs: Any) -> SmartWeightedEnsemble:
+        res = super().to(*args, **kwargs)
+        # Update self.device to match
+        try:
+            p = next(self.parameters())
+            self.device = p.device
+        except StopIteration:
+            pass
+        return res
 
     def update_performance(
         self,
@@ -350,48 +325,74 @@ class SmartWeightedEnsemble:
         model_outputs: List[torch.Tensor],
         target: torch.Tensor,
         metric: str = "accuracy",
-    ):
-        """
-        Update performance scores based on validation results.
-        Not implemented in detail – placeholder.
-        """
+    ) -> None:
+        """Update performance scores based on validation results."""
+        task_id = max(0, min(self.num_tasks - 1, task_id))
+        target = target.to(self.device)
         with torch.no_grad():
             for i, logits in enumerate(model_outputs):
+                if i >= self.num_models:
+                    break
+                logits = logits.to(self.device)
                 if metric == "accuracy":
                     preds = logits.argmax(dim=-1)
                     acc = (preds == target).float().mean().item()
                     self.performance[i, task_id] = (
                         0.9 * self.performance[i, task_id] + 0.1 * acc
                     )
-                # other metrics can be added
 
     def _get_dynamic_weights(
-        self, task_id: int, input_ids: torch.Tensor, attention_mask: torch.Tensor
+        self,
+        task_id: int,
+        input_ids: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        **kwargs: Any,
     ) -> torch.Tensor:
-        """
-        Compute dynamic weights based on input‑specific confidence.
-        Simplified version: uses model softmax probabilities.
-        """
-        weights = torch.zeros(self.num_models, device=self.device)
-        with torch.no_grad():
+        """Compute dynamic weights based on input-specific confidence."""
+        input_ids = input_ids.to(self.device)
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(self.device)
+
+        def _forward_all():
+            weights_list = []
             for i, model in enumerate(self.models):
-                model.eval()
-                logits = model(
-                    input_ids=input_ids, attention_mask=attention_mask
-                ).logits
-                probs = F.softmax(logits, dim=-1)
-                # Confidence = max probability across classes, averaged over batch
+                if not self.trainable_dynamic:
+                    model.eval()
+                if attention_mask is not None:
+                    out = model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
+                else:
+                    out = model(input_ids=input_ids, **kwargs)
+                if hasattr(out, "logits"):
+                    logits = out.logits
+                elif isinstance(out, (tuple, list)):
+                    logits = out[0]
+                else:
+                    logits = out
+
+                probs = F.softmax(logits.float(), dim=-1)
                 conf = probs.max(dim=-1)[0].mean()
-                weights[i] = conf
-        return weights / (weights.sum() + 1e-5)
+                weights_list.append(conf)
+            return torch.stack(weights_list)
+
+        if self.trainable_dynamic:
+            raw_weights = _forward_all()
+        else:
+            with torch.no_grad():
+                raw_weights = _forward_all()
+
+        if raw_weights.numel() == 0 or raw_weights.sum() <= 0:
+            return torch.ones(self.num_models, device=self.device) / self.num_models
+        return raw_weights / raw_weights.sum()
 
     def combine_logits(
         self,
         task_id: int,
         all_logits: torch.Tensor,
-        input_ids: torch.Tensor,
-        attention_mask: torch.Tensor,
+        input_ids: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
         method: str = "hybrid",
+        model_task_ids: Optional[List[int]] = None,
+        **kwargs: Any,
     ) -> torch.Tensor:
         """
         Combine logits from all models.
@@ -401,97 +402,148 @@ class SmartWeightedEnsemble:
             all_logits: (num_models, batch_size, num_labels) – already computed.
             input_ids, attention_mask: used for dynamic weighting.
             method: 'simple_average', 'weighted', 'task_aware_attention', 'hybrid'
+            model_task_ids: task assignments for each sub-model.
         """
+        all_logits = all_logits.to(self.device)
+        num_models = all_logits.shape[0]
+        task_id = max(0, min(self.num_tasks - 1, task_id))
+
+        if model_task_ids is not None and len(model_task_ids) != num_models:
+            raise ValueError(
+                f"model_task_ids length ({len(model_task_ids)}) must match num_models ({num_models})"
+            )
+
+        t_ids = (
+            model_task_ids
+            if model_task_ids is not None
+            else [i % self.num_tasks for i in range(num_models)]
+        )
+
         if method == "simple_average":
             return all_logits.mean(dim=0)
 
         elif method == "weighted":
-            # Use performance matrix as fixed weights
             perf_weights = self.performance[:, task_id]  # (M,)
-            perf_weights = perf_weights / (perf_weights.sum() + 1e-5)
+            sum_w = perf_weights.sum()
+            if sum_w > 0:
+                perf_weights = perf_weights / sum_w
+            else:
+                perf_weights = torch.ones_like(perf_weights) / max(1, len(perf_weights))
             return (all_logits * perf_weights.view(-1, 1, 1)).sum(dim=0)
 
         elif method == "task_aware_attention":
-            # Each model is associated with a prototype task (e.g., index of the task it was trained on)
-            # For demonstration, assign models to tasks in round‑robin:
-            num_tasks = self.performance.shape[1]
-            model_task_ids = [i % num_tasks for i in range(self.num_models)]
-            return self.attention(task_id, all_logits, model_task_ids)
+            return self.attention(task_id, all_logits, t_ids)
 
         elif method == "hybrid":
-            # Combine task_aware attention with input‑adaptive confidence
-            num_tasks = self.performance.shape[1]
-            model_task_ids = [i % num_tasks for i in range(self.num_models)]
-            attn_weighted = self.attention(task_id, all_logits, model_task_ids)
-            dyn_weights = self._get_dynamic_weights(
-                task_id, input_ids, attention_mask
-            )  # (M,)
-            dyn_weighted = (all_logits * dyn_weights.view(-1, 1, 1)).sum(dim=0)
-            # Blend: 60% attention, 40% dynamic
-            return 0.6 * attn_weighted + 0.4 * dyn_weighted
+            attn_weighted = self.attention(task_id, all_logits, t_ids)
+            if input_ids is not None:
+                dyn_weights = self._get_dynamic_weights(
+                    task_id, input_ids, attention_mask=attention_mask, **kwargs
+                )  # (M,)
+                dyn_weighted = (all_logits * dyn_weights.view(-1, 1, 1)).sum(dim=0)
+                return 0.6 * attn_weighted + 0.4 * dyn_weighted
+            return attn_weighted
 
         else:
             raise ValueError(f"Unknown ensemble method: {method}")
 
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        task_id: int = 0,
+        attention_mask: Optional[torch.Tensor] = None,
+        method: str = "hybrid",
+        model_task_ids: Optional[List[int]] = None,
+        **kwargs: Any,
+    ) -> torch.Tensor:
+        """Forward pass querying each model and combining logits with attention_mask propagation."""
+        input_ids = input_ids.to(self.device)
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(self.device)
 
-def run_smart_ensemble(config: dict, dataset_path: str):
-    """
-    Command‑line entry point for running smart ensemble.
-    (Placeholder – real implementation would load config, models, data, etc.)
-    """
-    print("Smart ensemble not fully implemented in this example.")
-    print(
-        "Use the class 'SmartWeightedEnsemble' directly in your training/evaluation script."
-    )
+        if model_task_ids is not None and len(model_task_ids) != self.num_models:
+            raise ValueError(
+                f"model_task_ids length ({len(model_task_ids)}) must match num_models ({self.num_models})"
+            )
+
+        all_logits = []
+        for model in self.models:
+            if attention_mask is not None:
+                out = model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
+            else:
+                out = model(input_ids=input_ids, **kwargs)
+
+            if hasattr(out, "logits"):
+                logits = out.logits
+            elif isinstance(out, (tuple, list)):
+                logits = out[0]
+            else:
+                logits = out
+            all_logits.append(logits)
+
+        stacked = torch.stack(all_logits, dim=0)
+        stacked = stacked.to(self.device)
+
+        return self.combine_logits(
+            task_id=task_id,
+            all_logits=stacked,
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            method=method,
+            model_task_ids=model_task_ids,
+            **kwargs,
+        )
+
+    def forward_simple_average(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> torch.Tensor:
+        return self.forward(
+            input_ids,
+            task_id=0,
+            attention_mask=attention_mask,
+            method="simple_average",
+            **kwargs,
+        )
+
+    def forward_task_attention(
+        self,
+        task_id: int,
+        model_task_ids: List[int],
+        input_ids: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> torch.Tensor:
+        return self.forward(
+            input_ids,
+            task_id=task_id,
+            attention_mask=attention_mask,
+            method="task_aware_attention",
+            model_task_ids=model_task_ids,
+            **kwargs,
+        )
+
+    def forward_hybrid(
+        self,
+        task_id: int,
+        model_task_ids: List[int],
+        input_ids: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> torch.Tensor:
+        return self.forward(
+            input_ids,
+            task_id=task_id,
+            attention_mask=attention_mask,
+            method="hybrid",
+            model_task_ids=model_task_ids,
+            **kwargs,
+        )
+
+
+def run_smart_ensemble(config: dict, dataset_path: str) -> None:
+    """Command-line entry point for running smart ensemble."""
+    print("Use the class 'SmartWeightedEnsemble' directly in your training/evaluation script.")
 ```
-
-## Configuration & Hyperparameters
-
-The `SmartWeightedEnsemble` module (registered under `weighted_ensemble`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
-
-| Class | Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `SmartWeightedEnsemble` | `models` | `Any` | **Required** | Controls `models` configuration in `SmartWeightedEnsemble`. |
-| `SmartWeightedEnsemble` | `num_tasks` | `int` | `1` | Controls `num_tasks` configuration in `SmartWeightedEnsemble`. |
-| `SmartWeightedEnsemble` | `device` | `Any` | `None` | Controls `device` configuration in `SmartWeightedEnsemble`. |
-| `SmartWeightedEnsemble` | `trainable_dynamic` | `bool` | `False` | Controls `trainable_dynamic` configuration in `SmartWeightedEnsemble`. |
-| `TaskAwareAttention` | `num_tasks` | `Any` | **Required** | Controls `num_tasks` configuration in `TaskAwareAttention`. |
-| `TaskAwareAttention` | `hidden_dim` | `int` | `64` | Controls `hidden_dim` configuration in `TaskAwareAttention`. |
-
-
-## Usage & Integration Examples
-
-### HuggingFace Injection & Verification
-
-```python
-import torch
-from transformers import AutoModelForSequenceClassification
-from framework.core.attention_utils import inject_attention
-
-# 1. Initialize base model
-model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
-
-# 2. Inject SmartWeightedEnsemble dynamically
-model = inject_attention(model, attn_type='weighted_ensemble', rank=64)
-
-# 3. Execute forward pass
-input_ids = torch.randint(0, 1000, (2, 128))
-outputs = model(input_ids)
-print('Output logits shape:', outputs.logits.shape)
-```
-
-
-## Attention Maps & Activation Diagnostics
-
-The `SmartWeightedEnsemble` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
-- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/weighted_ensemble/`.
-- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
-- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
-
-
-## Future Work & Algorithmic Extensions
-
-- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
-- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
-- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
-
