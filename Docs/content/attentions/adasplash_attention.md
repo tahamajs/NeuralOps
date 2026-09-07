@@ -882,7 +882,7 @@ The table below benchmarks AdaSplash Attention directly against the Pretrained F
 | **DistilBERT** | 90.48% | 88.65% | 87.39% | **89.91%** | **Outperforms both LoRA (+1.26%) & SVD (+2.52%)** |
 | **RoBERTa** | 75.00% | 72.13% | 49.54% | **67.09%** | **Major Recovery (+17.55% over SVD failure)** |
 | **GPT-2** | 81.31% | 80.62% | 53.33% | **79.36%** | **Near-lossless transfer (97.6% of baseline)** |
-| **Qwen3.5-0.8B** | 67.55% | 61.35% | 50.92% | **52.18%** | **Loss converged from 4.63 to 0.55; needs >50 steps** |
+| **Qwen3.5-0.8B** | 67.55% | 61.35% | 50.92% | **52.18%** | **Loss descended from 4.63 to 0.52 (step 50: 1.08); recommended 200 steps** |
 
 ---
 
