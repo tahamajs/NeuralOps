@@ -141,6 +141,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Unified 4-Model Hardened FLAP Benchmark")
 parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
 parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,direct_svd)")
+parser.add_argument("--batch_size", type=int, default=None, help="Batch size override")
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Compression rank override")
 parser.add_argument("--max_error", type=float, default=None, help="Max reconstruction error threshold")
@@ -175,6 +176,8 @@ def update_cmd_arg(cmd: list[str], flag: str, new_val: str):
 for m in models:
     if args.modules is not None:
         update_cmd_arg(m["cmd"], "--modules", args.modules)
+    if args.batch_size is not None:
+        update_cmd_arg(m["cmd"], "--batch_size", str(args.batch_size))
     if args.recovery_steps is not None:
         update_cmd_arg(m["cmd"], "--recovery_steps", str(args.recovery_steps))
     if args.rank is not None:
