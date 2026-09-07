@@ -610,5 +610,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T01:26:55.272311"
+  },
+  {
+    "module": "granite_hybrid",
+    "runner": "run_all_4_granite_hybrid.py",
+    "exit_code": 0,
+    "elapsed_s": 190.28,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:30:05.559221"
   }
 ]
