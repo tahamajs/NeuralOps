@@ -157,7 +157,7 @@ class AdaptiveSparseAttention(BaseAttention):
         self,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
-        sparsity_ratio: float = 0.5,
+        sparsity_ratio: Optional[float] = None,
         dropout: float = 0.1,
         lora_rank: int = 16,
         comp_config: Optional[Any] = None,
@@ -200,7 +200,6 @@ class AdaptiveSparseAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.default_sparsity: float = float(sparsity_ratio)
 
         # Decoder & Causal detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
@@ -214,6 +213,38 @@ class AdaptiveSparseAttention(BaseAttention):
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
+
+        # Head dim fallback from source_attn if head_dim <= 0 or not resolved properly
+        if source_attn is not None and getattr(source_attn, "head_dim", 0):
+            head_dim = getattr(source_attn, "head_dim")
+            self.head_dim = head_dim
+            self.all_head_size = self.num_heads * self.head_dim
+            self.kv_head_size = self.num_kv_heads * self.head_dim
+            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+        # Default sparsity: lower for bidirectional encoders (0.1) than decoders (0.5)
+        # Check explicit parameter, kwargs, comp_config, config
+        cfg_encoder_sparsity = getattr(comp_config, "adaptive_sparse_encoder_sparsity", kwargs.get("adaptive_sparse_encoder_sparsity", None))
+        if cfg_encoder_sparsity is None and config is not None:
+            cfg_encoder_sparsity = getattr(config, "adaptive_sparse_encoder_sparsity", None)
+
+        if sparsity_ratio is not None:
+            effective_sparsity = float(sparsity_ratio)
+        elif "sparsity_ratio" in kwargs:
+            effective_sparsity = float(kwargs["sparsity_ratio"])
+        elif comp_config is not None and hasattr(comp_config, "adaptive_sparsity_ratio"):
+            effective_sparsity = float(comp_config.adaptive_sparsity_ratio)
+        elif config is not None and hasattr(config, "adaptive_sparsity_ratio"):
+            effective_sparsity = float(config.adaptive_sparsity_ratio)
+        elif not self.is_decoder:
+            if cfg_encoder_sparsity is not None:
+                effective_sparsity = float(cfg_encoder_sparsity)
+            else:
+                effective_sparsity = 0.1
+        else:
+            effective_sparsity = 0.5
+
+        self.default_sparsity: float = effective_sparsity
 
         # LoRA rank and alpha: independent reads
         if config is not None:
@@ -238,9 +269,9 @@ class AdaptiveSparseAttention(BaseAttention):
         self.v_lin = self.v_proj
         self.out_lin = self.out_proj
 
-        # Learnable per-head sparsity logit initialized to target sparsity
-        init_logit = math.log(max(1e-4, min(0.9999, sparsity_ratio)) / (1.0 - max(1e-4, min(0.9999, sparsity_ratio))))
-        self.sparsity_logits = nn.Parameter(torch.full((self.num_heads,), fill_value=init_logit))
+        # Explicitly frozen per-head sparsity logit initialized to target sparsity
+        init_logit = math.log(max(1e-4, min(0.9999, effective_sparsity)) / (1.0 - max(1e-4, min(0.9999, effective_sparsity))))
+        self.sparsity_logits = nn.Parameter(torch.full((self.num_heads,), fill_value=init_logit), requires_grad=False)
 
         dropout_p = getattr(
             config,
@@ -495,13 +526,32 @@ class AdaptiveSparseAttention(BaseAttention):
             pos_ids = kwargs.get("position_ids", None)
             if pos_ids is None:
                 pos_ids = torch.arange(N_q, device=device).unsqueeze(0).expand(B, -1)
-            try:
-                cos, sin = rotary_mod(K, seq_len=N_k)
-            except Exception:
+            # 1. Try rotary_module(Q, position_ids)
+            # 2. Try rotary_module(Q, seq_len=...)
+            # 3. Try rotary_module(K, ...)
+            cos, sin = None, None
+            for probe_t in (Q, K):
                 try:
-                    cos, sin = rotary_mod(K, pos_ids)
+                    res = rotary_mod(probe_t, pos_ids)
+                    if isinstance(res, (tuple, list)) and len(res) >= 2:
+                        cos, sin = res[0], res[1]
+                        break
                 except Exception:
-                    cos, sin = None, None
+                    pass
+                try:
+                    res = rotary_mod(probe_t, seq_len=N_k)
+                    if isinstance(res, (tuple, list)) and len(res) >= 2:
+                        cos, sin = res[0], res[1]
+                        break
+                except Exception:
+                    pass
+                try:
+                    res = rotary_mod(probe_t)
+                    if isinstance(res, (tuple, list)) and len(res) >= 2:
+                        cos, sin = res[0], res[1]
+                        break
+                except Exception:
+                    pass
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
@@ -556,12 +606,16 @@ class AdaptiveSparseAttention(BaseAttention):
 
         if head_mask is not None:
             if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
+                hm = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                hm = head_mask.unsqueeze(-1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
-            attn = attn * head_mask
+                hm = head_mask.unsqueeze(1)
+            elif head_mask.dim() == 4:
+                hm = head_mask
+            else:
+                hm = head_mask
+            attn = attn * hm
 
         context = torch.matmul(attn, V)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
