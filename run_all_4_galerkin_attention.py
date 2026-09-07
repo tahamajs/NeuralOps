@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark runner for GalerkinAttention across DistilBERT, RoBERTa, GPT-2, and Qwen."""
+\"\"\"Benchmark runner for GalerkinAttention across DistilBERT, RoBERTa, GPT-2, and Qwen.\"\"\"
 
 import os
 import sys
