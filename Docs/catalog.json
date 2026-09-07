@@ -1,2302 +1,1292 @@
 {
-    "guides": [
-        {
-            "id": "Attention_Mechanisms_For_Paper.md",
-            "title": "Comprehensive Survey and Mathematical Taxonomy of Attention Mechanisms for Transformer Architectures",
-            "path": "Attention_Mechanisms_For_Paper.md"
-        },
-        {
-            "id": "COMPLETE_RESEARCH_GUIDE.md",
-            "title": "Complete SVD Linear Attention Research Guide",
-            "path": "COMPLETE_RESEARCH_GUIDE.md"
-        },
-        {
-            "id": "DEPLOYMENT.md",
-            "title": "Research Hub deployment",
-            "path": "DEPLOYMENT.md"
-        },
-        {
-            "id": "Kaggle_Deployment_Guide.md",
-            "title": "🏆 Kaggle & Cloud GPU Deployment Guide",
-            "path": "Kaggle_Deployment_Guide.md"
-        },
-        {
-            "id": "START_HERE.md",
-            "title": "SVD Linear Attention Documentation",
-            "path": "START_HERE.md"
-        }
-    ],
-    "verification": [
-        {
-            "id": "attention_verification.md",
-            "title": "Attention Architectures Verification Report",
-            "path": "attention_verification.md"
-        },
-        {
-            "id": "compression_verification.md",
-            "title": "Compression Engine Verification Report",
-            "path": "compression_verification.md"
-        },
-        {
-            "id": "core_verification.md",
-            "title": "Core Utilities Verification Report",
-            "path": "core_verification.md"
-        },
-        {
-            "id": "forward_pass_verification.md",
-            "title": "Attention Module Forward Pass Verification",
-            "path": "forward_pass_verification.md"
-        },
-        {
-            "id": "training_verification.md",
-            "title": "Training Orchestration Verification Report",
-            "path": "training_verification.md"
-        }
-    ],
-    "reports": [
-        {
-            "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
-            "title": "📊 SVD Linear Attention & Compression Framework: Master Empirical Benchmark Report",
-            "path": "reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
-        },
-        {
-            "id": "README.md",
-            "title": "Benchmark and verification reports",
-            "path": "reports/README.md"
-        },
-        {
-            "id": "master_empirical_benchmark_report.md",
-            "title": "🏆 Master Empirical Benchmark Report: SVD Linear Attention & Compression",
-            "path": "results/master_empirical_benchmark_report.md"
-        },
-        {
-            "id": "README.md",
-            "title": "Experiment results",
-            "path": "results/README.md"
-        }
-    ],
-    "studios": [
-        {
-            "id": "Attention_Visualization_Dashboard.md",
-            "title": "🧠 NeuralOps Attention Visualization Dashboard — Complete Aggregated Design",
-            "path": "Attention_Visualization_Dashboard/Attention_Visualization_Dashboard.md"
-        },
-        {
-            "id": "Attention_Visualization_Dashboard_Features.md",
-            "title": "🧠 Complete Attention Visualization Suite — React + 3D + Interactive",
-            "path": "Attention_Visualization_Dashboard/Attention_Visualization_Dashboard_Features.md"
-        },
-        {
-            "id": "Zone_1_Global_Navigation_&_Context_Bar.md",
-            "title": "🧭 Zone 1: Global Navigation & Context Bar — Complete Implementation Specification",
-            "path": "Attention_Visualization_Dashboard/Zone_1_Global_Navigation_&_Context_Bar.md"
-        },
-        {
-            "id": "Zone_2_Attention_Canvas.md",
-            "title": "🎨 Zone 2: Attention Canvas — Complete Advanced Implementation Specification",
-            "path": "Attention_Visualization_Dashboard/Zone_2_Attention_Canvas.md"
-        },
-        {
-            "id": "Zone_3_Live_Math_Panel.md",
-            "title": "📐 Zone 3: Live Math Panel — 3Blue1Brown‑Style Complete Implementation Specification",
-            "path": "Attention_Visualization_Dashboard/Zone_3_Live_Math_Panel.md"
-        },
-        {
-            "id": "Zone_4_Control_Panel.md",
-            "title": "🎛️ Zone 4: Control Panel — Complete Implementation Specification",
-            "path": "Attention_Visualization_Dashboard/Zone_4_Control_Panel.md"
-        },
-        {
-            "id": "Zone_5_Analytics_&_Diagnostics_Dashboard.md",
-            "title": "📈 Zone 5: Analytics & Diagnostics Dashboard — Complete Implementation Specification",
-            "path": "Attention_Visualization_Dashboard/Zone_5_Analytics_&_Diagnostics_Dashboard.md"
-        },
-        {
-            "id": "Zone_6_Interpretability_Tools.md",
-            "title": "🔬 Zone 6: Interpretability Tools — Complete Implementation Specification",
-            "path": "Attention_Visualization_Dashboard/Zone_6_Interpretability_Tools.md"
-        },
-        {
-            "id": "Zone_7_Social_&_Community_Layer.md",
-            "title": "🧠 Zone 7: Social & Community Layer — Complete Implementation Specification",
-            "path": "Attention_Visualization_Dashboard/Zone_7_Social_&_Community_Layer.md"
-        },
-        {
-            "id": "Zone_8_Gamification_&_Progress.md",
-            "title": "🎮 Zone 8: Gamification & Progress — Complete Implementation Specification",
-            "path": "Attention_Visualization_Dashboard/Zone_8_Gamification_&_Progress.md"
-        },
-        {
-            "id": "Zone_9_Additiona_Cross_Platform_Integration_Features.md",
-            "title": "🔗 Features 39‑50: Complete Implementation Specifications",
-            "path": "Attention_Visualization_Dashboard/Zone_9_Additiona_Cross_Platform_Integration_Features.md"
-        },
-        {
-            "id": "CIRCUIT_TRACER.md",
-            "title": "Circuit Tracer — QK & OV Circuit Explorer",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/CIRCUIT_TRACER.md"
-        },
-        {
-            "id": "COMPRESSION_STUDIO.md",
-            "title": "🏗️ Compression Studio — Complete Implementation Specification",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/COMPRESSION_STUDIO.md"
-        },
-        {
-            "id": "Embedding_Explorer.md",
-            "title": "🧬 Embedding Explorer — Complete Implementation Specification",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/Embedding_Explorer.md"
-        },
-        {
-            "id": "FNN_&_MLP_EXPLORER.md",
-            "title": "🧠 FFN/MLP EXPLORER — Complete Implementation Blueprint",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/FNN_&_MLP_EXPLORER.md"
-        },
-        {
-            "id": "FULL_PIPELINE_STUDIO.md",
-            "title": "🧠 Full Pipeline Studio — Complete Implementation Architecture",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/FULL_PIPELINE_STUDIO.md"
-        },
-        {
-            "id": "KV_CACHE_MONITOR.md",
-            "title": "🧠 KV Cache Monitor — Complete Implementation Specification",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/KV_CACHE_MONITOR.md"
-        },
-        {
-            "id": "LAYER_NORMALIZATION_DYNAMICS.md",
-            "title": "🧪 LAYER NORMALIZATION DYNAMICS — \"The Stabilizer Lab\"",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LAYER_NORMALIZATION_DYNAMICS.md"
-        },
-        {
-            "id": "LoRA_ADAPTER_STUDIO.md",
-            "title": "🧩 LoRA ADAPTER STUDIO — Complete Implementation Specifications",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LoRA_ADAPTER_STUDIO.md"
-        },
-        {
-            "id": "LOSS_LANDSCAPE_EXPLORER.md",
-            "title": "🏔️ Loss Landscape Explorer — Complete Implementation Specifications",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LOSS_LANDSCAPE_EXPLORER.md"
-        },
-        {
-            "id": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components.md",
-            "title": "🧠 Complete Mapping: Apply the Attention-Style Interactive Dashboard to ALL Transformer Components",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components.md"
-        },
-        {
-            "id": "OUTPUT_LOGITS_PREDICTOR.md",
-            "title": "🧠 Output Logits Predictor — Complete Implementation Guide",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/OUTPUT_LOGITS_PREDICTOR.md"
-        },
-        {
-            "id": "POSITIONAL_ENCODING_STUDIO.md",
-            "title": "🧭 POSITIONAL ENCODING STUDIO — Complete Implementation Blueprint",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/POSITIONAL_ENCODING_STUDIO.md"
-        },
-        {
-            "id": "RESIDUAL_STREAM_TRACER.md",
-            "title": "🧠 Residual Stream Tracer — Complete Implementation Specification",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/RESIDUAL_STREAM_TRACER.md"
-        },
-        {
-            "id": "TRAINING_DYNAMICS_SANDBOX.md",
-            "title": "Zone 11: Training Dynamics Sandbox — Complete Implementation Specifications",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/TRAINING_DYNAMICS_SANDBOX.md"
-        },
-        {
-            "id": "VR_IMMERSION_ROOM.md",
-            "title": "🥽 VR Immersion Room — \"Step Inside the Transformer\"",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/VR_IMMERSION_ROOM.md"
-        },
-        {
-            "id": "WEIGHT_MATRIX_DECOMPOSER.md",
-            "title": "🧮 Weight Matrix Decomposer — Complete Implementation Specification",
-            "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/WEIGHT_MATRIX_DECOMPOSER.md"
-        }
-    ],
-    "attentions": [
-        {
-            "id": "adaptive_span.md",
-            "title": "Adaptive Span (adaptivespan)",
-            "path": "content/attentions/adaptive_span.md"
-        },
-        {
-            "id": "adaptive_span_attention.md",
-            "title": "Adaptive Span Attention: Dynamic Head-Specific Context Window Gating",
-            "path": "content/attentions/adaptive_span_attention.md"
-        },
-        {
-            "id": "adaptive_span_inject.md",
-            "title": "Adaptive Span Inject (adaptivespaninject)",
-            "path": "content/attentions/adaptive_span_inject.md"
-        },
-        {
-            "id": "adaptive_sparse.md",
-            "title": "Adaptive Sparse (adaptivesparse)",
-            "path": "content/attentions/adaptive_sparse.md"
-        },
-        {
-            "id": "adaptive_sparse_attention.md",
-            "title": "Adaptive Sparse Attention: Dynamic Top-K & Threshold-Based Sparsity Routing",
-            "path": "content/attentions/adaptive_sparse_attention.md"
-        },
-        {
-            "id": "adaptive_sparse_attention_inject.md",
-            "title": "Adaptive Sparse Attention Inject (adaptivesparseattentioninject)",
-            "path": "content/attentions/adaptive_sparse_attention_inject.md"
-        },
-        {
-            "id": "adaptive_sparse_inject.md",
-            "title": "Adaptive Sparse Inject (adaptivesparseinject)",
-            "path": "content/attentions/adaptive_sparse_inject.md"
-        },
-        {
-            "id": "adaptive_svd.md",
-            "title": "Adaptive Svd (adaptivesvd)",
-            "path": "content/attentions/adaptive_svd.md"
-        },
-        {
-            "id": "adaptive_svd_attention.md",
-            "title": "Adaptive SVD Attention: Low-Rank SVD Projections with Parallel Residual Adapters",
-            "path": "content/attentions/adaptive_svd_attention.md"
-        },
-        {
-            "id": "adaptive_svd_attn.md",
-            "title": "Adaptive Svd Attn (adaptivesvdattn)",
-            "path": "content/attentions/adaptive_svd_attn.md"
-        },
-        {
-            "id": "adasplash.md",
-            "title": "Adasplash (adasplash)",
-            "path": "content/attentions/adasplash.md"
-        },
-        {
-            "id": "adasplash_attention.md",
-            "title": "AdaSplash Attention: Adaptive Splash Attention with alpha-Entmax Sparse Activations",
-            "path": "content/attentions/adasplash_attention.md"
-        },
-        {
-            "id": "adasplash_inject.md",
-            "title": "Adasplash Inject (adasplashinject)",
-            "path": "content/attentions/adasplash_inject.md"
-        },
-        {
-            "id": "aegis_hybrid.md",
-            "title": "AEGIS-Hybrid Attention: Low-Rank Factorized Hybrid Attention",
-            "path": "content/attentions/aegis_hybrid.md"
-        },
-        {
-            "id": "aegis_hybrid_attn.md",
-            "title": "Aegis Hybrid Attn (aegishybridattn)",
-            "path": "content/attentions/aegis_hybrid_attn.md"
-        },
-        {
-            "id": "aegis_hybrid_inject.md",
-            "title": "Aegis Hybrid Inject (aegishybridinject)",
-            "path": "content/attentions/aegis_hybrid_inject.md"
-        },
-        {
-            "id": "aegis_spectron_fp8.md",
-            "title": "AEGIS-Spectron-FP8: Tri-Branch Architecture with Spectral Entropy Routing",
-            "path": "content/attentions/aegis_spectron_fp8.md"
-        },
-        {
-            "id": "aegis_spectron_fp8_attn.md",
-            "title": "Aegis Spectron Fp8 Attn (aegisspectronfp8attn)",
-            "path": "content/attentions/aegis_spectron_fp8_attn.md"
-        },
-        {
-            "id": "aegis_spectron_fp8_inject.md",
-            "title": "Aegis Spectron Fp8 Inject (aegisspectronfp8inject)",
-            "path": "content/attentions/aegis_spectron_fp8_inject.md"
-        },
-        {
-            "id": "aegis_v1.md",
-            "title": "AEGIS-Attention V1: Adaptive Enhanced Global-Local Integrated Sparse Attention Baseline",
-            "path": "content/attentions/aegis_v1.md"
-        },
-        {
-            "id": "aegis_v1_inject.md",
-            "title": "Aegis V1 Inject (aegisv1inject)",
-            "path": "content/attentions/aegis_v1_inject.md"
-        },
-        {
-            "id": "aegis_v2.md",
-            "title": "AEGIS-Attention V2: Low-Rank Factorized Hybrid Attention with Adaptive Soft-Pruning",
-            "path": "content/attentions/aegis_v2.md"
-        },
-        {
-            "id": "aegis_v2_inject.md",
-            "title": "Aegis V2 Inject (aegisv2inject)",
-            "path": "content/attentions/aegis_v2_inject.md"
-        },
-        {
-            "id": "aegis_v3.md",
-            "title": "AEGIS-Attention V3: Energy-Constrained SVD & Softpick Rectified Sparse Attention",
-            "path": "content/attentions/aegis_v3.md"
-        },
-        {
-            "id": "aegis_v3_inject.md",
-            "title": "Aegis V3 Inject (aegisv3inject)",
-            "path": "content/attentions/aegis_v3_inject.md"
-        },
-        {
-            "id": "aegis_v4.md",
-            "title": "AEGIS-Attention V4: Adaptive Enhanced Global-Local Integrated Sparse Attention",
-            "path": "content/attentions/aegis_v4.md"
-        },
-        {
-            "id": "aegis_v4_attn.md",
-            "title": "Aegis V4 Attn (aegisv4attn)",
-            "path": "content/attentions/aegis_v4_attn.md"
-        },
-        {
-            "id": "aegis_v4_inject.md",
-            "title": "Aegis V4 Inject (aegisv4inject)",
-            "path": "content/attentions/aegis_v4_inject.md"
-        },
-        {
-            "id": "aegis_v5.md",
-            "title": "AEGIS-Attention V5: Hybrid Multi-Head Attention with ELU+1 Feature Maps & Safe Masking",
-            "path": "content/attentions/aegis_v5.md"
-        },
-        {
-            "id": "aegis_v5_inject.md",
-            "title": "Aegis V5 Inject (aegisv5inject)",
-            "path": "content/attentions/aegis_v5_inject.md"
-        },
-        {
-            "id": "aegis_v6.md",
-            "title": "AEGIS-Attention V6: Unified SVD-LoRA Hybrid Attention with Orthogonal Kernel Projections",
-            "path": "content/attentions/aegis_v6.md"
-        },
-        {
-            "id": "aegis_v6_inject.md",
-            "title": "Aegis V6 Inject (aegisv6inject)",
-            "path": "content/attentions/aegis_v6_inject.md"
-        },
-        {
-            "id": "asvd.md",
-            "title": "Asvd (asvd)",
-            "path": "content/attentions/asvd.md"
-        },
-        {
-            "id": "asvd_attention.md",
-            "title": "ASVD Attention: Activation-Aware Singular Value Decomposition Architecture",
-            "path": "content/attentions/asvd_attention.md"
-        },
-        {
-            "id": "bam_umoe.md",
-            "title": "BAM-uMoE: Bidirectional Attentive Mixture-of-Unified-Experts",
-            "path": "content/attentions/bam_umoe.md"
-        },
-        {
-            "id": "block_transformer_hiba.md",
-            "title": "Block Transformer HIBA: Hierarchical Intra/Inter-Block Attention",
-            "path": "content/attentions/block_transformer_hiba.md"
-        },
-        {
-            "id": "chela_slay.md",
-            "title": "CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel",
-            "path": "content/attentions/chela_slay.md"
-        },
-        {
-            "id": "chela_slay_inject.md",
-            "title": "Chela Slay Inject (chelaslayinject)",
-            "path": "content/attentions/chela_slay_inject.md"
-        },
-        {
-            "id": "cluster.md",
-            "title": "Cluster (cluster)",
-            "path": "content/attentions/cluster.md"
-        },
-        {
-            "id": "cluster_attention.md",
-            "title": "ClusterFormer: Dynamic Token-Clustering Attention via Batch Iterative K-Means",
-            "path": "content/attentions/cluster_attention.md"
-        },
-        {
-            "id": "cluster_inject.md",
-            "title": "Cluster Inject (clusterinject)",
-            "path": "content/attentions/cluster_inject.md"
-        },
-        {
-            "id": "compressed_attention.md",
-            "title": "Compressed Attention via Truncated SVD",
-            "path": "content/attentions/compressed_attention.md"
-        },
-        {
-            "id": "compressed_attention_layer.md",
-            "title": "Compressed Attention Layer (compressedattentionlayer)",
-            "path": "content/attentions/compressed_attention_layer.md"
-        },
-        {
-            "id": "compressed_attention_layer_energy.md",
-            "title": "Compressed Attention Layer Energy (compressedattentionlayerenergy)",
-            "path": "content/attentions/compressed_attention_layer_energy.md"
-        },
-        {
-            "id": "compressed_mha.md",
-            "title": "Compressed Mha (compressedmha)",
-            "path": "content/attentions/compressed_mha.md"
-        },
-        {
-            "id": "compressed_mha_attention.md",
-            "title": "Compressed Multi-Head Attention (Compressed-MHA)",
-            "path": "content/attentions/compressed_mha_attention.md"
-        },
-        {
-            "id": "compression_unified_rope.md",
-            "title": "Compression Unified Rope (compressionunifiedrope)",
-            "path": "content/attentions/compression_unified_rope.md"
-        },
-        {
-            "id": "cosformer.md",
-            "title": "Cosformer: Rethinking Softmax in Attention with Linear Complexity",
-            "path": "content/attentions/cosformer.md"
-        },
-        {
-            "id": "cosformer_attention.md",
-            "title": "Cosformer Attention (cosformerattention)",
-            "path": "content/attentions/cosformer_attention.md"
-        },
-        {
-            "id": "cosformer_inject.md",
-            "title": "Cosformer Inject (cosformerinject)",
-            "path": "content/attentions/cosformer_inject.md"
-        },
-        {
-            "id": "decay_linear_attention.md",
-            "title": "Decay Linear Attention (DecayLinearAttention)",
-            "path": "content/attentions/decay_linear_attention.md"
-        },
-        {
-            "id": "decay_linear_attention_inject.md",
-            "title": "Decay Linear Attention Inject (decaylinearattentioninject)",
-            "path": "content/attentions/decay_linear_attention_inject.md"
-        },
-        {
-            "id": "decay_linear_attn.md",
-            "title": "Decay Linear Attn (decaylinearattn)",
-            "path": "content/attentions/decay_linear_attn.md"
-        },
-        {
-            "id": "eat.md",
-            "title": "EAT: Efficient Attention Transformer with Progressive Token Pruning",
-            "path": "content/attentions/eat.md"
-        },
-        {
-            "id": "eat_inject.md",
-            "title": "Eat Inject (eatinject)",
-            "path": "content/attentions/eat_inject.md"
-        },
-        {
-            "id": "expert_choice_moe.md",
-            "title": "Expert Choice Mixture of Experts (EC-MoE) Attention Block",
-            "path": "content/attentions/expert_choice_moe.md"
-        },
-        {
-            "id": "factorised_matrix_state.md",
-            "title": "Factorised Matrix State Attention: Bidirectional Associative Matrix Recurrence & Low-Rank Bilinear Projections",
-            "path": "content/attentions/factorised_matrix_state.md"
-        },
-        {
-            "id": "factorised_matrix_state_inject.md",
-            "title": "Factorised Matrix State Inject (factorisedmatrixstateinject)",
-            "path": "content/attentions/factorised_matrix_state_inject.md"
-        },
-        {
-            "id": "fasa.md",
-            "title": "MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA)",
-            "path": "content/attentions/fasa.md"
-        },
-        {
-            "id": "flash3.md",
-            "title": "Flash3 (flash3)",
-            "path": "content/attentions/flash3.md"
-        },
-        {
-            "id": "flash3_fp8.md",
-            "title": "Flash3 Fp8 (flash3fp8)",
-            "path": "content/attentions/flash3_fp8.md"
-        },
-        {
-            "id": "flash3_fp8_inject.md",
-            "title": "Flash3 Fp8 Inject (flash3fp8inject)",
-            "path": "content/attentions/flash3_fp8_inject.md"
-        },
-        {
-            "id": "flash_attention3.md",
-            "title": "FlashAttention-3: Fast and Memory-Efficient Exact Attention with Asynchronous Hardware Overlap",
-            "path": "content/attentions/flash_attention3.md"
-        },
-        {
-            "id": "flash_attention3_fp8.md",
-            "title": "FlashAttention-3 FP8: Low-Precision 8-Bit Float Transformer Attention for Hopper Architectures",
-            "path": "content/attentions/flash_attention3_fp8.md"
-        },
-        {
-            "id": "full.md",
-            "title": "Full (full)",
-            "path": "content/attentions/full.md"
-        },
-        {
-            "id": "full_attention.md",
-            "title": "Full Attention: Standard Multi-Head Scaled Dot-Product Attention Architecture",
-            "path": "content/attentions/full_attention.md"
-        },
-        {
-            "id": "fused_svd_kernel.md",
-            "title": "Fused SVD-Linear Kernel: SRAM-Resident RMSNorm & Dual-Projection",
-            "path": "content/attentions/fused_svd_kernel.md"
-        },
-        {
-            "id": "fusion_attn.md",
-            "title": "FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention",
-            "path": "content/attentions/fusion_attn.md"
-        },
-        {
-            "id": "galerkin.md",
-            "title": "Galerkin (galerkin)",
-            "path": "content/attentions/galerkin.md"
-        },
-        {
-            "id": "galerkin_attention.md",
-            "title": "Petrov-Galerkin Projection Attention: Energy-Preserving Spectral Operator Discretization",
-            "path": "content/attentions/galerkin_attention.md"
-        },
-        {
-            "id": "galerkin_inject.md",
-            "title": "Galerkin Inject (galerkininject)",
-            "path": "content/attentions/galerkin_inject.md"
-        },
-        {
-            "id": "gated_delta_net.md",
-            "title": "Gated DeltaNet: Multi-Head Bidirectional Delta Rule Linear Recurrent Attention",
-            "path": "content/attentions/gated_delta_net.md"
-        },
-        {
-            "id": "gated_delta_net_inject.md",
-            "title": "Gated Delta Net Inject (gateddeltanetinject)",
-            "path": "content/attentions/gated_delta_net_inject.md"
-        },
-        {
-            "id": "gated_deltanet_block.md",
-            "title": "Gated DeltaNet Block: Hybrid Multi-Head Attention and Recurrent DeltaNet Layer",
-            "path": "content/attentions/gated_deltanet_block.md"
-        },
-        {
-            "id": "gated_deltanet_block_inject.md",
-            "title": "Gated Deltanet Block Inject (gateddeltanetblockinject)",
-            "path": "content/attentions/gated_deltanet_block_inject.md"
-        },
-        {
-            "id": "gated_linear_attention.md",
-            "title": "Gated Linear Attention (GatedLinearAttention)",
-            "path": "content/attentions/gated_linear_attention.md"
-        },
-        {
-            "id": "gated_linear_attention_inject.md",
-            "title": "Gated Linear Attention Inject (gatedlinearattentioninject)",
-            "path": "content/attentions/gated_linear_attention_inject.md"
-        },
-        {
-            "id": "gated_linear_attn.md",
-            "title": "Gated Linear Attn (gatedlinearattn)",
-            "path": "content/attentions/gated_linear_attn.md"
-        },
-        {
-            "id": "goldfinch_ahn.md",
-            "title": "GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated DeltaNet",
-            "path": "content/attentions/goldfinch_ahn.md"
-        },
-        {
-            "id": "goldfinch_ahn_inject.md",
-            "title": "Goldfinch Ahn Inject (goldfinchahninject)",
-            "path": "content/attentions/goldfinch_ahn_inject.md"
-        },
-        {
-            "id": "gqa.md",
-            "title": "Gqa (gqa)",
-            "path": "content/attentions/gqa.md"
-        },
-        {
-            "id": "gqa_attention.md",
-            "title": "Grouped-Query Attention (GQA): Memory-Efficient Shared Key-Value Subspace Architecture",
-            "path": "content/attentions/gqa_attention.md"
-        },
-        {
-            "id": "granite_hybrid.md",
-            "title": "Granite-Hybrid Attention: Interleaved Mamba-2 State Space Architecture with Multi-Head Attention and Mixture-of-Experts",
-            "path": "content/attentions/granite_hybrid.md"
-        },
-        {
-            "id": "granite_hybrid_inject.md",
-            "title": "Granite Hybrid Inject (granitehybridinject)",
-            "path": "content/attentions/granite_hybrid_inject.md"
-        },
-        {
-            "id": "griffin_ssd.md",
-            "title": "Griffin SSD: Hybrid Sliding-Window Attention & State Space Duality (SSD) Recurrence",
-            "path": "content/attentions/griffin_ssd.md"
-        },
-        {
-            "id": "griffin_ssd_inject.md",
-            "title": "Griffin Ssd Inject (griffinssdinject)",
-            "path": "content/attentions/griffin_ssd_inject.md"
-        },
-        {
-            "id": "halo_regla.md",
-            "title": "HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention",
-            "path": "content/attentions/halo_regla.md"
-        },
-        {
-            "id": "halo_regla_inject.md",
-            "title": "Halo Regla Inject (haloreglainject)",
-            "path": "content/attentions/halo_regla_inject.md"
-        },
-        {
-            "id": "hamming.md",
-            "title": "Hamming (hamming)",
-            "path": "content/attentions/hamming.md"
-        },
-        {
-            "id": "hamming_attention.md",
-            "title": "Hamming Attention Distillation (HAD): Sign-Binarized Attention with Continuous Relaxations",
-            "path": "content/attentions/hamming_attention.md"
-        },
-        {
-            "id": "hamming_inject.md",
-            "title": "Hamming Inject (hamminginject)",
-            "path": "content/attentions/hamming_inject.md"
-        },
-        {
-            "id": "hgrn2_gated_deltanet.md",
-            "title": "HGRN-2 Gated DeltaNet Hybrid Architecture",
-            "path": "content/attentions/hgrn2_gated_deltanet.md"
-        },
-        {
-            "id": "hgrn2_gated_deltanet_inject.md",
-            "title": "Hgrn2 Gated Deltanet Inject (hgrn2gateddeltanetinject)",
-            "path": "content/attentions/hgrn2_gated_deltanet_inject.md"
-        },
-        {
-            "id": "hgrn2_layer.md",
-            "title": "Hierarchically Gated Recurrent Network V2 (HGRN-2) Layer",
-            "path": "content/attentions/hgrn2_layer.md"
-        },
-        {
-            "id": "hgrn2_layer_inject.md",
-            "title": "Hgrn2 Layer Inject (hgrn2layerinject)",
-            "path": "content/attentions/hgrn2_layer_inject.md"
-        },
-        {
-            "id": "hgrn2_outer.md",
-            "title": "HGRN-2 Outer-Product Recurrent Linear Attention",
-            "path": "content/attentions/hgrn2_outer.md"
-        },
-        {
-            "id": "hgrn2_outer_inject.md",
-            "title": "Hgrn2 Outer Inject (hgrn2outerinject)",
-            "path": "content/attentions/hgrn2_outer_inject.md"
-        },
-        {
-            "id": "hla.md",
-            "title": "Hla (hla)",
-            "path": "content/attentions/hla.md"
-        },
-        {
-            "id": "hla_attention.md",
-            "title": "Hadamard Linear Attention (HLA)",
-            "path": "content/attentions/hla_attention.md"
-        },
-        {
-            "id": "hla_inject.md",
-            "title": "Hla Inject (hlainject)",
-            "path": "content/attentions/hla_inject.md"
-        },
-        {
-            "id": "hymba_transx.md",
-            "title": "HymbaTransX: Hybrid Differential Transformer & State Space Model Block",
-            "path": "content/attentions/hymba_transx.md"
-        },
-        {
-            "id": "infini.md",
-            "title": "Infini (infini)",
-            "path": "content/attentions/infini.md"
-        },
-        {
-            "id": "infini_attention.md",
-            "title": "Infini-Attention",
-            "path": "content/attentions/infini_attention.md"
-        },
-        {
-            "id": "jamba.md",
-            "title": "Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + Expert Choice MoE",
-            "path": "content/attentions/jamba.md"
-        },
-        {
-            "id": "jamba2.md",
-            "title": "Jamba-2 Architecture: Hybrid Mamba-Attention-MoE Block with Expert-Choice Routing",
-            "path": "content/attentions/jamba2.md"
-        },
-        {
-            "id": "jamba_info.md",
-            "title": "Jamba-Info: Information-Bottlenecked Hybrid Transformer",
-            "path": "content/attentions/jamba_info.md"
-        },
-        {
-            "id": "kda.md",
-            "title": "Kda (kda)",
-            "path": "content/attentions/kda.md"
-        },
-        {
-            "id": "kda_attention.md",
-            "title": "Kernelized Decay Attention (KDA)",
-            "path": "content/attentions/kda_attention.md"
-        },
-        {
-            "id": "kda_inject.md",
-            "title": "Kda Inject (kdainject)",
-            "path": "content/attentions/kda_inject.md"
-        },
-        {
-            "id": "leka_v1.md",
-            "title": "LEKA v1: Linear-time Efficient Kernel Attention",
-            "path": "content/attentions/leka_v1.md"
-        },
-        {
-            "id": "leka_v1_inject.md",
-            "title": "Leka V1 Inject (lekav1inject)",
-            "path": "content/attentions/leka_v1_inject.md"
-        },
-        {
-            "id": "leka_v2.md",
-            "title": "LEKA v2: Landmark-Enhanced Kernel Attention with Dual-Scale Distillation",
-            "path": "content/attentions/leka_v2.md"
-        },
-        {
-            "id": "leka_v2_inject.md",
-            "title": "Leka V2 Inject (lekav2inject)",
-            "path": "content/attentions/leka_v2_inject.md"
-        },
-        {
-            "id": "leka_v3.md",
-            "title": "LEKA v3: Value-Aware Landmark Kernel Attention with Padding Invariance",
-            "path": "content/attentions/leka_v3.md"
-        },
-        {
-            "id": "leka_v3_inject.md",
-            "title": "Leka V3 Inject (lekav3inject)",
-            "path": "content/attentions/leka_v3_inject.md"
-        },
-        {
-            "id": "linformer.md",
-            "title": "Linformer (linformer)",
-            "path": "content/attentions/linformer.md"
-        },
-        {
-            "id": "linformer_attention.md",
-            "title": "Linformer Attention: Linear-Complexity Sequence Projection via Low-Rank Matrix Factorization",
-            "path": "content/attentions/linformer_attention.md"
-        },
-        {
-            "id": "linformer_inject.md",
-            "title": "Linformer Inject (linformerinject)",
-            "path": "content/attentions/linformer_inject.md"
-        },
-        {
-            "id": "lola.md",
-            "title": "Lola (lola)",
-            "path": "content/attentions/lola.md"
-        },
-        {
-            "id": "lola_attention.md",
-            "title": "Lola Attention: Low-Rank Localized Attention via Three-Memory System Caching",
-            "path": "content/attentions/lola_attention.md"
-        },
-        {
-            "id": "lola_attn.md",
-            "title": "Lola Attn (lolaattn)",
-            "path": "content/attentions/lola_attn.md"
-        },
-        {
-            "id": "lola_attn_inject.md",
-            "title": "Lola Attn Inject (lolaattninject)",
-            "path": "content/attentions/lola_attn_inject.md"
-        },
-        {
-            "id": "lora_attention.md",
-            "title": "LoRA Attention: Parameter-Efficient Low-Rank Adaptation",
-            "path": "content/attentions/lora_attention.md"
-        },
-        {
-            "id": "lora_attn.md",
-            "title": "Lora Attn (loraattn)",
-            "path": "content/attentions/lora_attn.md"
-        },
-        {
-            "id": "lsh.md",
-            "title": "Lsh (lsh)",
-            "path": "content/attentions/lsh.md"
-        },
-        {
-            "id": "lsh_attention.md",
-            "title": "Locality-Sensitive Hashing Attention: Angular Random Hyperplane Bucket Partitioning",
-            "path": "content/attentions/lsh_attention.md"
-        },
-        {
-            "id": "lsh_inject.md",
-            "title": "Lsh Inject (lshinject)",
-            "path": "content/attentions/lsh_inject.md"
-        },
-        {
-            "id": "mamba.md",
-            "title": "Bidirectional Selective State Space Model (Bi-Mamba) Attention",
-            "path": "content/attentions/mamba.md"
-        },
-        {
-            "id": "mamba_inject.md",
-            "title": "Mamba Inject: Layer Replacement and Weight Adaptation Engine",
-            "path": "content/attentions/mamba_inject.md"
-        },
-        {
-            "id": "mamba_svd_flash.md",
-            "title": "MambaSVD-Flash: Hybrid Bidirectional SSM-FlashAttention Architecture",
-            "path": "content/attentions/mamba_svd_flash.md"
-        },
-        {
-            "id": "mamba_svd_flash_inject.md",
-            "title": "Mamba Svd Flash Inject (mambasvdflashinject)",
-            "path": "content/attentions/mamba_svd_flash_inject.md"
-        },
-        {
-            "id": "minimal_aurora.md",
-            "title": "MinimalAURORA Attention: Energy-Preserving SVD-Factorized Attention with Cumulative Spectral Truncation",
-            "path": "content/attentions/minimal_aurora.md"
-        },
-        {
-            "id": "minimal_aurora_inject.md",
-            "title": "Minimal Aurora Inject (minimalaurorainject)",
-            "path": "content/attentions/minimal_aurora_inject.md"
-        },
-        {
-            "id": "minimal_nova.md",
-            "title": "MinimalNOVA Attention: SVD-Factorized Low-Rank Projection Attention for Efficient Transformer Compression",
-            "path": "content/attentions/minimal_nova.md"
-        },
-        {
-            "id": "minimal_nova_inject.md",
-            "title": "Minimal Nova Inject (minimalnovainject)",
-            "path": "content/attentions/minimal_nova_inject.md"
-        },
-        {
-            "id": "minimal_prism.md",
-            "title": "MinimalPRISM Attention: Singular Spectrum Energy-Factorized Low-Rank Projection Attention",
-            "path": "content/attentions/minimal_prism.md"
-        },
-        {
-            "id": "minimal_prism_inject.md",
-            "title": "Minimal Prism Inject (minimalprisminject)",
-            "path": "content/attentions/minimal_prism_inject.md"
-        },
-        {
-            "id": "minimal_svd.md",
-            "title": "MinimalSVD: Cumulative Energy-Budgeted SVD Factorization Attention",
-            "path": "content/attentions/minimal_svd.md"
-        },
-        {
-            "id": "minimal_svd_inject.md",
-            "title": "Minimal Svd Inject (minimalsvdinject)",
-            "path": "content/attentions/minimal_svd_inject.md"
-        },
-        {
-            "id": "minimal_svd_v2.md",
-            "title": "MinimalSVD v2: Refined SVD Low-Rank Attention with Flexible Attention Mask Handling",
-            "path": "content/attentions/minimal_svd_v2.md"
-        },
-        {
-            "id": "minimal_svd_v2_inject.md",
-            "title": "Minimal Svd V2 Inject (minimalsvdv2inject)",
-            "path": "content/attentions/minimal_svd_v2_inject.md"
-        },
-        {
-            "id": "mixattention_moska.md",
-            "title": "MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA)",
-            "path": "content/attentions/mixattention_moska.md"
-        },
-        {
-            "id": "mla.md",
-            "title": "Mla (mla)",
-            "path": "content/attentions/mla.md"
-        },
-        {
-            "id": "mla_attention.md",
-            "title": "Multi-Head Latent Attention (MLA): Low-Rank Latent Bottleneck Compression (DeepSeek-V2)",
-            "path": "content/attentions/mla_attention.md"
-        },
-        {
-            "id": "moba.md",
-            "title": "MoBA Attention: Mixture-of-Block Attention via Centroid Cosine Routing",
-            "path": "content/attentions/moba.md"
-        },
-        {
-            "id": "moba_attention.md",
-            "title": "MoBA Attention: Mixture-of-Block Attention via Centroid Cosine Routing",
-            "path": "content/attentions/moba_attention.md"
-        },
-        {
-            "id": "moba_inject.md",
-            "title": "Moba Inject (mobainject)",
-            "path": "content/attentions/moba_inject.md"
-        },
-        {
-            "id": "moe_deltakv_paged.md",
-            "title": "MoE-DeltaKV Paged: Quantized & Paged KV-Cache Mixture-of-Experts Attention",
-            "path": "content/attentions/moe_deltakv_paged.md"
-        },
-        {
-            "id": "nasc.md",
-            "title": "Nasc (nasc)",
-            "path": "content/attentions/nasc.md"
-        },
-        {
-            "id": "nasc_attention.md",
-            "title": "NASC: NEXUS-AEGIS Spectral Cascade Attention",
-            "path": "content/attentions/nasc_attention.md"
-        },
-        {
-            "id": "nasc_injection.md",
-            "title": "Nasc Injection (nascinjection)",
-            "path": "content/attentions/nasc_injection.md"
-        },
-        {
-            "id": "nexus.md",
-            "title": "NEXUS: Neural Efficient X-scoring Unified Sparse Attention",
-            "path": "content/attentions/nexus.md"
-        },
-        {
-            "id": "nha.md",
-            "title": "Nha (nha)",
-            "path": "content/attentions/nha.md"
-        },
-        {
-            "id": "nha_attention.md",
-            "title": "Native Hybrid Attention (NHA)",
-            "path": "content/attentions/nha_attention.md"
-        },
-        {
-            "id": "nha_compressor.md",
-            "title": "NHA Compressor",
-            "path": "content/attentions/nha_compressor.md"
-        },
-        {
-            "id": "nsa.md",
-            "title": "Nsa (nsa)",
-            "path": "content/attentions/nsa.md"
-        },
-        {
-            "id": "nsa_attention.md",
-            "title": "Native Sparse Attention: Hybrid Local Sliding-Window and Dynamic Top-k Global Routing",
-            "path": "content/attentions/nsa_attention.md"
-        },
-        {
-            "id": "nsa_inject.md",
-            "title": "Nsa Inject (nsainject)",
-            "path": "content/attentions/nsa_inject.md"
-        },
-        {
-            "id": "nystrom.md",
-            "title": "Nystrom (nystrom)",
-            "path": "content/attentions/nystrom.md"
-        },
-        {
-            "id": "nystrom_attention.md",
-            "title": "Nyström Attention: Low-Rank Landmark Approximation via Matrix Pseudoinverse Decomposition",
-            "path": "content/attentions/nystrom_attention.md"
-        },
-        {
-            "id": "nystrom_inject.md",
-            "title": "Nystrom Inject (nystrominject)",
-            "path": "content/attentions/nystrom_inject.md"
-        },
-        {
-            "id": "oha.md",
-            "title": "Oha (oha)",
-            "path": "content/attentions/oha.md"
-        },
-        {
-            "id": "oha_inject.md",
-            "title": "Oha Inject (ohainject)",
-            "path": "content/attentions/oha_inject.md"
-        },
-        {
-            "id": "optimized_hybrid_attention.md",
-            "title": "Optimized Hybrid Attention (OHA): Fused Sliding-Window Local Self-Attention and Sequence-Compressed Low-Rank Global Attention",
-            "path": "content/attentions/optimized_hybrid_attention.md"
-        },
-        {
-            "id": "orion.md",
-            "title": "ORION: Optimized Rectified Input-Aware Orthogonal Network with Energy-Preserving SVD Projections and Bifurcated Multi-Head Attention",
-            "path": "content/attentions/orion.md"
-        },
-        {
-            "id": "orion_attention.md",
-            "title": "Orion Attention (orionattention)",
-            "path": "content/attentions/orion_attention.md"
-        },
-        {
-            "id": "orion_inject.md",
-            "title": "Orion Inject (orioninject)",
-            "path": "content/attentions/orion_inject.md"
-        },
-        {
-            "id": "orion_module.md",
-            "title": "Orion Module (orionmodule)",
-            "path": "content/attentions/orion_module.md"
-        },
-        {
-            "id": "performer.md",
-            "title": "Performer (performer)",
-            "path": "content/attentions/performer.md"
-        },
-        {
-            "id": "performer_attention.md",
-            "title": "Performer Attention (FAVOR+): Fast Attention via Positive Orthogonal Random Features",
-            "path": "content/attentions/performer_attention.md"
-        },
-        {
-            "id": "performer_inject.md",
-            "title": "Performer Inject (performerinject)",
-            "path": "content/attentions/performer_inject.md"
-        },
-        {
-            "id": "phantom.md",
-            "title": "PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH",
-            "path": "content/attentions/phantom.md"
-        },
-        {
-            "id": "phantom_inject.md",
-            "title": "Phantom Inject (phantominject)",
-            "path": "content/attentions/phantom_inject.md"
-        },
-        {
-            "id": "phantom_module.md",
-            "title": "Phantom Module (phantommodule)",
-            "path": "content/attentions/phantom_module.md"
-        },
-        {
-            "id": "primal.md",
-            "title": "Primal (primal)",
-            "path": "content/attentions/primal.md"
-        },
-        {
-            "id": "primal_attention.md",
-            "title": "Primal Attention: Asymmetric Kernel SVD via Segment-Pooled Landmark Decomposition",
-            "path": "content/attentions/primal_attention.md"
-        },
-        {
-            "id": "progressive_token_pruning.md",
-            "title": "Progressive Token Pruning (PTP)",
-            "path": "content/attentions/progressive_token_pruning.md"
-        },
-        {
-            "id": "projection_factorized_attn.md",
-            "title": "Projection Factorized Attention (projectionfactorizedattn)",
-            "path": "content/attentions/projection_factorized_attn.md"
-        },
-        {
-            "id": "qcqa.md",
-            "title": "Qcqa (qcqa)",
-            "path": "content/attentions/qcqa.md"
-        },
-        {
-            "id": "qcqa_attention.md",
-            "title": "Quality and Capacity-Aware Grouped Query Attention (QCQA): Dynamic Soft-Routing Mixture over Compressed KV Subspaces",
-            "path": "content/attentions/qcqa_attention.md"
-        },
-        {
-            "id": "rala.md",
-            "title": "Rala (rala)",
-            "path": "content/attentions/rala.md"
-        },
-        {
-            "id": "rala_attention.md",
-            "title": "Rank-Augmented Linear Attention (RALA): Low-Rank Parametric Head Interaction Augmentation",
-            "path": "content/attentions/rala_attention.md"
-        },
-        {
-            "id": "rala_compressor.md",
-            "title": "RALA Compressor: Rank-Augmented Linear Attention Layer Architecture & Masking Specifications",
-            "path": "content/attentions/rala_compressor.md"
-        },
-        {
-            "id": "reap_moe.md",
-            "title": "REAP-MoE: Robust Expert Allocation and Pruning Mixture-of-Experts",
-            "path": "content/attentions/reap_moe.md"
-        },
-        {
-            "id": "regla.md",
-            "title": "Regla (regla)",
-            "path": "content/attentions/regla.md"
-        },
-        {
-            "id": "regla_attention.md",
-            "title": "Refined Gated Linear Attention (ReGLA): Element-Wise Key Gating & Depthwise Convolutional Fusion",
-            "path": "content/attentions/regla_attention.md"
-        },
-        {
-            "id": "res_svd.md",
-            "title": "Spectral Residual SVD Attention (Res-SVD Attention)",
-            "path": "content/attentions/res_svd.md"
-        },
-        {
-            "id": "routing.md",
-            "title": "Routing (routing)",
-            "path": "content/attentions/routing.md"
-        },
-        {
-            "id": "routing_attention.md",
-            "title": "Routing Attention: Content-Adaptive Query-Centric Clustering via Head-Wise Online K-Means",
-            "path": "content/attentions/routing_attention.md"
-        },
-        {
-            "id": "routing_inject.md",
-            "title": "Routing Inject (routinginject)",
-            "path": "content/attentions/routing_inject.md"
-        },
-        {
-            "id": "rpc.md",
-            "title": "Rpc (rpc)",
-            "path": "content/attentions/rpc.md"
-        },
-        {
-            "id": "rpc_attention.md",
-            "title": "RPC Attention: Randomized Phase Cluster Attention via Fixed Random Subspace Sketching",
-            "path": "content/attentions/rpc_attention.md"
-        },
-        {
-            "id": "salt.md",
-            "title": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Transformer Fine-Tuning",
-            "path": "content/attentions/salt.md"
-        },
-        {
-            "id": "salt_attention.md",
-            "title": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Transformer Fine-Tuning",
-            "path": "content/attentions/salt_attention.md"
-        },
-        {
-            "id": "salt_inject.md",
-            "title": "Salt Inject (saltinject)",
-            "path": "content/attentions/salt_inject.md"
-        },
-        {
-            "id": "samba_m3.md",
-            "title": "SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba State-Space Model",
-            "path": "content/attentions/samba_m3.md"
-        },
-        {
-            "id": "samba_moe.md",
-            "title": "Samba-MoE: Selective State Space (SAMBA-M3) + REAP-MoE Hybrid Architecture",
-            "path": "content/attentions/samba_moe.md"
-        },
-        {
-            "id": "simple_ssm.md",
-            "title": "Simple State Space Model (SimpleSSM)",
-            "path": "content/attentions/simple_ssm.md"
-        },
-        {
-            "id": "simple_ssm_inject.md",
-            "title": "Simple Ssm Inject (simplessminject)",
-            "path": "content/attentions/simple_ssm_inject.md"
-        },
-        {
-            "id": "soa_attn.md",
-            "title": "SOA Attention: Shared Orthogonal Attention with Latent Bottlenecks",
-            "path": "content/attentions/soa_attn.md"
-        },
-        {
-            "id": "soa_fused_attention.md",
-            "title": "Soa Fused Attention (soafusedattention)",
-            "path": "content/attentions/soa_fused_attention.md"
-        },
-        {
-            "id": "soa_fused_attn.md",
-            "title": "Soa Fused Attn (soafusedattn)",
-            "path": "content/attentions/soa_fused_attn.md"
-        },
-        {
-            "id": "soa_fused_module.md",
-            "title": "Soa Fused Module (soafusedmodule)",
-            "path": "content/attentions/soa_fused_module.md"
-        },
-        {
-            "id": "soa_module.md",
-            "title": "Soa Module (soamodule)",
-            "path": "content/attentions/soa_module.md"
-        },
-        {
-            "id": "SOAFusedAttention.md",
-            "title": "SOA-Fused Attention: Low-Rank Latent Space Multi-Head Attention with Zero-Shot SVD Initialization",
-            "path": "content/attentions/SOAFusedAttention.md"
-        },
-        {
-            "id": "span_expanded.md",
-            "title": "Span Expanded (spanexpanded)",
-            "path": "content/attentions/span_expanded.md"
-        },
-        {
-            "id": "span_expanded_attention.md",
-            "title": "Span-Expanded Attention: Receptive Field Extension with Parallel HyLoRA Adaptation",
-            "path": "content/attentions/span_expanded_attention.md"
-        },
-        {
-            "id": "span_expanded_inject.md",
-            "title": "Span Expanded Inject (spanexpandedinject)",
-            "path": "content/attentions/span_expanded_inject.md"
-        },
-        {
-            "id": "spectra_v2.md",
-            "title": "SPECTRA-v2: Sparse Per-Head Efficient Context Transformer with Rectified Attention",
-            "path": "content/attentions/spectra_v2.md"
-        },
-        {
-            "id": "spectra_v2_inject.md",
-            "title": "Spectra V2 Inject (spectrav2inject)",
-            "path": "content/attentions/spectra_v2_inject.md"
-        },
-        {
-            "id": "spectral_mamba.md",
-            "title": "Spectral-Mamba: Hybrid Attention-State Space Module with Spectral Modulation",
-            "path": "content/attentions/spectral_mamba.md"
-        },
-        {
-            "id": "spectral_mamba_inject.md",
-            "title": "Spectral Mamba Inject (spectralmambainject)",
-            "path": "content/attentions/spectral_mamba_inject.md"
-        },
-        {
-            "id": "spectral_residual_svd.md",
-            "title": "Spectral Residual Svd (spectralresidualsvd)",
-            "path": "content/attentions/spectral_residual_svd.md"
-        },
-        {
-            "id": "spectron.md",
-            "title": "Spectron: Importance-Aware Low-Rank + Sparse Attention",
-            "path": "content/attentions/spectron.md"
-        },
-        {
-            "id": "spectron_attn.md",
-            "title": "Spectron Attn (spectronattn)",
-            "path": "content/attentions/spectron_attn.md"
-        },
-        {
-            "id": "spectron_inject.md",
-            "title": "Spectron Inject (spectroninject)",
-            "path": "content/attentions/spectron_inject.md"
-        },
-        {
-            "id": "squeezing_heads_distill.md",
-            "title": "Squeezing Heads Distillation: Multi-Head Receptive Field Distillation & Capacity Compression",
-            "path": "content/attentions/squeezing_heads_distill.md"
-        },
-        {
-            "id": "squeezing_heads_distiller.md",
-            "title": "Squeezing Heads Distiller (squeezingheadsdistiller)",
-            "path": "content/attentions/squeezing_heads_distiller.md"
-        },
-        {
-            "id": "SVD-Mamba.md",
-            "title": "SVD-Mamba: SVD-Factorized Selective State Space Model with Global Spectral Mixing",
-            "path": "content/attentions/SVD-Mamba.md"
-        },
-        {
-            "id": "svd.md",
-            "title": "Svd (svd)",
-            "path": "content/attentions/svd.md"
-        },
-        {
-            "id": "svd_attention.md",
-            "title": "SVD Attention: Sequence-Dimension Singular Subspace Projection Architecture",
-            "path": "content/attentions/svd_attention.md"
-        },
-        {
-            "id": "svd_compressed.md",
-            "title": "SVD-Compressed Attention: Importance-Aware Lagrangian Rank Allocation Architecture",
-            "path": "content/attentions/svd_compressed.md"
-        },
-        {
-            "id": "svd_compressed_inject.md",
-            "title": "Svd Compressed Inject (svdcompressedinject)",
-            "path": "content/attentions/svd_compressed_inject.md"
-        },
-        {
-            "id": "svd_compressed_module.md",
-            "title": "Svd Compressed Module (svdcompressedmodule)",
-            "path": "content/attentions/svd_compressed_module.md"
-        },
-        {
-            "id": "svd_linear.md",
-            "title": "Svd Linear (svdlinear)",
-            "path": "content/attentions/svd_linear.md"
-        },
-        {
-            "id": "svd_linear_attention.md",
-            "title": "SVD Linear Attention: Semi-Orthogonal Low-Rank Projection Factorization",
-            "path": "content/attentions/svd_linear_attention.md"
-        },
-        {
-            "id": "svd_linear_attn.md",
-            "title": "Svd Linear Attn (svdlinearattn)",
-            "path": "content/attentions/svd_linear_attn.md"
-        },
-        {
-            "id": "svd_linear_decay.md",
-            "title": "SVD Linear Decay Gated Attention (svdlineardecay)",
-            "path": "content/attentions/svd_linear_decay.md"
-        },
-        {
-            "id": "svd_llm_v2.md",
-            "title": "SVD-LLM V2 Attention (svdllmv2)",
-            "path": "content/attentions/svd_llm_v2.md"
-        },
-        {
-            "id": "svd_llm_v2_attention.md",
-            "title": "SVD-LLM V2 Attention: Truncation-Aware Explicit Factor Buffer Architecture",
-            "path": "content/attentions/svd_llm_v2_attention.md"
-        },
-        {
-            "id": "svd_llm_v2_inject.md",
-            "title": "Svd Llm V2 Inject (svdllmv2inject)",
-            "path": "content/attentions/svd_llm_v2_inject.md"
-        },
-        {
-            "id": "svd_mamba.md",
-            "title": "Svd Mamba (svdmamba)",
-            "path": "content/attentions/svd_mamba.md"
-        },
-        {
-            "id": "svd_mamba_inject.md",
-            "title": "Svd Mamba Inject (svdmambainject)",
-            "path": "content/attentions/svd_mamba_inject.md"
-        },
-        {
-            "id": "svd_proj_attn.md",
-            "title": "SVD Projection Attention (svdprojattn)",
-            "path": "content/attentions/svd_proj_attn.md"
-        },
-        {
-            "id": "svd_proj_attn_inject.md",
-            "title": "Svd Proj Attn Inject (svdprojattninject)",
-            "path": "content/attentions/svd_proj_attn_inject.md"
-        },
-        {
-            "id": "svd_projection.md",
-            "title": "Svd Projection (svdprojection)",
-            "path": "content/attentions/svd_projection.md"
-        },
-        {
-            "id": "svd_projection_attention.md",
-            "title": "SVD Projection Attention: Explicit Low-Rank Matrix Reconstruction Paradigm",
-            "path": "content/attentions/svd_projection_attention.md"
-        },
-        {
-            "id": "token_compressed.md",
-            "title": "Token-Compressed Attention Wrapper: Structural Abstraction & Pass-Through Layer-Wise Delegator",
-            "path": "content/attentions/token_compressed.md"
-        },
-        {
-            "id": "token_compressed_attention.md",
-            "title": "Token Compressed Attention",
-            "path": "content/attentions/token_compressed_attention.md"
-        },
-        {
-            "id": "token_compressed_module.md",
-            "title": "Token Compressed Module (tokencompressedmodule)",
-            "path": "content/attentions/token_compressed_module.md"
-        },
-        {
-            "id": "tpa.md",
-            "title": "Tpa (tpa)",
-            "path": "content/attentions/tpa.md"
-        },
-        {
-            "id": "tpa_attention.md",
-            "title": "TPAttention: Tensor Product Attention with Factorised Query-Key Projections",
-            "path": "content/attentions/tpa_attention.md"
-        },
-        {
-            "id": "tt.md",
-            "title": "TokenCompressedAttention: A No‑Compression Baseline Wrapper for Attention",
-            "path": "content/attentions/tt.md"
-        },
-        {
-            "id": "unified_rope.md",
-            "title": "Universal Rotary Position Embedding (UnifiedRoPE): Positional Invariance across Attention & SSM Branches",
-            "path": "content/attentions/unified_rope.md"
-        },
-        {
-            "id": "upi_stuffed_mamba.md",
-            "title": "UPI-Stuffed Mamba: Uncertainty-Penalized Interpolated Mamba SSM",
-            "path": "content/attentions/upi_stuffed_mamba.md"
-        },
-        {
-            "id": "upi_stuffed_mamba_inject.md",
-            "title": "Upi Stuffed Mamba Inject (upistuffedmambainject)",
-            "path": "content/attentions/upi_stuffed_mamba_inject.md"
-        },
-        {
-            "id": "vig.md",
-            "title": "Vig (vig)",
-            "path": "content/attentions/vig.md"
-        },
-        {
-            "id": "vig_attention.md",
-            "title": "ViG Attention: Bidirectional Row-Column ELU Linear Recurrent Grid Attention",
-            "path": "content/attentions/vig_attention.md"
-        },
-        {
-            "id": "vspec.md",
-            "title": "VSpec++ Attention: Variational Spectral Token-Adaptive Attention with SVD-Gated Projections and Dynamic Top-k Routing",
-            "path": "content/attentions/vspec.md"
-        },
-        {
-            "id": "vspec_attention.md",
-            "title": "VSpec++ Attention: Variational Spectral Token-Adaptive Attention",
-            "path": "content/attentions/vspec_attention.md"
-        },
-        {
-            "id": "weighted_ensemble.md",
-            "title": "Smart Weighted Ensemble: Task-Aware Attention & Dynamic Confidence Fusion",
-            "path": "content/attentions/weighted_ensemble.md"
-        },
-        {
-            "id": "wgqa.md",
-            "title": "Wgqa (wgqa)",
-            "path": "content/attentions/wgqa.md"
-        },
-        {
-            "id": "wgqa_attention.md",
-            "title": "Weighted Grouped-Query Attention (WGQA)",
-            "path": "content/attentions/wgqa_attention.md"
-        },
-        {
-            "id": "xattention.md",
-            "title": "XAttention: Block-Sparse Coarse-to-Fine Routing with Unified Softmax Normalization",
-            "path": "content/attentions/xattention.md"
-        },
-        {
-            "id": "xattention_inject.md",
-            "title": "Xattention Inject (xattentioninject)",
-            "path": "content/attentions/xattention_inject.md"
-        },
-        {
-            "id": "zeros_attention.md",
-            "title": "ZeroS Attention: Zero-Mean Normalized Linear Attention",
-            "path": "content/attentions/zeros_attention.md"
-        }
-    ],
-    "compressions": [
-        {
-            "id": "a3.md",
-            "title": "A3 (a3)",
-            "path": "content/compressions/a3.md"
-        },
-        {
-            "id": "a3_compressor.md",
-            "title": "A3 Compression: Low‑Rank Approximation via SVD",
-            "path": "content/compressions/a3_compressor.md"
-        },
-        {
-            "id": "aa_svd_compressor.md",
-            "title": "AASVDCompressor: Anchored Adaptive SVD via Input Activation Subspace Projection",
-            "path": "content/compressions/aa_svd_compressor.md"
-        },
-        {
-            "id": "aasvd.md",
-            "title": "AASVDCompressor: Anchored Adaptive SVD via Input Activation Subspace Projection",
-            "path": "content/compressions/aasvd.md"
-        },
-        {
-            "id": "adaptive_compressor.md",
-            "title": "AdaptiveTransformerCompressor: Dynamic Energy-Threshold Attention Subspace Compression Engine",
-            "path": "content/compressions/adaptive_compressor.md"
-        },
-        {
-            "id": "adaptive_ranks.md",
-            "title": "AdaptiveTransformerCompressor (Ranks): Dynamic Subspace Allocation & Sensitivity-Guided Rank Profiling",
-            "path": "content/compressions/adaptive_ranks.md"
-        },
-        {
-            "id": "adaptive_svd.md",
-            "title": "Adaptive Svd (adaptivesvd)",
-            "path": "content/compressions/adaptive_svd.md"
-        },
-        {
-            "id": "adasvd.md",
-            "title": "Adasvd (adasvd)",
-            "path": "content/compressions/adasvd.md"
-        },
-        {
-            "id": "adasvd_compressor.md",
-            "title": "AdaSVDCompressor: Adaptive SVD via Nuclear-Norm Layer Importance & Iterative Matrix Refinement",
-            "path": "content/compressions/adasvd_compressor.md"
-        },
-        {
-            "id": "admm.md",
-            "title": "Admm (admm)",
-            "path": "content/compressions/admm.md"
-        },
-        {
-            "id": "admm_compressor.md",
-            "title": "ADMM Compressor: Joint Alternating Direction Pruning and Low-Bit Quantization Engine",
-            "path": "content/compressions/admm_compressor.md"
-        },
-        {
-            "id": "admm_pruner.md",
-            "title": "ADMM Pruner: Alternating Direction Method of Multipliers with Dynamic Penalty Scheduling & STE Backpropagation",
-            "path": "content/compressions/admm_pruner.md"
-        },
-        {
-            "id": "armor.md",
-            "title": "Armor (armor)",
-            "path": "content/compressions/armor.md"
-        },
-        {
-            "id": "armor_pruner.md",
-            "title": "ARMOR Pruner: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction)",
-            "path": "content/compressions/armor_pruner.md"
-        },
-        {
-            "id": "ast.md",
-            "title": "Ast (ast)",
-            "path": "content/compressions/ast.md"
-        },
-        {
-            "id": "ast_pruner.md",
-            "title": "AST Pruner: Adaptive Semi-Structured 2:4 Pruning with Empirical Fisher Information & PCA Coordinate Rotation",
-            "path": "content/compressions/ast_pruner.md"
-        },
-        {
-            "id": "astro.md",
-            "title": "Astro (astro)",
-            "path": "content/compressions/astro.md"
-        },
-        {
-            "id": "astro_quantizer.md",
-            "title": "AstroQuantizer: Dynamic Uniform Range Quantization Engine with Straight-Through Estimator (STE)",
-            "path": "content/compressions/astro_quantizer.md"
-        },
-        {
-            "id": "bonsai.md",
-            "title": "Bonsai (bonsai)",
-            "path": "content/compressions/bonsai.md"
-        },
-        {
-            "id": "bonsai_pruner.md",
-            "title": "Bonsai Pruner: Progressive Iterative Pruning with Cubic Scheduling, GD Recovery & Router Protection",
-            "path": "content/compressions/bonsai_pruner.md"
-        },
-        {
-            "id": "cachenotes.md",
-            "title": "Cachenotes (cachenotes)",
-            "path": "content/compressions/cachenotes.md"
-        },
-        {
-            "id": "cachenotes_compressor.md",
-            "title": "CacheNotes Compressor: Task-Aware CPT Guidance for Static SVD & Dynamic KV Cache Compression",
-            "path": "content/compressions/cachenotes_compressor.md"
-        },
-        {
-            "id": "come.md",
-            "title": "CoMe: Transformer Layer Shedding with Learnable Inter-Layer Interpolation Adapters",
-            "path": "content/compressions/come.md"
-        },
-        {
-            "id": "compot.md",
-            "title": "Compot (compot)",
-            "path": "content/compressions/compot.md"
-        },
-        {
-            "id": "compot_compressor.md",
-            "title": "COMPOT: Compressed Orthogonal Dictionary Learning",
-            "path": "content/compressions/compot_compressor.md"
-        },
-        {
-            "id": "coopq.md",
-            "title": "Coopq (coopq)",
-            "path": "content/compressions/coopq.md"
-        },
-        {
-            "id": "coopq_quantizer.md",
-            "title": "CoopQ: Cooperative Game-Theoretic Bit Allocation Quantizer",
-            "path": "content/compressions/coopq_quantizer.md"
-        },
-        {
-            "id": "cr.md",
-            "title": "Cr (cr)",
-            "path": "content/compressions/cr.md"
-        },
-        {
-            "id": "cr_compressor.md",
-            "title": "CR Compressor: Interpolative Decomposition for Weight Compression",
-            "path": "content/compressions/cr_compressor.md"
-        },
-        {
-            "id": "cur.md",
-            "title": "Cur (cur)",
-            "path": "content/compressions/cur.md"
-        },
-        {
-            "id": "cur_compressor.md",
-            "title": "CURCompressor: Leverage Score Sampled Column-Row CUR Decomposition Engine",
-            "path": "content/compressions/cur_compressor.md"
-        },
-        {
-            "id": "cur_linear.md",
-            "title": "CURLinear: Drop-In Leverage-Sampled Subspace Replacement Layer for nn.Linear",
-            "path": "content/compressions/cur_linear.md"
-        },
-        {
-            "id": "cur_moe.md",
-            "title": "CURMoECompressor: Sparse Expert Layer CUR Decomposition Engine for Mixture-of-Experts",
-            "path": "content/compressions/cur_moe.md"
-        },
-        {
-            "id": "cur_moe_compressor.md",
-            "title": "CURMoECompressor: Sparse Expert Layer CUR Decomposition Engine for Mixture-of-Experts",
-            "path": "content/compressions/cur_moe_compressor.md"
-        },
-        {
-            "id": "cure.md",
-            "title": "CURE: CUR Expert Compression Engine with Randomized Subspace Approximation",
-            "path": "content/compressions/cure.md"
-        },
-        {
-            "id": "delta_kv.md",
-            "title": "DeltaKV: Residual-Based Key-Value Cache Compression via Long-Range Reference Matching",
-            "path": "content/compressions/delta_kv.md"
-        },
-        {
-            "id": "direct_svd.md",
-            "title": "DirectSVDCompressor: Closed-Form Truncated SVD Low-Rank Factorization",
-            "path": "content/compressions/direct_svd.md"
-        },
-        {
-            "id": "direct_svd_encoder.md",
-            "title": "Direct Svd Encoder (directsvdencoder)",
-            "path": "content/compressions/direct_svd_encoder.md"
-        },
-        {
-            "id": "dobi.md",
-            "title": "Dobi (dobi)",
-            "path": "content/compressions/dobi.md"
-        },
-        {
-            "id": "dobi_svd.md",
-            "title": "DobiSVDLinearLayer & Compressor: Differentiable SVD with Learnable Rank Ratios",
-            "path": "content/compressions/dobi_svd.md"
-        },
-        {
-            "id": "dynamic_entropy.md",
-            "title": "Dynamic Entropy (dynamicentropy)",
-            "path": "content/compressions/dynamic_entropy.md"
-        },
-        {
-            "id": "dynamic_entropy_svd.md",
-            "title": "Dynamic Entropy Svd (dynamicentropysvd)",
-            "path": "content/compressions/dynamic_entropy_svd.md"
-        },
-        {
-            "id": "dynamic_rank.md",
-            "title": "DynamicEntropySVDCompressor: Singular Entropy-Budgeted Rank Allocation",
-            "path": "content/compressions/dynamic_rank.md"
-        },
-        {
-            "id": "enlighten.md",
-            "title": "Enlighten (enlighten)",
-            "path": "content/compressions/enlighten.md"
-        },
-        {
-            "id": "enlighten_compressor.md",
-            "title": "ENLighten: Low‑Rank SVD + 2:4 Structured Sparsity",
-            "path": "content/compressions/enlighten_compressor.md"
-        },
-        {
-            "id": "entropy_budget.md",
-            "title": "Entropy Budget (entropybudget)",
-            "path": "content/compressions/entropy_budget.md"
-        },
-        {
-            "id": "entropy_budget_allocation.md",
-            "title": "EntropyBudgetAllocation: Global Rank Assignment via Whitened Activation Entropy",
-            "path": "content/compressions/entropy_budget_allocation.md"
-        },
-        {
-            "id": "entropy_rank_allocator.md",
-            "title": "Entropy Rank Allocator (entropyrankallocator)",
-            "path": "content/compressions/entropy_rank_allocator.md"
-        },
-        {
-            "id": "erc.md",
-            "title": "Erc (erc)",
-            "path": "content/compressions/erc.md"
-        },
-        {
-            "id": "erc_svd.md",
-            "title": "ERCCompressor: Error-Controlled Singular Value Energy Thresholding Engine",
-            "path": "content/compressions/erc_svd.md"
-        },
-        {
-            "id": "faq.md",
-            "title": "Faq (faq)",
-            "path": "content/compressions/faq.md"
-        },
-        {
-            "id": "faq_quantizer.md",
-            "title": "FAQ: Feature-Activation-Aware Quantization Engine",
-            "path": "content/compressions/faq_quantizer.md"
-        },
-        {
-            "id": "flap.md",
-            "title": "FLAP: Fluctuation-Based Adaptive Structured Pruning Engine",
-            "path": "content/compressions/flap.md"
-        },
-        {
-            "id": "flap_compressor.md",
-            "title": "Flap Compressor (flapcompressor)",
-            "path": "content/compressions/flap_compressor.md"
-        },
-        {
-            "id": "flat_llm.md",
-            "title": "FLAT-LLM: Activation-Aware Output Dimension & Neuron Pruning via Damped Covariance Eigendecomposition",
-            "path": "content/compressions/flat_llm.md"
-        },
-        {
-            "id": "flat_llm_compressor.md",
-            "title": "Flat Llm Compressor (flatllmcompressor)",
-            "path": "content/compressions/flat_llm_compressor.md"
-        },
-        {
-            "id": "frandi.md",
-            "title": "FRanDI: Feature‑Regression Aligned Low‑Rank Compression",
-            "path": "content/compressions/frandi.md"
-        },
-        {
-            "id": "frandi_compressor.md",
-            "title": "FRanDI: Feature‑Regression Aligned Low‑Rank Compression",
-            "path": "content/compressions/frandi_compressor.md"
-        },
-        {
-            "id": "galerkin_attention.md",
-            "title": "Galerkin Transformer: Petrov-Galerkin Subspace Projection Attention",
-            "path": "content/compressions/galerkin_attention.md"
-        },
-        {
-            "id": "gfws.md",
-            "title": "Gfws (gfws)",
-            "path": "content/compressions/gfws.md"
-        },
-        {
-            "id": "gfws_d.md",
-            "title": "Gfws D (gfwsd)",
-            "path": "content/compressions/gfws_d.md"
-        },
-        {
-            "id": "gfws_d_compressor.md",
-            "title": "GFWSVD: Fisher‑Weighted SVD Compression",
-            "path": "content/compressions/gfws_d_compressor.md"
-        },
-        {
-            "id": "grecodec.md",
-            "title": "GRECODeC: Greedy Coordinate Descent Low-Rank Compression",
-            "path": "content/compressions/grecodec.md"
-        },
-        {
-            "id": "grecodec_compressor.md",
-            "title": "GRECODeC: Greedy Coordinate Descent Low-Rank Compression",
-            "path": "content/compressions/grecodec_compressor.md"
-        },
-        {
-            "id": "hashed_linear.md",
-            "title": "Hashed Linear: Vectorized Hash-Based Weight Sharing Engine (HashedNets)",
-            "path": "content/compressions/hashed_linear.md"
-        },
-        {
-            "id": "hashed_net.md",
-            "title": "Hashed Net (hashednet)",
-            "path": "content/compressions/hashed_net.md"
-        },
-        {
-            "id": "hashed_net_compressor.md",
-            "title": "HashedNet Compressor: Weight Sharing via Hash Tables",
-            "path": "content/compressions/hashed_net_compressor.md"
-        },
-        {
-            "id": "huffman.md",
-            "title": "Huffman (huffman)",
-            "path": "content/compressions/huffman.md"
-        },
-        {
-            "id": "huffman_coder.md",
-            "title": "Huffman Coder: Frequency-Optimal Prefix Entropy Coding Engine",
-            "path": "content/compressions/huffman_coder.md"
-        },
-        {
-            "id": "hybrid_svd.md",
-            "title": "Hybrid SVD Layer: Single‑Head SVD Approximation with Positional Encoding for Attention‑Free Encoding",
-            "path": "content/compressions/hybrid_svd.md"
-        },
-        {
-            "id": "hybrid_svd_layer.md",
-            "title": "Hybrid SVD Layer: Single‑Head SVD Approximation with Positional Encoding for Attention‑Free Encoding",
-            "path": "content/compressions/hybrid_svd_layer.md"
-        },
-        {
-            "id": "hybridkv.md",
-            "title": "Hybridkv (hybridkv)",
-            "path": "content/compressions/hybridkv.md"
-        },
-        {
-            "id": "hybridkv_compressor.md",
-            "title": "HybridKV Compressor: Dual Static-Dynamic Head-Specific Hierarchical KV Cache Compression",
-            "path": "content/compressions/hybridkv_compressor.md"
-        },
-        {
-            "id": "hybridkv_quantizer.md",
-            "title": "Hybridkv Quantizer (hybridkvquantizer)",
-            "path": "content/compressions/hybridkv_quantizer.md"
-        },
-        {
-            "id": "kmeans.md",
-            "title": "Kmeans (kmeans)",
-            "path": "content/compressions/kmeans.md"
-        },
-        {
-            "id": "kmeans_quantize.md",
-            "title": "KMeans-based Weight Clustering Quantizer with Straight-Through Estimator (STE)",
-            "path": "content/compressions/kmeans_quantize.md"
-        },
-        {
-            "id": "kronecker.md",
-            "title": "Kronecker (kronecker)",
-            "path": "content/compressions/kronecker.md"
-        },
-        {
-            "id": "kronecker_compressor.md",
-            "title": "KroneckerCompressor: Automated Kronecker Subspace Decomposer for Deep Neural Networks",
-            "path": "content/compressions/kronecker_compressor.md"
-        },
-        {
-            "id": "kronecker_linear.md",
-            "title": "KroneckerLinear: Kronecker Product Factorized Linear Operator",
-            "path": "content/compressions/kronecker_linear.md"
-        },
-        {
-            "id": "kronecker_tt_lora.md",
-            "title": "Kronecker-TT-LoRA: Hybrid Compression Engine for Parameter-Efficient Fine-Tuning",
-            "path": "content/compressions/kronecker_tt_lora.md"
-        },
-        {
-            "id": "kvtc.md",
-            "title": "Kvtc (kvtc)",
-            "path": "content/compressions/kvtc.md"
-        },
-        {
-            "id": "kvtc_compressor.md",
-            "title": "KVTC Compressor: Key-Value Transform Coding via PCA Decorrelation and Adaptive Quantization",
-            "path": "content/compressions/kvtc_compressor.md"
-        },
-        {
-            "id": "kvtc_quantizer.md",
-            "title": "Kvtc Quantizer (kvtcquantizer)",
-            "path": "content/compressions/kvtc_quantizer.md"
-        },
-        {
-            "id": "liftr.md",
-            "title": "LIFTR – Linearized Function Trick Compressor",
-            "path": "content/compressions/liftr.md"
-        },
-        {
-            "id": "liftr_compressor.md",
-            "title": "Liftr Compressor (liftrcompressor)",
-            "path": "content/compressions/liftr_compressor.md"
-        },
-        {
-            "id": "lillama.md",
-            "title": "Lillama (lillama)",
-            "path": "content/compressions/lillama.md"
-        },
-        {
-            "id": "lillama_compressor.md",
-            "title": "LiLLaMA: Local Distillation via Activation Cross-Covariance Singular Value Decomposition",
-            "path": "content/compressions/lillama_compressor.md"
-        },
-        {
-            "id": "lsc.md",
-            "title": "Lsc (lsc)",
-            "path": "content/compressions/lsc.md"
-        },
-        {
-            "id": "lsc_compressor.md",
-            "title": "LSC Compressor: Low-Rank Spectral Fourier Compression Engine",
-            "path": "content/compressions/lsc_compressor.md"
-        },
-        {
-            "id": "mamba_shedder.md",
-            "title": "Mamba-Shedder: Fisher-Sensitivity-Guided Structured Column Shedding Engine",
-            "path": "content/compressions/mamba_shedder.md"
-        },
-        {
-            "id": "mamba_shedder_compressor.md",
-            "title": "Mamba Shedder Compressor (mambasheddercompressor)",
-            "path": "content/compressions/mamba_shedder_compressor.md"
-        },
-        {
-            "id": "mgie.md",
-            "title": "Mgie (mgie)",
-            "path": "content/compressions/mgie.md"
-        },
-        {
-            "id": "mgie_budget.md",
-            "title": "Mgie Budget (mgiebudget)",
-            "path": "content/compressions/mgie_budget.md"
-        },
-        {
-            "id": "mgie_svd.md",
-            "title": "MGIE-SVD: Information Entropy SVD Rank Preservation",
-            "path": "content/compressions/mgie_svd.md"
-        },
-        {
-            "id": "mgie_svd_compressor.md",
-            "title": "MGIESVDBudgetCompressor: Information Entropy SVD Rank Allocation under Global Budget Constraints",
-            "path": "content/compressions/mgie_svd_compressor.md"
-        },
-        {
-            "id": "mlorq.md",
-            "title": "Mlorq (mlorq)",
-            "path": "content/compressions/mlorq.md"
-        },
-        {
-            "id": "mlorq_compressor.md",
-            "title": "MLoRQ Compressor: Multi-Layer Optimal Rank SVD and Joint Low-Bit Quantization Engine",
-            "path": "content/compressions/mlorq_compressor.md"
-        },
-        {
-            "id": "modegpt.md",
-            "title": "Modegpt (modegpt)",
-            "path": "content/compressions/modegpt.md"
-        },
-        {
-            "id": "modegpt_compressor.md",
-            "title": "MoDeGPT: Modular Decomposition of Transformer Blocks",
-            "path": "content/compressions/modegpt_compressor.md"
-        },
-        {
-            "id": "nli_softmax.md",
-            "title": "NLI Softmax Approximation",
-            "path": "content/compressions/nli_softmax.md"
-        },
-        {
-            "id": "nmf.md",
-            "title": "Nmf (nmf)",
-            "path": "content/compressions/nmf.md"
-        },
-        {
-            "id": "nmf_compressor.md",
-            "title": "NMFCompressor: Non-Negative Matrix Factorization Compression Engine",
-            "path": "content/compressions/nmf_compressor.md"
-        },
-        {
-            "id": "oats.md",
-            "title": "OATS: Outlier‑Aware Training Sparsification",
-            "path": "content/compressions/oats.md"
-        },
-        {
-            "id": "oats_compressor.md",
-            "title": "Oats Compressor (oatscompressor)",
-            "path": "content/compressions/oats_compressor.md"
-        },
-        {
-            "id": "optimal_subspace_projection.md",
-            "title": "Subspace Projection: Activation‑Aware Low‑Rank Compression via Randomized SVD",
-            "path": "content/compressions/optimal_subspace_projection.md"
-        },
-        {
-            "id": "padre_attention.md",
-            "title": "PADRe – Polynomial Attention with Dropout Regularization",
-            "path": "content/compressions/padre_attention.md"
-        },
-        {
-            "id": "proxsparse.md",
-            "title": "Proxsparse (proxsparse)",
-            "path": "content/compressions/proxsparse.md"
-        },
-        {
-            "id": "proxsparse_compressor.md",
-            "title": "Proxsparse Compressor (proxsparsecompressor)",
-            "path": "content/compressions/proxsparse_compressor.md"
-        },
-        {
-            "id": "proxsparse_pruner.md",
-            "title": "ProxSparse Pruner: Proximal Gradient Regularized Semi-Structured Pruning Engine",
-            "path": "content/compressions/proxsparse_pruner.md"
-        },
-        {
-            "id": "res_svd.md",
-            "title": "ResSVDCompressor: Spectral Residual Low-Rank Adaptation (Spectral Residual LoRA)",
-            "path": "content/compressions/res_svd.md"
-        },
-        {
-            "id": "roast_hashed_linear.md",
-            "title": "ROAST: Hardware‑Aware Weight Sharing with Tiling",
-            "path": "content/compressions/roast_hashed_linear.md"
-        },
-        {
-            "id": "rotational_slicegpt.md",
-            "title": "Rotational Slicegpt (rotationalslicegpt)",
-            "path": "content/compressions/rotational_slicegpt.md"
-        },
-        {
-            "id": "rotational_slicegpt_int4.md",
-            "title": "Rotational-SliceGPT-INT4: Hybrid Compression Engine",
-            "path": "content/compressions/rotational_slicegpt_int4.md"
-        },
-        {
-            "id": "rpc_attention.md",
-            "title": "RPC Attention: Kernel PCA Perspective on Self‑Attention",
-            "path": "content/compressions/rpc_attention.md"
-        },
-        {
-            "id": "rpca.md",
-            "title": "RPCACompressor: Robust Principal Component Analysis Low-Rank & Sparse Matrix Decomposition Engine",
-            "path": "content/compressions/rpca.md"
-        },
-        {
-            "id": "rpca_compressor.md",
-            "title": "RPCACompressor: Robust Principal Component Analysis Low-Rank & Sparse Matrix Decomposition Engine",
-            "path": "content/compressions/rpca_compressor.md"
-        },
-        {
-            "id": "saes.md",
-            "title": "Saes (saes)",
-            "path": "content/compressions/saes.md"
-        },
-        {
-            "id": "saes_svd.md",
-            "title": "SAES‑SVD v2: Error Suppression with Fixed Rank Ratio",
-            "path": "content/compressions/saes_svd.md"
-        },
-        {
-            "id": "saes_svd_compressor.md",
-            "title": "SAESCompressor: Subspace Adaptation & Error Stabilization SVD Engine",
-            "path": "content/compressions/saes_svd_compressor.md"
-        },
-        {
-            "id": "saes_svd_v2.md",
-            "title": "SAESSVDCompressorV2: Spectrum-Aware Error Suppression SVD (SAES-SVD v2)",
-            "path": "content/compressions/saes_svd_v2.md"
-        },
-        {
-            "id": "salr.md",
-            "title": "SALR: Unified Low‑Rank and Sparse Pruning",
-            "path": "content/compressions/salr.md"
-        },
-        {
-            "id": "sdrm.md",
-            "title": "Sdrm (sdrm)",
-            "path": "content/compressions/sdrm.md"
-        },
-        {
-            "id": "sdrm_compressor.md",
-            "title": "SDRM: Rank Assignment Proportional to Parameter Budget for Edge Inference",
-            "path": "content/compressions/sdrm_compressor.md"
-        },
-        {
-            "id": "slicegpt.md",
-            "title": "SliceGPT: Post-Training Slicing with Orthogonal Transformation & Variance Concentration",
-            "path": "content/compressions/slicegpt.md"
-        },
-        {
-            "id": "slicegpt_compressor.md",
-            "title": "SliceGPT PCA: Calibration-Guided Activation Principal Component Slicing",
-            "path": "content/compressions/slicegpt_compressor.md"
-        },
-        {
-            "id": "slicegpt_pca.md",
-            "title": "SliceGPT PCA Compressor: Principal Component Subspace Projection & Variance Slicing",
-            "path": "content/compressions/slicegpt_pca.md"
-        },
-        {
-            "id": "slim.md",
-            "title": "Slim (slim)",
-            "path": "content/compressions/slim.md"
-        },
-        {
-            "id": "slim_compressor.md",
-            "title": "SLiM: One‑Shot Quantization, 2:4 Structured Sparsity, and Low‑Rank Correction",
-            "path": "content/compressions/slim_compressor.md"
-        },
-        {
-            "id": "soka.md",
-            "title": "Soka (soka)",
-            "path": "content/compressions/soka.md"
-        },
-        {
-            "id": "soka_compressor.md",
-            "title": "SoKA (Kronecker Product) Compressor – Low‑Rank SVD Placeholder",
-            "path": "content/compressions/soka_compressor.md"
-        },
-        {
-            "id": "sparsegpt.md",
-            "title": "SparseGPT: One-Shot Second-Order Hessian-Guided Weight Pruning for Large Language Models",
-            "path": "content/compressions/sparsegpt.md"
-        },
-        {
-            "id": "spectraformer_attention.md",
-            "title": "Spectraformer: Random Feature Linearisation with Flexible Kernel Approximation",
-            "path": "content/compressions/spectraformer_attention.md"
-        },
-        {
-            "id": "spectral_residual_lora.md",
-            "title": "Spectral Residual Lora (spectralresiduallora)",
-            "path": "content/compressions/spectral_residual_lora.md"
-        },
-        {
-            "id": "subspace_projection.md",
-            "title": "Subspace Projection (subspaceprojection)",
-            "path": "content/compressions/subspace_projection.md"
-        },
-        {
-            "id": "svd_linear.md",
-            "title": "SVDLinearLayer: Low-Rank Factorized Linear Layer Replacement",
-            "path": "content/compressions/svd_linear.md"
-        },
-        {
-            "id": "svd_linear_compressor.md",
-            "title": "Svd Linear Compressor (svdlinearcompressor)",
-            "path": "content/compressions/svd_linear_compressor.md"
-        },
-        {
-            "id": "swift_svd.md",
-            "title": "Swift‑SVD: Closed‑Form SVD Compression with Rank Ratio",
-            "path": "content/compressions/swift_svd.md"
-        },
-        {
-            "id": "swift_svd_act.md",
-            "title": "SwiftSVDActivationCompressor: Activation-Aware SVD via Cross-Covariance Projection",
-            "path": "content/compressions/swift_svd_act.md"
-        },
-        {
-            "id": "swift_svd_compressor.md",
-            "title": "SwiftSVDActivationCompressor: Activation-Aware SVD via Input-Output Cross-Covariance Factorization",
-            "path": "content/compressions/swift_svd_compressor.md"
-        },
-        {
-            "id": "tlinformer_attention.md",
-            "title": "TLinFormer Attention: Sequence-Dimension Projected Linear Attention",
-            "path": "content/compressions/tlinformer_attention.md"
-        },
-        {
-            "id": "tomoe_compressor.md",
-            "title": "ToMoE: Converting Dense MLP into Mixture of Experts via Dynamic Structural Pruning",
-            "path": "content/compressions/tomoe_compressor.md"
-        },
-        {
-            "id": "tt.md",
-            "title": "Tt (tt)",
-            "path": "content/compressions/tt.md"
-        },
-        {
-            "id": "tt_compressor.md",
-            "title": "TTCompressor: Global Tensor-Train Factorization Framework Engine",
-            "path": "content/compressions/tt_compressor.md"
-        },
-        {
-            "id": "tt_linear.md",
-            "title": "TTLinearLayer: Tensor-Train Core Decomposition Matrix Layer Engine",
-            "path": "content/compressions/tt_linear.md"
-        },
-        {
-            "id": "uniql.md",
-            "title": "Uniql (uniql)",
-            "path": "content/compressions/uniql.md"
-        },
-        {
-            "id": "uniql_compressor.md",
-            "title": "UniQL: Joint Low‑Rank + Quantisation via SVD and Uniform Quantisation",
-            "path": "content/compressions/uniql_compressor.md"
-        },
-        {
-            "id": "zerokv_neo.md",
-            "title": "Zerokv Neo (zerokvneo)",
-            "path": "content/compressions/zerokv_neo.md"
-        },
-        {
-            "id": "zerokv_neo_compressor.md",
-            "title": "ZeroKV-Neo: L2-Norm KV Cache Eviction with Attention Sink & Heavy-Hitter Preservation",
-            "path": "content/compressions/zerokv_neo_compressor.md"
-        }
-    ],
-    "attentions_blog": [
-        {
-            "id": "README.md",
-            "title": "Attention Mechanisms Deep-Dive Blog Series",
-            "path": "content/attentions_blog/README.md"
-        }
-    ],
-    "compressions_blog": [
-        {
-            "id": "README.md",
-            "title": "Compression Engines Deep-Dive Blog Series",
-            "path": "content/compressions_blog/README.md"
-        }
-    ],
-    "blog_series": [
-        {
-            "id": "01_spectral_svd_lowrank_attentions.md",
-            "title": "🌟 Part 1: Spectral, SVD, Low-Rank & Factorized Attention Architectures",
-            "path": "blog/01_spectral_svd_lowrank_attentions.md"
-        },
-        {
-            "id": "02_linear_kernel_recurrent_ssm_attentions.md",
-            "title": "⚡ Part 2: Linear, Kernelized, Recurrent & State Space (SSM) Attentions",
-            "path": "blog/02_linear_kernel_recurrent_ssm_attentions.md"
-        },
-        {
-            "id": "03_sparse_multiscale_latent_paged_attentions.md",
-            "title": "⚡ Part 3: Sparse, Multi-Scale, Latent & Paged Attention Architectures",
-            "path": "blog/03_sparse_multiscale_latent_paged_attentions.md"
-        },
-        {
-            "id": "04_svd_lowrank_structural_compressions.md",
-            "title": "🌟 Part 4: SVD, Low-Rank & Structural Compression Engines",
-            "path": "blog/04_svd_lowrank_structural_compressions.md"
-        },
-        {
-            "id": "05_quantization_pruning_distillation_compressions.md",
-            "title": "⚡ Part 5: Quantization, Pruning, Distillation & Cache Engines",
-            "path": "blog/05_quantization_pruning_distillation_compressions.md"
-        },
-        {
-            "id": "README.md",
-            "title": "🚀 NeuralOps Masterclass Blog Series Compendium",
-            "path": "blog/README.md"
-        }
-    ],
-    "framework": [
-        {
-            "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
-            "title": "📊 SVD Linear Attention & Compression Framework: Master Empirical Benchmark Report",
-            "path": "content/framework/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
-        },
-        {
-            "id": "NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md",
-            "title": "Next-Generation Architectural Synthesis & Innovation Master Compendium",
-            "path": "content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md"
-        },
-        {
-            "id": "README.md",
-            "title": "🚀 SVD Linear Attention Framework Core Architecture",
-            "path": "content/framework/README.md"
-        }
-    ]
+  "guides": [
+    {
+      "id": "Attention_Mechanisms_For_Paper.md",
+      "title": "Comprehensive Survey and Mathematical Taxonomy of Attention Mechanisms for Transformer Architectures",
+      "path": "Attention_Mechanisms_For_Paper.md"
+    },
+    {
+      "id": "COMPLETE_RESEARCH_GUIDE.md",
+      "title": "Complete SVD Linear Attention Research Guide",
+      "path": "COMPLETE_RESEARCH_GUIDE.md"
+    },
+    {
+      "id": "DEPLOYMENT.md",
+      "title": "Research Hub deployment",
+      "path": "DEPLOYMENT.md"
+    },
+    {
+      "id": "START_HERE.md",
+      "title": "SVD Linear Attention Documentation",
+      "path": "START_HERE.md"
+    }
+  ],
+  "verification": [
+    {
+      "id": "attention_verification.md",
+      "title": "Attention Architectures Verification Report",
+      "path": "attention_verification.md"
+    },
+    {
+      "id": "compression_verification.md",
+      "title": "Compression Engine Verification Report",
+      "path": "compression_verification.md"
+    },
+    {
+      "id": "core_verification.md",
+      "title": "Core Utilities Verification Report",
+      "path": "core_verification.md"
+    },
+    {
+      "id": "forward_pass_verification.md",
+      "title": "Attention Module Forward Pass Verification",
+      "path": "forward_pass_verification.md"
+    },
+    {
+      "id": "training_verification.md",
+      "title": "Training Orchestration Verification Report",
+      "path": "training_verification.md"
+    }
+  ],
+  "reports": [
+    {
+      "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
+      "title": "\ud83d\udcca SVD Linear Attention & Compression Framework: Master Empirical Benchmark Report",
+      "path": "reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
+    },
+    {
+      "id": "README.md",
+      "title": "Benchmark and verification reports",
+      "path": "reports/README.md"
+    },
+    {
+      "id": "master_empirical_benchmark_report.md",
+      "title": "\ud83c\udfc6 Master Empirical Benchmark Report: SVD Linear Attention & Compression",
+      "path": "results/master_empirical_benchmark_report.md"
+    },
+    {
+      "id": "README.md",
+      "title": "Experiment results",
+      "path": "results/README.md"
+    }
+  ],
+  "studios": [
+    {
+      "id": "Attention_Visualization_Dashboard.md",
+      "title": "\ud83e\udde0 NeuralOps Attention Visualization Dashboard \u2014 Complete Aggregated Design",
+      "path": "Attention_Visualization_Dashboard/Attention_Visualization_Dashboard.md"
+    },
+    {
+      "id": "Attention_Visualization_Dashboard_Features.md",
+      "title": "\ud83e\udde0 Complete Attention Visualization Suite \u2014 React + 3D + Interactive",
+      "path": "Attention_Visualization_Dashboard/Attention_Visualization_Dashboard_Features.md"
+    },
+    {
+      "id": "Zone_1_Global_Navigation_&_Context_Bar.md",
+      "title": "\ud83e\udded Zone 1: Global Navigation & Context Bar \u2014 Complete Implementation Specification",
+      "path": "Attention_Visualization_Dashboard/Zone_1_Global_Navigation_&_Context_Bar.md"
+    },
+    {
+      "id": "Zone_2_Attention_Canvas.md",
+      "title": "\ud83c\udfa8 Zone 2: Attention Canvas \u2014 Complete Advanced Implementation Specification",
+      "path": "Attention_Visualization_Dashboard/Zone_2_Attention_Canvas.md"
+    },
+    {
+      "id": "Zone_3_Live_Math_Panel.md",
+      "title": "\ud83d\udcd0 Zone 3: Live Math Panel \u2014 3Blue1Brown\u2011Style Complete Implementation Specification",
+      "path": "Attention_Visualization_Dashboard/Zone_3_Live_Math_Panel.md"
+    },
+    {
+      "id": "Zone_4_Control_Panel.md",
+      "title": "\ud83c\udf9b\ufe0f Zone 4: Control Panel \u2014 Complete Implementation Specification",
+      "path": "Attention_Visualization_Dashboard/Zone_4_Control_Panel.md"
+    },
+    {
+      "id": "Zone_5_Analytics_&_Diagnostics_Dashboard.md",
+      "title": "\ud83d\udcc8 Zone 5: Analytics & Diagnostics Dashboard \u2014 Complete Implementation Specification",
+      "path": "Attention_Visualization_Dashboard/Zone_5_Analytics_&_Diagnostics_Dashboard.md"
+    },
+    {
+      "id": "Zone_6_Interpretability_Tools.md",
+      "title": "\ud83d\udd2c Zone 6: Interpretability Tools \u2014 Complete Implementation Specification",
+      "path": "Attention_Visualization_Dashboard/Zone_6_Interpretability_Tools.md"
+    },
+    {
+      "id": "Zone_7_Social_&_Community_Layer.md",
+      "title": "\ud83e\udde0 Zone 7: Social & Community Layer \u2014 Complete Implementation Specification",
+      "path": "Attention_Visualization_Dashboard/Zone_7_Social_&_Community_Layer.md"
+    },
+    {
+      "id": "Zone_8_Gamification_&_Progress.md",
+      "title": "\ud83c\udfae Zone 8: Gamification & Progress \u2014 Complete Implementation Specification",
+      "path": "Attention_Visualization_Dashboard/Zone_8_Gamification_&_Progress.md"
+    },
+    {
+      "id": "Zone_9_Additiona_Cross_Platform_Integration_Features.md",
+      "title": "\ud83d\udd17 Features 39\u201150: Complete Implementation Specifications",
+      "path": "Attention_Visualization_Dashboard/Zone_9_Additiona_Cross_Platform_Integration_Features.md"
+    },
+    {
+      "id": "CIRCUIT_TRACER.md",
+      "title": "Circuit Tracer \u2014 QK & OV Circuit Explorer",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/CIRCUIT_TRACER.md"
+    },
+    {
+      "id": "COMPRESSION_STUDIO.md",
+      "title": "\ud83c\udfd7\ufe0f Compression Studio \u2014 Complete Implementation Specification",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/COMPRESSION_STUDIO.md"
+    },
+    {
+      "id": "Embedding_Explorer.md",
+      "title": "\ud83e\uddec Embedding Explorer \u2014 Complete Implementation Specification",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/Embedding_Explorer.md"
+    },
+    {
+      "id": "FNN_&_MLP_EXPLORER.md",
+      "title": "\ud83e\udde0 FFN/MLP EXPLORER \u2014 Complete Implementation Blueprint",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/FNN_&_MLP_EXPLORER.md"
+    },
+    {
+      "id": "FULL_PIPELINE_STUDIO.md",
+      "title": "\ud83e\udde0 Full Pipeline Studio \u2014 Complete Implementation Architecture",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/FULL_PIPELINE_STUDIO.md"
+    },
+    {
+      "id": "KV_CACHE_MONITOR.md",
+      "title": "\ud83e\udde0 KV Cache Monitor \u2014 Complete Implementation Specification",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/KV_CACHE_MONITOR.md"
+    },
+    {
+      "id": "LAYER_NORMALIZATION_DYNAMICS.md",
+      "title": "\ud83e\uddea LAYER NORMALIZATION DYNAMICS \u2014 \"The Stabilizer Lab\"",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LAYER_NORMALIZATION_DYNAMICS.md"
+    },
+    {
+      "id": "LoRA_ADAPTER_STUDIO.md",
+      "title": "\ud83e\udde9 LoRA ADAPTER STUDIO \u2014 Complete Implementation Specifications",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LoRA_ADAPTER_STUDIO.md"
+    },
+    {
+      "id": "LOSS_LANDSCAPE_EXPLORER.md",
+      "title": "\ud83c\udfd4\ufe0f Loss Landscape Explorer \u2014 Complete Implementation Specifications",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LOSS_LANDSCAPE_EXPLORER.md"
+    },
+    {
+      "id": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components.md",
+      "title": "\ud83e\udde0 Complete Mapping: Apply the Attention-Style Interactive Dashboard to ALL Transformer Components",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components.md"
+    },
+    {
+      "id": "OUTPUT_LOGITS_PREDICTOR.md",
+      "title": "\ud83e\udde0 Output Logits Predictor \u2014 Complete Implementation Guide",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/OUTPUT_LOGITS_PREDICTOR.md"
+    },
+    {
+      "id": "POSITIONAL_ENCODING_STUDIO.md",
+      "title": "\ud83e\udded POSITIONAL ENCODING STUDIO \u2014 Complete Implementation Blueprint",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/POSITIONAL_ENCODING_STUDIO.md"
+    },
+    {
+      "id": "RESIDUAL_STREAM_TRACER.md",
+      "title": "\ud83e\udde0 Residual Stream Tracer \u2014 Complete Implementation Specification",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/RESIDUAL_STREAM_TRACER.md"
+    },
+    {
+      "id": "TRAINING_DYNAMICS_SANDBOX.md",
+      "title": "Zone 11: Training Dynamics Sandbox \u2014 Complete Implementation Specifications",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/TRAINING_DYNAMICS_SANDBOX.md"
+    },
+    {
+      "id": "VR_IMMERSION_ROOM.md",
+      "title": "\ud83e\udd7d VR Immersion Room \u2014 \"Step Inside the Transformer\"",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/VR_IMMERSION_ROOM.md"
+    },
+    {
+      "id": "WEIGHT_MATRIX_DECOMPOSER.md",
+      "title": "\ud83e\uddee Weight Matrix Decomposer \u2014 Complete Implementation Specification",
+      "path": "Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/WEIGHT_MATRIX_DECOMPOSER.md"
+    }
+  ],
+  "attentions": [
+    {
+      "id": "SOAFusedAttention.md",
+      "title": "SOA-Fused Attention: Low-Rank Latent Space Multi-Head Attention with Zero-Shot SVD Initialization",
+      "path": "content/attentions/SOAFusedAttention.md"
+    },
+    {
+      "id": "SVD-Mamba.md",
+      "title": "SVD-Mamba: SVD-Factorized Selective State Space Model with Global Spectral Mixing",
+      "path": "content/attentions/SVD-Mamba.md"
+    },
+    {
+      "id": "adaptive_span_attention.md",
+      "title": "Adaptive Span Attention: Dynamic Head-Specific Context Window Gating",
+      "path": "content/attentions/adaptive_span_attention.md"
+    },
+    {
+      "id": "adaptive_sparse_attention.md",
+      "title": "Adaptive Sparse Attention: Dynamic Top-K & Threshold-Based Sparsity Routing",
+      "path": "content/attentions/adaptive_sparse_attention.md"
+    },
+    {
+      "id": "adaptive_svd_attention.md",
+      "title": "Adaptive SVD Attention: Low-Rank SVD Projections with Parallel Residual Adapters",
+      "path": "content/attentions/adaptive_svd_attention.md"
+    },
+    {
+      "id": "adasplash_attention.md",
+      "title": "AdaSplash Attention: Adaptive Splash Attention with alpha-Entmax Sparse Activations",
+      "path": "content/attentions/adasplash_attention.md"
+    },
+    {
+      "id": "aegis_hybrid.md",
+      "title": "AEGIS-Hybrid Attention: Low-Rank Factorized Hybrid Attention with Adaptive Gated Fusion and LoRA Recovery",
+      "path": "content/attentions/aegis_hybrid.md"
+    },
+    {
+      "id": "aegis_spectron_fp8.md",
+      "title": "AEGIS-Spectron-FP8: Tri-Branch Hybrid Attention with Token-Level Spectral Entropy Routing and True $\\mathcal{O}(N)$ Linear Complexity",
+      "path": "content/attentions/aegis_spectron_fp8.md"
+    },
+    {
+      "id": "aegis_v1.md",
+      "title": "AEGIS-Attention V1: Adaptive Enhanced Global-Local Integrated Sparse Attention Baseline",
+      "path": "content/attentions/aegis_v1.md"
+    },
+    {
+      "id": "aegis_v2.md",
+      "title": "AEGIS-Attention V2: Low-Rank Factorized Hybrid Attention with Adaptive Soft-Pruning",
+      "path": "content/attentions/aegis_v2.md"
+    },
+    {
+      "id": "aegis_v3.md",
+      "title": "AEGIS-Attention V3: Energy-Constrained SVD & Softpick Rectified Sparse Attention",
+      "path": "content/attentions/aegis_v3.md"
+    },
+    {
+      "id": "aegis_v4.md",
+      "title": "AEGIS-Attention V4: Adaptive Enhanced Global-Local Integrated Sparse Attention",
+      "path": "content/attentions/aegis_v4.md"
+    },
+    {
+      "id": "aegis_v5.md",
+      "title": "AEGIS-Attention V5: Hybrid Multi-Head Attention with ELU+1 Feature Maps & Safe Masking",
+      "path": "content/attentions/aegis_v5.md"
+    },
+    {
+      "id": "aegis_v6.md",
+      "title": "AEGIS-Attention V6: Unified SVD-LoRA Hybrid Attention with Orthogonal Kernel Projections",
+      "path": "content/attentions/aegis_v6.md"
+    },
+    {
+      "id": "asvd_attention.md",
+      "title": "ASVD Attention: Activation-Aware Singular Value Decomposition Architecture",
+      "path": "content/attentions/asvd_attention.md"
+    },
+    {
+      "id": "bam_umoe.md",
+      "title": "BAM-uMoE: Bidirectional Attentive Mixture-of-Unified-Experts",
+      "path": "content/attentions/bam_umoe.md"
+    },
+    {
+      "id": "block_transformer_hiba.md",
+      "title": "Block Transformer HIBA: Hierarchical Intra/Inter-Block Attention",
+      "path": "content/attentions/block_transformer_hiba.md"
+    },
+    {
+      "id": "chela_slay.md",
+      "title": "CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel",
+      "path": "content/attentions/chela_slay.md"
+    },
+    {
+      "id": "cluster_attention.md",
+      "title": "ClusterFormer: Dynamic Token-Clustering Attention via Batch Iterative K-Means",
+      "path": "content/attentions/cluster_attention.md"
+    },
+    {
+      "id": "compressed_attention.md",
+      "title": "Compressed Attention via Truncated SVD",
+      "path": "content/attentions/compressed_attention.md"
+    },
+    {
+      "id": "compressed_mha_attention.md",
+      "title": "Compressed Multi-Head Attention (Compressed-MHA)",
+      "path": "content/attentions/compressed_mha_attention.md"
+    },
+    {
+      "id": "cosformer.md",
+      "title": "Cosformer: Rethinking Softmax in Attention with Linear Complexity",
+      "path": "content/attentions/cosformer.md"
+    },
+    {
+      "id": "decay_linear_attention.md",
+      "title": "Decay Linear Attention (DecayLinearAttention)",
+      "path": "content/attentions/decay_linear_attention.md"
+    },
+    {
+      "id": "eat.md",
+      "title": "EAT: Efficient Attention Transformer with Progressive Token Pruning",
+      "path": "content/attentions/eat.md"
+    },
+    {
+      "id": "expert_choice_moe.md",
+      "title": "Expert Choice Mixture of Experts (EC-MoE) Attention Block",
+      "path": "content/attentions/expert_choice_moe.md"
+    },
+    {
+      "id": "factorised_matrix_state.md",
+      "title": "Factorised Matrix State Attention: Bidirectional Associative Matrix Recurrence & Low-Rank Bilinear Projections",
+      "path": "content/attentions/factorised_matrix_state.md"
+    },
+    {
+      "id": "flash_attention3.md",
+      "title": "FlashAttention-3: Fast and Memory-Efficient Exact Attention with Asynchronous Hardware Overlap",
+      "path": "content/attentions/flash_attention3.md"
+    },
+    {
+      "id": "flash_attention3_fp8.md",
+      "title": "FlashAttention-3 FP8: Low-Precision 8-Bit Float Transformer Attention for Hopper Architectures",
+      "path": "content/attentions/flash_attention3_fp8.md"
+    },
+    {
+      "id": "full_attention.md",
+      "title": "Full Attention: Standard Multi-Head Scaled Dot-Product Attention Architecture",
+      "path": "content/attentions/full_attention.md"
+    },
+    {
+      "id": "fused_svd_kernel.md",
+      "title": "Fused SVD-Linear Kernel: SRAM-Resident RMSNorm & Dual-Projection",
+      "path": "content/attentions/fused_svd_kernel.md"
+    },
+    {
+      "id": "fusion_attn.md",
+      "title": "FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention",
+      "path": "content/attentions/fusion_attn.md"
+    },
+    {
+      "id": "galerkin_attention.md",
+      "title": "Petrov-Galerkin Projection Attention: Energy-Preserving Spectral Operator Discretization",
+      "path": "content/attentions/galerkin_attention.md"
+    },
+    {
+      "id": "gated_delta_net.md",
+      "title": "Gated DeltaNet: Multi-Head Bidirectional Delta Rule Linear Recurrent Attention",
+      "path": "content/attentions/gated_delta_net.md"
+    },
+    {
+      "id": "gated_deltanet_block.md",
+      "title": "Gated DeltaNet Block: Hybrid Multi-Head Attention and Recurrent DeltaNet Layer",
+      "path": "content/attentions/gated_deltanet_block.md"
+    },
+    {
+      "id": "gated_linear_attention.md",
+      "title": "Gated Linear Attention (GatedLinearAttention)",
+      "path": "content/attentions/gated_linear_attention.md"
+    },
+    {
+      "id": "goldfinch_ahn.md",
+      "title": "GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated DeltaNet",
+      "path": "content/attentions/goldfinch_ahn.md"
+    },
+    {
+      "id": "gqa_attention.md",
+      "title": "Grouped-Query Attention (GQA): Memory-Efficient Shared Key-Value Subspace Architecture",
+      "path": "content/attentions/gqa_attention.md"
+    },
+    {
+      "id": "granite_hybrid.md",
+      "title": "Granite-Hybrid Attention: Interleaved Mamba-2 State Space Architecture with Multi-Head Attention and Mixture-of-Experts",
+      "path": "content/attentions/granite_hybrid.md"
+    },
+    {
+      "id": "griffin_ssd.md",
+      "title": "Griffin SSD: Hybrid Sliding-Window Attention & State Space Duality (SSD) Recurrence",
+      "path": "content/attentions/griffin_ssd.md"
+    },
+    {
+      "id": "halo_regla.md",
+      "title": "HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention",
+      "path": "content/attentions/halo_regla.md"
+    },
+    {
+      "id": "hamming_attention.md",
+      "title": "Hamming Attention Distillation (HAD): Sign-Binarized Attention with Continuous Relaxations",
+      "path": "content/attentions/hamming_attention.md"
+    },
+    {
+      "id": "hgrn2_gated_deltanet.md",
+      "title": "HGRN-2 Gated DeltaNet Hybrid Architecture",
+      "path": "content/attentions/hgrn2_gated_deltanet.md"
+    },
+    {
+      "id": "hgrn2_layer.md",
+      "title": "Hierarchically Gated Recurrent Network V2 (HGRN-2) Layer",
+      "path": "content/attentions/hgrn2_layer.md"
+    },
+    {
+      "id": "hgrn2_outer.md",
+      "title": "HGRN-2 Outer-Product Recurrent Linear Attention",
+      "path": "content/attentions/hgrn2_outer.md"
+    },
+    {
+      "id": "hla_attention.md",
+      "title": "Hadamard Linear Attention (HLA)",
+      "path": "content/attentions/hla_attention.md"
+    },
+    {
+      "id": "hymba_transx.md",
+      "title": "HymbaTransX: Hybrid Differential Transformer & State Space Model Block",
+      "path": "content/attentions/hymba_transx.md"
+    },
+    {
+      "id": "infini_attention.md",
+      "title": "Infini-Attention",
+      "path": "content/attentions/infini_attention.md"
+    },
+    {
+      "id": "jamba.md",
+      "title": "Jamba-2 Hybrid Transformer: SVD-Mamba + MHA + Expert Choice MoE",
+      "path": "content/attentions/jamba.md"
+    },
+    {
+      "id": "jamba_info.md",
+      "title": "Jamba-Info: Information-Bottlenecked Hybrid Transformer",
+      "path": "content/attentions/jamba_info.md"
+    },
+    {
+      "id": "kda_attention.md",
+      "title": "Kernelized Decay Attention (KDA)",
+      "path": "content/attentions/kda_attention.md"
+    },
+    {
+      "id": "leka_v1.md",
+      "title": "LEKA v1: Linear-time Efficient Kernel Attention",
+      "path": "content/attentions/leka_v1.md"
+    },
+    {
+      "id": "leka_v2.md",
+      "title": "LEKA v2: Landmark-Enhanced Kernel Attention with Dual-Scale Distillation",
+      "path": "content/attentions/leka_v2.md"
+    },
+    {
+      "id": "leka_v3.md",
+      "title": "LEKA v3: Value-Aware Landmark Kernel Attention with Padding Invariance",
+      "path": "content/attentions/leka_v3.md"
+    },
+    {
+      "id": "linformer_attention.md",
+      "title": "Linformer Attention: Linear-Complexity Sequence Projection via Low-Rank Matrix Factorization",
+      "path": "content/attentions/linformer_attention.md"
+    },
+    {
+      "id": "lola_attention.md",
+      "title": "Lola Attention: Low-Rank Localized Attention via Three-Memory System Caching",
+      "path": "content/attentions/lola_attention.md"
+    },
+    {
+      "id": "lora_attention.md",
+      "title": "LoRA Attention: Parameter-Efficient Low-Rank Adaptation",
+      "path": "content/attentions/lora_attention.md"
+    },
+    {
+      "id": "lsh_attention.md",
+      "title": "Locality-Sensitive Hashing Attention: Angular Random Hyperplane Bucket Partitioning",
+      "path": "content/attentions/lsh_attention.md"
+    },
+    {
+      "id": "mamba.md",
+      "title": "Bidirectional Selective State Space Model (Bi-Mamba) Attention",
+      "path": "content/attentions/mamba.md"
+    },
+    {
+      "id": "mamba_svd_flash.md",
+      "title": "MambaSVD-Flash: Hybrid Bidirectional SSM-FlashAttention Architecture",
+      "path": "content/attentions/mamba_svd_flash.md"
+    },
+    {
+      "id": "minimal_aurora.md",
+      "title": "MinimalAURORA Attention: Energy-Preserving SVD-Factorized Attention with Cumulative Spectral Truncation",
+      "path": "content/attentions/minimal_aurora.md"
+    },
+    {
+      "id": "minimal_nova.md",
+      "title": "MinimalNOVA Attention: SVD-Factorized Low-Rank Projection Attention for Efficient Transformer Compression",
+      "path": "content/attentions/minimal_nova.md"
+    },
+    {
+      "id": "minimal_prism.md",
+      "title": "MinimalPRISM Attention: Singular Spectrum Energy-Factorized Low-Rank Projection Attention",
+      "path": "content/attentions/minimal_prism.md"
+    },
+    {
+      "id": "minimal_svd.md",
+      "title": "MinimalSVD: Cumulative Energy-Budgeted SVD Factorization Attention",
+      "path": "content/attentions/minimal_svd.md"
+    },
+    {
+      "id": "minimal_svd_v2.md",
+      "title": "MinimalSVD v2: Refined SVD Low-Rank Attention with Flexible Attention Mask Handling",
+      "path": "content/attentions/minimal_svd_v2.md"
+    },
+    {
+      "id": "mixattention_moska.md",
+      "title": "MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA)",
+      "path": "content/attentions/mixattention_moska.md"
+    },
+    {
+      "id": "mla_attention.md",
+      "title": "Multi-Head Latent Attention (MLA): Low-Rank Latent Bottleneck Compression (DeepSeek-V2)",
+      "path": "content/attentions/mla_attention.md"
+    },
+    {
+      "id": "moba_attention.md",
+      "title": "MoBA Attention: Mixture-of-Block Attention via Centroid Cosine Routing",
+      "path": "content/attentions/moba_attention.md"
+    },
+    {
+      "id": "moe_deltakv_paged.md",
+      "title": "MoE-DeltaKV Paged: Quantized & Paged KV-Cache Mixture-of-Experts Attention",
+      "path": "content/attentions/moe_deltakv_paged.md"
+    },
+    {
+      "id": "nasc_attention.md",
+      "title": "NASC: NEXUS-AEGIS Spectral Cascade Attention",
+      "path": "content/attentions/nasc_attention.md"
+    },
+    {
+      "id": "nexus.md",
+      "title": "NEXUS: Neural Efficient X-scoring Unified Sparse Attention",
+      "path": "content/attentions/nexus.md"
+    },
+    {
+      "id": "nha_attention.md",
+      "title": "Native Hybrid Attention (NHA)",
+      "path": "content/attentions/nha_attention.md"
+    },
+    {
+      "id": "nsa_attention.md",
+      "title": "Native Sparse Attention: Hybrid Local Sliding-Window and Dynamic Top-k Global Routing",
+      "path": "content/attentions/nsa_attention.md"
+    },
+    {
+      "id": "nystrom_attention.md",
+      "title": "Nystr\u00f6m Attention: Low-Rank Landmark Approximation via Matrix Pseudoinverse Decomposition",
+      "path": "content/attentions/nystrom_attention.md"
+    },
+    {
+      "id": "optimized_hybrid_attention.md",
+      "title": "Optimized Hybrid Attention (OHA): Fused Sliding-Window Local Self-Attention and Sequence-Compressed Low-Rank Global Attention",
+      "path": "content/attentions/optimized_hybrid_attention.md"
+    },
+    {
+      "id": "orion.md",
+      "title": "ORION: Optimized Rectified Input-Aware Orthogonal Network with Energy-Preserving SVD Projections and Bifurcated Multi-Head Attention",
+      "path": "content/attentions/orion.md"
+    },
+    {
+      "id": "performer_attention.md",
+      "title": "Performer Attention (FAVOR+): Fast Attention via Positive Orthogonal Random Features",
+      "path": "content/attentions/performer_attention.md"
+    },
+    {
+      "id": "phantom.md",
+      "title": "PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH",
+      "path": "content/attentions/phantom.md"
+    },
+    {
+      "id": "primal_attention.md",
+      "title": "Primal Attention: Asymmetric Kernel SVD via Segment-Pooled Landmark Decomposition",
+      "path": "content/attentions/primal_attention.md"
+    },
+    {
+      "id": "progressive_token_pruning.md",
+      "title": "Progressive Token Pruning (PTP)",
+      "path": "content/attentions/progressive_token_pruning.md"
+    },
+    {
+      "id": "qcqa_attention.md",
+      "title": "Quality and Capacity-Aware Grouped Query Attention (QCQA): Dynamic Soft-Routing Mixture over Compressed KV Subspaces",
+      "path": "content/attentions/qcqa_attention.md"
+    },
+    {
+      "id": "rala_attention.md",
+      "title": "Rank-Augmented Linear Attention (RALA): Low-Rank Parametric Head Interaction Augmentation",
+      "path": "content/attentions/rala_attention.md"
+    },
+    {
+      "id": "rala_compressor.md",
+      "title": "RALA Compressor: Rank-Augmented Linear Attention Layer Architecture & Masking Specifications",
+      "path": "content/attentions/rala_compressor.md"
+    },
+    {
+      "id": "reap_moe.md",
+      "title": "REAP-MoE: Robust Expert Allocation and Pruning Mixture-of-Experts",
+      "path": "content/attentions/reap_moe.md"
+    },
+    {
+      "id": "regla_attention.md",
+      "title": "Refined Gated Linear Attention (ReGLA): Element-Wise Key Gating & Depthwise Convolutional Fusion",
+      "path": "content/attentions/regla_attention.md"
+    },
+    {
+      "id": "replace.md",
+      "title": "Replace: Dynamic Attention Layer Replacement Engine",
+      "path": "content/attentions/replace.md"
+    },
+    {
+      "id": "res_svd.md",
+      "title": "Spectral Residual SVD Attention (Res-SVD Attention)",
+      "path": "content/attentions/res_svd.md"
+    },
+    {
+      "id": "routing_attention.md",
+      "title": "Routing Attention: Content-Adaptive Query-Centric Clustering via Head-Wise Online K-Means",
+      "path": "content/attentions/routing_attention.md"
+    },
+    {
+      "id": "rpc_attention.md",
+      "title": "RPC Attention: Randomized Phase Cluster Attention via Fixed Random Subspace Sketching",
+      "path": "content/attentions/rpc_attention.md"
+    },
+    {
+      "id": "salt_attention.md",
+      "title": "SALT Attention: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Transformer Fine-Tuning",
+      "path": "content/attentions/salt_attention.md"
+    },
+    {
+      "id": "samba_m3.md",
+      "title": "SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba State-Space Model",
+      "path": "content/attentions/samba_m3.md"
+    },
+    {
+      "id": "samba_moe.md",
+      "title": "Samba-MoE: Selective State Space (SAMBA-M3) + REAP-MoE Hybrid Architecture",
+      "path": "content/attentions/samba_moe.md"
+    },
+    {
+      "id": "simple_ssm.md",
+      "title": "Simple State Space Model (SimpleSSM)",
+      "path": "content/attentions/simple_ssm.md"
+    },
+    {
+      "id": "smart_weighted_ensemble.md",
+      "title": "Smart Weighted Ensemble: Task-Aware Attention & Dynamic Confidence Fusion",
+      "path": "content/attentions/smart_weighted_ensemble.md"
+    },
+    {
+      "id": "soa_attn.md",
+      "title": "SOA Attention: Shared Orthogonal Attention with Latent Bottlenecks",
+      "path": "content/attentions/soa_attn.md"
+    },
+    {
+      "id": "span_expanded_attention.md",
+      "title": "Span-Expanded Attention: Receptive Field Extension with Parallel HyLoRA Adaptation",
+      "path": "content/attentions/span_expanded_attention.md"
+    },
+    {
+      "id": "spectra_v2.md",
+      "title": "SPECTRA-v2: Sparse Per-Head Efficient Context Transformer with Rectified Attention",
+      "path": "content/attentions/spectra_v2.md"
+    },
+    {
+      "id": "spectral_mamba.md",
+      "title": "Spectral-Mamba: Hybrid Attention-State Space Module with Spectral Modulation",
+      "path": "content/attentions/spectral_mamba.md"
+    },
+    {
+      "id": "spectron.md",
+      "title": "Spectron: Importance-Aware Low-Rank + Sparse Attention",
+      "path": "content/attentions/spectron.md"
+    },
+    {
+      "id": "squeezing_heads_distill.md",
+      "title": "Squeezing Heads Distillation: Multi-Head Receptive Field Distillation & Capacity Compression",
+      "path": "content/attentions/squeezing_heads_distill.md"
+    },
+    {
+      "id": "squeezing_heads_distiller.md",
+      "title": "Squeezing Heads Distiller: Progressive Multi-Head Knowledge Distillation & Dimension Pruning",
+      "path": "content/attentions/squeezing_heads_distiller.md"
+    },
+    {
+      "id": "svd_attention.md",
+      "title": "SVD Attention: Sequence-Dimension Singular Subspace Projection Architecture",
+      "path": "content/attentions/svd_attention.md"
+    },
+    {
+      "id": "svd_compressed.md",
+      "title": "SVD-Compressed Attention: Importance-Aware Lagrangian Rank Allocation Architecture",
+      "path": "content/attentions/svd_compressed.md"
+    },
+    {
+      "id": "svd_linear_attention.md",
+      "title": "SVD Linear Attention: Semi-Orthogonal Low-Rank Projection Factorization",
+      "path": "content/attentions/svd_linear_attention.md"
+    },
+    {
+      "id": "svd_llm_v2_attention.md",
+      "title": "SVD-LLM V2 Attention: Truncation-Aware Explicit Factor Buffer Architecture",
+      "path": "content/attentions/svd_llm_v2_attention.md"
+    },
+    {
+      "id": "svd_mamba.md",
+      "title": "SVD-Mamba Attention: Hardware-Efficient State-Space Recurrence via Truncated Singular Value Projections",
+      "path": "content/attentions/svd_mamba.md"
+    },
+    {
+      "id": "svd_projection_attention.md",
+      "title": "SVD Projection Attention: Explicit Low-Rank Matrix Reconstruction Paradigm",
+      "path": "content/attentions/svd_projection_attention.md"
+    },
+    {
+      "id": "template_attention.md",
+      "title": "Template Attention: Reference Implementation & Standardization Baseline",
+      "path": "content/attentions/template_attention.md"
+    },
+    {
+      "id": "token_compressed.md",
+      "title": "Token-Compressed Attention Wrapper: Structural Abstraction & Pass-Through Layer-Wise Delegator",
+      "path": "content/attentions/token_compressed.md"
+    },
+    {
+      "id": "token_compressed_attention.md",
+      "title": "Token Compressed Attention: Saliency-Based Key-Value Pruning",
+      "path": "content/attentions/token_compressed_attention.md"
+    },
+    {
+      "id": "tpa_attention.md",
+      "title": "TPAttention: Tensor Product Attention with Factorised Query-Key Projections",
+      "path": "content/attentions/tpa_attention.md"
+    },
+    {
+      "id": "tt.md",
+      "title": "TokenCompressedAttention: A No\u2011Compression Baseline Wrapper for Attention",
+      "path": "content/attentions/tt.md"
+    },
+    {
+      "id": "unified_rope.md",
+      "title": "Universal Rotary Position Embedding (UnifiedRoPE): Positional Invariance across Attention & SSM Branches",
+      "path": "content/attentions/unified_rope.md"
+    },
+    {
+      "id": "upi_stuffed_mamba.md",
+      "title": "UPI-Stuffed Mamba: Uncertainty-Penalized Interpolated Mamba SSM",
+      "path": "content/attentions/upi_stuffed_mamba.md"
+    },
+    {
+      "id": "vig_attention.md",
+      "title": "ViG Attention: Bidirectional Row-Column ELU Linear Recurrent Grid Attention",
+      "path": "content/attentions/vig_attention.md"
+    },
+    {
+      "id": "vspec.md",
+      "title": "VSpec++ Attention: Variational Spectral Token-Adaptive Attention with SVD-Gated Projections and Dynamic Top-k Routing",
+      "path": "content/attentions/vspec.md"
+    },
+    {
+      "id": "wgqa.md",
+      "title": "Weighted Grouped-Query Attention (WGQA)",
+      "path": "content/attentions/wgqa.md"
+    },
+    {
+      "id": "wgqa_attention.md",
+      "title": "Weighted Grouped-Query Attention (WGQA)",
+      "path": "content/attentions/wgqa_attention.md"
+    },
+    {
+      "id": "xattention.md",
+      "title": "XAttention: Block-Sparse Coarse-to-Fine Routing with Unified Softmax Normalization",
+      "path": "content/attentions/xattention.md"
+    },
+    {
+      "id": "zeros_attention.md",
+      "title": "ZeroS Attention: Zero-Mean Normalized Linear Attention",
+      "path": "content/attentions/zeros_attention.md"
+    }
+  ],
+  "compressions": [
+    {
+      "id": "a3_compressor.md",
+      "title": "A3 Compression: Activation-Aware Factorized Low-Rank SVD",
+      "path": "content/compressions/a3_compressor.md"
+    },
+    {
+      "id": "aa_svd_compressor.md",
+      "title": "AASVDCompressor: Anchored Adaptive SVD via Input Activation Subspace Projection",
+      "path": "content/compressions/aa_svd_compressor.md"
+    },
+    {
+      "id": "aasvd.md",
+      "title": "Activation-Aware SVD (AASVD) with Covariance Square-Root Weighting and Factorized Linear Layers",
+      "path": "content/compressions/aasvd.md"
+    },
+    {
+      "id": "adaptive_compressor.md",
+      "title": "AdaptiveTransformerCompressor: Dynamic Energy-Threshold Attention Subspace Compression Engine",
+      "path": "content/compressions/adaptive_compressor.md"
+    },
+    {
+      "id": "adaptive_ranks.md",
+      "title": "AdaptiveTransformerCompressor (Ranks): Dynamic Subspace Allocation & Sensitivity-Guided Rank Profiling",
+      "path": "content/compressions/adaptive_ranks.md"
+    },
+    {
+      "id": "adasvd_compressor.md",
+      "title": "AdaSVDCompressor: Adaptive SVD via Nuclear-Norm Layer Importance & Iterative Matrix Refinement",
+      "path": "content/compressions/adasvd_compressor.md"
+    },
+    {
+      "id": "admm_compressor.md",
+      "title": "ADMM Compressor: Joint Alternating Direction Pruning and Low-Bit Quantization Engine",
+      "path": "content/compressions/admm_compressor.md"
+    },
+    {
+      "id": "admm_pruner.md",
+      "title": "ADMM Pruner: Alternating Direction Method of Multipliers with Dynamic Penalty Scheduling & STE Backpropagation",
+      "path": "content/compressions/admm_pruner.md"
+    },
+    {
+      "id": "armor_pruner.md",
+      "title": "ARMOR Pruner: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction)",
+      "path": "content/compressions/armor_pruner.md"
+    },
+    {
+      "id": "ast_pruner.md",
+      "title": "AST Pruner: Adaptive Semi-Structured 2:4 Pruning with Empirical Fisher Information & PCA Coordinate Rotation",
+      "path": "content/compressions/ast_pruner.md"
+    },
+    {
+      "id": "astro_quantizer.md",
+      "title": "AstroQuantizer: Dynamic Uniform Range Quantization Engine with Straight-Through Estimator (STE)",
+      "path": "content/compressions/astro_quantizer.md"
+    },
+    {
+      "id": "bonsai_pruner.md",
+      "title": "Bonsai Pruner: Progressive Iterative Pruning with Cubic Scheduling, GD Recovery & Router Protection",
+      "path": "content/compressions/bonsai_pruner.md"
+    },
+    {
+      "id": "cachenotes_compressor.md",
+      "title": "CacheNotes Compressor: Task-Aware CPT Guidance for Static SVD & Dynamic KV Cache Compression",
+      "path": "content/compressions/cachenotes_compressor.md"
+    },
+    {
+      "id": "come.md",
+      "title": "CoMe: Context-Aware Low-Rank Memory Bridge Compression",
+      "path": "content/compressions/come.md"
+    },
+    {
+      "id": "compot_compressor.md",
+      "title": "COMPOT: Compressed Orthogonal Dictionary Learning",
+      "path": "content/compressions/compot_compressor.md"
+    },
+    {
+      "id": "coopq_quantizer.md",
+      "title": "CoopQ: Cooperative Game-Theoretic Bit Allocation Quantizer",
+      "path": "content/compressions/coopq_quantizer.md"
+    },
+    {
+      "id": "cr_compressor.md",
+      "title": "CR Compressor: Interpolative Decomposition for Weight Compression",
+      "path": "content/compressions/cr_compressor.md"
+    },
+    {
+      "id": "cur_compressor.md",
+      "title": "CURCompressor: Leverage Score Sampled Column-Row CUR Decomposition Engine",
+      "path": "content/compressions/cur_compressor.md"
+    },
+    {
+      "id": "cur_linear.md",
+      "title": "CURLinear: Drop-In Leverage-Sampled Subspace Replacement Layer for nn.Linear",
+      "path": "content/compressions/cur_linear.md"
+    },
+    {
+      "id": "cur_moe_compressor.md",
+      "title": "CURMoECompressor: Sparse Expert Layer CUR Decomposition Engine for Mixture-of-Experts",
+      "path": "content/compressions/cur_moe_compressor.md"
+    },
+    {
+      "id": "cure.md",
+      "title": "CURE: CUR Expert Compression Engine with Randomized Subspace Approximation",
+      "path": "content/compressions/cure.md"
+    },
+    {
+      "id": "delta_kv.md",
+      "title": "DeltaKV: Residual-Based Key-Value Cache Compression via Long-Range Reference Matching",
+      "path": "content/compressions/delta_kv.md"
+    },
+    {
+      "id": "direct_svd.md",
+      "title": "DirectSVDCompressor: Closed-Form Truncated SVD Low-Rank Factorization",
+      "path": "content/compressions/direct_svd.md"
+    },
+    {
+      "id": "dobi_svd.md",
+      "title": "DobiSVDLinearLayer & Compressor: Differentiable SVD with Learnable Rank Ratios",
+      "path": "content/compressions/dobi_svd.md"
+    },
+    {
+      "id": "dynamic_rank.md",
+      "title": "DynamicEntropySVDCompressor: Singular Entropy-Budgeted Rank Allocation",
+      "path": "content/compressions/dynamic_rank.md"
+    },
+    {
+      "id": "enlighten_compressor.md",
+      "title": "ENLighten: Low\u2011Rank SVD + 2:4 Structured Sparsity",
+      "path": "content/compressions/enlighten_compressor.md"
+    },
+    {
+      "id": "entropy_budget_allocation.md",
+      "title": "EntropyBudgetAllocation: Global Rank Assignment via Whitened Activation Entropy",
+      "path": "content/compressions/entropy_budget_allocation.md"
+    },
+    {
+      "id": "erc_svd.md",
+      "title": "ERCCompressor: Error-Controlled Singular Value Energy Thresholding Engine",
+      "path": "content/compressions/erc_svd.md"
+    },
+    {
+      "id": "faq_quantizer.md",
+      "title": "FAQ: Feature-Activation-Aware Quantization Engine",
+      "path": "content/compressions/faq_quantizer.md"
+    },
+    {
+      "id": "flap.md",
+      "title": "FLAP: Fluctuation-based Adaptive Structured Pruning",
+      "path": "content/compressions/flap.md"
+    },
+    {
+      "id": "flat_llm.md",
+      "title": "FLAT-LLM: Feature-Level Adaptive Truncation Compression",
+      "path": "content/compressions/flat_llm.md"
+    },
+    {
+      "id": "frandi_compressor.md",
+      "title": "FRanDI: Feature\u2011Regression Aligned Low\u2011Rank Compression",
+      "path": "content/compressions/frandi_compressor.md"
+    },
+    {
+      "id": "gfws_d_compressor.md",
+      "title": "GFWSVD: Fisher\u2011Weighted SVD Compression",
+      "path": "content/compressions/gfws_d_compressor.md"
+    },
+    {
+      "id": "grecodec_compressor.md",
+      "title": "GRECODeC: Greedy Coordinate Descent Low-Rank Compression",
+      "path": "content/compressions/grecodec_compressor.md"
+    },
+    {
+      "id": "hashed_linear.md",
+      "title": "Hashed Linear: Vectorized Hash-Based Weight Sharing Engine (HashedNets)",
+      "path": "content/compressions/hashed_linear.md"
+    },
+    {
+      "id": "hashed_net_compressor.md",
+      "title": "HashedNet Compressor: Weight Sharing via Hash Tables",
+      "path": "content/compressions/hashed_net_compressor.md"
+    },
+    {
+      "id": "huffman_coder.md",
+      "title": "Huffman Coder: Frequency-Optimal Prefix Entropy Coding Engine",
+      "path": "content/compressions/huffman_coder.md"
+    },
+    {
+      "id": "hybrid_svd_layer.md",
+      "title": "Hybrid SVD Layer: Single\u2011Head SVD Approximation with Positional Encoding for Attention\u2011Free Encoding",
+      "path": "content/compressions/hybrid_svd_layer.md"
+    },
+    {
+      "id": "hybridkv_compressor.md",
+      "title": "HybridKV Compressor: Dual Static-Dynamic Head-Specific Hierarchical KV Cache Compression",
+      "path": "content/compressions/hybridkv_compressor.md"
+    },
+    {
+      "id": "kmeans_quantize.md",
+      "title": "KMeans-based Weight Clustering Quantizer with Straight-Through Estimator (STE)",
+      "path": "content/compressions/kmeans_quantize.md"
+    },
+    {
+      "id": "kronecker_compressor.md",
+      "title": "KroneckerCompressor: Automated Kronecker Subspace Decomposer for Deep Neural Networks",
+      "path": "content/compressions/kronecker_compressor.md"
+    },
+    {
+      "id": "kronecker_linear.md",
+      "title": "KroneckerLinear: Kronecker Product Factorized Linear Operator",
+      "path": "content/compressions/kronecker_linear.md"
+    },
+    {
+      "id": "kronecker_tt_lora.md",
+      "title": "Kronecker-TT-LoRA: Hybrid Compression Engine for Parameter-Efficient Fine-Tuning",
+      "path": "content/compressions/kronecker_tt_lora.md"
+    },
+    {
+      "id": "kvtc_compressor.md",
+      "title": "KVTC Compressor: Key-Value Transform Coding via PCA Decorrelation and Adaptive Quantization",
+      "path": "content/compressions/kvtc_compressor.md"
+    },
+    {
+      "id": "liftr.md",
+      "title": "LIFTR: Low-Rank In-Flight Truncated Reconstruction Compressor",
+      "path": "content/compressions/liftr.md"
+    },
+    {
+      "id": "lillama_compressor.md",
+      "title": "LiLLaMA: Local Distillation via Activation Cross-Covariance Singular Value Decomposition",
+      "path": "content/compressions/lillama_compressor.md"
+    },
+    {
+      "id": "lsc_compressor.md",
+      "title": "LSC Compressor: Low-Rank Spectral Fourier Compression Engine",
+      "path": "content/compressions/lsc_compressor.md"
+    },
+    {
+      "id": "mamba_shedder.md",
+      "title": "Mamba-Shedder: Fisher-Sensitivity-Guided Structured Column Shedding Engine",
+      "path": "content/compressions/mamba_shedder.md"
+    },
+    {
+      "id": "mgie_svd_compressor.md",
+      "title": "MGIESVDBudgetCompressor: Information Entropy SVD Rank Allocation under Global Budget Constraints",
+      "path": "content/compressions/mgie_svd_compressor.md"
+    },
+    {
+      "id": "mlorq_compressor.md",
+      "title": "MLoRQ Compressor: Multi-Layer Optimal Rank SVD and Joint Low-Bit Quantization Engine",
+      "path": "content/compressions/mlorq_compressor.md"
+    },
+    {
+      "id": "modegpt_compressor.md",
+      "title": "MoDeGPT: Modular Decomposition of Transformer Blocks",
+      "path": "content/compressions/modegpt_compressor.md"
+    },
+    {
+      "id": "nli_softmax.md",
+      "title": "NLI Softmax Approximation",
+      "path": "content/compressions/nli_softmax.md"
+    },
+    {
+      "id": "nmf_compressor.md",
+      "title": "NMFCompressor: Non-Negative Matrix Factorization Compression Engine",
+      "path": "content/compressions/nmf_compressor.md"
+    },
+    {
+      "id": "oats_compressor.md",
+      "title": "OATS: Optimal Activation-Aware Truncated SVD Compressor",
+      "path": "content/compressions/oats_compressor.md"
+    },
+    {
+      "id": "optimal_subspace_projection.md",
+      "title": "Subspace Projection: Activation\u2011Aware Low\u2011Rank Compression via Randomized SVD",
+      "path": "content/compressions/optimal_subspace_projection.md"
+    },
+    {
+      "id": "padre_attention.md",
+      "title": "PADRe \u2013 Polynomial Attention with Dropout Regularization",
+      "path": "content/compressions/padre_attention.md"
+    },
+    {
+      "id": "proxsparse.md",
+      "title": "ProxSparse: Proximal Gradient Sparse SVD Compressor",
+      "path": "content/compressions/proxsparse.md"
+    },
+    {
+      "id": "proxsparse_pruner.md",
+      "title": "ProxSparse Pruner: Proximal Gradient Regularized Semi-Structured Pruning Engine",
+      "path": "content/compressions/proxsparse_pruner.md"
+    },
+    {
+      "id": "pruning_utils.md",
+      "title": "Pruning Utilities: Structured Pruning & Importance Metrics Suite",
+      "path": "content/compressions/pruning_utils.md"
+    },
+    {
+      "id": "replaceme_compressor.md",
+      "title": "ReplaceMe: Structural Layer Replacement Compression",
+      "path": "content/compressions/replaceme_compressor.md"
+    },
+    {
+      "id": "res_svd.md",
+      "title": "ResSVDCompressor: Spectral Residual Low-Rank Adaptation (Spectral Residual LoRA)",
+      "path": "content/compressions/res_svd.md"
+    },
+    {
+      "id": "roast_hashed_linear.md",
+      "title": "ROAST: Hardware\u2011Aware Weight Sharing with Tiling",
+      "path": "content/compressions/roast_hashed_linear.md"
+    },
+    {
+      "id": "rotational_slicegpt_int4.md",
+      "title": "Rotational-SliceGPT-INT4: Hybrid Compression Engine",
+      "path": "content/compressions/rotational_slicegpt_int4.md"
+    },
+    {
+      "id": "rpca_compressor.md",
+      "title": "RPCACompressor: Robust Principal Component Analysis Low-Rank & Sparse Matrix Decomposition Engine",
+      "path": "content/compressions/rpca_compressor.md"
+    },
+    {
+      "id": "saes_svd_compressor.md",
+      "title": "SAESCompressor: Subspace Adaptation & Error Stabilization SVD Engine",
+      "path": "content/compressions/saes_svd_compressor.md"
+    },
+    {
+      "id": "saes_svd_v2.md",
+      "title": "SAESSVDCompressorV2: Spectrum-Aware Error Suppression SVD (SAES-SVD v2)",
+      "path": "content/compressions/saes_svd_v2.md"
+    },
+    {
+      "id": "salr.md",
+      "title": "SALR: Unified Low\u2011Rank and Sparse Pruning",
+      "path": "content/compressions/salr.md"
+    },
+    {
+      "id": "sdrm_compressor.md",
+      "title": "SDRM: Rank Assignment Proportional to Parameter Budget for Edge Inference",
+      "path": "content/compressions/sdrm_compressor.md"
+    },
+    {
+      "id": "slicegpt.md",
+      "title": "SliceGPT: Post-Training Slicing with Orthogonal Transformation & Variance Concentration",
+      "path": "content/compressions/slicegpt.md"
+    },
+    {
+      "id": "slicegpt_pca.md",
+      "title": "SliceGPT PCA Compressor: Principal Component Subspace Projection & Variance Slicing",
+      "path": "content/compressions/slicegpt_pca.md"
+    },
+    {
+      "id": "slim_compressor.md",
+      "title": "SLiM: One\u2011Shot Quantization, 2:4 Structured Sparsity, and Low\u2011Rank Correction",
+      "path": "content/compressions/slim_compressor.md"
+    },
+    {
+      "id": "soka_compressor.md",
+      "title": "SoKA (Kronecker Product) Compressor \u2013 Low\u2011Rank SVD Placeholder",
+      "path": "content/compressions/soka_compressor.md"
+    },
+    {
+      "id": "sparsegpt.md",
+      "title": "SparseGPT: One-Shot Second-Order Hessian-Guided Weight Pruning for Large Language Models",
+      "path": "content/compressions/sparsegpt.md"
+    },
+    {
+      "id": "spectraformer_attention.md",
+      "title": "Spectraformer: Random Feature Linearisation with Flexible Kernel Approximation",
+      "path": "content/compressions/spectraformer_attention.md"
+    },
+    {
+      "id": "subspace_projection.md",
+      "title": "Subspace Projection Compression Engine",
+      "path": "content/compressions/subspace_projection.md"
+    },
+    {
+      "id": "svd_linear.md",
+      "title": "SVDLinearLayer: Low-Rank Factorized Linear Layer Replacement",
+      "path": "content/compressions/svd_linear.md"
+    },
+    {
+      "id": "swift_svd.md",
+      "title": "Swift\u2011SVD: Closed\u2011Form SVD Compression with Rank Ratio",
+      "path": "content/compressions/swift_svd.md"
+    },
+    {
+      "id": "swift_svd_act.md",
+      "title": "SwiftSVDActivationCompressor: Activation-Aware SVD via Cross-Covariance Projection",
+      "path": "content/compressions/swift_svd_act.md"
+    },
+    {
+      "id": "tlinformer_attention.md",
+      "title": "TLinFormer Attention: Sequence-Dimension Projected Linear Attention",
+      "path": "content/compressions/tlinformer_attention.md"
+    },
+    {
+      "id": "tomoe_compressor.md",
+      "title": "ToMoE: Converting Dense MLP into Mixture of Experts via Dynamic Structural Pruning",
+      "path": "content/compressions/tomoe_compressor.md"
+    },
+    {
+      "id": "tt_compressor.md",
+      "title": "TTCompressor: Global Tensor-Train Factorization Framework Engine",
+      "path": "content/compressions/tt_compressor.md"
+    },
+    {
+      "id": "tt_linear.md",
+      "title": "TTLinearLayer: Tensor-Train Core Decomposition Matrix Layer Engine",
+      "path": "content/compressions/tt_linear.md"
+    },
+    {
+      "id": "uniql_compressor.md",
+      "title": "UniQL: Joint Low\u2011Rank + Quantisation via SVD and Uniform Quantisation",
+      "path": "content/compressions/uniql_compressor.md"
+    },
+    {
+      "id": "zerokv_neo_compressor.md",
+      "title": "ZeroKV-Neo: L2-Norm KV Cache Eviction with Attention Sink & Heavy-Hitter Preservation",
+      "path": "content/compressions/zerokv_neo_compressor.md"
+    }
+  ],
+  "attentions_blog": [
+    {
+      "id": "README.md",
+      "title": "Attention Mechanisms Deep-Dive Blog Series",
+      "path": "content/attentions_blog/README.md"
+    }
+  ],
+  "compressions_blog": [
+    {
+      "id": "README.md",
+      "title": "Compression Engines Deep-Dive Blog Series",
+      "path": "content/compressions_blog/README.md"
+    }
+  ],
+  "blog_series": [
+    {
+      "id": "01_spectral_svd_lowrank_attentions.md",
+      "title": "\ud83c\udf1f Part 1: Spectral, SVD, Low-Rank & Factorized Attention Architectures",
+      "path": "blog/01_spectral_svd_lowrank_attentions.md"
+    },
+    {
+      "id": "02_linear_kernel_recurrent_ssm_attentions.md",
+      "title": "\u26a1 Part 2: Linear, Kernelized, Recurrent & State Space (SSM) Attentions",
+      "path": "blog/02_linear_kernel_recurrent_ssm_attentions.md"
+    },
+    {
+      "id": "03_sparse_multiscale_latent_paged_attentions.md",
+      "title": "\u26a1 Part 3: Sparse, Multi-Scale, Latent & Paged Attention Architectures",
+      "path": "blog/03_sparse_multiscale_latent_paged_attentions.md"
+    },
+    {
+      "id": "04_svd_lowrank_structural_compressions.md",
+      "title": "\ud83c\udf1f Part 4: SVD, Low-Rank & Structural Compression Engines",
+      "path": "blog/04_svd_lowrank_structural_compressions.md"
+    },
+    {
+      "id": "05_quantization_pruning_distillation_compressions.md",
+      "title": "\u26a1 Part 5: Quantization, Pruning, Distillation & Cache Engines",
+      "path": "blog/05_quantization_pruning_distillation_compressions.md"
+    },
+    {
+      "id": "README.md",
+      "title": "\ud83d\ude80 NeuralOps Masterclass Blog Series Compendium",
+      "path": "blog/README.md"
+    }
+  ],
+  "framework": [
+    {
+      "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
+      "title": "\ud83d\udcca SVD Linear Attention & Compression Framework: Master Empirical Benchmark Report",
+      "path": "content/framework/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
+    },
+    {
+      "id": "NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md",
+      "title": "Next-Generation Architectural Synthesis & Innovation Master Compendium",
+      "path": "content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md"
+    },
+    {
+      "id": "README.md",
+      "title": "\ud83d\ude80 SVD Linear Attention Framework Core Architecture",
+      "path": "content/framework/README.md"
+    }
+  ]
 }
