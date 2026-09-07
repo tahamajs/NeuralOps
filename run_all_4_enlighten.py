@@ -363,7 +363,12 @@ for m in models:
     print(f"[Quality Gate: PASSED] {name} passed criteria (status={status}, acc={acc:.2f}% >= 56.0%). Packaging for export...", flush=True)
 
     hf_export_dir.mkdir(parents=True, exist_ok=True)
-    weights_candidates = list(weights_dir.glob("**/weights.pt")) + list(weights_dir.glob("weights.pt"))
+    checkpoints_dir = out_dir / "checkpoints"
+    weights_candidates = (
+        list(checkpoints_dir.glob("**/weights.pt"))
+        + list(weights_dir.glob("**/weights.pt"))
+        + list(out_dir.glob("**/weights.pt"))
+    )
     if weights_candidates:
         src_weights = weights_candidates[0]
         dst_weights = hf_export_dir / "weights.pt"
