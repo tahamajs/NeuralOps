@@ -209,6 +209,7 @@ compressed_model = a3_compressor_factory(
 | Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **roberta-base** | sst2 | `PASS` | 88.76% | **85.67%** | -3.09% | 0.8731 | 0.83x | 0 | N/A | 2026-09-07 |
+| **gpt2** | sst2 | `PASS` | 81.31% | **75.34%** | -5.97% | 0.7898 | 0.84x | 0 | N/A | 2026-09-07 |
 
 
 The hardened A3 compressor implementation was evaluated natively on a dedicated remote GPU server under full hardware acceleration:
