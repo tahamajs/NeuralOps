@@ -72,7 +72,7 @@ class AegisConfigV3:
     num_key_value_heads: Optional[int] = None
     head_dim: Optional[int] = None
     window_size: int = 64
-    svd_rank: int = 128
+    svd_rank: int = 384
     low_rank_update: int = 16
     kernel_feature_dim: int = 128
     dropout: float = 0.1
@@ -98,7 +98,7 @@ class AegisConfigV3:
         if self.head_dim is None and self.hidden_size is not None and self.num_heads is not None:
             self.head_dim = self.hidden_size // max(1, self.num_heads)
         self.window_size = kwargs.get("window_size", 64)
-        self.svd_rank = kwargs.get("svd_rank", min(128, self.hidden_size if self.hidden_size is not None else 128))
+        self.svd_rank = kwargs.get("svd_rank", min(384, self.hidden_size if self.hidden_size is not None else 384))
         self.low_rank_update = kwargs.get("low_rank_update", 16)
         self.kernel_feature_dim = kwargs.get("kernel_feature_dim", 128)
         self.dropout = kwargs.get("dropout", 0.1)
@@ -779,14 +779,14 @@ def inject_aegis_v6(
         num_key_value_heads=n_kv_heads,
         head_dim=h_dim,
         window_size=getattr(comp_config, "window_size", 64),
-        svd_rank=getattr(comp_config, "svd_rank", 128),
+        svd_rank=getattr(comp_config, "svd_rank", 384),
         low_rank_update=getattr(comp_config, "low_rank_update", 16),
         kernel_feature_dim=getattr(comp_config, "kernel_feature_dim", 128),
         dropout=getattr(comp_config, "dropout", 0.1),
         fusion_gate_bias=getattr(comp_config, "fusion_gate_bias", 1.8),
     )
     new_attn = AegisAttentionV3(config=cfg)
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)
@@ -800,6 +800,8 @@ def inject_aegis_v6(
         layer.attention = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
+    elif hasattr(layer, "attn"):
+        layer.attn = new_attn
     return new_attn
 
 
