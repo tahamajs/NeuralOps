@@ -218,6 +218,7 @@ class GraniteHybridBlock(BaseAttention):
         ratio: int = 2,
         pretrained_attn: Optional[nn.Module] = None,
         old_attn: Optional[nn.Module] = None,
+        comp_config: Optional[Any] = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         **kwargs: Any,
@@ -225,14 +226,16 @@ class GraniteHybridBlock(BaseAttention):
         super().__init__(config, rank)
         src_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
+        def _get(k: str, default: Any = None) -> Any:
+            for obj in (config, comp_config, getattr(config, "compression_config", None)):
+                if obj is not None and hasattr(obj, k):
+                    val = getattr(obj, k)
+                    if val is not None:
+                        return val
+            return kwargs.get(k, default)
+
         if dim is None:
-            if config is not None:
-                dim = (
-                    _cfg_get(config, "hidden_size", None)
-                    or _cfg_get(config, "d_model", None)
-                    or _cfg_get(config, "n_embd", None)
-                    or _cfg_get(config, "dim", None)
-                )
+            dim = _get("hidden_size", _get("d_model", _get("n_embd", _get("dim", None))))
         if dim is None and src_attn is not None:
             dim = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", None))
             if dim is None:
@@ -244,42 +247,59 @@ class GraniteHybridBlock(BaseAttention):
         dim = dim or kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
         if num_heads is None:
-            if config is not None:
-                num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", None))
+            num_heads = _get("num_attention_heads", _get("num_heads", None))
         if num_heads is None and src_attn is not None:
             num_heads = getattr(src_attn, "num_heads", getattr(src_attn, "num_attention_heads", None))
         num_heads = num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8))
 
         self.dim: int = int(dim)
         self.num_heads: int = int(num_heads)
-        self.head_dim: int = self.dim // max(1, self.num_heads)
+
+        resolved_head_dim = _get("head_dim", None)
+        if resolved_head_dim is None and src_attn is not None:
+            resolved_head_dim = getattr(src_attn, "head_dim", None)
+        if resolved_head_dim is None:
+            resolved_head_dim = self.dim // max(1, self.num_heads)
+        self.head_dim: int = int(resolved_head_dim)
+
+        kv_heads = _get("num_key_value_heads", None)
+        if kv_heads is None and src_attn is not None:
+            kv_heads = getattr(src_attn, "num_key_value_heads", getattr(src_attn, "num_kv_heads", getattr(src_attn, "n_kv_heads", None)))
+            if kv_heads is None and hasattr(src_attn, "k_proj") and hasattr(src_attn.k_proj, "out_features") and self.head_dim > 0:
+                kv_heads = src_attn.k_proj.out_features // self.head_dim
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         # Decoder detection
-        model_type = str(_cfg_get(config, "model_type", "")).lower()
-        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+        model_type = str(_get("model_type", "")).lower()
+        is_dec = _get("is_decoder", _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
         if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
 
         # LoRA setup
-        comp_config = getattr(config, "compression_config", None)
-        self.lora_rank: int = int(_cfg_get(comp_config, "lora_rank", _cfg_get(config, "lora_rank", kwargs.get("lora_rank", lora_rank))))
-        self.lora_alpha: float = float(_cfg_get(comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha))))
+        self.lora_rank: int = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
+        self.lora_alpha: float = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base: bool = (self.lora_rank > 0)
 
         self.mamba: Mamba2 = Mamba2(d_model=self.dim)
 
-        self.q_proj = LoRALinear(self.dim, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.dim, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.dim, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.dim, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.k_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.v_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        num_exp = int(_cfg_get(comp_config, "num_experts", kwargs.get("num_experts", num_experts)))
-        tk = int(_cfg_get(comp_config, "top_k", kwargs.get("top_k", top_k)))
-        rat = int(_cfg_get(comp_config, "ratio", kwargs.get("ratio", ratio)))
+        num_exp = int(_get("num_experts", kwargs.get("num_experts", num_experts)))
+        tk = int(_get("top_k", kwargs.get("top_k", top_k)))
+        rat = int(_get("ratio", kwargs.get("ratio", ratio)))
         self.moe: MixtureOfExperts = MixtureOfExperts(self.dim, self.dim * 4, num_exp, tk)
         self.ratio: int = rat
         self.register_buffer("counter", torch.tensor(0, dtype=torch.long))
+
+        self.rotary_emb = getattr(src_attn, "rotary_emb", None) if src_attn is not None else None
+        self.comp_config = comp_config
 
         if src_attn is not None:
             self.copy_weights(src_attn)
@@ -379,15 +399,46 @@ class GraniteHybridBlock(BaseAttention):
         k_in: torch.Tensor,
         v_in: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, L_q, _ = q_in.shape
         L_k = k_in.shape[1]
         H = self.num_heads
+        H_kv = self.num_kv_heads
         Dh = self.head_dim
 
         q = self.q_proj(q_in).view(B, L_q, H, Dh).transpose(1, 2)
-        k = self.k_proj(k_in).view(B, L_k, H, Dh).transpose(1, 2)
-        v = self.v_proj(v_in).view(B, L_k, H, Dh).transpose(1, 2)
+        k = self.k_proj(k_in).view(B, L_k, H_kv, Dh).transpose(1, 2)
+        v = self.v_proj(v_in).view(B, L_k, H_kv, Dh).transpose(1, 2)
+
+        # RoPE application
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        pos_ids = kwargs.get("position_ids", None)
+        if pos_emb is not None:
+            if isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+                cos, sin = pos_emb[0], pos_emb[1]
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, pos_ids)
+        elif self.rotary_emb is not None:
+            rotary_mod = self.rotary_emb
+            if pos_ids is None:
+                pos_ids = torch.arange(L_q, device=q_in.device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = rotary_mod(q, seq_len=L_k)
+            except Exception:
+                try:
+                    cos, sin = rotary_mod(q, pos_ids)
+                except Exception:
+                    try:
+                        cos, sin = rotary_mod(q)
+                    except Exception:
+                        cos, sin = None, None
+            if cos is not None and sin is not None:
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(Dh)
         scores = torch.matmul(q, k.transpose(-2, -1)) * scale
@@ -400,13 +451,15 @@ class GraniteHybridBlock(BaseAttention):
             if attention_mask.dim() == 2:
                 pad_mask = (attention_mask == 0).view(B, 1, 1, L_k)
                 scores = scores.masked_fill(pad_mask, -10000.0)
+            elif attention_mask.dim() == 3:
+                scores = scores + attention_mask.unsqueeze(1)
             elif attention_mask.dim() == 4:
                 scores = scores + attention_mask
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
         context = torch.matmul(attn_weights, v)
-        context = context.transpose(1, 2).contiguous().view(B, L_q, self.dim)
+        context = context.transpose(1, 2).contiguous().view(B, L_q, self.all_head_size)
         out = self.out_proj(context)
         return out, attn_weights
 
@@ -421,6 +474,7 @@ class GraniteHybridBlock(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
@@ -437,7 +491,12 @@ class GraniteHybridBlock(BaseAttention):
             x = self.mamba(hidden_states)
         else:
             x, attn_weights = self._attn_forward(
-                hidden_states, hidden_states, hidden_states, attention_mask=attention_mask
+                hidden_states,
+                hidden_states,
+                hidden_states,
+                attention_mask=attention_mask,
+                position_embeddings=position_embeddings,
+                **kwargs,
             )
 
         x = x + self.moe(x)
