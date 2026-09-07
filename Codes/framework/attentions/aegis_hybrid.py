@@ -574,6 +574,19 @@ class AegisHybridAttention(BaseAttention):
                 f"Could not extract all required weights for AegisHybridAttention from {cls_name}. Missing: {missing}"
             )
 
+        # Strict Frobenius norm verification (>= 1e-4)
+        for p in ["q", "k", "v"]:
+            w_check = extracted_weights[p][0]
+            if w_check is not None:
+                norm = float(torch.norm(w_check.float()).item())
+                if norm < 1e-4:
+                    raise RuntimeError(f"AegisHybridAttention extracted weight for '{p}' has near-zero Frobenius norm ({norm:.2e})")
+
+        if extracted_weights["o"][0] is not None:
+            norm_o = float(torch.norm(extracted_weights["o"][0].float()).item())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"AegisHybridAttention extracted weight for 'o' has near-zero Frobenius norm ({norm_o:.2e})")
+
         # SVD initialization for Q, K, V
         for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj)]:
             w, b = extracted_weights[proj]
