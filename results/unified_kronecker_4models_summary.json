@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "Kronecker Acc": "88.65%",
+    "Delta Acc": "-0.11%",
+    "F1": "0.8946",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "321.1 MB",
+    "Time (s)": "83.6"
+  }
+]
