@@ -493,5 +493,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T23:33:18.921464"
+  },
+  {
+    "module": "flat_llm",
+    "runner": "run_all_4_flat_llm.py",
+    "exit_code": 0,
+    "elapsed_s": 514.03,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T23:41:52.956858"
   }
 ]

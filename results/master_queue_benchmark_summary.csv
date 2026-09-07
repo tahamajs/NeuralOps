@@ -54,3 +54,4 @@ fasa,run_all_4_fasa.py,0,113.29,PASS,,2026-09-07T23:25:06.335597
 flap,run_all_4_flap.py,0,272.94,PASS,,2026-09-07T23:29:39.280643
 flash3,run_all_4_flash3.py,0,114.34,PASS,,2026-09-07T23:31:33.622763
 flash3_fp8,run_all_4_flash3_fp8.py,0,105.29,PASS,,2026-09-07T23:33:18.921464
+flat_llm,run_all_4_flat_llm.py,0,514.03,PASS,,2026-09-07T23:41:52.956858
