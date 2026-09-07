@@ -67,3 +67,59 @@ def test_nested_encoder_bypass():
     enc = torch.randn(2, 8, 64)
     out, _ = block(x, encoder_hidden_states=enc)
     assert torch.equal(out, x)
+
+
+def test_griffin_ssd_comp_config_and_gqa():
+    class DummyOldAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.head_dim = 16
+            self.k_proj = nn.Linear(64, 32)  # 32 // 16 = 2 kv heads
+            self.q_proj = nn.Linear(64, 64)
+            self.v_proj = nn.Linear(64, 32)
+            self.out_proj = nn.Linear(64, 64)
+
+    old = DummyOldAttn()
+    comp_config = {"lora_rank": 4, "window_size": 32}
+    block = GriffinSSDBlock(d_model=64, num_heads=4, old_attn=old, comp_config=comp_config)
+    assert block.num_heads == 4
+    assert block.num_kv_heads == 2
+    assert block.head_dim == 16
+    assert block.lora_rank == 4
+    assert block.window_size == 32
+
+    x = torch.randn(2, 8, 64)
+    out, _ = block(x)
+    assert out.shape == (2, 8, 64)
+
+
+def test_griffin_ssd_rotary_emb_probing():
+    class MockRotaryEmb(nn.Module):
+        def __init__(self, dim):
+            super().__init__()
+            self.dim = dim
+
+        def forward(self, q, seq_len=None):
+            if seq_len is None:
+                seq_len = q.shape[-2]
+            cos = torch.ones(seq_len, self.dim)
+            sin = torch.zeros(seq_len, self.dim)
+            return cos, sin
+
+    class DummyAttnWithRoPE(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.rotary_emb = MockRotaryEmb(16)
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 64)
+            self.v_proj = nn.Linear(64, 64)
+            self.out_proj = nn.Linear(64, 64)
+
+    old = DummyAttnWithRoPE()
+    block = GriffinSSDBlock(d_model=64, num_heads=4, old_attn=old)
+    assert block.rotary_emb is not None
+
+    x = torch.randn(2, 8, 64)
+    out, _ = block(x)
+    assert out.shape == (2, 8, 64)
+

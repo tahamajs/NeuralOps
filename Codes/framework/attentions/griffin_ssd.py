@@ -120,11 +120,14 @@ class GriffinSSDBlock(BaseAttention):
         super().__init__(config, rank)
 
         def _get(k: str, default: Any = None) -> Any:
-            for obj in (config, comp_config, getattr(config, "compression_config", None)):
-                if obj is not None and hasattr(obj, k):
-                    val = getattr(obj, k)
-                    if val is not None:
-                        return val
+            for obj in (comp_config, config, getattr(config, "compression_config", None)):
+                if obj is not None:
+                    if isinstance(obj, dict) and k in obj and obj[k] is not None:
+                        return obj[k]
+                    elif hasattr(obj, k):
+                        val = getattr(obj, k)
+                        if val is not None:
+                            return val
             return kwargs.get(k, default)
 
         # Resolve d_model
@@ -177,7 +180,7 @@ class GriffinSSDBlock(BaseAttention):
 
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.window_size: int = window_size
+        self.window_size: int = int(_get("window_size", kwargs.get("window_size", window_size)))
 
         # Decoder / causal detection
         model_type = str(_get("model_type", "")).lower()
