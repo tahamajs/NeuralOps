@@ -182,3 +182,68 @@ def test_cluster_injection_all_4_architectures():
     res_q = inject_cluster(model=q_model, lora_rank=8)
     assert res_q is not None
     assert isinstance(q_model.model.layers[0].self_attn, ClusterAttention)
+
+
+def test_cluster_config_none_no_attr_error():
+    """config=None must not raise AttributeError when checking is_decoder in forward."""
+    p = ClusterAttention(config=None, d_model=64, num_heads=4, lora_rank=0)
+    x = torch.randn(2, 8, 64)
+    out, _ = p(x)
+    assert out.shape == (2, 8, 64)
+    assert torch.isfinite(out).all()
+
+
+def test_cluster_rope_uses_query_not_key():
+    """RoPE fallback must call rotary_emb with Q (queries), not K."""
+    calls = []
+
+    class TrackingRotary(nn.Module):
+        def forward(self, x, seq_len=None):
+            calls.append(x.shape)
+            B, H, N, d = x.shape
+            cos = torch.ones(B, H, N, d)
+            sin = torch.zeros(B, H, N, d)
+            return cos, sin
+
+    class MockAttnWithRotary(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 64)
+            self.v_proj = nn.Linear(64, 64)
+            self.out_proj = nn.Linear(64, 64)
+            self.rotary_emb = TrackingRotary()
+            self.hidden_size = 64
+            self.num_heads = 4
+
+    old = MockAttnWithRotary()
+    p = ClusterAttention(d_model=64, num_heads=4, pretrained_attn=old, lora_rank=0)
+    x = torch.randn(2, 8, 64)
+    p(x, position_embeddings=None)
+    # rotary_emb must have been called with Q: shape [2, 4, 8, 16] (seq_len=8, head_dim=16)
+    assert len(calls) >= 1, "rotary_emb was never called"
+    rotary_L = calls[0][2]   # sequence length dimension of the input passed to rotary_emb
+    assert rotary_L == 8, f"rotary_emb called with seq_len={rotary_L}, expected 8 (Q length, not K length)"
+
+
+def test_cluster_num_kv_heads_from_source_attn():
+    """num_kv_heads should be picked up from source_attn when config=None."""
+    class GQAAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 32)   # 2 kv_heads * 16
+            self.v_proj = nn.Linear(64, 32)
+            self.out_proj = nn.Linear(64, 64)
+            self.hidden_size = 64
+            self.num_heads = 4
+            self.num_key_value_heads = 2
+
+    old = GQAAttn()
+    p = ClusterAttention(
+        config=None, d_model=64, num_heads=4,
+        pretrained_attn=old, lora_rank=0,
+    )
+    assert p.num_kv_heads == 2, f"Expected num_kv_heads=2, got {p.num_kv_heads}"
+    assert p.kv_repeat == 2
+
