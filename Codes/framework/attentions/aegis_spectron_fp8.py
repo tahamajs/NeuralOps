@@ -911,7 +911,7 @@ def inject_aegis_spectron_fp8(
         num_key_value_heads=n_kv_heads,
         head_dim=h_dim,
         window_size=getattr(comp_config, "window_size", getattr(comp_config, "local_window", 64)) if comp_config else 64,
-        svd_rank=getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 128)) if comp_config else 128,
+        svd_rank=getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 384)) if comp_config else 384,
         lora_rank=getattr(comp_config, "lora_rank", getattr(comp_config, "lora_r", 32)) if comp_config else 32,
         dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
         is_decoder=is_dec,
@@ -931,4 +931,10 @@ def inject_aegis_spectron_fp8(
 
     if hasattr(layer, "attention"):
         layer.attention = new_attn
+    elif hasattr(layer, "self_attn"):
+        layer.self_attn = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
+    elif hasattr(layer, "attn"):
+        layer.attn = new_attn
     return new_attn
