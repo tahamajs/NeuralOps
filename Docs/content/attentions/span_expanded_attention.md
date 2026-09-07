@@ -71,16 +71,15 @@ Y = O_{\text{fused}} W_O + b_O \in \mathbb{R}^{B \times L \times D}
 
 ## Architecture & Data Flow
 
+The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
 ```
-Input Sequence X [B, L, D]
+Input Activation X [B, N, D]
    │
-   ├── Projections: Q = q_proj(X), K = k_proj(X), V = v_proj(X)
-   │     ├── Rotary Position Embeddings (RoPE) / Positional Bias
-   │     └── Head Partitioning & GQA Group Expansion
-   ├── Linearized / Compressed Attention Kernel:
-   │     ├── Low-Rank Subspace Decomposition / Sparse Window Filtering
-   │     └── Associative Linear Accumulation: Out_attn = Kernel(Q, K, V)
-   └── Output Linear Synthesis: Y = out_proj(Out_attn) [B, L, D]
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
 ```
 
 ### Step-by-Step Tensor Shape Trace
