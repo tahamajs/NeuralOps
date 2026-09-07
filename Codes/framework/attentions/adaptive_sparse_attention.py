@@ -145,8 +145,9 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("adaptive_sparse_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("adaptive_sparse", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_sparse_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_sparse_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class AdaptiveSparseAttention(BaseAttention):
     supports_causal = True
     supports_bidirectional = True
@@ -632,6 +633,7 @@ class AdaptiveSparseAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("adaptive_sparse_attention_inject")
 @ATTENTION_REGISTRY.register("adaptive_sparse_inject")
+@ATTENTION_REGISTRY.register("adaptive_sparse_attn_inject")
 def inject_adaptive_sparse(
     layer: Any = None,
     model: Any = None,
