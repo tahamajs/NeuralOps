@@ -520,5 +520,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T00:15:52.976654"
+  },
+  {
+    "module": "full",
+    "runner": "run_all_4_full.py",
+    "exit_code": 0,
+    "elapsed_s": 90.61,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T00:17:23.594299"
+  },
+  {
+    "module": "fused_svd_kernel",
+    "runner": "run_all_4_fused_svd_kernel.py",
+    "exit_code": 0,
+    "elapsed_s": 269.1,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T00:21:52.697848"
   }
 ]

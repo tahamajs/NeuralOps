@@ -57,3 +57,5 @@ flash3_fp8,run_all_4_flash3_fp8.py,0,105.29,PASS,,2026-09-07T23:33:18.921464
 flat_llm,run_all_4_flat_llm.py,0,514.03,PASS,,2026-09-07T23:41:52.956858
 fms,run_all_4_fms.py,0,1548.5,PASS,,2026-09-08T00:07:41.467744
 frandi,run_all_4_frandi.py,0,491.5,PASS,,2026-09-08T00:15:52.976654
+full,run_all_4_full.py,0,90.61,PASS,,2026-09-08T00:17:23.594299
+fused_svd_kernel,run_all_4_fused_svd_kernel.py,0,269.1,PASS,,2026-09-08T00:21:52.697848
