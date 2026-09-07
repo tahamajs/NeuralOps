@@ -1,0 +1,5 @@
+model,slug,baseline_acc,acc,delta_acc,f1,status,passed_gate,original_layers,kept_layers,shed_layers,layer_reduction_ratio,flops_reduction,bridges_inserted,latency_p95_ms,vram_peak_mb,out_dir,hf_repo
+distilbert,distilbert,0.9048,0.0,-0.9048,0.9077,FAIL,False,12,9,3,0.25,25.0%,0,0.0,389.51,results\unified_come\distilbert,N/A (Failed Gate)
+roberta,roberta,0.8876000000000001,0.0,-0.8876000000000001,0.8942,FAIL,False,12,9,3,0.25,25.0%,0,0.0,299.92,results\unified_come\roberta,N/A (Failed Gate)
+gpt2,gpt2,0.8131,0.0,-0.8131,0.8372,FAIL,False,12,9,3,0.25,25.0%,0,0.0,391.24,results\unified_come\gpt2,N/A (Failed Gate)
+qwen3_5,qwen3_5,0.6755,0.0,-0.6755,0.5501,FAIL,False,12,9,3,0.25,25.0%,0,0.0,1809.78,results\unified_come\qwen3_5,N/A (Failed Gate)
