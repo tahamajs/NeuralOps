@@ -449,10 +449,20 @@ class BlockTransformerHIBA(BaseAttention):
             return torch.ones(B, L, device=device, dtype=torch.bool)
         if attention_mask.dim() == 2:
             return attention_mask.bool() if attention_mask.dtype == torch.bool else attention_mask > 0
-        elif attention_mask.dim() in (3, 4):
-            # Extract sequence padding from 3D/4D masks
-            m = attention_mask[:, 0, 0, :] if attention_mask.dim() == 4 else attention_mask[:, 0, :]
-            return m > -1000.0 if m.min() < -100.0 else m > 0
+        elif attention_mask.dim() == 3:
+            if attention_mask.shape[1] == 1:
+                m = attention_mask[:, 0, :]
+                return m > -1000.0 if (m.dtype != torch.bool and m.min() < -100.0) else (m if m.dtype == torch.bool else m > 0)
+            else:
+                m = attention_mask > -1000.0 if (attention_mask.dtype != torch.bool and attention_mask.min() < -100.0) else (attention_mask if attention_mask.dtype == torch.bool else attention_mask > 0)
+                return m.any(dim=1)
+        elif attention_mask.dim() == 4:
+            m = attention_mask > -1000.0 if (attention_mask.dtype != torch.bool and attention_mask.min() < -100.0) else (attention_mask if attention_mask.dtype == torch.bool else attention_mask > 0)
+            if m.shape[1] == 1:
+                m = m.squeeze(1)
+            else:
+                m = m.any(dim=1)
+            return m.any(dim=-2)
         return torch.ones(B, L, device=device, dtype=torch.bool)
 
     def _intra_block_attention(
@@ -470,13 +480,13 @@ class BlockTransformerHIBA(BaseAttention):
 
         if causal:
             causal_mask = torch.triu(
-                torch.full((L_b, L_b), float("-inf"), device=q.device, dtype=torch.float32),
+                torch.full((L_b, L_b), -10000.0, device=q.device, dtype=torch.float32),
                 diagonal=1,
             )
             attn = attn + causal_mask.unsqueeze(0).unsqueeze(1)
 
         pad_mask = key_padding_mask.unsqueeze(1).unsqueeze(2)
-        attn = attn.masked_fill(pad_mask, float("-inf"))
+        attn = attn.masked_fill(pad_mask, -10000.0)
 
         probs = F.softmax(attn, dim=-1)
         probs = torch.nan_to_num(probs, nan=0.0, posinf=1.0, neginf=0.0)
