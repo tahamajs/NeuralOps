@@ -548,6 +548,8 @@ def inject_granite_hybrid(
 > 3. **Lyapunov Stability**:
 >    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
 
+**Registered Aliases**: , 
+
 ## Configuration & Hyperparameters
 
 The `GraniteHybridBlock` module (registered under `granite_hybrid`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
