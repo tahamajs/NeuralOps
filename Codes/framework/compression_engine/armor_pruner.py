@@ -578,7 +578,9 @@ class ARMORPruner(BaseCompressor):
         try:
             self.model.eval()
             with torch.no_grad():
-                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                first_param = next(self.model.parameters(), torch.tensor(0.0))
+                dev = first_param.device
+                p_dtype = first_param.dtype
                 cfg = getattr(self.model, "config", None)
                 hidden_size = getattr(cfg, "hidden_size", None)
                 try:
@@ -588,14 +590,14 @@ class ARMORPruner(BaseCompressor):
                 except Exception:
                     # Secondary: float input matching hidden size or first linear in_features
                     if hidden_size is not None:
-                        dummy_embeds = torch.randn(1, 8, hidden_size, device=dev)
+                        dummy_embeds = torch.randn(1, 8, hidden_size, dtype=p_dtype if p_dtype.is_floating_point else torch.float32, device=dev)
                     else:
                         first_linear = next(
                             (m for m in self.model.modules() if isinstance(m, (nn.Linear, ARMORLinear))),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
-                        dummy_embeds = torch.randn(1, 8, in_dim, device=dev)
+                        dummy_embeds = torch.randn(1, 8, in_dim, dtype=p_dtype if p_dtype.is_floating_point else torch.float32, device=dev)
                     self.model(dummy_embeds)
         except Exception as e:
             logger.warning("ARMOR post-compression forward check warning: %s", e)

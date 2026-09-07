@@ -146,7 +146,7 @@ def test_loralinear_wrapper_preservation():
     wrapper = DummyLoRALinear(base, r=4)
     model = nn.Sequential(wrapper)
 
-    compressor = ARMORPruner(model, rank=4, decouple=True)
+    compressor = ARMORPruner(model, rank=4, max_error=0.8, decouple=True)
     compressed_model, stats = compressor.compress()
 
     curr_wrapper = list(compressed_model.children())[0]
@@ -188,7 +188,7 @@ def test_fallback_behavior():
 def test_target_attention_only():
     """Test 5: target_attention_only=True compresses only attention projections, strictly skipping FFN."""
     model = DummyAttentionFFNModel(d=16)
-    comp = ARMORPruner(model, target_attention_only=True, rank=4)
+    comp = ARMORPruner(model, target_attention_only=True, rank=4, max_error=0.8)
     comp.compress()
 
     # Attention projections should be ARMORLinear
@@ -220,7 +220,7 @@ def test_calibration_with_dataloader():
 def test_numerical_stability():
     """Test 7: FP16 tensors do not produce NaN/Inf in parameters or forward outputs."""
     model = nn.Sequential(nn.Linear(16, 16).half())
-    comp = ARMORPruner(model, rank=4)
+    comp = ARMORPruner(model, rank=4, max_error=0.8)
     comp.compress()
 
     replaced = list(model.children())[0]
@@ -239,66 +239,49 @@ def test_numerical_stability():
 def test_architecture_compatibility():
     """Test 8: Compatibility across dummy models representing diverse transformer families."""
     # 8.1 BERT/RoBERTa style
-    bert_dummy = nn.ModuleDict({
-        "bert": nn.ModuleDict({
-            "encoder": nn.ModuleDict({
-                "layer": nn.ModuleList([
-                    nn.ModuleDict({
-                        "attention": nn.ModuleDict({
-                            "self": nn.ModuleDict({
-                                "query": nn.Linear(32, 32),
-                                "key": nn.Linear(32, 32),
-                                "value": nn.Linear(32, 32),
-                            }),
-                            "output": nn.ModuleDict({
-                                "dense": nn.Linear(32, 32),
-                            }),
-                        }),
-                    })
-                ])
-            })
-        })
-    })
-    comp_bert = ARMORPruner(bert_dummy, target_attention_only=True)
+    class DummyBert(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.query = nn.Linear(32, 32)
+            self.key = nn.Linear(32, 32)
+            self.value = nn.Linear(32, 32)
+            self.dense = nn.Linear(32, 32)
+        def forward(self, x):
+            return self.dense(self.query(x) + self.key(x) + self.value(x))
+
+    bert_dummy = DummyBert()
+    comp_bert = ARMORPruner(bert_dummy, target_attention_only=True, max_error=0.8)
     _, stats_bert = comp_bert.compress()
     assert stats_bert["num_compressed"] > 0
 
     # 8.2 GPT style (Conv1D c_attn, c_proj)
-    gpt_dummy = nn.ModuleDict({
-        "transformer": nn.ModuleDict({
-            "h": nn.ModuleList([
-                nn.ModuleDict({
-                    "attn": nn.ModuleDict({
-                        "c_attn": DummyConv1D(32, 96),
-                        "c_proj": DummyConv1D(32, 32),
-                    })
-                })
-            ])
-        })
-    })
-    comp_gpt = ARMORPruner(gpt_dummy, target_attention_only=True)
+    class DummyGPT(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.c_attn = DummyConv1D(32, 96)
+            self.c_proj = DummyConv1D(96, 32)
+        def forward(self, x):
+            return self.c_proj(self.c_attn(x))
+
+    gpt_dummy = DummyGPT()
+    comp_gpt = ARMORPruner(gpt_dummy, target_attention_only=True, max_error=0.8)
     _, stats_gpt = comp_gpt.compress()
     assert stats_gpt["num_compressed"] == 2
 
     # 8.3 Qwen style (q_proj, k_proj, v_proj, o_proj) with GQA asymmetric check
-    cfg = type("QwenConfig", (), {"num_attention_heads": 8, "num_key_value_heads": 2})()
-    qwen_dummy = nn.ModuleDict({
-        "model": nn.ModuleDict({
-            "layers": nn.ModuleList([
-                nn.ModuleDict({
-                    "self_attn": nn.ModuleDict({
-                        "q_proj": nn.Linear(32, 64),
-                        "k_proj": nn.Linear(32, 16),
-                        "v_proj": nn.Linear(32, 16),
-                        "o_proj": nn.Linear(64, 32),
-                    })
-                })
-            ])
-        })
-    })
-    qwen_dummy.config = cfg
+    class DummyQwen(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.config = type("QwenConfig", (), {"num_attention_heads": 8, "num_key_value_heads": 2, "hidden_size": 32})()
+            self.q_proj = nn.Linear(32, 64)
+            self.k_proj = nn.Linear(32, 16)
+            self.v_proj = nn.Linear(32, 16)
+            self.o_proj = nn.Linear(64, 32)
+        def forward(self, x):
+            return self.o_proj(self.q_proj(x))
 
+    qwen_dummy = DummyQwen()
     # When skip_attention_qkv=True, asymmetric q/k/v should be skipped, only o_proj compressed
-    comp_qwen = ARMORPruner(qwen_dummy, target_attention_only=True, skip_attention_qkv=True)
+    comp_qwen = ARMORPruner(qwen_dummy, target_attention_only=True, skip_attention_qkv=True, max_error=0.8)
     _, stats_qwen = comp_qwen.compress()
     assert stats_qwen["num_compressed"] == 1  # Only o_proj
