@@ -511,5 +511,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T00:07:41.467744"
+  },
+  {
+    "module": "frandi",
+    "runner": "run_all_4_frandi.py",
+    "exit_code": 0,
+    "elapsed_s": 491.5,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T00:15:52.976654"
   }
 ]
