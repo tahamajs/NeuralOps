@@ -264,6 +264,8 @@ class GatedDeltaNet(BaseAttention):
         self.source_attn = source_attn
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config: Optional[Any] = comp_config
+        self.chunk_size: int = int(_cfg_get(comp_config, "chunk_size", kwargs.get("chunk_size", 64)))
+        self.max_seq_len_for_recurrence: int = int(_cfg_get(comp_config, "max_seq_len_for_recurrence", kwargs.get("max_seq_len_for_recurrence", 256)))
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -500,26 +502,31 @@ class GatedDeltaNet(BaseAttention):
             k_f = k_f * m_f.unsqueeze(-1)
             v_f = v_f * m_f.unsqueeze(-1)
 
-        # 1. Forward recurrent scan: S_t = beta_t * S_{t-1} + alpha_t * (v_t - S_{t-1} k_t) k_t^T
+        # Chunked associative recurrence with bounded intra-chunk slicing
+        chunk_size = getattr(self, "chunk_size", 64)
         y_fwd_list = []
         S_fwd = torch.zeros((B, H, d, d), device=q.device, dtype=torch.float32)
 
-        for t in range(L):
-            b_t = beta_f[:, :, t].unsqueeze(-1).unsqueeze(-1)    # [B, H, 1, 1]
-            a_t = alpha_f[:, :, t].unsqueeze(-1).unsqueeze(-1)   # [B, H, 1, 1]
-            k_t = k_f[:, :, t].unsqueeze(-1)                     # [B, H, d, 1]
-            v_t = v_f[:, :, t].unsqueeze(-1)                     # [B, H, d, 1]
-            q_t = q_f[:, :, t].unsqueeze(-1)                     # [B, H, d, 1]
+        for c_start in range(0, L, chunk_size):
+            c_end = min(c_start + chunk_size, L)
+            qc = q_f[:, :, c_start:c_end]
+            kc = k_f[:, :, c_start:c_end]
+            vc = v_f[:, :, c_start:c_end]
+            bc = beta_f[:, :, c_start:c_end]
+            ac = alpha_f[:, :, c_start:c_end]
 
-            # Error correction: e_t = v_t - S_{t-1} @ k_t
-            pred_v = torch.matmul(S_fwd, k_t)
-            e_t = v_t - pred_v
+            for t in range(c_end - c_start):
+                b_t = bc[:, :, t, None, None]
+                a_t = ac[:, :, t, None, None]
+                k_t = kc[:, :, t, :, None]
+                v_t = vc[:, :, t, :, None]
+                q_t = qc[:, :, t, :, None]
 
-            # State update
-            S_fwd = b_t * S_fwd + a_t * torch.matmul(e_t, k_t.transpose(-1, -2))
-            # Readout: y_t = S_t @ q_t
-            y_t = torch.matmul(S_fwd, q_t).squeeze(-1)
-            y_fwd_list.append(y_t)
+                pred_v = torch.matmul(S_fwd, k_t)
+                e_t = v_t - pred_v
+                S_fwd = b_t * S_fwd + a_t * torch.matmul(e_t, k_t.transpose(-1, -2))
+                y_t = torch.matmul(S_fwd, q_t).squeeze(-1)
+                y_fwd_list.append(y_t)
 
         y_fwd = torch.stack(y_fwd_list, dim=2)  # [B, H, L, d]
 
@@ -527,21 +534,37 @@ class GatedDeltaNet(BaseAttention):
         if not self.is_decoder:
             y_bwd_list = []
             S_bwd = torch.zeros((B, H, d, d), device=q.device, dtype=torch.float32)
-            for t in reversed(range(L)):
-                b_t = beta_f[:, :, t].unsqueeze(-1).unsqueeze(-1)
-                a_t = alpha_f[:, :, t].unsqueeze(-1).unsqueeze(-1)
-                k_t = k_f[:, :, t].unsqueeze(-1)
-                v_t = v_f[:, :, t].unsqueeze(-1)
-                q_t = q_f[:, :, t].unsqueeze(-1)
 
-                pred_v = torch.matmul(S_bwd, k_t)
-                e_t = v_t - pred_v
+            # Process chunks in reverse order for anticausal recurrence
+            c_starts = list(range(0, L, chunk_size))
+            c_starts.reverse()
 
-                S_bwd = b_t * S_bwd + a_t * torch.matmul(e_t, k_t.transpose(-1, -2))
-                y_t = torch.matmul(S_bwd, q_t).squeeze(-1)
-                y_bwd_list.append(y_t)
+            for c_start in c_starts:
+                c_end = min(c_start + chunk_size, L)
+                qc = q_f[:, :, c_start:c_end]
+                kc = k_f[:, :, c_start:c_end]
+                vc = v_f[:, :, c_start:c_end]
+                bc = beta_f[:, :, c_start:c_end]
+                ac = alpha_f[:, :, c_start:c_end]
 
-            y_bwd = torch.stack(list(reversed(y_bwd_list)), dim=2)
+                chunk_bwd = []
+                for t in reversed(range(c_end - c_start)):
+                    b_t = bc[:, :, t, None, None]
+                    a_t = ac[:, :, t, None, None]
+                    k_t = kc[:, :, t, :, None]
+                    v_t = vc[:, :, t, :, None]
+                    q_t = qc[:, :, t, :, None]
+
+                    pred_v = torch.matmul(S_bwd, k_t)
+                    e_t = v_t - pred_v
+                    S_bwd = b_t * S_bwd + a_t * torch.matmul(e_t, k_t.transpose(-1, -2))
+                    y_t = torch.matmul(S_bwd, q_t).squeeze(-1)
+                    chunk_bwd.append(y_t)
+
+                chunk_bwd.reverse()
+                y_bwd_list = chunk_bwd + y_bwd_list
+
+            y_bwd = torch.stack(y_bwd_list, dim=2)
             return y_fwd.to(q.dtype), y_bwd.to(q.dtype)
 
         return y_fwd.to(q.dtype), None
