@@ -619,5 +619,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T01:30:05.559221"
+  },
+  {
+    "module": "grecodec",
+    "runner": "run_all_4_grecodec.py",
+    "exit_code": 0,
+    "elapsed_s": 156.36,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:32:41.927717"
+  },
+  {
+    "module": "griffin_ssd",
+    "runner": "run_all_4_griffin_ssd.py",
+    "exit_code": 0,
+    "elapsed_s": 81.51,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:34:03.440730"
+  },
+  {
+    "module": "halo_regla",
+    "runner": "run_all_4_halo_regla.py",
+    "exit_code": 0,
+    "elapsed_s": 129.67,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:36:13.119714"
   }
 ]
