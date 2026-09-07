@@ -406,15 +406,17 @@ class ViGAttention(BaseAttention):
                         src_lA = getattr(sub.lora_A, "weight", sub.lora_A)
                         src_lB = getattr(sub.lora_B, "weight", sub.lora_B)
                         if hasattr(src_lA, "data") and target.lora_A is not None:
-                            r_min = min(target.lora_A.shape[0], src_lA.shape[0])
-                            in_min = min(target.lora_A.shape[1], src_lA.shape[1])
-                            target.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
-                            target.lora_A.requires_grad = True
+                            if src_lA.shape[0] == target.lora_A.shape[0] and src_lA.shape[1] == target.lora_A.shape[1]:
+                                target.lora_A.data.copy_(src_lA.data)
+                                target.lora_A.requires_grad = True
+                            else:
+                                print(f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init.")
                         if hasattr(src_lB, "data") and target.lora_B is not None:
-                            out_min = min(target.lora_B.shape[0], src_lB.shape[0])
-                            r_min = min(target.lora_B.shape[1], src_lB.shape[1])
-                            target.lora_B.data[:out_min, :r_min].copy_(src_lB.data[:out_min, :r_min])
-                            target.lora_B.requires_grad = True
+                            if src_lB.shape[0] == target.lora_B.shape[0] and src_lB.shape[1] == target.lora_B.shape[1]:
+                                target.lora_B.data.copy_(src_lB.data)
+                                target.lora_B.requires_grad = True
+                            else:
+                                print(f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init.")
                         if hasattr(sub, "lora_scaling"):
                             target.lora_scaling = sub.lora_scaling
                         break
@@ -537,12 +539,22 @@ class ViGAttention(BaseAttention):
         )
 
         if is_decoder:
-            attn_r = q_row_lin.transpose(-1, -2) @ k_row_lin
-            tril = torch.tril(torch.ones(H, H, device=q.device, dtype=torch.bool))
-            attn_r = attn_r * tril.unsqueeze(0).unsqueeze(0)
-            denom_r = attn_r.sum(dim=-1, keepdim=True) + 1e-5
-            out_row = (attn_r @ v_row_f.transpose(-1, -2)) / denom_r
-            out_row = out_row.transpose(-1, -2).transpose(2, 3).reshape(B, Hh, W, H, Dh).permute(0, 1, 3, 2, 4)
+            # Per-axis causal softmax attention along rows
+            # q_row: [B, Hh * W, Dh, H] -> permute to [B, Hh * W, H, Dh]
+            q_r = q_row.transpose(-1, -2).float()
+            k_r = k_row.transpose(-1, -2).float()
+            v_r = v_row.transpose(-1, -2).float()
+            scale_r = 1.0 / math.sqrt(Dh)
+            scores_r = torch.matmul(q_r, k_r.transpose(-1, -2)) * scale_r
+            tril_r = torch.tril(torch.ones(H, H, device=q.device, dtype=torch.bool))
+            scores_r = scores_r.masked_fill(~tril_r.unsqueeze(0).unsqueeze(0), float("-inf"))
+            valid_r_mask = valid_row.squeeze(-2)  # [B, Hh * W, H]
+            scores_r = scores_r.masked_fill(~valid_r_mask.unsqueeze(-2), float("-inf"))
+            # If an entire row is masked out, softmax produces NaNs: fill with 0.0 after nan_to_num
+            attn_r = torch.softmax(scores_r, dim=-1)
+            attn_r = torch.nan_to_num(attn_r, nan=0.0)
+            out_row = torch.matmul(attn_r, v_r)
+            out_row = out_row.transpose(2, 3).reshape(B, Hh, W, H, Dh).permute(0, 1, 3, 2, 4)
         else:
             kv_row = torch.einsum("b m n d, b m n e -> b m d e", k_row_lin, v_row_f)
             z_row = k_row_lin.sum(dim=2, keepdim=True)
@@ -573,11 +585,16 @@ class ViGAttention(BaseAttention):
         v_col_f = v_col_flat.float() * valid_col
 
         if is_decoder:
-            attn_c = q_col_lin @ k_col_lin.transpose(-1, -2)
+            # Per-axis causal softmax attention along columns
+            scale_c = 1.0 / math.sqrt(Dh)
+            scores_c = torch.matmul(q_col_flat.float(), k_col_flat.float().transpose(-1, -2)) * scale_c
             tril_c = torch.tril(torch.ones(W, W, device=q.device, dtype=torch.bool))
-            attn_c = attn_c * tril_c.unsqueeze(0)
-            denom_c = attn_c.sum(dim=-1, keepdim=True) + 1e-5
-            out_col = (attn_c @ v_col_f) / denom_c
+            scores_c = scores_c.masked_fill(~tril_c.unsqueeze(0), float("-inf"))
+            valid_c_mask = valid_col.squeeze(-1)  # [B * Hh * H, W]
+            scores_c = scores_c.masked_fill(~valid_c_mask.unsqueeze(-2), float("-inf"))
+            attn_c = torch.softmax(scores_c, dim=-1)
+            attn_c = torch.nan_to_num(attn_c, nan=0.0)
+            out_col = torch.matmul(attn_c, v_col_flat.float())
             out_col = out_col.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
         else:
             kv_col = torch.einsum("b n d, b n e -> b d e", k_col_lin, v_col_f)
@@ -594,6 +611,7 @@ class ViGAttention(BaseAttention):
         gate_col = gates[:, :, 1, :, :]
 
         out = (out_row * gate_row + out_col * gate_col).to(dtype)
+        out = self.dropout(out)
 
         # Head mask broadcasting
         if head_mask is not None:
@@ -601,6 +619,11 @@ class ViGAttention(BaseAttention):
                 head_mask = head_mask.view(1, 1, -1, 1)
             elif head_mask.dim() == 2:
                 head_mask = head_mask.view(head_mask.size(0), 1, head_mask.size(1), 1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(-1)
+            elif head_mask.dim() == 4:
+                if head_mask.shape[-1] == head_mask.shape[-2] and head_mask.shape[-1] != out.shape[-1]:
+                    head_mask = head_mask.mean(dim=-1, keepdim=True)
             out = out * head_mask.to(dtype)
 
         out = out.reshape(B, N_pad, self.all_head_size)
