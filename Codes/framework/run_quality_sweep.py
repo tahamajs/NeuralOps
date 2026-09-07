@@ -2027,6 +2027,12 @@ def main():
                         hf_export_dir.mkdir(parents=True, exist_ok=True)
                         try:
                             torch.save(checkpoint_payload, hf_export_dir / "weights.pt")
+                            # Save complete model state dictionary for full standalone Hugging Face loading
+                            try:
+                                full_model_state = {k: v.detach().cpu() for k, v in model.state_dict().items()}
+                                torch.save(full_model_state, hf_export_dir / "pytorch_model.bin")
+                            except Exception as state_err:
+                                LOG.debug("Optional full state dict export: %s", state_err)
                             if tokenizer is not None and hasattr(tokenizer, "save_pretrained"):
                                 try:
                                     tokenizer.save_pretrained(hf_export_dir)
@@ -2038,6 +2044,9 @@ def main():
                                         json.dump(model.config.to_dict(), cf, indent=2)
                                 except Exception:
                                     pass
+                            # Save evaluation metrics json in export directory
+                            with open(hf_export_dir / "metrics.json", "w", encoding="utf-8") as mf:
+                                json.dump({"performance": perf_metrics, "compression": comp_metrics}, mf, indent=2)
                         except Exception as hf_save_err:
                             LOG.debug("Optional HF model export info: %s", hf_save_err)
                     except Exception as me_err:
