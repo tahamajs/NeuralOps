@@ -83,8 +83,8 @@ class CompressedAttentionLayer(BaseAttention):
         self,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
-        rank_qkv: int = 64,
-        rank_out: int = 64,
+        rank_qkv: int = 384,
+        rank_out: int = 384,
         lora_rank: int = 16,
         original_layer: Any = None,
         pretrained_attn: Optional[nn.Module] = None,
@@ -399,7 +399,10 @@ class CompressedAttentionLayer(BaseAttention):
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is not None:
             if mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
+                if mask.dtype == torch.bool:
+                    scores = scores.masked_fill(~mask, -10000.0)
+                else:
+                    scores = scores + mask.to(scores.dtype)
             else:
                 valid_m = get_token_valid_mask(mask, B, N, device)
                 if valid_m is not None:
@@ -411,7 +414,7 @@ class CompressedAttentionLayer(BaseAttention):
             or getattr(self.config, "is_decoder", False)
             or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
-        if is_decoder:
+        if is_decoder and (mask is None or mask.dim() != 4):
             causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
@@ -447,6 +450,8 @@ class CompressedAttentionLayer2(CompressedAttentionLayer):
     pass
 
 
+@ATTENTION_REGISTRY.register("compressed_attention_fn")
+@ATTENTION_REGISTRY.register("compressed_attention_layer_fn")
 @ATTENTION_REGISTRY.register("compressed_attention_inject")
 @ATTENTION_REGISTRY.register("compressed_attention_layer_inject")
 def inject_compressed_attention(
@@ -459,21 +464,36 @@ def inject_compressed_attention(
     **kwargs: Any,
 ) -> Optional[CompressedAttentionLayer]:
     if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+        model_config = type('Cfg', (), {'hidden_size': 768, 'num_heads': 12, 'rank': 384})()
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    src_attn = old_attn
+    if src_attn is None:
+        if hasattr(layer, "attention"):
+            src_attn = layer.attention
+        elif hasattr(layer, "self_attn"):
+            src_attn = layer.self_attn
+        elif hasattr(layer, "self"):
+            src_attn = layer.self
+        elif hasattr(layer, "attn"):
+            src_attn = layer.attn
 
     try:
-        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", 64))
-        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", 64))
+        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", 384))
+        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", 384))
         new_attn = CompressedAttentionLayer(
             config=model_config,
             rank_qkv=rank_qkv,
             rank_out=rank_out,
-            pretrained_attn=old_attn,
+            pretrained_attn=src_attn,
         )
-        layer.attention = new_attn
+        if hasattr(layer, "attention"):
+            layer.attention = new_attn
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
         return new_attn
     except Exception:
         return None
