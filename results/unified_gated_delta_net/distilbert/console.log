@@ -1,0 +1,61 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 14899.84it/s]
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep:   family:            bert
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-08 00:25:38,731 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:25:38,814 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
+2026-09-08 00:25:38,985 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-08 00:25:39,268 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-08 00:25:40,332 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.48%
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:25:40,342 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-08 00:25:41,324 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_gated_delta_net\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-08 00:25:41,331 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_gated_delta_net\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-08 00:25:41,419 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.48% (F1: 0.9077, Peak VRAM: 389.51 MB)
+2026-09-08 00:25:41,419 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_gated_delta_net\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-08 00:25:41,543 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: gated_delta_net (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-08 00:25:41,903 [INFO] framework.core.attention_utils: Successfully injected 'gated_delta_net' into 6 transformer blocks.
+2026-09-08 00:25:41,905 [INFO] QwenQualitySweep: module=gated_delta_net path=legacy_bert
+2026-09-08 00:25:41,905 [INFO] QwenQualitySweep: module=gated_delta_net injection summary: 0 SVDLinear layers active
+2026-09-08 00:25:41,905 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for gated_delta_net (lr=2.0e-04)
+2026-09-08 00:25:41,951 [INFO] QwenQualitySweep: LoRA fine-tuning: 1329410 trainable parameters across 64 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-08 00:25:44,482 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6789 (bs=8, micro_bs=8)
+2026-09-08 00:25:52,492 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7369 (bs=8, micro_bs=8)
+2026-09-08 00:26:02,380 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6846 (bs=8, micro_bs=8)
+2026-09-08 00:26:12,247 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6147 (bs=8, micro_bs=8)
+2026-09-08 00:26:22,135 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6908 (bs=8, micro_bs=8)
+2026-09-08 00:26:32,023 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7266 (bs=8, micro_bs=8)
+2026-09-08 00:26:41,921 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7369 (bs=8, micro_bs=8)
+2026-09-08 00:26:51,836 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6813 (bs=8, micro_bs=8)
+2026-09-08 00:27:01,849 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7010 (bs=8, micro_bs=8)
+2026-09-08 00:27:11,777 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7128 (bs=8, micro_bs=8)
+2026-09-08 00:27:21,766 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6958 (bs=8, micro_bs=8)
+2026-09-08 00:28:01,289 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_gated_delta_net\distilbert\distilbert_sst2_gated_delta_net_full_metrics.json
+2026-09-08 00:28:01,299 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_gated_delta_net\distilbert\checkpoints\gated_delta_net\weights.pt (module_params=0, lora_params=64)
+2026-09-08 00:28:01,470 [INFO] QwenQualitySweep: [2/2] gated_delta_net -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 403.99 MB)
+2026-09-08 00:28:01,470 [INFO] QwenQualitySweep: [Quality Guard] Module 'gated_delta_net' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning checkpoint artifacts.
+2026-09-08 00:28:01,620 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:28:01,621 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-08 00:28:01,636 [INFO] QwenQualitySweep: 
+         Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+           full     PASS   90.48% 0.00% (base) 0.9077                  0            1.00x  389.5 MB               0.69              0.80
+gated_delta_net PASS_LOW   50.92%      -39.56% 0.6748                  0            0.78x  404.0 MB              38.33             43.96
+2026-09-08 00:28:01,636 [INFO] QwenQualitySweep: ================================================================================

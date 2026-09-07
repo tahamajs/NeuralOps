@@ -1,0 +1,69 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3105.07it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-07 17:08:51,233 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 17:08:51,312 [INFO] QwenQualitySweep: Injected 48 LoRALinear layers into gpt backbone
+2026-09-07 17:08:51,312 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-07 17:08:51,490 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-07 17:08:52,207 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-07 17:09:00,032 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 81.31%
+2026-09-07 17:09:00,081 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 17:09:00,081 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-07 17:09:00,081 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-07 17:09:00,081 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-07 17:09:00,081 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-07 17:09:00,082 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-07 17:09:00,082 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-07 17:09:00,082 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 17:09:00,082 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-07 17:09:05,391 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adaptive_span\gpt2\gpt2_full_full_metrics.json
+2026-09-07 17:09:05,421 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adaptive_span\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=97)
+2026-09-07 17:09:06,709 [INFO] QwenQualitySweep: [1/2] full -> PASS 81.31% (F1: 0.8372, Peak VRAM: 391.24 MB)
+2026-09-07 17:09:06,710 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_adaptive_span\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-07 17:09:06,976 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: adaptive_span (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-07 17:09:08,700 [INFO] framework.core.attention_utils: Successfully injected 'adaptive_span' into 12 transformer blocks.
+2026-09-07 17:09:08,716 [INFO] QwenQualitySweep: module=adaptive_span path=adapted_gpt
+2026-09-07 17:09:08,717 [INFO] QwenQualitySweep: module=adaptive_span injection summary: 0 SVDLinear layers active
+2026-09-07 17:09:08,718 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for adaptive_span (lr=2.0e-04)
+2026-09-07 17:09:09,410 [INFO] QwenQualitySweep: LoRA fine-tuning: 3540624 trainable parameters across 205 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-07 17:09:09,928 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7307 (bs=8, micro_bs=8)
+2026-09-07 17:09:10,991 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6685 (bs=8, micro_bs=8)
+2026-09-07 17:09:12,279 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.5144 (bs=8, micro_bs=8)
+2026-09-07 17:09:13,577 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.4599 (bs=8, micro_bs=8)
+2026-09-07 17:09:14,862 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5611 (bs=8, micro_bs=8)
+2026-09-07 17:09:16,144 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.4504 (bs=8, micro_bs=8)
+2026-09-07 17:09:17,417 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.2520 (bs=8, micro_bs=8)
+2026-09-07 17:09:18,700 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6094 (bs=8, micro_bs=8)
+2026-09-07 17:09:19,972 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.4345 (bs=8, micro_bs=8)
+2026-09-07 17:09:21,266 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.4330 (bs=8, micro_bs=8)
+2026-09-07 17:09:22,545 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.2726 (bs=8, micro_bs=8)
+2026-09-07 17:09:33,204 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adaptive_span\gpt2\gpt2_adaptive_span_full_metrics.json
+2026-09-07 17:09:33,291 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adaptive_span\gpt2\checkpoints\adaptive_span\weights.pt (module_params=0, lora_params=193)
+2026-09-07 17:09:35,248 [INFO] QwenQualitySweep: [2/2] adaptive_span -> PASS 80.39% (F1: 0.8217, Peak VRAM: 445.69 MB)
+2026-09-07 17:09:35,248 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_adaptive_span\gpt2\checkpoints\adaptive_span. Automated export will be handled post-sweep by orchestrator.
+2026-09-07 17:09:35,495 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 17:09:35,495 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-07 17:09:35,500 [INFO] QwenQualitySweep: 
+       Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+         full   PASS   81.31% 0.00% (base) 0.8372                  0            1.00x  391.2 MB               4.04              4.64
+adaptive_span   PASS   80.39%       -0.92% 0.8217                  0            0.71x  445.7 MB              10.43             11.96
+2026-09-07 17:09:35,500 [INFO] QwenQualitySweep: ================================================================================

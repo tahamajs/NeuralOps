@@ -1,0 +1,79 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 7027.07it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-07 22:26:37,176 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-07 22:26:37,176 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-07 22:26:37,176 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 22:26:37,176 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-07 22:26:37,176 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-07 22:26:37,177 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-07 22:26:37,177 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-07 22:26:37,177 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-07 22:26:37,177 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-07 22:26:37,177 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-07 22:26:37,177 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-07 22:26:37,177 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 22:26:37,723 [INFO] QwenQualitySweep: Injected 73 LoRALinear layers into roberta backbone
+2026-09-07 22:26:37,723 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
+2026-09-07 22:26:38,099 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-07 22:26:38,373 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-07 22:26:41,145 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 88.76%
+2026-09-07 22:26:41,153 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 22:26:41,153 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-07 22:26:41,153 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-07 22:26:41,153 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-07 22:26:41,153 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-07 22:26:41,153 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-07 22:26:41,153 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-07 22:26:41,153 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 22:26:41,156 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-07 22:26:42,754 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_adaptive_sparse_attention_attention\roberta\roberta-base_full_full_metrics.json
+2026-09-07 22:26:42,792 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_adaptive_sparse_attention_attention\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=150)
+2026-09-07 22:26:43,103 [INFO] QwenQualitySweep: [1/2] full -> PASS 88.76% (F1: 0.8942, Peak VRAM: 299.92 MB)
+2026-09-07 22:26:43,103 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_adaptive_sparse_attention_attention\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-07 22:26:43,236 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: adaptive_sparse_attention_attention (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-07 22:26:43,643 [WARNING] EvalEngine: Could not import compressor module 'adaptive_sparse_attention_attention': No module named 'framework.compression_engine.adaptive_sparse_attention_attention'
+2026-09-07 22:26:43,643 [ERROR] QwenQualitySweep: Module adaptive_sparse_attention_attention execution failure:
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2139, in main
+    pipe_res = future.result(timeout=effective_timeout)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 1974, in _run_candidate_pipeline
+    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 582, in apply_module_to_model
+    raise RuntimeError(f"Compressor '{module_name}' not found in COMPRESSOR_REGISTRY")
+RuntimeError: Compressor 'adaptive_sparse_attention_attention' not found in COMPRESSOR_REGISTRY
+2026-09-07 22:26:43,653 [INFO] QwenQualitySweep: [2/2] adaptive_sparse_attention_attention -> FAIL 0.00% (F1: 0.8942, Peak VRAM: 299.92 MB)
+2026-09-07 22:26:43,653 [INFO] QwenQualitySweep: [Quality Guard] Module 'adaptive_sparse_attention_attention' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning checkpoint artifacts.
+2026-09-07 22:26:43,784 [INFO] QwenQualitySweep: ================================================================================
+2026-09-07 22:26:43,784 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-07 22:26:43,789 [INFO] QwenQualitySweep: 
+                             Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                               full   PASS   88.76% 0.00% (base) 0.8942                  0            1.00x  299.9 MB               0.99              1.13
+adaptive_sparse_attention_attention   FAIL    0.00%      -88.76% 0.8942                  0            1.00x  299.9 MB               0.99              1.13
+2026-09-07 22:26:43,789 [INFO] QwenQualitySweep: ================================================================================

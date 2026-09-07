@@ -1,0 +1,59 @@
+`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 7076.05it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-08 00:57:37,098 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:57:37,587 [INFO] QwenQualitySweep: Injected 73 LoRALinear layers into roberta backbone
+2026-09-08 00:57:37,587 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
+2026-09-08 00:57:37,906 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-08 00:57:38,173 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-08 00:57:40,892 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 88.76%
+2026-09-08 00:57:40,901 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:57:40,901 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-08 00:57:40,901 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-08 00:57:40,901 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-08 00:57:40,902 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-08 00:57:40,902 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-08 00:57:40,902 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-08 00:57:40,902 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 00:57:40,902 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-08 00:57:42,517 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_gated_deltanet_block\roberta\roberta-base_full_full_metrics.json
+2026-09-08 00:57:42,549 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_gated_deltanet_block\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=150)
+2026-09-08 00:57:42,869 [INFO] QwenQualitySweep: [1/2] full -> PASS 88.76% (F1: 0.8942, Peak VRAM: 299.92 MB)
+2026-09-08 00:57:42,869 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_gated_deltanet_block\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-08 00:57:43,008 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: gated_deltanet_block (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-08 00:57:43,661 [INFO] framework.core.attention_utils: Successfully injected 'gated_deltanet_block' into 12 transformer blocks.
+2026-09-08 00:57:43,666 [INFO] QwenQualitySweep: module=gated_deltanet_block path=adapted_roberta
+2026-09-08 00:57:43,666 [INFO] QwenQualitySweep: module=gated_deltanet_block injection summary: 0 SVDLinear layers active
+2026-09-08 00:57:43,666 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for gated_deltanet_block (lr=2.0e-04)
+2026-09-08 00:57:44,051 [INFO] QwenQualitySweep: LoRA fine-tuning: 4745474 trainable parameters across 270 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-08 00:59:06,466 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7234 (bs=8, micro_bs=8)
+2026-09-08 01:03:26,721 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7140 (bs=8, micro_bs=8)
