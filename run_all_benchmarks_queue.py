@@ -294,11 +294,14 @@ def main():
         try:
             import pandas as pd
             pd.DataFrame(queue_results).to_csv(summary_csv_path, index=False)
-        except Exception:
-            pass
+        except Exception as csv_err:
+            print(f"[WARN] Could not write summary CSV: {csv_err}", flush=True)
 
-        with open(summary_json_path, "w", encoding="utf-8") as f:
-            json.dump(queue_results, f, indent=2)
+        try:
+            with open(summary_json_path, "w", encoding="utf-8") as f:
+                json.dump(queue_results, f, indent=2)
+        except Exception as json_err:
+            print(f"[WARN] Could not write summary JSON: {json_err}", flush=True)
 
     total_wall_s = round(time.time() - overall_start_time, 2)
     print("\n" + "=" * 80)
