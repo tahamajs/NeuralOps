@@ -13,15 +13,16 @@
 
 ## Architecture & Data Flow
 
-The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
-
 ```
-Input Activation X [B, N, D]
+Input Activation X [B, L, D]
    │
-   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
-   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
-   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
-   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+   ├── Gated Linear Projection: (u, gate) = Linear(X).chunk(2)
+   ├── Continuous-Time State Space Scan (Diagonal SSM):
+   │     ├── Discretized Transition: A_bar = exp(-exp(A_log) * dt)
+   │     ├── Input Modulation: B_bar = B * dt
+   │     └── Recurrent Linear Update: h_t = A_bar * h_{t-1} + B_bar * u_t
+   ├── Output Gating: y = (C * h_t) * SiLU(gate)
+   └── Context Projection: Out = Linear(y)
 ```
 
 ### Step-by-Step Tensor Shape Trace

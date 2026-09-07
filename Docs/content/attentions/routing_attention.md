@@ -62,15 +62,17 @@ $$\mathbf{Y} = \operatorname{Reshape}\left( \mathbf{O}_{\text{final}} \right) \m
 
 ## Architecture & Data Flow
 
-The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
-
 ```
-Input Activation X [B, N, D]
+Input Sequence X [B, L, D]
    │
-   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
-   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
-   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
-   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+   ├── Spherical Centroid Assignment:
+   │     ├── Cluster Q and K tokens onto hyperspherical centroids
+   │     └── Assign token indices to top-k cluster centroids
+   ├── Routing Dispatch:
+   │     └── Gather queries and keys sharing matching cluster IDs
+   ├── Sparse Cluster-Wise Local Attention:
+   │     └── S_c = Softmax(Q_c @ K_c^T / sqrt(d)) @ V_c
+   └── Scatter & Output Synthesis: Out = Scatter(S_c) @ W_O
 ```
 
 ### Step-by-Step Tensor Shape Trace

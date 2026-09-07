@@ -126,15 +126,17 @@ Evaluating right-to-left eliminates any $\mathcal{O}(L^2)$ matrix materializatio
 
 ## Architecture & Data Flow
 
-The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
-
 ```
-Input Activation X [B, N, D]
+Input Activations Q, K, V [B, L, D]
    │
-   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
-   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
-   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
-   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+   ├── Landmark Selection via Segment-Means:
+   │     ├── Q_tilde = SegmentMeans(Q, m)  [B, m, d]
+   │     └── K_tilde = SegmentMeans(K, m)  [B, m, d]
+   ├── Nystrom Kernel Factorization (O(m * L)):
+   │     ├── F_1 = Softmax(Q @ K_tilde^T / sqrt(d))  [B, L, m]
+   │     ├── F_2_pinv = MoorePenrose(Softmax(Q_tilde @ K_tilde^T / sqrt(d)))  [B, m, m]
+   │     └── F_3 = Softmax(Q_tilde @ K^T / sqrt(d))  [B, m, L]
+   └── Low-Rank Context Approximation: Y = F_1 @ F_2_pinv @ (F_3 @ V)
 ```
 
 ### Step-by-Step Tensor Shape Trace

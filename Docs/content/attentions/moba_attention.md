@@ -47,15 +47,16 @@ $$\mathbf{Y} = \operatorname{Slice}\left(\mathbf{O}_p, :L\right) \mathbf{W}_O \i
 
 ## Architecture & Data Flow
 
-The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
-
 ```
-Input Activation X [B, N, D]
+Input State X [B, L, D]
    │
-   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
-   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
-   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
-   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+   ├── Projections: Q, K, V via linear projection
+   ├── Block Partitioning & Gating:
+   │     ├── Block-diagonal local attention windows
+   │     └── Dynamic gating score to allocate cross-block computation
+   ├── Sparse MoE Attention Routing:
+   │     └── Route query blocks to top-k matching key-value blocks
+   └── Context Synthesis: Out = out_proj(AttnOut)
 ```
 
 ### Step-by-Step Tensor Shape Trace
