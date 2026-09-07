@@ -514,12 +514,24 @@ class ASVDAttention(nn.Module):
                 except Exception:
                     pass
 
-        # 6. Check for missing essential projections
+        # 6. Check for missing essential projections and Frobenius norm verification
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
         if not self.is_nested_encoder and extracted_weights["o"][0] is None:
             missing.append("o")
         if missing:
             raise RuntimeError(f"Missing essential pretrained weights for ASVDAttention: {missing}. Aborting injection.")
+
+        for p in ["q", "k", "v"]:
+            w_check = extracted_weights[p][0]
+            if w_check is not None:
+                norm = float(torch.norm(w_check.float()).item())
+                if norm < 1e-4:
+                    raise RuntimeError(f"ASVDAttention extracted weight for '{p}' has near-zero Frobenius norm ({norm:.2e})")
+
+        if extracted_weights["o"][0] is not None:
+            norm_o = float(torch.norm(extracted_weights["o"][0].float()).item())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"ASVDAttention extracted weight for 'o' has near-zero Frobenius norm ({norm_o:.2e})")
 
         # 7. SVD Factorization & Reconstruction Verification
         for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
