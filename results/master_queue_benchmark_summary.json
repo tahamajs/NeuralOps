@@ -646,5 +646,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T01:36:13.119714"
+  },
+  {
+    "module": "hamming",
+    "runner": "run_all_4_hamming.py",
+    "exit_code": 0,
+    "elapsed_s": 78.38,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:37:31.508307"
+  },
+  {
+    "module": "hashednets",
+    "runner": "run_all_4_hashednets.py",
+    "exit_code": 0,
+    "elapsed_s": 109.52,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:39:21.035839"
   }
 ]

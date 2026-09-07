@@ -71,3 +71,5 @@ granite_hybrid,run_all_4_granite_hybrid.py,0,190.28,PASS,,2026-09-08T01:30:05.55
 grecodec,run_all_4_grecodec.py,0,156.36,PASS,,2026-09-08T01:32:41.927717
 griffin_ssd,run_all_4_griffin_ssd.py,0,81.51,PASS,,2026-09-08T01:34:03.440730
 halo_regla,run_all_4_halo_regla.py,0,129.67,PASS,,2026-09-08T01:36:13.119714
+hamming,run_all_4_hamming.py,0,78.38,PASS,,2026-09-08T01:37:31.508307
+hashednets,run_all_4_hashednets.py,0,109.52,PASS,,2026-09-08T01:39:21.035839
