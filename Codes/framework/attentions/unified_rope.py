@@ -549,13 +549,7 @@ class UnifiedRoPE(BaseAttention):
 
         mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
         if mask is not None:
-            if mask.dim() == 2:
-                mask_t = mask[:, None, None, :].to(scores.dtype)
-                scores = scores + (1.0 - mask_t) * -10000.0
-            elif mask.dim() == 3:
-                scores = scores + mask.unsqueeze(1).to(scores.dtype)
-            elif mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
+            scores = apply_attention_mask(scores, mask)
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
@@ -566,7 +560,11 @@ class UnifiedRoPE(BaseAttention):
                 head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
                 head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
-            attn_weights = attn_weights * head_mask
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(1)
+            elif head_mask.dim() == 4:
+                head_mask = head_mask
+            attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
         context = torch.matmul(attn_weights, v)
         context = context.transpose(1, 2).contiguous().view(B, L, self.num_heads * self.head_dim)
