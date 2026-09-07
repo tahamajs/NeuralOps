@@ -279,3 +279,10 @@ def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any
     compressed_model, _ = compressor.compress()
     return compressed_model
 ```
+
+## Unified 4-Architecture Benchmark Results (ENLighten)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 80.73% | 0.8197 | 1.0 | 72 | 337.21 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-enlighten) |
