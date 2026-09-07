@@ -468,8 +468,8 @@ def inject_compressed_mha(
         model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
     try:
-        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", 64))
-        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", 64))
+        rank_qkv = getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", 384))
+        rank_out = getattr(comp_config, "rank_out", getattr(comp_config, "rank", 384))
         dropout = getattr(comp_config, "dropout", 0.1)
         new_attn = CompressedDistilBertAttention(
             model_config=model_config,
@@ -478,7 +478,52 @@ def inject_compressed_mha(
             dropout=dropout,
             pretrained_attn=old_attn,
         )
-        layer.attention = new_attn
+        if hasattr(layer, "attention"):
+            layer.attention = new_attn
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        else:
+            layer.attention = new_attn
         return new_attn
     except Exception:
         return None
+
+
+@ATTENTION_REGISTRY.register("compressed_mha_fn")
+def compressed_mha_fn(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    attention_mask: Optional[torch.Tensor] = None,
+    dropout_p: float = 0.0,
+    is_causal: bool = False,
+    scale: Optional[float] = None,
+    **kwargs: Any,
+) -> torch.Tensor:
+    head_dim = query.shape[-1]
+    if scale is None:
+        scale = 1.0 / math.sqrt(head_dim)
+    scores = torch.matmul(query, key.transpose(-2, -1)) * scale
+    if attention_mask is not None:
+        if attention_mask.dim() == 4:
+            if attention_mask.dtype == torch.bool:
+                scores = scores.masked_fill(~attention_mask, -10000.0)
+            else:
+                scores = scores + attention_mask.to(scores.dtype)
+        else:
+            valid_m = get_token_valid_mask(attention_mask, query.shape[0], query.shape[-2], query.device)
+            if valid_m is not None:
+                scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+    if is_causal:
+        seq_len = query.shape[-2]
+        causal_mask = torch.tril(torch.ones((seq_len, seq_len), device=query.device, dtype=torch.bool))
+        scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -10000.0)
+    attn_probs = torch.softmax(scores.float(), dim=-1).to(query.dtype)
+    if dropout_p > 0.0:
+        attn_probs = F.dropout(attn_probs, p=dropout_p)
+    return torch.matmul(attn_probs, value)
+
