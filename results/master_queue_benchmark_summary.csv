@@ -30,3 +30,5 @@ compressed_attention,run_all_4_compressed_attention.py,0,158.86,PASS,,2026-09-07
 compressed_attention_layer,run_all_4_compressed_attention_layer.py,0,153.39,PASS,,2026-09-07T19:25:28.650169
 compressed_mha,run_all_4_compressed_mha.py,0,154.82,PASS,,2026-09-07T19:28:03.470785
 cosformer,run_all_4_cosformer.py,0,229.96,PASS,,2026-09-07T19:31:53.433130
+cur,run_all_4_cur.py,0,212.34,PASS,,2026-09-07T19:35:25.773220
+cur_moe,run_all_4_cur_moe.py,0,179.57,PASS,,2026-09-07T19:38:25.349173
