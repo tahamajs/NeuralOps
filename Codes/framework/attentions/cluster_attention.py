@@ -183,6 +183,12 @@ class ClusterAttention(BaseAttention):
                 cand = source_attn.q_proj.in_features
             hidden_size = cand
 
+        if not num_kv_heads and source_attn is not None:
+            num_kv_heads = (
+                getattr(source_attn, "num_key_value_heads", None)
+                or getattr(source_attn, "num_kv_heads", None)
+            )
+
         hidden_size = int(hidden_size or 768)
         num_heads = int(num_heads or 12)
         num_kv_heads = int(num_kv_heads or num_heads)
@@ -461,10 +467,10 @@ class ClusterAttention(BaseAttention):
             if pos_ids is None:
                 pos_ids = torch.arange(L, device=device).unsqueeze(0).expand(B, -1)
             try:
-                cos, sin = rotary_mod(K, seq_len=N_k)
+                cos, sin = rotary_mod(Q, seq_len=L)
             except Exception:
                 try:
-                    cos, sin = rotary_mod(K, pos_ids)
+                    cos, sin = rotary_mod(Q, pos_ids)
                 except Exception:
                     cos, sin = None, None
             if cos is not None and sin is not None:
@@ -476,11 +482,12 @@ class ClusterAttention(BaseAttention):
 
         scale = Dh ** -0.5
 
-        # Check for causal decoding
+        # Check for causal decoding (guard against self.config being None)
+        _cfg = self.config
         is_decoder = (
             self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or (_cfg is not None and getattr(_cfg, "is_decoder", False))
+            or (_cfg is not None and getattr(_cfg, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama"))
         )
 
         if is_decoder or is_cross_attention:
