@@ -56,16 +56,15 @@ $$\mathbf{Y} = \operatorname{Reshape}(\mathbf{O}) \mathbf{W}_O \quad \in \mathbb
 
 ## Architecture & Data Flow
 
+The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
 ```
-Input Hidden State X [B, L, D]
+Input Activation X [B, N, D]
    │
-   ├── Native Sparse Attention (NSA) Multi-Scale Partitioning:
-   │     ├── Fine-Grained Token Window: Local exact sliding-window attention
-   │     ├── Coarse-Grained Block Compression: Strided average pooling
-   │     └── Top-k Selected Key Blocks: Dynamic sparse block routing
-   ├── Multi-Scale Attention Fusion:
-   │     └── Out = alpha * Attn_local + beta * Attn_compressed + gamma * Attn_sparse
-   └── Final Output Projection: Y = Out @ W_O
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
 ```
 
 ### Step-by-Step Tensor Shape Trace

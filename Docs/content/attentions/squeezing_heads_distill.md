@@ -11,16 +11,15 @@ The module encapsulates standard multi-head scaled dot-product attention while i
 
 ## Architecture & Data Flow
 
+The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
 ```
-Pretrained Multi-Head QKV Activations [B, H_orig, L, d]
+Input Activation X [B, N, D]
    │
-   ├── Inter-Head Similarity & Redundancy Metric:
-   │     └── Compute cosine alignment and Frobenius affinity across heads
-   ├── Progressive Head Squeezing & Clustering:
-   │     └── Aggregate correlated heads into compressed head representations
-   ├── Distillation Alignment Loss:
-   │     └── L_distill = KL(Softmax(S_squeezed) || Softmax(S_orig))
-   └── Squeezed Attention Output: Out = Concat(Heads_squeezed) @ W_O
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
 ```
 
 ### Step-by-Step Tensor Shape Trace

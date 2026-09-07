@@ -75,21 +75,15 @@ Thus, computing affinity scores reduces to an inner product between transformed 
 
 ## Architecture & Data Flow
 
+The `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
 ```
-Input Hidden State X [B, L, D]
+Input Activation X [B, N, D]
    │
-   ├── Low-Rank Query Compression: c_Q = X @ W_DQ  [B, L, d_c_q]
-   │     ├── Query Decoupled RoPE: q_R = RoPE(c_Q @ W_QR)
-   │     └── Query Content Up-Projection: q_C = c_Q @ W_QC
-   │
-   ├── Low-Rank KV Compression: c_KV = X @ W_DKV  [B, L, d_c_kv]
-   │     ├── Key Decoupled RoPE: k_R = RoPE(X @ W_KR)
-   │     ├── Key Content Up-Projection: k_C = c_KV @ W_UK
-   │     └── Value Up-Projection: v_C = c_KV @ W_UV
-   │
-   ├── Multi-Head Matrix Attention:
-   │     └── S = (q_C @ k_C^T + q_R @ k_R^T) / sqrt(d_h)
-   └── Latent Context Synthesis: Y = Softmax(S) @ v_C @ W_O
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
 ```
 
 ### Step-by-Step Tensor Shape Trace
