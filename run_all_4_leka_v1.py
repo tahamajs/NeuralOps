@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-\"\"\"Benchmark runner for LEKAV1Attention across DistilBERT, RoBERTa, GPT-2, and Qwen.\"\"\"
+"""Benchmark runner for LEKAV1Attention across DistilBERT, RoBERTa, GPT-2, and Qwen."""
 
 import os
 import sys
