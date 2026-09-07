@@ -101,7 +101,7 @@ for m in models:
         "--output_dir", str(out_dir),
         "--modules", "adaptive_ranks",
         "--batch_size", "8",
-        "--recovery_steps", "100",
+        "--recovery_steps", "50",
         "--learning_rate", "2e-4",
         "--lora_rank", "32",
         "--timeout", "1200",
