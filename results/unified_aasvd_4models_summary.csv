@@ -1,2 +1,5 @@
-Model,Exit Code,Baseline Acc,AASVD Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-roberta,0,88.76%,90.02%,+1.26%,0.9024,PASS,48,1.06x,318.4 MB,161.7
+Model,Baseline Acc,AASVD Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Inference Time (s),Latency (ms/sample)
+distilbert,90.48%,88.19%,-2.29%,0.8823,PASS,11,1.02x,358.3 MB,3.08,3.53
+roberta,88.76%,86.93%,-1.83%,0.8837,PASS,10,1.01x,327.3 MB,10.07,11.55
+gpt2,81.31%,78.78%,-2.53%,0.8177,PASS,3,1.00x,406.9 MB,8.83,10.13
+qwen3_5,N/A,N/A,N/A,N/A,OOM_ACCESS_VIOLATION,0,1.00x,N/A,N/A,N/A

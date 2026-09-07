@@ -1,15 +1,54 @@
 [
   {
-    "Model": "roberta",
-    "Exit Code": 0,
-    "Baseline Acc": "88.76%",
-    "AASVD Acc": "90.02%",
-    "Delta Acc": "+1.26%",
-    "F1": "0.9024",
+    "Model": "distilbert",
+    "Baseline Acc": "90.48%",
+    "AASVD Acc": "88.19%",
+    "Delta Acc": "-2.29%",
+    "F1": 0.8823,
     "Status": "PASS",
-    "Compressed Layers": "48",
-    "Comp Rate": "1.06x",
-    "Peak VRAM": "318.4 MB",
-    "Time (s)": "161.7"
+    "Compressed Layers": 11,
+    "Comp Rate": "1.02x",
+    "Peak VRAM": "358.3 MB",
+    "Inference Time (s)": 3.08,
+    "Latency (ms/sample)": 3.53
+  },
+  {
+    "Model": "roberta",
+    "Baseline Acc": "88.76%",
+    "AASVD Acc": "86.93%",
+    "Delta Acc": "-1.83%",
+    "F1": 0.8837,
+    "Status": "PASS",
+    "Compressed Layers": 10,
+    "Comp Rate": "1.01x",
+    "Peak VRAM": "327.3 MB",
+    "Inference Time (s)": 10.07,
+    "Latency (ms/sample)": 11.55
+  },
+  {
+    "Model": "gpt2",
+    "Baseline Acc": "81.31%",
+    "AASVD Acc": "78.78%",
+    "Delta Acc": "-2.53%",
+    "F1": 0.8177,
+    "Status": "PASS",
+    "Compressed Layers": 3,
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "406.9 MB",
+    "Inference Time (s)": 8.83,
+    "Latency (ms/sample)": 10.13
+  },
+  {
+    "Model": "qwen3_5",
+    "Baseline Acc": "N/A",
+    "AASVD Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "OOM_ACCESS_VIOLATION",
+    "Compressed Layers": 0,
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Inference Time (s)": "N/A",
+    "Latency (ms/sample)": "N/A"
   }
 ]
