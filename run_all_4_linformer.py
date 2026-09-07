@@ -315,20 +315,54 @@ for m in models:
     with open(hf_export_dir / "metrics.json", "w", encoding="utf-8") as mf:
         json.dump(metrics_payload, mf, indent=2)
 
+    # Comprehensive, publication-ready model card
     card_content = f"""---
 tags:
 - svd-linear-attention
-- linformer-attention
+- model-compression
+- {slug}
 - pytorch
 datasets:
 - sst2
+metrics:
+- accuracy
+- f1
 ---
-# LINFORMER - {name}
-- Benchmark Accuracy: {acc:.2f}%
-- F1 Score: {metrics_payload['f1']:.4f}
-- Status: {status}
-- Architecture: {name}
-- Hyperparameters: sparsity_ratio=0.5, lora_rank=16, lora_alpha=32
+
+# SVD Linear Attention / Compression: {name.upper()} ({slug})
+
+Validated factorized/adapted checkpoint of **{name}** using **{slug}** evaluated on **SST-2**.
+
+## Empirical Performance Results
+- **Validation Accuracy**: `{acc:.2f}%`
+- **F1 Score (Binary)**: `{row.get('f1_score', row.get('f1', 'N/A'))}`
+- **F1 Macro**: `{row.get('f1_macro', 'N/A')}`
+- **Precision**: `{row.get('precision', 'N/A')}`
+- **Recall**: `{row.get('recall', 'N/A')}`
+- **Validation Loss**: `{row.get('val_loss', 'N/A')}`
+- **Quality Gate Status**: `{status}` (Pass Threshold: >= 56.00%)
+
+## Efficiency Profile & Resource Footprint
+- **Compression Rate**: `{row.get('compression_rate', '1.00')}x`
+- **FLOPs Reduction**: `{row.get('flops_reduction_pct', '0.0')}%`
+- **Total Parameters Before**: `{row.get('total_params_before', 'N/A')}`
+- **Total Parameters After**: `{row.get('total_params_after', 'N/A')}`
+- **Trainable Recovery Params**: `{row.get('trainable_recovery_params', 'N/A')}`
+- **Compressed / Injected Layers**: `{row.get('num_compressed_layers', row.get('num_injected_attention_layers', 'N/A'))}`
+- **Peak VRAM**: `{row.get('peak_vram_mb', 'N/A')} MB`
+- **Throughput**: `{row.get('tokens_per_sec', 'N/A')} tokens/sec`
+- **Evaluation Time**: `{row.get('elapsed_s', 'N/A')} s`
+
+## Reproduction & Usage
+```python
+import torch
+
+# Load the factorized model weights
+checkpoint = torch.load("weights.pt", map_location="cpu")
+print(f"Loaded {len(checkpoint)} parameter tensors successfully.")
+```
+
+Part of the SVD Linear Attention and LLM Compression Benchmark Suite.
 """
     with open(hf_export_dir / "README.md", "w", encoding="utf-8") as f:
         f.write(card_content)
