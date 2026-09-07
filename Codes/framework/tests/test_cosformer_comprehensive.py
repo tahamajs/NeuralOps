@@ -140,3 +140,30 @@ def test_cosformer_inject_safe():
     x = torch.randn(2, 8, 64)
     out, _ = layer.attention(x)
     assert out.shape == (2, 8, 64)
+
+
+def test_cosformer_num_kv_heads_and_head_dim_fallback():
+    old_attn = DummyQwenAttention(dim=64, num_kv_heads=2, head_dim=16)
+    attn = CosformerAttention(config=None, old_attn=old_attn, hidden_size=64, num_heads=4)
+    assert attn.num_kv_heads == 2
+    assert attn.head_dim == 16
+    assert attn.kv_repeat == 2
+
+
+def test_cosformer_rope_fallback_probing():
+    class DummyRotary(nn.Module):
+        def __init__(self, d=16):
+            super().__init__()
+            self.d = d
+        def forward(self, q, seq_len=None):
+            assert q.shape[-1] == self.d
+            cos = torch.ones(q.shape[0], 1, q.shape[2], self.d)
+            sin = torch.zeros(q.shape[0], 1, q.shape[2], self.d)
+            return cos, sin
+
+    attn = CosformerAttention(config=MockConfig(is_decoder=True))
+    attn.rotary_emb = DummyRotary(d=16)
+    x = torch.randn(2, 8, 64)
+    out, _ = attn(x)
+    assert out.shape == (2, 8, 64)
+
