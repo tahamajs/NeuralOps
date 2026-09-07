@@ -23,3 +23,4 @@ asvd,run_all_4_asvd.py,0,335.58,PASS,,2026-09-07T18:46:03.456726
 bam_umoe,run_all_4_bam_umoe.py,0,225.49,PASS,,2026-09-07T18:49:48.947664
 block_transformer_hiba,run_all_4_block_transformer_hiba.py,0,165.28,PASS,,2026-09-07T18:52:34.232899
 cachenotes,run_all_4_cachenotes.py,1,750.79,FAIL,,2026-09-07T19:05:05.024659
+chela_slay,run_all_4_chela_slay.py,0,375.51,PASS,,2026-09-07T19:11:20.534489
