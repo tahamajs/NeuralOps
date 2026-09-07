@@ -651,3 +651,11 @@ torchrun --nproc_per_node=4 -m framework.main \
 - **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
 
+## Unified 4-Architecture Benchmark Results (Entropy Budget SVD)
+Evaluated on SST-2 sentiment classification (FP16, total budget ratio 0.7, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.48% | 0.9077 | 1.0 | 0 | 310.69 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-entropy-budget) |
+| ROBERTA | 88.65% | 0.8941 | 1.0 | 0 | 321.14 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-entropy-budget) |
+| GPT2 | 82.57% | 0.84 | 1.0 | 0 | 400.12 | `PASS` | [`gpt2`](Upload error: [WinError 10054] An existing connection was forcibly closed by the remote host) |
