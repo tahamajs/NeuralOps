@@ -53,8 +53,8 @@ logger = logging.getLogger(__name__)
 
 class A3FactorizedLinear(nn.Module):
     """
-    True Low-Rank Factorized Linear Layer:
-    y = (x @ V.T) @ U.T + b
+    True Low-Rank Factorized Linear Layer with optional LoRA adapter support:
+    y = (x @ V.T) @ U.T + ((x @ lora_A.T) @ lora_B.T) * lora_scaling + b
     Achieves physical parameter reduction from d_in * d_out to r * (d_in + d_out).
     """
 
@@ -66,13 +66,19 @@ class A3FactorizedLinear(nn.Module):
         bias: bool = True,
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_base: bool = False,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
+        self.lora_rank = max(0, int(lora_rank))
+        self.lora_alpha = float(lora_alpha)
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
 
-        # Fix 5: Safe Device Initialization directly with factory kwargs
+        # Safe Device Initialization directly with factory kwargs
         factory_kwargs = {"dtype": dtype, "device": device}
         self.V = nn.Parameter(torch.empty(self.rank, in_features, **factory_kwargs))
         self.U = nn.Parameter(torch.empty(out_features, self.rank, **factory_kwargs))
@@ -82,7 +88,18 @@ class A3FactorizedLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+        # Optional LoRA adapter parameters
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features, **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank, **factory_kwargs))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
         self.reset_parameters()
+
+        if freeze_base:
+            self.freeze_base_weights()
 
     def reset_parameters(self) -> None:
         with torch.no_grad():
@@ -96,14 +113,34 @@ class A3FactorizedLinear(nn.Module):
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
 
-    # Fix 4: Framework Compatibility - Standard method instead of @property weight
+            if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B)
+
+    def freeze_base_weights(self) -> None:
+        """Freeze factorized SVD base weights while leaving LoRA parameters trainable."""
+        self.V.requires_grad = False
+        self.U.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
     @property
     def weight(self) -> torch.Tensor:
-        return torch.matmul(self.U, self.V)
+        w = torch.matmul(self.U, self.V)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
+        return w
 
     def get_weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""
-        return torch.matmul(self.U, self.V)
+        w = torch.matmul(self.U, self.V)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
+        return w
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         """Sets the low-rank factor parameters."""
@@ -114,6 +151,9 @@ class A3FactorizedLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         latent = F.linear(x, self.V)
         out = F.linear(latent, self.U)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_latent = F.linear(x, self.lora_A)
+            out = out + F.linear(lora_latent, self.lora_B) * self.lora_scaling
         if self.bias is not None:
             out = out + self.bias
         return out
@@ -134,19 +174,26 @@ class A3FactorizedLinear(nn.Module):
         rank: int,
         U_factor: Optional[torch.Tensor] = None,
         V_factor: Optional[torch.Tensor] = None,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_base: bool = False,
     ) -> A3FactorizedLinear:
         cls_name = linear.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
-        in_f = getattr(linear, "in_features", None)
-        out_f = getattr(linear, "out_features", None)
-        bias = getattr(linear, "bias", None)
+        target_mod = getattr(linear, "base_layer", linear)
+        in_f = getattr(target_mod, "in_features", None)
+        out_f = getattr(target_mod, "out_features", None)
+        bias = getattr(target_mod, "bias", getattr(linear, "bias", None))
 
-        if hasattr(linear, "nf"):
+        if hasattr(target_mod, "nf"):
+            out_f = target_mod.nf
+            in_f = getattr(target_mod, "nx", None)
+        elif hasattr(linear, "nf"):
             out_f = linear.nf
             in_f = getattr(linear, "nx", None)
 
         if in_f is None or out_f is None:
-            w = getattr(linear, "weight", None)
+            w = getattr(target_mod, "weight", None)
             if w is not None and w.ndim == 2:
                 if bias is not None and bias.ndim == 1 and bias.shape[0] == w.shape[1] and bias.shape[0] != w.shape[0]:
                     in_f, out_f = w.shape[0], w.shape[1]
@@ -157,13 +204,17 @@ class A3FactorizedLinear(nn.Module):
             else:
                 raise ValueError(f"Cannot determine in/out features for {type(linear)}")
 
+        weight_ref = getattr(target_mod, "weight", getattr(linear, "weight", None))
         layer = cls(
             in_features=in_f,
             out_features=out_f,
             rank=rank,
             bias=bias is not None,
-            dtype=linear.weight.dtype,
-            device=linear.weight.device,
+            dtype=weight_ref.dtype if weight_ref is not None else torch.float32,
+            device=weight_ref.device if weight_ref is not None else None,
+            lora_rank=lora_rank,
+            lora_alpha=lora_alpha,
+            freeze_base=freeze_base,
         )
         if U_factor is not None and V_factor is not None:
             layer.U.data.copy_(U_factor.to(device=layer.U.device, dtype=layer.U.dtype))
@@ -189,7 +240,7 @@ class A3Compressor(BaseCompressor):
         target_attention_only: bool = False,
         max_error: float = 0.20,
         max_retries: int = 3,
-        fallback_to_original: bool = False,
+        fallback_to_original: bool = True,
         normalize_scale: bool = True,
         tokenizer: Optional[Any] = None,
         calibration_loader: Optional[Any] = None,
@@ -200,14 +251,14 @@ class A3Compressor(BaseCompressor):
         super().__init__(model, name="a3", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
-            rank = getattr(cfg, "a3_rank", getattr(cfg, "rank", rank))
-            use_fisher = getattr(cfg, "a3_use_fisher", getattr(cfg, "use_fisher", use_fisher))
-            recalibrate_ln = getattr(cfg, "a3_recalibrate_ln", getattr(cfg, "recalibrate_ln", recalibrate_ln))
-            target_attention_only = getattr(cfg, "a3_attention_only", getattr(cfg, "target_attention_only", target_attention_only))
-            max_error = getattr(cfg, "a3_max_error", getattr(cfg, "max_error", max_error))
-            max_retries = getattr(cfg, "a3_max_retries", getattr(cfg, "max_retries", max_retries))
-            fallback_to_original = getattr(cfg, "a3_fallback_to_original", getattr(cfg, "fallback_to_original", fallback_to_original))
-            normalize_scale = getattr(cfg, "a3_normalize_scale", getattr(cfg, "normalize_scale", normalize_scale))
+            rank = _cfg_get(cfg, "a3_rank", _cfg_get(cfg, "rank", rank))
+            use_fisher = _cfg_get(cfg, "a3_use_fisher", _cfg_get(cfg, "use_fisher", use_fisher))
+            recalibrate_ln = _cfg_get(cfg, "a3_recalibrate_ln", _cfg_get(cfg, "recalibrate_ln", recalibrate_ln))
+            target_attention_only = _cfg_get(cfg, "a3_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+            max_error = _cfg_get(cfg, "a3_max_error", _cfg_get(cfg, "max_error", max_error))
+            max_retries = _cfg_get(cfg, "a3_max_retries", _cfg_get(cfg, "max_retries", max_retries))
+            fallback_to_original = _cfg_get(cfg, "a3_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+            normalize_scale = _cfg_get(cfg, "a3_normalize_scale", _cfg_get(cfg, "normalize_scale", normalize_scale))
 
         self.rank = max(1, int(rank))
         self.use_fisher = bool(use_fisher)  # activation energy / empirical Fisher proxy
@@ -215,9 +266,9 @@ class A3Compressor(BaseCompressor):
         self.target_attention_only = bool(target_attention_only)
         self.max_error = float(max_error)
         self.max_retries = max(0, int(max_retries))
-        # Fix 1 & 3: fallback_to_original attribute cleanly defined and honored
+        # fallback_to_original attribute cleanly defined and defaulted to True
         self.fallback_to_original = bool(kwargs.get("fallback_to_original", fallback_to_original))
-        # Fix 5: scale normalization toggle
+        # scale normalization toggle
         self.normalize_scale = bool(kwargs.get("normalize_scale", normalize_scale))
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -363,14 +414,19 @@ class A3Compressor(BaseCompressor):
             logger.warning("Unsupported layer type %s for A3 compression; skipping %s", module.__class__.__name__, name)
             return None, 0.0, 0
 
+        
         # Extract weights and orient as [out_features, in_features]
         target_mod = getattr(module, 'base_layer', module)
         device = target_mod.weight.device
         dtype = target_mod.weight.dtype
         raw_w = target_mod.weight.data.float()
-        bias = getattr(module, "bias", None)
+        bias = getattr(target_mod, "bias", getattr(module, "bias", None))
 
-        if hasattr(module, "nf"):
+        if hasattr(target_mod, "nf"):
+            out_f = target_mod.nf
+            in_f = getattr(target_mod, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
+            W = raw_w.t() if raw_w.shape == (in_f, out_f) else raw_w
+        elif hasattr(module, "nf"):
             out_f = module.nf
             in_f = getattr(module, "nx", raw_w.shape[0] if raw_w.shape[1] == out_f else raw_w.shape[1])
             W = raw_w.t() if raw_w.shape == (in_f, out_f) else raw_w
@@ -378,7 +434,7 @@ class A3Compressor(BaseCompressor):
             W = raw_w.t()
             out_f = bias.shape[0]
             in_f = raw_w.shape[0]
-        elif is_conv1d:
+        elif "conv1d" in target_mod.__class__.__name__.lower():
             # HuggingFace Conv1D weights are [in_features, out_features]
             W = raw_w.t()
             in_f = W.shape[1]
@@ -411,7 +467,7 @@ class A3Compressor(BaseCompressor):
                 scale = torch.sqrt(diag_c.clamp(min=1e-8) + 1e-6)
 
         if scale is not None:
-            # Fix 5: Optional scale normalization via normalize_scale
+            # Optional scale normalization via normalize_scale
             if self.normalize_scale:
                 rms = torch.norm(scale) / math.sqrt(in_f) + 1e-8
                 scale = (scale / rms).clamp(min=1e-3, max=1e3).to(W.device)
@@ -422,7 +478,7 @@ class A3Compressor(BaseCompressor):
             logger.debug("No calibration data available for %s; falling back to unweighted SVD.", name)
             W_w = W
 
-        # Fix 2: Pull SVD Out of the Retry Loop
+        # Pull SVD Out of the Retry Loop
         try:
             U, S, Vt = torch.linalg.svd(W_w, full_matrices=False)
         except Exception:
@@ -466,39 +522,57 @@ class A3Compressor(BaseCompressor):
                 step = max(8, (min(in_f, out_f) - current_r) // remaining)
                 current_r = min(current_r + step, min(in_f, out_f))
 
-        # Fix 3: Validation threshold check - Enforce max_error Abort if fallback_to_original is True
+        # Validation threshold check - Enforce max_error Abort if fallback_to_original is True
         if best_err > self.max_error:
-            logger.warning(
-                "A3 compression for %s exceeded max_error (%0.3f > %0.3f) at rank %d.",
-                name,
-                best_err,
-                self.max_error,
-                best_r,
-            )
             if self.fallback_to_original:
+                logger.warning(
+                    "A3 compression for %s exceeded max_error (%0.3f > %0.3f) at rank %d. Falling back to original layer.",
+                    name,
+                    best_err,
+                    self.max_error,
+                    best_r,
+                )
                 return None, best_err, best_r
+            else:
+                logger.warning(
+                    "A3 compression for %s exceeds max_error (%0.3f > %0.3f) at rank %d but fallback_to_original=False. Compressing anyway with error %0.4f.",
+                    name,
+                    best_err,
+                    self.max_error,
+                    best_r,
+                    best_err,
+                )
 
-        # Construct factorized layer with Safe Device Initialization (Fix 5)
+        # Check for LoRA parameters on wrapper module
+        lora_r = getattr(module, "lora_rank", getattr(module, "r", 0))
+        lora_a = getattr(module, "lora_alpha", 1.0)
+        has_lora = (
+            hasattr(module, "lora_A") and hasattr(module, "lora_B")
+        ) or (lora_r > 0)
+
+        # Construct factorized layer with Safe Device Initialization
         U_final, V_final = best_layer_factors
         factorized_layer = A3FactorizedLinear(
             in_features=in_f,
             out_features=out_f,
             rank=best_r,
-            bias=target_mod.bias is not None,
+            bias=bias is not None,
             dtype=dtype,
             device=device,
+            lora_rank=lora_r if (has_lora and not hasattr(module, "base_layer")) else 0,
+            lora_alpha=lora_a,
         )
         factorized_layer.U.data.copy_(U_final.to(dtype=dtype, device=device))
         factorized_layer.V.data.copy_(V_final.to(dtype=dtype, device=device))
-        if target_mod.bias is not None and factorized_layer.bias is not None:
-            if factorized_layer.bias.shape == target_mod.bias.shape:
-                factorized_layer.bias.data.copy_(target_mod.bias.data.to(dtype=dtype, device=device))
+        if bias is not None and factorized_layer.bias is not None:
+            if factorized_layer.bias.shape == bias.shape:
+                factorized_layer.bias.data.copy_(bias.data.to(dtype=dtype, device=device))
             else:
                 logger.warning(
                     "A3 bias shape mismatch on %s: expected %s, got %s. Skipping bias copy.",
                     name,
                     factorized_layer.bias.shape,
-                    target_mod.bias.shape,
+                    bias.shape,
                 )
 
         factorized_layer.reconstruction_error = best_err
@@ -509,7 +583,6 @@ class A3Compressor(BaseCompressor):
         Executes A3 factorized compression with activation-aware weighting,
         reconstruction validation, and LayerNorm recalibration.
         """
-        # Fix 4 (Calibration data absence handled gracefully)
         has_calib_sources = (
             self.calibration_loader is not None
             or bool(self.calibration_texts)
@@ -533,27 +606,37 @@ class A3Compressor(BaseCompressor):
 
         for name, module in list(self.model.named_modules()):
             cls_name = module.__class__.__name__.lower()
+            target_mod = getattr(module, "base_layer", module)
+            target_cls = target_mod.__class__.__name__.lower()
             is_linear_like = (
                 isinstance(module, nn.Linear)
-                or "conv1d" in cls_name
-                or (hasattr(module, "weight") and hasattr(module.weight, "ndim") and module.weight.ndim == 2 and not isinstance(module, (nn.Embedding, nn.LayerNorm, nn.RMSNorm)))
+                or isinstance(target_mod, nn.Linear)
+                or "conv1d" in cls_name or "conv1d" in target_cls
+                or hasattr(module, "nf") or hasattr(target_mod, "nf")
+                or (hasattr(target_mod, "weight") and hasattr(target_mod.weight, "ndim") and target_mod.weight.ndim == 2 and not isinstance(target_mod, (nn.Embedding, nn.LayerNorm, nn.RMSNorm)))
             )
             if not is_linear_like:
                 continue
 
             # Never compress classification heads or pre-classifiers
-            if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler"]):
+            name_lower = name.lower()
+            if any(k in name_lower for k in ["classifier", "score", "lm_head", "pooler"]):
                 continue
             if not should_compress_linear(self.model, name):
                 continue
-            if self.target_attention_only and not any(
-                k in name.lower()
-                for k in [
-                    "attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj",
-                    "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value", "c_attn", "c_proj"
-                ]
-            ):
-                continue
+            if self.target_attention_only:
+                is_ffn = any(k in name_lower for k in ["mlp", "ffn", "feed_forward", "gate_proj", "up_proj", "down_proj", "dense_4h_to_h", "dense_h_to_4h", "intermediate", "output.dense", "lin1", "lin2"])
+                if is_ffn:
+                    continue
+                is_attn = any(
+                    k in name_lower
+                    for k in [
+                        "attn", "attention", "q_proj", "k_proj", "v_proj", "out_proj",
+                        "o_proj", "q_lin", "k_lin", "v_lin", "out_lin", "query", "key", "value", "c_attn", "c_proj"
+                    ]
+                )
+                if not is_attn:
+                    continue
 
             cov = cov_map.get(name, None)
             fisher = fisher_map.get(name, None)
@@ -564,13 +647,12 @@ class A3Compressor(BaseCompressor):
 
             if factorized_layer is not None:
                 if hasattr(module, 'base_layer'):
-                    if hasattr(module, 'lora_A'):
-                        factorized_layer.lora_A = module.lora_A
-                    if hasattr(module, 'lora_B'):
-                        factorized_layer.lora_B = module.lora_B
                     module.base_layer = factorized_layer
-                    factorized_layer = module
-                replace_module(self.model, name, factorized_layer)
+                    # Keep module intact so LoRA parameters remain attached and trainable
+                    replacement = module
+                else:
+                    replacement = factorized_layer
+                replace_module(self.model, name, replacement)
                 factorized_count += 1
                 total_err += rel_err
                 p_count = sum(p.numel() for p in module.parameters())
@@ -583,7 +665,8 @@ class A3Compressor(BaseCompressor):
                 self.compressed_layers.append(name)
             else:
                 skipped_count += 1
-                for p in module.parameters(): p.requires_grad = False
+                for p in module.parameters():
+                    p.requires_grad = False
                 self.skipped_layers.append(name)
 
         # LayerNorm Recalibration - only execute if calibration data & tokenizer are present
@@ -647,22 +730,13 @@ def a3_compressor_factory(
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     # Robust configuration extraction
     if comp_config is not None:
-        if isinstance(comp_config, dict):
-            r = comp_config.get("a3_rank", comp_config.get("rank", rank))
-            u_fish = comp_config.get("a3_use_fisher", comp_config.get("use_fisher", use_fisher))
-            recal_ln = comp_config.get("a3_recalibrate_ln", comp_config.get("recalibrate_ln", recalibrate_ln))
-            target_attn = comp_config.get("a3_attention_only", comp_config.get("target_attention_only", False))
-            max_err = comp_config.get("max_error", kwargs.get("max_error", 0.20))
-            fallback = comp_config.get("fallback_to_original", kwargs.get("fallback_to_original", True))
-            norm_scale = comp_config.get("normalize_scale", kwargs.get("normalize_scale", True))
-        else:
-            r = getattr(comp_config, "a3_rank", getattr(comp_config, "rank", rank))
-            u_fish = getattr(comp_config, "a3_use_fisher", getattr(comp_config, "use_fisher", use_fisher))
-            recal_ln = getattr(comp_config, "a3_recalibrate_ln", getattr(comp_config, "recalibrate_ln", recalibrate_ln))
-            target_attn = getattr(comp_config, "a3_attention_only", getattr(comp_config, "target_attention_only", False))
-            max_err = getattr(comp_config, "max_error", kwargs.get("max_error", 0.20))
-            fallback = getattr(comp_config, "fallback_to_original", kwargs.get("fallback_to_original", True))
-            norm_scale = getattr(comp_config, "normalize_scale", kwargs.get("normalize_scale", True))
+        r = _cfg_get(comp_config, "a3_rank", _cfg_get(comp_config, "rank", rank))
+        u_fish = _cfg_get(comp_config, "a3_use_fisher", _cfg_get(comp_config, "use_fisher", use_fisher))
+        recal_ln = _cfg_get(comp_config, "a3_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", recalibrate_ln))
+        target_attn = _cfg_get(comp_config, "a3_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+        max_err = _cfg_get(comp_config, "a3_max_error", _cfg_get(comp_config, "max_error", kwargs.get("max_error", 0.20)))
+        fallback = _cfg_get(comp_config, "a3_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", kwargs.get("fallback_to_original", True)))
+        norm_scale = _cfg_get(comp_config, "a3_normalize_scale", _cfg_get(comp_config, "normalize_scale", kwargs.get("normalize_scale", True)))
     else:
         r = kwargs.get("rank", rank)
         u_fish = kwargs.get("use_fisher", use_fisher)
