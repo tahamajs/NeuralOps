@@ -896,7 +896,7 @@ def inject_aegis_hybrid(
         n_kv_heads = 12
         l_rank = 32
 
-    target_rank = kwargs.get("rank", 128)
+    target_rank = kwargs.get("rank", 384)
     if comp_config is not None:
         target_rank = getattr(comp_config, "lora_r", getattr(comp_config, "rank", target_rank))
     target_lora_rank = kwargs.get("lora_rank", l_rank)
@@ -935,5 +935,11 @@ def inject_aegis_hybrid(
 
     if hasattr(layer, "attention"):
         layer.attention = new_attn
+    elif hasattr(layer, "self_attn"):
+        layer.self_attn = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
+    elif hasattr(layer, "attn"):
+        layer.attn = new_attn
 
     return new_attn
