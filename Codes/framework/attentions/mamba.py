@@ -171,6 +171,8 @@ class Mamba(BaseAttention):
         self.in_proj = LoRALinear(self.d_model, self.d_model * 2, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.d_model, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
+        # Selective SSM decay parameter for causal sequences: A = -exp(A_log) <= 0
+        self.A_log: nn.Parameter = nn.Parameter(torch.log(torch.arange(1, self.d_model + 1, dtype=torch.float32)))
         self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(-2.0))
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
@@ -425,12 +427,22 @@ class Mamba(BaseAttention):
         proj = self.in_proj(hidden_states)
         p1, p2 = proj.chunk(2, dim=-1)
 
-        # Causal masking for decoders
+        # Causal SSM selective recurrence for decoders
         if self.is_decoder and L > 1:
-            # Mask future gating tokens cumulatively
-            causal_weights = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=p1.dtype))
-            norm = causal_weights.sum(dim=-1, keepdim=True).clamp(min=1.0)
-            p1_causal = torch.matmul(causal_weights / norm, p1)
+            # Learned continuous decay: A = -exp(A_log), discrete decay factor gamma = sigmoid(A) in (0, 1)
+            decay = torch.sigmoid(-torch.exp(self.A_log[:D].clamp(max=5.0)).to(dtype=torch.float32, device=hidden_states.device))
+            # Build decay matrix: distance = i - j for i >= j
+            pos = torch.arange(L, device=hidden_states.device)
+            dist = (pos.unsqueeze(1) - pos.unsqueeze(0)).clamp(min=0)  # [L, L]
+            # Log decay weights: dist * log(decay + eps)
+            log_gamma = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))  # [D]
+            log_weights = dist.unsqueeze(-1) * log_gamma.unsqueeze(0).unsqueeze(0)  # [L, L, D]
+            causal_mask = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool)).unsqueeze(-1)
+            log_weights = log_weights.masked_fill(~causal_mask, float("-inf"))
+            # Softmax-normalized causal attention weights along past sequence dimension
+            weights = torch.softmax(log_weights, dim=1).to(p1.dtype)  # [L_q, L_k, D]
+            # Einsum convolution: sum_j W[i, j, d] * p1[b, j, d] -> p1_causal[b, i, d]
+            p1_causal = torch.einsum("ijd,bjd->bid", weights, p1)
             gated = F.silu(p1_causal) * p2
         else:
             gated = F.silu(p1) * p2
