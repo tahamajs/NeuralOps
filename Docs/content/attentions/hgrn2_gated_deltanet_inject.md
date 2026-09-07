@@ -17,6 +17,27 @@ The `hgrn2_gated_deltanet_inject` module provides an efficient, hardware-aligned
 
 ---
 
+
+## Architecture & Data Flow
+
+The `HGRN2GatedDeltaNet` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. Mathematical Formulation & Tensor Mechanics
 
 Given an input activation sequence $X \in \mathbb{R}^{B \times N \times D}$ where $B$ is the batch size, $N$ is the sequence length, and $D$ is the hidden dimension:
@@ -114,3 +135,33 @@ assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
 print('Verification successful: logits shape', out.logits.shape)
 "
 ```
+
+## Configuration & Hyperparameters
+
+The `HGRN2GatedDeltaNet` module (registered under `hgrn2_gated_deltanet`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `HGRN2GatedDeltaNet` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `HGRN2GatedDeltaNet` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `HGRN2GatedDeltaNet` | `d_model` | `Any` | `None` | Controls `d_model` configuration in `HGRN2GatedDeltaNet`. |
+| `HGRN2GatedDeltaNet` | `num_heads` | `Any` | `None` | Controls `num_heads` configuration in `HGRN2GatedDeltaNet`. |
+| `HGRN2GatedDeltaNet` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `HGRN2GatedDeltaNet`. |
+| `HGRN2GatedDeltaNet` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `HGRN2GatedDeltaNet`. |
+| `HGRN2GatedDeltaNet` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `HGRN2GatedDeltaNet` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

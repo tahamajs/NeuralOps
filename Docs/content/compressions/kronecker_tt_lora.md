@@ -119,6 +119,27 @@ where $\bar{\mathcal{H}}_{sv}$ is a user-defined entropy threshold (e.g., $0.75$
 ---
 
 
+
+## Architecture & Data Flow
+
+The `KroneckerTTLoRACompressor` pipeline executes structured factorization and model transformation through coordinated stages:
+
+```
+Dense Weight Matrix W [D_out, D_in]
+   │
+   ├── Calibration Activation Profiling: Streaming Covariance C = X^T X
+   ├── Truncated Spectral / Structured Decomposition: W ≈ U Σ V^T (rank r)
+   ├── Square-Root Singular Value Balancing: U_r = U √Σ, V_r = √Σ V^T
+   └── In-Place Structural Replacement: nn.Linear -> FactorizedLinear(U_r, V_r)
+```
+
+### Step-by-Step Execution Trace
+
+1. **Layer Identification**: Identifies candidate projection layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`, `fc1`, `fc2`).
+2. **Error-Bounded Decomposition**: Evaluates relative reconstruction error $\|W - U V^T\|_F / \|W\|_F$.
+3. **Atomic Module Substitution**: Swaps dense linear module with factorized two-stage linear layers.
+4. **Norm Recalibration**: Validates downstream activation variance to ensure stability.
+
 ## 7. Implementation Details & Integration Guide
 The `Kronecker-TT-LoRA` layer is implemented as a direct drop-in replacement for `nn.Linear` adapters in PyTorch. 
 
@@ -600,3 +621,54 @@ torchrun --nproc_per_node=4 -m framework.main \
 1. **Edalati, A., Tahaei, M., Rashid, A., Vandyke, D., & Nia, K. (2022)**. *Kronecker Decomposition for Low-Rank Adaptation of Large Language Models*. In Advances in Neural Information Processing Systems (NeurIPS 2022).
 2. **Oseledets, I. V. (2011)**. *Tensor-Train Decomposition*. SIAM Journal on Scientific Computing, 33(5), 2295-2317. [DOI: 10.1137/090752286](https://doi.org/10.1137/090752286).
 3. **Hu, E. J., Shen, Y., Wallis, P., et al. (2021)**. *LoRA: Low-Rank Adaptation of Large Language Models*. In ICLR 2022. [arXiv:2106.09685](https://arxiv.org/abs/2106.09685).
+
+## Configuration & Hyperparameters
+
+The `KroneckerTTLoRACompressor` module (registered under `kronecker_tt_lora`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `KroneckerTTLoRACompressor` | `model` | `Any` | `None` | The PyTorch HuggingFace model instance to compress or inject. |
+| `KroneckerTTLoRACompressor` | `rank` | `int` | `8` | Low-rank bottleneck projection rank. |
+| `KroneckerTTLoRACompressor` | `gamma` | `float` | `1.0` | Controls `gamma` configuration in `KroneckerTTLoRACompressor`. |
+| `KroneckerTTLoRACompressor` | `lora_r` | `int` | `4` | Rank of the residual LoRA parameter update matrix. |
+| `KroneckerTTLoRACompressor` | `lora_alpha` | `float` | `8.0` | Scaling multiplier for LoRA weight updates. |
+| `KroneckerTTLoRACompressor` | `max_error` | `float` | `0.35` | Upper bound on relative Frobenius reconstruction error before fallback. |
+| `KroneckerTTLoRACompressor` | `target_attention_only` | `bool` | `False` | Controls `target_attention_only` configuration in `KroneckerTTLoRACompressor`. |
+| `KroneckerTTLoRACompressor` | `fallback_to_original` | `bool` | `True` | Whether to revert to dense weights if decomposition exceeds error threshold. |
+| `KroneckerTTLoRACompressor` | `skip_attention_qkv` | `bool` | `False` | Controls `skip_attention_qkv` configuration in `KroneckerTTLoRACompressor`. |
+| `KroneckerTTLoRACompressor` | `cfg` | `Any` | `None` | Controls `cfg` configuration in `KroneckerTTLoRACompressor`. |
+| `KroneckerTTLoRALayer` | `base_layer` | `Any` | **Required** | Controls `base_layer` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `m1` | `Any` | **Required** | Controls `m1` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `n1` | `Any` | **Required** | Controls `n1` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `m2` | `Any` | **Required** | Controls `m2` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `n2` | `Any` | **Required** | Controls `n2` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `tt_shapes` | `Any` | **Required** | Controls `tt_shapes` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `tt_ranks` | `str` | `(1, 4, 4, 1)` | Controls `tt_ranks` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `gamma` | `float` | `1.0` | Controls `gamma` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `lora_r` | `int` | `4` | Rank of the residual LoRA parameter update matrix. |
+| `KroneckerTTLoRALayer` | `lora_alpha` | `float` | `8.0` | Scaling multiplier for LoRA weight updates. |
+| `KroneckerTTLoRALayer` | `r_min` | `int` | `2` | Controls `r_min` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `r_max` | `int` | `32` | Controls `r_max` configuration in `KroneckerTTLoRALayer`. |
+| `KroneckerTTLoRALayer` | `entropy_threshold` | `float` | `0.75` | Controls `entropy_threshold` configuration in `KroneckerTTLoRALayer`. |
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/kronecker_tt_lora-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

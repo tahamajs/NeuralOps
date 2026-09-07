@@ -70,6 +70,27 @@ $$Y = \text{FactorisedLinear}_{\text{out}}\left( \text{Reshape}(O^{\text{fused}}
 
 ---
 
+
+## Architecture & Data Flow
+
+The `FactorisedLinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
@@ -585,4 +606,51 @@ def inject_orion(
 > Benchmarks Pending — run `bash run_on_gpu_server.sh suite` to populate results.
 > See [Empirical Validation Protocol](../empirical_validation_protocol.md).
 
+## Configuration & Hyperparameters
+
+The `FactorisedLinear` module (registered under `orion`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `FactorisedLinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `energy` | `float` | `0.95` | Controls `energy` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `min_rank` | `int` | `4` | Controls `min_rank` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `max_rank` | `int` | `64` | Controls `max_rank` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `FactorisedLinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `FactorisedLinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `device` | `Any` | `None` | Controls `device` configuration in `FactorisedLinear`. |
+| `FactorisedLinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `FactorisedLinear`. |
+| `ORIONAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `ORIONAttention` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `ORIONAttention` | `model_config` | `Any` | `None` | Controls `model_config` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `orion_cfg` | `Any` | `None` | Controls `orion_cfg` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `ORIONAttention`. |
+| `ORIONAttention` | `bert_mode` | `bool` | `False` | Controls `bert_mode` configuration in `ORIONAttention`. |
+| `ORIONConfig` | `svd_energy` | `float` | `0.95` | Controls `svd_energy` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `svd_min_rank` | `int` | `4` | Controls `svd_min_rank` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `svd_max_rank` | `int` | `64` | Controls `svd_max_rank` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `num_kernel_heads` | `int` | `8` | Controls `num_kernel_heads` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `num_full_heads` | `int` | `4` | Controls `num_full_heads` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `rff_features` | `int` | `256` | Controls `rff_features` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `softpick_temperature` | `float` | `1.0` | Controls `softpick_temperature` configuration in `ORIONConfig`. |
+| `ORIONConfig` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `ORIONConfig`. |
+
+
+## Attention Maps & Activation Diagnostics
+
+The `FactorisedLinear` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/orion/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Hugging Face Model Hub Checkpoints
+
+- **Repository URL**: `https://huggingface.co/tahamajs/orion-verified` *(status: model checkpoint pending final distributed sweep)*
+- **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
 

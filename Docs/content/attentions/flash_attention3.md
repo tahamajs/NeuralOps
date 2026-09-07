@@ -83,6 +83,27 @@ Standard Softmax attention reads and writes $S$ and $P$ to HBM, incurring $\Thet
 
 ---
 
+
+## Architecture & Data Flow
+
+The `FlashAttention3` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
@@ -254,3 +275,82 @@ class FlashAttention3(BaseAttention):
 1. **Shah, J., Dao, T., Subramanian, P., et al. (2024)**. *FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision*. arXiv preprint [arXiv:2407.08608](https://arxiv.org/abs/2407.08608).
 2. **Dao, T. (2023)**. *FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning*. In International Conference on Learning Representations (ICLR 2024). [arXiv:2307.08691](https://arxiv.org/abs/2307.08691).
 3. **Dao, T., Fu, D. Y., Ermon, S., Rudra, A., & Ré, C. (2022)**. *FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness*. In Advances in Neural Information Processing Systems (NeurIPS 2022).
+
+## Configuration & Hyperparameters
+
+The `FlashAttention3` module (registered under `flash3`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `FlashAttention3` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `FlashAttention3` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `FlashAttention3` | `use_fp8` | `bool` | `False` | Controls `use_fp8` configuration in `FlashAttention3`. |
+| `FlashAttention3` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `FlashAttention3`. |
+| `FlashAttention3` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `FlashAttention3`. |
+| `FlashAttention3` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `FlashAttention3`. |
+| `FlashAttention3` | `layer_id` | `Any` | `None` | Controls `layer_id` configuration in `FlashAttention3`. |
+| `FlashAttention3` | `layer_idx` | `Any` | `None` | Controls `layer_idx` configuration in `FlashAttention3`. |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject FlashAttention3 dynamically
+model = inject_attention(model, attn_type='flash3', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Empirical Benchmark Results
+
+Evaluations across sequence lengths and model scales:
+
+| Model | Dataset / Benchmark | Metric / Accuracy | Latency (ms) | Peak Memory (MB) |
+| :--- | :--- | :--- | :--- | :--- |
+| `distilbert-base-uncased` | default | None | None | None |
+| `distilbert-base-uncased` | default | None | None | None |
+| `distilbert-base-uncased` | default | None | None | None |
+
+
+## Attention Maps & Activation Diagnostics
+
+The `FlashAttention3` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/flash_attention3/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

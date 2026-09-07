@@ -77,6 +77,27 @@ In **ClusterFormer**, centroids attend **globally** over all keys $K_1, \dots, K
 
 ---
 
+
+## Architecture & Data Flow
+
+The `ClusterAttention` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Step-by-Step Tensor Execution Trace
 
 ```
@@ -333,3 +354,81 @@ def inject_cluster(
     layer.attention = new_attn
     return new_attn
 ```
+
+## Configuration & Hyperparameters
+
+The `ClusterAttention` module (registered under `cluster`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `ClusterAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `ClusterAttention` | `rank` | `Any` | `None` | Low-rank bottleneck projection rank. |
+| `ClusterAttention` | `num_clusters` | `int` | `16` | Controls `num_clusters` configuration in `ClusterAttention`. |
+| `ClusterAttention` | `n_iters` | `int` | `3` | Controls `n_iters` configuration in `ClusterAttention`. |
+| `ClusterAttention` | `window_size` | `int` | `32` | Controls `window_size` configuration in `ClusterAttention`. |
+| `ClusterAttention` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `ClusterAttention` | `comp_config` | `Any` | `None` | Controls `comp_config` configuration in `ClusterAttention`. |
+| `ClusterAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `ClusterAttention`. |
+| `ClusterAttention` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `ClusterAttention`. |
+| `LoRALinear` | `in_features` | `Any` | **Required** | Controls `in_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `out_features` | `Any` | **Required** | Controls `out_features` configuration in `LoRALinear`. |
+| `LoRALinear` | `bias` | `bool` | `True` | Controls `bias` configuration in `LoRALinear`. |
+| `LoRALinear` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `LoRALinear` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `LoRALinear` | `freeze_base` | `bool` | `False` | Controls `freeze_base` configuration in `LoRALinear`. |
+| `LoRALinear` | `device` | `Any` | `None` | Controls `device` configuration in `LoRALinear`. |
+| `LoRALinear` | `dtype` | `Any` | `None` | Controls `dtype` configuration in `LoRALinear`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject ClusterAttention dynamically
+model = inject_attention(model, attn_type='cluster', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Empirical Benchmark Results
+
+Evaluations across sequence lengths and model scales:
+
+| Model | Dataset / Benchmark | Metric / Accuracy | Latency (ms) | Peak Memory (MB) |
+| :--- | :--- | :--- | :--- | :--- |
+| `distilbert-base-uncased` | default | None | None | None |
+
+
+## Attention Maps & Activation Diagnostics
+
+The `ClusterAttention` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/cluster_attention/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

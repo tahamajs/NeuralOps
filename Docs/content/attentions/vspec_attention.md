@@ -3,6 +3,27 @@
 ## 1. Mathematical Formulation & Architecture
 Combines SVD low-rank projectors with variational spectral gating $\mathbf{g} = \sigma(\mathbf{\mu} + \mathbf{\epsilon} \odot e^{\mathbf{\sigma}})$ and top-$k$ token routing with guaranteed $[\text{CLS}]$ preservation.
 
+
+## Architecture & Data Flow
+
+The `DynamicLowRankProjector` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 2. SST-2 Evaluation
 Achieves 89.0% Acc on SST-2.
 
@@ -290,3 +311,67 @@ assert out.logits.shape == (2, 2), f'Shape mismatch: {out.logits.shape}'
 print('Verification successful: logits shape', out.logits.shape)
 "
 ```
+
+## Configuration & Hyperparameters
+
+The `DynamicLowRankProjector` module (registered under `inject_vspec_attn`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `DynamicLowRankProjector` | `rank` | `int` | `32` | Low-rank bottleneck projection rank. |
+| `DynamicLowRankProjector` | `in_dim` | `int` | `768` | Controls `in_dim` configuration in `DynamicLowRankProjector`. |
+| `DynamicLowRankProjector` | `out_dim` | `int` | `768` | Controls `out_dim` configuration in `DynamicLowRankProjector`. |
+| `DynamicLowRankProjector` | `bias` | `bool` | `True` | Controls `bias` configuration in `DynamicLowRankProjector`. |
+| `DynamicLowRankProjector` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `DynamicLowRankProjector` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `DynamicLowRankProjector` | `freeze_base` | `bool` | `True` | Controls `freeze_base` configuration in `DynamicLowRankProjector`. |
+| `HeadGate` | `hidden_dim` | `Any` | **Required** | Controls `hidden_dim` configuration in `HeadGate`. |
+| `HeadGate` | `n_heads` | `Any` | **Required** | Controls `n_heads` configuration in `HeadGate`. |
+| `TokenRouter` | `hidden_dim` | `Any` | **Required** | Controls `hidden_dim` configuration in `TokenRouter`. |
+| `TokenRouter` | `keep_ratio` | `float` | `0.75` | Controls `keep_ratio` configuration in `TokenRouter`. |
+| `TokenRouter` | `min_tokens` | `int` | `8` | Controls `min_tokens` configuration in `TokenRouter`. |
+| `VSpecAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `VSpecAttention` | `rank` | `int` | `64` | Low-rank bottleneck projection rank. |
+| `VSpecAttention` | `pretrained_attn` | `Any` | `None` | Controls `pretrained_attn` configuration in `VSpecAttention`. |
+| `VSpecAttention` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `VSpecAttention` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `VSpecAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `VSpecAttention`. |
+| `VariationalSpectralGate` | `hidden_dim` | `Any` | **Required** | Controls `hidden_dim` configuration in `VariationalSpectralGate`. |
+| `VariationalSpectralGate` | `rank` | `Any` | **Required** | Low-rank bottleneck projection rank. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject DynamicLowRankProjector dynamically
+model = inject_attention(model, attn_type='inject_vspec_attn', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
+

@@ -71,6 +71,27 @@ Y = X (W_i^{\text{down}})^\top (W_i^{\text{up}})^\top + b_i + X S_i^\top \in \ma
 
 ---
 
+
+## Architecture & Data Flow
+
+The `SVDCompressedAttention` module coordinates input projection factorization, intermediate representation routing, and output synthesis:
+
+```
+Input Activation X [B, N, D]
+   │
+   ├── Low-Rank Bottleneck Down-Projection: Z = X W_down [B, N, r]
+   ├── Head Expansion & Up-Projection: Q, K, V [B, H, N, d_k]
+   ├── Attention Scoring / Kernelized Associative Scan: S = Score(Q, K)
+   └── Context Projection & Residual Output: Y = Context V W_out [B, N, D]
+```
+
+### Step-by-Step Tensor Shape Trace
+
+1. **Input Representation**: Shape `[B, N, D]` where $B$ is batch size, $N$ is token count, $D$ is hidden dimension.
+2. **Factorized Projections**: Bottleneck compression into rank $r \ll D$ yielding `[B, N, r]` intermediates before head projection `[B, H, N, d_k]`.
+3. **Attention / Linear Scan**: Aggregation produces contextual representation `[B, H, N, d_v]`.
+4. **Output Linear Synthesis**: Final projection restores hidden dimension `[B, N, D]` followed by residual addition.
+
 ## 3. Step-by-Step Tensor Execution Trace
 
 ### Tensor Shape Transformation Table
@@ -899,4 +920,65 @@ def inject_svd_compressed(
 >    Splitting $\Sigma_r^{1/2}$ equally across factorized matrices balances spectral condition numbers $\kappa(U_r) \approx \kappa(V_r) = \sqrt{\kappa(W)}$, preventing FP16/BF16 gradient underflow.
 > 3. **Lyapunov Stability**:
 >    State recurrence parameters satisfy $\lambda_t \in (0, 1)$, ensuring strict asymptotic decay and preventing state saturation on long contexts ($L > 4096$).
+
+## Configuration & Hyperparameters
+
+The `SVDCompressedAttention` module (registered under `inject_svd_compressed`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
+
+| Class | Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `SVDCompressedAttention` | `config` | `Any` | `None` | HuggingFace architecture configuration instance. |
+| `SVDCompressedAttention` | `old_attn` | `Any` | `None` | Controls `old_attn` configuration in `SVDCompressedAttention`. |
+| `SVDCompressedAttention` | `dropout` | `float` | `0.1` | Controls `dropout` configuration in `SVDCompressedAttention`. |
+| `SVDCompressedAttention` | `layer_idx` | `int` | `0` | Controls `layer_idx` configuration in `SVDCompressedAttention`. |
+| `SVDCompressedAttention` | `ranks` | `Any` | `None` | Controls `ranks` configuration in `SVDCompressedAttention`. |
+| `SVDCompressedAttention` | `lora_rank` | `int` | `16` | Rank of the residual LoRA parameter update matrix. |
+| `SVDCompressedAttention` | `lora_alpha` | `float` | `32.0` | Scaling multiplier for LoRA weight updates. |
+| `SVDCompressedAttention` | `is_decoder` | `Any` | `None` | Controls `is_decoder` configuration in `SVDCompressedAttention`. |
+| `SVDCompressedAttention` | `add_sparse` | `bool` | `False` | Controls `add_sparse` configuration in `SVDCompressedAttention`. |
+| `SVDCompressedAttention` | `sparsity_level` | `float` | `0.7` | Controls `sparsity_level` configuration in `SVDCompressedAttention`. |
+
+
+## Usage & Integration Examples
+
+### HuggingFace Injection & Verification
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from framework.core.attention_utils import inject_attention
+
+# 1. Initialize base model
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
+
+# 2. Inject SVDCompressedAttention dynamically
+model = inject_attention(model, attn_type='inject_svd_compressed', rank=64)
+
+# 3. Execute forward pass
+input_ids = torch.randint(0, 1000, (2, 128))
+outputs = model(input_ids)
+print('Output logits shape:', outputs.logits.shape)
+```
+
+
+## Attention Maps & Activation Diagnostics
+
+The `SVDCompressedAttention` architecture incorporates telemetry hooks for tracking singular value decay, intermediate activation spectra, and receptive field distributions:
+- **Activation Snapshots**: Receptive patterns and attention logits are logged under `results/diagnostics/svd_compressed/`.
+- **Frobenius Error Tracking**: Relative reconstruction residual error is recorded per layer.
+- **Entropy & Head Sparsity**: Singular spectral entropy is computed across attention projection heads to monitor representation rank collapse.
+
+
+## Limitations & Failure Modes
+
+1. **Extreme Low-Rank Truncation Degradation**: When bottleneck rank is excessively small, representational collapse may occur on high-entropy reasoning tasks.
+2. **Sequence Length Scaling Invariants**: Very short sequences exhibit reduced acceleration due to kernel launch overhead.
+3. **Dynamic Memory Footprint**: Allocation during initial decomposition requires temporary buffer memory proportional to the hidden dimension squared.
+
+
+## Future Work & Algorithmic Extensions
+
+- **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
+- **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
+- **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
 
