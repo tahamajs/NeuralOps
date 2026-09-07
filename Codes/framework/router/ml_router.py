@@ -1,3 +1,9 @@
+"""
+ML Router – machine learning-based intelligent routing for task dispatch.
+
+Dynamically routes tasks based on features and learned patterns.
+"""
+
 # framework/routing/ml_router.py
 from typing import Any
 from typing import Dict, List, Optional, Tuple

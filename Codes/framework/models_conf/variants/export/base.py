@@ -1,3 +1,9 @@
+"""
+Export base – abstract interface for model export implementations.
+
+Defines the contract for exporting models to various formats (ONNX, TorchScript, etc.).
+"""
+
 from abc import ABC, abstractmethod
 
 from framework.core.registry import Registry

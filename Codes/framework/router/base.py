@@ -1,3 +1,9 @@
+"""
+Base router – abstract base class for all routing implementations.
+
+Defines the interface and common functionality for task routing.
+"""
+
 # framework/routing/base.py
 import time
 from abc import ABC, abstractmethod

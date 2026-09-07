@@ -1,3 +1,9 @@
+"""
+Compression base – abstract interface for model compression strategies.
+
+Defines the contract for compression implementations (distillation, pruning, quantization, etc.).
+"""
+
 from abc import ABC, abstractmethod
 
 from framework.core.registry import Registry
