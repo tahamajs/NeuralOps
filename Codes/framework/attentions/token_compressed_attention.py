@@ -167,8 +167,9 @@ class TokenCompressedAttention(BaseAttention):
         rank: Optional[int] = 64,
         compression_ratio: float = 0.5,
         pretrained_attn: Optional[nn.Module] = None,
-        lora_rank: int = 16,
-        lora_alpha: float = 32.0,
+        lora_rank: Optional[int] = None,
+        lora_alpha: Optional[float] = None,
+        comp_config: Optional[Any] = None,
         is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
@@ -178,6 +179,8 @@ class TokenCompressedAttention(BaseAttention):
         dim = None
         if config is not None and not isinstance(config, int):
             dim = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", None)))
+        if dim is None and comp_config is not None:
+            dim = _cfg_get(comp_config, "hidden_size", _cfg_get(comp_config, "dim", None))
         if dim is None and src is not None:
             dim = getattr(src, "hidden_size", getattr(src, "embed_dim", None))
             if dim is None and hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
@@ -192,8 +195,12 @@ class TokenCompressedAttention(BaseAttention):
             dim = kwargs.get("hidden_size", 768)
 
         num_heads = None
-        if config is not None and not isinstance(config, int):
+        if "num_heads" in kwargs and kwargs["num_heads"] is not None:
+            num_heads = kwargs["num_heads"]
+        elif config is not None and not isinstance(config, int):
             num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", None)))
+        if num_heads is None and comp_config is not None:
+            num_heads = _cfg_get(comp_config, "num_attention_heads", _cfg_get(comp_config, "n_heads", None))
         if num_heads is None and src is not None:
             num_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", getattr(src, "n_head", None)))
         if num_heads is None:
@@ -201,15 +208,17 @@ class TokenCompressedAttention(BaseAttention):
 
         self.dim: int = int(dim)
         self.num_heads: int = max(1, int(num_heads))
-        self.head_dim: int = getattr(
-            config, "head_dim", kwargs.get("head_dim", self.dim // self.num_heads)
-        ) if config is not None else self.dim // self.num_heads
-
-        cfg_kv = (
-            _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
+        self.head_dim: int = int(
+            _cfg_get(config, "head_dim", kwargs.get("head_dim", self.dim // self.num_heads))
             if config is not None
-            else None
+            else kwargs.get("head_dim", self.dim // self.num_heads)
         )
+
+        cfg_kv = None
+        if config is not None:
+            cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
+        if cfg_kv is None and comp_config is not None:
+            cfg_kv = _cfg_get(comp_config, "num_key_value_heads", _cfg_get(comp_config, "num_kv_heads", None))
         if cfg_kv is None and src is not None:
             cfg_kv = getattr(src, "num_key_value_heads", getattr(src, "num_kv_heads", None))
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
@@ -218,19 +227,47 @@ class TokenCompressedAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        self.compression_ratio: float = compression_ratio
-        self.lora_rank: int = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
-        self.lora_alpha: float = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
+        self.compression_ratio: float = float(kwargs.get("compression_ratio", _cfg_get(comp_config, "compression_ratio", compression_ratio)))
+
+        # Uniform LoRA configuration: read independently from kwargs, comp_config, config
+        if "lora_rank" in kwargs and kwargs["lora_rank"] is not None:
+            resolved_lora_rank = int(kwargs["lora_rank"])
+        elif comp_config is not None and _cfg_get(comp_config, "lora_rank") is not None:
+            resolved_lora_rank = int(_cfg_get(comp_config, "lora_rank"))
+        elif config is not None and _cfg_get(config, "lora_rank") is not None:
+            resolved_lora_rank = int(_cfg_get(config, "lora_rank"))
+        else:
+            resolved_lora_rank = 16 if lora_rank is None else int(lora_rank)
+
+        if "lora_alpha" in kwargs and kwargs["lora_alpha"] is not None:
+            resolved_lora_alpha = float(kwargs["lora_alpha"])
+        elif comp_config is not None and _cfg_get(comp_config, "lora_alpha") is not None:
+            resolved_lora_alpha = float(_cfg_get(comp_config, "lora_alpha"))
+        elif config is not None and _cfg_get(config, "lora_alpha") is not None:
+            resolved_lora_alpha = float(_cfg_get(config, "lora_alpha"))
+        else:
+            resolved_lora_alpha = 32.0 if lora_alpha is None else float(lora_alpha)
+
+        self.lora_rank: int = resolved_lora_rank
+        self.lora_alpha: float = resolved_lora_alpha
 
         # Decoder / Causal flag
         if is_decoder is not None:
-            self.is_decoder: bool = is_decoder
+            self.is_decoder: bool = bool(is_decoder)
+        elif kwargs.get("is_decoder") is not None:
+            self.is_decoder = bool(kwargs["is_decoder"])
+        elif src is not None and getattr(src, "is_decoder", False):
+            self.is_decoder = True
         elif config is not None:
-            self.is_decoder = bool(_cfg_get(config, "is_decoder", False))
+            self.is_decoder = bool(
+                _cfg_get(config, "is_decoder", False)
+                or _cfg_get(config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            )
         else:
             self.is_decoder = False
 
         self.is_nested_encoder: bool = False
+        self.rotary_emb: Optional[Any] = getattr(src, "rotary_emb", None) if src is not None else None
 
         self.q_lin = LoRALinear(
             self.dim, self.q_head_size, bias=True,
@@ -255,8 +292,8 @@ class TokenCompressedAttention(BaseAttention):
             nn.Linear(64, 1),
         )
         dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
+            _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
+            if config is not None
             else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
@@ -267,6 +304,9 @@ class TokenCompressedAttention(BaseAttention):
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
         with torch.no_grad():
+            if hasattr(old_attn, "rotary_emb") and getattr(old_attn, "rotary_emb", None) is not None:
+                self.rotary_emb = old_attn.rotary_emb
+
             w_q, b_q = None, None
             w_k, b_k = None, None
             w_v, b_v = None, None
@@ -278,6 +318,7 @@ class TokenCompressedAttention(BaseAttention):
                 hasattr(old_attn, "query")
                 and not hasattr(old_attn, "dense")
                 and not hasattr(old_attn, "out_proj")
+                and not hasattr(old_attn, "c_proj")
             ):
                 self.is_nested_encoder = True
 
@@ -285,16 +326,30 @@ class TokenCompressedAttention(BaseAttention):
                 self.is_nested_encoder = True
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
-                    w_o = old_attn.output.dense.weight
-                    b_o = old_attn.output.dense.bias
+                    dense = getattr(old_attn.output.dense, "base_layer", old_attn.output.dense)
+                    w_o = dense.weight.detach()
+                    b_o = dense.bias.detach() if dense.bias is not None else None
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 Fused c_attn
+            if hasattr(src, "rotary_emb") and getattr(src, "rotary_emb", None) is not None:
+                self.rotary_emb = src.rotary_emb
+
+            # Helper to extract base layer from LoRALinear or Conv1D wrapper
+            def _unwrap_linear(layer: Any) -> Any:
+                if hasattr(layer, "base_layer"):
+                    return layer.base_layer
+                return layer
+
+            # Pattern 1: GPT-2 Fused c_attn / c_proj
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
-                c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim:
+                c_attn_layer = _unwrap_linear(src.c_attn)
+                c_proj_layer = _unwrap_linear(src.c_proj)
+
+                c_attn_w = c_attn_layer.weight.detach()
+                c_attn_b = c_attn_layer.bias.detach() if c_attn_layer.bias is not None else None
+                # Conv1D weights stored as [in_dim, out_dim]. If first dim is self.dim, transpose to [out_dim, in_dim]
+                if c_attn_w.dim() == 2 and c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim:
                     c_attn_w = c_attn_w.t()
 
                 q_dim = self.q_head_size
@@ -310,54 +365,68 @@ class TokenCompressedAttention(BaseAttention):
                     b_k = c_attn_b[q_dim : q_dim + k_dim]
                     b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
 
-                out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.dim and out_w.shape[1] != self.dim:
+                out_w = c_proj_layer.weight.detach()
+                if out_w.dim() == 2 and out_w.shape[0] == self.dim and out_w.shape[1] != self.dim:
                     out_w = out_w.t()
                 w_o = out_w
-                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
+                b_o = c_proj_layer.bias.detach() if c_proj_layer.bias is not None else None
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
-                w_q = src.query.weight.detach()
-                b_q = src.query.bias.detach() if src.query.bias is not None else None
-                w_k = src.key.weight.detach()
-                b_k = src.key.bias.detach() if src.key.bias is not None else None
-                w_v = src.value.weight.detach()
-                b_v = src.value.bias.detach() if src.value.bias is not None else None
+                q_l = _unwrap_linear(src.query)
+                k_l = _unwrap_linear(src.key)
+                v_l = _unwrap_linear(src.value)
+
+                w_q = q_l.weight.detach()
+                b_q = q_l.bias.detach() if q_l.bias is not None else None
+                w_k = k_l.weight.detach()
+                b_k = k_l.bias.detach() if k_l.bias is not None else None
+                w_v = v_l.weight.detach()
+                b_v = v_l.bias.detach() if v_l.bias is not None else None
 
                 if w_o is None:
-                    for attr in ("dense", "out_proj", "o_proj"):
+                    for attr in ("dense", "out_proj", "o_proj", "c_proj"):
                         if hasattr(src, attr):
-                            proj = getattr(src, attr)
+                            proj = _unwrap_linear(getattr(src, attr))
                             w_o = proj.weight.detach()
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
-                w_q = src.q_proj.weight.detach()
-                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
-                w_k = src.k_proj.weight.detach()
-                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
-                w_v = src.v_proj.weight.detach()
-                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+                q_l = _unwrap_linear(src.q_proj)
+                k_l = _unwrap_linear(src.k_proj)
+                v_l = _unwrap_linear(src.v_proj)
+
+                w_q = q_l.weight.detach()
+                b_q = q_l.bias.detach() if q_l.bias is not None else None
+                w_k = k_l.weight.detach()
+                b_k = k_l.bias.detach() if k_l.bias is not None else None
+                w_v = v_l.weight.detach()
+                b_v = v_l.bias.detach() if v_l.bias is not None else None
 
                 if hasattr(src, "o_proj"):
-                    w_o = src.o_proj.weight.detach()
-                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+                    o_l = _unwrap_linear(src.o_proj)
+                    w_o = o_l.weight.detach()
+                    b_o = o_l.bias.detach() if o_l.bias is not None else None
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
-                w_q = src.q_lin.weight.detach()
-                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
-                w_k = src.k_lin.weight.detach()
-                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
-                w_v = src.v_lin.weight.detach()
-                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+                q_l = _unwrap_linear(src.q_lin)
+                k_l = _unwrap_linear(src.k_lin)
+                v_l = _unwrap_linear(src.v_lin)
+
+                w_q = q_l.weight.detach()
+                b_q = q_l.bias.detach() if q_l.bias is not None else None
+                w_k = k_l.weight.detach()
+                b_k = k_l.bias.detach() if k_l.bias is not None else None
+                w_v = v_l.weight.detach()
+                b_v = v_l.bias.detach() if v_l.bias is not None else None
 
                 if hasattr(src, "out_lin"):
-                    w_o = src.out_lin.weight.detach()
-                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+                    o_l = _unwrap_linear(src.out_lin)
+                    w_o = o_l.weight.detach()
+                    b_o = o_l.bias.detach() if o_l.bias is not None else None
 
             # Pattern 5: UniversalAdapter fallback
             if w_q is None or w_k is None or w_v is None:
@@ -387,6 +456,17 @@ class TokenCompressedAttention(BaseAttention):
                     f"TokenCompressedAttention: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
+            # Frobenius norm checks on extracted base weights
+            for name, w_tensor in [("Q", w_q), ("K", w_k), ("V", w_v)]:
+                if w_tensor is not None:
+                    norm = float(torch.linalg.norm(w_tensor.float()))
+                    if norm < 1e-4:
+                        raise RuntimeError(f"TokenCompressedAttention: {name} projection norm is near zero: {norm}")
+            if w_o is not None and not self.is_nested_encoder:
+                norm_o = float(torch.linalg.norm(w_o.float()))
+                if norm_o < 1e-4:
+                    raise RuntimeError(f"TokenCompressedAttention: Out projection norm is near zero: {norm_o}")
+
             def _copy_layer(target_layer, w, b, src_sub=None):
                 if w is not None:
                     if w.shape == target_layer.weight.shape:
@@ -408,6 +488,12 @@ class TokenCompressedAttention(BaseAttention):
                 elif target_layer.bias is not None:
                     target_layer.bias.zero_()
 
+                # Ensure base weights remain frozen
+                target_layer.weight.requires_grad = False
+                if target_layer.bias is not None:
+                    target_layer.bias.requires_grad = False
+
+                # Preserve source LoRA if present
                 if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
                     if src_sub.lora_A is not None and src_sub.lora_B is not None and target_layer.lora_A is not None and target_layer.lora_B is not None:
                         src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
@@ -435,10 +521,6 @@ class TokenCompressedAttention(BaseAttention):
             _copy_layer(self.v_lin, w_v, b_v, sub_v)
             if w_o is not None:
                 _copy_layer(self.out_lin, w_o, b_o, sub_o)
-
-                f_norm_o = float(torch.linalg.norm(self.out_lin.weight))
-                if f_norm_o < 1e-4:
-                    raise RuntimeError(f"TokenCompressedAttention: Out projection norm is near zero: {f_norm_o}")
 
     def _select_compressed_tokens(
         self, x: torch.Tensor, k_tensor: torch.Tensor, v_tensor: torch.Tensor, mask: Optional[torch.Tensor]
@@ -512,9 +594,22 @@ class TokenCompressedAttention(BaseAttention):
 
         # Partial Rotary Position Embeddings (RoPE)
         pos_emb = kwargs.get("position_embeddings", None)
-        if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
-            cos, sin = pos_emb
-            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+            cos, sin = pos_emb[0], pos_emb[1]
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids", None))
+        elif self.rotary_emb is not None:
+            pos_ids = kwargs.get("position_ids", None)
+            if pos_ids is None:
+                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
+            try:
+                cos, sin = self.rotary_emb(v, seq_len=L)
+            except Exception:
+                try:
+                    cos, sin = self.rotary_emb(v, pos_ids)
+                except Exception:
+                    cos, sin = None, None
+            if cos is not None and sin is not None:
+                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
         # Compress tokens for K and V
         k, v, top_idx, comp_mask = self._select_compressed_tokens(hidden_states, k, v, attention_mask)
@@ -585,42 +680,48 @@ def inject_token_compressed_attn(
     **kwargs: Any,
 ) -> Optional[TokenCompressedAttention]:
     """Safe injection hook for TokenCompressedAttention."""
+    src = old_attn
+    if src is None and layer is not None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(layer, attr):
+                src = getattr(layer, attr)
+                break
+
+    if src is None:
+        return None
+
+    if model_config is None and hasattr(layer, "config"):
+        model_config = layer.config
+    if model_config is None and hasattr(src, "config"):
+        model_config = src.config
+
+    # Uniform parameter extraction from kwargs, comp_config, model_config
+    comp_ratio = float(kwargs.pop("compression_ratio", _cfg_get(comp_config, "compression_ratio", 0.5)))
+    lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", _cfg_get(model_config, "lora_rank", 16)))
+    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", _cfg_get(model_config, "lora_alpha", 32.0)))
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
+
+    # Pre-flight weight extraction test before replacing original attention
     try:
-        src = old_attn
-        if src is None:
-            for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(layer, attr):
-                    src = getattr(layer, attr)
-                    break
-
-        if src is None:
-            return None
-
-        if model_config is None and hasattr(layer, "config"):
-            model_config = layer.config
-        if model_config is None and hasattr(src, "config"):
-            model_config = src.config
-
-        comp_ratio = _cfg_get(comp_config, "compression_ratio", 0.5)
-        lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
-        rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
-
         new_attn = TokenCompressedAttention(
             config=model_config,
             rank=rank,
             lora_rank=lora_rank,
+            lora_alpha=lora_alpha,
             compression_ratio=comp_ratio,
             pretrained_attn=src,
+            comp_config=comp_config,
             **kwargs,
         )
 
-        for attr in ("attention", "self_attn", "attn", "self"):
-            if hasattr(layer, attr):
-                setattr(layer, attr, new_attn)
-                return new_attn
+        if layer is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    setattr(layer, attr, new_attn)
+                    return new_attn
 
-        layer.attention = new_attn
         return new_attn
     except Exception as e:
-        logger.error("inject_token_compressed_attn failed at layer %d: %s", layer_idx, e)
+        logger.error("inject_token_compressed_attn: Pre-flight weight copy failed at layer %d: %s. Aborting replacement.", layer_idx, e)
         return None
+

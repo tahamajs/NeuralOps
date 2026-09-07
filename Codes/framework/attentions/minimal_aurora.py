@@ -472,8 +472,6 @@ class MinimalAURORAAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
-        alpha = torch.sigmoid(self.pres_gate)
-        output = alpha * output + (1.0 - alpha) * hidden_states
         return output, (attn_weights if output_attentions else None)
 
     def get_ortho_loss(self) -> torch.Tensor:
