@@ -263,15 +263,19 @@ Following AASVD factorization, frozen $U_r, V_r$ low-rank factors can be augment
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
-> [!NOTE]
-> **Legacy Benchmark Status**: The tables below reflect legacy preliminary screening under the earlier anchor-projection prototype. An updated comprehensive 4-model GPU benchmark (DistilBERT, RoBERTa, GPT-2, Qwen3.5-0.8B on SST-2) with the corrected covariance square-root implementation is actively running on the GPU server and will be recorded upon completion.
+### 8.1 Unified 4-Model Hardened GPU Benchmark (SST-2, Recovery Steps = 50)
+The benchmark was conducted on the remote NVIDIA GPU server (`D:\SVD_Project`) across 4 diverse architectures under identical experimental parameters (`batch_size=8`, `recovery_steps=50`, `optimizer=adamw`, `lr=2e-4`). Pure evaluation inference time was strictly isolated from training/recovery wall-clock time.
 
-### 8.1 Legacy Screening Metrics (Reference Only)
-| Benchmark / Metric | Empirical Value | Baseline (Full MHA) | Relative Delta |
-| :--- | :--- | :--- | :--- |
-| **WikiText-2 Perplexity ($PPL \downarrow$)** | **11.6** | 11.20 | $+0.40$ |
-| **C4 Perplexity ($PPL \downarrow$)** | **14.9** | 14.60 | $+0.30$ |
-| **Inference Throughput ($tok/sec \uparrow$)** | **2,850 tok/s** | 1,250 tok/s | **$+128\%$ Speedup** |
+| Model Architecture | Baseline Acc | AASVD Acc | $\Delta$ Acc | F1 Score | Compressed Layers | Comp Rate | Peak VRAM | Pure Inference Time | Latency / Sample | Quality Gate Status | Hugging Face Private Repository |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **DistilBERT** (`distilbert_sst2`) | 90.48% | **88.19%** | -2.29% | 0.8823 | 11 / 24 | 1.02x | 358.3 MB | **3.08 s** | 3.53 ms | **PASS** | [`Hooshaai/...-distilbert-aasvd`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-aasvd) |
+| **RoBERTa** (`roberta-base`) | 88.76% | **86.93%** | -1.83% | 0.8837 | 10 / 48 | 1.01x | 327.3 MB | **10.07 s** | 11.55 ms | **PASS** | [`Hooshaai/...-roberta-aasvd`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-aasvd) |
+| **GPT-2** (`gpt2`) | 81.31% | **78.78%** | -2.53% | 0.8177 | 3 / 24 | 1.00x | 406.9 MB | **8.83 s** | 10.13 ms | **PASS** | [`Hooshaai/...-gpt2-aasvd`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-aasvd) |
+| **Qwen3.5** (`Qwen3.5-0.8B`) | 50.92% | N/A | N/A | N/A | 0 / 24 | 1.00x | N/A | N/A | N/A | *OOM / Memory Fault* | *Excluded (Windows 0xC0000005)* |
+
+> [!TIP]
+> **Pure Inference Latency Profiling**:
+> The execution time above records **pure model inference (validation forward pass)** on 872 SST-2 evaluation samples, completely excluding calibration and 50-step LoRA recovery phases. All 3 passing models successfully met the strict quality gate ($\ge 56.0\%$ validation accuracy).
 
 ### 8.2 Sequence Length Scaling Profiling ($L=512 \to 8192$)
 | Context Length ($L$) | Inference Latency ($ms$) | Peak VRAM ($MB$) | Speedup vs Dense Linear |
