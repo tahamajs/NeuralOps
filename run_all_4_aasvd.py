@@ -246,6 +246,8 @@ for m in models:
                         recall = float(row["recall"].values[-1]) if "recall" in row.columns and not pd.isna(row["recall"].values[-1]) else None
                         tokens_per_sec = float(row["tokens_per_sec"].values[-1]) if "tokens_per_sec" in row.columns and not pd.isna(row["tokens_per_sec"].values[-1]) else None
                         flops_reduction = float(row["flops_reduction_pct"].values[-1]) if "flops_reduction_pct" in row.columns and not pd.isna(row["flops_reduction_pct"].values[-1]) else None
+                        eval_time = float(row["eval_time_s"].values[-1]) if "eval_time_s" in row.columns and not pd.isna(row["eval_time_s"].values[-1]) else None
+                        latency = float(row["latency_ms"].values[-1]) if "latency_ms" in row.columns and not pd.isna(row["latency_ms"].values[-1]) else None
                         if "elapsed_s" in row.columns and not pd.isna(row["elapsed_s"].values[-1]):
                             try:
                                 elapsed = float(row["elapsed_s"].values[-1])
@@ -274,6 +276,8 @@ for m in models:
     vram_str = f"{peak_vram:.1f} MB" if peak_vram is not None else "N/A"
     num_fallback_str = num_fallback_layers if 'num_fallback_layers' in locals() else "0"
     avg_error_str = avg_error if 'avg_error' in locals() else "N/A"
+    inf_time_str = f"{eval_time:.2f}s" if ('eval_time' in locals() and eval_time is not None) else f"{elapsed:.1f}s"
+    latency_str = f"{latency:.2f} ms" if ('latency' in locals() and latency is not None) else "N/A"
 
     final_stats.append({
         "Model": m["name"],
@@ -292,10 +296,11 @@ for m in models:
         "Comp Rate": comp_rate_str,
         "FLOPs Red": f"{flops_reduction:.1f}%" if ('flops_reduction' in locals() and flops_reduction is not None) else "N/A",
         "Peak VRAM": vram_str,
+        "Inference Time": inf_time_str,
+        "Latency / sample": latency_str,
         "Throughput (tok/s)": f"{tokens_per_sec:.1f}" if ('tokens_per_sec' in locals() and tokens_per_sec is not None) else "N/A",
-        "Time (s)": f"{elapsed:.1f}",
     })
-    print(f"\n>>> FINISHED MODEL: {m['name']} in {elapsed:.1f}s (Exit: {res.returncode}, Status: {status}, Compressed Layers: {num_compressed_layers}, Comp Rate: {comp_rate_str})", flush=True)
+    print(f"\n>>> FINISHED MODEL: {m['name']} in Inference: {inf_time_str} (Exit: {res.returncode}, Status: {status}, Compressed Layers: {num_compressed_layers}, Comp Rate: {comp_rate_str})", flush=True)
 
 print("\n" + "=" * 80, flush=True)
 print("4-MODEL BENCHMARK RESULTS SUMMARY (AASVD on GPU)", flush=True)

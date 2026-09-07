@@ -461,6 +461,7 @@ def evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, devi
     eval_time = max(1e-4, time.monotonic() - t0)
     tokens_per_sec = round(total_tokens / eval_time, 2)
     peak_vram_mb = round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 2) if device_type == "cuda" else 0.0
+    latency_ms_per_sample = round((eval_time / max(1, total)) * 1000.0, 2)
 
     acc = round(100.0 * correct / max(1, total), 2)
     val_loss = round(total_loss / max(1, num_batches), 4)
@@ -488,6 +489,8 @@ def evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, devi
         "val_loss": val_loss,
         "peak_vram_mb": peak_vram_mb,
         "tokens_per_sec": tokens_per_sec,
+        "eval_time_s": round(eval_time, 2),
+        "latency_ms": latency_ms_per_sample,
     }
 
 
@@ -2253,6 +2256,8 @@ def main():
             "recall": perf_metrics.get("recall", 0.0),
             "val_loss": perf_metrics.get("val_loss", 0.0),
             "elapsed_s": round(time.monotonic() - t, 2),
+            "eval_time_s": perf_metrics.get("eval_time_s", round(time.monotonic() - t, 2)),
+            "latency_ms": perf_metrics.get("latency_ms", 0.0),
             "peak_vram_mb": perf_metrics.get("peak_vram_mb", 0.0),
             "tokens_per_sec": perf_metrics.get("tokens_per_sec", 0.0),
             "total_params_before": comp_metrics.get("total_params_before", total_params_before),
@@ -2354,7 +2359,8 @@ def main():
             "Compressed Layers": r.get("num_compressed_layers", "0"),
             "Compression Rate": comp_rate_str,
             "Peak VRAM": vram_str,
-            "Time (s)": f"{float(r.get('elapsed_s', 0.0)):.1f}",
+            "Inference Time (s)": f"{float(r.get('eval_time_s', r.get('elapsed_s', 0.0))):.2f}",
+            "Latency (ms/samp)": f"{float(r.get('latency_ms', 0.0)):.2f}" if r.get('latency_ms') else "N/A",
         })
 
     import pandas as pd
@@ -2375,8 +2381,8 @@ def main():
             "",
             "## Empirical Comparative Profiling",
             "",
-            "| Module | Status | Accuracy | Delta Acc | F1 Score | Compressed Layers | Comp Rate | Peak VRAM | Time (s) |",
-            "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+            "| Module | Status | Accuracy | Delta Acc | F1 Score | Compressed Layers | Comp Rate | Peak VRAM | Inference Time (s) | Latency (ms) |",
+            "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
         ]
         for sr in summary_rows:
             st = sr["Status"]
