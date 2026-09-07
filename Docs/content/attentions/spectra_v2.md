@@ -347,6 +347,8 @@ def inject_spectra_v2(
     return new_attn
 ```
 
+**Registered Aliases**: , 
+
 ## Configuration & Hyperparameters
 
 The `LoRALinear` module (registered under `inject_spectra_v2`) provides configurable parameters for runtime optimization, numerical stability thresholds, and low-rank allocation:
