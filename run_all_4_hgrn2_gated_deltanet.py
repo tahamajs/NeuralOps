@@ -20,7 +20,7 @@ models = [
              "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
              "--output_dir", rf"results\unified_{MODULE}\distilbert",
              "--parent_checkpoint", r"results\unified_asvd\distilbert\finetuned_model.pt",
-             "--modules", f"full,{MODULE}", "--batch_size", "8", "--recovery_steps", "200",
+             "--modules", f"full,{MODULE}", "--batch_size", "8", "--recovery_steps", "50",
              "--learning_rate", "2e-4", "--lora_rank", "16", "--rank", "32",
              "--precision", "fp16", "--fresh", "--defer_export", "--timeout", "1200"],
      "summary_csv": rf"results\unified_{MODULE}\distilbert\summary.csv",
@@ -31,7 +31,7 @@ models = [
              "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
              "--output_dir", rf"results\unified_{MODULE}\roberta",
              "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
-             "--modules", f"full,{MODULE}", "--batch_size", "8", "--recovery_steps", "200",
+             "--modules", f"full,{MODULE}", "--batch_size", "8", "--recovery_steps", "50",
              "--learning_rate", "2e-4", "--lora_rank", "16", "--rank", "32",
              "--precision", "fp16", "--fresh", "--defer_export", "--timeout", "1200"],
      "summary_csv": rf"results\unified_{MODULE}\roberta\summary.csv",
@@ -42,7 +42,7 @@ models = [
              "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
              "--output_dir", rf"results\unified_{MODULE}\gpt2",
              "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
-             "--modules", f"full,{MODULE}", "--batch_size", "8", "--recovery_steps", "200",
+             "--modules", f"full,{MODULE}", "--batch_size", "8", "--recovery_steps", "50",
              "--learning_rate", "2e-4", "--lora_rank", "16", "--rank", "32",
              "--precision", "fp16", "--fresh", "--defer_export", "--timeout", "1200"],
      "summary_csv": rf"results\unified_{MODULE}\gpt2\summary.csv",
@@ -53,7 +53,7 @@ models = [
              "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
              "--output_dir", rf"results\unified_{MODULE}\qwen3_5",
              "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
-             "--modules", f"full,{MODULE}", "--batch_size", "8", "--recovery_steps", "200",
+             "--modules", f"full,{MODULE}", "--batch_size", "8", "--recovery_steps", "50",
              "--learning_rate", "2e-4", "--lora_rank", "16", "--rank", "32",
              "--precision", "fp16", "--fresh", "--defer_export", "--timeout", "1500"],
      "summary_csv": rf"results\unified_{MODULE}\qwen3_5\summary.csv",
@@ -115,6 +115,68 @@ for m in models:
         try: df = pd.read_csv(sp); print(f"\nSummary for {m['name']}:\n{df.to_string(index=False)}")
         except Exception as e: print(f"Could not read summary CSV for {m['name']}: {e}")
     else: print(f"No summary CSV found for {m['name']} at {sp}")
+
+
+# ==============================================================================
+# BATCH CONSOLIDATED SUMMARY & VISUALIZATION CHARTS
+# ==============================================================================
+try:
+    _summary_rows = []
+    for _m in models:
+        _sp = Path(_m["summary_csv"])
+        if _sp.exists():
+            try:
+                _df = pd.read_csv(_sp)
+                if not _df.empty:
+                    _cand = _df[_df["module"] != "full"] if "module" in _df.columns else (_df[_df["module_name"] != "full"] if "module_name" in _df.columns else _df)
+                    _row = (_cand if not _cand.empty else _df).iloc[-1].to_dict()
+                    _row["model"] = _m["name"]
+                    _summary_rows.append(_row)
+            except Exception:
+                pass
+    if _summary_rows:
+        _sum_df = pd.DataFrame(_summary_rows)
+        _first_out = Path(models[0]["out_dir"]).parent
+        _sum_df.to_csv(_first_out / "unified_summary_all_models.csv", index=False)
+
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        _p_models = [str(r.get("model", "")) for r in _summary_rows]
+        _p_accs = [float(r.get("accuracy_pct", r.get("mean_accuracy", 0.0))) for r in _summary_rows]
+        _p_rates = [float(r.get("compression_rate", 1.0)) for r in _summary_rows]
+
+        # Chart 1: Accuracy Comparison
+        fig, ax1 = plt.subplots(figsize=(8, 5))
+        bars = ax1.bar(_p_models, _p_accs, color="#4C72B0", width=0.4)
+        ax1.set_ylabel("Accuracy (%)", fontweight="bold")
+        ax1.set_title(f"Unified 4-Model Quality Evaluation ({MODULE.upper()})", fontweight="bold")
+        ax1.set_ylim(0, 105)
+        ax1.grid(axis="y", linestyle="--", alpha=0.5)
+        for b in bars:
+            h = b.get_height()
+            ax1.annotate(f"{h:.1f}%", xy=(b.get_x() + b.get_width()/2, h), xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontweight="bold")
+        plt.tight_layout()
+        plt.savefig(_first_out / "accuracy_comparison.png", dpi=300)
+        plt.close()
+
+        # Chart 2: Pareto Frontier
+        fig, ax2 = plt.subplots(figsize=(8, 5))
+        for i, m_name in enumerate(_p_models):
+            ax2.scatter(_p_rates[i], _p_accs[i], s=140, label=m_name, zorder=5)
+            ax2.annotate(f"{m_name} ({_p_rates[i]:.2f}x, {_p_accs[i]:.1f}%)", (_p_rates[i], _p_accs[i]), xytext=(6, -4), textcoords="offset points", fontsize=9)
+        ax2.set_xlabel("Compression Rate (x)", fontweight="bold")
+        ax2.set_ylabel("Accuracy (%)", fontweight="bold")
+        ax2.set_title(f"Pareto Tradeoff: Accuracy vs Compression ({MODULE.upper()})", fontweight="bold")
+        ax2.grid(True, linestyle="--", alpha=0.5)
+        plt.tight_layout()
+        plt.savefig(_first_out / "pareto_accuracy_vs_compression.png", dpi=300)
+        plt.close()
+        print(f"Saved comparative visualization charts to {_first_out}", flush=True)
+except Exception as _e_plot:
+    print(f"[WARN] Comparative plots generation skipped: {_e_plot}", flush=True)
 
 print(f"\nStarting Quality Gate & Automated Hugging Face Export...\n", flush=True)
 try:
