@@ -57,3 +57,35 @@ def test_nested_encoder_bypass():
     enc = torch.randn(2, 8, 64)
     out, _ = block(x, encoder_hidden_states=enc)
     assert torch.equal(out, x)
+
+
+def test_granite_hybrid_gqa_and_rope():
+    class DummyQwen(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(64, 64)
+            self.k_proj = nn.Linear(64, 32)
+            self.v_proj = nn.Linear(64, 32)
+            self.out_proj = nn.Linear(64, 64)
+            self.num_attention_heads = 4
+            self.num_key_value_heads = 2
+            self.head_dim = 16
+
+    old = DummyQwen()
+    block = GraniteHybridBlock(dim=64, old_attn=old, ratio=0)
+    assert block.num_kv_heads == 2
+    assert block.kv_repeat == 2
+    x = torch.randn(2, 8, 64)
+    cos = torch.randn(2, 1, 8, 16)
+    sin = torch.randn(2, 1, 8, 16)
+    out, _ = block(x, position_embeddings=(cos, sin))
+    assert out.shape == (2, 8, 64)
+
+
+def test_granite_hybrid_3d_mask():
+    block = GraniteHybridBlock(dim=64, num_heads=4, ratio=0)
+    x = torch.randn(2, 8, 64)
+    mask = torch.zeros(2, 8, 8)
+    out, _ = block(x, attention_mask=mask)
+    assert out.shape == (2, 8, 64)
+
