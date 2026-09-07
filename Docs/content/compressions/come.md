@@ -776,3 +776,13 @@ compressed_model = bridge.compress()
 
 ## Future Work
 - Dynamic online rank adaptation during long-context generation.
+
+## Unified 4-Architecture Benchmark Results (CoMe Layer Shedding + Bridges)
+Evaluated on SST-2 sentiment classification (FP16, layer shedding with learnable interpolation bridges, LoRA rank 16, 200 recovery steps):
+
+| Model Architecture | Baseline Acc | CoMe Acc | Δ Acc | F1 Score | Retained Layers | Layer Reduction | FLOPs Reduction | Bridges | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:------------:|:--------:|:-----:|:--------:|:---------------:|:---------------:|:---------------:|:-------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.48% | 0.00% | -90.48% | 0.9077 | 9/12 | 25.0% | 25.0% | 0 | 389.5 MB | `FAIL` | N/A |
+| ROBERTA | 88.76% | 0.00% | -88.76% | 0.8942 | 9/12 | 25.0% | 25.0% | 0 | 299.9 MB | `FAIL` | N/A |
+| GPT2 | 81.31% | 0.00% | -81.31% | 0.8372 | 9/12 | 25.0% | 25.0% | 0 | 391.2 MB | `FAIL` | N/A |
+| QWEN3_5 | 67.55% | 0.00% | -67.55% | 0.5501 | 9/12 | 25.0% | 25.0% | 0 | 1809.8 MB | `FAIL` | N/A |
