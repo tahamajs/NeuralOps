@@ -230,22 +230,41 @@ class LoLAAttention(BaseAttention):
         pretrained_attn: Optional[nn.Module] = None,
         **kwargs: Any,
     ) -> None:
-        cfg = config or model_config
-        actual_rank = rank if rank is not None else getattr(cfg, "rank", 32)
+        cfg = config if config is not None else model_config
+
+        def _cfg_get(name: str, fallback: Any) -> Any:
+            if cfg is not None:
+                val = getattr(cfg, name, None)
+                if val is not None:
+                    return val
+            return fallback
+
+        actual_rank = rank if rank is not None else _cfg_get("rank", 32)
         super().__init__(cfg, actual_rank)
-        self.adapter = ModelAdapter(cfg)
-        self.num_heads: int = self.adapter.num_heads
-        self.num_kv_heads: int = self.adapter.num_key_value_heads
-        self.hidden_size: int = self.adapter.hidden_size
-        self.head_dim: int = self.adapter.head_dim
+
+        # Ensure hidden_size and num_heads are safely discovered
+        if cfg is not None:
+            self.adapter = ModelAdapter(cfg)
+            self.num_heads = self.adapter.num_heads or 12
+            self.num_kv_heads = self.adapter.num_key_value_heads or self.num_heads
+            self.hidden_size = self.adapter.hidden_size or 768
+            self.head_dim = self.adapter.head_dim or (self.hidden_size // self.num_heads)
+            self.kv_repeat = self.adapter.kv_repeat or 1
+            self.is_decoder = bool(_cfg_get("is_decoder", False))
+        else:
+            self.num_heads = kwargs.get("num_heads", 12)
+            self.num_kv_heads = kwargs.get("num_key_value_heads", self.num_heads)
+            self.hidden_size = kwargs.get("hidden_size", 768)
+            self.head_dim = kwargs.get("head_dim", self.hidden_size // self.num_heads)
+            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+            self.is_decoder = bool(kwargs.get("is_decoder", False))
+
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.kv_repeat: int = self.adapter.kv_repeat
-        self.is_decoder: bool = getattr(cfg, "is_decoder", False)
         self.is_nested_encoder: bool = False
 
         self.rank: int = actual_rank
-        self.lora_rank: int = getattr(cfg, "lora_rank", lora_rank)
+        self.lora_rank: int = _cfg_get("lora_rank", lora_rank)
 
         self.q_proj = LowRankLinear(self.hidden_size, self.all_head_size, self.rank, lora_rank=self.lora_rank, bias=True)
         self.k_proj = LowRankLinear(self.hidden_size, self.kv_head_size, self.rank, lora_rank=self.lora_rank, bias=True)
@@ -259,7 +278,7 @@ class LoLAAttention(BaseAttention):
         self.cache: LowRankCache = LowRankCache(max_len=max_seq_len, low_rank_k=low_rank_cache_size)
         self.LR_scale: nn.Parameter = nn.Parameter(torch.tensor(0.5))
         self.sparse_gate: nn.Parameter = nn.Parameter(torch.tensor(0.5))
-        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
+        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None) if pretrained_attn is not None else None
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -311,42 +330,52 @@ class LoLAAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                bias = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                bias_data = bias.data.clone() if bias is not None else None
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (weight.dim() == 2 and weight.shape[0] < weight.shape[1]):
+                    weight = weight.t()
+                split_size = weight.shape[0] // 3
+                q_w = weight[:split_size, :]
+                k_w = weight[split_size : 2 * split_size, :]
+                v_w = weight[2 * split_size :, :]
+                q_b = bias_data[:split_size] if bias_data is not None else None
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+                v_b = bias_data[2 * split_size :] if bias_data is not None else None
+                extracted["q"] = (q_w, q_b)
+                extracted["k"] = (k_w, k_b)
+                extracted["v"] = (v_w, v_b)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(src.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            c_proj_mod = src.c_proj
+            base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+            w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]):
+                    w_o = w_o.t()
+                b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             s = getattr(src, "self")
-            if hasattr(s, "query"):
-                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
-            if hasattr(s, "key"):
-                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
-            if hasattr(s, "value"):
-                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+            for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
+                mod = getattr(s, sub_name, None)
+                if mod is not None:
+                    base_mod = getattr(mod, "base_layer", mod)
+                    if hasattr(base_mod, "weight"):
+                        extracted[proj_key] = (base_mod.weight.data.clone(), base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None)
 
         if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
             dense = src.output.dense
-            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
+            base_dense = getattr(dense, "base_layer", dense)
+            if hasattr(base_dense, "weight"):
+                extracted["o"] = (base_dense.weight.data.clone(), base_dense.bias.data.clone() if getattr(base_dense, "bias", None) is not None else None)
 
         # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
@@ -360,8 +389,9 @@ class LoLAAttention(BaseAttention):
                 for name in names:
                     if hasattr(src, name):
                         layer = getattr(src, name)
-                        if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                        base_l = getattr(layer, "base_layer", layer)
+                        if hasattr(base_l, "weight"):
+                            extracted[proj] = (base_l.weight.data.clone(), base_l.bias.data.clone() if getattr(base_l, "bias", None) is not None else None)
                             break
 
         # Detect nested encoder architecture
@@ -535,21 +565,20 @@ def inject_lola_attention(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[LoLAAttention]:
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
-
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
-
     try:
-        rank = getattr(comp_config, "rank", 32)
+        rank = getattr(comp_config, "rank", 32) if comp_config is not None else 32
         new_attn = LoLAAttention(
             config=model_config,
             rank=rank,
             comp_config=comp_config,
             pretrained_attn=old_attn,
         )
-        layer.attention = new_attn
+        if hasattr(layer, "attention"):
+            layer.attention = new_attn
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
         return new_attn
     except Exception:
         return None

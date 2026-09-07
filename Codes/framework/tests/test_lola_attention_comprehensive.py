@@ -132,3 +132,42 @@ def test_lola_inject_safe():
     x = torch.randn(2, 8, 64)
     out, _ = layer.attention(x)
     assert out.shape == (2, 8, 64)
+
+
+def test_lola_config_none_safe():
+    attn = LoLAAttention(config=None, rank=16, hidden_size=64, num_heads=4)
+    assert attn.hidden_size == 64
+    assert attn.num_heads == 4
+    x = torch.randn(2, 8, 64)
+    out, _ = attn(x)
+    assert out.shape == (2, 8, 64)
+
+
+def test_lola_base_layer_peft_unwrapping():
+    class DummyLoRALikeWrapper(nn.Module):
+        def __init__(self, in_dim, out_dim):
+            super().__init__()
+            self.base_layer = nn.Linear(in_dim, out_dim)
+
+        @property
+        def weight(self):
+            return self.base_layer.weight
+
+        @property
+        def bias(self):
+            return self.base_layer.bias
+
+    class DummyWrappedGPT2Attention(nn.Module):
+        def __init__(self, dim=64):
+            super().__init__()
+            self.c_attn = DummyLoRALikeWrapper(dim, 3 * dim)
+            self.c_proj = DummyLoRALikeWrapper(dim, dim)
+
+    cfg = MockConfig(is_decoder=True, model_type="gpt2")
+    wrapped_attn = DummyWrappedGPT2Attention(64)
+    attn = LoLAAttention(config=cfg, rank=16, pretrained_attn=wrapped_attn)
+    assert attn.is_decoder
+    x = torch.randn(2, 8, 64)
+    out, _ = attn(x)
+    assert out.shape == (2, 8, 64)
+
