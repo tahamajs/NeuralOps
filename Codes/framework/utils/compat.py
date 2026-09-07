@@ -209,10 +209,13 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         elif any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
                                           ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
                                           ".comp_", ".svd_", ".cur_", ".salr", ".direct_svd", ".sparse_proj",
-                                          ".cores", ".centroids", ".weight_table", ".alpha", ".gate",
+                                          ".cores", ".centroids", ".weight_table", ".alpha",
                                           ".proj_k", ".proj_v")):
             trainable_params.append(param)
         elif not (n_low.endswith(".weight") or n_low.endswith(".bias")) and any(tag in n_low for tag in ("attention.", "self_attn.", ".attn.")):
+            trainable_params.append(param)
+        # In hybrid recurrent attention modules (HGRN, DeltaNet, etc.), only keep gates and adapters trainable, not full base projections
+        elif any(tag in n_low for tag in (".gate.", ".beta.", ".input_gate.", ".forget_gate.", ".alpha_gate.")):
             trainable_params.append(param)
 
     for name, param in model.named_parameters():
