@@ -694,6 +694,8 @@ def inject_asvd(
                     layer.self_attn = new_attn
                 elif hasattr(layer, "self"):
                     layer.self = new_attn
+                elif hasattr(layer, "attn"):
+                    layer.attn = new_attn
             return new_attn
         except RuntimeError as err:
             logger.warning("inject_asvd: Pre-flight weight extraction failed on %s: %s. Aborting replacement.", type(old_attn).__name__, err)
@@ -709,4 +711,6 @@ def inject_asvd(
             layer.self_attn = new_attn
         elif hasattr(layer, "self"):
             layer.self = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
     return new_attn
