@@ -16,7 +16,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
-from framework.core.attention_mask import apply_attention_mask
+from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -532,13 +532,7 @@ class TPAttention(BaseAttention):
 
         mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
         if mask is not None:
-            if mask.dim() == 2:
-                mask_t = mask[:, None, None, :].to(scores.dtype)
-                scores = scores + (1.0 - mask_t) * -10000.0
-            elif mask.dim() == 3:
-                scores = scores + mask.unsqueeze(1).to(scores.dtype)
-            elif mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
+            scores = apply_attention_mask(scores, mask)
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
@@ -549,7 +543,11 @@ class TPAttention(BaseAttention):
                 head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
                 head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
-            attn_weights = attn_weights * head_mask
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(1)
+            elif head_mask.dim() == 4:
+                head_mask = head_mask
+            attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
         context = torch.matmul(attn_weights, v)
         context = context.permute(0, 2, 1, 3).contiguous().view(B, L, H * hd)
@@ -561,6 +559,10 @@ class TPAttention(BaseAttention):
 
         if output.shape[-1] != hidden_states.shape[-1]:
             output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1])) if output.shape[-1] < hidden_states.shape[-1] else output[..., :hidden_states.shape[-1]]
+
+        valid_m = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
+        if valid_m is not None:
+            output = output * valid_m.unsqueeze(-1).to(output.dtype)
 
         return (output, (attn_weights if output_attentions else None))
 
