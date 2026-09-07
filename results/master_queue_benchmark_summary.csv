@@ -63,3 +63,7 @@ fusion_attn,run_all_4_fusion_attn.py,0,69.97,PASS,,2026-09-08T00:23:02.669714
 galerkin,run_all_4_galerkin.py,0,77.22,PASS,,2026-09-08T00:24:19.894355
 galerkin_attention,run_all_4_galerkin_attention.py,0,67.69,PASS,,2026-09-08T00:25:27.588545
 gated_delta_net,run_all_4_gated_delta_net.py,0,1764.03,PASS,,2026-09-08T00:54:51.621950
+gated_deltanet_block,run_all_4_gated_deltanet_block.py,0,1671.92,PASS,,2026-09-08T01:22:43.563872
+gated_linear_attention,run_all_4_gated_linear_attention.py,0,85.66,PASS,,2026-09-08T01:24:09.254217
+goldfinch_ahn,run_all_4_goldfinch_ahn.py,0,69.79,PASS,,2026-09-08T01:25:19.046033
+gqa,run_all_4_gqa.py,0,96.22,PASS,,2026-09-08T01:26:55.272311

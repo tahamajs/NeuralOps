@@ -574,5 +574,41 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T00:54:51.621950"
+  },
+  {
+    "module": "gated_deltanet_block",
+    "runner": "run_all_4_gated_deltanet_block.py",
+    "exit_code": 0,
+    "elapsed_s": 1671.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:22:43.563872"
+  },
+  {
+    "module": "gated_linear_attention",
+    "runner": "run_all_4_gated_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 85.66,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:24:09.254217"
+  },
+  {
+    "module": "goldfinch_ahn",
+    "runner": "run_all_4_goldfinch_ahn.py",
+    "exit_code": 0,
+    "elapsed_s": 69.79,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:25:19.046033"
+  },
+  {
+    "module": "gqa",
+    "runner": "run_all_4_gqa.py",
+    "exit_code": 0,
+    "elapsed_s": 96.22,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T01:26:55.272311"
   }
 ]
