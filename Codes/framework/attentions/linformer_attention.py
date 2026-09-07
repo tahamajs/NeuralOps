@@ -254,6 +254,11 @@ class LinformerAttention(BaseAttention):
         dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1))) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
+        # Preservation gate: sigmoid(-3) ≈ 0.047 → output starts as ~95% passthrough of hidden_states.
+        # This prevents the majority-baseline collapse before LoRA has recovered the attention behavior.
+        # Trained jointly with LoRA; becomes trainable parameter so get_recovery_params picks it up.
+        self.output_gate = nn.Parameter(torch.tensor(-3.0))
+
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -505,6 +510,11 @@ class LinformerAttention(BaseAttention):
             out = context
         else:
             out = self.out_proj(context)
+
+        # Preservation gate: blend new attention output with original hidden_states.
+        # sigmoid(-3) ≈ 0.047 at init → 95% passthrough preserves pretrained activations.
+        alpha = torch.sigmoid(self.output_gate)
+        out = alpha * out + (1.0 - alpha) * hidden_states
 
         return out, (attn if output_attentions else None)
 
