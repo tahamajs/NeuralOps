@@ -9,7 +9,7 @@ For the broad end-to-end explanation, read the [Complete Research Guide](./COMPL
 | Goal | Start here | What follows |
 | --- | --- | --- |
 | Understand the project | [Attention survey](./Attention_Mechanisms_For_Paper.md) | Architecture notes and mathematical background |
-| Run the framework | [Deployment guide](./DEPLOYMENT.md) and [Kaggle/GPU guide](./Kaggle_Deployment_Guide.md) | Server, GPU, telemetry, and Pages setup |
+| Run the framework | [Deployment guide](./DEPLOYMENT.md) and [Kaggle/GPU guide](./DEPLOYMENT.md) | Server, GPU, telemetry, and Pages setup |
 | Explore architectures | [Attention catalog](./content/attentions/) | Attention mechanisms, hybrids, and SSM variants |
 | Explore compression | [Compression catalog](./content/compressions/) | SVD, quantization, pruning, and low-rank engines |
 | Read research deep dives | [Attention series](./blog/01_spectral_svd_lowrank_attentions.md) | Five linked series covering attention and compression |

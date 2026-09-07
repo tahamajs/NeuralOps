@@ -38,10 +38,11 @@ jobs:
       run: |
         python Codes/framework/run_quality_sweep.py \
           --max_steps 1 \
-          --seeds 42 \
+          --seed 42 \
           --modules full \
-          --models bert \
-          --datasets sst2 \
+          --model bert-base-uncased \
+          --model_family bert \
+          --dataset sst2 \
           --batch_size 16 \
           --output_dir /tmp/test
         test -f /tmp/test/summary.csv
