@@ -364,15 +364,17 @@ class ZeroSAttention(BaseAttention):
                         src_lA = getattr(sub.lora_A, "weight", sub.lora_A)
                         src_lB = getattr(sub.lora_B, "weight", sub.lora_B)
                         if hasattr(src_lA, "data") and target.lora_A is not None:
-                            r_min = min(target.lora_A.shape[0], src_lA.shape[0])
-                            in_min = min(target.lora_A.shape[1], src_lA.shape[1])
-                            target.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
-                            target.lora_A.requires_grad = True
+                            if src_lA.shape[0] == target.lora_A.shape[0] and src_lA.shape[1] == target.lora_A.shape[1]:
+                                target.lora_A.data.copy_(src_lA.data)
+                                target.lora_A.requires_grad = True
+                            else:
+                                print(f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init.")
                         if hasattr(src_lB, "data") and target.lora_B is not None:
-                            out_min = min(target.lora_B.shape[0], src_lB.shape[0])
-                            r_min = min(target.lora_B.shape[1], src_lB.shape[1])
-                            target.lora_B.data[:out_min, :r_min].copy_(src_lB.data[:out_min, :r_min])
-                            target.lora_B.requires_grad = True
+                            if src_lB.shape[0] == target.lora_B.shape[0] and src_lB.shape[1] == target.lora_B.shape[1]:
+                                target.lora_B.data.copy_(src_lB.data)
+                                target.lora_B.requires_grad = True
+                            else:
+                                print(f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init.")
                         if hasattr(sub, "lora_scaling"):
                             target.lora_scaling = sub.lora_scaling
                         break
@@ -414,10 +416,16 @@ class ZeroSAttention(BaseAttention):
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif getattr(self, "rotary_emb", None) is not None:
             try:
-                from framework.utils.compat import maybe_apply_rotary
-                Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
+                rotary_out = self.rotary_emb(hidden_states, position_ids=kwargs.get("position_ids"))
+                if isinstance(rotary_out, tuple) and len(rotary_out) >= 2:
+                    cos, sin = rotary_out[0], rotary_out[1]
+                    Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
             except Exception:
-                pass
+                try:
+                    from framework.utils.compat import maybe_apply_rotary
+                    Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
+                except Exception:
+                    pass
 
         # GQA repeat
         if self.kv_repeat > 1:
@@ -431,11 +439,21 @@ class ZeroSAttention(BaseAttention):
         )
 
         eps = 1e-6
+        attn_map = None
         if is_decoder:
-            # Causal running mean calculation for key centering
-            step = torch.arange(1, N_k + 1, device=device, dtype=K.dtype).view(1, 1, N_k, 1)
-            k_cum_sum = torch.cumsum(K, dim=2)
-            k_running_mean = k_cum_sum / step
+            valid_m = get_token_valid_mask(attention_mask, B, N_k, device)
+            if valid_m is not None:
+                mask_f = valid_m.unsqueeze(1).unsqueeze(-1).to(K.dtype)
+                K = K * mask_f
+                V = V * mask_f
+                k_cum_sum = torch.cumsum(K, dim=2)
+                count = torch.cumsum(mask_f, dim=2).clamp(min=1.0)
+                k_running_mean = k_cum_sum / count
+            else:
+                step = torch.arange(1, N_k + 1, device=device, dtype=K.dtype).view(1, 1, N_k, 1)
+                k_cum_sum = torch.cumsum(K, dim=2)
+                k_running_mean = k_cum_sum / step
+
             k_centered = K - k_running_mean
 
             q_hat = F.relu(Q) + eps  # [B, H, L, d]
@@ -446,6 +464,7 @@ class ZeroSAttention(BaseAttention):
             kv_cum = torch.cumsum(kv, dim=2)  # [B, H, N_k, d, d]
             k_cum = torch.cumsum(k_hat, dim=2)  # [B, H, N_k, d]
 
+            sim = None
             if L == N_k:
                 num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)  # [B, H, L, d]
                 den = (q_hat * k_cum).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
@@ -462,6 +481,13 @@ class ZeroSAttention(BaseAttention):
                 den = sim.sum(dim=-1, keepdim=True)  # [B, H, L, 1]
 
             context = num / den.clamp(min=eps)  # [B, H, L, d]
+            context = self.dropout(context)
+
+            if output_attentions:
+                if sim is not None:
+                    attn_map = sim / den.clamp(min=eps)
+                else:
+                    attn_map = None
         else:
             # Bidirectional Mean-Centering
             valid_m = get_token_valid_mask(attention_mask, B, N_k, device)
@@ -480,6 +506,10 @@ class ZeroSAttention(BaseAttention):
             num = torch.matmul(q_hat, S_kv)                  # [B, H, L, d]
             den = torch.matmul(q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1)) + eps
             context = num / den.clamp(min=eps)
+            context = self.dropout(context)
+
+            if output_attentions:
+                attn_map = torch.matmul(q_hat, k_hat.transpose(-1, -2)) / den.clamp(min=eps)
 
         # Head mask broadcasting across 1D/2D/3D/4D
         if head_mask is not None:
@@ -501,7 +531,7 @@ class ZeroSAttention(BaseAttention):
         else:
             output = self.out(context)
 
-        return output, None
+        return output, attn_map
 
 
 @ATTENTION_REGISTRY.register("zeros_attention_inject")
