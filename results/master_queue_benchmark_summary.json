@@ -187,5 +187,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T18:46:03.456726"
+  },
+  {
+    "module": "bam_umoe",
+    "runner": "run_all_4_bam_umoe.py",
+    "exit_code": 0,
+    "elapsed_s": 225.49,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T18:49:48.947664"
+  },
+  {
+    "module": "block_transformer_hiba",
+    "runner": "run_all_4_block_transformer_hiba.py",
+    "exit_code": 0,
+    "elapsed_s": 165.28,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T18:52:34.232899"
   }
 ]
