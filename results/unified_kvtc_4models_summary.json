@@ -1,0 +1,54 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 2,
+    "Baseline Acc": "N/A",
+    "KVTC Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_2",
+    "Compressed Layers": "N/A",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Time (s)": "23.6"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 2,
+    "Baseline Acc": "N/A",
+    "KVTC Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_2",
+    "Compressed Layers": "N/A",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Time (s)": "23.5"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 2,
+    "Baseline Acc": "N/A",
+    "KVTC Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_2",
+    "Compressed Layers": "N/A",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Time (s)": "23.6"
+  },
+  {
+    "Model": "qwen3_5",
+    "Exit Code": 2,
+    "Baseline Acc": "N/A",
+    "KVTC Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_2",
+    "Compressed Layers": "N/A",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Time (s)": "23.2"
+  }
+]
