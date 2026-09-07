@@ -42,6 +42,15 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Helper to safely retrieve an attribute or dict entry from a config."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
     x1 = x[..., : x.shape[-1] // 2]

@@ -171,6 +171,14 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if old_attn is not None:
             self.copy_weights(old_attn)
 
+        # Requirement 4: Trainable parameter check and OOM-prevention warning
+        n_trainable_12_layers = sum(p.numel() for p in self.parameters() if p.requires_grad) * 12
+        if n_trainable_12_layers > 5e6:
+            logger.warning(
+                "Module HGRN2GatedDeltaNet creates %.1fM trainable parameters across 12 layers, may cause OOM on small GPUs.",
+                n_trainable_12_layers / 1e6,
+            )
+
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained Multi-Head Attention weights to both branches and output projection."""
         if hasattr(self.hgrn, "copy_weights"):
