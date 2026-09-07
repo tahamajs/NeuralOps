@@ -72,7 +72,7 @@ class AegisAttentionConfigV2:
     head_dim: int = 64
     num_key_value_heads: int = 12
     local_window: int = 64
-    rank: int = 64
+    rank: int = 384
     kernel_feature_dim: int = 128
     dropout: float = 0.1
     use_adaptive_pruning: bool = True
@@ -93,7 +93,7 @@ class FactorisedLinear(nn.Module):
         self,
         in_features: int,
         out_features: int,
-        rank: int = 64,
+        rank: int = 384,
         bias: bool = True,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
@@ -573,7 +573,10 @@ class AegisAttentionV2(BaseAttention):
         scores = scores.masked_fill(~band, mask_val)
 
         if eff_mask is not None and eff_mask.dim() == 4:
-            scores = scores + eff_mask.float()
+            if eff_mask.dtype == torch.bool:
+                scores = scores.masked_fill(~eff_mask, mask_val)
+            else:
+                scores = scores + eff_mask.float()
         elif mask_2d is not None:
             key_mask = mask_2d.unsqueeze(1).unsqueeze(2)
             scores = scores.masked_fill(~key_mask, mask_val)
@@ -675,14 +678,14 @@ def inject_aegis_v2(
         num_key_value_heads=n_kv_heads,
         head_dim=h_dim,
         local_window=getattr(comp_config, "block_size", 64),
-        rank=getattr(comp_config, "lora_r", 64),
+        rank=getattr(comp_config, "rank", getattr(comp_config, "lora_r", 384)),
         kernel_feature_dim=getattr(comp_config, "rff_features", 128),
         dropout=getattr(comp_config, "dropout", 0.1),
         use_adaptive_pruning=getattr(comp_config, "use_gate", True),
         gate_init_bias=getattr(comp_config, "gate_init_bias", 1.8),
     )
     new_attn = AegisAttentionV2(config=cfg)
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)
@@ -696,4 +699,6 @@ def inject_aegis_v2(
         layer.attention = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
+    elif hasattr(layer, "attn"):
+        layer.attn = new_attn
     return new_attn
