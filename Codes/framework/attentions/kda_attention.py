@@ -549,10 +549,14 @@ class KDAAttention(BaseAttention):
                 if pos_ids is None:
                     pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
                 try:
-                    cos, sin = rotary_module(v, pos_ids)
+                    cos, sin = rotary_module(q_raw, pos_ids)
                     q_raw, k_raw = apply_rotary_pos_emb(q_raw, k_raw, cos, sin, position_ids=pos_ids)
                 except Exception:
-                    pass
+                    try:
+                        cos, sin = rotary_module(q_raw, seq_len=L)
+                        q_raw, k_raw = apply_rotary_pos_emb(q_raw, k_raw, cos, sin, position_ids=pos_ids)
+                    except Exception:
+                        pass
 
         if self.kv_repeat > 1:
             k_raw = repeat_kv(k_raw, self.kv_repeat)
