@@ -181,36 +181,53 @@ class CosformerAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
+        def _cfg_get(k: str, default: Any = None) -> Any:
+            for obj in (config, comp_config):
+                if obj is not None and hasattr(obj, k):
+                    val = getattr(obj, k)
+                    if val is not None:
+                        return val
+            return kwargs.get(k, default)
+
         hidden_size = kwargs.get("hidden_size")
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
 
         if hidden_size is None:
-            if config is not None:
-                hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            elif source_attn is not None:
+            hidden_size = _cfg_get("hidden_size", _cfg_get("dim", None))
+            if hidden_size is None and source_attn is not None:
                 out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
                 hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            else:
+            elif hidden_size is None:
                 hidden_size = 768
 
         if num_heads is None:
-            if config is not None:
-                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
-            elif source_attn is not None:
+            num_heads = _cfg_get("num_attention_heads", _cfg_get("num_heads", None))
+            if num_heads is None and source_attn is not None:
                 num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
-            else:
+            elif num_heads is None:
                 num_heads = 12
 
         super().__init__(config, rank)
         self.dim: int = int(hidden_size)
         self.hidden_size: int = self.dim
         self.num_heads: int = int(num_heads)
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
-        self.head_dim: int = getattr(config, "head_dim", None) or (self.dim // max(1, self.num_heads))
+
+        kv_heads = _cfg_get("num_key_value_heads", None)
+        if kv_heads is None and source_attn is not None:
+            kv_heads = getattr(source_attn, "num_key_value_heads", getattr(source_attn, "num_kv_heads", getattr(source_attn, "n_kv_heads", None)))
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
+
+        resolved_head_dim = _cfg_get("head_dim", None)
+        if resolved_head_dim is None and source_attn is not None:
+            resolved_head_dim = getattr(source_attn, "head_dim", None)
+        if resolved_head_dim is None:
+            resolved_head_dim = self.dim // max(1, self.num_heads)
+        self.head_dim: int = int(resolved_head_dim)
+
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.max_seq_len: int = getattr(config, "max_position_embeddings", max_seq_len) if config is not None else max_seq_len
+        self.max_seq_len: int = int(_cfg_get("max_position_embeddings", max_seq_len))
         self.act_fun: str = act_fun
         self.eps: float = float(eps)
 
@@ -219,13 +236,13 @@ class CosformerAttention(BaseAttention):
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
-        self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        self.lora_rank: int = int(_cfg_get("lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_alpha: float = float(_cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base: bool = (self.lora_rank > 0)
 
         # Decoder & nested encoder detection
-        model_type = getattr(config, "model_type", "").lower()
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
+        model_type = getattr(config, "model_type", "").lower() if config is not None else ""
+        is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
         if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
