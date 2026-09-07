@@ -304,6 +304,27 @@ for m in models:
             if f_extra.is_file() and f_extra.name not in ("weights.pt", "pytorch_model.bin"):
                 shutil.copy2(f_extra, hf_export_dir / f_extra.name)
 
+    # Save complete publication-ready metrics
+    metrics_payload = {
+        "model_name": name,
+        "module": "kda",
+        "status": status,
+        "accuracy_pct": acc,
+        "f1": float(row.get("f1", row.get("mean_f1", 0.0))),
+        "precision": float(row.get("precision", 0.0)),
+        "recall": float(row.get("recall", 0.0)),
+        "eval_loss": float(row.get("eval_loss", 0.0)),
+        "params_total": row.get("params_total", None),
+        "params_active": row.get("params_active", None),
+        "param_reduction_pct": row.get("param_reduction_pct", None),
+        "peak_vram_mb": row.get("peak_vram_mb", None),
+        "tokens_per_sec": row.get("tokens_per_sec", None),
+        "elapsed_seconds": row.get("elapsed_seconds", None),
+        "full_metrics": row,
+    }
+    with open(hf_export_dir / "metrics.json", "w", encoding="utf-8") as mf:
+        json.dump(metrics_payload, mf, indent=2)
+
     # Comprehensive, publication-ready model card
     card_content = f"""---
 tags:
