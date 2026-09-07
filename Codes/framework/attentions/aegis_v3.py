@@ -69,7 +69,7 @@ class AegisConfig:
     r"""Configuration parameters for AegisAttention V3."""
     svd_energy: float = 0.95
     min_rank: int = 4
-    max_rank: int = 64
+    max_rank: int = 384
     num_local_heads: int = 8
     num_global_heads: int = 4
     local_window: int = 64
@@ -94,7 +94,7 @@ class FactorisedLinear(nn.Module):
         out_features_or_bias: Optional[Union[int, torch.Tensor]] = None,
         energy: float = 0.95,
         min_rank: int = 4,
-        max_rank: int = 64,
+        max_rank: int = 384,
         rank: Optional[int] = None,
         bias: bool = True,
         lora_rank: int = 16,
@@ -600,19 +600,22 @@ class AegisAttention(BaseAttention):
             if eff_mask.dim() == 2:
                 token_valid = eff_mask > 0 if eff_mask.dtype != torch.bool else eff_mask
             elif eff_mask.dim() == 4:
-                token_valid = eff_mask[:, 0, 0, :] > -10000.0 if eff_mask.min() < -1000 else eff_mask[:, 0, 0, :] > 0
+                m_eff = eff_mask > -10000.0 if eff_mask.dtype != torch.bool else eff_mask
+                token_valid = m_eff.any(dim=1).any(dim=-2).bool()
 
         if N < self.cfg.local_window or self.is_decoder:
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
-            if self.is_decoder and not is_cross and N > 1:
-                causal_mask = torch.triu(torch.full((N, N_kv), float("-inf"), device=Q.device, dtype=torch.float32), diagonal=1)
-                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
-
-            if eff_mask is not None:
-                if eff_mask.dim() == 2:
-                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                elif eff_mask.dim() == 4:
+            if eff_mask is not None and eff_mask.dim() == 4:
+                if eff_mask.dtype == torch.bool:
+                    scores = scores.masked_fill(~eff_mask, -10000.0)
+                else:
                     scores = scores + eff_mask.float()
+            else:
+                if self.is_decoder and not is_cross and N > 1:
+                    causal_mask = torch.triu(torch.full((N, N_kv), -10000.0, device=Q.device, dtype=torch.float32), diagonal=1)
+                    scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+                if eff_mask is not None and eff_mask.dim() == 2:
+                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
@@ -697,7 +700,7 @@ def inject_aegis_v3(
     cfg = AegisConfig(
         svd_energy=getattr(comp_config, "svd_energy", 0.95),
         min_rank=getattr(comp_config, "min_rank", 4),
-        max_rank=getattr(comp_config, "max_rank", 64),
+        max_rank=getattr(comp_config, "max_rank", 384),
         num_local_heads=getattr(comp_config, "num_local_heads", 8),
         num_global_heads=getattr(comp_config, "num_global_heads", 4),
         local_window=getattr(comp_config, "block_size", 64),
@@ -709,7 +712,7 @@ def inject_aegis_v3(
         model_config=model_config,
         aegis_cfg=cfg,
     )
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)
@@ -723,6 +726,8 @@ def inject_aegis_v3(
         layer.attention = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
+    elif hasattr(layer, "attn"):
+        layer.attn = new_attn
     return new_attn
 
 
