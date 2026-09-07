@@ -178,5 +178,14 @@
     "status": "FAIL",
     "error": null,
     "timestamp": "2026-09-07T18:40:27.872854"
+  },
+  {
+    "module": "asvd",
+    "runner": "run_all_4_asvd.py",
+    "exit_code": 0,
+    "elapsed_s": 335.58,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T18:46:03.456726"
   }
 ]

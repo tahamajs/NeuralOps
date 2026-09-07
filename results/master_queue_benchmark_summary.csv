@@ -19,3 +19,4 @@ aegis_v5_module,run_all_4_aegis_v5_module.py,0,243.37,PASS,,2026-09-07T18:24:03.
 aegis_v6,run_all_4_aegis_v6.py,0,240.57,PASS,,2026-09-07T18:28:04.237270
 armor,run_all_4_armor.py,0,0.0,SKIPPED_EXISTING,,2026-09-07T18:28:04.239347
 astro,run_all_4_astro.py,1,743.63,FAIL,,2026-09-07T18:40:27.872854
+asvd,run_all_4_asvd.py,0,335.58,PASS,,2026-09-07T18:46:03.456726
