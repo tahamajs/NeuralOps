@@ -448,5 +448,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T23:18:52.723513"
+  },
+  {
+    "module": "faq",
+    "runner": "run_all_4_faq.py",
+    "exit_code": 0,
+    "elapsed_s": 260.31,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T23:23:13.038549"
+  },
+  {
+    "module": "fasa",
+    "runner": "run_all_4_fasa.py",
+    "exit_code": 0,
+    "elapsed_s": 113.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T23:25:06.335597"
   }
 ]
