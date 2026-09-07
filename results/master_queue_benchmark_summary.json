@@ -484,5 +484,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-07T23:31:33.622763"
+  },
+  {
+    "module": "flash3_fp8",
+    "runner": "run_all_4_flash3_fp8.py",
+    "exit_code": 0,
+    "elapsed_s": 105.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-07T23:33:18.921464"
   }
 ]
