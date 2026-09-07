@@ -375,15 +375,17 @@ class XAttention(BaseAttention):
                         src_lA = getattr(sub.lora_A, "weight", sub.lora_A)
                         src_lB = getattr(sub.lora_B, "weight", sub.lora_B)
                         if hasattr(src_lA, "data") and target.lora_A is not None:
-                            r_min = min(target.lora_A.shape[0], src_lA.shape[0])
-                            in_min = min(target.lora_A.shape[1], src_lA.shape[1])
-                            target.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
-                            target.lora_A.requires_grad = True
+                            if src_lA.shape[0] == target.lora_A.shape[0] and src_lA.shape[1] == target.lora_A.shape[1]:
+                                target.lora_A.data.copy_(src_lA.data)
+                                target.lora_A.requires_grad = True
+                            else:
+                                print(f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init.")
                         if hasattr(src_lB, "data") and target.lora_B is not None:
-                            out_min = min(target.lora_B.shape[0], src_lB.shape[0])
-                            r_min = min(target.lora_B.shape[1], src_lB.shape[1])
-                            target.lora_B.data[:out_min, :r_min].copy_(src_lB.data[:out_min, :r_min])
-                            target.lora_B.requires_grad = True
+                            if src_lB.shape[0] == target.lora_B.shape[0] and src_lB.shape[1] == target.lora_B.shape[1]:
+                                target.lora_B.data.copy_(src_lB.data)
+                                target.lora_B.requires_grad = True
+                            else:
+                                print(f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init.")
                         if hasattr(sub, "lora_scaling"):
                             target.lora_scaling = sub.lora_scaling
                         break
@@ -426,10 +428,16 @@ class XAttention(BaseAttention):
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif getattr(self, "rotary_emb", None) is not None:
             try:
-                from framework.utils.compat import maybe_apply_rotary
-                Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
+                rotary_out = self.rotary_emb(hidden_states, position_ids=kwargs.get("position_ids"))
+                if isinstance(rotary_out, tuple) and len(rotary_out) >= 2:
+                    cos, sin = rotary_out[0], rotary_out[1]
+                    Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
             except Exception:
-                pass
+                try:
+                    from framework.utils.compat import maybe_apply_rotary
+                    Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
+                except Exception:
+                    pass
 
         # GQA repeat
         if self.kv_repeat > 1:
@@ -441,8 +449,8 @@ class XAttention(BaseAttention):
         # Check for causal decoders
         is_decoder = (
             self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or bool(_cfg_get(self.config, "is_decoder", False))
+            or str(_cfg_get(self.config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
@@ -515,8 +523,8 @@ class XAttention(BaseAttention):
             elif head_mask.dim() == 3:
                 head_mask = head_mask.unsqueeze(-1)
             elif head_mask.dim() == 4:
-                if head_mask.shape[-1] == head_mask.shape[-2] and head_mask.shape[-1] != attn.shape[-1]:
-                    head_mask = head_mask.mean(dim=-1, keepdim=True)
+                # Assume [B, H, 1, 1] or [B, 1, 1, 1]; broadcast normally
+                pass
             attn = attn * head_mask.to(attn.dtype)
 
         context = torch.matmul(attn, V)
@@ -526,6 +534,10 @@ class XAttention(BaseAttention):
             output = context
         else:
             output = self.out_proj(context)
+
+        valid_m = get_token_valid_mask(attention_mask, B, N_q, device)
+        if valid_m is not None:
+            output = output * valid_m.unsqueeze(-1).to(output.dtype)
 
         return output, (attn if output_attentions else None)
 
