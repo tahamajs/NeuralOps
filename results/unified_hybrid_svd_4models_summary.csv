@@ -1,2 +1,2 @@
 Model,Exit Code,Baseline Acc,Hybrid SVD Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-roberta,0,88.76%,88.53%,-0.23%,0.8936,PASS,0,1.00x,321.1 MB,70.4
+roberta,0,88.76%,88.53%,-0.23%,0.8936,PASS,0,1.00x,321.1 MB,72.0
