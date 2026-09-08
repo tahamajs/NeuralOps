@@ -970,5 +970,50 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T06:19:11.045686"
+  },
+  {
+    "module": "mamba_svd_flash",
+    "runner": "run_all_4_mamba_svd_flash.py",
+    "exit_code": 0,
+    "elapsed_s": 1265.76,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:40:16.809694"
+  },
+  {
+    "module": "mgie_budget",
+    "runner": "run_all_4_mgie_budget.py",
+    "exit_code": 0,
+    "elapsed_s": 20.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:40:37.111302"
+  },
+  {
+    "module": "mgie_svd",
+    "runner": "run_all_4_mgie_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 19.17,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:40:56.280530"
+  },
+  {
+    "module": "minimal_aurora",
+    "runner": "run_all_4_minimal_aurora.py",
+    "exit_code": 0,
+    "elapsed_s": 83.37,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:42:19.667308"
+  },
+  {
+    "module": "minimal_nova",
+    "runner": "run_all_4_minimal_nova.py",
+    "exit_code": 0,
+    "elapsed_s": 83.15,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:43:42.816913"
   }
 ]

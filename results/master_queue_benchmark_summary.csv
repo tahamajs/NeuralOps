@@ -107,3 +107,8 @@ lsh_attention,run_all_4_lsh_attention.py,1,0.05,FAIL,,2026-09-08T06:17:20.329823
 mamba,run_all_4_mamba.py,0,55.4,PASS,,2026-09-08T06:18:15.734960
 mamba_inject,run_all_4_mamba_inject.py,0,35.36,PASS,,2026-09-08T06:18:51.104661
 mamba_shedder,run_all_4_mamba_shedder.py,0,19.94,PASS,,2026-09-08T06:19:11.045686
+mamba_svd_flash,run_all_4_mamba_svd_flash.py,0,1265.76,PASS,,2026-09-08T06:40:16.809694
+mgie_budget,run_all_4_mgie_budget.py,0,20.29,PASS,,2026-09-08T06:40:37.111302
+mgie_svd,run_all_4_mgie_svd.py,0,19.17,PASS,,2026-09-08T06:40:56.280530
+minimal_aurora,run_all_4_minimal_aurora.py,0,83.37,PASS,,2026-09-08T06:42:19.667308
+minimal_nova,run_all_4_minimal_nova.py,0,83.15,PASS,,2026-09-08T06:43:42.816913
