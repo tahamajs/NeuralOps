@@ -42,30 +42,30 @@ def get_telemetry():
     return telemetry
 
 def get_active_process_and_logs():
-    active_module = "hgrn2_gated_deltanet"
-    active_model = "gpt2"
+    active_module = None
+    active_model = None
     queue_logs = ""
     try:
         cmd = 'powershell -Command "(Get-CimInstance Win32_Process -Filter \\"name = \'python.exe\'\\").CommandLine"'
-        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=3)
+        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
         if res.returncode == 0 and res.stdout:
             for line in res.stdout.splitlines():
-                if "run_all_4_" in line:
-                    m = re.search(r'run_all_4_([a-zA-Z0-9_]+)\.py', line)
-                    if m:
-                        active_module = m.group(1)
-                elif "run_quality_sweep.py" in line:
+                if "run_quality_sweep.py" in line:
                     m = re.search(r'--modules\s+[^,]+,([a-zA-Z0-9_]+)', line)
                     if m:
                         active_module = m.group(1)
                     mm = re.search(r'--model_family\s+([a-zA-Z0-9_]+)', line)
                     if mm:
                         active_model = mm.group(1)
+                elif "run_all_4_" in line and not active_module:
+                    m = re.search(r'run_all_4_([a-zA-Z0-9_]+)\.py', line)
+                    if m:
+                        active_module = m.group(1)
     except Exception:
         pass
 
     try:
-        for qf in ["D:/SVD_Project/queue_launcher.log", "D:/SVD_Project/gpu_queue.log"]:
+        for qf in ["D:/SVD_Project/queue_launcher.log", "D:/SVD_Project/gpu_queue.log", "D:/SVD_Project/results/queue_runner.log"]:
             if os.path.exists(qf):
                 with open(qf, "r", encoding="utf-8", errors="ignore") as f:
                     lines = [l.strip() for l in f.readlines()[-30:] if l.strip() and not l.startswith("**")]
@@ -75,27 +75,28 @@ def get_active_process_and_logs():
     except Exception:
         pass
 
-    return active_module, active_model, queue_logs
+    return active_module or "cur_linear", active_model or "qwen3_5", queue_logs
 
 def get_live_progress_and_trajectory(target_module=None, target_model=None):
     results_dir = "D:/SVD_Project/results"
     if not os.path.exists(results_dir):
         return None
 
-    pattern = os.path.join(results_dir, "**", "console.log")
+    candidate_files = []
     if target_module:
-        pattern = os.path.join(results_dir, f"unified_{target_module}", "**", "console.log")
+        candidate_files.extend(glob.glob(os.path.join(results_dir, f"bench_{target_module}.log")))
+        candidate_files.extend(glob.glob(os.path.join(results_dir, f"unified_{target_module}", "**", "console.log"), recursive=True))
 
-    logs = sorted(glob.glob(pattern, recursive=True), key=os.path.getmtime)
-    if not logs:
-        # Fallback to any recent console log
-        logs = sorted(glob.glob(os.path.join(results_dir, "**", "console.log"), recursive=True), key=os.path.getmtime)
+    candidate_files.extend(glob.glob(os.path.join(results_dir, "bench_*.log")))
+    candidate_files.extend(glob.glob(os.path.join(results_dir, "**", "console.log"), recursive=True))
 
-    for f in reversed(logs[-15:]):
+    logs = sorted(list(set(candidate_files)), key=os.path.getmtime)
+
+    for f in reversed(logs[-20:]):
         try:
             with open(f, 'r', encoding='utf-8', errors='ignore') as fp:
                 content = fp.read()
-            if 'loss=' not in content:
+            if 'loss=' not in content and 'step' not in content:
                 continue
 
             lines = content.splitlines()[-300:]
@@ -120,14 +121,18 @@ def get_live_progress_and_trajectory(target_module=None, target_model=None):
                 continue
 
             norm_path = f.replace('\\', '/')
-            parts = norm_path.split('/')
-            mod = 'unknown'
-            arch = 'distilbert'
-            for i, p in enumerate(parts):
-                if p.startswith('unified_'):
-                    mod = p.replace('unified_', '')
-                    if i + 1 < len(parts):
-                        arch = parts[i+1]
+            mod = target_module or 'cur_linear'
+            arch = target_model or 'qwen3_5'
+            m_bench = re.search(r'bench_([a-zA-Z0-9_]+)\.log', norm_path)
+            if m_bench:
+                mod = m_bench.group(1)
+            elif 'unified_' in norm_path:
+                parts = norm_path.split('/')
+                for i, p in enumerate(parts):
+                    if p.startswith('unified_'):
+                        mod = p.replace('unified_', '')
+                        if i + 1 < len(parts):
+                            arch = parts[i+1]
 
             latest_loss = loss_vals[-1]
             pct = int((cur_step / max(1, total_step)) * 100) if total_step > 0 else 50
