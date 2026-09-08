@@ -1,15 +1,15 @@
 [
   {
     "Model": "roberta",
-    "Exit Code": 2,
-    "Baseline Acc": "N/A",
-    "MLoRQ Acc": "N/A",
-    "Delta Acc": "N/A",
-    "F1": "N/A",
-    "Status": "EXIT_2",
-    "Compressed Layers": "N/A",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "MLoRQ Acc": "88.65%",
+    "Delta Acc": "-0.11%",
+    "F1": "0.8941",
+    "Status": "PASS",
+    "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "N/A",
-    "Time (s)": "14.4"
+    "Peak VRAM": "321.6 MB",
+    "Time (s)": "54.8"
   }
 ]
