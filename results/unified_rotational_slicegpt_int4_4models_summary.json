@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "Rotational SliceGPT INT4 Acc": "91.06%",
+    "Delta Acc": "+2.30%",
+    "F1": "0.9150",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "336.3 MB",
+    "Time (s)": "393.8"
+  }
+]

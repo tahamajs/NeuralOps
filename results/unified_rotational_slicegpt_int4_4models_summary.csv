@@ -1,0 +1,2 @@
+Model,Exit Code,Baseline Acc,Rotational SliceGPT INT4 Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+roberta,0,88.76%,91.06%,+2.30%,0.9150,PASS,0,1.00x,336.3 MB,393.8
