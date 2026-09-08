@@ -1033,18 +1033,27 @@ def main():
     # KVTC Compressor
     ap.add_argument("--kvtc_bits", type=int, default=4,
                     help="Quantization bitwidth for KVTC compressor")
-    ap.add_argument("--kvtc_pca_energy", type=float, default=0.95,
-                    help="PCA energy threshold for KVTC compressor")
-    ap.add_argument("--kvtc_max_error", type=float, default=0.50,
-                    help="Max relative Frobenius error for KVTC before fallback")
+    ap.add_argument("--kvtc_pca_energy", type=float, default=0.90,
+                    help="Target PCA energy retention for KVTC compressor")
+    ap.add_argument("--kvtc_max_error", type=float, default=0.20,
+                    help="Max relative error threshold for KVTC before fallback")
     ap.add_argument("--kvtc_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict KVTC compression to attention projections only")
     ap.add_argument("--kvtc_fallback_to_original", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
-                    help="Fallback to uncompressed weights if error exceeds max_error")
+                    help="Fallback to original weights if KVTC error exceeds threshold")
+    # LIFTR Compressor
+    ap.add_argument("--liftr_gelu_coefficient", type=float, default=0.8,
+                    help="GELU coefficient for LIFTR compressor")
+    ap.add_argument("--liftr_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict LIFTR compression to attention projections only")
+    # LiLLaMA Compressor
+    ap.add_argument("--lillama_rank_ratio", type=float, default=0.5,
+                    help="Rank ratio for LiLLaMA compression")
+    ap.add_argument("--lillama_max_error", type=float, default=0.50,
+                    help="Max relative error for LiLLaMA compression")
+    ap.add_argument("--lillama_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict LiLLaMA compression to attention projections only")
 
-
-
-    
     # Pre-parse to check if a config file is provided
     pre_args, remaining_argv = ap.parse_known_args()
     if pre_args.config and Path(pre_args.config).exists():
