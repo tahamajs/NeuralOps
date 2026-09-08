@@ -19,7 +19,7 @@ PORT = 8080
 PROJECT_DIR = "/Users/tahamajs/Documents/uni/Project"
 WEB_DIR = os.path.join(PROJECT_DIR, "Codes", "framework", "web")
 HARVESTED_JSON = os.path.join(PROJECT_DIR, "results", "harvested_benchmark_data.json")
-DOCS_DIR = os.path.join(PROJECT_DIR, "Docs", "content")
+DOCS_DIR = os.path.join(PROJECT_DIR, "Docs")
 
 # Cache to avoid hammering disk/ssh every single request
 _CACHE_DATA = None
@@ -717,6 +717,31 @@ class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
                 ]
             }
             self.wfile.write(json.dumps(runs_payload).encode("utf-8"))
+        elif path.startswith("/api/runs/"):
+            run_id = path.replace("/api/runs/", "").strip()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            stats = build_aggregated_stats()
+            run_detail = {
+                "run_id": run_id,
+                "name": "Live Sequential GPU Sweep" if run_id == "run_active" else "Phase 1 Archive",
+                "is_active": (run_id == "run_active"),
+                "analytics": stats.get("analytics", {}),
+                "comparative_analytics": stats.get("comparative_analytics", {}),
+                "counts": stats.get("counts", {}),
+                "results": stats.get("results", [])
+            }
+            self.wfile.write(json.dumps(run_detail).encode("utf-8"))
+        elif path == "/api/docs_list":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            idx = get_module_doc_index()
+            clean_list = sorted(list(set(idx.keys())))
+            self.wfile.write(json.dumps({"success": True, "modules": clean_list, "count": len(clean_list)}).encode("utf-8"))
         else:
             return super().do_GET()
 
@@ -749,8 +774,8 @@ class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
 
 if __name__ == "__main__":
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), ComprehensiveStudioHandler) as httpd:
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    with socketserver.ThreadingTCPServer(("", PORT), ComprehensiveStudioHandler) as httpd:
         print(f"Full Studio UI & Telemetry API active on http://localhost:{PORT}")
         httpd.serve_forever()
 
