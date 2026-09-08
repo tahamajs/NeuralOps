@@ -458,11 +458,14 @@ class HuffmanCompressor(BaseCompressor):
                     forward_check_success = True
                 else:
                     # Look for token embeddings
-                    has_embed = any(kw in n.lower() for n, _ in self.model.named_modules() if any(kw in n.lower() for kw in ("embed_tokens", "wte", "word_embeddings")))
+                    has_embed = any(any(kw in n.lower() for kw in ("embed_tokens", "wte", "word_embeddings")) for n, _ in self.model.named_modules())
                     if has_embed:
                         dummy_ids = torch.randint(0, 100, (1, 8), device=dev)
                         dummy_mask = torch.ones((1, 8), device=dev)
-                        self.model(input_ids=dummy_ids, attention_mask=dummy_mask)
+                        try:
+                            self.model(input_ids=dummy_ids, attention_mask=dummy_mask)
+                        except TypeError:
+                            self.model(dummy_ids)
                         forward_check_success = True
                     else:
                         first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
