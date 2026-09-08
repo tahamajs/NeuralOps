@@ -98,3 +98,11 @@ liftr,run_all_4_liftr.py,0,20.42,PASS,,2026-09-08T06:10:03.330640
 lillama,run_all_4_lillama.py,0,20.46,PASS,,2026-09-08T06:10:23.798537
 linformer,run_all_4_linformer.py,0,69.57,PASS,,2026-09-08T06:11:33.379986
 lola_attention,run_all_4_lola_attention.py,0,84.76,PASS,,2026-09-08T06:12:58.150927
+lola_attn,run_all_4_lola_attn.py,0,85.37,PASS,,2026-09-08T06:14:23.522424
+lora_attention,run_all_4_lora_attention.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T06:14:23.528983
+lora_attn,run_all_4_lora_attn.py,0,74.31,PASS,,2026-09-08T06:15:37.835636
+lsc,run_all_4_lsc.py,0,20.13,PASS,,2026-09-08T06:15:57.972846
+lsh,run_all_4_lsh.py,0,82.29,PASS,,2026-09-08T06:17:20.269170
+lsh_attention,run_all_4_lsh_attention.py,1,0.05,FAIL,,2026-09-08T06:17:20.329823
+mamba,run_all_4_mamba.py,0,55.4,PASS,,2026-09-08T06:18:15.734960
+mamba_inject,run_all_4_mamba_inject.py,0,35.36,PASS,,2026-09-08T06:18:51.104661

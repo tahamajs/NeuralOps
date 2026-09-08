@@ -889,5 +889,77 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T06:12:58.150927"
+  },
+  {
+    "module": "lola_attn",
+    "runner": "run_all_4_lola_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 85.37,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:14:23.522424"
+  },
+  {
+    "module": "lora_attention",
+    "runner": "run_all_4_lora_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T06:14:23.528983"
+  },
+  {
+    "module": "lora_attn",
+    "runner": "run_all_4_lora_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 74.31,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:15:37.835636"
+  },
+  {
+    "module": "lsc",
+    "runner": "run_all_4_lsc.py",
+    "exit_code": 0,
+    "elapsed_s": 20.13,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:15:57.972846"
+  },
+  {
+    "module": "lsh",
+    "runner": "run_all_4_lsh.py",
+    "exit_code": 0,
+    "elapsed_s": 82.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:17:20.269170"
+  },
+  {
+    "module": "lsh_attention",
+    "runner": "run_all_4_lsh_attention.py",
+    "exit_code": 1,
+    "elapsed_s": 0.05,
+    "status": "FAIL",
+    "error": null,
+    "timestamp": "2026-09-08T06:17:20.329823"
+  },
+  {
+    "module": "mamba",
+    "runner": "run_all_4_mamba.py",
+    "exit_code": 0,
+    "elapsed_s": 55.4,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:18:15.734960"
+  },
+  {
+    "module": "mamba_inject",
+    "runner": "run_all_4_mamba_inject.py",
+    "exit_code": 0,
+    "elapsed_s": 35.36,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:18:51.104661"
   }
 ]
