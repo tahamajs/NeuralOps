@@ -210,6 +210,7 @@ class HLAAttention(BaseAttention):
         )
 
         self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
@@ -473,6 +474,7 @@ class HLAAttention(BaseAttention):
 
         context = y.transpose(1, 2).contiguous().view(B, L, H * Dh)
 
+        context = context * self.output_scale
         if self.is_nested_encoder:
             out = context
         else:
@@ -516,7 +518,11 @@ def inject_hla(
             num_heads = getattr(layer.config, "num_attention_heads", getattr(layer.config, "n_heads", 12))
 
         new_block = HLAAttention(config=model_config, d_model=d_model, num_heads=num_heads, **kwargs)
-        new_block.copy_weights(src)
+        try:
+            new_block.copy_weights(src)
+        except Exception as e:
+            logger.error('inject_hla copy_weights failed: %s', e)
+            return None
 
         for attr in ("attention", "self_attn", "attn", "self"):
             if hasattr(layer, attr):

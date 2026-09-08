@@ -239,6 +239,7 @@ class MinimalNOVAAttention(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
         self.k_proj = FactorisedLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
@@ -466,6 +467,7 @@ class MinimalNOVAAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
+        context = context * self.output_scale
         if self.is_nested_encoder:
             output = context
         else:
@@ -505,8 +507,9 @@ def inject_minimal_nova(
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'[WARN] copy_weights failed for minimal_nova: {e}')
+            return None
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)

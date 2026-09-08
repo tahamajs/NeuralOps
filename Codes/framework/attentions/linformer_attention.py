@@ -215,6 +215,7 @@ class LinformerAttention(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # LoRA config (three-branch to handle config=None properly)
         if config is not None:
@@ -507,9 +508,9 @@ class LinformerAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
-            out = context
+            out = context * self.output_scale
         else:
-            out = self.out_proj(context)
+            out = self.out_proj(context * self.output_scale)
 
         # Preservation gate: blend new attention output with original hidden_states.
         # sigmoid(-3) ≈ 0.047 at init → 95% passthrough preserves pretrained activations.

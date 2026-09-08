@@ -326,6 +326,7 @@ class GatedDeltaNet(BaseAttention):
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(self.d_model, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -698,6 +699,7 @@ class GatedDeltaNet(BaseAttention):
         gated_y = y * F.silu(z)
 
         # 10. Output projection with nested encoder bypass
+        gated_y = gated_y * self.output_scale
         if self.is_nested_encoder and gated_y.shape[-1] == self.d_model:
             out = gated_y
         else:
