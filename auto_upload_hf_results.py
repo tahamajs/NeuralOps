@@ -114,9 +114,9 @@ def sync_and_verify_hf():
         
         repo_id = get_repo_id(model_name, mod_name)
         
-        # 1. Ensure repo exists
+        # 1. Ensure repo exists (strictly private)
         try:
-            api.create_repo(repo_id=repo_id, exist_ok=True, private=False)
+            api.create_repo(repo_id=repo_id, exist_ok=True, private=True)
         except Exception:
             pass
             
