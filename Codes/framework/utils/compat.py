@@ -1,9 +1,12 @@
 """Family-aware, opt-in compatibility helpers for attention modules."""
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 from .model_family import ModelAdapter, detect_family
 from .qwen_compat import QwenIncompatibleError
@@ -145,14 +148,35 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     if hasattr(model, "compression_stats") and isinstance(model.compression_stats, dict):
         fallback_layers = set(model.compression_stats.get("fallback_layers", []))
 
+    # Map parameter names to containing module types for strict recurrent module checking
+    module_by_name = dict(model.named_modules())
+    recurrent_type_keywords = ("hgrn", "delta", "mamba", "ssm", "recurrent")
+
     trainable_params = []
     for name, param in model.named_parameters():
         n_low = name.lower()
         parent_module_prefix = name.split(".base_layer.")[0] if ".base_layer." in name else name.rsplit(".", 1)[0]
         layer_has_lora = any(k.startswith(parent_module_prefix) and any(t in k.lower() for t in (".lora_", ".lora_a", ".lora_b")) for k, _ in model.named_parameters())
 
+        # Check if parent or enclosing module is a recurrent/hybrid module
+        is_recurrent_module = False
+        parts = name.split(".")
+        for i in range(len(parts)):
+            sub_prefix = ".".join(parts[:i])
+            if sub_prefix in module_by_name:
+                mod_cls = module_by_name[sub_prefix].__class__.__name__.lower()
+                if any(kw in mod_cls for kw in recurrent_type_keywords):
+                    is_recurrent_module = True
+                    break
+
         # Fallback layers must remain strictly frozen during recovery fine-tuning
         if fallback_layers and (parent_module_prefix in fallback_layers or any(name.startswith(fb + ".") or name == fb for fb in fallback_layers)):
+            continue
+
+        # For recurrent/hybrid modules (HGRN, Delta, Mamba, SSM, etc.), ONLY allow lora_A/lora_B parameters!
+        if is_recurrent_module:
+            if any(tag in n_low for tag in (".lora_a", ".lora_b", "lora_a", "lora_b")):
+                trainable_params.append(param)
             continue
 
         # 1. LoRA adapter parameters are always trainable
@@ -164,6 +188,15 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         if any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
             trainable_params.append(param)
             continue
+
+        # Explicitly exclude standard base linear parameters unless inside a LoRALinear adapter
+        if any(n_low.endswith(sfx) for sfx in (
+            ".weight", ".bias", ".u", ".v", ".a", ".b", ".beta", ".alpha", ".gate",
+            ".in_proj", ".out_proj", ".x_proj", ".q_proj", ".k_proj", ".v_proj", ".z_proj"
+        )):
+            if not any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b")):
+                if layer_has_lora or has_lora:
+                    continue
 
         # If this layer has LoRA adapters, its base weight/bias and base factors remain frozen
         if layer_has_lora and (any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v", ".bias")) or ".base_layer." in n_low or ".lin1." in n_low or ".lin2." in n_low):
@@ -218,8 +251,24 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         elif any(tag in n_low for tag in (".gate.", ".beta.", ".input_gate.", ".forget_gate.", ".alpha_gate.")):
             trainable_params.append(param)
 
+    # Set requires_grad
     for name, param in model.named_parameters():
         param.requires_grad = any(param is p for p in trainable_params)
+
+    # Safety check on total trainable parameters
+    total_trainable = sum(p.numel() for p in trainable_params)
+    logger.info("Recovery fine-tuning selected %d trainable parameters across %d tensors.", total_trainable, len(trainable_params))
+    if total_trainable > 5_000_000:
+        logger.warning(
+            "Total trainable parameters (%d) exceeds 5,000,000 threshold for recovery. Reducing lora_rank or freezing additional layers to prevent OOM.",
+            total_trainable,
+        )
+        # Automatically reduce lora_rank to 8 across all LoRA modules if present
+        for m in model.modules():
+            if hasattr(m, "lora_rank") and getattr(m, "lora_rank", 0) > 8:
+                m.lora_rank = 8
+                if hasattr(m, "lora_scaling") and hasattr(m, "lora_alpha"):
+                    m.lora_scaling = m.lora_alpha / 8
 
     return trainable_params
 
