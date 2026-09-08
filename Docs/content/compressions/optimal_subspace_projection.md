@@ -500,3 +500,9 @@ def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = Non
 - **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
 
+## Unified 4-Architecture Benchmark Results (Optimal Subspace Projection)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 88.76% | 0.8953 | 1.0 | 64 | 341.79 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-optimal_subspace_projection) |

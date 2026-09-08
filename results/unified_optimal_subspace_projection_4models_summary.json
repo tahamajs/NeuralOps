@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "Optimal Subspace Projection Acc": "88.76%",
+    "Delta Acc": "+0.00%",
+    "F1": "0.8953",
+    "Status": "PASS",
+    "Compressed Layers": "64",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "341.8 MB",
+    "Time (s)": "54.9"
+  }
+]
