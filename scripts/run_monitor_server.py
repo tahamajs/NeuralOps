@@ -45,10 +45,10 @@ def get_live_gpu_telemetry():
 
     try:
         if IS_LOCAL_GPU:
-            cmd = [sys.executable, os.path.join(PROJECT_DIR, "gpu_live_probe.py")]
+            cmd = [sys.executable, os.path.join(PROJECT_DIR, "scripts", "gpu_live_probe.py")]
             g_res = subprocess.run(cmd, capture_output=True, text=True, timeout=4)
         else:
-            cmd = 'ssh -o ConnectTimeout=2 -o BatchMode=yes gpu "python D:/SVD_Project/gpu_live_probe.py"'
+            cmd = 'ssh -o ConnectTimeout=2 -o BatchMode=yes gpu "python D:/SVD_Project/scripts/gpu_live_probe.py"'
             g_res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
 
         if g_res.returncode == 0:
@@ -178,6 +178,8 @@ def build_aggregated_stats():
 
         mod = m_name.replace('unified_', '').replace('_attention', '').replace('_compressor', '').replace('-', '_').strip().lower()
         if mod in ['full', '', 'nan', 'none', 'results', 'benchmark']:
+            continue
+        if any(x in mod for x in ['_summary', '_inject', '_fn', '#', 'summary.csv', 'summary', '.csv']):
             continue
 
         arch = 'distilbert'
@@ -778,6 +780,27 @@ class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
                 "results": stats.get("results", [])
             }
             self.wfile.write(json.dumps(run_detail).encode("utf-8"))
+        elif path == "/api/export/csv":
+            stats = build_aggregated_stats()
+            results = stats.get("results", [])
+            df = pd.DataFrame(results)
+            csv_str = df.to_csv(index=False)
+            csv_bytes = csv_str.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition", 'attachment; filename="neuralops_benchmark_results.csv"')
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(csv_bytes)
+        elif path == "/api/export/json":
+            stats = build_aggregated_stats()
+            json_bytes = json.dumps(stats, indent=2).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Disposition", 'attachment; filename="neuralops_benchmark_results.json"')
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json_bytes)
         elif path == "/api/docs_list":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
