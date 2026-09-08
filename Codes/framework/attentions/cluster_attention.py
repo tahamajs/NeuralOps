@@ -228,6 +228,7 @@ class ClusterAttention(BaseAttention):
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         if config is not None:
             self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
@@ -619,6 +620,7 @@ class ClusterAttention(BaseAttention):
 
         out = out_context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
+        out = out * self.output_scale
         if self.is_nested_encoder:
             output = out
         else:

@@ -185,6 +185,7 @@ class MLAAttention(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         self.q_proj = LoRALinear(self.hidden_size, self.q_dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
         self.kv_down = nn.Linear(self.hidden_size, self.rank, bias=False)
@@ -464,6 +465,7 @@ class MLAAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
+        context = context * self.output_scale
         if self.is_nested_encoder:
             out = context
         else:
