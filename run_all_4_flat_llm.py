@@ -487,16 +487,14 @@ if doc_path.exists():
     doc_path.write_text(content, encoding="utf-8")
     print(f"\n[+] Updated documentation benchmark table in {doc_path}", flush=True)
 
-target_branch = "benchmark-results-flat_llm"
-print(f"\nCommitting results and documentation updates to dedicated branch '{target_branch}'...", flush=True)
+print("Committing results directly to main...", flush=True)
 try:
-    subprocess.run(["git", "checkout", "-b", target_branch], check=False)
-    subprocess.run(["git", "checkout", target_branch], check=False)
-    subprocess.run(["git", "add", str(doc_path), str(out_csv), str(out_json)], check=True)
-    subprocess.run(["git", "commit", "-m", f"feat(benchmark): FLAT-LLM 4-model evaluation ({pass_count}/{len(models)} passed on SST-2)"], check=True)
-    subprocess.run(["git", "push", "origin", target_branch], check=True)
-    print(f"Git commit and push completed successfully on branch '{target_branch}'.", flush=True)
-    subprocess.run(["git", "checkout", "main"], check=False)
+    subprocess.run(["git", "add", str(doc_path), str(out_csv), str(out_json)], check=False)
+    subprocess.run(["git", "commit", "-m", f"feat(benchmark): evaluation ({pass_count}/{len(models)} passed on SST-2)"], check=False)
+    subprocess.run(["git", "push", "origin", "main"], check=False)
+    print("Results committed to main.", flush=True)
+except Exception as e:
+    print(f"Git commit warning: {e}", flush=True)
 except Exception as e:
     print(f"Git branch commit/push warning: {e}", flush=True)
 
