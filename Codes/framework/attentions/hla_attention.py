@@ -375,44 +375,34 @@ class HLAAttention(BaseAttention):
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
     ) -> torch.Tensor:
-        """Memory-efficient linear associative scan."""
+        """Vectorized parallel linear associative scan via tensor contraction."""
         B, H, L, d = q.shape
-        S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
-        z = torch.zeros(B, H, d, 1, device=q.device, dtype=torch.float32)
-        outputs = []
-
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
-        decay_f = decay.float()
 
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            q_t = q_f[:, :, t, :]  # [B, H, d]
-            k_t = k_f[:, :, t, :]  # [B, H, d]
-            v_t = v_f[:, :, t, :]  # [B, H, d]
+        if mask is not None:
+            m_f = mask.float().view(B, 1, L, 1)
+            k_f = k_f * m_f
+            v_f = v_f * m_f
 
-            kv = k_t.unsqueeze(-1) @ v_t.unsqueeze(-2)
-            S_next = decay_f * S + kv
-            z_next = decay_f * z + k_t.unsqueeze(-1)
+        t_idx = torch.arange(L, device=q.device)
+        diff = (t_idx.unsqueeze(0) - t_idx.unsqueeze(1)) if reverse else (t_idx.unsqueeze(1) - t_idx.unsqueeze(0))
+        tri_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool)) if reverse else torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
 
-            if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1, 1).float()
-                S = m_t * S_next + (1.0 - m_t) * S
-                z = m_t * z_next + (1.0 - m_t) * z
-            else:
-                S = S_next
-                z = z_next
+        log_decay = torch.log(decay.squeeze(-1).squeeze(-1).clamp(min=1e-5, max=1.0 - 1e-5))  # [1, H]
+        decay_mat = torch.exp(diff.unsqueeze(0).unsqueeze(0).float() * log_decay.unsqueeze(-1).unsqueeze(-1)) * tri_mask.float().unsqueeze(0).unsqueeze(0)
 
-            num = (S @ q_t.unsqueeze(-1)).squeeze(-1)
-            denom = (z.transpose(-1, -2) @ q_t.unsqueeze(-1)).squeeze(-1) + 1e-5
-            y_t = num / denom.clamp(min=1e-5)
-            outputs.append(y_t.to(q.dtype))
+        # Numerator: y_num = ( (q @ v^T) * decay_mat ) @ k
+        qv = torch.matmul(q_f, v_f.transpose(-1, -2))  # [B, H, L, L]
+        num = torch.matmul(qv * decay_mat, k_f)        # [B, H, L, d]
 
-        if reverse:
-            outputs.reverse()
+        # Denominator: y_denom = sum_j ( (q @ k^T) * decay_mat )
+        qk = torch.matmul(q_f, k_f.transpose(-1, -2))  # [B, H, L, L]
+        denom = (qk * decay_mat).sum(dim=-1, keepdim=True) + 1e-5  # [B, H, L, 1]
 
-        return torch.stack(outputs, dim=2)
+        y = num / denom.clamp(min=1e-5)
+        return y.to(q.dtype)
 
     def forward(
         self,
