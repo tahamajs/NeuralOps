@@ -417,3 +417,10 @@ compressed_model = compressor.compress()
 
 ## Future Work
 - Hardware streaming implementation on FPGA/ASIC accelerators.
+
+## Unified 4-Architecture Benchmark Results (LIFTR)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
