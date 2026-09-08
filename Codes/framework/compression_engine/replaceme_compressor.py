@@ -245,7 +245,8 @@ class ReplaceMeCompressor(BaseCompressor):
         stats.update({
             'layers_removed': layers_replaced,
             'layers_replaced': layers_replaced,
-            'fallback_layers': fallback_layers,
+            'fallback_layers': [f"layer_{i}" for i in range(fallback_layers)],
+            'fallback_count': fallback_layers,
             'target_removed': self.remove_layers,
             'hidden_size': hidden_size,
             'forward_check_success': forward_check_success,
