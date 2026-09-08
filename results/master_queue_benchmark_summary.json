@@ -394,5 +394,284 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T05:47:12.977497"
+  },
+  {
+    "module": "eat",
+    "runner": "run_all_4_eat.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.983394"
+  },
+  {
+    "module": "enlighten",
+    "runner": "run_all_4_enlighten.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.983614"
+  },
+  {
+    "module": "entropy_budget",
+    "runner": "run_all_4_entropy_budget.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.983812"
+  },
+  {
+    "module": "erc",
+    "runner": "run_all_4_erc.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.984000"
+  },
+  {
+    "module": "expert_choice_moe",
+    "runner": "run_all_4_expert_choice_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.984191"
+  },
+  {
+    "module": "factorised_matrix_state",
+    "runner": "run_all_4_factorised_matrix_state.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.984375"
+  },
+  {
+    "module": "faq",
+    "runner": "run_all_4_faq.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.984558"
+  },
+  {
+    "module": "fasa",
+    "runner": "run_all_4_fasa.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.984745"
+  },
+  {
+    "module": "flap",
+    "runner": "run_all_4_flap.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.985482"
+  },
+  {
+    "module": "flash3",
+    "runner": "run_all_4_flash3.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.985675"
+  },
+  {
+    "module": "flash3_fp8",
+    "runner": "run_all_4_flash3_fp8.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.985861"
+  },
+  {
+    "module": "flat_llm",
+    "runner": "run_all_4_flat_llm.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.986043"
+  },
+  {
+    "module": "fms",
+    "runner": "run_all_4_fms.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.986218"
+  },
+  {
+    "module": "frandi",
+    "runner": "run_all_4_frandi.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.986397"
+  },
+  {
+    "module": "full",
+    "runner": "run_all_4_full.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.986579"
+  },
+  {
+    "module": "fused_svd_kernel",
+    "runner": "run_all_4_fused_svd_kernel.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.986759"
+  },
+  {
+    "module": "fusion_attn",
+    "runner": "run_all_4_fusion_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.986964"
+  },
+  {
+    "module": "galerkin",
+    "runner": "run_all_4_galerkin.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.987151"
+  },
+  {
+    "module": "galerkin_attention",
+    "runner": "run_all_4_galerkin_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.987336"
+  },
+  {
+    "module": "gated_delta_net",
+    "runner": "run_all_4_gated_delta_net.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.987515"
+  },
+  {
+    "module": "gated_deltanet_block",
+    "runner": "run_all_4_gated_deltanet_block.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.987694"
+  },
+  {
+    "module": "gated_linear_attention",
+    "runner": "run_all_4_gated_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.987871"
+  },
+  {
+    "module": "goldfinch_ahn",
+    "runner": "run_all_4_goldfinch_ahn.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.988053"
+  },
+  {
+    "module": "gqa",
+    "runner": "run_all_4_gqa.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.988234"
+  },
+  {
+    "module": "granite_hybrid",
+    "runner": "run_all_4_granite_hybrid.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.988415"
+  },
+  {
+    "module": "grecodec",
+    "runner": "run_all_4_grecodec.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.988593"
+  },
+  {
+    "module": "griffin_ssd",
+    "runner": "run_all_4_griffin_ssd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.988772"
+  },
+  {
+    "module": "halo_regla",
+    "runner": "run_all_4_halo_regla.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.989058"
+  },
+  {
+    "module": "hamming",
+    "runner": "run_all_4_hamming.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.989234"
+  },
+  {
+    "module": "hashednets",
+    "runner": "run_all_4_hashednets.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:47:12.989413"
+  },
+  {
+    "module": "hgrn2",
+    "runner": "run_all_4_hgrn2.py",
+    "exit_code": 0,
+    "elapsed_s": 368.25,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.236715"
   }
 ]
