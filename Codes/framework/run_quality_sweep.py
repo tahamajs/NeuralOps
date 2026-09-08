@@ -569,7 +569,18 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
     scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
     model.train()
     curr_batch_size = batch_size
-    micro_bs = min(curr_batch_size, 8 if device.type == "cuda" else curr_batch_size)
+    # Adaptively maximize GPU utilization based on free VRAM (RTX 4070 8GB allows micro_bs 16 or 32 for BERT/RoBERTa/GPT2)
+    if device.type == "cuda":
+        total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+        if "qwen" in str(name).lower():
+            target_micro = 8
+        elif total_vram_gb >= 7.0:
+            target_micro = 32 if curr_batch_size >= 32 else (16 if curr_batch_size >= 16 else curr_batch_size)
+        else:
+            target_micro = 8
+        micro_bs = min(curr_batch_size, target_micro)
+    else:
+        micro_bs = curr_batch_size
     had_nan = False
     step = 0
     t_start = time.monotonic()
