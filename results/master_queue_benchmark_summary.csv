@@ -74,3 +74,14 @@ halo_regla,run_all_4_halo_regla.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:47:12.9
 hamming,run_all_4_hamming.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:47:12.989234
 hashednets,run_all_4_hashednets.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:47:12.989413
 hgrn2,run_all_4_hgrn2.py,0,368.25,PASS,,2026-09-08T05:53:21.236715
+hgrn2_gated_deltanet,run_all_4_hgrn2_gated_deltanet.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.244384
+hgrn2_layer,run_all_4_hgrn2_layer.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.244590
+hgrn2_outer,run_all_4_hgrn2_outer.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.244784
+hla,run_all_4_hla.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.244968
+hla_attention,run_all_4_hla_attention.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.245149
+huffman,run_all_4_huffman.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.245342
+hybrid_svd,run_all_4_hybrid_svd.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.245524
+hybridkv,run_all_4_hybridkv.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.245703
+infini,run_all_4_infini.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.245917
+infini_attention,run_all_4_infini_attention.py,0,67.92,PASS,,2026-09-08T05:54:29.171367
+jamba,run_all_4_jamba.py,0,63.89,PASS,,2026-09-08T05:55:33.068057

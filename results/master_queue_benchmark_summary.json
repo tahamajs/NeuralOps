@@ -673,5 +673,104 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T05:53:21.236715"
+  },
+  {
+    "module": "hgrn2_gated_deltanet",
+    "runner": "run_all_4_hgrn2_gated_deltanet.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.244384"
+  },
+  {
+    "module": "hgrn2_layer",
+    "runner": "run_all_4_hgrn2_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.244590"
+  },
+  {
+    "module": "hgrn2_outer",
+    "runner": "run_all_4_hgrn2_outer.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.244784"
+  },
+  {
+    "module": "hla",
+    "runner": "run_all_4_hla.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.244968"
+  },
+  {
+    "module": "hla_attention",
+    "runner": "run_all_4_hla_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.245149"
+  },
+  {
+    "module": "huffman",
+    "runner": "run_all_4_huffman.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.245342"
+  },
+  {
+    "module": "hybrid_svd",
+    "runner": "run_all_4_hybrid_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.245524"
+  },
+  {
+    "module": "hybridkv",
+    "runner": "run_all_4_hybridkv.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.245703"
+  },
+  {
+    "module": "infini",
+    "runner": "run_all_4_infini.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:53:21.245917"
+  },
+  {
+    "module": "infini_attention",
+    "runner": "run_all_4_infini_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 67.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T05:54:29.171367"
+  },
+  {
+    "module": "jamba",
+    "runner": "run_all_4_jamba.py",
+    "exit_code": 0,
+    "elapsed_s": 63.89,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T05:55:33.068057"
   }
 ]
