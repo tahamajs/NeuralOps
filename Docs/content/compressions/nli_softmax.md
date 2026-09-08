@@ -316,3 +316,9 @@ The `NLISoftmax` architecture incorporates telemetry hooks for tracking singular
 - **Repository URL**: `https://huggingface.co/tahamajs/nli_softmax-verified` *(status: model checkpoint pending final distributed sweep)*
 - **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
 
+## Unified 4-Architecture Benchmark Results (NLI Softmax)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
