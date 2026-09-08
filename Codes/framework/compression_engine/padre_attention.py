@@ -539,10 +539,12 @@ class PADReAttention(BaseAttention):
             invalid_mask = invalid_mask | invalid_causal
 
         # Apply temperature and re-center over valid scores for numerical stability
-        masked_for_max = scores.masked_fill(invalid_mask, -1e9)
+        fill_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
+        masked_for_max = scores.masked_fill(invalid_mask, fill_val)
         max_scores = masked_for_max.max(dim=-1, keepdim=True).values
-        # If all keys are masked, avoid -1e9 producing NaN
-        max_scores = torch.where(max_scores <= -1e8, torch.zeros_like(max_scores), max_scores)
+        # If all keys are masked, avoid large negative value producing NaN
+        thresh = -5e3 if scores.dtype in (torch.float16, torch.bfloat16) else -1e8
+        max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
 
         scores_centered = (scores - max_scores) / max(self.temperature, 1e-6)
 
