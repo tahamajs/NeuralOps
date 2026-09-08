@@ -88,3 +88,8 @@ jamba,run_all_4_jamba.py,0,63.89,PASS,,2026-09-08T05:55:33.068057
 jamba_info,run_all_4_jamba_info.py,1,289.0,FAIL,,2026-09-08T06:00:22.073166
 kda,run_all_4_kda.py,0,87.59,PASS,,2026-09-08T06:01:49.661785
 kmeans,run_all_4_kmeans.py,0,30.07,PASS,,2026-09-08T06:02:19.734963
+kronecker,run_all_4_kronecker.py,0,96.68,PASS,,2026-09-08T06:03:56.421492
+kronecker_tt_lora,run_all_4_kronecker_tt_lora.py,0,41.92,PASS,,2026-09-08T06:04:38.352289
+kvtc,run_all_4_kvtc.py,0,66.62,PASS,,2026-09-08T06:05:44.980591
+leka_v1,run_all_4_leka_v1.py,0,72.16,PASS,,2026-09-08T06:06:57.141236
+leka_v2,run_all_4_leka_v2.py,0,84.26,PASS,,2026-09-08T06:08:21.406627

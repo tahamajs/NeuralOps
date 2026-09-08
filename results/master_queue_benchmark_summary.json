@@ -799,5 +799,50 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T06:02:19.734963"
+  },
+  {
+    "module": "kronecker",
+    "runner": "run_all_4_kronecker.py",
+    "exit_code": 0,
+    "elapsed_s": 96.68,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:03:56.421492"
+  },
+  {
+    "module": "kronecker_tt_lora",
+    "runner": "run_all_4_kronecker_tt_lora.py",
+    "exit_code": 0,
+    "elapsed_s": 41.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:04:38.352289"
+  },
+  {
+    "module": "kvtc",
+    "runner": "run_all_4_kvtc.py",
+    "exit_code": 0,
+    "elapsed_s": 66.62,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:05:44.980591"
+  },
+  {
+    "module": "leka_v1",
+    "runner": "run_all_4_leka_v1.py",
+    "exit_code": 0,
+    "elapsed_s": 72.16,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:06:57.141236"
+  },
+  {
+    "module": "leka_v2",
+    "runner": "run_all_4_leka_v2.py",
+    "exit_code": 0,
+    "elapsed_s": 84.26,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:08:21.406627"
   }
 ]
