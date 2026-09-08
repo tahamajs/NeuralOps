@@ -405,7 +405,7 @@ class TestLeadSVDSpecialistAudit(unittest.TestCase):
     def test_dobi_svd_linear_and_compressor(self):
         """Audit Dobi-SVD differentiable spectral gating and forward/backward gradient flow."""
         dense = nn.Linear(128, 128)
-        dobi_layer = DobiSVDCompressor(nn.Sequential(dense), rank=32).compress_linear(dense, rank=32)
+        dobi_layer, err, r = DobiSVDCompressor(nn.Sequential(dense), rank=32).compress_linear(dense, rank=32)
         self.assertEqual(dobi_layer.rank, 32)
         self.assertIsNotNone(dobi_layer.gate)
 
