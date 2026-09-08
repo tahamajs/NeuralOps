@@ -1,5 +1,7 @@
 module,runner,exit_code,elapsed_s,status,error,timestamp
-hgrn2_layer,run_all_4_hgrn2_layer.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T03:45:12.932578
-hgrn2_outer,run_all_4_hgrn2_outer.py,0,79.34,PASS,,2026-09-08T03:46:32.268165
-hla,run_all_4_hla.py,0,1470.56,PASS,,2026-09-08T04:11:03.933338
-hla_attention,run_all_4_hla_attention.py,4294967295,312.27,FAIL,,2026-09-08T04:16:16.205805
+a3,run_all_4_a3.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:26:56.707105
+aasvd,run_all_4_aasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:26:56.707177
+adaptive_ranks,run_all_4_adaptive_ranks.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:26:56.707230
+adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:26:56.707272
+adaptive_sparse,run_all_4_adaptive_sparse.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:26:56.707312
+adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,82.9,PASS,,2026-09-08T05:28:19.611378

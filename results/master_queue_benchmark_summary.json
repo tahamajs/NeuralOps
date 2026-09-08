@@ -1,38 +1,56 @@
 [
   {
-    "module": "hgrn2_layer",
-    "runner": "run_all_4_hgrn2_layer.py",
+    "module": "a3",
+    "runner": "run_all_4_a3.py",
     "exit_code": 0,
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-08T03:45:12.932578"
+    "timestamp": "2026-09-08T05:26:56.707105"
   },
   {
-    "module": "hgrn2_outer",
-    "runner": "run_all_4_hgrn2_outer.py",
+    "module": "aasvd",
+    "runner": "run_all_4_aasvd.py",
     "exit_code": 0,
-    "elapsed_s": 79.34,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:26:56.707177"
+  },
+  {
+    "module": "adaptive_ranks",
+    "runner": "run_all_4_adaptive_ranks.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:26:56.707230"
+  },
+  {
+    "module": "adaptive_span",
+    "runner": "run_all_4_adaptive_span.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:26:56.707272"
+  },
+  {
+    "module": "adaptive_sparse",
+    "runner": "run_all_4_adaptive_sparse.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T05:26:56.707312"
+  },
+  {
+    "module": "adaptive_sparse_attention",
+    "runner": "run_all_4_adaptive_sparse_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 82.9,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-08T03:46:32.268165"
-  },
-  {
-    "module": "hla",
-    "runner": "run_all_4_hla.py",
-    "exit_code": 0,
-    "elapsed_s": 1470.56,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-08T04:11:03.933338"
-  },
-  {
-    "module": "hla_attention",
-    "runner": "run_all_4_hla_attention.py",
-    "exit_code": 4294967295,
-    "elapsed_s": 312.27,
-    "status": "FAIL",
-    "error": null,
-    "timestamp": "2026-09-08T04:16:16.205805"
+    "timestamp": "2026-09-08T05:28:19.611378"
   }
 ]
