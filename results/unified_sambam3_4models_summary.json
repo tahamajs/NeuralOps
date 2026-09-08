@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "SAMBA-M3 Acc": "0.00%",
+    "Delta Acc": "-88.76%",
+    "F1": "0.8942",
+    "Status": "SKIP_ROBERTA_TIMEOUT",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "299.9 MB",
+    "Time (s)": "1250.7"
+  }
+]

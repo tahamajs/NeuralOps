@@ -1,0 +1,2 @@
+Model,Exit Code,Baseline Acc,SALT Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+roberta,0,88.76%,50.92%,-37.84%,0.6748,PASS_LOW,0,1.18x,339.7 MB,79.1
