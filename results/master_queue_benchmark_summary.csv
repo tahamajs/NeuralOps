@@ -112,3 +112,8 @@ mgie_budget,run_all_4_mgie_budget.py,0,20.29,PASS,,2026-09-08T06:40:37.111302
 mgie_svd,run_all_4_mgie_svd.py,0,19.17,PASS,,2026-09-08T06:40:56.280530
 minimal_aurora,run_all_4_minimal_aurora.py,0,83.37,PASS,,2026-09-08T06:42:19.667308
 minimal_nova,run_all_4_minimal_nova.py,0,83.15,PASS,,2026-09-08T06:43:42.816913
+minimal_prism,run_all_4_minimal_prism.py,0,82.63,PASS,,2026-09-08T06:45:05.456072
+minimal_svd,run_all_4_minimal_svd.py,0,82.58,PASS,,2026-09-08T06:46:28.036239
+minimal_svd_v2,run_all_4_minimal_svd_v2.py,0,82.66,PASS,,2026-09-08T06:47:50.703106
+mixattention_moska,run_all_4_mixattention_moska.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T06:47:50.705586
+mla,run_all_4_mla.py,0,58.89,PASS,,2026-09-08T06:48:49.593921
