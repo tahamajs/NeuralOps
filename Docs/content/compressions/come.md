@@ -776,3 +776,13 @@ compressed_model = bridge.compress()
 
 ## Future Work
 - Dynamic online rank adaptation during long-context generation.
+
+## Unified 4-Architecture Benchmark Results (CoMe Layer Shedding + Bridges)
+Evaluated on SST-2 sentiment classification (FP16, layer shedding with learnable interpolation bridges, LoRA rank 16, 200 recovery steps):
+
+| Model Architecture | Baseline Acc | CoMe Acc | Δ Acc | F1 Score | Retained Layers | Layer Reduction | FLOPs Reduction | Bridges | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:------------:|:--------:|:-----:|:--------:|:---------------:|:---------------:|:---------------:|:-------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.48% | 86.24% | -4.24% | 0.8701 | 4/6 | 33.3% | 33.3% | 2 | 179.1 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-come) |
+| ROBERTA | 88.76% | 78.33% | -10.43% | 0.8177 | 8/12 | 33.3% | 33.3% | 4 | 276.4 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-come) |
+| GPT2 | 81.31% | 73.17% | -8.14% | 0.7776 | 8/12 | 33.3% | 33.3% | 4 | 332.1 MB | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-come) |
+| QWEN3_5 | 67.89% | 0.00% | -67.89% | 0.5570 | 16/24 | 33.3% | 33.3% | 8 | 1796.8 MB | `FAIL` | N/A |
