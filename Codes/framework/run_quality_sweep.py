@@ -1290,20 +1290,26 @@ def main():
             else:
                 LOG.info("Fine-tuning classification head for %d steps before module injection", args.finetune_steps)
                 finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
-                torch.save(base.state_dict(), checkpoint)
-            LOG.info("Saved fine-tuned checkpoint: %s", checkpoint)
+                try:
+                    torch.save(base.state_dict(), checkpoint)
+                    LOG.info("Saved fine-tuned checkpoint: %s", checkpoint)
+                except Exception as e:
+                    LOG.warning("Failed to save fine-tuned checkpoint %s: %s (continuing in-memory)", checkpoint, e)
     if args.precision == "fp16":
         for name, p in base.named_parameters():
             if not p.requires_grad:
                 p.data = p.data.half()
     base.to("cpu")
-    (out / "finetune_metadata.json").write_text(json.dumps({
-        "classification_head_trained": True,
-        "finetune_mode": args.finetune_mode,
-        "steps": args.finetune_steps,
-        "dataset": args.dataset,
-        "seed": args.seed
-    }), encoding="utf-8")
+    try:
+        (out / "finetune_metadata.json").write_text(json.dumps({
+            "classification_head_trained": True,
+            "finetune_mode": args.finetune_mode,
+            "steps": args.finetune_steps,
+            "dataset": args.dataset,
+            "seed": args.seed
+        }), encoding="utf-8")
+    except Exception as e:
+        LOG.warning("Could not write finetune_metadata.json: %s", e)
     LOG.info("Precomputing validation and training batches directly on device %s...", device)
     eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
     train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
