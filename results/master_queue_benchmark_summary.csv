@@ -125,3 +125,4 @@ nasc,run_all_4_nasc.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T06:50:45.665138
 nasc_attention,run_all_4_nasc_attention.py,1,0.05,FAIL,,2026-09-08T06:50:45.713197
 nexus,run_all_4_nexus.py,0,70.55,PASS,,2026-09-08T06:51:56.267703
 nha,run_all_4_nha.py,0,71.21,PASS,,2026-09-08T06:53:07.480610
+nha_compressor,run_all_4_nha_compressor.py,0,71.04,PASS,,2026-09-08T06:54:18.520567
