@@ -59,3 +59,14 @@ Notes:
 2026-09-08 03:04:37,011 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7354 (bs=8, micro_bs=4)
 2026-09-08 03:08:55,660 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7935 (bs=8, micro_bs=4)
 2026-09-08 03:14:09,185 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.8700 (bs=8, micro_bs=4)
+2026-09-08 03:19:23,055 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6307 (bs=8, micro_bs=4)
+2026-09-08 03:23:26,553 [INFO] QwenQualitySweep: [2/2] hgrn2_layer -> SKIP_ROBERTA_TIMEOUT 0.00% (F1: 0.8942, Peak VRAM: 299.92 MB)
+2026-09-08 03:23:26,555 [INFO] QwenQualitySweep: [Quality Guard] Module 'hgrn2_layer' did not pass quality criteria (status=SKIP_ROBERTA_TIMEOUT, acc=0.00%, pass_thresh=56.00%). Pruning checkpoint artifacts.
+2026-09-08 03:23:34,576 [INFO] QwenQualitySweep: ================================================================================
+2026-09-08 03:23:34,576 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-08 03:23:34,577 [WARNING] QwenQualitySweep: Training step 19/50 exceeded timeout 1200s; aborting
+2026-09-08 03:23:34,787 [INFO] QwenQualitySweep: 
+     Module               Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+       full                 PASS   88.76% 0.00% (base) 0.8942                  0            1.00x  299.9 MB               1.19              1.37
+hgrn2_layer SKIP_ROBERTA_TIMEOUT    0.00%      -88.76% 0.8942                  0            1.00x  299.9 MB               1.19              1.37
+2026-09-08 03:23:34,787 [INFO] QwenQualitySweep: ================================================================================
