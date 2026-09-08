@@ -146,7 +146,9 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     has_lora = any(any(t in n.lower() for t in (".lora_", ".lora_a", ".lora_b")) for n, _ in model.named_parameters())
     fallback_layers = set()
     if hasattr(model, "compression_stats") and isinstance(model.compression_stats, dict):
-        fallback_layers = set(model.compression_stats.get("fallback_layers", []))
+        fb = model.compression_stats.get("fallback_layers", [])
+        if isinstance(fb, (list, tuple, set)):
+            fallback_layers = set(fb)
 
     # Map parameter names to containing module types for strict recurrent module checking
     module_by_name = dict(model.named_modules())
