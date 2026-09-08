@@ -466,10 +466,14 @@ function renderLiveLoss(data) {
 
   const trajs = data.trajectories || {};
   let lossCurve = [];
-  if (activeItem && activeItem.trajectories && activeItem.trajectories.loss && activeItem.trajectories.loss.length > 0) {
-    lossCurve = activeItem.trajectories.loss;
+  if (lp.loss_trajectory && lp.loss_trajectory.length > 0) {
+    lossCurve = lp.loss_trajectory;
   } else if (trajs[modName] && trajs[modName].loss && trajs[modName].loss.length > 0) {
     lossCurve = trajs[modName].loss;
+  } else if (trajs["live"] && trajs["live"].loss && trajs["live"].loss.length > 0) {
+    lossCurve = trajs["live"].loss;
+  } else if (activeItem && activeItem.trajectories && activeItem.trajectories.loss && activeItem.trajectories.loss.length > 0) {
+    lossCurve = activeItem.trajectories.loss;
   }
   const hasRealLoss = lossCurve && lossCurve.length > 0;
 
