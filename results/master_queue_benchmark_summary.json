@@ -25,5 +25,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T04:11:03.933338"
+  },
+  {
+    "module": "hla_attention",
+    "runner": "run_all_4_hla_attention.py",
+    "exit_code": 4294967295,
+    "elapsed_s": 312.27,
+    "status": "FAIL",
+    "error": null,
+    "timestamp": "2026-09-08T04:16:16.205805"
   }
 ]

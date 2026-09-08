@@ -2,3 +2,4 @@ module,runner,exit_code,elapsed_s,status,error,timestamp
 hgrn2_layer,run_all_4_hgrn2_layer.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T03:45:12.932578
 hgrn2_outer,run_all_4_hgrn2_outer.py,0,79.34,PASS,,2026-09-08T03:46:32.268165
 hla,run_all_4_hla.py,0,1470.56,PASS,,2026-09-08T04:11:03.933338
+hla_attention,run_all_4_hla_attention.py,4294967295,312.27,FAIL,,2026-09-08T04:16:16.205805
