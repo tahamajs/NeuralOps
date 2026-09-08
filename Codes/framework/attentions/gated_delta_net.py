@@ -58,6 +58,77 @@ def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     return torch.cat((-x2, x1), dim=-1)
 
 
+def chunked_delta_rule_scan(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    beta: torch.Tensor,
+    alpha: torch.Tensor,
+    chunk_size: int = 32,
+) -> torch.Tensor:
+    r"""
+    Chunked associative scan for Delta-Rule recurrent attention.
+    Processes blocks of tokens concurrently via intra-chunk matrix multiplications
+    and inter-chunk state propagation, avoiding token-level Python loops.
+    """
+    B, H, L, d = q.shape
+    num_chunks = (L + chunk_size - 1) // chunk_size
+    pad_len = num_chunks * chunk_size - L
+
+    q_c = q
+    k_c = k
+    v_c = v
+    beta_c = beta
+    alpha_c = alpha
+
+    if pad_len > 0:
+        q_c = F.pad(q_c, (0, 0, 0, pad_len))
+        k_c = F.pad(k_c, (0, 0, 0, pad_len))
+        v_c = F.pad(v_c, (0, 0, 0, pad_len))
+        beta_c = F.pad(beta_c, (0, pad_len), value=1.0)
+        alpha_c = F.pad(alpha_c, (0, pad_len), value=0.0)
+
+    q_c = q_c.view(B, H, num_chunks, chunk_size, d)
+    k_c = k_c.view(B, H, num_chunks, chunk_size, d)
+    v_c = v_c.view(B, H, num_chunks, chunk_size, d)
+    beta_c = beta_c.view(B, H, num_chunks, chunk_size)
+    alpha_c = alpha_c.view(B, H, num_chunks, chunk_size)
+
+    decay = torch.cumprod(beta_c, dim=-1)  # [B, H, num_chunks, chunk_size]
+
+    outputs = []
+    S = torch.zeros((B, H, d, d), device=q.device, dtype=torch.float32)
+    causal_mask = torch.tril(torch.ones((chunk_size, chunk_size), device=q.device, dtype=torch.bool))
+
+    for c in range(num_chunks):
+        qc = q_c[:, :, c].float()
+        kc = k_c[:, :, c].float()
+        vc = v_c[:, :, c].float()
+        ac = alpha_c[:, :, c].unsqueeze(-1).float()
+
+        # Inter-chunk state projection: predict v from historical state S
+        inter_v = torch.matmul(kc, S)
+        err = vc - inter_v
+
+        # Intra-chunk attention and error correction
+        intra_attn = torch.matmul(qc, kc.transpose(-1, -2))
+        intra_attn = intra_attn.masked_fill(~causal_mask, 0.0)
+
+        intra_out = torch.matmul(intra_attn, err * ac)
+        state_out = torch.matmul(qc, S)
+        chunk_out = state_out + intra_out
+        outputs.append(chunk_out)
+
+        # Update historical state S across chunks
+        chunk_decay = decay[:, :, c, -1].unsqueeze(-1).unsqueeze(-1)
+        S = chunk_decay * S + torch.matmul((kc * ac).transpose(-1, -2), err)
+
+    y = torch.cat(outputs, dim=2)
+    if pad_len > 0:
+        y = y[:, :, :L, :]
+    return torch.nan_to_num(y, nan=0.0)
+
+
 def apply_rotary_pos_emb(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -511,69 +582,22 @@ class GatedDeltaNet(BaseAttention):
             k_f = k_f * m_f.unsqueeze(-1)
             v_f = v_f * m_f.unsqueeze(-1)
 
-        # Chunked associative recurrence with bounded intra-chunk slicing
-        chunk_size = getattr(self, "chunk_size", 64)
-        y_fwd_list = []
-        S_fwd = torch.zeros((B, H, d, d), device=q.device, dtype=torch.float32)
+        # Chunked associative recurrence via vectorised intra-chunk matrix multiplications
+        chunk_size = getattr(self, "chunk_size", 32)
+        logger.info("Using chunked delta scan with chunk_size=%d", chunk_size)
 
-        for c_start in range(0, L, chunk_size):
-            c_end = min(c_start + chunk_size, L)
-            qc = q_f[:, :, c_start:c_end]
-            kc = k_f[:, :, c_start:c_end]
-            vc = v_f[:, :, c_start:c_end]
-            bc = beta_f[:, :, c_start:c_end]
-            ac = alpha_f[:, :, c_start:c_end]
+        y_fwd = chunked_delta_rule_scan(q_f, k_f, v_f, beta_f, alpha_f, chunk_size=chunk_size)
 
-            for t in range(c_end - c_start):
-                b_t = bc[:, :, t, None, None]
-                a_t = ac[:, :, t, None, None]
-                k_t = kc[:, :, t, :, None]
-                v_t = vc[:, :, t, :, None]
-                q_t = qc[:, :, t, :, None]
-
-                pred_v = torch.matmul(S_fwd, k_t)
-                e_t = v_t - pred_v
-                S_fwd = b_t * S_fwd + a_t * torch.matmul(e_t, k_t.transpose(-1, -2))
-                y_t = torch.matmul(S_fwd, q_t).squeeze(-1)
-                y_fwd_list.append(y_t)
-
-        y_fwd = torch.stack(y_fwd_list, dim=2)  # [B, H, L, d]
-
-        # 2. Anticausal backward scan (only computed for bidirectional encoders)
+        # 2. Anticausal backward scan (computed for bidirectional encoders by reversing sequences)
         if not self.is_decoder:
-            y_bwd_list = []
-            S_bwd = torch.zeros((B, H, d, d), device=q.device, dtype=torch.float32)
+            q_bwd = torch.flip(q_f, dims=[2])
+            k_bwd = torch.flip(k_f, dims=[2])
+            v_bwd = torch.flip(v_f, dims=[2])
+            beta_bwd = torch.flip(beta_f, dims=[2])
+            alpha_bwd = torch.flip(alpha_f, dims=[2])
 
-            # Process chunks in reverse order for anticausal recurrence
-            c_starts = list(range(0, L, chunk_size))
-            c_starts.reverse()
-
-            for c_start in c_starts:
-                c_end = min(c_start + chunk_size, L)
-                qc = q_f[:, :, c_start:c_end]
-                kc = k_f[:, :, c_start:c_end]
-                vc = v_f[:, :, c_start:c_end]
-                bc = beta_f[:, :, c_start:c_end]
-                ac = alpha_f[:, :, c_start:c_end]
-
-                chunk_bwd = []
-                for t in reversed(range(c_end - c_start)):
-                    b_t = bc[:, :, t, None, None]
-                    a_t = ac[:, :, t, None, None]
-                    k_t = kc[:, :, t, :, None]
-                    v_t = vc[:, :, t, :, None]
-                    q_t = qc[:, :, t, :, None]
-
-                    pred_v = torch.matmul(S_bwd, k_t)
-                    e_t = v_t - pred_v
-                    S_bwd = b_t * S_bwd + a_t * torch.matmul(e_t, k_t.transpose(-1, -2))
-                    y_t = torch.matmul(S_bwd, q_t).squeeze(-1)
-                    chunk_bwd.append(y_t)
-
-                chunk_bwd.reverse()
-                y_bwd_list = chunk_bwd + y_bwd_list
-
-            y_bwd = torch.stack(y_bwd_list, dim=2)
+            y_bwd_flipped = chunked_delta_rule_scan(q_bwd, k_bwd, v_bwd, beta_bwd, alpha_bwd, chunk_size=chunk_size)
+            y_bwd = torch.flip(y_bwd_flipped, dims=[2])
             return y_fwd.to(q.dtype), y_bwd.to(q.dtype)
 
         return y_fwd.to(q.dtype), None
