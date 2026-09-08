@@ -5,6 +5,7 @@ Serves the Codes/framework/web application on port 8080 with 100% code-accurate 
 and an interactive Documentation Reader API.
 """
 
+import sys
 import http.server
 import socketserver
 import os
@@ -25,6 +26,16 @@ else:
     PROJECT_DIR = "/Users/tahamajs/Documents/uni/Project"
     IS_LOCAL_GPU = False
 
+# Ensure scripts dir is in path
+if os.path.join(PROJECT_DIR, "scripts") not in sys.path:
+    sys.path.insert(0, os.path.join(PROJECT_DIR, "scripts"))
+
+try:
+    import gpu_live_probe
+    HAS_LOCAL_PROBE = True
+except Exception:
+    HAS_LOCAL_PROBE = False
+
 WEB_DIR = os.path.join(PROJECT_DIR, "Codes", "framework", "web")
 HARVESTED_JSON = os.path.join(PROJECT_DIR, "results", "harvested_benchmark_data.json")
 DOCS_DIR = os.path.join(PROJECT_DIR, "Docs")
@@ -44,7 +55,24 @@ def get_live_gpu_telemetry():
         return _GPU_CACHE
 
     try:
-        if IS_LOCAL_GPU:
+        if IS_LOCAL_GPU and HAS_LOCAL_PROBE:
+            t = gpu_live_probe.get_telemetry()
+            active_m, active_arch, q_logs = gpu_live_probe.get_active_process_and_logs()
+            lp = gpu_live_probe.get_live_progress_and_trajectory(target_module=active_m)
+            _GPU_CACHE = {
+                "gpu_name": t.get("gpu_name", "NVIDIA GeForce RTX 4070 (8GB)"),
+                "mem_used_mb": t.get("mem_used_mb", 450),
+                "mem_total_mb": t.get("mem_total_mb", 8188),
+                "gpu_util": t.get("gpu_util", 0),
+                "temp_c": t.get("temp_c", 45),
+                "power_w": t.get("power_w", 25.0),
+                "active_module": active_m,
+                "logs": q_logs or "Mutex-Locked Sequential GPU Queue Active.",
+                "live_progress": lp
+            }
+            _GPU_CACHE_TIME = now
+            return _GPU_CACHE
+        elif IS_LOCAL_GPU:
             cmd = [sys.executable, os.path.join(PROJECT_DIR, "scripts", "gpu_live_probe.py")]
             g_res = subprocess.run(cmd, capture_output=True, text=True, timeout=4)
         else:
@@ -64,14 +92,14 @@ def get_live_gpu_telemetry():
                     "gpu_util": t.get("gpu_util", 0),
                     "temp_c": t.get("temp_c", 45),
                     "power_w": t.get("power_w", 25.0),
-                    "active_module": data.get("active_module", "hgrn2_gated_deltanet"),
+                    "active_module": data.get("active_module", "cur_linear"),
                     "logs": data.get("queue_logs", "Mutex-Locked Sequential GPU Queue Active."),
                     "live_progress": lp
                 }
                 _GPU_CACHE_TIME = now
                 return _GPU_CACHE
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error probing GPU telemetry: {e}")
 
     if not _GPU_CACHE:
         _GPU_CACHE = {
