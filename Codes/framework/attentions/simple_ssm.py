@@ -335,98 +335,23 @@ class SimpleSSM(BaseAttention):
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
             u = u * mask_float.unsqueeze(-1)
 
-        # Vectorized cumsum scan for exact token-by-token decay
-        C = torch.cumsum(log_dA.clamp(min=-20.0, max=0.0).float(), dim=1)  # [B, L, D]
+        dA = torch.exp(log_dA.clamp(min=-20.0, max=0.0))  # [B, L, D]
 
-        if L <= 512:
-            # Pairwise log-difference matrix: C_diff[b, d, i, j] = C[b, i, d] - C[b, j, d]
-            C_tr = C.transpose(1, 2)  # [B, D, L]
-            C_diff = C_tr.unsqueeze(-1) - C_tr.unsqueeze(-2)  # [B, D, L, L]
+        # O(L) linear memory sequential scan (avoids 14GB quadratic B,D,L,L allocation)
+        h_fwd = torch.empty_like(u)
+        h = torch.zeros(B, D, device=x_ssm.device, dtype=u.dtype)
+        for t in range(L):
+            h = dA[:, t] * h + u[:, t]
+            h_fwd[:, t] = h
 
-            tril = torch.tril(torch.ones(L, L, device=x_ssm.device, dtype=torch.bool))
-            K_fwd = torch.exp(C_diff.clamp(min=-30.0, max=0.0)) * tril.float()  # [B, D, L, L]
-
-            u_tr = u.transpose(1, 2).unsqueeze(-1)  # [B, D, L, 1]
-            h_fwd = torch.matmul(K_fwd, u_tr).squeeze(-1).transpose(1, 2)  # [B, L, D]
-
-            if not self.is_decoder:
-                triu = torch.triu(torch.ones(L, L, device=x_ssm.device, dtype=torch.bool))
-                K_bwd = torch.exp((-C_diff).clamp(min=-30.0, max=0.0)) * triu.float()
-                h_bwd = torch.matmul(K_bwd, u_tr).squeeze(-1).transpose(1, 2)
-            else:
-                h_bwd = None
+        if not self.is_decoder:
+            h_bwd = torch.empty_like(u)
+            h = torch.zeros(B, D, device=x_ssm.device, dtype=u.dtype)
+            for t in range(L - 1, -1, -1):
+                h = dA[:, t] * h + u[:, t]
+                h_bwd[:, t] = h
         else:
-            # Chunked associative scan for long sequences (chunk_size=64)
-            chunk_size = 64
-            num_chunks = (L + chunk_size - 1) // chunk_size
-            pad_len = num_chunks * chunk_size - L
-
-            dA_c = torch.exp(log_dA.clamp(min=-20.0, max=0.0))  # [B, L, D]
-            u_c = u  # [B, L, D]
-
-            if pad_len > 0:
-                dA_c = F.pad(dA_c, (0, 0, 0, pad_len), value=1.0)
-                u_c = F.pad(u_c, (0, 0, 0, pad_len), value=0.0)
-
-            dA_blocks = dA_c.view(B, num_chunks, chunk_size, D)
-            u_blocks = u_c.view(B, num_chunks, chunk_size, D)
-
-            # Intra-chunk cumprod decay
-            intra_decay = torch.cumprod(dA_blocks, dim=2)  # [B, num_chunks, chunk_size, D]
-            # Inter-chunk state propagation
-            h_fwd_list = []
-            h_state = torch.zeros(B, D, device=x_ssm.device, dtype=u.dtype)
-
-            for c in range(num_chunks):
-                # Intra-chunk decay from position s to position t
-                # Matrix multiplication per chunk:
-                # K_chunk[i, j] = intra_decay[i] / intra_decay[j] for i >= j
-                log_chunk_dA = torch.log(dA_blocks[:, c].clamp(min=1e-6))
-                c_cumsum = torch.cumsum(log_chunk_dA, dim=1)  # [B, chunk_size, D]
-                c_diff = c_cumsum.unsqueeze(2) - c_cumsum.unsqueeze(1)  # [B, chunk_size, chunk_size, D]
-                c_tril = torch.tril(torch.ones(chunk_size, chunk_size, device=x_ssm.device, dtype=torch.bool))
-                k_intra = torch.exp(c_diff.clamp(min=-30.0, max=0.0)) * c_tril.unsqueeze(-1).float()
-
-                # Local chunk response: [B, chunk_size, D]
-                chunk_local = torch.sum(k_intra * u_blocks[:, c].unsqueeze(1), dim=2)
-                chunk_state = intra_decay[:, c] * h_state.unsqueeze(1)
-                chunk_out = chunk_state + chunk_local
-                h_fwd_list.append(chunk_out)
-
-                # Update running state
-                h_state = chunk_out[:, -1, :]
-
-            h_fwd = torch.cat(h_fwd_list, dim=1)
-            if pad_len > 0:
-                h_fwd = h_fwd[:, :L, :]
-
-            if not self.is_decoder:
-                # Backward scan for bidirectional encoder
-                dA_bwd = torch.flip(dA_c, dims=[1]).view(B, num_chunks, chunk_size, D)
-                u_bwd = torch.flip(u_c, dims=[1]).view(B, num_chunks, chunk_size, D)
-                intra_decay_bwd = torch.cumprod(dA_bwd, dim=2)
-
-                h_bwd_list = []
-                h_bwd_state = torch.zeros(B, D, device=x_ssm.device, dtype=u.dtype)
-
-                for c in range(num_chunks):
-                    log_chunk_dA_b = torch.log(dA_bwd[:, c].clamp(min=1e-6))
-                    c_cumsum_b = torch.cumsum(log_chunk_dA_b, dim=1)
-                    c_diff_b = c_cumsum_b.unsqueeze(2) - c_cumsum_b.unsqueeze(1)
-                    k_intra_b = torch.exp(c_diff_b.clamp(min=-30.0, max=0.0)) * c_tril.unsqueeze(-1).float()
-
-                    chunk_local_b = torch.sum(k_intra_b * u_bwd[:, c].unsqueeze(1), dim=2)
-                    chunk_state_b = intra_decay_bwd[:, c] * h_bwd_state.unsqueeze(1)
-                    chunk_out_b = chunk_state_b + chunk_local_b
-                    h_bwd_list.append(chunk_out_b)
-                    h_bwd_state = chunk_out_b[:, -1, :]
-
-                h_bwd = torch.cat(h_bwd_list, dim=1)
-                if pad_len > 0:
-                    h_bwd = h_bwd[:, :L, :]
-                h_bwd = torch.flip(h_bwd, dims=[1])
-            else:
-                h_bwd = None
+            h_bwd = None
 
         out_fwd = (h_fwd * self.D.view(1, 1, D)).to(dtype=x_ssm.dtype)
         out_bwd = (h_bwd * self.D.view(1, 1, D)).to(dtype=x_ssm.dtype) if h_bwd is not None else None

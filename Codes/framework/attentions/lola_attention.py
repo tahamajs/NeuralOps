@@ -276,8 +276,8 @@ class LoLAAttention(BaseAttention):
         max_seq_len: int = getattr(comp_config, "max_seq_len", 128) if comp_config is not None else 128
         low_rank_cache_size: int = getattr(comp_config, "low_rank_cache_size", 16) if comp_config is not None else 16
         self.cache: LowRankCache = LowRankCache(max_len=max_seq_len, low_rank_k=low_rank_cache_size)
-        self.LR_scale: nn.Parameter = nn.Parameter(torch.tensor(0.5))
-        self.sparse_gate: nn.Parameter = nn.Parameter(torch.tensor(0.5))
+        self.LR_scale: nn.Parameter = nn.Parameter(torch.tensor(4.0))
+        self.sparse_gate: nn.Parameter = nn.Parameter(torch.tensor(-3.0))
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None) if pretrained_attn is not None else None
 
         if pretrained_attn is not None:

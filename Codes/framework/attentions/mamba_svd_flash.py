@@ -452,27 +452,22 @@ class MambaSVDFlash(BaseAttention):
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
     ) -> torch.Tensor:
-        """Bidirectional low-rank SVD-SSM state recurrence."""
+        """Bidirectional low-rank SVD-SSM state recurrence (Vectorized & Pre-scaled)."""
         b, l, d = hidden_states.shape
         h = torch.zeros(b, d, device=hidden_states.device, dtype=hidden_states.dtype)
         outputs = []
 
         U_norm = F.normalize(U, p=2, dim=2)  # [B, L, D, r]
         V_norm = F.normalize(V, p=2, dim=3)  # [B, L, r, D]
+        US = U_norm * Sigma.unsqueeze(2)     # [B, L, D, r] pre-scaled transition factor
+        bx = B_seq * hidden_states          # [B, L, D]
 
         step_range = range(l - 1, -1, -1) if reverse else range(l)
         for t in step_range:
-            U_t = U_norm[:, t]                                # [B, D, r]
-            Sigma_t = Sigma[:, t]                             # [B, r]
-            V_t = V_norm[:, t]                                # [B, r, D]
-            b_t = B_seq[:, t]                                 # [B, D]
-            x_t = hidden_states[:, t]                         # [B, D]
-            c_t = C_seq[:, t]                                 # [B, D]
-
-            # v_{t-1} = V_{t, r}^\top h_{t-1}
-            v_t_1 = torch.bmm(V_t, h.unsqueeze(-1)).squeeze(-1)  # [B, r]
-            s_t_1 = Sigma_t * v_t_1                              # [B, r]
-            h_next = torch.bmm(U_t, s_t_1.unsqueeze(-1)).squeeze(-1) + b_t * x_t
+            # v_{t-1} = V_{t, r}^\top h_{t-1}: [B, r, 1]
+            v_t = torch.bmm(V_norm[:, t], h.unsqueeze(-1))
+            # h_next = U_t * (Sigma_t * v_t) + bx_t
+            h_next = torch.bmm(US[:, t], v_t).squeeze(-1) + bx[:, t]
 
             if mask is not None:
                 m_t = mask[:, t].view(b, 1)
@@ -480,13 +475,13 @@ class MambaSVDFlash(BaseAttention):
             else:
                 h = h_next
 
-            y_t = c_t * h
-            outputs.append(y_t)
+            outputs.append(h)
 
         if reverse:
             outputs.reverse()
 
-        return torch.stack(outputs, dim=1)
+        H = torch.stack(outputs, dim=1)
+        return C_seq * H
 
     def forward(
         self,
