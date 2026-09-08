@@ -383,3 +383,10 @@ compressed_model = compressor.compress()
 
 ## Future Work
 - Dynamic token-adaptive layer routing.
+
+## Unified 4-Architecture Benchmark Results (ReplaceMe)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 0.00% | 0.8942 | 1.0 | 0 | 299.92 | `FAIL` | N/A |
