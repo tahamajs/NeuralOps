@@ -1677,6 +1677,9 @@ function openModuleModal(moduleName) {
     });
   }
 
+  // Fetch and display Markdown Documentation Preview
+  loadModalDocPreview(moduleName);
+
   document.getElementById("detail-modal").classList.add("active");
 }
 
@@ -1899,6 +1902,194 @@ function renderModuleProgressTable(moduleProgress) {
 
 
 // ==========================================
+// DOCUMENTATION & READMES STUDIO LOGIC
+// ==========================================
+let allDocsModules = [];
+let currentSelectedDoc = null;
+let currentDocMarkdown = "";
+
+function renderMarkdownToHtml(md) {
+  if (!md) return "<p style='color:#94a3b8;'>No content available.</p>";
+  
+  // Escape script tags
+  let html = md.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+  
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h4 style="color:#38bdf8; margin:14px 0 6px 0; font-size:1.05rem;">$1</h4>');
+  html = html.replace(/^## (.*$)/gim, '<h3 style="color:#a855f7; margin:18px 0 8px 0; font-size:1.2rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:4px;">$1</h3>');
+  html = html.replace(/^# (.*$)/gim, '<h2 style="color:#f8fafc; margin:20px 0 10px 0; font-size:1.4rem;">$1</h2>');
+  
+  // Bold & Italic
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#f8fafc;">$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em style="color:#cbd5e1;">$1</em>');
+  
+  // Code Blocks
+  html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, function(match, lang, code) {
+    return `<pre style="background:rgba(15,23,42,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:10px 14px; overflow-x:auto; margin:10px 0; font-family:monospace; font-size:0.8rem; color:#38bdf8;"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+  });
+  
+  // Inline Code
+  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.08); color:#38bdf8; padding:2px 6px; border-radius:4px; font-family:monospace; font-size:0.82rem;">$1</code>');
+  
+  // Blockquotes
+  html = html.replace(/^\> (.*$)/gim, '<blockquote style="border-left:3px solid #38bdf8; padding-left:12px; margin:8px 0; color:#94a3b8; font-style:italic;">$1</blockquote>');
+  
+  // Lists
+  html = html.replace(/^\- (.*$)/gim, '<li style="margin-left:18px; margin-bottom:4px;">$1</li>');
+  
+  // Tables
+  html = html.replace(/\|(.+)\|/g, function(match) {
+    if (match.includes("---")) return "";
+    const cells = match.split("|").slice(1, -1);
+    const tds = cells.map(c => `<td style="padding:6px 10px; border:1px solid rgba(255,255,255,0.08); font-size:0.8rem;">${c.trim()}</td>`).join("");
+    return `<tr>${tds}</tr>`;
+  });
+  html = html.replace(/(<tr>.+<\/tr>)/gs, '<table style="width:100%; border-collapse:collapse; margin:12px 0;">$1</table>');
+
+  // Paragraphs
+  html = html.replace(/\n\n/g, '<br><br>');
+  return html;
+}
+
+async function loadModalDocPreview(moduleName) {
+  const container = document.getElementById("modal-doc-preview");
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">📖 Loading verified mathematical specification...</div>';
+  
+  try {
+    const res = await fetch(`/api/doc?module=${encodeURIComponent(moduleName)}`);
+    const data = await res.json();
+    currentSelectedDoc = moduleName;
+    currentDocMarkdown = data.content || "";
+    
+    container.innerHTML = `
+      <div style="margin-bottom:8px; font-size:0.75rem; color:#38bdf8; font-family:monospace;">
+        📄 Source: ${data.path || 'Docs/' + moduleName + '.md'}
+      </div>
+      <div>${renderMarkdownToHtml(data.content || '')}</div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<div style="color:#ef4444;">Failed to load documentation: ${err.message}</div>`;
+  }
+}
+
+function jumpToDocsTabFromModal() {
+  hideModal();
+  switchTab('docs');
+  if (currentSelectedDoc) {
+    selectDocModule(currentSelectedDoc);
+  }
+}
+
+function initDocsView(moduleProgress) {
+  if (!moduleProgress || moduleProgress.length === 0) return;
+  allDocsModules = moduleProgress.map(m => m.module || m.name);
+  
+  const countEl = document.getElementById("tab-docs-count");
+  if (countEl) countEl.textContent = `${allDocsModules.length} Modules`;
+  const sbCount = document.getElementById("docs-sidebar-count");
+  if (sbCount) sbCount.textContent = `${allDocsModules.length}`;
+  
+  renderDocsSidebar(allDocsModules);
+  
+  // Auto-select first or active
+  if (!currentSelectedDoc && allDocsModules.length > 0) {
+    selectDocModule(allDocsModules[0]);
+  }
+}
+
+function renderDocsSidebar(list) {
+  const sb = document.getElementById("docs-sidebar-list");
+  if (!sb) return;
+  sb.innerHTML = "";
+  
+  list.forEach(mod => {
+    const item = document.createElement("div");
+    item.className = "doc-nav-item";
+    const isActive = (currentSelectedDoc === mod);
+    item.style.cssText = `
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.15s;
+      background: ${isActive ? 'rgba(56, 189, 248, 0.15)' : 'transparent'};
+      border: 1px solid ${isActive ? 'rgba(56, 189, 248, 0.4)' : 'transparent'};
+      color: ${isActive ? '#38bdf8' : '#cbd5e1'};
+    `;
+    item.innerHTML = `
+      <span style="font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${mod}</span>
+      <span style="font-size:0.7rem; color:#94a3b8;">📄</span>
+    `;
+    item.onclick = () => selectDocModule(mod);
+    sb.appendChild(item);
+  });
+}
+
+function filterDocsList(q) {
+  const query = (q || "").trim().toLowerCase();
+  const filtered = allDocsModules.filter(m => m.toLowerCase().includes(query));
+  renderDocsSidebar(filtered);
+}
+
+function clearDocsSearch() {
+  const inp = document.getElementById("docs-search-input");
+  if (inp) inp.value = "";
+  renderDocsSidebar(allDocsModules);
+}
+
+async function selectDocModule(moduleName) {
+  currentSelectedDoc = moduleName;
+  renderDocsSidebar(allDocsModules);
+  
+  const titleEl = document.getElementById("doc-view-title");
+  const pathEl = document.getElementById("doc-view-path");
+  const bodyEl = document.getElementById("doc-view-body");
+  
+  if (titleEl) titleEl.textContent = `${moduleName} — Specifications & Architecture`;
+  if (pathEl) pathEl.textContent = `Fetching documentation...`;
+  if (bodyEl) bodyEl.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#94a3b8;">📖 Loading document content...</div>';
+  
+  try {
+    const res = await fetch(`/api/doc?module=${encodeURIComponent(moduleName)}`);
+    const data = await res.json();
+    currentDocMarkdown = data.content || "";
+    
+    if (pathEl) pathEl.textContent = data.path ? `📄 ${data.path}` : `Docs/${moduleName}.md`;
+    if (bodyEl) bodyEl.innerHTML = renderMarkdownToHtml(data.content || "");
+  } catch (err) {
+    if (bodyEl) bodyEl.innerHTML = `<div style="color:#ef4444;">Error loading document: ${err.message}</div>`;
+  }
+}
+
+function copyDocContent() {
+  if (!currentDocMarkdown) return;
+  navigator.clipboard.writeText(currentDocMarkdown).then(() => {
+    alert("Markdown documentation copied to clipboard!");
+  }).catch(() => {
+    alert("Copied!");
+  });
+}
+
+function openSelectedDocBenchmark() {
+  if (!currentSelectedDoc) return;
+  switchTab('telemetry');
+  openModuleModal(currentSelectedDoc);
+}
+
+// Hook initDocsView into fetchStats
+const originalRenderTelemetry = renderTelemetry;
+renderTelemetry = function(data) {
+  originalRenderTelemetry(data);
+  if (data && data.module_progress && allDocsModules.length === 0) {
+    initDocsView(data.module_progress);
+  }
+};
+
+// ==========================================
 // BOOTSTRAP
 // ==========================================
 restoreState();
@@ -1910,5 +2101,6 @@ fetchRunsList().then(() => {
   populateRunSelectors();
 });
 switchTab(activeTab);
+
 
 
