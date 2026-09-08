@@ -16,7 +16,14 @@ import urllib.parse
 import pandas as pd
 
 PORT = 8080
-PROJECT_DIR = "/Users/tahamajs/Documents/uni/Project"
+
+if os.path.exists(r"D:\SVD_Project"):
+    PROJECT_DIR = r"D:\SVD_Project"
+    IS_LOCAL_GPU = True
+else:
+    PROJECT_DIR = "/Users/tahamajs/Documents/uni/Project"
+    IS_LOCAL_GPU = False
+
 WEB_DIR = os.path.join(PROJECT_DIR, "Codes", "framework", "web")
 HARVESTED_JSON = os.path.join(PROJECT_DIR, "results", "harvested_benchmark_data.json")
 DOCS_DIR = os.path.join(PROJECT_DIR, "Docs")
@@ -36,8 +43,13 @@ def get_live_gpu_telemetry():
         return _GPU_CACHE
 
     try:
-        cmd = 'ssh -o ConnectTimeout=2 -o BatchMode=yes gpu "python D:/SVD_Project/gpu_live_probe.py"'
-        g_res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
+        if IS_LOCAL_GPU:
+            cmd = [sys.executable, os.path.join(PROJECT_DIR, "gpu_live_probe.py")]
+            g_res = subprocess.run(cmd, capture_output=True, text=True, timeout=4)
+        else:
+            cmd = 'ssh -o ConnectTimeout=2 -o BatchMode=yes gpu "python D:/SVD_Project/gpu_live_probe.py"'
+            g_res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
+
         if g_res.returncode == 0:
             lines = [l for l in g_res.stdout.splitlines() if not l.startswith("**") and l.strip()]
             if lines:
@@ -427,11 +439,18 @@ def build_aggregated_stats():
 def get_live_logs(source='active', module=None, lines=200):
     """Fetches real-time log lines from the GPU server via gpu_live_probe or local disk."""
     try:
-        cmd = f'ssh -o ConnectTimeout=2 -o BatchMode=yes gpu "python D:/SVD_Project/gpu_live_probe.py --action logs --source {source} --lines {lines}'
-        if module:
-            cmd += f' --module {module}'
-        cmd += '"'
-        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
+        if IS_LOCAL_GPU:
+            cmd = [sys.executable, os.path.join(PROJECT_DIR, "gpu_live_probe.py"), "--action", "logs", "--source", source, "--lines", str(lines)]
+            if module:
+                cmd.extend(["--module", module])
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=4)
+        else:
+            cmd = f'ssh -o ConnectTimeout=2 -o BatchMode=yes gpu "python D:/SVD_Project/gpu_live_probe.py --action logs --source {source} --lines {lines}'
+            if module:
+                cmd += f' --module {module}'
+            cmd += '"'
+            res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
+
         if res.returncode == 0 and res.stdout:
             lines_out = [l for l in res.stdout.splitlines() if not l.startswith("**") and l.strip()]
             if lines_out:
