@@ -1335,13 +1335,15 @@ function renderPerformanceHeatmap() {
   if (!container) return;
 
   const results = currentData.results || currentData.recent_results || currentData.summary || [];
-  const datasetsList = ["SST2", "MRPC", "COLA", "STSB", "WIKITEXT2"];
   const matrix = {};
+  const presentDatasets = new Set();
 
   results.forEach(r => {
     const mod = r.module || r.module_name;
-    const ds = (r.dataset || "").toUpperCase();
-    if (!mod || !ds) return;
+    const rawDs = r.dataset || "SST-2";
+    const ds = rawDs.toUpperCase().replace("-", "");
+    if (!mod) return;
+    presentDatasets.add(ds);
     if (!matrix[mod]) matrix[mod] = {};
 
     let accVal = null;
@@ -1359,6 +1361,15 @@ function renderPerformanceHeatmap() {
       matrix[mod][ds] = -1.0;
     }
   });
+
+  const preferredOrder = ["SST2", "MRPC", "COLA", "RTE", "STSB", "WIKITEXT2", "C4"];
+  const datasetsList = preferredOrder.filter(d => presentDatasets.has(d));
+  if (datasetsList.length === 0) {
+    datasetsList.push(...Array.from(presentDatasets).slice(0, 6));
+  }
+  if (datasetsList.length === 0) {
+    datasetsList.push("SST2");
+  }
 
   const modNames = Object.keys(matrix).slice(0, 18);
   if (modNames.length === 0) {
@@ -1399,27 +1410,32 @@ function renderModelDistributionChart() {
   const mods = (comp.module_leaderboard || []).filter(m => m.success_count > 0).slice(0, 8);
   const labels = mods.map(m => m.module);
 
-  // Group real model results if available
+  // Group real model results across the 4 core benchmark architectures
   const allResults = currentData.results || currentData.recent_results || currentData.summary || [];
-  const bertFwd = [];
+  const distilbertFwd = [];
   const robertaFwd = [];
-  const t5Fwd = [];
+  const gpt2Fwd = [];
+  const qwenFwd = [];
 
   labels.forEach(modName => {
     const modRuns = allResults.filter(r => (r.module || r.module_name) === modName && r.status === "PASS");
     const getAvgFwd = (fam) => {
-      const subset = modRuns.filter(r => (r.model || r.model_family || "").toUpperCase().includes(fam));
+      const subset = modRuns.filter(r => {
+        const m = (r.model || r.model_family || "").toUpperCase();
+        return m.includes(fam);
+      });
       if (!subset.length) return null;
       const sum = subset.reduce((acc, r) => acc + parseFloat(r.fwd_ms || r.forward_latency_ms || 0), 0);
       return +(sum / subset.length).toFixed(2);
     };
 
-    bertFwd.push(getAvgFwd("BERT"));
+    distilbertFwd.push(getAvgFwd("DISTIL"));
     robertaFwd.push(getAvgFwd("ROBERTA"));
-    t5Fwd.push(getAvgFwd("T5"));
+    gpt2Fwd.push(getAvgFwd("GPT2") || getAvgFwd("GPT-2"));
+    qwenFwd.push(getAvgFwd("QWEN"));
   });
 
-  const hasAnyData = bertFwd.some(v => v !== null) || robertaFwd.some(v => v !== null) || t5Fwd.some(v => v !== null);
+  const hasAnyData = distilbertFwd.some(v => v !== null) || robertaFwd.some(v => v !== null) || gpt2Fwd.some(v => v !== null) || qwenFwd.some(v => v !== null);
 
   if (modelDistChart) modelDistChart.destroy();
   modelDistChart = new Chart(canvas.getContext("2d"), {
@@ -1427,9 +1443,10 @@ function renderModelDistributionChart() {
     data: {
       labels: labels,
       datasets: [
-        { label: 'BERT', data: bertFwd, backgroundColor: '#38bdf8', borderRadius: 4 },
+        { label: 'DistilBERT', data: distilbertFwd, backgroundColor: '#38bdf8', borderRadius: 4 },
         { label: 'RoBERTa', data: robertaFwd, backgroundColor: '#a855f7', borderRadius: 4 },
-        { label: 'T5', data: t5Fwd, backgroundColor: '#10b981', borderRadius: 4 },
+        { label: 'GPT-2', data: gpt2Fwd, backgroundColor: '#10b981', borderRadius: 4 },
+        { label: 'Qwen3.5', data: qwenFwd, backgroundColor: '#f59e0b', borderRadius: 4 },
       ]
     },
     options: {
