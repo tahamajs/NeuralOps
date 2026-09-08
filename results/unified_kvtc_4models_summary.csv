@@ -1,5 +1,2 @@
 Model,Exit Code,Baseline Acc,KVTC Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,2,N/A,N/A,N/A,N/A,EXIT_2,N/A,1.00x,N/A,23.6
-roberta,2,N/A,N/A,N/A,N/A,EXIT_2,N/A,1.00x,N/A,23.5
-gpt2,2,N/A,N/A,N/A,N/A,EXIT_2,N/A,1.00x,N/A,23.6
-qwen3_5,2,N/A,N/A,N/A,N/A,EXIT_2,N/A,1.00x,N/A,23.2
+roberta,0,88.76%,50.92%,-37.84%,0.6748,PASS_LOW,45,1.00x,422.0 MB,60.5
