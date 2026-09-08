@@ -12,7 +12,7 @@ import torch.nn as nn
 
 from framework.attentions.asvd_attention import ASVDAttention
 from framework.attentions.adaptive_svd_attention import AdaptiveSVDAttention
-from framework.attentions.factorised_matrix_state import FactorisedMatrixStateAttention
+from framework.attentions.factorised_matrix_state import FactorisedMatrixState
 from framework.attentions.cluster_attention import ClusterAttention
 from framework.attentions.compressed_attention import CompressedAttention
 
@@ -40,7 +40,7 @@ class TestLowAccuracyModulesFixes(unittest.TestCase):
 
     def test_fms_positive_denominators(self):
         """FMS uses positive ELU+1 kernel feature maps preventing negative denominator explosions."""
-        fms = FactorisedMatrixStateAttention(d_model=64, num_heads=4, is_decoder=True)
+        fms = FactorisedMatrixState(d_model=64, num_heads=4, is_decoder=True)
         x = torch.randn(2, 32, 64)
         out, _ = fms(x)
         self.assertTrue(torch.isfinite(out).all())
