@@ -229,6 +229,7 @@ class DecayLinearAttention(BaseAttention):
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -565,6 +566,7 @@ class DecayLinearAttention(BaseAttention):
         out = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         # 7. Output projection with nested encoder bypass
+        out = out * self.output_scale
         if self.is_nested_encoder:
             final_out = out
         else:
