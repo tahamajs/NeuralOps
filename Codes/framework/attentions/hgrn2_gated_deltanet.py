@@ -159,6 +159,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
         # Gate and output projection
         self.gate = nn.Linear(self.d_model, self.d_model)
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
         self.out_proj = LoRALinear(
             self.d_model,
             self.d_model,
@@ -275,6 +276,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
         gamma = torch.sigmoid(self.gate(hidden_states))
         fused = gamma * hgrn_out + (1.0 - gamma) * delta_out
+        fused = fused * self.output_scale
         out = self.out_proj(fused)
 
         # Output shape match

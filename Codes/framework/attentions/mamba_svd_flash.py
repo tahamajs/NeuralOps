@@ -207,6 +207,7 @@ class MambaSVDFlash(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # Heads and GQA
         n_heads = num_heads or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
@@ -620,6 +621,7 @@ class MambaSVDFlash(BaseAttention):
             attn_out = attn_out[0]
         Y = gamma * ssm_out + (1.0 - gamma) * attn_out
 
+        Y = Y * self.output_scale
         if self.is_nested_encoder:
             out = Y
         else:

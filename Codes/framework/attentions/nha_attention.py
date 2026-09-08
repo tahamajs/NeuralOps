@@ -238,6 +238,7 @@ class NativeHybridAttention(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # 1. Independent LoRA rank/alpha configuration
         if config is not None:
@@ -592,6 +593,7 @@ class NativeHybridAttention(BaseAttention):
         if self.is_nested_encoder:
             return out, None
 
+        out = out * self.output_scale
         out = self.out_proj(out)
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:

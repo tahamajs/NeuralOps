@@ -210,6 +210,7 @@ class KDAAttention(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # LoRA config
         if config is not None:
@@ -591,6 +592,7 @@ class KDAAttention(BaseAttention):
 
         out = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
+        out = out * self.output_scale
         if self.is_nested_encoder:
             final_out = out
         else:

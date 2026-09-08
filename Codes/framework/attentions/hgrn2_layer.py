@@ -99,6 +99,7 @@ class HGRN2Layer(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
         self.lora_rank = lora_rank if lora_rank is not None else 16
         self.lora_alpha = lora_alpha
         self.lora_scaling = (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
@@ -351,6 +352,7 @@ class HGRN2Layer(BaseAttention):
 
         # 4. Gating and output projection
         gated = h * F.silu(z)
+        gated = gated * self.output_scale
         if self.is_nested_encoder:
             out = gated
         else:

@@ -262,6 +262,7 @@ class LoLAAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         self.rank: int = actual_rank
         self.lora_rank: int = _cfg_get("lora_rank", lora_rank)
@@ -546,6 +547,7 @@ class LoLAAttention(BaseAttention):
         context = torch.matmul(attn, V_comb)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
+        context = context * self.output_scale
         if self.is_nested_encoder:
             output = context
         else:

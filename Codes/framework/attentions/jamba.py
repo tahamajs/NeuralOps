@@ -164,6 +164,7 @@ class SVDMambaSub(nn.Module):
         ssm_out = self.ssm(x_proj, attention_mask=attention_mask)
         if isinstance(ssm_out, tuple):
             ssm_out = ssm_out[0]
+        ssm_out = ssm_out * self.output_scale
         out = self.out_proj(ssm_out)
         return out, None
 
@@ -237,6 +238,7 @@ class Jamba2Block(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
+        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # LoRA config: independent inspection of config, comp_config, and kwargs
         if config is not None:
