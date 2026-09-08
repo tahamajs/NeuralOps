@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "Spectral Residual LoRA (res_svd) Acc": "65.94%",
+    "Delta Acc": "-22.82%",
+    "F1": "0.5139",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.09x",
+    "Peak VRAM": "444.7 MB",
+    "Time (s)": "91.7"
+  }
+]
