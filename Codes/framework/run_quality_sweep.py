@@ -1075,7 +1075,35 @@ def main():
             if hasattr(pre_args, k):
                 ap.set_defaults(**{k: v})
 
-    args = ap.parse_args(); logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    args, unknown_args = ap.parse_known_args()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    if unknown_args:
+        LOG.info("Parsed %d module-specific extended arguments: %s", len(unknown_args), unknown_args)
+        # Dynamically attach unknown key-value pairs onto args so compressors can read them
+        i = 0
+        while i < len(unknown_args):
+            flag = unknown_args[i]
+            if flag.startswith("--"):
+                key = flag[2:].replace("-", "_")
+                if i + 1 < len(unknown_args) and not unknown_args[i + 1].startswith("--"):
+                    val = unknown_args[i + 1]
+                    # Parse type
+                    if val.lower() in ("true", "1", "yes"):
+                        parsed_val = True
+                    elif val.lower() in ("false", "0", "no"):
+                        parsed_val = False
+                    else:
+                        try:
+                            parsed_val = int(val) if "." not in val else float(val)
+                        except ValueError:
+                            parsed_val = val
+                    setattr(args, key, parsed_val)
+                    i += 2
+                else:
+                    setattr(args, key, True)
+                    i += 1
+            else:
+                i += 1
     torch.manual_seed(args.seed)
     torch.set_num_threads(4)
     if torch.cuda.is_available():
@@ -1458,6 +1486,14 @@ def main():
 
                 if name != "full":
                     if hasattr(model, "config") and model.config is not None:
+                        # Automatically propagate all parsed flags matching module name prefix or compressor keywords
+                        for attr_name, attr_val in vars(args).items():
+                            if attr_name.startswith(name + "_") or attr_name in ("max_error", "target_attention_only", "rank", "lora_rank", "lora_alpha", "sparsity"):
+                                setattr(model.config, attr_name, attr_val)
+                                # Also strip module prefix for standard configs (e.g. nmf_max_error -> max_error)
+                                if attr_name.startswith(name + "_"):
+                                    stripped = attr_name[len(name) + 1:]
+                                    setattr(model.config, stripped, attr_val)
                         if getattr(args, "lora_rank", None) is not None:
                             setattr(model.config, "lora_rank", args.lora_rank)
                         if getattr(args, "asvd_dynamic_rank", None) is not None:
