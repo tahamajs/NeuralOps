@@ -660,3 +660,10 @@ compressed_model = compressor.compress()
 
 ## Future Work
 - Integration with mixed-precision FP8 factor quantization.
+
+## Unified 4-Architecture Benchmark Results (OATS)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 87.73% | 0.8853 | 1.0 | 72 | 500.51 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-oats) |
