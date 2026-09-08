@@ -133,6 +133,7 @@ parser.add_argument("--batch_size", type=int, default=None, help="Batch size ove
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Rank override")
 parser.add_argument("--lora_rank", type=int, default=None, help="LoRA rank override")
+parser.add_argument("--timeout", type=int, default=None, help="Timeout override in seconds")
 parser.add_argument("positional_models", nargs="*", default=None, help="Positional model names for backwards compatibility")
 
 args = parser.parse_args()
@@ -171,6 +172,8 @@ for m in models:
         update_cmd_arg(m["cmd"], "--rank", str(args.rank))
     if args.lora_rank is not None:
         update_cmd_arg(m["cmd"], "--lora_rank", str(args.lora_rank))
+    if args.timeout is not None:
+        update_cmd_arg(m["cmd"], "--timeout", str(args.timeout))
 
 start_time = time.time()
 
