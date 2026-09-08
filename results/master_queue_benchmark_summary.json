@@ -16,5 +16,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T03:46:32.268165"
+  },
+  {
+    "module": "hla",
+    "runner": "run_all_4_hla.py",
+    "exit_code": 0,
+    "elapsed_s": 1470.56,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T04:11:03.933338"
   }
 ]
