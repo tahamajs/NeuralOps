@@ -117,3 +117,11 @@ minimal_svd,run_all_4_minimal_svd.py,0,82.58,PASS,,2026-09-08T06:46:28.036239
 minimal_svd_v2,run_all_4_minimal_svd_v2.py,0,82.66,PASS,,2026-09-08T06:47:50.703106
 mixattention_moska,run_all_4_mixattention_moska.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T06:47:50.705586
 mla,run_all_4_mla.py,0,58.89,PASS,,2026-09-08T06:48:49.593921
+mlorq,run_all_4_mlorq.py,0,19.93,PASS,,2026-09-08T06:49:09.530195
+moba,run_all_4_moba.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T06:49:09.539021
+modegpt,run_all_4_modegpt.py,0,20.34,PASS,,2026-09-08T06:49:29.882650
+moe_deltakv_paged,run_all_4_moe_deltakv_paged.py,0,75.77,PASS,,2026-09-08T06:50:45.660463
+nasc,run_all_4_nasc.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T06:50:45.665138
+nasc_attention,run_all_4_nasc_attention.py,1,0.05,FAIL,,2026-09-08T06:50:45.713197
+nexus,run_all_4_nexus.py,0,70.55,PASS,,2026-09-08T06:51:56.267703
+nha,run_all_4_nha.py,0,71.21,PASS,,2026-09-08T06:53:07.480610

@@ -1060,5 +1060,77 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T06:48:49.593921"
+  },
+  {
+    "module": "mlorq",
+    "runner": "run_all_4_mlorq.py",
+    "exit_code": 0,
+    "elapsed_s": 19.93,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:49:09.530195"
+  },
+  {
+    "module": "moba",
+    "runner": "run_all_4_moba.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T06:49:09.539021"
+  },
+  {
+    "module": "modegpt",
+    "runner": "run_all_4_modegpt.py",
+    "exit_code": 0,
+    "elapsed_s": 20.34,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:49:29.882650"
+  },
+  {
+    "module": "moe_deltakv_paged",
+    "runner": "run_all_4_moe_deltakv_paged.py",
+    "exit_code": 0,
+    "elapsed_s": 75.77,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:50:45.660463"
+  },
+  {
+    "module": "nasc",
+    "runner": "run_all_4_nasc.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-08T06:50:45.665138"
+  },
+  {
+    "module": "nasc_attention",
+    "runner": "run_all_4_nasc_attention.py",
+    "exit_code": 1,
+    "elapsed_s": 0.05,
+    "status": "FAIL",
+    "error": null,
+    "timestamp": "2026-09-08T06:50:45.713197"
+  },
+  {
+    "module": "nexus",
+    "runner": "run_all_4_nexus.py",
+    "exit_code": 0,
+    "elapsed_s": 70.55,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:51:56.267703"
+  },
+  {
+    "module": "nha",
+    "runner": "run_all_4_nha.py",
+    "exit_code": 0,
+    "elapsed_s": 71.21,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:53:07.480610"
   }
 ]
