@@ -746,9 +746,11 @@ function getSelectedOrFilteredModules() {
   return allFiltered;
 }
 
-// Chart.js Theme Defaults
-Chart.defaults.color = '#94a3b8';
-Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.05)';
+// Chart.js Theme Defaults (Safe guarded)
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.05)';
+}
 
 function updateAnalytics() {
   const trackSel = document.getElementById("filter-track");
