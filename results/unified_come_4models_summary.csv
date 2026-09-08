@@ -1,0 +1,5 @@
+model,slug,baseline_acc,acc,delta_acc,f1,status,passed_gate,original_layers,kept_layers,shed_layers,layer_reduction_ratio,flops_reduction,bridges_inserted,latency_p95_ms,vram_peak_mb,out_dir,hf_repo
+distilbert,distilbert,0.9048,0.8623999999999999,-0.042400000000000104,0.8701,PASS,True,6,4,2,0.3333333333333333,33.3%,2,0.0,179.06,results\unified_come\distilbert,https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-come
+roberta,roberta,0.8876000000000001,0.7833,-0.10430000000000006,0.8177,PASS,True,12,8,4,0.3333333333333333,33.3%,4,0.0,276.45,results\unified_come\roberta,https://huggingface.co/Hooshaai/svd-linear-attention-roberta-come
+gpt2,gpt2,0.8131,0.7317,-0.08140000000000003,0.7776,PASS,True,12,8,4,0.3333333333333333,33.3%,4,0.0,332.05,results\unified_come\gpt2,https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-come
+qwen3_5,qwen3_5,0.6789000000000001,0.0,-0.6789000000000001,0.557,FAIL,False,24,16,8,0.3333333333333333,33.3%,8,0.0,1796.78,results\unified_come\qwen3_5,N/A (Failed Gate)
