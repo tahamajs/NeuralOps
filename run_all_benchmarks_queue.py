@@ -204,6 +204,13 @@ def main():
         help="Path to project repository root (default: current working directory)",
     )
 
+    parser.add_argument(
+        "--exclude",
+        type=str,
+        default="",
+        help="Comma-separated list of module names to exclude from execution",
+    )
+
     args = parser.parse_args()
 
     repo_dir = Path(args.repo_dir) if args.repo_dir else Path.cwd()
@@ -216,12 +223,14 @@ def main():
         print(f"No run_all_4_*.py scripts found in {repo_dir}")
         sys.exit(1)
 
+    exclude_set = {m.strip() for m in args.exclude.split(",") if m.strip()} if args.exclude else set()
+
     # Filter by specific modules if requested
     if args.modules:
         target_set = {m.strip() for m in args.modules.split(",") if m.strip()}
-        runners = [r for r in all_runners if extract_module_name(r) in target_set]
+        runners = [r for r in all_runners if extract_module_name(r) in target_set and extract_module_name(r) not in exclude_set]
     else:
-        runners = all_runners
+        runners = [r for r in all_runners if extract_module_name(r) not in exclude_set]
 
     # Filter starting point if requested
     if args.start_from:
