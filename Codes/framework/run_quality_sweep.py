@@ -1053,6 +1053,13 @@ def main():
                     help="Max relative error for LiLLaMA compression")
     ap.add_argument("--lillama_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
                     help="Restrict LiLLaMA compression to attention projections only")
+    # LSC Compressor
+    ap.add_argument("--lsc_sparsity", type=float, default=0.3,
+                    help="Target sparsity for LSC compressor")
+    ap.add_argument("--lsc_max_error", type=float, default=0.50,
+                    help="Max relative error threshold for LSC compressor")
+    ap.add_argument("--lsc_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict LSC compression to attention projections only")
 
     # Pre-parse to check if a config file is provided
     pre_args, remaining_argv = ap.parse_known_args()
