@@ -17,6 +17,13 @@ Production-hardened with:
 
 from __future__ import annotations
 
+import os
+import warnings
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "4")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+warnings.filterwarnings("ignore", category=UserWarning, module="joblib")
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+
 import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
