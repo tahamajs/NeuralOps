@@ -240,3 +240,75 @@ body {
 .toast.toast-success { border-color: var(--success); }
 .toast.toast-error { border-color: var(--danger); }
 
+
+/* ==========================================================================
+   ENHANCED LOG VIEWER & TERMINAL STYLES
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 10000;
+  pointer-events: none;
+}
+.toast-item {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-main);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  animation: toastSlideIn 0.25s ease-out;
+}
+.toast-item.toast-success { border-color: #10b981; }
+.toast-item.toast-error { border-color: #ef4444; }
+.toast-item.toast-warn { border-color: #f59e0b; }
+@keyframes toastSlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.terminal-window {
+  background: #070b12;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.terminal-header {
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.terminal-body {
+  padding: 12px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex: 1;
+}
+.log-line { margin-bottom: 2px; }
+.log-line.log-info { color: #38bdf8; }
+.log-line.log-error { color: #f87171; font-weight: 600; background: rgba(239, 68, 68, 0.1); padding: 1px 4px; border-radius: 3px; }
+.log-line.log-pass { color: #34d399; font-weight: 600; }
+.log-line.log-step { color: #fbbf24; }
+.log-line.log-warn { color: #f59e0b; }
+.log-line.log-highlight { background: rgba(251, 191, 36, 0.25); border-radius: 2px; }
