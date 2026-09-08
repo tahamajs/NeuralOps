@@ -393,13 +393,15 @@ class HLAAttention(BaseAttention):
         log_decay = torch.log(decay.squeeze(-1).squeeze(-1).clamp(min=1e-5, max=1.0 - 1e-5))  # [1, H]
         decay_mat = torch.exp(diff.unsqueeze(0).unsqueeze(0).float() * log_decay.unsqueeze(-1).unsqueeze(-1)) * tri_mask.float().unsqueeze(0).unsqueeze(0)
 
-        # Numerator: y_num = ( (q @ v^T) * decay_mat ) @ k
-        qv = torch.matmul(q_f, v_f.transpose(-1, -2))  # [B, H, L, L]
-        num = torch.matmul(qv * decay_mat, k_f)        # [B, H, L, d]
-
-        # Denominator: y_denom = sum_j ( (q @ k^T) * decay_mat )
+        # Attention weights with exponential decay: scores = (q @ k^T) * decay_mat
         qk = torch.matmul(q_f, k_f.transpose(-1, -2))  # [B, H, L, L]
-        denom = (qk * decay_mat).sum(dim=-1, keepdim=True) + 1e-5  # [B, H, L, 1]
+        scores = qk * decay_mat
+
+        # Numerator: y_num = scores @ v
+        num = torch.matmul(scores, v_f)                 # [B, H, L, d]
+
+        # Denominator: y_denom = sum_j scores
+        denom = scores.sum(dim=-1, keepdim=True) + 1e-5 # [B, H, L, 1]
 
         y = num / denom.clamp(min=1e-5)
         return y.to(q.dtype)
