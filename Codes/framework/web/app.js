@@ -70,6 +70,10 @@ function switchTab(tabId) {
     renderAdvancedVisuals();
   } else if (tabId === 'logs') {
     fetchLiveLogsNow();
+  } else if (tabId === 'docs') {
+    if (allDocsModules.length === 0) {
+      loadAllDocsCatalog();
+    }
   }
 }
 
@@ -1522,30 +1526,6 @@ function sortAnalyticsTable(colIdx) {
   updateAnalyticsTable();
 }
 
-// ==========================================
-// HISTORICAL COMPARISON STUDIO (DIFF VIEW)
-// ==========================================
-async function updateRunComparison() {
-  const selA = document.getElementById("compare-run-a");
-  const selB = document.getElementById("compare-run-b");
-  const metricSel = document.getElementById("compare-metric-select");
-
-  if (!selA || !selB) return;
-  const idA = selA.value || "run_active";
-  const idB = selB.value || (availableRuns[1] ? availableRuns[1].run_id : "run_active");
-  const metric = metricSel ? metricSel.value : "fwd";
-
-  try {
-    const [resA, resB] = await Promise.all([
-      fetch(`/api/runs/${idA}`, { cache: "no-store" }).then(r => r.json()),
-      fetch(`/api/runs/${idB}`, { cache: "no-store" }).then(r => r.json())
-    ]);
-
-    renderRunDiff(resA, resB, metric);
-  } catch (err) {
-    console.error("Error updating run comparison:", err);
-  }
-}
 
 // ==========================================
 // MODULE DETAIL MODAL
@@ -2089,21 +2069,44 @@ function jumpToDocsTabFromModal() {
   }
 }
 
-function initDocsView(moduleProgress) {
-  if (!moduleProgress || moduleProgress.length === 0) return;
-  allDocsModules = moduleProgress.map(m => m.module || m.name);
-  
-  const countEl = document.getElementById("tab-docs-count");
-  if (countEl) countEl.textContent = `${allDocsModules.length} Modules`;
-  const sbCount = document.getElementById("docs-sidebar-count");
-  if (sbCount) sbCount.textContent = `${allDocsModules.length}`;
-  
-  renderDocsSidebar(allDocsModules);
-  
-  // Auto-select first or active
-  if (!currentSelectedDoc && allDocsModules.length > 0) {
-    selectDocModule(allDocsModules[0]);
+async function loadAllDocsCatalog() {
+  try {
+    const res = await fetch('/api/docs_list');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.modules && data.modules.length > 0) {
+        allDocsModules = data.modules;
+        const countEl = document.getElementById("tab-docs-count");
+        if (countEl) countEl.textContent = `${allDocsModules.length} Docs`;
+        const sbCount = document.getElementById("docs-sidebar-count");
+        if (sbCount) sbCount.textContent = `${allDocsModules.length}`;
+        renderDocsSidebar(allDocsModules);
+        if (!currentSelectedDoc && allDocsModules.length > 0) {
+          selectDocModule(allDocsModules[0]);
+        }
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn("Could not fetch /api/docs_list:", e);
   }
+}
+
+function initDocsView(moduleProgress) {
+  if (allDocsModules.length > 0) return;
+  loadAllDocsCatalog().then(() => {
+    if (allDocsModules.length === 0 && moduleProgress && moduleProgress.length > 0) {
+      allDocsModules = moduleProgress.map(m => m.module || m.name);
+      const countEl = document.getElementById("tab-docs-count");
+      if (countEl) countEl.textContent = `${allDocsModules.length} Modules`;
+      const sbCount = document.getElementById("docs-sidebar-count");
+      if (sbCount) sbCount.textContent = `${allDocsModules.length}`;
+      renderDocsSidebar(allDocsModules);
+      if (!currentSelectedDoc && allDocsModules.length > 0) {
+        selectDocModule(allDocsModules[0]);
+      }
+    }
+  });
 }
 
 function renderDocsSidebar(list) {
@@ -2352,6 +2355,7 @@ isHistorical = false;
 startPolling();
 fetchStats();
 fetchLiveLogsNow();
+loadAllDocsCatalog();
 fetchRunsList().then(() => {
   populateRunSelectors();
 });
