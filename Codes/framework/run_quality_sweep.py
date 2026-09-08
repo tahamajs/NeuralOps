@@ -6,6 +6,10 @@ attention/compression module from the same fine-tuned checkpoint.
 """
 from __future__ import annotations
 
+import os
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "4")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+
 import argparse, copy, csv, gc, importlib, json, logging, math, sys, time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from datetime import datetime
