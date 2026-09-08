@@ -1,2 +1,2 @@
 Model,Exit Code,Baseline Acc,KMeans Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-roberta,2,N/A,N/A,N/A,N/A,EXIT_2,N/A,1.00x,N/A,23.2
+roberta,0,88.76%,87.96%,-0.80%,0.8901,PASS,72,3.00x,1020.6 MB,63.3
