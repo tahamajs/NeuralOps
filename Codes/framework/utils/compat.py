@@ -150,7 +150,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
 
     # Map parameter names to containing module types for strict recurrent module checking
     module_by_name = dict(model.named_modules())
-    recurrent_type_keywords = ("hgrn", "delta", "mamba", "ssm", "recurrent")
+    recurrent_type_keywords = ("hgrn", "delta", "mamba", "ssm", "recurrent", "jamba")
 
     trainable_params = []
     for name, param in model.named_parameters():
