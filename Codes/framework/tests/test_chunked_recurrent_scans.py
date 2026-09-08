@@ -13,7 +13,7 @@ from framework.attentions.gated_delta_net import GatedDeltaNet, chunked_delta_ru
 from framework.attentions.hgrn2_layer import HGRN2Layer
 from framework.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet
 from framework.attentions.gated_deltanet_block import GatedDeltaNetBlock
-from framework.attentions.simple_ssm import SimpleSSMAttention
+from framework.attentions.simple_ssm import SimpleSSM
 
 
 class TestChunkedRecurrentScans(unittest.TestCase):
@@ -104,7 +104,7 @@ class TestChunkedRecurrentScans(unittest.TestCase):
         """SimpleSSM long sequence chunked associative scan works without NaN."""
         B, L, D = 2, 600, 64
         x = torch.randn(B, L, D, device=self.device)
-        ssm = SimpleSSMAttention(d_model=D, is_decoder=False).to(self.device)
+        ssm = SimpleSSM(d_model=D, is_decoder=False).to(self.device)
         out, _ = ssm(x)
         self.assertEqual(out.shape, (B, L, D))
         self.assertTrue(torch.isfinite(out).all())
