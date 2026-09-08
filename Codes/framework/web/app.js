@@ -2002,45 +2002,61 @@ let currentDocMarkdown = "";
 
 function renderMarkdownToHtml(md) {
   if (!md) return "<p style='color:#94a3b8;'>No content available.</p>";
-  
-  // Escape script tags
-  let html = md.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
-  
-  // Headers
-  html = html.replace(/^### (.*$)/gim, '<h4 style="color:#38bdf8; margin:14px 0 6px 0; font-size:1.05rem;">$1</h4>');
-  html = html.replace(/^## (.*$)/gim, '<h3 style="color:#a855f7; margin:18px 0 8px 0; font-size:1.2rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:4px;">$1</h3>');
-  html = html.replace(/^# (.*$)/gim, '<h2 style="color:#f8fafc; margin:20px 0 10px 0; font-size:1.4rem;">$1</h2>');
-  
-  // Bold & Italic
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#f8fafc;">$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em style="color:#cbd5e1;">$1</em>');
-  
-  // Code Blocks
-  html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, function(match, lang, code) {
-    return `<pre style="background:rgba(15,23,42,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:10px 14px; overflow-x:auto; margin:10px 0; font-family:monospace; font-size:0.8rem; color:#38bdf8;"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
-  });
-  
-  // Inline Code
-  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.08); color:#38bdf8; padding:2px 6px; border-radius:4px; font-family:monospace; font-size:0.82rem;">$1</code>');
-  
-  // Blockquotes
-  html = html.replace(/^\> (.*$)/gim, '<blockquote style="border-left:3px solid #38bdf8; padding-left:12px; margin:8px 0; color:#94a3b8; font-style:italic;">$1</blockquote>');
-  
-  // Lists
-  html = html.replace(/^\- (.*$)/gim, '<li style="margin-left:18px; margin-bottom:4px;">$1</li>');
-  
-  // Tables
-  html = html.replace(/\|(.+)\|/g, function(match) {
-    if (match.includes("---")) return "";
-    const cells = match.split("|").slice(1, -1);
-    const tds = cells.map(c => `<td style="padding:6px 10px; border:1px solid rgba(255,255,255,0.08); font-size:0.8rem;">${c.trim()}</td>`).join("");
-    return `<tr>${tds}</tr>`;
-  });
-  html = html.replace(/(<tr>.+<\/tr>)/gs, '<table style="width:100%; border-collapse:collapse; margin:12px 0;">$1</table>');
 
-  // Paragraphs
-  html = html.replace(/\n\n/g, '<br><br>');
-  return html;
+  // If marked.js is available locally, use it for robust GitHub-flavored Markdown
+  let output = "";
+  if (typeof marked !== "undefined" && marked.parse) {
+    try {
+      output = marked.parse(md, { gfm: true, breaks: true });
+    } catch (e) {
+      console.warn("marked.parse error, falling back:", e);
+      output = "";
+    }
+  }
+
+  if (!output) {
+    // Fallback regex renderer
+    let html = md.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+    html = html.replace(/^### (.*$)/gim, '<h4 style="color:#38bdf8; margin:14px 0 6px 0; font-size:1.05rem;">$1</h4>');
+    html = html.replace(/^## (.*$)/gim, '<h3 style="color:#a855f7; margin:18px 0 8px 0; font-size:1.2rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:4px;">$1</h3>');
+    html = html.replace(/^# (.*$)/gim, '<h2 style="color:#f8fafc; margin:20px 0 10px 0; font-size:1.4rem;">$1</h2>');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#f8fafc;">$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em style="color:#cbd5e1;">$1</em>');
+    html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, function(match, lang, code) {
+      return `<pre style="background:rgba(15,23,42,0.9); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:10px 14px; overflow-x:auto; margin:10px 0; font-family:monospace; font-size:0.8rem; color:#38bdf8;"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+    });
+    html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.08); color:#38bdf8; padding:2px 6px; border-radius:4px; font-family:monospace; font-size:0.82rem;">$1</code>');
+    html = html.replace(/^\> (.*$)/gim, '<blockquote style="border-left:3px solid #38bdf8; padding-left:12px; margin:8px 0; color:#94a3b8; font-style:italic;">$1</blockquote>');
+    html = html.replace(/^\- (.*$)/gim, '<li style="margin-left:18px; margin-bottom:4px;">$1</li>');
+    html = html.replace(/\n\n/g, '<br><br>');
+    output = html;
+  }
+
+  // Render KaTeX math expressions if katex is available
+  if (typeof katex !== "undefined" && katex.renderToString) {
+    try {
+      // Display math: $$ ... $$
+      output = output.replace(/\$\$([\s\S]+?)\$\$/g, function(match, tex) {
+        try {
+          return katex.renderToString(tex, { displayMode: true, throwOnError: false });
+        } catch (e) {
+          return `<div style="color:#38bdf8; font-family:monospace; margin:8px 0;">${tex}</div>`;
+        }
+      });
+      // Inline math: $ ... $
+      output = output.replace(/\$([^\$\n]+?)\$/g, function(match, tex) {
+        try {
+          return katex.renderToString(tex, { displayMode: false, throwOnError: false });
+        } catch (e) {
+          return `<span style="color:#38bdf8; font-family:monospace;">${tex}</span>`;
+        }
+      });
+    } catch (e) {
+      console.warn("KaTeX post-processing error:", e);
+    }
+  }
+
+  return output;
 }
 
 async function loadModalDocPreview(moduleName) {
@@ -2182,6 +2198,152 @@ renderTelemetry = function(data) {
 };
 
 // ==========================================
+// TERMINAL LOGGING & CONSOLE MONITORING
+// ==========================================
+let currentLogSource = "active";
+let currentRawLogLines = [];
+let fullLogFilterQuery = "";
+let isTerminalCollapsed = false;
+
+async function fetchLiveLogsNow() {
+  const sourceSelect = document.getElementById("log-source-select");
+  const source = sourceSelect ? sourceSelect.value : currentLogSource;
+  currentLogSource = source;
+
+  try {
+    const res = await fetch(`/api/logs?source=${encodeURIComponent(source)}&lines=300`, { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !data.lines) return;
+
+    currentRawLogLines = data.lines;
+
+    // Update Telemetry mini terminal
+    renderMiniTerminal(data);
+
+    // Update Full Terminal Studio if active or elements exist
+    renderFullTerminal(data);
+  } catch (err) {
+    console.warn("Failed to fetch live logs:", err);
+  }
+}
+
+function colorizeLogLine(raw) {
+  if (!raw) return "";
+  const escaped = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  
+  if (/error|failed|exception|traceback|errno/i.test(escaped)) {
+    return `<div class="log-line log-error" style="color:#f87171;">${escaped}</div>`;
+  }
+  if (/\[PASS\]|pass|success|completed|accuracy: (8|9|100)/i.test(escaped)) {
+    return `<div class="log-line log-pass" style="color:#4ade80;">${escaped}</div>`;
+  }
+  if (/step \d+|epoch \d+|progress|iter/i.test(escaped)) {
+    return `<div class="log-line log-step" style="color:#38bdf8;">${escaped}</div>`;
+  }
+  if (/warn|warning|skip|timeout/i.test(escaped)) {
+    return `<div class="log-line log-warn" style="color:#fbbf24;">${escaped}</div>`;
+  }
+  if (/\[active\]|\[orchestrator\]|evaluating|benchmarking/i.test(escaped)) {
+    return `<div class="log-line log-highlight" style="color:#c084fc;">${escaped}</div>`;
+  }
+  return `<div class="log-line log-info" style="color:#cbd5e1;">${escaped}</div>`;
+}
+
+function renderMiniTerminal(data) {
+  const miniEl = document.getElementById("live-terminal-logs");
+  const activeTag = document.getElementById("terminal-active-tag");
+  if (activeTag && data.module) {
+    activeTag.textContent = `Active: ${data.module}`;
+  } else if (activeTag && data.source) {
+    activeTag.textContent = `Source: ${data.source}`;
+  }
+
+  if (!miniEl) return;
+  const recentLines = (data.lines || []).slice(-80);
+  if (recentLines.length === 0) {
+    miniEl.innerHTML = '<div style="color:#64748b;">No log output recorded yet for current process.</div>';
+    return;
+  }
+  miniEl.innerHTML = recentLines.map(colorizeLogLine).join("");
+  miniEl.scrollTop = miniEl.scrollHeight;
+}
+
+function renderFullTerminal(data) {
+  const fullBody = document.getElementById("full-terminal-body");
+  const filePathEl = document.getElementById("full-log-filepath");
+  const timeEl = document.getElementById("full-log-timestamp");
+  const autoScrollBox = document.getElementById("full-log-autoscroll");
+
+  if (filePathEl && data.filepath) {
+    filePathEl.textContent = `File: ${data.filepath}`;
+  }
+  if (timeEl) {
+    const now = new Date();
+    timeEl.textContent = `Updated: ${now.toTimeString().split(' ')[0]}`;
+  }
+
+  if (!fullBody) return;
+  let lines = data.lines || [];
+  if (fullLogFilterQuery) {
+    lines = lines.filter(l => l.toLowerCase().includes(fullLogFilterQuery.toLowerCase()));
+  }
+
+  if (lines.length === 0) {
+    fullBody.innerHTML = '<div style="color:#64748b; padding:20px; text-align:center;">No matching lines found.</div>';
+    return;
+  }
+
+  fullBody.innerHTML = lines.map(colorizeLogLine).join("");
+
+  if (autoScrollBox && autoScrollBox.checked) {
+    fullBody.scrollTop = fullBody.scrollHeight;
+  }
+}
+
+function onLogSourceChanged(newSource) {
+  currentLogSource = newSource;
+  fetchLiveLogsNow();
+}
+
+function filterFullLogs(query) {
+  fullLogFilterQuery = (query || "").trim();
+  renderFullTerminal({ lines: currentRawLogLines });
+}
+
+function clearFullLogs() {
+  const fullBody = document.getElementById("full-terminal-body");
+  if (fullBody) fullBody.innerHTML = '<div style="color:#64748b; padding:20px; text-align:center;">Console cleared.</div>';
+}
+
+function clearTerminalView() {
+  const miniEl = document.getElementById("live-terminal-logs");
+  if (miniEl) miniEl.innerHTML = '<div style="color:#64748b;">Terminal cleared. Waiting for next stream update...</div>';
+}
+
+function toggleTerminalCollapse() {
+  const panel = document.getElementById("live-terminal-panel");
+  const icon = document.getElementById("terminal-toggle-icon");
+  if (!panel) return;
+  isTerminalCollapsed = !isTerminalCollapsed;
+  panel.style.display = isTerminalCollapsed ? "none" : "block";
+  if (icon) {
+    icon.textContent = isTerminalCollapsed ? "▲ [Expand]" : "▼ [Collapse]";
+  }
+}
+
+// Hook fetchLiveLogsNow into pollTimer
+const originalStartPolling = startPolling;
+startPolling = function() {
+  stopPolling();
+  pollTimer = setInterval(() => {
+    fetchStats();
+    fetchRunsList();
+    fetchLiveLogsNow();
+  }, POLL_INTERVAL_MS);
+};
+
+// ==========================================
 // BOOTSTRAP
 // ==========================================
 restoreState();
@@ -2189,10 +2351,12 @@ selectedRunId = "run_active";
 isHistorical = false;
 startPolling();
 fetchStats();
+fetchLiveLogsNow();
 fetchRunsList().then(() => {
   populateRunSelectors();
 });
 switchTab(activeTab);
+
 
 
 
