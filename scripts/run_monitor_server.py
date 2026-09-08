@@ -11,6 +11,7 @@ import os
 import json
 import glob
 import time
+import datetime
 import subprocess
 import urllib.parse
 import pandas as pd
@@ -91,24 +92,35 @@ def load_harvested_benchmark_records():
     """Reads all historical + GPU empirical benchmark runs with exact code-accurate metrics."""
     records = []
     
+    # 1. Load active real-time CSVs from results directory first (sorted by file modification time)
+    local_csvs = glob.glob(os.path.join(PROJECT_DIR, "results", "**", "*summary*.csv"), recursive=True)
+    local_csvs.sort(key=os.path.getmtime, reverse=True)
+    
+    for cf in local_csvs:
+        try:
+            mtime_dt = datetime.datetime.fromtimestamp(os.path.getmtime(cf)).strftime('%Y-%m-%d %H:%M:%S')
+            df = pd.read_csv(cf)
+            df.columns = [str(c).strip().lower() for c in df.columns]
+            for _, row in df.iterrows():
+                d = row.to_dict()
+                d["_source_path"] = cf.replace("\\", "/")
+                # Ensure actual runtime timestamp is preserved
+                if not d.get("timestamp") or str(d.get("timestamp")).lower() == "nan":
+                    d["timestamp"] = mtime_dt
+                else:
+                    ts_str = str(d.get("timestamp")).replace("T", " ")[:19]
+                    d["timestamp"] = ts_str
+                records.append(d)
+        except Exception:
+            continue
+
+    # 2. Add historical archived runs from HARVESTED_JSON for older historical records
     if os.path.exists(HARVESTED_JSON):
         try:
             with open(HARVESTED_JSON, "r", encoding="utf-8") as f:
                 records.extend(json.load(f))
         except Exception as e:
             print(f"Error loading {HARVESTED_JSON}: {e}")
-
-    local_csvs = glob.glob(os.path.join(PROJECT_DIR, "results", "**", "*summary*.csv"), recursive=True)
-    for cf in local_csvs:
-        try:
-            df = pd.read_csv(cf)
-            df.columns = [str(c).strip().lower() for c in df.columns]
-            for _, row in df.iterrows():
-                d = row.to_dict()
-                d["_source_path"] = cf.replace("\\", "/")
-                records.append(d)
-        except Exception:
-            continue
 
     return records
 
@@ -249,9 +261,22 @@ def build_aggregated_stats():
             "delta": f"{acc - 90.48:+.2f}%" if acc is not None and arch == "distilbert" else (f"{acc - 88.76:+.2f}%" if acc is not None else "-")
         }
 
+        # Clean mod name from CSV filename suffix if present
+        if mod.endswith("_4models_summary.csv"):
+            mod = mod.replace("_4models_summary.csv", "")
+
+        run_obj["module"] = mod
+        run_obj["module_name"] = mod
+
         key = (mod, arch)
-        if key not in distinct_runs_map or (acc is not None and acc > distinct_runs_map[key]['acc']):
+        # Prioritize newer execution timestamp, or higher accuracy if same timestamp
+        if key not in distinct_runs_map:
             distinct_runs_map[key] = run_obj
+        else:
+            prev_time = str(distinct_runs_map[key].get('time', ''))
+            curr_time = str(run_obj.get('time', ''))
+            if curr_time > prev_time or (curr_time == prev_time and acc is not None and acc > distinct_runs_map[key]['acc']):
+                distinct_runs_map[key] = run_obj
 
         if mod not in module_runs:
             module_runs[mod] = []
