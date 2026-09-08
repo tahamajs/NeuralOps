@@ -85,3 +85,6 @@ hybridkv,run_all_4_hybridkv.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.24570
 infini,run_all_4_infini.py,0,0.0,SKIPPED_EXISTING,,2026-09-08T05:53:21.245917
 infini_attention,run_all_4_infini_attention.py,0,67.92,PASS,,2026-09-08T05:54:29.171367
 jamba,run_all_4_jamba.py,0,63.89,PASS,,2026-09-08T05:55:33.068057
+jamba_info,run_all_4_jamba_info.py,1,289.0,FAIL,,2026-09-08T06:00:22.073166
+kda,run_all_4_kda.py,0,87.59,PASS,,2026-09-08T06:01:49.661785
+kmeans,run_all_4_kmeans.py,0,30.07,PASS,,2026-09-08T06:02:19.734963

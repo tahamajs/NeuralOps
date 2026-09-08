@@ -772,5 +772,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T05:55:33.068057"
+  },
+  {
+    "module": "jamba_info",
+    "runner": "run_all_4_jamba_info.py",
+    "exit_code": 1,
+    "elapsed_s": 289.0,
+    "status": "FAIL",
+    "error": null,
+    "timestamp": "2026-09-08T06:00:22.073166"
+  },
+  {
+    "module": "kda",
+    "runner": "run_all_4_kda.py",
+    "exit_code": 0,
+    "elapsed_s": 87.59,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:01:49.661785"
+  },
+  {
+    "module": "kmeans",
+    "runner": "run_all_4_kmeans.py",
+    "exit_code": 0,
+    "elapsed_s": 30.07,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:02:19.734963"
   }
 ]
