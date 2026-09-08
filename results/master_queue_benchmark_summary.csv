@@ -106,3 +106,4 @@ lsh,run_all_4_lsh.py,0,82.29,PASS,,2026-09-08T06:17:20.269170
 lsh_attention,run_all_4_lsh_attention.py,1,0.05,FAIL,,2026-09-08T06:17:20.329823
 mamba,run_all_4_mamba.py,0,55.4,PASS,,2026-09-08T06:18:15.734960
 mamba_inject,run_all_4_mamba_inject.py,0,35.36,PASS,,2026-09-08T06:18:51.104661
+mamba_shedder,run_all_4_mamba_shedder.py,0,19.94,PASS,,2026-09-08T06:19:11.045686
