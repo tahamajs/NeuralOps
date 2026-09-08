@@ -130,6 +130,8 @@ parser = argparse.ArgumentParser(description="Unified 4-Model JAMBA_INFO Benchma
 parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
 parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,jamba_info)")
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
+parser.add_argument("--batch_size", type=int, default=None, help="Batch size override")
+parser.add_argument("--timeout", type=int, default=None, help="Timeout override")
 parser.add_argument("--rank", type=int, default=None, help="Rank override")
 parser.add_argument("--lora_rank", type=int, default=None, help="LoRA rank override")
 parser.add_argument("positional_models", nargs="*", default=None, help="Positional model names for backwards compatibility")
@@ -164,6 +166,10 @@ for m in models:
         update_cmd_arg(m["cmd"], "--modules", args.modules)
     if args.recovery_steps is not None:
         update_cmd_arg(m["cmd"], "--recovery_steps", str(args.recovery_steps))
+    if args.batch_size is not None:
+        update_cmd_arg(m["cmd"], "--batch_size", str(args.batch_size))
+    if args.timeout is not None:
+        update_cmd_arg(m["cmd"], "--timeout", str(args.timeout))
     if args.rank is not None:
         update_cmd_arg(m["cmd"], "--rank", str(args.rank))
     if args.lora_rank is not None:
