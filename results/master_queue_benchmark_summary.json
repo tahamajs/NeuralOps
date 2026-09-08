@@ -844,5 +844,50 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-08T06:08:21.406627"
+  },
+  {
+    "module": "leka_v3",
+    "runner": "run_all_4_leka_v3.py",
+    "exit_code": 0,
+    "elapsed_s": 81.49,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:09:42.905375"
+  },
+  {
+    "module": "liftr",
+    "runner": "run_all_4_liftr.py",
+    "exit_code": 0,
+    "elapsed_s": 20.42,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:10:03.330640"
+  },
+  {
+    "module": "lillama",
+    "runner": "run_all_4_lillama.py",
+    "exit_code": 0,
+    "elapsed_s": 20.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:10:23.798537"
+  },
+  {
+    "module": "linformer",
+    "runner": "run_all_4_linformer.py",
+    "exit_code": 0,
+    "elapsed_s": 69.57,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:11:33.379986"
+  },
+  {
+    "module": "lola_attention",
+    "runner": "run_all_4_lola_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 84.76,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-08T06:12:58.150927"
   }
 ]

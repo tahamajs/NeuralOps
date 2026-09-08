@@ -93,3 +93,8 @@ kronecker_tt_lora,run_all_4_kronecker_tt_lora.py,0,41.92,PASS,,2026-09-08T06:04:
 kvtc,run_all_4_kvtc.py,0,66.62,PASS,,2026-09-08T06:05:44.980591
 leka_v1,run_all_4_leka_v1.py,0,72.16,PASS,,2026-09-08T06:06:57.141236
 leka_v2,run_all_4_leka_v2.py,0,84.26,PASS,,2026-09-08T06:08:21.406627
+leka_v3,run_all_4_leka_v3.py,0,81.49,PASS,,2026-09-08T06:09:42.905375
+liftr,run_all_4_liftr.py,0,20.42,PASS,,2026-09-08T06:10:03.330640
+lillama,run_all_4_lillama.py,0,20.46,PASS,,2026-09-08T06:10:23.798537
+linformer,run_all_4_linformer.py,0,69.57,PASS,,2026-09-08T06:11:33.379986
+lola_attention,run_all_4_lola_attention.py,0,84.76,PASS,,2026-09-08T06:12:58.150927
