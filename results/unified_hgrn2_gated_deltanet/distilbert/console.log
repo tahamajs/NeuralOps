@@ -1,56 +1,1043 @@
 `torch_dtype` is deprecated! Use `dtype` instead!
 
 Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 104/104 [00:00<00:00, 8182.63it/s]
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep: ================================================================================
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep:   family:            bert
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-08 01:39:31,162 [INFO] QwenQualitySweep: ================================================================================
-2026-09-08 01:39:31,379 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
-2026-09-08 01:39:31,541 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-08 01:39:31,823 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-08 01:39:32,788 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.48%
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep: ================================================================================
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep: ================================================================================
-2026-09-08 01:39:32,796 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-08 01:39:33,751 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hgrn2_gated_deltanet\distilbert\distilbert_sst2_full_full_metrics.json
-2026-09-08 01:39:33,759 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_hgrn2_gated_deltanet\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-08 01:39:33,862 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.48% (F1: 0.9077, Peak VRAM: 389.51 MB)
-2026-09-08 01:39:33,862 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_hgrn2_gated_deltanet\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-08 01:39:33,975 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: hgrn2_gated_deltanet (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-08 01:39:34,438 [INFO] framework.core.attention_utils: Successfully injected 'hgrn2_gated_deltanet' into 6 transformer blocks.
-2026-09-08 01:39:34,440 [INFO] QwenQualitySweep: module=hgrn2_gated_deltanet path=legacy_bert
-2026-09-08 01:39:34,440 [INFO] QwenQualitySweep: module=hgrn2_gated_deltanet injection summary: 0 SVDLinear layers active
-2026-09-08 01:39:34,440 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hgrn2_gated_deltanet (lr=2.0e-04)
-2026-09-08 01:39:34,529 [INFO] QwenQualitySweep: LoRA fine-tuning: 8858882 trainable parameters across 124 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-08 01:39:44,864 [WARNING] QwenQualitySweep: CUDA OOM during LoRA training; reducing micro-batch size to 4 (effective bs=8)
-2026-09-08 01:40:37,071 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6536 (bs=8, micro_bs=4)
-2026-09-08 01:43:46,642 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6504 (bs=8, micro_bs=4)
-2026-09-08 01:47:40,083 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7146 (bs=8, micro_bs=4)
-2026-09-08 01:51:28,778 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.8643 (bs=8, micro_bs=4)
-2026-09-08 01:55:12,680 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6769 (bs=8, micro_bs=4)
-2026-09-08 01:58:44,589 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6270 (bs=8, micro_bs=4)
-2026-09-08 01:59:34,242 [INFO] QwenQualitySweep: [2/2] hgrn2_gated_deltanet -> SKIP_BERT_TIMEOUT 0.00% (F1: 0.9077, Peak VRAM: 389.51 MB)
-2026-09-08 01:59:34,247 [INFO] QwenQualitySweep: [Quality Guard] Module 'hgrn2_gated_deltanet' did not pass quality criteria (status=SKIP_BERT_TIMEOUT, acc=0.00%, pass_thresh=56.00%). Pruning checkpoint artifacts.
-2026-09-08 01:59:35,779 [INFO] QwenQualitySweep: ================================================================================
-2026-09-08 01:59:35,780 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
-2026-09-08 01:59:35,801 [INFO] QwenQualitySweep: 
-              Module            Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-                full              PASS   90.48% 0.00% (base) 0.9077                  0            1.00x  389.5 MB               0.69              0.79
-hgrn2_gated_deltanet SKIP_BERT_TIMEOUT    0.00%      -90.48% 0.9077                  0            1.00x  389.5 MB               0.69              0.79
-2026-09-08 01:59:35,801 [INFO] QwenQualitySweep: ================================================================================
-2026-09-08 02:00:08,218 [WARNING] QwenQualitySweep: Training step 27/50 exceeded timeout 1200s; aborting
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 2830.84it/s]
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep:   family:            bert
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-09 00:50:11,553 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-09 00:50:11,554 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 00:50:11,554 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
+2026-09-09 00:50:13,023 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0004
+2026-09-09 00:50:13,739 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0017
+2026-09-09 00:50:14,436 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.8900
+2026-09-09 00:50:15,131 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0130
+2026-09-09 00:50:15,871 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0026
+2026-09-09 00:50:16,590 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0269
+2026-09-09 00:50:17,278 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0079
+2026-09-09 00:50:17,966 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0132
+2026-09-09 00:50:18,579 [INFO] QwenQualitySweep: Saved fine-tuned checkpoint: results\unified_hgrn2_gated_deltanet\distilbert\finetuned_model.pt
+2026-09-09 00:50:18,676 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-09 00:50:19,523 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-09 00:50:21,635 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.48%
+2026-09-09 00:50:21,683 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 00:50:21,683 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-09 00:50:21,683 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-09 00:50:21,683 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-09 00:50:21,683 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-09 00:50:21,684 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-09 00:50:21,684 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-09 00:50:21,684 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 00:50:21,685 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-09 00:50:24,107 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hgrn2_gated_deltanet\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-09 00:50:24,116 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_hgrn2_gated_deltanet\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-09 00:50:24,319 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.48% (F1: 0.9077, Peak VRAM: 181.06 MB)
+2026-09-09 00:50:24,319 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_hgrn2_gated_deltanet\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-09 00:50:24,556 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: hgrn2_gated_deltanet (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-09 00:50:25,117 [WARNING] framework.attentions.hgrn2_gated_deltanet: Module HGRN2GatedDeltaNet creates 9.7M trainable parameters across 12 layers, may cause OOM on small GPUs.
+2026-09-09 00:50:25,226 [WARNING] framework.attentions.hgrn2_gated_deltanet: Module HGRN2GatedDeltaNet creates 9.7M trainable parameters across 12 layers, may cause OOM on small GPUs.
+2026-09-09 00:50:25,335 [WARNING] framework.attentions.hgrn2_gated_deltanet: Module HGRN2GatedDeltaNet creates 9.7M trainable parameters across 12 layers, may cause OOM on small GPUs.
+2026-09-09 00:50:25,441 [WARNING] framework.attentions.hgrn2_gated_deltanet: Module HGRN2GatedDeltaNet creates 9.7M trainable parameters across 12 layers, may cause OOM on small GPUs.
+2026-09-09 00:50:25,550 [WARNING] framework.attentions.hgrn2_gated_deltanet: Module HGRN2GatedDeltaNet creates 9.7M trainable parameters across 12 layers, may cause OOM on small GPUs.
+2026-09-09 00:50:25,658 [WARNING] framework.attentions.hgrn2_gated_deltanet: Module HGRN2GatedDeltaNet creates 9.7M trainable parameters across 12 layers, may cause OOM on small GPUs.
+2026-09-09 00:50:25,679 [INFO] framework.core.attention_utils: Successfully injected 'hgrn2_gated_deltanet' into 6 transformer blocks.
+2026-09-09 00:50:25,689 [INFO] QwenQualitySweep: module=hgrn2_gated_deltanet path=legacy_bert
+2026-09-09 00:50:25,690 [INFO] QwenQualitySweep: module=hgrn2_gated_deltanet injection summary: 0 SVDLinear layers active
+2026-09-09 00:50:25,690 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hgrn2_gated_deltanet (lr=2.0e-04)
+2026-09-09 00:50:26,005 [INFO] framework.utils.compat: Recovery fine-tuning selected 1771778 trainable parameters across 100 tensors.
+2026-09-09 00:50:26,013 [INFO] QwenQualitySweep: LoRA fine-tuning: 1771778 trainable parameters across 100 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-09 00:50:26,147 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:26,248 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:26,348 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:26,433 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:26,527 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:26,622 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:28,345 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6182 (bs=8, micro_bs=8)
+2026-09-09 00:50:28,424 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:28,516 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:28,610 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:28,703 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:28,798 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:28,898 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:30,569 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:30,661 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:30,754 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:30,848 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:30,943 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:31,020 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:32,696 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:32,788 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:32,890 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:32,991 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:33,084 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:33,188 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:34,864 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:34,957 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:35,050 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:35,146 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:35,237 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:35,328 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:36,924 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7090 (bs=8, micro_bs=8)
+2026-09-09 00:50:37,002 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:37,094 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:37,192 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:37,283 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:37,377 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:37,470 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:39,185 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:39,283 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:39,381 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:39,477 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:39,568 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:39,662 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:41,269 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:41,362 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:41,456 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:41,548 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:41,643 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:41,736 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:43,448 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:43,541 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:43,633 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:43,727 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:43,819 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:43,912 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:45,603 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:45,697 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:45,793 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:45,891 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:45,985 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:46,083 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:47,700 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7888 (bs=8, micro_bs=8)
+2026-09-09 00:50:47,777 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:47,869 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:47,959 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:48,053 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:48,145 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:48,238 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:49,937 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:50,029 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:50,122 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:50,217 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:50,310 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:50,410 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:52,126 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:52,218 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:52,311 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:52,409 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:52,509 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:52,600 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:54,288 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:54,396 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:54,489 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:54,582 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:54,686 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:54,785 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:56,495 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:56,587 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:56,681 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:56,773 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:56,866 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:56,961 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:58,588 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.7150 (bs=8, micro_bs=8)
+2026-09-09 00:50:58,666 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:58,759 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:58,852 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:58,945 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:59,039 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:50:59,136 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:00,847 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:00,939 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:01,036 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:01,127 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:01,219 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:01,312 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:03,002 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:03,094 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:03,189 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:03,282 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:03,378 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:03,481 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:05,167 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:05,260 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:05,352 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:05,444 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:05,541 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:05,635 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:07,311 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:07,418 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:07,515 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:07,614 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:07,707 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:07,799 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:09,410 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6167 (bs=8, micro_bs=8)
+2026-09-09 00:51:09,492 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:09,593 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:09,689 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:09,782 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:09,876 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:09,970 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:11,644 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:11,748 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:11,851 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:11,944 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:12,037 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:12,130 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:13,806 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:13,903 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:14,001 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:14,097 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:14,183 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:14,278 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:15,929 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:16,032 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:16,131 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:16,233 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:16,342 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:16,439 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:18,107 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:18,199 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:18,292 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:18,388 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:18,486 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:18,585 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:20,190 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7742 (bs=8, micro_bs=8)
+2026-09-09 00:51:20,269 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:20,362 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:20,454 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:20,547 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:20,645 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:20,745 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:22,426 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:22,517 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:22,610 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:22,702 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:22,809 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:22,909 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:24,567 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:24,659 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:24,753 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:24,849 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:24,942 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:25,041 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:26,704 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:26,797 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:26,891 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:26,985 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:27,078 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:27,172 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:28,885 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:28,977 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:29,069 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:29,154 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:29,242 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:29,333 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:30,934 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6159 (bs=8, micro_bs=8)
+2026-09-09 00:51:31,015 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:31,107 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:31,200 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:31,297 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:31,390 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:31,482 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:33,155 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:33,248 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:33,343 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:33,436 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:33,526 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:33,630 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:35,344 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:35,437 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:35,530 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:35,624 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:35,715 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:35,808 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:37,475 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:37,568 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:37,661 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:37,753 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:37,846 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:37,939 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:39,666 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:39,765 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:39,860 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:39,952 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:40,047 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:40,143 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:41,742 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7510 (bs=8, micro_bs=8)
+2026-09-09 00:51:41,820 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:41,910 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:41,999 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:42,088 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:42,175 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:42,266 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:43,925 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:44,018 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:44,113 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:44,204 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:44,295 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:44,391 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:46,089 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:46,178 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:46,271 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:46,364 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:46,459 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:46,552 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:48,239 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:48,331 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:48,425 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:48,519 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:48,613 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:48,704 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:50,421 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:50,518 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:50,611 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:50,705 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:50,796 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:50,889 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:52,481 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7613 (bs=8, micro_bs=8)
+2026-09-09 00:51:52,560 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:52,654 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:52,749 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:52,841 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:52,933 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:53,026 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:54,728 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:54,820 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:54,913 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:55,006 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:55,100 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:55,191 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:56,868 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:56,960 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:57,052 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:57,144 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:57,237 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:57,327 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:58,995 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:59,088 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:59,180 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:59,283 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:59,378 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:51:59,471 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:01,185 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:01,276 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:01,373 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:01,465 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:01,558 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:01,652 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:03,250 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6536 (bs=8, micro_bs=8)
+2026-09-09 00:52:03,333 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:03,425 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:03,518 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:03,614 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:03,707 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:03,799 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:05,528 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:05,621 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:05,713 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:05,808 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:05,900 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:05,994 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:07,639 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:07,732 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:07,828 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:07,920 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:08,012 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:08,103 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:09,788 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:09,880 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:09,972 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:10,065 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:10,158 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:10,251 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:11,928 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:12,020 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:12,113 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:12,205 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:12,297 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:12,388 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:13,993 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6995 (bs=8, micro_bs=8)
+2026-09-09 00:52:14,070 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,143 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,215 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,287 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,360 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,433 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,511 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,581 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,653 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,724 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,794 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,869 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:14,947 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,018 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,090 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,158 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,231 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,304 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,381 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,453 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,526 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,598 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,671 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,745 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,824 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,896 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:15,969 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,049 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,129 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,202 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,281 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,352 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,425 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,501 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,571 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,643 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,723 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,795 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,865 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:16,936 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,005 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,076 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,155 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,221 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,292 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,365 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,437 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,518 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,596 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,670 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,743 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,816 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,891 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:17,963 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,040 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,114 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,189 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,267 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,345 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,419 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,502 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,575 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,648 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,720 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,795 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,869 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:18,947 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,019 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,089 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,159 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,226 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,296 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,376 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,452 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,524 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,594 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,664 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,742 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,820 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,899 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:19,971 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,043 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,116 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,186 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,264 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,338 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,417 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,496 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,579 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,653 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,732 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,806 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,880 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:20,952 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,026 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,097 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,175 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,248 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,322 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,395 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,467 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,541 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,622 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,697 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,768 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,838 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,909 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:21,978 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,058 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,130 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,199 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,269 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,341 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,412 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,488 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,561 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,643 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,720 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,798 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,870 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:22,948 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,020 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,093 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,165 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,239 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,313 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,390 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,463 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,536 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,613 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,684 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,759 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,837 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,910 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:23,983 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,056 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,126 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,195 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,275 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,351 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,427 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,498 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,570 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,650 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,725 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,801 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,877 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:24,955 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,032 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,103 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,181 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,254 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,328 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,401 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,475 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,547 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,621 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,692 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,766 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,840 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,913 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:25,986 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,064 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,136 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,209 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,279 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,351 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,423 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,500 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,571 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,652 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,724 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,813 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,885 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:26,962 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,039 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,115 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,188 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,267 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,341 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,419 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,505 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,581 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,656 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,732 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,810 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,887 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:27,960 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,033 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,105 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,174 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,244 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,326 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,395 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,465 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,535 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,605 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,678 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,756 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,832 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,905 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:28,976 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,049 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,121 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,197 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,281 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,361 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,439 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,511 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,583 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,668 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,741 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,815 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,888 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:29,964 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,038 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,116 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,190 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,263 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,336 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,409 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,481 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,563 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,633 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,703 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,772 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,847 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,918 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:30,997 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,066 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,138 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,210 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,282 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,355 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,431 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,512 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,588 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,665 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,738 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,811 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,889 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:31,963 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,036 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,109 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,183 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,254 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,334 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,407 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,478 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,550 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,624 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,702 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,779 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,854 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,925 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:32,995 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,066 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,136 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,231 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,301 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,372 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,441 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,514 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,586 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,674 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,752 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,835 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,909 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:33,981 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,056 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,134 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,206 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,277 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,348 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,426 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,498 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,577 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,650 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,723 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,798 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,872 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:34,945 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,026 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,100 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,172 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,245 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,316 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,388 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,470 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,541 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,610 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,679 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,750 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,820 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,908 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:35,987 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,062 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,130 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,196 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,266 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,344 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,417 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,490 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,563 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,637 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,710 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,789 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,863 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:36,936 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,010 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,082 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,154 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,231 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,304 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,378 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,451 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,524 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,598 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,677 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,750 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,824 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,899 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:37,975 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,047 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,135 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,210 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,283 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,353 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,424 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,496 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,576 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,646 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,716 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,787 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,858 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:38,931 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,009 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,081 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,149 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,220 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,293 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,366 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,445 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,518 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,591 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,664 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,737 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,813 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,893 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:39,966 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,039 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,116 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,189 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,262 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,348 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,427 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,502 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,576 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,649 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,719 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,801 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,876 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:40,947 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,019 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,089 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,158 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,240 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,313 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,385 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,458 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,530 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,603 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,681 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,754 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,827 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,902 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:41,977 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,051 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,130 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,201 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,273 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,347 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,421 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,503 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,591 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,672 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,746 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,819 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,897 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:42,971 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,050 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,121 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,187 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,257 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,329 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,400 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,480 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,552 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,625 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,696 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,767 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,839 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,918 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:43,991 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,065 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,137 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,208 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,282 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,361 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,436 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,509 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,582 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,655 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,742 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,825 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,905 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:44,978 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,052 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,127 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,194 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,274 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,347 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,419 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,492 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,565 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,637 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,717 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,790 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,862 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:45,936 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,010 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,083 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,161 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,233 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,307 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,380 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,458 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,530 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,608 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,681 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,754 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,826 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,911 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:46,990 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,072 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,144 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,211 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,282 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,351 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,422 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,503 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,573 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,644 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,716 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,787 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,859 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:47,939 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,013 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,087 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,159 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,232 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,305 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,383 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,456 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,530 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,603 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,675 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,748 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,826 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,900 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:48,977 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,050 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,127 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,207 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,292 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,366 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,443 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,514 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,585 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,654 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,735 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,805 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,875 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:49,958 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,030 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,100 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,176 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,247 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,320 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,396 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,470 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,543 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,621 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,696 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,769 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,842 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,915 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:50,993 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,071 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,146 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,221 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,294 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,372 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,453 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,535 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,608 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,681 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,754 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,827 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,901 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:51,983 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,057 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,127 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,194 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,264 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,336 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,413 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,486 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,559 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,632 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,709 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,781 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,858 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:52,930 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,006 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,077 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,151 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,224 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,301 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,374 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,447 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,522 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,609 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,691 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,771 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,843 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,916 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:53,994 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,068 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,138 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,232 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,302 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,372 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,445 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,515 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,585 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,666 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,739 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,813 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,884 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:54,958 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,032 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,111 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,185 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,260 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,334 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,409 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,485 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,563 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,636 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,709 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,795 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,872 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:55,949 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,034 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,109 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,177 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,250 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,323 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,396 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,475 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,545 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,615 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,688 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,758 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,828 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,910 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:56,986 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,059 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,130 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,197 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,267 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,344 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,418 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,491 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,564 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,637 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,711 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,789 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,863 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:57,938 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,021 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,103 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,178 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,255 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,330 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,404 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,477 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,552 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,626 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,704 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,778 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,852 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,925 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:58,999 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,075 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,155 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,224 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,299 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,370 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,446 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,523 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,604 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,676 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,755 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,828 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,902 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:52:59,973 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,053 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,127 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,200 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,280 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,360 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,436 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,514 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,586 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,657 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,730 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,804 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,877 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:00,953 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,027 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,102 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,173 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,246 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,315 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,397 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,466 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,537 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,607 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,677 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,747 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,828 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,898 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:01,969 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,043 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,117 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,189 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,266 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,340 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,426 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,505 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,584 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,655 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,776 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,846 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,916 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:02,986 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,057 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,131 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,252 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,379 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,505 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,633 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,761 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,887 [INFO] framework.attentions.gated_delta_net: Using chunked delta scan with chunk_size=64
+2026-09-09 00:53:03,909 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hgrn2_gated_deltanet\distilbert\distilbert_sst2_hgrn2_gated_deltanet_full_metrics.json
+2026-09-09 00:53:03,989 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_hgrn2_gated_deltanet\distilbert\checkpoints\hgrn2_gated_deltanet\weights.pt (module_params=0, lora_params=100)
+2026-09-09 00:53:04,373 [INFO] QwenQualitySweep: [2/2] hgrn2_gated_deltanet -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 307.52 MB)
+2026-09-09 00:53:04,374 [INFO] QwenQualitySweep: [Quality Guard] Module 'hgrn2_gated_deltanet' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning checkpoint artifacts.
+2026-09-09 00:53:04,637 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 00:53:04,637 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-09 00:53:04,646 [INFO] QwenQualitySweep: 
+              Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                full     PASS   90.48% 0.00% (base) 0.9077                  0            1.00x  181.1 MB               1.87              2.14
+hgrn2_gated_deltanet PASS_LOW   50.92%      -39.56% 0.6748                  0            0.60x  307.5 MB              48.66             55.81
+2026-09-09 00:53:04,647 [INFO] QwenQualitySweep: ================================================================================
