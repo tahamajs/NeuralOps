@@ -400,3 +400,9 @@ def lillama_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
 - **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
 
+## Unified 4-Architecture Benchmark Results (LiLLaMA)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
