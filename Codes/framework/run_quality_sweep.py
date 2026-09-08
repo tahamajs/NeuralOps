@@ -1014,6 +1014,8 @@ def main():
                     help="LoRA rank for KMeans recovery adapter")
     ap.add_argument("--kmeans_max_error", type=float, default=0.20,
                     help="Max relative Frobenius error threshold for KMeans before fallback")
+    ap.add_argument("--kmeans_target_attention_only", type=lambda x: (str(x).lower() in ["true", "1", "yes"]), default=True,
+                    help="Restrict KMeans quantization to attention projections only")
     # Kronecker
     ap.add_argument("--kronecker_rank", type=int, default=128,
                     help="Target rank for Kronecker decomposition")
