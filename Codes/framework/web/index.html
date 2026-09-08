@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NeuralOps Live View & Analytics Studio</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="katex.min.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
-  <!-- Local High Performance Chart.js (No external CDN network dependency) -->
+  <!-- Local High Performance Chart.js & Markdown/LaTeX Renderers (100% Offline, Zero CDN dependency) -->
   <script src="chart.js"></script>
+  <script src="marked.min.js"></script>
+  <script src="katex.min.js"></script>
 </head>
 <body>
   <div class="dashboard-container">
@@ -49,6 +52,7 @@
       </div>
 
       <div class="nav-controls">
+        <div id="last-updated" class="badge badge-neutral" style="font-family: monospace; font-size: 0.72rem;">Last updated: --:--:--</div>
         <div id="conn-status" class="badge badge-online">Connecting...</div>
         <div id="sweep-status" class="badge badge-running">Active Run</div>
       </div>
@@ -73,6 +77,10 @@
         <span class="tab-icon">📚</span> Architecture Docs & Readmes
         <span class="tab-pill-badge" id="tab-docs-count">215+ Docs</span>
       </button>
+      <button class="tab-btn" id="tab-logs-btn" onclick="switchTab('logs')">
+        <span class="tab-icon">📜</span> Live Terminal Logs
+        <span class="tab-pill-badge" id="tab-logs-badge" style="background: rgba(16,185,129,0.2); color: #34d399;">LIVE</span>
+      </button>
     </nav>
 
     <!-- VIEW 1: Telemetry & Live Stream -->
@@ -88,7 +96,7 @@
           <div class="progress-track">
             <div class="progress-fill" id="bar-gpu-util" style="width: 0%;"></div>
           </div>
-          <div class="card-sub" id="sub-gpu-util">NVIDIA RTX 4070 (8GB)</div>
+          <div class="card-sub" id="sub-gpu-util">Detecting GPU...</div>
         </div>
 
         <div class="telemetry-card">
@@ -96,7 +104,7 @@
             <span class="card-label">VRAM Allocation</span>
             <span class="card-icon">🧠</span>
           </div>
-          <div class="card-value" id="val-vram">0 / 8188 MB</div>
+          <div class="card-value" id="val-vram">Detecting VRAM...</div>
           <div class="progress-track">
             <div class="progress-fill fill-accent" id="bar-vram" style="width: 0%;"></div>
           </div>
@@ -260,7 +268,7 @@
         <!-- Search and Filter Bar for 245+ Modules -->
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 10px; margin-bottom: 12px; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
           <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px;">
-            <input type="text" id="matrix-search-input" placeholder="🔍 Search across 245+ modules (e.g. svd, mamba, cosformer, a3)..." 
+            <input type="search" id="matrix-search-input" placeholder="🔍 Search across 245+ modules (e.g. svd, mamba, cosformer, a3)..." 
                    style="width: 100%; max-width: 420px; padding: 7px 14px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f8fafc; font-size: 0.85rem; outline: none;" 
                    oninput="filterModuleMatrix(this.value)">
             <button class="btn" style="background: rgba(255,255,255,0.08); color: #94a3b8; font-size: 0.75rem; padding: 6px 12px;" onclick="clearMatrixSearch()">Clear</button>
@@ -338,6 +346,26 @@
           </table>
         </div>
       </section>
+
+      <!-- Live Terminal / Console Stream View -->
+      <section class="analytics-card" style="margin-top: 20px;">
+        <div class="card-header-flex" style="cursor: pointer;" onclick="toggleTerminalCollapse()">
+          <div style="display:flex; align-items:center; gap: 8px;">
+            <h3>💻 Live Server Execution Stream & Terminal</h3>
+            <span id="terminal-toggle-icon" style="color:#94a3b8; font-size:0.8rem;">▼ [Collapse]</span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;" onclick="event.stopPropagation()">
+            <span class="live-run-tag" id="terminal-active-tag">Active: Detecting...</span>
+            <button class="btn btn-secondary btn-sm" onclick="clearTerminalView()">Clear</button>
+            <button class="btn btn-primary btn-sm" onclick="switchTab('logs')">Open Full Terminal Studio ↗</button>
+          </div>
+        </div>
+        <div id="live-terminal-panel" style="margin-top: 10px;">
+          <div id="live-terminal-logs" class="terminal-logs-window" style="height: 240px; overflow-y: auto; background: #070b12; border: 1px solid #1e293b; border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', 'SF Mono', monospace; font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; white-space: pre-wrap; word-break: break-all;">
+            Waiting for live execution stream...
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- VIEW 2: Complete Multi-Module Comparison Studio -->
@@ -401,7 +429,7 @@
               <button onclick="clearModuleSelection()">Clear</button>
             </div>
           </div>
-          <input type="text" id="analytics-module-search" placeholder="Filter modules to compare..." 
+          <input type="search" id="analytics-module-search" placeholder="Filter modules to compare..." 
                  style="margin: 6px 0; padding: 5px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f8fafc; font-size: 0.75rem; width: 100%; outline: none;" 
                  oninput="filterAnalyticsModules(this.value)">
           <div class="multi-select-list" id="module-select-list">
@@ -459,7 +487,7 @@
             <span class="table-sub">Click a module row for detailed analysis and training loss curves.</span>
           </div>
           <div class="search-wrap">
-            <input type="text" id="analytics-search" placeholder="Search module name..." onkeyup="updateAnalyticsTable()">
+            <input type="search" id="analytics-search" placeholder="Search module name..." onkeyup="updateAnalyticsTable()">
           </div>
         </div>
         <div class="table-wrapper">
@@ -674,7 +702,7 @@
             <span class="table-sub">Live access to 215+ verified theoretical derivations, SVD formulations, and module papers</span>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
-            <input type="text" id="docs-search-input" placeholder="🔍 Search documentation (e.g. mamba, linformer, svd, cur)..." 
+            <input type="search" id="docs-search-input" placeholder="🔍 Search documentation (e.g. mamba, linformer, svd, cur)..." 
                    style="padding: 7px 14px; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #f8fafc; font-size: 0.85rem; min-width: 320px;"
                    oninput="filterDocsList(this.value)">
             <button class="btn btn-secondary btn-sm" onclick="clearDocsSearch()">Clear</button>
@@ -716,6 +744,41 @@
       </section>
     </div>
 
+    <!-- VIEW 6: Dedicated Full Terminal Logs Studio -->
+    <div id="view-logs" class="tab-content">
+      <section class="analytics-card" style="height: calc(100vh - 190px); display: flex; flex-direction: column;">
+        <div class="card-header-flex" style="margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <h2>📜 GPU Server Live Terminal Studio</h2>
+            <span class="live-run-tag" id="full-log-status-tag" style="background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3);">🟢 Streaming</span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <label style="font-size: 0.75rem; color: #94a3b8;">Source:</label>
+            <select id="log-source-select" class="small-select" onchange="onLogSourceChanged(this.value)" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem;">
+              <option value="active">⚡ Current Active Running Module (console.log)</option>
+              <option value="queue">⚙️ Queue Orchestrator Log (exclusive_queue_manager)</option>
+              <option value="local_disk">📁 Local Recent Logs Archive</option>
+            </select>
+            <input type="search" id="log-search-filter" placeholder="Search filter (e.g. error, loss, PASS)..." style="background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; width: 220px;" oninput="filterFullLogs(this.value)">
+            <label style="font-size: 0.75rem; color: #cbd5e1; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+              <input type="checkbox" id="full-log-autoscroll" checked> Auto-scroll
+            </label>
+            <button class="btn btn-secondary btn-sm" onclick="clearFullLogs()">Clear</button>
+            <button class="btn btn-secondary btn-sm" onclick="fetchLiveLogsNow()">🔄 Refresh Now</button>
+          </div>
+        </div>
+        <div class="terminal-window" style="flex: 1; min-height: 480px;">
+          <div class="terminal-header">
+            <span id="full-log-filepath" style="font-size: 0.75rem; color: #94a3b8;">Log file: Detecting...</span>
+            <span id="full-log-timestamp" style="font-size: 0.75rem; color: #64748b;">Updated: --:--:--</span>
+          </div>
+          <div id="full-terminal-body" class="terminal-body" style="font-family: 'JetBrains Mono', 'SF Mono', monospace;">
+            Connecting to GPU terminal stream...
+          </div>
+        </div>
+      </section>
+    </div>
+
     <!-- Footer -->
     <footer class="dashboard-footer">
       <span>NeuralOps Universal Benchmark Matrix</span>
@@ -725,7 +788,7 @@
 
   <!-- New Run Configuration Modal -->
   <div id="new-run-modal" class="modal-overlay" onclick="closeNewRunModal(event)">
-    <div class="modal-card" style="max-width: 600px;" onclick="event.stopPropagation()">
+    <div class="modal-card" style="max-width: 650px;" onclick="event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-title-group">
           <span class="tag-status tag-pass">NEW EXPERIMENT</span>
@@ -747,7 +810,7 @@
             </div>
             <div class="form-group">
               <label>Max Steps:</label>
-              <input type="number" id="form-max-steps" value="15" min="1" max="100" required>
+              <input type="number" id="form-max-steps" value="50" min="1" max="200" required>
             </div>
             <div class="form-group">
               <label>Precision:</label>
@@ -757,9 +820,37 @@
                 <option value="fp32">FP32 Full Precision</option>
               </select>
             </div>
+
+            <!-- SVD & Compression Core Hyperparameters -->
+            <div class="form-group">
+              <label>Base SVD Rank:</label>
+              <input type="number" id="form-svd-rank" value="32" min="1" max="512" required>
+            </div>
+            <div class="form-group">
+              <label>LoRA Rank:</label>
+              <input type="number" id="form-lora-rank" value="16" min="1" max="256" required>
+            </div>
+            <div class="form-group">
+              <label>LoRA Alpha:</label>
+              <input type="number" id="form-lora-alpha" value="32" min="1" max="512" required>
+            </div>
+            <div class="form-group">
+              <label>Max Reconstruction Error:</label>
+              <input type="number" id="form-max-error" value="0.20" step="0.01" min="0.01" max="1.0" required>
+            </div>
+
+            <div class="form-group" style="grid-column: span 2; display: flex; gap: 24px; padding: 6px 0;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.82rem;">
+                <input type="checkbox" id="form-fisher" checked> Use Fisher Weighting
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f8fafc; font-size: 0.82rem;">
+                <input type="checkbox" id="form-dynamic-rank" checked> Dynamic Rank Selection
+              </label>
+            </div>
+
             <div class="form-group" style="grid-column: span 2;">
               <label>Models (comma separated):</label>
-              <input type="text" id="form-models" value="bert,roberta,t5" required>
+              <input type="text" id="form-models" value="distilbert,roberta,gpt2,qwen" required>
             </div>
             <div class="form-group" style="grid-column: span 2;">
               <label>Datasets (comma separated):</label>
@@ -865,6 +956,31 @@
       </div>
     </div>
   </div>
+
+  <!-- Stop Run Confirmation Modal -->
+  <div id="stop-confirmation-modal" class="modal-overlay" onclick="closeStopModal(event)">
+    <div class="modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(239, 68, 68, 0.2);">
+        <div class="modal-title-group">
+          <span class="tag-status tag-fail">SAFETY CONFIRMATION</span>
+          <h3 style="color: #f87171;">Stop Running Experiment?</h3>
+        </div>
+        <button class="modal-close-btn" onclick="hideStopModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem;">
+          Are you sure you want to stop the currently running GPU benchmark? Any in-progress fine-tuning step or evaluation epoch will be halted.
+        </p>
+        <div class="modal-actions" style="margin-top: 1rem; padding: 0; background: transparent; border: none; display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="hideStopModal()">Cancel (Keep Running)</button>
+          <button type="button" class="btn btn-danger" onclick="confirmStopRun()">🛑 Yes, Stop Experiment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
 
   <script src="app.js"></script>
 </body>
