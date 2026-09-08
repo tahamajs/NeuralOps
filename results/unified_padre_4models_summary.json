@@ -3,13 +3,13 @@
     "Model": "roberta",
     "Exit Code": 0,
     "Baseline Acc": "88.76%",
-    "PADRe Attention Acc": "0.00%",
-    "Delta Acc": "-88.76%",
-    "F1": "0.8942",
-    "Status": "FAIL",
+    "PADRe Attention Acc": "86.58%",
+    "Delta Acc": "-2.18%",
+    "F1": "0.8790",
+    "Status": "PASS",
     "Compressed Layers": "0",
-    "Comp Rate": "1.00x",
-    "Peak VRAM": "299.9 MB",
-    "Time (s)": "37.4"
+    "Comp Rate": "0.95x",
+    "Peak VRAM": "402.0 MB",
+    "Time (s)": "63.7"
   }
 ]

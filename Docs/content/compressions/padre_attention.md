@@ -361,4 +361,4 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| ROBERTA | 0.00% | 0.8942 | 1.0 | 0 | 299.92 | `FAIL` | N/A |
+| ROBERTA | 86.58% | 0.879 | 0.9452 | 0 | 402.0 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-padre) |
