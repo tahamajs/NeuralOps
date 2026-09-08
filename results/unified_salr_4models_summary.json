@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "SALR Compressor Acc": "88.30%",
+    "Delta Acc": "-0.46%",
+    "F1": "0.8926",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "328.2 MB",
+    "Time (s)": "69.0"
+  }
+]
