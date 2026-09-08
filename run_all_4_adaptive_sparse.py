@@ -39,7 +39,7 @@ models = [
             "--precision", "fp16",
             "--fresh",
             "--defer_export",
-            "--timeout", "1200",
+            "--timeout", "180",
         ],
         "summary_csv": r"results\unified_adaptive_sparse\roberta\summary.csv",
         "stats_json": r"results\unified_adaptive_sparse\roberta\adaptive_sparse_stats.json",

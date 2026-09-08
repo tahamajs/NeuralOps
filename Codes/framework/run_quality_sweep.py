@@ -1461,10 +1461,8 @@ def main():
             "asvd": 1500,
             "asvd_attention": 1500,
         }
-        base_timeout = args.timeout if getattr(args, "timeout", None) else 600
-        effective_timeout = max(base_timeout, _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, base_timeout))
-        if family in ("qwen", "qwen3_5") or name in ("asvd", "asvd_attention"):
-            effective_timeout = max(effective_timeout, 1500)
+        base_timeout = min(180, args.timeout if getattr(args, "timeout", None) else 180)
+        effective_timeout = min(180, base_timeout)
 
         # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
         _OOM_MODULE_BATCH_OVERRIDES = {

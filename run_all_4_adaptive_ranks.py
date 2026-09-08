@@ -104,7 +104,7 @@ for m in models:
         "--recovery_steps", "50",
         "--learning_rate", "2e-4",
         "--lora_rank", "32",
-        "--timeout", "1200",
+        "--timeout", "180",
         "--precision", "fp16",
         "--adaptive_ranks_max_error", "0.85",
         "--adaptive_ranks_energy_threshold", "0.92",
