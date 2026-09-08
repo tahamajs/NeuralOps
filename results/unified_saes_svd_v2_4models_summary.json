@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "88.76%",
+    "SAES-SVD v2 Acc": "88.88%",
+    "Delta Acc": "+0.12%",
+    "F1": "0.8974",
+    "Status": "PASS",
+    "Compressed Layers": "68",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "335.9 MB",
+    "Time (s)": "71.4"
+  }
+]

@@ -1,0 +1,2 @@
+Model,Exit Code,Baseline Acc,SAES-SVD v2 Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+roberta,0,88.76%,88.88%,+0.12%,0.8974,PASS,68,1.00x,335.9 MB,71.4
