@@ -22,7 +22,7 @@ class MockMHA(nn.Module):
         self.out_lin = nn.Linear(hidden_dim, hidden_dim)
 
 
-class MockRobertaSelf(nn.Module):
+class RobertaSelfAttention(nn.Module):
     def __init__(self, hidden_dim: int = 64):
         super().__init__()
         self.query = nn.Linear(hidden_dim, hidden_dim)
@@ -64,7 +64,7 @@ class TestCrossArchitectureInjection(unittest.TestCase):
 
     def test_injection_roberta(self):
         """RoBERTa self-attention (query, key, value) is extracted and nested mode enabled."""
-        mock = MockRobertaSelf(64).to(self.device)
+        mock = RobertaSelfAttention(64).to(self.device)
         net = GatedDeltaNet(hidden_size=64, num_heads=4, is_decoder=False).to(self.device)
         net.copy_weights(mock)
         self.assertTrue(net.is_nested_encoder)
