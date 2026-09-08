@@ -100,11 +100,17 @@ def sync_and_verify_hf():
     api = HfApi()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Running sweep across {results_base}...")
 
-    weight_files = list(results_base.glob("unified_*/*/checkpoints/*/weights.pt"))
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Found {len(weight_files)} candidate weights.pt files.")
+    # Collect candidate checkpoints (both weights.pt and hf_export dirs)
+    candidate_checkpoints = []
+    for wf in results_base.glob("unified_*/*/checkpoints/*/weights.pt"):
+        if wf.parent.name != "full":
+            candidate_checkpoints.append((wf.parent, wf))
+    for hf_d in results_base.glob("unified_*/*/checkpoints/*/hf_export"):
+        if hf_d.parent.name != "full":
+            candidate_checkpoints.append((hf_d, None))
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Found {len(candidate_checkpoints)} candidate checkpoint targets.")
 
-    for wf in weight_files:
-        ckpt_dir = wf.parent
+    for ckpt_dir, wf in candidate_checkpoints:
         if ckpt_dir.name == "full":
             continue
             
@@ -165,8 +171,8 @@ def sync_and_verify_hf():
             except Exception as e_rm:
                 print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Failed README upload to {repo_id}: {e_rm}")
 
-        # 4. If weights.pt is missing, upload with retry
-        if "weights.pt" not in remote_files:
+        # 4. If weights.pt is missing and exists locally, upload with retry
+        if wf and wf.exists() and "weights.pt" not in remote_files:
             print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Uploading missing weights.pt ({wf.stat().st_size / 1e6:.1f} MB) to {repo_id}...")
             success = False
             for attempt in range(1, 4):
@@ -183,8 +189,6 @@ def sync_and_verify_hf():
                 except Exception as e_up:
                     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Attempt {attempt} failed for {repo_id}: {e_up}")
                     time.sleep(5)
-            if not success:
-                continue
 
         # 5. Upload configs, metrics, tokenizers if missing
         for extra in ckpt_dir.glob("*"):
