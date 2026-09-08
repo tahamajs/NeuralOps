@@ -1,0 +1,15 @@
+[
+  {
+    "Model": "roberta",
+    "Exit Code": 2,
+    "Baseline Acc": "N/A",
+    "MGIE Budget Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_2",
+    "Compressed Layers": "N/A",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Time (s)": "14.4"
+  }
+]
