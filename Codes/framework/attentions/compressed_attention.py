@@ -497,3 +497,14 @@ def inject_compressed_attention(
         return new_attn
     except Exception:
         return None
+
+
+# Aliases for backward compatibility
+CompressedAttention = CompressedAttentionLayer
+
+__all__ = [
+    "CompressedAttention",
+    "CompressedAttentionLayer",
+    "CompressedAttentionLayer2",
+    "inject_compressed_attention",
+]
