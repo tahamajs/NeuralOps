@@ -271,41 +271,37 @@ class HGRN2Layer(BaseAttention):
         iv: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Parallel element-wise associative scan in FP32."""
+        """Memory-efficient element-wise recurrence scan in FP32."""
         B, L, D = iv.shape
         f_fp32 = f.float()
         iv_fp32 = iv.float()
 
-        log_f = torch.log(f_fp32.clamp(min=1e-4, max=1.0 - 1e-4))  # [B, L, D]
-        C = torch.cumsum(log_f, dim=1).permute(0, 2, 1)            # [B, D, L]
-        C_diff = C.unsqueeze(-1) - C.unsqueeze(-2)                 # [B, D, L, L]
-
-        # 1. Forward causal decay matrix
-        tril_mask = torch.tril(torch.ones(L, L, device=iv.device, dtype=torch.bool))
-        D_causal = torch.exp(C_diff.clamp(min=-40.0, max=0.0)) * tril_mask.float()  # [B, D, L, L]
-
-        u = iv_fp32.permute(0, 2, 1).unsqueeze(-1)  # [B, D, L, 1]
-
         if mask is not None:
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
-            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
-            D_causal = D_causal * mask_2d
+            iv_fp32 = iv_fp32 * mask_float.unsqueeze(-1)
 
-        h_fwd = torch.matmul(D_causal, u).squeeze(-1).permute(0, 2, 1).to(iv.dtype)  # [B, L, D]
-        h_fwd = torch.clamp(h_fwd, -self.res_clip, self.res_clip)
+        # Sequential scan with PyTorch in-place/compiled efficiency to avoid [B, D, L, L] OOM
+        h_fwd_list = []
+        h_t = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
+        for t in range(L):
+            h_t = f_fp32[:, t] * h_t + iv_fp32[:, t]
+            h_t = torch.clamp(h_t, -self.res_clip, self.res_clip)
+            h_fwd_list.append(h_t)
+
+        h_fwd = torch.stack(h_fwd_list, dim=1).to(iv.dtype)  # [B, L, D]
 
         if self.is_decoder:
             return h_fwd, None
 
-        # 2. Backward anticausal decay matrix for bidirectional mode
-        triu_mask = torch.triu(torch.ones(L, L, device=iv.device, dtype=torch.bool))
-        D_anti = torch.exp((-C_diff).clamp(min=-40.0, max=0.0)) * triu_mask.float()  # [B, D, L, L]
-        if mask is not None:
-            D_anti = D_anti * mask_2d
+        # Anticausal backward scan for bidirectional encoders
+        h_bwd_list = []
+        h_t_bwd = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
+        for t in reversed(range(L)):
+            h_t_bwd = f_fp32[:, t] * h_t_bwd + iv_fp32[:, t]
+            h_t_bwd = torch.clamp(h_t_bwd, -self.res_clip, self.res_clip)
+            h_bwd_list.append(h_t_bwd)
 
-        h_bwd = torch.matmul(D_anti, u).squeeze(-1).permute(0, 2, 1).to(iv.dtype)    # [B, L, D]
-        h_bwd = torch.clamp(h_bwd, -self.res_clip, self.res_clip)
-
+        h_bwd = torch.stack(list(reversed(h_bwd_list)), dim=1).to(iv.dtype)  # [B, L, D]
         return h_fwd, h_bwd
 
     def forward(
