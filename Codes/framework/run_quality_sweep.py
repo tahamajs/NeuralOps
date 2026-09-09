@@ -1482,6 +1482,9 @@ def main():
             "asvd": 1500,
             "asvd_attention": 1500,
             "tomoe": 500,
+            "hgrn2": 500,
+            "hgrn2_gated_deltanet": 500,
+            "hgrn2_layer": 500,
         }
         # Slow module or configured timeout
         override_to = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
