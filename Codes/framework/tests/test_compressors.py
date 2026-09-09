@@ -111,7 +111,7 @@ class TestCompressionEngines(unittest.TestCase):
 
         toy_model = ToySequentialModel(in_features=64, hidden_features=128, out_features=32)
         orig_params = sum(p.numel() for p in toy_model.parameters())
-        compressor = KroneckerCompressor(toy_model)
+        compressor = KroneckerCompressor(toy_model, max_error=1.0)
         compressed_model, stats = compressor.compress()
 
         compressed_params = sum(p.numel() for p in compressed_model.parameters())
