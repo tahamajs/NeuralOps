@@ -552,6 +552,16 @@ class A3Compressor(BaseCompressor):
 
         # Construct factorized layer with Safe Device Initialization
         U_final, V_final = best_layer_factors
+        
+        # If the target module was already wrapped by PEFT (lora_A exists but is dropped by base_layer unwrapping),
+        # or if lora_r > 0 is requested, we MUST instantiate lora_A/B in the factorized layer to keep it trainable!
+        effective_lora_rank = lora_r
+        if effective_lora_rank == 0 and has_lora:
+            # Fallback to the active LoRA rank from the original wrapper if possible
+            effective_lora_rank = getattr(module, "lora_rank", 16)
+            if effective_lora_rank == 0:
+                effective_lora_rank = 16
+
         factorized_layer = A3FactorizedLinear(
             in_features=in_f,
             out_features=out_f,
@@ -559,7 +569,7 @@ class A3Compressor(BaseCompressor):
             bias=bias is not None,
             dtype=dtype,
             device=device,
-            lora_rank=lora_r if (has_lora and not hasattr(module, "base_layer")) else 0,
+            lora_rank=effective_lora_rank,
             lora_alpha=lora_a,
         )
         factorized_layer.U.data.copy_(U_final.to(dtype=dtype, device=device))

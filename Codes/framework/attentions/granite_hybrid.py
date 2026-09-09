@@ -116,6 +116,8 @@ class Mamba2(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.d_model: int = d_model
         self.d_state: int = d_state
         self.expand: int = expand
@@ -199,7 +201,7 @@ class MixtureOfExperts(nn.Module):
                     * selected_weights
                     * self.experts[e](x * mask.unsqueeze(-1))
                 )
-        return out
+        return out * self.output_scale
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid")

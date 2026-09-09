@@ -102,6 +102,8 @@ class FactorisedLinear(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.energy = energy
         self.min_rank = min_rank
         self.max_rank = max_rank
@@ -230,7 +232,7 @@ class FactorisedLinear(nn.Module):
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out
+        return out * self.output_scale
 
 
 def local_window_attention(

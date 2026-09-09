@@ -72,6 +72,8 @@ def apply_rotary_pos_emb(
 class HeadRoPE(nn.Module):
     def __init__(self, head_dim: int, max_seq_len: int = 4096, base: float = 10000.0) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.head_dim = head_dim
         self.max_seq_len = max_seq_len
         inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
@@ -172,7 +174,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out * self.output_scale
 
 
 @ATTENTION_REGISTRY.register("hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
