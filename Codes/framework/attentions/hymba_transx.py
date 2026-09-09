@@ -77,8 +77,6 @@ class HeadRoPE(nn.Module):
         inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
         self.register_buffer("inv_freq", inv_freq, persistent=False)
         self._build_cache(max_seq_len)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
     def _build_cache(self, seq_len: int) -> None:
         t = torch.arange(seq_len, device=self.inv_freq.device).float()

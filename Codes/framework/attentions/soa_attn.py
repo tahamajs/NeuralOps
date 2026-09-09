@@ -100,8 +100,6 @@ class LoRALinear(nn.Module):
             self.weight.requires_grad = False
             if self.bias is not None:
                 self.bias.requires_grad = False
-                if not hasattr(self, 'output_scale'):
-                    self.output_scale = nn.Parameter(torch.ones(1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)

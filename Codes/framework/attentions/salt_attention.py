@@ -138,8 +138,6 @@ class SALTLinear(nn.Module):
         else:
             self.bias = nn.Parameter(torch.zeros(out_features, device=target_dev, dtype=target_dtype))
 
-if not hasattr(self, 'output_scale'):
-    self.output_scale = nn.Parameter(torch.ones(1))
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""

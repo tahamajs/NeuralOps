@@ -63,8 +63,6 @@ class GatedDeltaNetBlock(BaseAttention):
             config=config, d_model=self.d_model, num_heads=self.num_heads, **kwargs
         )
         self.norm = nn.LayerNorm(self.d_model)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained weights to either MHA or GatedDeltaNet."""

@@ -106,8 +106,6 @@ class LoRALinear(nn.Module):
         self.reset_parameters()
         if freeze_base:
             self.freeze_base_weights()
-            if not hasattr(self, 'output_scale'):
-                self.output_scale = nn.Parameter(torch.ones(1))
 
     def reset_parameters(self) -> None:
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
@@ -430,7 +428,7 @@ class SpanExpandedAttention(BaseAttention):
         context = torch.matmul(attn, v).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
-            return context * self.output_scale * self.output_scale, (attn if output_attentions else None)
+            return context, (attn if output_attentions else None)
 
         out = self.out_proj(context)
         return out, (attn if output_attentions else None)

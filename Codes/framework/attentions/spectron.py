@@ -167,8 +167,6 @@ class LowRankSparseLinear(nn.Module):
         self.out_features: int = up.out_features
         self.in_features: int = down.in_features
 
-if not hasattr(self, 'output_scale'):
-    self.output_scale = nn.Parameter(torch.ones(1))
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features)."""

@@ -35,8 +35,6 @@ except Exception:
         def __init__(self, d_model: int = 768, **kwargs: Any) -> None:
             super().__init__()
             self.in_proj = nn.Linear(d_model, 2 * d_model)
-            if not hasattr(self, 'output_scale'):
-                self.output_scale = nn.Parameter(torch.ones(1))
             self.out_proj = nn.Linear(d_model, d_model)
         def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
             x1, x2 = self.in_proj(x).chunk(2, dim=-1)

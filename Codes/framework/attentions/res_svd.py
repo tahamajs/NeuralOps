@@ -178,8 +178,6 @@ class ResSVDAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
-            if not hasattr(self, 'output_scale'):
-                self.output_scale = nn.Parameter(torch.ones(1))
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -415,7 +413,7 @@ class ResSVDAttention(BaseAttention):
         context = torch.matmul(attn_weights, V).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
-            return context * self.output_scale, (attn_weights if output_attentions else None)
+            return context, (attn_weights if output_attentions else None)
 
         output = self.out_proj(context)
         return output, (attn_weights if output_attentions else None)
