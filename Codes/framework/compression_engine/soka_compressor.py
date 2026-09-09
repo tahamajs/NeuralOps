@@ -52,6 +52,9 @@ class LowRankLinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
@@ -80,7 +83,7 @@ class LowRankLinear(nn.Module):
         out = torch.matmul(bottleneck, self.U.T)  # [..., out_features]
         if self.bias is not None:
             out = out + self.bias
-        return out
+        return out * self.output_scale
 
 
 class LowRankCompressor(BaseCompressor):
@@ -101,6 +104,9 @@ class LowRankCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="soka", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             rank = _cfg_get(cfg, "soka_rank", _cfg_get(cfg, "rank", rank))

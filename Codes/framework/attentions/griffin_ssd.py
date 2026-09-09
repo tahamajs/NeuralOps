@@ -232,8 +232,9 @@ class GriffinSSDBlock(BaseAttention):
                 w, b = adapter.get_weight_bias(old_attn, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-        except Exception:
-            pass
+        except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # 2. GPT-2 Fused c_attn
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
@@ -486,7 +487,7 @@ class GriffinSSDBlock(BaseAttention):
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out, None
+        return out * self.output_scale, None
 
 
 @ATTENTION_REGISTRY.register("griffin_ssd_inject")

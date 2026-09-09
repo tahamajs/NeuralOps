@@ -7,7 +7,8 @@ Mathematical Formulation:
 2. Empirical Covariance: $\Sigma = rac{1}{N - 1} (X - \mu)^	op (X - \mu)$
 3. Eigendecomposition: $\Sigma = V \Lambda V^	op$
 4. Retain principal coordinates covering $(1 - 	ext{sparsity})$ cumulative variance:
-   $$k = \min \left\{ r \;\middle|\; rac{\sum_{i=1}^r \lambda_i}{\sum_{i=1}^d \lambda_i} \ge 1 - 	ext{sparsity} ight\}$$
+   $$k = \min \left\{ r \;\middle|\; rac{\sum_{i=1}^r \lambda_i}{\sum_{i=1}^d \lambda_i} \ge 1 - 	ext{sparsity} 
+ight\}$$
 5. Transform weights: $W \leftarrow (W V) P_k P_k^	op V^	op$
 6. Optional LoRA Adapter Integration:
    $$y = (W_{	ext{sliced}} x + b) + rac{lpha}{r} (B A x)$$
@@ -50,6 +51,9 @@ class SliceGPTPCALoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.lora_r = int(lora_r)
@@ -126,7 +130,7 @@ class SliceGPTPCALoRALinear(nn.Module):
                 self.lora_B,
             ) * self.scaling
             out = out + lora_delta.to(out.dtype)
-        return out
+        return out * self.output_scale
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -165,6 +169,9 @@ class SliceGPTPCACompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='slicegpt_pca', **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
         self.calibration_loader = calibration_loader
@@ -308,8 +315,9 @@ class SliceGPTPCACompressor(BaseCompressor):
             for h in hooks:
                 try:
                     h.remove()
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         aggregated: Dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():

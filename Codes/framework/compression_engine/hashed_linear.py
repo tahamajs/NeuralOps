@@ -73,6 +73,9 @@ class HashedLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.n_buckets = max(1, n_buckets)
@@ -137,7 +140,7 @@ class HashedLinear(nn.Module):
             lora_contrib = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_contrib
 
-        return out
+        return out * self.output_scale
 
     @classmethod
     def from_linear(

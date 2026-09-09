@@ -199,8 +199,9 @@ class HammingAttention(BaseAttention):
                 hidden_size = self.adapter.hidden_size
                 head_dim = self.adapter.head_dim
                 kv_repeat = self.adapter.kv_repeat
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         if not hidden_size and pretrained_attn is not None:
             hidden_size = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", 0))
@@ -275,8 +276,9 @@ class HammingAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):

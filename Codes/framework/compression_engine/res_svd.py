@@ -59,6 +59,9 @@ class ResSVDLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         max_possible_rank = min(in_features, out_features)
@@ -161,7 +164,7 @@ class ResSVDLinear(nn.Module):
         if self.bias is not None:
             out = out + self.bias
 
-        return out
+        return out * self.output_scale
 
     @classmethod
     def from_linear(
@@ -366,6 +369,9 @@ class ResSVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="res_svd", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
 
         base_rank = _cfg_get(cfg, "base_rank", _cfg_get(cfg, "rank", base_rank))
@@ -524,6 +530,9 @@ class SpectralResidualLoRA(ResSVDCompressor):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.name = "spectral_residual_lora"
 
 

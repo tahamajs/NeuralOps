@@ -85,6 +85,9 @@ class MambaShedderCompressor(BaseCompressor):
         kwargs.pop("shed_layers", None)
         kwargs.pop("structured_24", None)
         super().__init__(model, name="mamba_shedder", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             sparsity = _cfg_get(cfg, "mamba_shedder_sparsity", _cfg_get(cfg, "sparsity", sparsity))

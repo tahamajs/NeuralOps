@@ -39,6 +39,9 @@ class MoDeGPTLoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -123,7 +126,7 @@ class MoDeGPTLoRALinear(nn.Module):
             out = out + self.scaling * F.linear(
                 F.linear(x.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
-        return out
+        return out * self.output_scale
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -176,6 +179,9 @@ class MoDeGPTCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="modegpt", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             rank = _cfg_get(cfg, "modegpt_rank", _cfg_get(cfg, "rank", rank))

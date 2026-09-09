@@ -185,8 +185,9 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 w, b = UniversalAdapter.get_weight_bias(pretrained_attn, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         if hasattr(pretrained_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             weight = pretrained_attn.c_attn.weight.data
@@ -438,7 +439,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         else:
             out = self.out_proj(context[:, :N, :])
 
-        return out, None
+        return out * self.output_scale, None
 
 
 @ATTENTION_REGISTRY.register("moe_deltakv_paged_inject")

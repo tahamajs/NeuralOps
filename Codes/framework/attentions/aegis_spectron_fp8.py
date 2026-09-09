@@ -71,8 +71,9 @@ def fp8_cast_simulate(
     try:
         from torchao.quantization.quant_api import to_fp8
         return to_fp8(x, format=fmt).to(orig_dtype)
-    except Exception:
-        pass
+    except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
     # Dynamic scaling factor calculation
     if per_channel:
@@ -89,8 +90,9 @@ def fp8_cast_simulate(
             x_fp8 = x_scaled.to(torch_dtype)
             x_dequant = (x_fp8.float() / scale.float()).to(orig_dtype)
             return x_dequant
-        except Exception:
-            pass
+        except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
     # 3. Mathematical fallback: bit-depth IEEE-754 mantissa rounding
     abs_x = torch.abs(x_scaled).clamp(min=1e-12)
@@ -498,8 +500,9 @@ class AegisSpectronFP8Attention(BaseAttention):
                     if hasattr(mod, "merge") and not getattr(mod, "merged", False):
                         try:
                             mod.merge()
-                        except Exception:
-                            pass
+                        except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
                     base_mod = getattr(mod, "base_layer", mod)
                     w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                     if w is not None:
@@ -535,8 +538,9 @@ class AegisSpectronFP8Attention(BaseAttention):
                 if hasattr(mod, "merge") and not getattr(mod, "merged", False):
                     try:
                         mod.merge()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
                 base_mod = getattr(mod, "base_layer", mod)
                 c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                 if c_w is not None:
@@ -594,8 +598,9 @@ class AegisSpectronFP8Attention(BaseAttention):
             if w is None:
                 try:
                     w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
             extracted_weights[proj] = (w, b)
 
@@ -856,8 +861,9 @@ class AegisSpectronFP8Attention(BaseAttention):
             try:
                 from framework.utils.compat import maybe_apply_rotary
                 Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)

@@ -239,7 +239,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out * self.output_scale
 
 
 @ATTENTION_REGISTRY.register("gated_delta_net", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -422,8 +422,9 @@ class GatedDeltaNet(BaseAttention):
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -489,8 +490,9 @@ class GatedDeltaNet(BaseAttention):
                     w, b = adapter.get_weight_bias(old_attn, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -708,7 +710,7 @@ class GatedDeltaNet(BaseAttention):
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out, None
+        return out * self.output_scale, None
 
 
 @ATTENTION_REGISTRY.register("gated_delta_net_inject")

@@ -54,6 +54,9 @@ class NLISoftmax(nn.Module):
 
     def __init__(self, dim: int = -1) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.dim = dim
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -100,6 +103,9 @@ class NLISoftmaxCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="nli_softmax", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         conf = cfg or kwargs.get("comp_config", None)
         if conf is not None:
             max_error = _cfg_get(conf, "nli_max_error", _cfg_get(conf, "max_error", max_error))

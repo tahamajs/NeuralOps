@@ -44,6 +44,9 @@ class SALRLayer(nn.Module):
         lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
@@ -99,7 +102,7 @@ class SALRLayer(nn.Module):
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out.to(out.dtype)
-        return out
+        return out * self.output_scale
 
     @property
     def weight(self) -> torch.Tensor:
@@ -149,6 +152,9 @@ class SALRCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='salr', **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
         if 'rank' in kwargs and kwargs['rank'] is not None:

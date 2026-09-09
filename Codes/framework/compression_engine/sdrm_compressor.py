@@ -58,6 +58,9 @@ class SDRMCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='sdrm', **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
         self.total_param_ratio = max(0.05, min(float(total_param_ratio or _cfg_get(cfg_obj, 'total_param_ratio', _cfg_get(cfg_obj, 'ratio', 0.7))), 1.0))

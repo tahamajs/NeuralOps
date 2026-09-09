@@ -42,6 +42,9 @@ class CRLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
@@ -110,6 +113,9 @@ class CRLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -188,8 +194,9 @@ class CRLinear(nn.Module):
             W_np = W_float.cpu().numpy()
             _, _, piv = scipy.linalg.qr(W_np, mode="economic", pivoting=True)
             col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device)
-        except Exception:
-            pass
+        except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         if col_idx is None:
             # Pure PyTorch QRCP-equivalent greedy pivoted column selection

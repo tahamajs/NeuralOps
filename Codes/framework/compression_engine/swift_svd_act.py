@@ -58,6 +58,9 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="swift_svd_act", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             rank = _cfg_get(cfg, "swift_svd_act_rank", _cfg_get(cfg, "rank", rank))
@@ -270,8 +273,9 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 rel_err_direct = (torch.norm(W - W_rec_direct) / max(norm_orig, 1e-12)).item()
                 if rel_err_direct <= self.max_error or rel_err_direct < rel_err:
                     A, B, r, rel_err = A_direct, B_direct, r_direct, rel_err_direct
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         if not math.isfinite(rel_err) or (self.fallback_to_original and rel_err > self.max_error):
             logger.warning(
@@ -309,8 +313,9 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                     svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
                 if hasattr(layer.lora_B, "weight"):
                     svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         svd_layer.reconstruction_error = rel_err
         return svd_layer

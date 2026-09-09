@@ -277,8 +277,9 @@ class ClusterAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # 2. GPT-2 Fused c_attn Conv1D handling (including LoRALinear wrappers)
         if hasattr(src, "c_attn") and src.c_attn is not None and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -286,8 +287,9 @@ class ClusterAttention(BaseAttention):
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if weight is not None:
@@ -306,8 +308,9 @@ class ClusterAttention(BaseAttention):
             if hasattr(c_proj_mod, "merge") and not getattr(c_proj_mod, "merged", False):
                 try:
                     c_proj_mod.merge()
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
             base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
             w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
             if w_o is not None:

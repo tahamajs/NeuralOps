@@ -622,7 +622,7 @@ class SpectronAttention(BaseAttention):
             out = out + F.linear(F.linear(x, lora_A), lora_B) * self.scaling
         if self.add_sparse and sparse_w is not None:
             out = out + F.linear(x, sparse_w)
-        return out
+        return out * self.output_scale
 
     def forward(
         self,

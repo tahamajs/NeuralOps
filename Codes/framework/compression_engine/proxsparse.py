@@ -65,6 +65,9 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.lora_r = int(lora_r)
@@ -137,7 +140,7 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_delta = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
             out = out + lora_delta.to(out.dtype)
-        return out
+        return out * self.output_scale
 
 
 @COMPRESSOR_REGISTRY.register('proxsparse')
@@ -172,6 +175,9 @@ class ProxSparsePruner(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='proxsparse', **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
         self.sparsity = max(0.0, min(float(sparsity if sparsity is not None else _cfg_get(cfg_obj, 'proxsparse_sparsity', _cfg_get(cfg_obj, 'sparsity', 0.5))), 0.95))
