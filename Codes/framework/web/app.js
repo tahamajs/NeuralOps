@@ -49,31 +49,36 @@ const fN = (val, dec = 2) => {
 // TAB MANAGEMENT
 // ==========================================
 function switchTab(tabId) {
-  activeTab = tabId;
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-  
-  const btn = document.getElementById(`tab-${tabId}-btn`);
-  const view = document.getElementById(`view-${tabId}`);
-  if (btn) btn.classList.add("active");
-  if (view) view.classList.add("active");
+  try {
+    activeTab = tabId;
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    
+    const btn = document.getElementById(`tab-${tabId}-btn`);
+    const view = document.getElementById(`view-${tabId}`);
+    if (btn) btn.classList.add("active");
+    if (view) view.classList.add("active");
 
-  saveState();
+    saveState();
 
-  if (tabId === 'analytics') {
-    if (barChart) barChart.resize();
-    if (radarChart) radarChart.resize();
-    if (scatterChart) scatterChart.resize();
-  } else if (tabId === 'compare') {
-    updateRunComparison();
-  } else if (tabId === 'visuals') {
-    renderAdvancedVisuals();
-  } else if (tabId === 'logs') {
-    fetchLiveLogsNow();
-  } else if (tabId === 'docs') {
-    if (allDocsModules.length === 0) {
-      loadAllDocsCatalog();
+    if (tabId === 'analytics') {
+      if (barChart && typeof barChart.resize === 'function') barChart.resize();
+      if (radarChart && typeof radarChart.resize === 'function') radarChart.resize();
+      if (scatterChart && typeof scatterChart.resize === 'function') scatterChart.resize();
+      if (currentData) updateAnalytics();
+    } else if (tabId === 'compare') {
+      updateRunComparison();
+    } else if (tabId === 'visuals') {
+      renderAdvancedVisuals();
+    } else if (tabId === 'logs') {
+      fetchLiveLogsNow();
+    } else if (tabId === 'docs') {
+      if (allDocsModules.length === 0) {
+        loadAllDocsCatalog();
+      }
     }
+  } catch (err) {
+    console.error(`Error in switchTab('${tabId}'):`, err);
   }
 }
 
@@ -2363,20 +2368,29 @@ startPolling = function() {
   }, POLL_INTERVAL_MS);
 };
 
-// ==========================================
-// BOOTSTRAP
-// ==========================================
-restoreState();
-selectedRunId = "run_active";
-isHistorical = false;
-startPolling();
-fetchStats();
-fetchLiveLogsNow();
-loadAllDocsCatalog();
-fetchRunsList().then(() => {
-  populateRunSelectors();
-});
-switchTab(activeTab);
+function bootstrapApp() {
+  try {
+    restoreState();
+    selectedRunId = "run_active";
+    isHistorical = false;
+    startPolling();
+    fetchStats();
+    fetchLiveLogsNow();
+    loadAllDocsCatalog();
+    fetchRunsList().then(() => {
+      populateRunSelectors();
+    });
+    switchTab(activeTab || "telemetry");
+  } catch (err) {
+    console.error("App bootstrap error:", err);
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootstrapApp);
+} else {
+  bootstrapApp();
+}
 
 
 
