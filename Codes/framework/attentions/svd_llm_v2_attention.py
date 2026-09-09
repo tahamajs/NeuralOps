@@ -239,6 +239,8 @@ class SVDLLMV2Attention(BaseAttention):
             else dropout
         )
         self.dropout = nn.Dropout(dropout_p)
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
 
     def _init_random(self) -> None:
         """Initialize orthogonal factor projections with identity scales."""

@@ -106,6 +106,8 @@ class LoRALinear(nn.Module):
         self.reset_parameters()
         if freeze_base:
             self.freeze_base_weights()
+            if not hasattr(self, 'output_scale'):
+                self.output_scale = nn.Parameter(torch.ones(1))
 
     def reset_parameters(self) -> None:
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
@@ -456,7 +458,7 @@ class RoutingAttention(BaseAttention):
         context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
-            return context, (attn if output_attentions else None)
+            return context * self.output_scale * self.output_scale, (attn if output_attentions else None)
 
         output = self.out_proj(context)
         return output, (attn if output_attentions else None)

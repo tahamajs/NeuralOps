@@ -381,6 +381,8 @@ class SVDCompressedAttention(BaseAttention):
         src_attn = old_attn or kwargs.get("pretrained_attn", None)
         if src_attn is not None:
             self.copy_weights(src_attn)
+            if not hasattr(self, 'output_scale'):
+                self.output_scale = nn.Parameter(torch.ones(1))
 
     def _set_factorised_weights(
         self, W_tensor: torch.Tensor, bias_tensor: Optional[torch.Tensor], down: nn.Linear, up: nn.Linear, rank: int

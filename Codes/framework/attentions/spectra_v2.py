@@ -152,6 +152,8 @@ class LoRALinear(nn.Module):
         self.reset_parameters()
         if freeze_base:
             self.freeze_base_weights()
+            if not hasattr(self, 'output_scale'):
+                self.output_scale = nn.Parameter(torch.ones(1))
 
     def reset_parameters(self) -> None:
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
@@ -500,7 +502,7 @@ class SpectraV2Attention(BaseAttention):
                     context = F.pad(context, (0, hidden_states.shape[-1] - context.shape[-1]))
                 else:
                     context = context[..., :hidden_states.shape[-1]]
-            return context, (attn_weights if output_attentions else None)
+            return context * self.output_scale * self.output_scale, (attn_weights if output_attentions else None)
 
         output = self.out_proj(context)
         if output.shape[-1] != hidden_states.shape[-1]:

@@ -38,7 +38,7 @@ def extract_module_name(runner_path: Path) -> str:
 
 
 def is_module_already_done(module_name: str, results_root: Path, required_models: List[str]) -> bool:
-    """Check if all required models have already completed with summary.csv for this module."""
+    """Check if all required models have already completed with summary.csv for this module and passed."""
     module_dir = results_root / f"unified_{module_name}"
     if not module_dir.is_dir():
         return False
@@ -46,6 +46,20 @@ def is_module_already_done(module_name: str, results_root: Path, required_models
     for m in required_models:
         csv_file = module_dir / m / "summary.csv"
         if not csv_file.is_file() or csv_file.stat().st_size == 0:
+            return False
+            
+        # Check if the status was PASS_LOW or FAIL, if so we want to re-run
+        try:
+            with open(csv_file, 'r', encoding='utf-8') as f:
+                import csv
+                reader = csv.DictReader(f)
+                rows = list(reader)
+                if not rows:
+                    return False
+                # If any run for this model wasn't a PASS, we re-run
+                if any(r.get('status') in ('FAIL', 'PASS_LOW') for r in rows):
+                    return False
+        except Exception:
             return False
 
     return True

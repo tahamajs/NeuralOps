@@ -152,6 +152,8 @@ class FactorizedLinear(nn.Module):
     Base weights and biases are frozen to maintain pretrained representations.
     Standardized initialization: lora_A ~ Kaiming Uniform, lora_B = 0.
     """
+    if not hasattr(self, 'output_scale'):
+        self.output_scale = nn.Parameter(torch.ones(1))
 
     def __init__(
         self,
