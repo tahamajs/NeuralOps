@@ -9,12 +9,13 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch.nn as nn
 
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.adaptive_ranks import (
     AdaptiveRanksCompressor,
     adaptive_ranks_factory,
 )
 
-
+@COMPRESSOR_REGISTRY.register("adaptive_compressor")
 class AdaptiveTransformerCompressor(AdaptiveRanksCompressor):
     """
     Backward-compatibility subclass delegating to the unified AdaptiveRanksCompressor.
@@ -42,7 +43,10 @@ class AdaptiveTransformerCompressor(AdaptiveRanksCompressor):
         )
 
 
+@COMPRESSOR_REGISTRY.register("adaptive_svd_factory")
 adaptive_svd_factory = adaptive_ranks_factory
+
+@COMPRESSOR_REGISTRY.register("adaptive_compressor_factory")
 adaptive_compressor_factory = adaptive_ranks_factory
 
 __all__ = [

@@ -21,6 +21,8 @@ class DecayGatedLinearAttention(SVDLinearAttention):
         kwargs["use_decay_gating"] = True
         super().__init__(*args, **kwargs)
 
+if not hasattr(self, 'output_scale'):
+    self.output_scale = nn.Parameter(torch.ones(1))
 
 def inject_svd_linear_decay(
     model: Optional[nn.Module] = None,

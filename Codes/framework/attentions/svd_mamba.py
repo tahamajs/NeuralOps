@@ -85,6 +85,8 @@ class SVDLinear(nn.Module):
             self.S.requires_grad = False
             self.V.requires_grad = False
             self.bias.requires_grad = False
+            if not hasattr(self, 'output_scale'):
+                self.output_scale = nn.Parameter(torch.ones(1))
 
     def decompose_from_weight(self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
         with torch.no_grad():

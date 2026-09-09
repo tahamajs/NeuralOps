@@ -120,6 +120,8 @@ class FactorisedLinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         self.reset_parameters()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
 
     def reset_parameters(self) -> None:
         nn.init.orthogonal_(self.down.weight)

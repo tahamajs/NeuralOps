@@ -178,6 +178,8 @@ class SVDLinear(nn.Module):
 
         self.reset_parameters()
 
+if not hasattr(self, 'output_scale'):
+    self.output_scale = nn.Parameter(torch.ones(1))
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective dense weight matrix."""
@@ -656,7 +658,7 @@ class SVDLinearAttention(BaseAttention):
             phi_k_w = phi_k * w_final  # [B, H, N, D_k]
             S = torch.matmul(phi_k_w.transpose(-1, -2), v_f)  # [B, H, D_k, D_v]
             Z = phi_k_w.sum(dim=-2, keepdim=True).transpose(-1, -2)  # [B, H, D_k, 1]
-            return context, (S, Z)
+            return context * self.output_scale, (S, Z)
 
         # Sequential associative memory recurrence loop
         if past_state is not None:
@@ -685,7 +687,7 @@ class SVDLinearAttention(BaseAttention):
             outputs.append(y_t)
 
         context = torch.cat(outputs, dim=2).to(q.dtype)
-        return context, (S, Z)
+        return context * self.output_scale, (S, Z)
 
     def _forward_linear_kernel(
         self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: Optional[torch.Tensor]
@@ -734,7 +736,7 @@ class SVDLinearAttention(BaseAttention):
             denominator = torch.matmul(phi_q, k_sum.transpose(-1, -2)) + self.eps
             context = (numerator / denominator).to(q.dtype)
 
-        return context
+        return context * self.output_scale
 
     def _forward_exact_softmax(
         self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: Optional[torch.Tensor]
@@ -756,7 +758,7 @@ class SVDLinearAttention(BaseAttention):
         probs = F.softmax(scores, dim=-1).to(q.dtype)
         probs = self.dropout(probs)
         context = torch.matmul(probs, v)
-        return context, probs
+        return context * self.output_scale, probs
 
     def forward(
         self,

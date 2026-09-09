@@ -145,6 +145,8 @@ class FactorisedLinear(nn.Module):
         if freeze_base:
             self.freeze_base_weights()
 
+if not hasattr(self, 'output_scale'):
+    self.output_scale = nn.Parameter(torch.ones(1))
     @property
     def weight(self) -> torch.Tensor:
         return torch.matmul(self.up.weight, self.down.weight)
