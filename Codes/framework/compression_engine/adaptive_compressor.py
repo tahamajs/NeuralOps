@@ -43,11 +43,11 @@ class AdaptiveTransformerCompressor(AdaptiveRanksCompressor):
         )
 
 
-@COMPRESSOR_REGISTRY.register("adaptive_svd_factory")
 adaptive_svd_factory = adaptive_ranks_factory
+COMPRESSOR_REGISTRY.register("adaptive_svd_factory")(adaptive_svd_factory)
 
-@COMPRESSOR_REGISTRY.register("adaptive_compressor_factory")
 adaptive_compressor_factory = adaptive_ranks_factory
+COMPRESSOR_REGISTRY.register("adaptive_compressor_factory")(adaptive_compressor_factory)
 
 __all__ = [
     "AdaptiveTransformerCompressor",
