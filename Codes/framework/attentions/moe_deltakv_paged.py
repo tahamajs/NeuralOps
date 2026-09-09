@@ -171,8 +171,6 @@ class MoEDeltaKVPagedAttention(nn.Module):
         pretrained_attn = kwargs.get("pretrained_attn", None)
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
-            if not hasattr(self, 'output_scale'):
-                self.output_scale = nn.Parameter(torch.ones(1))
 
     def copy_weights(self, pretrained_attn: Any) -> None:
         from framework.core.adapters import UniversalAdapter

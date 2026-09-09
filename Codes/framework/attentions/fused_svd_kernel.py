@@ -344,8 +344,6 @@ class FusedSVDLinear(nn.Module):
             self.register_parameter("bias", None)
 
         self.reset_parameters()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
     def reset_parameters(self) -> None:
         # Symmetrical square-root initialization

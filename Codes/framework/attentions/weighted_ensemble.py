@@ -43,8 +43,6 @@ class TaskAwareAttention(nn.Module):
         self.q_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
         self.k_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
         self.sim_mat = nn.Parameter(torch.eye(self.num_tasks))  # (num_tasks, num_tasks)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
     def forward(
         self, task_id: int, all_logits: torch.Tensor, model_task_ids: List[int]
