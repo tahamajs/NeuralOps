@@ -588,6 +588,12 @@ class AdaptiveRanksCompressor(BaseCompressor):
 AdaptiveTransformerCompressor = AdaptiveRanksCompressor
 
 
+@COMPRESSOR_REGISTRY.register("adaptive")
+@COMPRESSOR_REGISTRY.register("adaptive_compressor")
+@COMPRESSOR_REGISTRY.register("adaptive_ranks")
+@COMPRESSOR_REGISTRY.register("adaptive_svd")
+@COMPRESSOR_REGISTRY.register("adaptive_factory")
+@COMPRESSOR_REGISTRY.register("adaptive_compressor_factory")
 @COMPRESSOR_REGISTRY.register("adaptive_ranks_factory")
 @COMPRESSOR_REGISTRY.register("adaptive_svd_factory")
 def adaptive_ranks_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
