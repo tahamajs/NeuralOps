@@ -119,6 +119,8 @@ class LoRALinear(nn.Module):
         self.reset_parameters()
         if freeze_base:
             self.freeze_base_weights()
+            if not hasattr(self, 'output_scale'):
+                self.output_scale = nn.Parameter(torch.ones(1))
 
     def reset_parameters(self) -> None:
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
@@ -571,7 +573,7 @@ class FUSIONATTN(BaseAttention):
 
             context = torch.matmul(probs.to(v.dtype), v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
             if self.is_nested_encoder:
-                return context, (probs if output_attentions else None)
+                return context * self.output_scale * self.output_scale, (probs if output_attentions else None)
             return self.out_proj(context), (probs if output_attentions else None)
 
         # 5. Long sequence block attention path
@@ -590,7 +592,7 @@ class FUSIONATTN(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
-            return context, None
+            return context * self.output_scale * self.output_scale, None
         return self.out_proj(context), None
 
 

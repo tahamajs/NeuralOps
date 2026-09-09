@@ -121,6 +121,8 @@ class ASVDLinear(nn.Module):
         self.reset_parameters()
         if self.freeze_base:
             self.freeze_base_weights()
+            if not hasattr(self, 'output_scale'):
+                self.output_scale = nn.Parameter(torch.ones(1))
 
     def reset_parameters(self) -> None:
         with torch.no_grad():

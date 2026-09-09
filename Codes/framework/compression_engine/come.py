@@ -128,7 +128,26 @@ class CoMeBridgedLayer(nn.Module):
     def __contains__(self, key: Any) -> bool:
         return key in self.layer
 
-    def forward(self, *args: Any, **kwargs: Any) -> Any:
+    def forward(
+        self,
+        hidden_states: Any = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        *args: Any,
+        **kwargs: Any
+    ) -> Any:
+        # Reconstruct args/kwargs to pass down
+        if hidden_states is not None:
+            # We insert hidden_states back as the first positional argument
+            # or into kwargs depending on how the original layer expects it.
+            # Usually it's the first positional.
+            args = (hidden_states,) + args
+        if attention_mask is not None:
+            # Cast attention mask to bool if it's int64 to avoid SDPA errors
+            # when the model passes raw integer masks to our wrapper
+            if getattr(attention_mask, "dtype", None) == torch.int64:
+                attention_mask = attention_mask.to(torch.bool)
+            kwargs["attention_mask"] = attention_mask
+            
         out = self.layer(*args, **kwargs)
         if self.bridge is not None:
             out = self.bridge(out)

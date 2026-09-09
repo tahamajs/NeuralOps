@@ -53,6 +53,8 @@ class MinimalMoEFallback(nn.Module):
             for _ in range(n_experts)
         ])
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         logits = self.router(x)

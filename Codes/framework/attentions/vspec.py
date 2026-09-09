@@ -116,6 +116,8 @@ class VariationalSpectralGate(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
         )
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
 
     def forward(
         self, x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None
