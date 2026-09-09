@@ -234,3 +234,5 @@ results/all_compressors_gpu_summary.csv
 temp_modules_docs/
 
 
+
+results/*.log
