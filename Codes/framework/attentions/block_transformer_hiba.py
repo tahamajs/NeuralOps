@@ -315,8 +315,9 @@ class BlockTransformerHIBA(BaseAttention):
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -336,8 +337,9 @@ class BlockTransformerHIBA(BaseAttention):
                 if hasattr(c_proj_mod, "merge") and not getattr(c_proj_mod, "merged", False):
                     try:
                         c_proj_mod.merge()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
@@ -385,8 +387,9 @@ class BlockTransformerHIBA(BaseAttention):
                     w, b = adapter.get_weight_bias(pretrained_attn, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # Verify all mandatory projections were extracted
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
@@ -598,8 +601,9 @@ class BlockTransformerHIBA(BaseAttention):
             try:
                 from framework.utils.compat import maybe_apply_rotary
                 q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids", None))
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # 3. GQA Expansion
         if self.kv_repeat > 1:

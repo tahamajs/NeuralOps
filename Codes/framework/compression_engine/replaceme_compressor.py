@@ -46,6 +46,9 @@ class ReplacementBlock(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.hidden_size = hidden_size
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
@@ -93,7 +96,7 @@ class ReplacementBlock(nn.Module):
             if isinstance(hidden_states, tuple) and len(hidden_states) > 1:
                 return (out,) + hidden_states[1:]
             return (out,)
-        return out
+        return out * self.output_scale
 
 
 @COMPRESSOR_REGISTRY.register('replaceme')
@@ -119,6 +122,9 @@ class ReplaceMeCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='replaceme', **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg or config or kwargs.get('comp_config', None)
 
         self.remove_layers = max(1, int(remove_layers if remove_layers is not None else _cfg_get(cfg_obj, 'remove_layers', 2)))
@@ -222,8 +228,9 @@ class ReplaceMeCompressor(BaseCompressor):
                             for p in old_layer.parameters():
                                 p.requires_grad = False
                             continue
-                    except Exception:
-                        pass
+                    except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
                 layers[i] = new_block
                 layers_replaced += 1

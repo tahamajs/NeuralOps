@@ -341,8 +341,9 @@ class AdaptiveSVDAttention(BaseAttention):
             w, b = None, None
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
             if w is None:
                 # Manual fallback for GPT-2 Fused c_attn Conv1D

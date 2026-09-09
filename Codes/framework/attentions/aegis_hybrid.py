@@ -462,8 +462,9 @@ class AegisHybridAttention(BaseAttention):
                     if hasattr(mod, "merge") and not getattr(mod, "merged", False):
                         try:
                             mod.merge()
-                        except Exception:
-                            pass
+                        except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
                     base_mod = getattr(mod, "base_layer", mod)
                     w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                     if w is not None:
@@ -499,8 +500,9 @@ class AegisHybridAttention(BaseAttention):
                 if hasattr(mod, "merge") and not getattr(mod, "merged", False):
                     try:
                         mod.merge()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
                 base_mod = getattr(mod, "base_layer", mod)
                 c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                 if c_w is not None:
@@ -546,8 +548,9 @@ class AegisHybridAttention(BaseAttention):
             if w is None:
                 try:
                     w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
             extracted_weights[proj] = (w, b)
 
@@ -706,8 +709,9 @@ class AegisHybridAttention(BaseAttention):
             try:
                 from framework.utils.compat import maybe_apply_rotary
                 Q, K = maybe_apply_rotary(Q, K, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # 3. GQA Key-Value expansion: [B, H_kv, N_k, Dh] -> [B, H, N_k, Dh]
         if self.kv_repeat > 1:

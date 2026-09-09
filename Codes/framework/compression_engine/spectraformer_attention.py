@@ -96,6 +96,9 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -150,7 +153,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out * self.output_scale
 
 
 @ATTENTION_REGISTRY.register("spectraformer")
@@ -168,6 +171,9 @@ class SpectraformerAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank or 64)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.config = config
         comp_config = _cfg_get(config, "compression_config", None) or kwargs.get("comp_config", None)
 
@@ -363,8 +369,9 @@ class SpectraformerAttention(BaseAttention):
                     w, b = adapter.get_weight_bias(src, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -440,13 +447,15 @@ class SpectraformerAttention(BaseAttention):
                 if target_mod.lora_A is not None and hasattr(src_sub.lora_A, "weight"):
                     try:
                         target_mod.lora_A.data.copy_(src_sub.lora_A.weight.data)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
                 if target_mod.lora_B is not None and hasattr(src_sub.lora_B, "weight"):
                     try:
                         target_mod.lora_B.data.copy_(src_sub.lora_B.weight.data)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         return True
 

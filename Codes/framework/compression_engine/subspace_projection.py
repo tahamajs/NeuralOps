@@ -47,6 +47,9 @@ class SubspaceLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = min(rank, in_features, out_features)
@@ -169,8 +172,9 @@ class SubspaceLinear(nn.Module):
                     subspace_layer.lora_A.data.copy_(linear.lora_A.weight.data)
                 if hasattr(linear.lora_B, "weight") and subspace_layer.lora_B is not None:
                     subspace_layer.lora_B.data.copy_(linear.lora_B.weight.data)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         return subspace_layer
 

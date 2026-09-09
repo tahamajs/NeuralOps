@@ -369,7 +369,7 @@ class HGRN2Layer(BaseAttention):
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out, None
+        return out * self.output_scale, None
 
 
 @ATTENTION_REGISTRY.register("hgrn2_layer_inject")

@@ -344,8 +344,9 @@ class AdaSplashAttention(BaseAttention):
             w, b = None, None
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
             if w is None:
                 # 1. Output projection checks first (RoBERTa/BERT outer, GPT-2, DistilBERT, etc.)
@@ -558,8 +559,9 @@ class AdaSplashAttention(BaseAttention):
         elif hasattr(self, "rotary_emb") and self.rotary_emb is not None:
             try:
                 q, k = maybe_apply_rotary(q, k, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)

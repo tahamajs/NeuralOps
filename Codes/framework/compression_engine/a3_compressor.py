@@ -71,6 +71,9 @@ class A3FactorizedLinear(nn.Module):
         freeze_base: bool = False,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
@@ -156,7 +159,7 @@ class A3FactorizedLinear(nn.Module):
             out = out + F.linear(lora_latent, self.lora_B) * self.lora_scaling
         if self.bias is not None:
             out = out + self.bias
-        return out
+        return out * self.output_scale
 
     def __iter__(self):
         """Allow tuple unpacking: layer, err, r = compressor.compress_linear(...)."""
@@ -249,6 +252,9 @@ class A3Compressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="a3", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             rank = _cfg_get(cfg, "a3_rank", _cfg_get(cfg, "rank", rank))
