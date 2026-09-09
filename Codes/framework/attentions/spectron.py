@@ -160,6 +160,8 @@ class LowRankSparseLinear(nn.Module):
         bias: Optional[torch.Tensor] = None,
     **kwargs) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.down: nn.Linear = down
         self.up: nn.Linear = up
         self.sparse_weight: nn.Parameter = nn.Parameter(sparse_weight)

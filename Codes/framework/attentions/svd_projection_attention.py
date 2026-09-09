@@ -110,6 +110,8 @@ class SVDProjectionLinear(nn.Module):
         freeze_base: bool = True,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features: int = in_features
         self.out_features: int = out_features
         self.rank: int = rank
@@ -165,7 +167,7 @@ class SVDProjectionLinear(nn.Module):
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
 
-        return out
+        return out * self.output_scale
 
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor) -> None:
         """Set precomputed U and V factors."""

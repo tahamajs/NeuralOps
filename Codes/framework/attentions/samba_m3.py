@@ -107,6 +107,8 @@ class LoRALinear(nn.Module):
         freeze_base: bool = True,
     ):
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
@@ -144,7 +146,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
-        return out
+        return out * self.output_scale
 
 
 class SpectralMamba(nn.Module):
@@ -166,7 +168,7 @@ class SpectralMamba(nn.Module):
             out = out[0]
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
         out = out * gate
-        return out, None
+        return out * self.output_scale, None
 
 
 @ATTENTION_REGISTRY.register("samba_m3", supports_causal=True, supports_gqa=True)

@@ -89,6 +89,8 @@ class ResSVDAttention(BaseAttention):
     ) -> None:
         effective_rank = rank if rank is not None else 16
         super().__init__(config, effective_rank)
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 

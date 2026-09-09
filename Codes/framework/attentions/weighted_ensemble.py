@@ -37,6 +37,8 @@ class TaskAwareAttention(nn.Module):
 
     def __init__(self, num_tasks: int, hidden_dim: int = 64):
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.num_tasks = max(1, num_tasks)
         self.hidden_dim = hidden_dim
         self.task_emb = nn.Embedding(self.num_tasks, hidden_dim)

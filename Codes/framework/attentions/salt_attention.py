@@ -110,6 +110,8 @@ class SALTLinear(nn.Module):
         original_bias: Optional[torch.Tensor] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features: int = in_features
         self.out_features: int = out_features
         self.rank: int = min(rank, min(in_features, out_features))

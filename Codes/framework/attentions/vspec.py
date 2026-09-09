@@ -113,6 +113,8 @@ class VariationalSpectralGate(nn.Module):
 
     def __init__(self, hidden_dim: int, rank: int) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.net = nn.Sequential(
             nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
         )
@@ -301,7 +303,7 @@ class DynamicLowRankProjector(nn.Module):
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
 
-        return out
+        return out * self.output_scale
 
 
 @ATTENTION_REGISTRY.register("vspec", supports_causal=True, supports_bidirectional=True, supports_gqa=True)

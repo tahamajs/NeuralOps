@@ -258,6 +258,8 @@ class SVDCompressedAttention(BaseAttention):
     ) -> None:
         model_config = config or kwargs.get("model_config", None)
         super().__init__(model_config)
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
 
         # 1. Dimensions & Architecture
         self.hidden_size: int = int(_cfg_get(
