@@ -38,8 +38,9 @@ def inject_mamba(
     if src_attn is not None and hasattr(new_module, "copy_weights"):
         try:
             new_module.copy_weights(src_attn)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'copy_weights failed: {e}')
+            return None
 
     if layer is not None:
         if hasattr(layer, "attention"):
