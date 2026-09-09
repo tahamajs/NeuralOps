@@ -40,7 +40,7 @@ jobs:
           --finetune_steps 1 \
           --max_steps 1 \
           --seed 42 \
-          --modules full \
+          --modules full,a3,minimal_svd \
           --model bert-base-uncased \
           --model_family bert \
           --dataset sst2 \
@@ -50,3 +50,10 @@ jobs:
         test -f /tmp/test/summary.csv
         test -f /tmp/test/detailed_results.json
         cat /tmp/test/summary.csv
+
+    - name: Run Core Pytest Suite
+      env:
+        PYTHONPATH: Codes:.
+      run: |
+        # Run a comprehensive subset of the test suite that can complete quickly on CI
+        pytest Codes/framework/tests/test_attention_modules.py Codes/framework/tests/test_compressors.py Codes/framework/tests/test_sweep_orchestration.py Codes/framework/tests/test_lora.py -v --maxfail=5
