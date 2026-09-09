@@ -114,8 +114,8 @@ def main():
     print(f"\n{'='*60}")
     print(f"  TOTAL UNIQUE MODULES: {total_mods}")
     print(f"  Modules with 4-model results: {complete_4}")
-    print(f"  Modules with ≥1 PASS: {has_any_pass}")
-    print(f"  Modules with 4× PASS: {all_4_pass}")
+    print(f"  Modules with >=1 PASS: {has_any_pass}")
+    print(f"  Modules with 4x PASS: {all_4_pass}")
     print(f"  Models breakdown:")
     by_family = defaultdict(lambda: defaultdict(int))
     for r in all_records:
