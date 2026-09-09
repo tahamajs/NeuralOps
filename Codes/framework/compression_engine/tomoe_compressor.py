@@ -69,6 +69,9 @@ class ToMoELinear(nn.Module):
     ):
         super().__init__()
 
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         # Fix 2: Handle both nn.Linear, Conv1D, and LoRALinear wrappers
         if original is not None:
             base_layer = getattr(original, "base_layer", original)
@@ -373,6 +376,9 @@ class ToMoECompressor(BaseCompressor):
         **kwargs: Any,
     ):
         super().__init__(model, name="tomoe", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             num_experts = _cfg_get(cfg, "num_experts", _cfg_get(cfg, "tomoe_num_experts", num_experts))

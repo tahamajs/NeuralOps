@@ -134,7 +134,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out
+        return out * self.output_scale
 
 
 @ATTENTION_REGISTRY.register("mamba_svd_flash")
@@ -363,8 +363,9 @@ class MambaSVDFlash(BaseAttention):
                     w, b = adapter.get_weight_bias(old_attn, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:

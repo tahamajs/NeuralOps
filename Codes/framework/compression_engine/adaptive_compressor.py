@@ -43,6 +43,12 @@ class AdaptiveTransformerCompressor(AdaptiveRanksCompressor):
         )
 
 
+if not hasattr(self, 'output_scale'):
+
+    import torch, torch.nn as nn
+
+    self.output_scale = nn.Parameter(torch.ones(1))
+
 adaptive_svd_factory = adaptive_ranks_factory
 COMPRESSOR_REGISTRY.register("adaptive_svd_factory")(adaptive_svd_factory)
 

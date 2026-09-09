@@ -153,7 +153,7 @@ class GatedDeltaNetBlock(BaseAttention):
             if delta_out.shape[-1] != x.shape[-1]:
                 delta_out = F.pad(delta_out, (0, x.shape[-1] - delta_out.shape[-1])) if delta_out.shape[-1] < x.shape[-1] else delta_out[..., :x.shape[-1]]
             out = self.norm(x + delta_out)
-            return out, None
+            return out * self.output_scale, None
 
 
 @ATTENTION_REGISTRY.register("gated_deltanet_block_inject")

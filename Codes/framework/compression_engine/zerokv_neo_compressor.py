@@ -152,6 +152,9 @@ class ZeroKVNeoCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="zerokv_neo", **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             keep_ratio = _cfg_get(cfg, "zerokv_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio))

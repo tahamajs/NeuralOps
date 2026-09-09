@@ -203,8 +203,9 @@ class UPIMambaBlock(BaseAttention):
                         elif proj == "k": w_k, b_k = w, b
                         elif proj == "v": w_v, b_v = w, b
                         elif proj == "o": w_o, b_o = w, b
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (

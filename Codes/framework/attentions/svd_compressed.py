@@ -617,7 +617,7 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(F.linear(x, self.q_lora_A), self.q_lora_B) * self.scaling
             if self.add_sparse and self.q_sparse_weight is not None:
                 out = out + F.linear(x, self.q_sparse_weight)
-            return out
+            return out * self.output_scale
 
         def proj_k(x: torch.Tensor) -> torch.Tensor:
             out = self.k_up(self.k_down(x))
@@ -625,7 +625,7 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(F.linear(x, self.k_lora_A), self.k_lora_B) * self.scaling
             if self.add_sparse and self.k_sparse_weight is not None:
                 out = out + F.linear(x, self.k_sparse_weight)
-            return out
+            return out * self.output_scale
 
         def proj_v(x: torch.Tensor) -> torch.Tensor:
             out = self.v_up(self.v_down(x))
@@ -633,7 +633,7 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(F.linear(x, self.v_lora_A), self.v_lora_B) * self.scaling
             if self.add_sparse and self.v_sparse_weight is not None:
                 out = out + F.linear(x, self.v_sparse_weight)
-            return out
+            return out * self.output_scale
 
         def proj_o(x: torch.Tensor) -> torch.Tensor:
             out = self.o_up(self.o_down(x))
@@ -641,7 +641,7 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(F.linear(x, self.o_lora_A), self.o_lora_B) * self.scaling
             if self.add_sparse and self.o_sparse_weight is not None:
                 out = out + F.linear(x, self.o_sparse_weight)
-            return out
+            return out * self.output_scale
 
         # 1. Projections
         Q = proj_q(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)

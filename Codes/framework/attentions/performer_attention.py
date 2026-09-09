@@ -409,8 +409,9 @@ class PerformerAttention(BaseAttention):
                     w, b = adapter.get_weight_bias(src, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -501,8 +502,9 @@ class PerformerAttention(BaseAttention):
             try:
                 cos, sin = self.rotary_emb(V, pos_ids)
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, pos_ids)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)

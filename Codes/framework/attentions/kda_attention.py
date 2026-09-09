@@ -337,8 +337,9 @@ class KDAAttention(BaseAttention):
                     w, b = adapter.get_weight_bias(src, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -556,8 +557,9 @@ class KDAAttention(BaseAttention):
                     try:
                         cos, sin = rotary_module(q_raw, seq_len=L)
                         q_raw, k_raw = apply_rotary_pos_emb(q_raw, k_raw, cos, sin, position_ids=pos_ids)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         if self.kv_repeat > 1:
             k_raw = repeat_kv(k_raw, self.kv_repeat)

@@ -293,8 +293,9 @@ class ViGAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(old_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -501,8 +502,9 @@ class ViGAttention(BaseAttention):
             try:
                 from framework.utils.compat import maybe_apply_rotary
                 q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # GQA expansion
         if self.kv_repeat > 1:

@@ -206,8 +206,9 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                 ctx.eps = eps
                 ctx.use_rms_norm = use_rms_norm
                 return y_2d.view(*orig_shape[:-1], K_out)
-            except Exception:
-                pass  # Fall back to PyTorch native reference below
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None  # Fall back to PyTorch native reference below
 
         # PyTorch Native Reference Implementation (Fallback / CPU / MPS)
         # RESEARCH FIX: Numerically identical reference implementation for CPU/MPS

@@ -62,6 +62,9 @@ class RPCACompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='rpca', **kwargs)
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
         self.rank = int(rank or _cfg_get(cfg_obj, 'rpca_rank', _cfg_get(cfg_obj, 'rank', 64)))

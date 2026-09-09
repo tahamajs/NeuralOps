@@ -74,6 +74,9 @@ class TTLinearLayer(nn.Module):
         lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            import torch, torch.nn as nn
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -361,8 +364,9 @@ class TTLinearLayer(nn.Module):
                     best_layer.lora_B.data.copy_(linear_layer.lora_B.weight.data)
                 elif hasattr(linear_layer, "lora_B") and linear_layer.lora_B.shape == best_layer.lora_B.shape:
                     best_layer.lora_B.data.copy_(linear_layer.lora_B.data)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         return best_layer
 

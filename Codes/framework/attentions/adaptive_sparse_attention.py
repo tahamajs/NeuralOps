@@ -367,8 +367,9 @@ class AdaptiveSparseAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
         # 2. GPT-2 Fused c_attn / c_proj (handling Conv1D and LoRALinear wrapper)
         if hasattr(src, "c_attn") and src.c_attn is not None and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -540,22 +541,25 @@ class AdaptiveSparseAttention(BaseAttention):
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
                 try:
                     res = rotary_mod(probe_t, seq_len=N_k)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
                 try:
                     res = rotary_mod(probe_t)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception:
-                    pass
+                except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 

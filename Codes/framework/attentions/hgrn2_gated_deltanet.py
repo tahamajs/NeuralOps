@@ -198,8 +198,9 @@ class HGRN2GatedDeltaNet(BaseAttention):
             try:
                 adapter = UniversalAdapter()
                 w_o, b_o = adapter.get_weight_bias(old_attn, "o")
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
 
             if w_o is None:
                 for cand in ("out_proj", "out_lin", "o_proj", "output", "proj", "c_proj", "dense"):
@@ -286,7 +287,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             else:
                 out = out[..., : hidden_states.shape[-1]]
 
-        return out, None
+        return out * self.output_scale, None
 
 
 @ATTENTION_REGISTRY.register("hgrn2_gated_deltanet_inject")
