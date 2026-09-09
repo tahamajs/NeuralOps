@@ -118,8 +118,6 @@ class GriffinSSDBlock(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
         def _get(k: str, default: Any = None) -> Any:
             for obj in (comp_config, config, getattr(config, "compression_config", None)):

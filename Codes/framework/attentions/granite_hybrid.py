@@ -131,8 +131,6 @@ class Mamba2(nn.Module):
         )
         self.D: nn.Parameter = nn.Parameter(torch.ones(inner_dim))
         self.out_proj: nn.Linear = nn.Linear(inner_dim, d_model)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
         B, L, D = x.shape

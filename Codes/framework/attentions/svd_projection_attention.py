@@ -140,8 +140,6 @@ class SVDProjectionLinear(nn.Module):
             self.V.requires_grad = False
             if self.bias is not None:
                 self.bias.requires_grad = False
-                if not hasattr(self, 'output_scale'):
-                    self.output_scale = nn.Parameter(torch.ones(1))
 
     def reset_parameters(self) -> None:
         """Initialize SVD parameters with Kaiming uniform distribution."""

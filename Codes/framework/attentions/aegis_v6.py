@@ -114,8 +114,6 @@ class AegisConfigV3:
         self.kernel_seed = kwargs.get("kernel_seed", None)
         self.fusion_gate_bias = kwargs.get("fusion_gate_bias", 1.8)
         self.is_decoder = kwargs.get("is_decoder", False)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
     def __post_init__(self):
         if self.num_heads is not None:
