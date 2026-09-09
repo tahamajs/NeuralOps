@@ -357,7 +357,11 @@ class CURCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cur")
+@COMPRESSOR_REGISTRY.register("cur_linear")
+@COMPRESSOR_REGISTRY.register("cure")
 @COMPRESSOR_REGISTRY.register("cur_factory")
+@COMPRESSOR_REGISTRY.register("cur_linear_factory")
+@COMPRESSOR_REGISTRY.register("cure_factory")
 @COMPRESSOR_REGISTRY.register("cur_compressor_factory")
 def cur_compressor_factory(
     model: nn.Module,

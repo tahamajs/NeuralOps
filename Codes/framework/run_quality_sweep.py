@@ -1481,9 +1481,10 @@ def main():
             "aegis_spectron_fp8": 1500,
             "asvd": 1500,
             "asvd_attention": 1500,
-        }
-        base_timeout = min(180, args.timeout if getattr(args, "timeout", None) else 180)
-        effective_timeout = min(180, base_timeout)
+        # Slow module or configured timeout
+        override_to = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
+        cli_timeout = getattr(args, "timeout", None) or 180
+        effective_timeout = max(cli_timeout, override_to)
 
         # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
         _OOM_MODULE_BATCH_OVERRIDES = {
