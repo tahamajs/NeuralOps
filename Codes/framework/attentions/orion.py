@@ -618,8 +618,9 @@ def inject_orion(
         if src_attn is not None:
             try:
                 new_attn.copy_weights(src_attn)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f'copy_weights failed: {e}')
+                return None
         if layer is not None:
             if hasattr(layer, "attention"):
                 layer.attention = new_attn

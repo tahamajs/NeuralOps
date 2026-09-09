@@ -790,8 +790,9 @@ def inject_aegis_v6(
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'copy_weights failed: {e}')
+            return None
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
