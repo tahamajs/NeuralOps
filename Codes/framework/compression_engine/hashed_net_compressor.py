@@ -364,6 +364,8 @@ class HashedNetCompressor(BaseCompressor):
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register("hashed_linear")
+@COMPRESSOR_REGISTRY.register("hashed_linear_factory")
 @COMPRESSOR_REGISTRY.register("hashed_net")
 @COMPRESSOR_REGISTRY.register("hashed_net_factory")
 @COMPRESSOR_REGISTRY.register("hashednets")
