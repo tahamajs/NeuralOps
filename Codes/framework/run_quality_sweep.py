@@ -1486,10 +1486,10 @@ def main():
             "hgrn2_gated_deltanet": 500,
             "hgrn2_layer": 500,
         }
-        # Slow module or configured timeout
+        # Slow module or configured timeout (default minimum: 1200s = 20 minutes)
         override_to = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
-        cli_timeout = getattr(args, "timeout", None) or 180
-        effective_timeout = max(cli_timeout, override_to)
+        cli_timeout = getattr(args, "timeout", None) or 1200
+        effective_timeout = max(1200, cli_timeout, override_to)
 
         # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
         _OOM_MODULE_BATCH_OVERRIDES = {
