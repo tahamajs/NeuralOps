@@ -1481,6 +1481,8 @@ def main():
             "aegis_spectron_fp8": 1500,
             "asvd": 1500,
             "asvd_attention": 1500,
+            "tomoe": 500,
+        }
         # Slow module or configured timeout
         override_to = _SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
         cli_timeout = getattr(args, "timeout", None) or 180
