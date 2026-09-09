@@ -2366,11 +2366,55 @@ def main():
         hf_export_dir = weights_dir / "hf_export"
 
         if not is_successful_run:
-            LOG.info("[Quality Guard] Module '%s' did not pass quality criteria (status=%s, acc=%.2f%%, pass_thresh=%.2f%%). Pruning checkpoint artifacts.",
+            LOG.info("[Quality Guard] Module '%s' did not pass quality criteria (status=%s, acc=%.2f%%, pass_thresh=%.2f%%). Pruning large checkpoint artifacts but preserving metrics.",
                      name, status, acc, pass_threshold_pct)
+            # Always preserve a compact metrics record (no heavy weights.pt) so the
+            # analytics dashboard and auto-uploader can track every module outcome.
             if weights_dir.exists():
-                import shutil
-                shutil.rmtree(weights_dir, ignore_errors=True)
+                # Remove only the large binary weight files; keep the metrics JSON and config
+                for big_file in list(weights_dir.glob("**/*.pt")):
+                    try:
+                        big_file.unlink()
+                    except Exception:
+                        pass
+                for big_file in list(weights_dir.glob("**/*.bin")):
+                    try:
+                        big_file.unlink()
+                    except Exception:
+                        pass
+            # Always write a summary_record.json so the auto-uploader knows this module ran
+            weights_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                summary_record = {
+                    "module_name": name,
+                    "model_name": str(args.model),
+                    "model_family": family,
+                    "dataset": args.dataset,
+                    "status": status,
+                    "accuracy_pct": acc,
+                    "f1_score": row.get("f1_score", 0.0),
+                    "f1_macro": row.get("f1_macro", 0.0),
+                    "precision": row.get("precision", 0.0),
+                    "recall": row.get("recall", 0.0),
+                    "val_loss": row.get("val_loss", 0.0),
+                    "peak_vram_mb": row.get("peak_vram_mb", 0.0),
+                    "tokens_per_sec": row.get("tokens_per_sec", 0.0),
+                    "elapsed_s": row.get("elapsed_s", 0.0),
+                    "compression_rate": row.get("compression_rate", 1.0),
+                    "compression_ratio_pct": row.get("compression_ratio_pct", 0.0),
+                    "total_params_before": row.get("total_params_before", 0),
+                    "total_params_after": row.get("total_params_after", 0),
+                    "num_compressed_layers": row.get("num_compressed_layers", 0),
+                    "num_injected_attention_layers": row.get("num_injected_attention_layers", 0),
+                    "lora_params": row.get("lora_params", 0),
+                    "pass_threshold_pct": pass_threshold_pct,
+                    "timestamp": row.get("timestamp", datetime.now().isoformat()),
+                    "error": err[:500] if err else "",
+                }
+                with open(weights_dir / "summary_record.json", "w", encoding="utf-8") as srec:
+                    json.dump(summary_record, srec, indent=2)
+            except Exception as srec_err:
+                LOG.debug("Could not write summary_record.json for %s: %s", name, srec_err)
         else:
             if getattr(args, "defer_export", False):
                 LOG.info("[Export Deferred] Checkpoint preserved in %s. Automated export will be handled post-sweep by orchestrator.", weights_dir)
