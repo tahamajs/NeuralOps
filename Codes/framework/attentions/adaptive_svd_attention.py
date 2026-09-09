@@ -46,6 +46,8 @@ class AdaptiveSVDLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features: int = in_features
         self.out_features: int = out_features
         max_possible_rank = min(in_features, out_features)
@@ -146,7 +148,7 @@ class AdaptiveSVDLinear(nn.Module):
             out = out + F.linear(Ax, self.lora_B)
         if self.bias is not None:
             out = out + self.bias
-        return out
+        return out * self.output_scale
 
 
 @ATTENTION_REGISTRY.register("adaptive_svd_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)

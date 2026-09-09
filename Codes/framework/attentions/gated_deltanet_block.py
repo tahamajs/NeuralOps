@@ -36,6 +36,8 @@ class GatedDeltaNetBlock(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         if d_model is None:
             if config is not None:
                 d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))

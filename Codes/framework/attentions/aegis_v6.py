@@ -141,6 +141,8 @@ class FactorisedLowRankProjection(nn.Module):
         pretrained_bias: Optional[torch.Tensor] = None,
     ):
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.svd_rank = min(svd_rank, in_features, out_features)
@@ -241,7 +243,7 @@ class FactorisedLowRankProjection(nn.Module):
             out = (out_svd + out_lora + self.bias.float()).to(orig_dtype)
         else:
             out = (out_svd + self.bias.float()).to(orig_dtype)
-        return out
+        return out * self.output_scale
 
 
 @dataclass
@@ -290,7 +292,7 @@ class StableKernelFeatureMap(nn.Module):
         exp_in = phi - norm_sq
         exp_in = torch.clamp(exp_in, min=self.cfg.clamp_min, max=self.cfg.clamp_max)
         out = self.scale * torch.exp(exp_in)
-        return out
+        return out * self.output_scale
 
 
 class GatingModule(nn.Module):

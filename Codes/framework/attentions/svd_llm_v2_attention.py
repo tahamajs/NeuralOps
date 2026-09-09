@@ -118,6 +118,8 @@ class SVDLLMV2Attention(BaseAttention):
             else _cfg_get(comp_config, "rank", _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 64)))
         )
         super().__init__(config, actual_rank)
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
 
         # 1. Dimensions & Architecture
         self.hidden_size: int = kwargs.get(

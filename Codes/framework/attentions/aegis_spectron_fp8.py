@@ -164,6 +164,8 @@ class FactorizedLinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
         if isinstance(in_features_or_lin1, nn.Linear) and isinstance(out_features_or_lin2, nn.Linear):
             self.lin1 = in_features_or_lin1
             self.lin2 = out_features_or_lin2
@@ -232,7 +234,7 @@ class FactorizedLinear(nn.Module):
         out = self.lin2(self.lin1(x))
         if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
-        return out
+        return out * self.output_scale
 
 
 class SpectronSpectralEntropyRouter(nn.Module):
