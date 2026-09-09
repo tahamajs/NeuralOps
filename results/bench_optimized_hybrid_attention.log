@@ -335,3 +335,73 @@ Notes:
 2026-09-09 04:59:28,936 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
 2026-09-09 04:59:28,936 [INFO] QwenQualitySweep: ================================================================================
 2026-09-09 04:59:28,937 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-09 05:01:16,835 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_optimized_hybrid_attention\qwen3_5\Qwen3.5-0.8B_full_full_metrics.json
+2026-09-09 05:01:16,972 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_optimized_hybrid_attention\qwen3_5\checkpoints\full\weights.pt (module_params=0, lora_params=373)
+2026-09-09 05:01:19,500 [INFO] QwenQualitySweep: [1/2] full -> PASS 67.89% (F1: 0.557, Peak VRAM: 1796.78 MB)
+2026-09-09 05:01:19,500 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_optimized_hybrid_attention\qwen3_5\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-09 05:01:19,832 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: optimized_hybrid_attention (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-09 05:01:23,674 [INFO] framework.core.attention_utils: Successfully injected 'optimized_hybrid_attention' into 6 transformer blocks.
+2026-09-09 05:01:23,699 [INFO] QwenQualitySweep: module=optimized_hybrid_attention path=adapted_qwen3_5
+2026-09-09 05:01:23,702 [INFO] QwenQualitySweep: module=optimized_hybrid_attention injection summary: 0 SVDLinear layers active
+2026-09-09 05:01:23,702 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for optimized_hybrid_attention (lr=2.0e-04)
+2026-09-09 05:01:25,255 [INFO] framework.utils.compat: Recovery fine-tuning selected 10382336 trainable parameters across 373 tensors.
+2026-09-09 05:01:25,255 [WARNING] framework.utils.compat: Total trainable parameters (10382336) exceeds 5,000,000 threshold for recovery. Reducing lora_rank or freezing additional layers to prevent OOM.
+2026-09-09 05:01:25,290 [INFO] QwenQualitySweep: LoRA fine-tuning: 10382336 trainable parameters across 373 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-09 05:01:38,532 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6301 (bs=8, micro_bs=8)
+2026-09-09 05:01:55,664 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=1.1977 (bs=8, micro_bs=8)
+2026-09-09 05:02:18,545 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=1.1650 (bs=8, micro_bs=8)
+2026-09-09 05:02:41,886 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=1.2044 (bs=8, micro_bs=8)
+2026-09-09 05:03:06,989 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5159 (bs=8, micro_bs=8)
+2026-09-09 05:03:33,799 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.2561 (bs=8, micro_bs=8)
+2026-09-09 05:03:58,833 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.1432 (bs=8, micro_bs=8)
+2026-09-09 05:04:20,673 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=1.0220 (bs=8, micro_bs=8)
+2026-09-09 05:04:23,305 [INFO] QwenQualitySweep: [2/2] optimized_hybrid_attention -> SKIP_QWEN3_5_TIMEOUT 0.00% (F1: 0.557, Peak VRAM: 1796.78 MB)
+2026-09-09 05:04:23,305 [INFO] QwenQualitySweep: [Quality Guard] Module 'optimized_hybrid_attention' did not pass quality criteria (status=SKIP_QWEN3_5_TIMEOUT, acc=0.00%, pass_thresh=56.00%). Pruning checkpoint artifacts.
+2026-09-09 05:04:23,671 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 05:04:23,672 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (Qwen3.5-0.8B on sst2)
+2026-09-09 05:04:23,686 [INFO] QwenQualitySweep: 
+                    Module               Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                      full                 PASS   67.89% 0.00% (base) 0.5570                  0            1.00x 1796.8 MB              87.52            100.37
+optimized_hybrid_attention SKIP_QWEN3_5_TIMEOUT    0.00%      -67.89% 0.5570                  0            1.00x 1796.8 MB              87.52            100.37
+2026-09-09 05:04:23,687 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 05:04:25,375 [WARNING] QwenQualitySweep: Training step 36/50 exceeded timeout 180s; aborting
+
+[SUCCESS] Finished Benchmark for qwen3_5.
+
+========================================================
+All Requested Models Processed in 851.65s
+========================================================
+
+
+--- Summary Results ---
+
+Summary for distilbert:
+               module_name   status  accuracy_pct  f1_score  f1_macro  precision  recall  val_loss  elapsed_s  peak_vram_mb  tokens_per_sec  total_params_before  total_params_after  trainable_recovery_params  compression_rate  compression_ratio_pct  flops_reduction_pct  num_compressed_layers  num_fallback_layers  avg_reconstruction_error  weighted_reconstruction_error  num_injected_attention_layers  lora_params                                                             error        path                  timestamp
+                      full     PASS         90.48    0.9077    0.9047     0.9052  0.9046    0.3090       2.60        181.06        59575.50             66955010            66955010                          0            1.0000                    0.0                  0.0                      0                    0                       NaN                            NaN                              0            0                                                               NaN legacy_bert 2026-09-09T04:50:44.803918
+optimized_hybrid_attention PASS_LOW         50.92    0.6748    0.3374     0.2546  0.5000    0.7123      14.27        204.74        19121.54             66955010            67895114                    1181954            0.9862                   -1.4                  0.0                      0                    0                       NaN                            NaN                              6       589824 note: evaluated accuracy (50.92%) below chance threshold (56.00%) legacy_bert 2026-09-09T04:50:59.301397
+
+Summary for roberta:
+               module_name   status  accuracy_pct  f1_score  f1_macro  precision  recall  val_loss  elapsed_s  peak_vram_mb  tokens_per_sec  total_params_before  total_params_after  trainable_recovery_params  compression_rate  compression_ratio_pct  flops_reduction_pct  num_compressed_layers  num_fallback_layers  avg_reconstruction_error  weighted_reconstruction_error  num_injected_attention_layers  lora_params                                                             error            path                  timestamp
+                      full     PASS         75.11    0.7586    0.7509     0.7512  0.7508    0.5699       5.57        295.83        29288.65            124647170           124647170                          0            1.0000                   0.00                  0.0                      0                    0                       NaN                            NaN                              0            0                                                               NaN adapted_roberta 2026-09-09T04:51:48.379941
+optimized_hybrid_attention PASS_LOW         50.92    0.6748    0.3374     0.2546  0.5000    0.7097      33.33        381.15         9034.25            124647170           133614482                    1771778            0.9329                  -7.19                  0.0                      0                    0                       NaN                            NaN                             12      1179648 note: evaluated accuracy (50.92%) below chance threshold (56.00%) adapted_roberta 2026-09-09T04:52:21.940177
+
+Summary for gpt2:
+               module_name   status  accuracy_pct  f1_score  f1_macro  precision  recall  val_loss  elapsed_s  peak_vram_mb  tokens_per_sec  total_params_before  total_params_after  trainable_recovery_params  compression_rate  compression_ratio_pct  flops_reduction_pct  num_compressed_layers  num_fallback_layers  avg_reconstruction_error  weighted_reconstruction_error  num_injected_attention_layers  lora_params                                                             error        path                  timestamp
+                      full PASS_LOW         54.13    0.6390    0.5050     0.5502  0.5365    0.6903       6.29        390.24        25165.55            124441344           124441344                          0            1.0000                   0.00                  0.0                      0                    0                       NaN                            NaN                              0            0 note: evaluated accuracy (54.13%) below chance threshold (56.00%) adapted_gpt 2026-09-09T04:53:11.459339
+optimized_hybrid_attention PASS_LOW         50.92    0.6748    0.3374     0.2546  0.5000    0.7370      33.72        327.71         8209.23            124441344           126321552                    1181184            0.9851                  -1.51                  0.0                      0                    0                       NaN                            NaN                             12      1179648 note: evaluated accuracy (50.92%) below chance threshold (56.00%) adapted_gpt 2026-09-09T04:53:45.421104
+
+Summary for qwen3_5:
+               module_name               status  accuracy_pct  f1_score  f1_macro  precision  recall  val_loss  elapsed_s  peak_vram_mb  tokens_per_sec  total_params_before  total_params_after  trainable_recovery_params  compression_rate  compression_ratio_pct  flops_reduction_pct  num_compressed_layers  num_fallback_layers  avg_reconstruction_error  weighted_reconstruction_error  num_injected_attention_layers  lora_params                                      error            path                  timestamp
+                      full                 PASS         67.89     0.557    0.6526     0.7722  0.6842    0.6349     110.56       1796.78         1275.31            763217728           763217728                          0               1.0                    0.0                  0.0                      0                    0                       NaN                            NaN                              0     10822656                                        NaN adapted_qwen3_5 2026-09-09T05:01:19.499852
+optimized_hybrid_attention SKIP_QWEN3_5_TIMEOUT          0.00     0.557    0.6526     0.7722  0.6842    0.6349     183.47       1796.78         1275.31            763217728           763217728                          0               1.0                    0.0                  0.0                      0                    0                       NaN                            NaN                              0     10822656 Module pipeline exceeded hard 180s timeout adapted_qwen3_5 2026-09-09T05:04:23.304586
+
+========================================================
+Starting Quality Gate & Automated Hugging Face Export...
+========================================================
+
+[Quality Gate: REJECTED] distilbert did not meet criteria (status=PASS_LOW, acc=50.92% < 56.0%).
+[Quality Gate: REJECTED] roberta did not meet criteria (status=PASS_LOW, acc=50.92% < 56.0%).
+[Quality Gate: REJECTED] gpt2 did not meet criteria (status=PASS_LOW, acc=50.92% < 56.0%).
+[Quality Gate: REJECTED] qwen3_5 did not meet criteria (status=SKIP_QWEN3_5_TIMEOUT, acc=0.00% < 56.0%).
+
+Export Complete: 0/4 passed quality gate.

@@ -68,3 +68,33 @@ Notes:
 2026-09-09 04:59:28,936 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
 2026-09-09 04:59:28,936 [INFO] QwenQualitySweep: ================================================================================
 2026-09-09 04:59:28,937 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-09 05:01:16,835 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_optimized_hybrid_attention\qwen3_5\Qwen3.5-0.8B_full_full_metrics.json
+2026-09-09 05:01:16,972 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_optimized_hybrid_attention\qwen3_5\checkpoints\full\weights.pt (module_params=0, lora_params=373)
+2026-09-09 05:01:19,500 [INFO] QwenQualitySweep: [1/2] full -> PASS 67.89% (F1: 0.557, Peak VRAM: 1796.78 MB)
+2026-09-09 05:01:19,500 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_optimized_hybrid_attention\qwen3_5\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-09 05:01:19,832 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: optimized_hybrid_attention (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-09 05:01:23,674 [INFO] framework.core.attention_utils: Successfully injected 'optimized_hybrid_attention' into 6 transformer blocks.
+2026-09-09 05:01:23,699 [INFO] QwenQualitySweep: module=optimized_hybrid_attention path=adapted_qwen3_5
+2026-09-09 05:01:23,702 [INFO] QwenQualitySweep: module=optimized_hybrid_attention injection summary: 0 SVDLinear layers active
+2026-09-09 05:01:23,702 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for optimized_hybrid_attention (lr=2.0e-04)
+2026-09-09 05:01:25,255 [INFO] framework.utils.compat: Recovery fine-tuning selected 10382336 trainable parameters across 373 tensors.
+2026-09-09 05:01:25,255 [WARNING] framework.utils.compat: Total trainable parameters (10382336) exceeds 5,000,000 threshold for recovery. Reducing lora_rank or freezing additional layers to prevent OOM.
+2026-09-09 05:01:25,290 [INFO] QwenQualitySweep: LoRA fine-tuning: 10382336 trainable parameters across 373 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-09 05:01:38,532 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6301 (bs=8, micro_bs=8)
+2026-09-09 05:01:55,664 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=1.1977 (bs=8, micro_bs=8)
+2026-09-09 05:02:18,545 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=1.1650 (bs=8, micro_bs=8)
+2026-09-09 05:02:41,886 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=1.2044 (bs=8, micro_bs=8)
+2026-09-09 05:03:06,989 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5159 (bs=8, micro_bs=8)
+2026-09-09 05:03:33,799 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.2561 (bs=8, micro_bs=8)
+2026-09-09 05:03:58,833 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.1432 (bs=8, micro_bs=8)
+2026-09-09 05:04:20,673 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=1.0220 (bs=8, micro_bs=8)
+2026-09-09 05:04:23,305 [INFO] QwenQualitySweep: [2/2] optimized_hybrid_attention -> SKIP_QWEN3_5_TIMEOUT 0.00% (F1: 0.557, Peak VRAM: 1796.78 MB)
+2026-09-09 05:04:23,305 [INFO] QwenQualitySweep: [Quality Guard] Module 'optimized_hybrid_attention' did not pass quality criteria (status=SKIP_QWEN3_5_TIMEOUT, acc=0.00%, pass_thresh=56.00%). Pruning checkpoint artifacts.
+2026-09-09 05:04:23,671 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 05:04:23,672 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (Qwen3.5-0.8B on sst2)
+2026-09-09 05:04:23,686 [INFO] QwenQualitySweep: 
+                    Module               Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                      full                 PASS   67.89% 0.00% (base) 0.5570                  0            1.00x 1796.8 MB              87.52            100.37
+optimized_hybrid_attention SKIP_QWEN3_5_TIMEOUT    0.00%      -67.89% 0.5570                  0            1.00x 1796.8 MB              87.52            100.37
+2026-09-09 05:04:23,687 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 05:04:25,375 [WARNING] QwenQualitySweep: Training step 36/50 exceeded timeout 180s; aborting
