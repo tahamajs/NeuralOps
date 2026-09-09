@@ -37,13 +37,15 @@ jobs:
         PYTHONPATH: Codes:.
       run: |
         python Codes/framework/run_quality_sweep.py \
+          --finetune_steps 1 \
           --max_steps 1 \
           --seed 42 \
           --modules full \
           --model bert-base-uncased \
           --model_family bert \
           --dataset sst2 \
-          --batch_size 16 \
+          --batch_size 2 \
+          --seq_len 128 \
           --output_dir /tmp/test
         test -f /tmp/test/summary.csv
         test -f /tmp/test/detailed_results.json
