@@ -7,8 +7,8 @@
         "precision": 0.556,
         "recall": 0.5126,
         "val_loss": 0.8645,
-        "status": "PASS_LOW",
-        "elapsed_s": 921.7
+        "status": "SKIP_GPT_TIMEOUT",
+        "elapsed_s": 180.93
     },
     "efficiency": {
         "total_params_before": 126800640,

@@ -269,3 +269,55 @@ Notes:
 2026-09-09 03:27:44,604 [INFO] QwenQualitySweep: ================================================================================
 2026-09-09 03:27:44,780 [INFO] QwenQualitySweep: Injected 186 LoRALinear layers into qwen3_5 backbone
 2026-09-09 03:27:44,780 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
+2026-09-09 03:28:15,309 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.4371
+2026-09-09 03:28:41,211 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6070
+2026-09-09 03:29:08,429 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.2456
+2026-09-09 03:29:36,410 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.4726
+2026-09-09 03:30:04,439 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.5866
+2026-09-09 03:30:32,617 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7024
+2026-09-09 03:31:00,002 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.3318
+2026-09-09 03:31:26,644 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.2500
+2026-09-09 03:31:34,776 [INFO] QwenQualitySweep: Saved fine-tuned checkpoint: results\unified_cure\qwen3_5\finetuned_model.pt
+2026-09-09 03:31:36,032 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-09 03:31:36,808 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-09 03:33:13,129 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 67.89%
+2026-09-09 03:33:13,180 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 03:33:13,180 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-09 03:33:13,180 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-09 03:33:13,180 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-09 03:33:13,180 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-09 03:33:13,181 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-09 03:33:13,181 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-09 03:33:13,181 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 03:33:13,181 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-09 03:34:59,552 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_cure\qwen3_5\Qwen3.5-0.8B_full_full_metrics.json
+2026-09-09 03:34:59,682 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_cure\qwen3_5\checkpoints\full\weights.pt (module_params=0, lora_params=373)
+2026-09-09 03:35:02,190 [INFO] QwenQualitySweep: [1/2] full -> PASS 67.89% (F1: 0.557, Peak VRAM: 1796.78 MB)
+2026-09-09 03:35:02,190 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_cure\qwen3_5\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-09 03:35:02,522 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: cure (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-09 03:35:05,947 [ERROR] QwenQualitySweep: Module cure execution failure:
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2212, in main
+    pipe_res = future.result(timeout=effective_timeout)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2047, in _run_candidate_pipeline
+    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 582, in apply_module_to_model
+    raise RuntimeError(f"Compressor '{module_name}' not found in COMPRESSOR_REGISTRY")
+RuntimeError: Compressor 'cure' not found in COMPRESSOR_REGISTRY
+2026-09-09 03:35:05,963 [INFO] QwenQualitySweep: [2/2] cure -> FAIL 0.00% (F1: 0.557, Peak VRAM: 1796.78 MB)
+2026-09-09 03:35:05,963 [INFO] QwenQualitySweep: [Quality Guard] Module 'cure' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning checkpoint artifacts.
+2026-09-09 03:35:06,170 [INFO] QwenQualitySweep: ================================================================================
+2026-09-09 03:35:06,170 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (Qwen3.5-0.8B on sst2)
+2026-09-09 03:35:06,176 [INFO] QwenQualitySweep: 
+Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full   PASS   67.89% 0.00% (base) 0.5570                  0            1.00x 1796.8 MB              87.50            100.35
+  cure   FAIL    0.00%      -67.89% 0.5570                  0            1.00x 1796.8 MB              87.50            100.35
+2026-09-09 03:35:06,176 [INFO] QwenQualitySweep: ================================================================================
