@@ -868,3 +868,8 @@ The `A3Compressor` architecture incorporates telemetry hooks for tracking singul
 
 - **Repository URL**: `https://huggingface.co/tahamajs/a3_compressor-verified` *(status: model checkpoint pending final distributed sweep)*
 - **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
+## Usage Examples
+
+```python
+# TODO: Add specific usage example
+```
