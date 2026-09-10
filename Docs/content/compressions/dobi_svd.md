@@ -634,23 +634,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank ratio 0.5, gate val 2.5,
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 90.37% | 0.9069 | 1.0 | 0 | 183.82 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-dobi-svd) |
-| ROBERTA | 72.13% | 0.767 | 1.0 | 0 | 299.59 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-dobi-svd) |
-| GPT2 | 54.70% | 0.6706 | 1.0 | 0 | 389.62 | `PASS_LOW` | N/A |
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
-
-## Limitations & Future Work
-
-TODO: Identify specific limitations and edge cases for this module.
+| DISTILBERT | 90.48% | 0.9079 | 1.0 | 0 | 310.69 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-dobi-svd) |
+| ROBERTA | 74.54% | 0.7707 | 1.0 | 0 | 530.19 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-dobi-svd) |
+| GPT2 | 58.14% | 0.6256 | 1.0 | 0 | 635.79 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-dobi-svd) |
