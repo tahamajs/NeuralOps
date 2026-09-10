@@ -205,5 +205,212 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T17:57:29.770224"
+  },
+  {
+    "module": "aegis_v5_module",
+    "runner": "run_all_4_aegis_v5_module.py",
+    "exit_code": 0,
+    "elapsed_s": 33.58,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T17:58:03.356609"
+  },
+  {
+    "module": "aegis_v6",
+    "runner": "run_all_4_aegis_v6.py",
+    "exit_code": 0,
+    "elapsed_s": 30.63,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T17:58:33.991211"
+  },
+  {
+    "module": "armor",
+    "runner": "run_all_4_armor.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T17:58:33.996874"
+  },
+  {
+    "module": "astro",
+    "runner": "run_all_4_astro.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T17:58:33.998541"
+  },
+  {
+    "module": "asvd",
+    "runner": "run_all_4_asvd.py",
+    "exit_code": 0,
+    "elapsed_s": 30.89,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T17:59:04.892800"
+  },
+  {
+    "module": "bam_umoe",
+    "runner": "run_all_4_bam_umoe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T17:59:04.897613"
+  },
+  {
+    "module": "block_transformer_hiba",
+    "runner": "run_all_4_block_transformer_hiba.py",
+    "exit_code": 0,
+    "elapsed_s": 32.79,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T17:59:37.691773"
+  },
+  {
+    "module": "cachenotes",
+    "runner": "run_all_4_cachenotes.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T17:59:37.696919"
+  },
+  {
+    "module": "chela_slay",
+    "runner": "run_all_4_chela_slay.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T17:59:37.698224"
+  },
+  {
+    "module": "cluster",
+    "runner": "run_all_4_cluster.py",
+    "exit_code": 0,
+    "elapsed_s": 30.78,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:00:08.477295"
+  },
+  {
+    "module": "come",
+    "runner": "run_all_4_come.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:00:08.481993"
+  },
+  {
+    "module": "compressed_attention",
+    "runner": "run_all_4_compressed_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 30.52,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:00:38.998742"
+  },
+  {
+    "module": "compressed_attention_layer",
+    "runner": "run_all_4_compressed_attention_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 30.58,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:01:09.585962"
+  },
+  {
+    "module": "compressed_mha",
+    "runner": "run_all_4_compressed_mha.py",
+    "exit_code": 0,
+    "elapsed_s": 30.32,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:01:39.909924"
+  },
+  {
+    "module": "cosformer",
+    "runner": "run_all_4_cosformer.py",
+    "exit_code": 0,
+    "elapsed_s": 34.61,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:02:14.522520"
+  },
+  {
+    "module": "cur",
+    "runner": "run_all_4_cur.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:02:14.526914"
+  },
+  {
+    "module": "cur_linear",
+    "runner": "run_all_4_cur_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 33.27,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:02:47.798351"
+  },
+  {
+    "module": "cur_moe",
+    "runner": "run_all_4_cur_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 34.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:03:22.720114"
+  },
+  {
+    "module": "cure",
+    "runner": "run_all_4_cure.py",
+    "exit_code": 0,
+    "elapsed_s": 33.4,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:03:56.124322"
+  },
+  {
+    "module": "decay_linear_attention",
+    "runner": "run_all_4_decay_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 30.21,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:04:26.343021"
+  },
+  {
+    "module": "delta_kv",
+    "runner": "run_all_4_delta_kv.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:04:26.347595"
+  },
+  {
+    "module": "direct_svd",
+    "runner": "run_all_4_direct_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:04:26.348811"
+  },
+  {
+    "module": "dobi",
+    "runner": "run_all_4_dobi.py",
+    "exit_code": 0,
+    "elapsed_s": 37.19,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:05:03.541312"
   }
 ]
