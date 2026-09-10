@@ -10,8 +10,8 @@
   "params_total": null,
   "params_active": null,
   "param_reduction_pct": null,
-  "peak_vram_mb": 374.32,
-  "tokens_per_sec": 40342.46,
+  "peak_vram_mb": 376.7,
+  "tokens_per_sec": 44867.69,
   "elapsed_seconds": null,
   "full_metrics": {
     "module_name": "mixattention_moska",
@@ -22,9 +22,9 @@
     "precision": 0.8655,
     "recall": 0.8615,
     "val_loss": 0.3524,
-    "elapsed_s": 7.27,
-    "peak_vram_mb": 374.32,
-    "tokens_per_sec": 40342.46,
+    "elapsed_s": 6.63,
+    "peak_vram_mb": 376.7,
+    "tokens_per_sec": 44867.69,
     "total_params_before": 124647170,
     "total_params_after": 132913970,
     "trainable_recovery_params": 1771826,
@@ -39,6 +39,6 @@
     "lora_params": 1179648,
     "error": NaN,
     "path": "adapted_roberta",
-    "timestamp": "2026-09-10T05:35:21.758084"
+    "timestamp": "2026-09-11T02:57:20.925973"
   }
 }
