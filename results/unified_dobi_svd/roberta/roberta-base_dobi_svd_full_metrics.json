@@ -1,28 +1,28 @@
 {
     "model": "roberta-base_dobi_svd",
     "performance": {
-        "accuracy_pct": 88.53,
-        "f1_score": 0.8938,
-        "f1_macro": 0.8846,
-        "precision": 0.8919,
-        "recall": 0.8841,
-        "val_loss": 0.3724,
+        "accuracy_pct": 72.13,
+        "f1_score": 0.767,
+        "f1_macro": 0.7102,
+        "precision": 0.7533,
+        "recall": 0.718,
+        "val_loss": 0.5649,
         "status": "PASS",
-        "elapsed_s": 8.18
+        "elapsed_s": 5.98
     },
     "efficiency": {
-        "total_params_before": 127325954,
-        "total_params_after": 127325954,
-        "trainable_recovery_params": 616706,
+        "total_params_before": 124647170,
+        "total_params_after": 124647170,
+        "trainable_recovery_params": 592130,
         "compression_rate": 1.0,
         "compression_ratio_pct": 0.0,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 72,
         "num_injected_attention_layers": 0,
-        "lora_params": 2678784,
+        "lora_params": 0,
         "avg_reconstruction_error": 0.0,
-        "weighted_reconstruction_error": 0.8154,
+        "weighted_reconstruction_error": 0.8156,
         "per_layer_reconstruction_errors": {
             "roberta.encoder.layer.0.attention.self.query": 0.7852039038672304,
             "roberta.encoder.layer.0.attention.self.key": 0.7445417929844025,
@@ -173,8 +173,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 321.64,
-        "tokens_per_sec": 56554.75
+        "peak_vram_mb": 299.59,
+        "tokens_per_sec": 115860.95
     },
     "architecture": {
         "span_distribution": {},
@@ -182,10 +182,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 290.8,
-        "L_256_vram_mb": 295.12,
-        "L_512_vram_mb": 303.76,
+        "L_128_vram_mb": 279.51,
+        "L_256_vram_mb": 282.09,
+        "L_512_vram_mb": 287.72,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-08T19:06:16.983751"
+    "timestamp": "2026-09-10T04:12:56.095763"
 }

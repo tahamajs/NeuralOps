@@ -250,5 +250,140 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T04:02:51.001033"
+  },
+  {
+    "module": "bam_umoe",
+    "runner": "run_all_4_bam_umoe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:02:51.006075"
+  },
+  {
+    "module": "block_transformer_hiba",
+    "runner": "run_all_4_block_transformer_hiba.py",
+    "exit_code": 0,
+    "elapsed_s": 48.48,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:03:39.489715"
+  },
+  {
+    "module": "cachenotes",
+    "runner": "run_all_4_cachenotes.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:03:39.495037"
+  },
+  {
+    "module": "chela_slay",
+    "runner": "run_all_4_chela_slay.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:03:39.496834"
+  },
+  {
+    "module": "cluster",
+    "runner": "run_all_4_cluster.py",
+    "exit_code": 0,
+    "elapsed_s": 44.96,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:04:24.456674"
+  },
+  {
+    "module": "come",
+    "runner": "run_all_4_come.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:04:24.461792"
+  },
+  {
+    "module": "compressed_attention",
+    "runner": "run_all_4_compressed_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 59.2,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:05:23.662675"
+  },
+  {
+    "module": "compressed_attention_layer",
+    "runner": "run_all_4_compressed_attention_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 59.35,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:06:23.018609"
+  },
+  {
+    "module": "compressed_mha",
+    "runner": "run_all_4_compressed_mha.py",
+    "exit_code": 0,
+    "elapsed_s": 59.64,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:07:22.678960"
+  },
+  {
+    "module": "cosformer",
+    "runner": "run_all_4_cosformer.py",
+    "exit_code": 0,
+    "elapsed_s": 47.56,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:08:10.245460"
+  },
+  {
+    "module": "cur",
+    "runner": "run_all_4_cur.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:08:10.258896"
+  },
+  {
+    "module": "cur_linear",
+    "runner": "run_all_4_cur_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 74.5,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:09:24.757915"
+  },
+  {
+    "module": "cur_moe",
+    "runner": "run_all_4_cur_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 60.45,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:10:25.217253"
+  },
+  {
+    "module": "cure",
+    "runner": "run_all_4_cure.py",
+    "exit_code": 0,
+    "elapsed_s": 75.01,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:11:40.230590"
+  },
+  {
+    "module": "decay_linear_attention",
+    "runner": "run_all_4_decay_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 44.77,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:12:25.007653"
   }
 ]
