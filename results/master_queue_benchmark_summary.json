@@ -691,5 +691,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:08:40.843124"
+  },
+  {
+    "module": "hashednets",
+    "runner": "run_all_4_hashednets.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T21:08:40.846456"
+  },
+  {
+    "module": "hgrn2",
+    "runner": "run_all_4_hgrn2.py",
+    "exit_code": 0,
+    "elapsed_s": 45.73,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:09:26.576163"
+  },
+  {
+    "module": "hgrn2_gated_deltanet",
+    "runner": "run_all_4_hgrn2_gated_deltanet.py",
+    "exit_code": 0,
+    "elapsed_s": 45.08,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:10:11.661001"
   }
 ]

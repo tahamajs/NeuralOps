@@ -76,3 +76,6 @@ griffin_ssd,run_all_4_griffin_ssd.py,0,48.92,PASS,,2026-09-10T21:06:12.598289
 halo_regla,run_all_4_halo_regla.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T21:06:12.603290
 hamming,run_all_4_hamming.py,0,89.4,PASS,,2026-09-10T21:07:42.006220
 hashed_linear,run_all_4_hashed_linear.py,0,58.83,PASS,,2026-09-10T21:08:40.843124
+hashednets,run_all_4_hashednets.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T21:08:40.846456
+hgrn2,run_all_4_hgrn2.py,0,45.73,PASS,,2026-09-10T21:09:26.576163
+hgrn2_gated_deltanet,run_all_4_hgrn2_gated_deltanet.py,0,45.08,PASS,,2026-09-10T21:10:11.661001
