@@ -916,5 +916,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T22:12:50.733997"
+  },
+  {
+    "module": "leka_v3",
+    "runner": "run_all_4_leka_v3.py",
+    "exit_code": 0,
+    "elapsed_s": 73.31,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T22:14:04.046846"
+  },
+  {
+    "module": "liftr",
+    "runner": "run_all_4_liftr.py",
+    "exit_code": 0,
+    "elapsed_s": 58.63,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T22:15:02.687849"
+  },
+  {
+    "module": "lillama",
+    "runner": "run_all_4_lillama.py",
+    "exit_code": 0,
+    "elapsed_s": 229.06,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T22:18:51.754523"
   }
 ]

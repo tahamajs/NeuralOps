@@ -101,3 +101,6 @@ kronecker_tt_lora,run_all_4_kronecker_tt_lora.py,0,74.74,PASS,,2026-09-10T21:49:
 kvtc,run_all_4_kvtc.py,0,66.02,PASS,,2026-09-10T21:50:18.579374
 leka_v1,run_all_4_leka_v1.py,0,1270.8,PASS,,2026-09-10T22:11:29.386765
 leka_v2,run_all_4_leka_v2.py,0,81.34,PASS,,2026-09-10T22:12:50.733997
+leka_v3,run_all_4_leka_v3.py,0,73.31,PASS,,2026-09-10T22:14:04.046846
+liftr,run_all_4_liftr.py,0,58.63,PASS,,2026-09-10T22:15:02.687849
+lillama,run_all_4_lillama.py,0,229.06,PASS,,2026-09-10T22:18:51.754523
