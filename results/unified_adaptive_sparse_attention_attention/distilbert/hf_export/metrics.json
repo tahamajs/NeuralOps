@@ -10,8 +10,8 @@
   "params_total": null,
   "params_active": null,
   "param_reduction_pct": null,
-  "peak_vram_mb": 396.51,
-  "tokens_per_sec": 83680.06,
+  "peak_vram_mb": 396.52,
+  "tokens_per_sec": 82252.84,
   "elapsed_seconds": null,
   "full_metrics": {
     "module_name": "adaptive_sparse_attention_attention",
@@ -21,13 +21,13 @@
     "f1_macro": 0.8989,
     "precision": 0.9003,
     "recall": 0.8986,
-    "val_loss": 0.5705,
-    "elapsed_s": 3.62,
-    "peak_vram_mb": 396.51,
-    "tokens_per_sec": 83680.06,
+    "val_loss": 0.5722,
+    "elapsed_s": 3.77,
+    "peak_vram_mb": 396.52,
+    "tokens_per_sec": 82252.84,
     "total_params_before": 66955010,
-    "total_params_after": 81719138,
-    "trainable_recovery_params": 1182050,
+    "total_params_after": 81719144,
+    "trainable_recovery_params": 1182056,
     "compression_rate": 0.8193,
     "compression_ratio_pct": -22.05,
     "flops_reduction_pct": 0.0,
@@ -39,6 +39,6 @@
     "lora_params": 589824,
     "error": NaN,
     "path": "legacy_bert",
-    "timestamp": "2026-09-10T22:26:56.437843"
+    "timestamp": "2026-09-10T23:28:58.386446"
   }
 }
