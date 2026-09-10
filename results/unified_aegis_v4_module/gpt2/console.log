@@ -1,44 +1,7 @@
-Skipping attention module 'adaptive_sparse_attention' due to: expected an indented block after 'except' statement on line 544 (adaptive_sparse_attention.py, line 545)
-Skipping attention module 'aegis_hybrid' due to: expected an indented block after 'except' statement on line 465 (aegis_hybrid.py, line 466)
-Skipping attention module 'aegis_hybrid_attention' due to: expected an indented block after 'except' statement on line 465 (aegis_hybrid.py, line 466)
-Skipping attention module 'aegis_spectron_fp8' due to: expected an indented block after 'except' statement on line 503 (aegis_spectron_fp8.py, line 504)
-Skipping attention module 'asvd_attention' due to: expected an indented block after 'except' statement on line 516 (asvd_attention.py, line 517)
-Skipping attention module 'bam_umoe' due to: expected an indented block after 'except' statement on line 429 (bam_umoe.py, line 430)
-Skipping attention module 'block_transformer_hiba' due to: expected an indented block after 'except' statement on line 318 (block_transformer_hiba.py, line 319)
-Skipping attention module 'chela_slay' due to: expected an indented block after 'except' statement on line 359 (chela_slay.py, line 360)
-Skipping attention module 'cluster_attention' due to: expected an indented block after 'except' statement on line 290 (cluster_attention.py, line 291)
-Skipping attention module 'cosformer' due to: expected an indented block after 'except' statement on line 343 (cosformer.py, line 344)
-Skipping attention module 'decay_linear_attention' due to: expected an indented block after 'except' statement on line 315 (decay_linear_attention.py, line 316)
-Skipping attention module 'eat' due to: expected an indented block after 'except' statement on line 296 (eat.py, line 297)
-Skipping attention module 'expert_choice_moe' due to: expected an indented block after 'except' statement on line 410 (expert_choice_moe.py, line 411)
-Skipping attention module 'factorised_matrix_state' due to: expected an indented block after 'except' statement on line 337 (factorised_matrix_state.py, line 338)
-Skipping attention module 'flash_attention3' due to: expected an indented block after 'except' statement on line 315 (flash_attention3.py, line 316)
-Skipping attention module 'flash_attention3_fp8' due to: expected an indented block after 'except' statement on line 319 (flash_attention3_fp8.py, line 320)
-Skipping attention module 'fusion_attn' due to: expected an indented block after 'except' statement on line 312 (fusion_attn.py, line 313)
-Skipping attention module 'galerkin_attention' due to: expected an indented block after 'except' statement on line 320 (galerkin_attention.py, line 321)
-Skipping attention module 'gated_deltanet_block' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'gated_delta_net' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'granite_hybrid' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'griffin_ssd' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'hgrn2_gated_deltanet' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'jamba' due to: expected an indented block after 'except' statement on line 410 (expert_choice_moe.py, line 411)
-Skipping attention module 'kda_attention' due to: expected an indented block after 'except' statement on line 560 (kda_attention.py, line 561)
-Skipping compression_engine module 'adaptive_compressor' due to: name 'self' is not defined
-Skipping compression_engine module 'entropy_budget_allocation' due to: expected an indented block after 'except' statement on line 397 (entropy_budget_allocation.py, line 398)
-Skipping compression_engine module 'erc_svd' due to: expected an indented block after 'except' statement on line 313 (erc_svd.py, line 314)
-Skipping compression_engine module 'faq_quantizer' due to: expected an indented block after 'except' statement on line 359 (faq_quantizer.py, line 360)
-Skipping compression_engine module 'replaceme_compressor' due to: expected an indented block after 'except' statement on line 231 (replaceme_compressor.py, line 232)
-Skipping compression_engine module 'slicegpt_compressor' due to: expected an indented block after 'except' statement on line 318 (slicegpt_pca.py, line 319)
-Skipping compression_engine module 'slicegpt_pca' due to: expected an indented block after 'except' statement on line 318 (slicegpt_pca.py, line 319)
-Skipping compression_engine module 'spectraformer_attention' due to: expected an indented block after 'except' statement on line 450 (spectraformer_attention.py, line 451)
-Skipping attention module 'upi_stuffed_mamba' due to: expected an indented block after 'except' statement on line 206 (upi_stuffed_mamba.py, line 207)
-Skipping attention module 'wgqa_attention' due to: expected an indented block after 'except' statement on line 580 (wgqa_attention.py, line 581)
-Skipping attention module 'xattention' due to: expected an indented block after 'except' statement on line 442 (xattention.py, line 443)
-Skipping attention module 'zeros_attention' due to: expected an indented block after 'except' statement on line 430 (zeros_attention.py, line 431)
 `torch_dtype` is deprecated! Use `dtype` instead!
 
 Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 148/148 [00:00<00:00, 14969.18it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 13682.10it/s]
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -46,29 +9,61 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep: ================================================================================
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-10 17:56:54,239 [INFO] QwenQualitySweep: ================================================================================
-2026-09-10 17:56:54,251 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_aegis_v4_module\gpt2\finetuned_model.pt
-Traceback (most recent call last):
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2516, in <module>
-    if __name__ == "__main__": main()
-                               ~~~~^^
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 1281, in main
-    state = torch.load(checkpoint, map_location="cpu", weights_only=False)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\serialization.py", line 1432, in load
-    with _open_zipfile_reader(opened_file) as opened_zipfile:
-         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\serialization.py", line 763, in __init__
-    super().__init__(torch._C.PyTorchFileReader(name_or_buffer))
-                     ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
-OSError: [Errno 22] Invalid argument
+2026-09-11 01:05:11,979 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 01:05:11,980 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 01:05:12,125 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-11 01:05:12,419 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 01:05:12,645 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 01:05:14,608 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 60.78%
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 01:05:14,618 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 01:05:16,665 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v4_module\gpt2\gpt2_full_full_metrics.json
+2026-09-11 01:05:16,669 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v4_module\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-11 01:05:16,916 [INFO] QwenQualitySweep: [1/2] full -> PASS 60.78% (F1: 0.6354, Peak VRAM: 793.19 MB)
+2026-09-11 01:05:16,916 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v4_module\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 01:05:17,030 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: aegis_v4_module (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 01:05:25,777 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v4_module' into 12 transformer blocks.
+2026-09-11 01:05:25,780 [INFO] QwenQualitySweep: module=aegis_v4_module path=adapted_gpt
+2026-09-11 01:05:25,780 [INFO] QwenQualitySweep: module=aegis_v4_module injection summary: 0 SVDLinear layers active
+2026-09-11 01:05:25,780 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v4_module (lr=2.0e-04)
+2026-09-11 01:05:25,912 [INFO] framework.utils.compat: Recovery fine-tuning selected 1574592 trainable parameters across 169 tensors.
+2026-09-11 01:05:25,913 [INFO] QwenQualitySweep: LoRA fine-tuning: 1574592 trainable parameters across 169 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-11 01:05:26,092 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7809 (bs=8, micro_bs=8)
+2026-09-11 01:05:26,372 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7746 (bs=8, micro_bs=8)
+2026-09-11 01:05:26,777 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.8123 (bs=8, micro_bs=8)
+2026-09-11 01:05:27,147 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.8365 (bs=8, micro_bs=8)
+2026-09-11 01:05:27,505 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5518 (bs=8, micro_bs=8)
+2026-09-11 01:05:27,835 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7439 (bs=8, micro_bs=8)
+2026-09-11 01:05:28,202 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=1.0200 (bs=8, micro_bs=8)
+2026-09-11 01:05:28,561 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6518 (bs=8, micro_bs=8)
+2026-09-11 01:05:28,877 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.9674 (bs=8, micro_bs=8)
+2026-09-11 01:05:29,208 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7386 (bs=8, micro_bs=8)
+2026-09-11 01:05:29,551 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5553 (bs=8, micro_bs=8)
+2026-09-11 01:05:32,126 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v4_module\gpt2\gpt2_aegis_v4_module_full_metrics.json
+2026-09-11 01:05:32,138 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v4_module\gpt2\checkpoints\aegis_v4_module\weights.pt (module_params=0, lora_params=97)
+2026-09-11 01:05:32,441 [INFO] QwenQualitySweep: [2/2] aegis_v4_module -> PASS 56.31% (F1: 0.6495, Peak VRAM: 595.01 MB)
+2026-09-11 01:05:32,442 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v4_module\gpt2\checkpoints\aegis_v4_module. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 01:05:32,562 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 01:05:32,562 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-11 01:05:32,564 [INFO] QwenQualitySweep: 
+         Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+           full   PASS   60.78% 0.00% (base) 0.6354                  0            1.00x  793.2 MB               1.57              1.80
+aegis_v4_module   PASS   56.31%       -4.47% 0.6495                  0            0.99x  595.0 MB               2.49              2.86
+2026-09-11 01:05:32,564 [INFO] QwenQualitySweep: ================================================================================

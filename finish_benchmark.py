@@ -17,6 +17,16 @@ import os, sys, json, time, csv, logging, argparse, subprocess, threading, queue
 from pathlib import Path
 from datetime import datetime, timedelta
 
+os.environ["TQDM_DISABLE"] = "1"
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["PYTHONUNBUFFERED"] = "1"
+
+try:
+    from huggingface_hub.utils import disable_progress_bars
+    disable_progress_bars()
+except Exception:
+    pass
+
 REPO_DIR       = Path(__file__).resolve().parent
 RESULTS_DIR    = REPO_DIR / "results"
 STATE_FILE     = REPO_DIR / "finish_benchmark_state.json"
@@ -32,7 +42,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout),
     ],
 )
 LOG = logging.getLogger("orchestrator")
@@ -75,6 +84,9 @@ def read_summary_accuracy(module):
                     reader = csv.DictReader(f)
                     best_status, best_acc = "FAIL", 0.0
                     for row in reader:
+                        m_name = (row.get("module_name") or "").strip()
+                        if m_name == "full":
+                            continue
                         try:
                             acc = float(row.get("accuracy_pct", row.get("mean_accuracy", 0)) or 0)
                             status = row.get("status", "FAIL")
@@ -89,7 +101,8 @@ def read_summary_accuracy(module):
 
 def upload_to_hf(module, model_slug, status, accuracy):
     try:
-        os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
+        os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+        os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
         from huggingface_hub import HfApi
         api = HfApi()
         repo_id = f"{HF_ORG}/svd-linear-attention-{model_slug}-{module}"
@@ -101,12 +114,20 @@ def upload_to_hf(module, model_slug, status, accuracy):
         api.upload_file(path_or_fileobj=readme.encode("utf-8"), path_in_repo="README.md", repo_id=repo_id, commit_message=f"Update card acc={accuracy:.2f}%")
         unified = RESULTS_DIR / f"unified_{module}"
         if status == "PASS":
-            weights = list((unified / model_slug).rglob("weights.pt"))
-            if not weights:
-                weights = list(unified.rglob("weights.pt"))
-            if weights:
+            candidate_weights = [
+                unified / model_slug / "checkpoints" / module / "weights.pt",
+                unified / model_slug / "checkpoints" / module / "hf_export" / "weights.pt",
+                unified / model_slug / "hf_export" / "weights.pt",
+                unified / model_slug / "weights.pt",
+            ]
+            weights_file = next((w for w in candidate_weights if w.exists()), None)
+            if not weights_file:
+                all_w = [w for w in (unified / model_slug).rglob("weights.pt") if "\\full\\" not in str(w) and "/full/" not in str(w)]
+                if all_w:
+                    weights_file = all_w[0]
+            if weights_file:
                 LOG.info("[HF-ASYNC] Uploading weights.pt -> %s", repo_id)
-                api.upload_file(path_or_fileobj=str(weights[0]), path_in_repo="weights.pt", repo_id=repo_id, commit_message="Upload weights")
+                api.upload_file(path_or_fileobj=str(weights_file), path_in_repo="weights.pt", repo_id=repo_id, commit_message="Upload weights")
         csv_path = unified / model_slug / "summary.csv"
         if csv_path.exists():
             api.upload_file(path_or_fileobj=str(csv_path), path_in_repo="summary.csv", repo_id=repo_id, commit_message="Upload metrics")
@@ -121,16 +142,25 @@ _upload_queue = queue.Queue()
 
 def _background_uploader_worker():
     LOG.info("[HF-ASYNC] Background uploader worker thread started.")
+    import concurrent.futures
     while True:
         try:
             task = _upload_queue.get()
             if task is None:
                 break
             module, model_slug, status, acc = task
-            upload_to_hf(module, model_slug, status, acc)
-            _upload_queue.task_done()
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(upload_to_hf, module, model_slug, status, acc)
+                    future.result(timeout=120)
+            except concurrent.futures.TimeoutError:
+                LOG.warning("[HF-ASYNC] Upload timed out (120s) for %s/%s. Skipping to next.", module, model_slug)
+            except Exception as e:
+                LOG.warning("[HF-ASYNC] Worker exception on %s/%s: %s", module, model_slug, e)
+            finally:
+                _upload_queue.task_done()
         except Exception as e:
-            LOG.warning("[HF-ASYNC] Worker exception: %s", e)
+            LOG.warning("[HF-ASYNC] Worker queue exception: %s", e)
 
 _current_module = ["(starting)"]
 _completed = [0]

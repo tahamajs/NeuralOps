@@ -323,10 +323,9 @@ class MoBAAttention(BaseAttention):
         is_nested = False
         if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             is_nested = True
-        elif (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj:
+        elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention") or cls_name.endswith("SelfAttention"):
+            is_nested = True
+        elif cls_name.endswith("Attention") and not has_out_proj:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -401,6 +400,8 @@ class MoBAAttention(BaseAttention):
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
+        elif cls_name in ("GPT2Attention", "GPT2Block") or hasattr(src, "c_attn") or "gpt" in cls_name.lower():
+            self.is_decoder = True
 
     def forward(
         self,
@@ -518,9 +519,10 @@ class MoBAAttention(BaseAttention):
                 )
                 block_scores = block_scores + causal_block_mask.unsqueeze(0).unsqueeze(0)
 
-            # Guarantee preservation of block 0 (CLS)
+            # Guarantee preservation of block 0 (CLS) for bidirectional encoders
             block_scores_for_topk = block_scores.clone()
-            block_scores_for_topk[:, :, :, 0] = block_scores_for_topk[:, :, :, 0] + 1e4
+            if not is_causal:
+                block_scores_for_topk[:, :, :, 0] = block_scores_for_topk[:, :, :, 0] + 1e4
 
             top_k = min(self.top_k, nb)
             _, top_idx = block_scores_for_topk.topk(top_k, dim=-1)  # (B, H, nb, top_k)

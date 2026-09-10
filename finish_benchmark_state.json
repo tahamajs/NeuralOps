@@ -669,5 +669,45 @@
       ]
     },
     "timestamp": "2026-09-11T03:11:19.246883"
+  },
+  "nasc_attention": {
+    "status": "PASS",
+    "exit_code": 0,
+    "elapsed_s": 135.4,
+    "accuracies": {
+      "distilbert": [
+        "PASS",
+        85.89
+      ],
+      "roberta": [
+        "PASS",
+        82.57
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        50.92
+      ]
+    },
+    "timestamp": "2026-09-11T03:13:34.626092"
+  },
+  "nexus": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 68.2,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        51.03
+      ]
+    },
+    "timestamp": "2026-09-11T03:14:42.873720"
   }
 }
