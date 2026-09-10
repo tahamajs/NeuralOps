@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import torch
 import torch.nn as nn
 
 from framework.core.registry import COMPRESSOR_REGISTRY
