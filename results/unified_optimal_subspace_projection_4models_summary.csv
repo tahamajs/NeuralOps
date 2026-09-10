@@ -1,2 +1,4 @@
 Model,Exit Code,Baseline Acc,Optimal Subspace Projection Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-roberta,0,88.76%,88.76%,+0.00%,0.8953,PASS,64,1.00x,341.8 MB,54.9
+distilbert,1,N/A,N/A,N/A,N/A,EXIT_1,N/A,1.00x,N/A,9.9
+roberta,0,75.11%,70.87%,-4.24%,0.7708,PASS,4,1.00x,318.6 MB,20.9
+gpt2,0,54.13%,0.00%,-54.13%,0.6390,FAIL,0,1.00x,390.2 MB,22.4
