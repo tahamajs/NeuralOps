@@ -181,8 +181,8 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
                 trainable_params.append(param)
             continue
 
-        # 1. LoRA adapter parameters are always trainable
-        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt")):
+        # 1. LoRA adapter, gate, calibration scale, and decay parameters are always trainable
+        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt", ".gate", "gate.", ".alpha", ".beta", ".output_scale", ".decay")):
             trainable_params.append(param)
             continue
 
