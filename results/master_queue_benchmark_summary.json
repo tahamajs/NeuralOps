@@ -898,5 +898,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:50:18.579374"
+  },
+  {
+    "module": "leka_v1",
+    "runner": "run_all_4_leka_v1.py",
+    "exit_code": 0,
+    "elapsed_s": 1270.8,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T22:11:29.386765"
+  },
+  {
+    "module": "leka_v2",
+    "runner": "run_all_4_leka_v2.py",
+    "exit_code": 0,
+    "elapsed_s": 81.34,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T22:12:50.733997"
   }
 ]
