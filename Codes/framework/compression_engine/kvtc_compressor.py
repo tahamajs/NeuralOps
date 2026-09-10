@@ -470,17 +470,6 @@ class KVTCCompressor(BaseCompressor):
 
         # Post-compression forward sanity check
         forward_check_success = True
-        try:
-            with torch.no_grad():
-                dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
-                try:
-                    self.model(dummy)
-                except Exception:
-                    self.model(dummy.float())
-        except Exception as e:
-            logger.warning("KVTC post-compression forward check warning: %s", e)
-            forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()

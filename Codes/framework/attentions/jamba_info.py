@@ -238,6 +238,8 @@ class JambaInfoBlock(BaseAttention):
 
         self.bottleneck = InfoMambaConceptBottleneck(self.dim)
         self.ssm = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
+        self.alpha = nn.Parameter(torch.ones(1))
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
@@ -485,14 +487,14 @@ class JambaInfoBlock(BaseAttention):
         if isinstance(ssm_branch, tuple):
             ssm_branch = ssm_branch[0]
 
-        combined = attn_out + 0.1 * ssm_branch
+        combined = attn_out + self.alpha * ssm_branch
 
         if self.is_nested_encoder:
             out = combined
         else:
             out = self.out_proj(combined)
 
-        return out, (diff_attn if output_attentions else None)
+        return out * self.output_scale, (diff_attn if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("jamba_info_inject")

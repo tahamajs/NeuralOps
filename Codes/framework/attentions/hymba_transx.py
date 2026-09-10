@@ -174,6 +174,8 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1, device=out.device, dtype=out.dtype))
         return out * self.output_scale
 
 
@@ -254,6 +256,7 @@ class HymbaTransXBlock(BaseAttention):
 
         self.mamba = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
         self.alpha = nn.Parameter(torch.tensor(0.5))
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
@@ -509,7 +512,7 @@ class HymbaTransXBlock(BaseAttention):
         else:
             out = self.out_proj(combined)
 
-        return out, (diff_attn if output_attentions else None)
+        return out * self.output_scale, (diff_attn if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("hymba_transx_inject")
