@@ -382,19 +382,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
-| ROBERTA | 72.02% | 0.7724 | 1.0 | 0 | 299.09 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-mlorq) |
-| GPT2 | 54.47% | 0.5928 | 1.0 | 0 | 391.12 | `PASS_LOW` | N/A |
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
+| DISTILBERT | 90.48% | 0.9077 | 1.0 | 0 | 311.19 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-mlorq) |
+| ROBERTA | 72.02% | 0.7724 | 1.0 | 0 | 301.72 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-mlorq) |
+| GPT2 | 62.04% | 0.6783 | 1.0 | 0 | 635.54 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-mlorq) |
