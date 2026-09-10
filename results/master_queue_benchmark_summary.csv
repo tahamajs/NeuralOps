@@ -135,3 +135,12 @@ nexus,run_all_4_nexus.py,0,60.29,PASS,,2026-09-10T05:46:12.914189
 nha,run_all_4_nha.py,0,93.85,PASS,,2026-09-10T05:47:46.769204
 nha_compressor,run_all_4_nha_compressor.py,0,93.77,PASS,,2026-09-10T05:49:20.538601
 nli_softmax,run_all_4_nli_softmax.py,0,51.83,PASS,,2026-09-10T05:50:12.367899
+nmf,run_all_4_nmf.py,0,222.46,PASS,,2026-09-10T05:53:54.827436
+nsa,run_all_4_nsa.py,0,60.2,PASS,,2026-09-10T05:54:55.029260
+nsa_attention,run_all_4_nsa_attention.py,0,59.54,PASS,,2026-09-10T05:55:54.575352
+nystrom,run_all_4_nystrom.py,0,66.15,PASS,,2026-09-10T05:57:00.726828
+oats,run_all_4_oats.py,0,91.96,PASS,,2026-09-10T05:58:32.688240
+oha,run_all_4_oha.py,0,64.1,PASS,,2026-09-10T05:59:36.788932
+optimal_subspace_projection,run_all_4_optimal_subspace_projection.py,0,64.53,PASS,,2026-09-10T06:00:41.321514
+optimized_hybrid_attention,run_all_4_optimized_hybrid_attention.py,0,62.93,PASS,,2026-09-10T06:01:44.257107
+orion,run_all_4_orion.py,0,128.21,PASS,,2026-09-10T06:03:52.475604

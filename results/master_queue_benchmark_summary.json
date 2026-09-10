@@ -1222,5 +1222,86 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T05:50:12.367899"
+  },
+  {
+    "module": "nmf",
+    "runner": "run_all_4_nmf.py",
+    "exit_code": 0,
+    "elapsed_s": 222.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:53:54.827436"
+  },
+  {
+    "module": "nsa",
+    "runner": "run_all_4_nsa.py",
+    "exit_code": 0,
+    "elapsed_s": 60.2,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:54:55.029260"
+  },
+  {
+    "module": "nsa_attention",
+    "runner": "run_all_4_nsa_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 59.54,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:55:54.575352"
+  },
+  {
+    "module": "nystrom",
+    "runner": "run_all_4_nystrom.py",
+    "exit_code": 0,
+    "elapsed_s": 66.15,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:57:00.726828"
+  },
+  {
+    "module": "oats",
+    "runner": "run_all_4_oats.py",
+    "exit_code": 0,
+    "elapsed_s": 91.96,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:58:32.688240"
+  },
+  {
+    "module": "oha",
+    "runner": "run_all_4_oha.py",
+    "exit_code": 0,
+    "elapsed_s": 64.1,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:59:36.788932"
+  },
+  {
+    "module": "optimal_subspace_projection",
+    "runner": "run_all_4_optimal_subspace_projection.py",
+    "exit_code": 0,
+    "elapsed_s": 64.53,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T06:00:41.321514"
+  },
+  {
+    "module": "optimized_hybrid_attention",
+    "runner": "run_all_4_optimized_hybrid_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 62.93,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T06:01:44.257107"
+  },
+  {
+    "module": "orion",
+    "runner": "run_all_4_orion.py",
+    "exit_code": 0,
+    "elapsed_s": 128.21,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T06:03:52.475604"
   }
 ]
