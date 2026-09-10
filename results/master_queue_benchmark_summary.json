@@ -808,5 +808,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:28:52.170788"
+  },
+  {
+    "module": "infini",
+    "runner": "run_all_4_infini.py",
+    "exit_code": 0,
+    "elapsed_s": 64.66,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:29:56.834304"
+  },
+  {
+    "module": "infini_attention",
+    "runner": "run_all_4_infini_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 66.78,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:31:03.619590"
+  },
+  {
+    "module": "jamba",
+    "runner": "run_all_4_jamba.py",
+    "exit_code": 0,
+    "elapsed_s": 45.73,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:31:49.349923"
   }
 ]
