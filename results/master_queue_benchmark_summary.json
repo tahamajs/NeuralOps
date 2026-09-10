@@ -610,5 +610,86 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:02:15.455894"
+  },
+  {
+    "module": "gated_linear_attention",
+    "runner": "run_all_4_gated_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 75.77,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:03:31.230775"
+  },
+  {
+    "module": "goldfinch_ahn",
+    "runner": "run_all_4_goldfinch_ahn.py",
+    "exit_code": 0,
+    "elapsed_s": 66.01,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:04:37.243724"
+  },
+  {
+    "module": "gqa",
+    "runner": "run_all_4_gqa.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T21:04:37.248610"
+  },
+  {
+    "module": "granite_hybrid",
+    "runner": "run_all_4_granite_hybrid.py",
+    "exit_code": 0,
+    "elapsed_s": 46.42,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:05:23.673917"
+  },
+  {
+    "module": "grecodec",
+    "runner": "run_all_4_grecodec.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T21:05:23.681794"
+  },
+  {
+    "module": "griffin_ssd",
+    "runner": "run_all_4_griffin_ssd.py",
+    "exit_code": 0,
+    "elapsed_s": 48.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:06:12.598289"
+  },
+  {
+    "module": "halo_regla",
+    "runner": "run_all_4_halo_regla.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T21:06:12.603290"
+  },
+  {
+    "module": "hamming",
+    "runner": "run_all_4_hamming.py",
+    "exit_code": 0,
+    "elapsed_s": 89.4,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:07:42.006220"
+  },
+  {
+    "module": "hashed_linear",
+    "runner": "run_all_4_hashed_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 58.83,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:08:40.843124"
   }
 ]
