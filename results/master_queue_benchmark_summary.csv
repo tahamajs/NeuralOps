@@ -59,3 +59,11 @@ flash3,run_all_4_flash3.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:57:06.935552
 flash3_fp8,run_all_4_flash3_fp8.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:57:06.937000
 flat_llm,run_all_4_flat_llm.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:57:06.937574
 fms,run_all_4_fms.py,0,48.22,PASS,,2026-09-10T20:57:55.162362
+frandi,run_all_4_frandi.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:57:55.166480
+full,run_all_4_full.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:57:55.167585
+fused_svd_kernel,run_all_4_fused_svd_kernel.py,0,67.62,PASS,,2026-09-10T20:59:02.787836
+fusion_attn,run_all_4_fusion_attn.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:59:02.791065
+galerkin,run_all_4_galerkin.py,0,51.45,PASS,,2026-09-10T20:59:54.246637
+galerkin_attention,run_all_4_galerkin_attention.py,0,47.61,PASS,,2026-09-10T21:00:41.855842
+gated_delta_net,run_all_4_gated_delta_net.py,0,46.19,PASS,,2026-09-10T21:01:28.047448
+gated_deltanet_block,run_all_4_gated_deltanet_block.py,0,47.4,PASS,,2026-09-10T21:02:15.455894
