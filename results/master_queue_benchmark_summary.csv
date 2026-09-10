@@ -17,3 +17,4 @@ aegis_spectron_fp8,run_all_4_aegis_spectron_fp8.py,0,43.76,PASS,,2026-09-10T20:1
 aegis_v1,run_all_4_aegis_v1.py,0,133.27,PASS,,2026-09-10T20:13:01.030407
 aegis_v1_module,run_all_4_aegis_v1_module.py,0,149.92,PASS,,2026-09-10T20:15:30.958050
 aegis_v2,run_all_4_aegis_v2.py,0,96.57,PASS,,2026-09-10T20:17:07.531864
+aegis_v3,run_all_4_aegis_v3.py,0,163.07,PASS,,2026-09-10T20:19:50.606515
