@@ -1,3 +1,3 @@
 module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-full,PASS,60.78,0.6354,0.6055,0.6085,0.6066,0.6585,2.31,793.19,71166.86,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-10T20:51:50.834894
-dobi_svd,PASS,58.14,0.6256,0.5755,0.5834,0.5794,0.6694,5.67,635.79,70522.86,124441344,124441344,1536,1.0,0.0,0.0,0,48,0.0,0.8307,0,0,,adapted_gpt,2026-09-10T20:51:56.623059
+full,PASS,60.78,0.6354,0.6055,0.6085,0.6066,0.6585,2.29,793.19,71307.55,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T01:52:25.926096
+dobi_svd,PASS,58.14,0.6256,0.5755,0.5834,0.5794,0.6694,5.63,635.79,72258.55,124441344,124441344,1536,1.0,0.0,0.0,0,48,0.0,0.8307,0,0,,adapted_gpt,2026-09-11T01:52:31.671241
