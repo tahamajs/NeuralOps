@@ -1,0 +1,34 @@
+[
+  {
+    "Model": "DistilBERT",
+    "Module": "a3",
+    "Status": "PASS",
+    "Accuracy (%)": 72.82,
+    "Threshold (%)": 56.0,
+    "Elapsed (s)": 204.0
+  },
+  {
+    "Model": "RoBERTa",
+    "Module": "a3",
+    "Status": "PASS_LOW",
+    "Accuracy (%)": 50.92,
+    "Threshold (%)": 56.0,
+    "Elapsed (s)": 27.0
+  },
+  {
+    "Model": "GPT-2",
+    "Module": "a3",
+    "Status": "PASS_LOW",
+    "Accuracy (%)": 50.92,
+    "Threshold (%)": 56.0,
+    "Elapsed (s)": 26.0
+  },
+  {
+    "Model": "Qwen3.5",
+    "Module": "a3",
+    "Status": "SKIP_QWEN3_5_TIMEOUT",
+    "Accuracy (%)": 0.0,
+    "Threshold (%)": 56.0,
+    "Elapsed (s)": 1492.9
+  }
+]

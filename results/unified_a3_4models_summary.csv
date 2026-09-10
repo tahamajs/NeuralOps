@@ -1,0 +1,5 @@
+Model,Module,Status,Accuracy (%),Threshold (%),Elapsed (s)
+DistilBERT,a3,PASS,72.82,56.0,204.0
+RoBERTa,a3,PASS_LOW,50.92,56.0,27.0
+GPT-2,a3,PASS_LOW,50.92,56.0,26.0
+Qwen3.5,a3,SKIP_QWEN3_5_TIMEOUT,0.0,56.0,1492.9
