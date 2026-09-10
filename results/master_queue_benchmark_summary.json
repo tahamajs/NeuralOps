@@ -583,5 +583,167 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T18:07:44.186927"
+  },
+  {
+    "module": "galerkin_attention",
+    "runner": "run_all_4_galerkin_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 31.6,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:08:15.789351"
+  },
+  {
+    "module": "gated_delta_net",
+    "runner": "run_all_4_gated_delta_net.py",
+    "exit_code": 0,
+    "elapsed_s": 30.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:08:46.080038"
+  },
+  {
+    "module": "gated_deltanet_block",
+    "runner": "run_all_4_gated_deltanet_block.py",
+    "exit_code": 0,
+    "elapsed_s": 30.98,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:09:17.068881"
+  },
+  {
+    "module": "gated_linear_attention",
+    "runner": "run_all_4_gated_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 31.0,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:09:48.072601"
+  },
+  {
+    "module": "goldfinch_ahn",
+    "runner": "run_all_4_goldfinch_ahn.py",
+    "exit_code": 0,
+    "elapsed_s": 31.69,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:10:19.766153"
+  },
+  {
+    "module": "gqa",
+    "runner": "run_all_4_gqa.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:10:19.770971"
+  },
+  {
+    "module": "granite_hybrid",
+    "runner": "run_all_4_granite_hybrid.py",
+    "exit_code": 0,
+    "elapsed_s": 40.55,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:11:00.320999"
+  },
+  {
+    "module": "grecodec",
+    "runner": "run_all_4_grecodec.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:11:00.326248"
+  },
+  {
+    "module": "griffin_ssd",
+    "runner": "run_all_4_griffin_ssd.py",
+    "exit_code": 0,
+    "elapsed_s": 34.59,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:11:34.919826"
+  },
+  {
+    "module": "halo_regla",
+    "runner": "run_all_4_halo_regla.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:11:34.925027"
+  },
+  {
+    "module": "hamming",
+    "runner": "run_all_4_hamming.py",
+    "exit_code": 0,
+    "elapsed_s": 35.78,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:12:10.702602"
+  },
+  {
+    "module": "hashed_linear",
+    "runner": "run_all_4_hashed_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 35.25,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:12:45.958599"
+  },
+  {
+    "module": "hashednets",
+    "runner": "run_all_4_hashednets.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:12:45.963781"
+  },
+  {
+    "module": "hgrn2",
+    "runner": "run_all_4_hgrn2.py",
+    "exit_code": 0,
+    "elapsed_s": 31.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:13:17.429098"
+  },
+  {
+    "module": "hgrn2_gated_deltanet",
+    "runner": "run_all_4_hgrn2_gated_deltanet.py",
+    "exit_code": 0,
+    "elapsed_s": 32.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:13:49.892747"
+  },
+  {
+    "module": "hgrn2_layer",
+    "runner": "run_all_4_hgrn2_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 32.68,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:14:22.577588"
+  },
+  {
+    "module": "hgrn2_outer",
+    "runner": "run_all_4_hgrn2_outer.py",
+    "exit_code": 0,
+    "elapsed_s": 34.56,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:14:57.140080"
+  },
+  {
+    "module": "hla",
+    "runner": "run_all_4_hla.py",
+    "exit_code": 0,
+    "elapsed_s": 32.59,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:15:29.730585"
   }
 ]
