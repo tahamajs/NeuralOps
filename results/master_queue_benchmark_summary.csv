@@ -29,3 +29,8 @@ astro,run_all_4_astro.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:36:37.129459
 asvd,run_all_4_asvd.py,0,46.82,PASS,,2026-09-10T20:37:23.954228
 bam_umoe,run_all_4_bam_umoe.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:37:23.958565
 block_transformer_hiba,run_all_4_block_transformer_hiba.py,0,45.71,PASS,,2026-09-10T20:38:09.664916
+cachenotes,run_all_4_cachenotes.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:38:09.669472
+chela_slay,run_all_4_chela_slay.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:38:09.669894
+cluster,run_all_4_cluster.py,0,61.68,PASS,,2026-09-10T20:39:11.349361
+come,run_all_4_come.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:39:11.366454
+compressed_attention,run_all_4_compressed_attention.py,0,105.41,PASS,,2026-09-10T20:40:56.781808
