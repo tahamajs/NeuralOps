@@ -412,5 +412,176 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T18:05:03.541312"
+  },
+  {
+    "module": "dynamic_entropy",
+    "runner": "run_all_4_dynamic_entropy.py",
+    "exit_code": 0,
+    "elapsed_s": 36.5,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:05:40.048743"
+  },
+  {
+    "module": "eat",
+    "runner": "run_all_4_eat.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:05:40.053786"
+  },
+  {
+    "module": "enlighten",
+    "runner": "run_all_4_enlighten.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:05:40.054972"
+  },
+  {
+    "module": "entropy_budget",
+    "runner": "run_all_4_entropy_budget.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:05:40.056102"
+  },
+  {
+    "module": "erc",
+    "runner": "run_all_4_erc.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:05:40.057122"
+  },
+  {
+    "module": "expert_choice_moe",
+    "runner": "run_all_4_expert_choice_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:05:40.058089"
+  },
+  {
+    "module": "factorised_matrix_state",
+    "runner": "run_all_4_factorised_matrix_state.py",
+    "exit_code": 0,
+    "elapsed_s": 30.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:10.519666"
+  },
+  {
+    "module": "faq",
+    "runner": "run_all_4_faq.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:10.524559"
+  },
+  {
+    "module": "fasa",
+    "runner": "run_all_4_fasa.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:10.525657"
+  },
+  {
+    "module": "flap",
+    "runner": "run_all_4_flap.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:10.526599"
+  },
+  {
+    "module": "flash3",
+    "runner": "run_all_4_flash3.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:10.527700"
+  },
+  {
+    "module": "flash3_fp8",
+    "runner": "run_all_4_flash3_fp8.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:10.529467"
+  },
+  {
+    "module": "flat_llm",
+    "runner": "run_all_4_flat_llm.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:10.530584"
+  },
+  {
+    "module": "fms",
+    "runner": "run_all_4_fms.py",
+    "exit_code": 0,
+    "elapsed_s": 30.48,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:41.015407"
+  },
+  {
+    "module": "frandi",
+    "runner": "run_all_4_frandi.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:41.020546"
+  },
+  {
+    "module": "full",
+    "runner": "run_all_4_full.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:06:41.021439"
+  },
+  {
+    "module": "fused_svd_kernel",
+    "runner": "run_all_4_fused_svd_kernel.py",
+    "exit_code": 0,
+    "elapsed_s": 32.52,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:07:13.540877"
+  },
+  {
+    "module": "fusion_attn",
+    "runner": "run_all_4_fusion_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T18:07:13.546189"
+  },
+  {
+    "module": "galerkin",
+    "runner": "run_all_4_galerkin.py",
+    "exit_code": 0,
+    "elapsed_s": 30.64,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:07:44.186927"
   }
 ]
