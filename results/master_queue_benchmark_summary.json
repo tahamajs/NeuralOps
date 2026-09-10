@@ -925,5 +925,86 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T05:12:49.306559"
+  },
+  {
+    "module": "liftr",
+    "runner": "run_all_4_liftr.py",
+    "exit_code": 0,
+    "elapsed_s": 67.15,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:13:56.460503"
+  },
+  {
+    "module": "lillama",
+    "runner": "run_all_4_lillama.py",
+    "exit_code": 0,
+    "elapsed_s": 77.05,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:15:13.522945"
+  },
+  {
+    "module": "linformer",
+    "runner": "run_all_4_linformer.py",
+    "exit_code": 0,
+    "elapsed_s": 60.63,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:16:14.154275"
+  },
+  {
+    "module": "lola_attention",
+    "runner": "run_all_4_lola_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 72.41,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:17:26.564754"
+  },
+  {
+    "module": "lola_attn",
+    "runner": "run_all_4_lola_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 72.75,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:18:39.321290"
+  },
+  {
+    "module": "lora_attention",
+    "runner": "run_all_4_lora_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 62.37,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:19:41.696424"
+  },
+  {
+    "module": "lora_attn",
+    "runner": "run_all_4_lora_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 62.17,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:20:43.871130"
+  },
+  {
+    "module": "lsc",
+    "runner": "run_all_4_lsc.py",
+    "exit_code": 0,
+    "elapsed_s": 60.93,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:21:44.811035"
+  },
+  {
+    "module": "lsh",
+    "runner": "run_all_4_lsh.py",
+    "exit_code": 0,
+    "elapsed_s": 63.09,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:22:47.904090"
   }
 ]

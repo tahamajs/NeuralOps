@@ -102,3 +102,12 @@ kvtc,run_all_4_kvtc.py,0,61.41,PASS,,2026-09-10T04:51:13.292168
 leka_v1,run_all_4_leka_v1.py,0,1158.47,PASS,,2026-09-10T05:10:31.767876
 leka_v2,run_all_4_leka_v2.py,0,71.96,PASS,,2026-09-10T05:11:43.730144
 leka_v3,run_all_4_leka_v3.py,0,65.57,PASS,,2026-09-10T05:12:49.306559
+liftr,run_all_4_liftr.py,0,67.15,PASS,,2026-09-10T05:13:56.460503
+lillama,run_all_4_lillama.py,0,77.05,PASS,,2026-09-10T05:15:13.522945
+linformer,run_all_4_linformer.py,0,60.63,PASS,,2026-09-10T05:16:14.154275
+lola_attention,run_all_4_lola_attention.py,0,72.41,PASS,,2026-09-10T05:17:26.564754
+lola_attn,run_all_4_lola_attn.py,0,72.75,PASS,,2026-09-10T05:18:39.321290
+lora_attention,run_all_4_lora_attention.py,0,62.37,PASS,,2026-09-10T05:19:41.696424
+lora_attn,run_all_4_lora_attn.py,0,62.17,PASS,,2026-09-10T05:20:43.871130
+lsc,run_all_4_lsc.py,0,60.93,PASS,,2026-09-10T05:21:44.811035
+lsh,run_all_4_lsh.py,0,63.09,PASS,,2026-09-10T05:22:47.904090
