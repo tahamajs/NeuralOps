@@ -14,6 +14,7 @@ and ensures that:
 """
 
 import os
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 import sys
 import time
 import json
