@@ -1,26 +1,26 @@
 {
     "model": "roberta-base_asvd",
     "performance": {
-        "accuracy_pct": 85.78,
-        "f1_score": 0.8737,
-        "f1_macro": 0.8555,
-        "precision": 0.8762,
-        "recall": 0.8558,
-        "val_loss": 0.4423,
-        "status": "FAIL",
-        "elapsed_s": 0.36
+        "accuracy_pct": 82.57,
+        "f1_score": 0.8417,
+        "f1_macro": 0.8239,
+        "precision": 0.8353,
+        "recall": 0.8241,
+        "val_loss": 0.4348,
+        "status": "PASS",
+        "elapsed_s": 14.46
     },
     "efficiency": {
-        "total_params_before": 127325954,
-        "total_params_after": 142920149,
-        "trainable_recovery_params": 3565826,
-        "compression_rate": 0.8909,
-        "compression_ratio_pct": -12.25,
+        "total_params_before": 124647170,
+        "total_params_after": 141124612,
+        "trainable_recovery_params": 1771826,
+        "compression_rate": 0.8832,
+        "compression_ratio_pct": -13.22,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 2973696,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -64,7 +64,7 @@
             "roberta.encoder.layer.6.attention.self": 32,
             "roberta.encoder.layer.6.attention.self.inner": 32,
             "roberta.encoder.layer.6.attention.self.inner.query": 404,
-            "roberta.encoder.layer.6.attention.self.inner.key": 397,
+            "roberta.encoder.layer.6.attention.self.inner.key": 396,
             "roberta.encoder.layer.6.attention.self.inner.value": 411,
             "roberta.encoder.layer.6.attention.self.inner.out_proj": 738,
             "roberta.encoder.layer.7.attention.self": 32,
@@ -100,8 +100,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 413.14,
-        "tokens_per_sec": 9662.9
+        "peak_vram_mb": 716.6,
+        "tokens_per_sec": 41476.3
     },
     "architecture": {
         "span_distribution": {},
@@ -109,10 +109,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 382.8,
-        "L_256_vram_mb": 387.81,
-        "L_512_vram_mb": 412.93,
+        "L_128_vram_mb": 683.16,
+        "L_256_vram_mb": 688.3,
+        "L_512_vram_mb": 716.8,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-07T18:42:32.097049"
+    "timestamp": "2026-09-11T01:19:28.152039"
 }
