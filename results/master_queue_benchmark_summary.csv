@@ -14,3 +14,6 @@ admm,run_all_4_admm.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:09:20.280529
 admm_pruner,run_all_4_admm_pruner.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:09:20.281089
 aegis_hybrid,run_all_4_aegis_hybrid.py,0,43.72,PASS,,2026-09-10T20:10:03.998500
 aegis_spectron_fp8,run_all_4_aegis_spectron_fp8.py,0,43.76,PASS,,2026-09-10T20:10:47.760453
+aegis_v1,run_all_4_aegis_v1.py,0,133.27,PASS,,2026-09-10T20:13:01.030407
+aegis_v1_module,run_all_4_aegis_v1_module.py,0,149.92,PASS,,2026-09-10T20:15:30.958050
+aegis_v2,run_all_4_aegis_v2.py,0,96.57,PASS,,2026-09-10T20:17:07.531864

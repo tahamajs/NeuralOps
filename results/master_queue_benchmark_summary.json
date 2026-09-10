@@ -133,5 +133,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T20:10:47.760453"
+  },
+  {
+    "module": "aegis_v1",
+    "runner": "run_all_4_aegis_v1.py",
+    "exit_code": 0,
+    "elapsed_s": 133.27,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:13:01.030407"
+  },
+  {
+    "module": "aegis_v1_module",
+    "runner": "run_all_4_aegis_v1_module.py",
+    "exit_code": 0,
+    "elapsed_s": 149.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:15:30.958050"
+  },
+  {
+    "module": "aegis_v2",
+    "runner": "run_all_4_aegis_v2.py",
+    "exit_code": 0,
+    "elapsed_s": 96.57,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:17:07.531864"
   }
 ]
