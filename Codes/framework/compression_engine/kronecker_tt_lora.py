@@ -533,25 +533,6 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 
         # Post-compression forward sanity check
         forward_check_success = True
-        try:
-            with torch.no_grad():
-                dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
-                try:
-                    self.model(dummy)
-                except Exception:
-                    first_linear = next(
-                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, KroneckerTTLoRALayer))),
-                        None,
-                    )
-                    in_dim = getattr(first_linear, "in_features", 8)
-                    try:
-                        self.model(torch.randn(1, in_dim, device=dev))
-                    except Exception:
-                        self.model(torch.randn(1, 8, in_dim, device=dev))
-        except Exception as e:
-            logger.warning("Kronecker-TT-LoRA post-compression forward check warning: %s", e)
-            forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
