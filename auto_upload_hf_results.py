@@ -333,12 +333,10 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Uploading weights.pt ({wf.stat().st_size / 1e6:.1f} MB) -> {repo_id}...")
         for attempt in range(1, 4):
             try:
-                api.upload_file(
-                    path_or_fileobj=str(wf),
-                    path_in_repo="weights.pt",
-                    repo_id=repo_id,
-                    commit_message=f"Upload model weights for {model_name}-{mod_name} (recovery_steps=50)",
-                )
+                import subprocess
+                res = subprocess.run(["hf", "upload", repo_id, str(wf), "weights.pt"], capture_output=True)
+                if res.returncode != 0:
+                    raise Exception(res.stderr.decode("utf-8"))
                 print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] SUCCESS: weights.pt -> {repo_id}")
                 break
             except Exception as e_up:
