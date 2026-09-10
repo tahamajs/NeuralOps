@@ -1,2 +1,4 @@
 Model,Exit Code,Baseline Acc,MLoRQ Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-roberta,0,88.76%,88.65%,-0.11%,0.8941,PASS,0,1.00x,321.6 MB,54.8
+distilbert,1,N/A,N/A,N/A,N/A,EXIT_1,N/A,1.00x,N/A,9.9
+roberta,0,75.11%,72.02%,-3.09%,0.7724,PASS,0,1.00x,299.1 MB,22.3
+gpt2,0,54.13%,54.47%,+0.34%,0.5928,PASS_LOW,0,1.00x,391.1 MB,23.1
