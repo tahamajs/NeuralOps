@@ -6,7 +6,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-10T18:17:27.899350"
+    "timestamp": "2026-09-10T18:48:49.438542"
   },
   {
     "module": "aasvd",
@@ -15,16 +15,16 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-10T18:17:27.900975"
+    "timestamp": "2026-09-10T18:48:49.438985"
   },
   {
     "module": "adaptive_compressor",
     "runner": "run_all_4_adaptive_compressor.py",
     "exit_code": 0,
-    "elapsed_s": 87.2,
+    "elapsed_s": 83.49,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-10T18:18:55.108648"
+    "timestamp": "2026-09-10T18:50:12.930422"
   },
   {
     "module": "adaptive_ranks",
@@ -33,7 +33,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-10T18:18:55.645350"
+    "timestamp": "2026-09-10T18:50:13.463666"
   },
   {
     "module": "adaptive_span",
@@ -42,7 +42,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-10T18:18:55.646431"
+    "timestamp": "2026-09-10T18:50:13.464321"
   },
   {
     "module": "adaptive_sparse",
@@ -51,321 +51,24 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-10T18:18:55.647847"
+    "timestamp": "2026-09-10T18:50:13.465098"
   },
   {
     "module": "adaptive_sparse_attention",
     "runner": "run_all_4_adaptive_sparse_attention.py",
     "exit_code": 0,
-    "elapsed_s": 67.22,
+    "elapsed_s": 52.18,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-10T18:20:02.873612"
+    "timestamp": "2026-09-10T18:51:05.641280"
   },
   {
     "module": "adaptive_svd_attention",
     "runner": "run_all_4_adaptive_svd_attention.py",
     "exit_code": 0,
-    "elapsed_s": 132.28,
+    "elapsed_s": 106.62,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-10T18:22:15.160429"
-  },
-  {
-    "module": "adaptive_svd_attn",
-    "runner": "run_all_4_adaptive_svd_attn.py",
-    "exit_code": 0,
-    "elapsed_s": 127.68,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:24:22.840754"
-  },
-  {
-    "module": "adasplash",
-    "runner": "run_all_4_adasplash.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:24:22.843960"
-  },
-  {
-    "module": "adasvd",
-    "runner": "run_all_4_adasvd.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:24:22.845439"
-  },
-  {
-    "module": "admm",
-    "runner": "run_all_4_admm.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:24:22.846783"
-  },
-  {
-    "module": "admm_pruner",
-    "runner": "run_all_4_admm_pruner.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:24:22.848649"
-  },
-  {
-    "module": "aegis_hybrid",
-    "runner": "run_all_4_aegis_hybrid.py",
-    "exit_code": 0,
-    "elapsed_s": 63.04,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:25:25.894217"
-  },
-  {
-    "module": "aegis_spectron_fp8",
-    "runner": "run_all_4_aegis_spectron_fp8.py",
-    "exit_code": 0,
-    "elapsed_s": 65.7,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:26:31.593859"
-  },
-  {
-    "module": "aegis_v1",
-    "runner": "run_all_4_aegis_v1.py",
-    "exit_code": 0,
-    "elapsed_s": 123.94,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:28:35.538739"
-  },
-  {
-    "module": "aegis_v1_module",
-    "runner": "run_all_4_aegis_v1_module.py",
-    "exit_code": 0,
-    "elapsed_s": 121.56,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:30:37.106379"
-  },
-  {
-    "module": "aegis_v2",
-    "runner": "run_all_4_aegis_v2.py",
-    "exit_code": 0,
-    "elapsed_s": 118.64,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:32:35.748131"
-  },
-  {
-    "module": "aegis_v3",
-    "runner": "run_all_4_aegis_v3.py",
-    "exit_code": 0,
-    "elapsed_s": 123.06,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:34:38.818111"
-  },
-  {
-    "module": "aegis_v3_module",
-    "runner": "run_all_4_aegis_v3_module.py",
-    "exit_code": 0,
-    "elapsed_s": 118.27,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:36:37.098438"
-  },
-  {
-    "module": "aegis_v4",
-    "runner": "run_all_4_aegis_v4.py",
-    "exit_code": 1,
-    "elapsed_s": 22.92,
-    "status": "FAIL",
-    "error": null,
-    "timestamp": "2026-09-10T18:37:00.022298"
-  },
-  {
-    "module": "aegis_v4_module",
-    "runner": "run_all_4_aegis_v4_module.py",
-    "exit_code": -1,
-    "elapsed_s": 23.6,
-    "status": "FAIL",
-    "error": "[Errno 28] No space left on device",
-    "timestamp": "2026-09-10T18:37:23.625485"
-  },
-  {
-    "module": "aegis_v5",
-    "runner": "run_all_4_aegis_v5.py",
-    "exit_code": -1,
-    "elapsed_s": 23.19,
-    "status": "FAIL",
-    "error": "[Errno 28] No space left on device",
-    "timestamp": "2026-09-10T18:37:46.824709"
-  },
-  {
-    "module": "aegis_v5_module",
-    "runner": "run_all_4_aegis_v5_module.py",
-    "exit_code": -1,
-    "elapsed_s": 24.24,
-    "status": "FAIL",
-    "error": "[Errno 28] No space left on device",
-    "timestamp": "2026-09-10T18:38:11.065864"
-  },
-  {
-    "module": "aegis_v6",
-    "runner": "run_all_4_aegis_v6.py",
-    "exit_code": -1,
-    "elapsed_s": 39.01,
-    "status": "FAIL",
-    "error": "[Errno 28] No space left on device",
-    "timestamp": "2026-09-10T18:38:50.079199"
-  },
-  {
-    "module": "armor",
-    "runner": "run_all_4_armor.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:38:50.081757"
-  },
-  {
-    "module": "astro",
-    "runner": "run_all_4_astro.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:38:50.083646"
-  },
-  {
-    "module": "asvd",
-    "runner": "run_all_4_asvd.py",
-    "exit_code": -1,
-    "elapsed_s": 24.06,
-    "status": "FAIL",
-    "error": "[Errno 28] No space left on device",
-    "timestamp": "2026-09-10T18:39:14.147018"
-  },
-  {
-    "module": "bam_umoe",
-    "runner": "run_all_4_bam_umoe.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:39:14.152463"
-  },
-  {
-    "module": "block_transformer_hiba",
-    "runner": "run_all_4_block_transformer_hiba.py",
-    "exit_code": 1,
-    "elapsed_s": 30.22,
-    "status": "FAIL",
-    "error": null,
-    "timestamp": "2026-09-10T18:39:44.371255"
-  },
-  {
-    "module": "cachenotes",
-    "runner": "run_all_4_cachenotes.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:39:44.376509"
-  },
-  {
-    "module": "chela_slay",
-    "runner": "run_all_4_chela_slay.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:39:44.378271"
-  },
-  {
-    "module": "cluster",
-    "runner": "run_all_4_cluster.py",
-    "exit_code": -1,
-    "elapsed_s": 43.14,
-    "status": "FAIL",
-    "error": "[Errno 28] No space left on device",
-    "timestamp": "2026-09-10T18:40:27.518023"
-  },
-  {
-    "module": "come",
-    "runner": "run_all_4_come.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:40:27.523782"
-  },
-  {
-    "module": "compressed_attention",
-    "runner": "run_all_4_compressed_attention.py",
-    "exit_code": -1,
-    "elapsed_s": 30.26,
-    "status": "FAIL",
-    "error": "[Errno 28] No space left on device",
-    "timestamp": "2026-09-10T18:40:57.788021"
-  },
-  {
-    "module": "compressed_attention_layer",
-    "runner": "run_all_4_compressed_attention_layer.py",
-    "exit_code": -1,
-    "elapsed_s": 55.48,
-    "status": "FAIL",
-    "error": "[Errno 28] No space left on device",
-    "timestamp": "2026-09-10T18:41:53.274822"
-  },
-  {
-    "module": "compressed_mha",
-    "runner": "run_all_4_compressed_mha.py",
-    "exit_code": 0,
-    "elapsed_s": 75.99,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:43:09.285580"
-  },
-  {
-    "module": "cosformer",
-    "runner": "run_all_4_cosformer.py",
-    "exit_code": 0,
-    "elapsed_s": 91.6,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:44:40.889105"
-  },
-  {
-    "module": "cur",
-    "runner": "run_all_4_cur.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-10T18:44:40.911075"
-  },
-  {
-    "module": "cur_linear",
-    "runner": "run_all_4_cur_linear.py",
-    "exit_code": 0,
-    "elapsed_s": 114.5,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:46:35.417185"
-  },
-  {
-    "module": "cur_moe",
-    "runner": "run_all_4_cur_moe.py",
-    "exit_code": 0,
-    "elapsed_s": 82.37,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-10T18:47:57.791701"
+    "timestamp": "2026-09-10T18:52:52.263335"
   }
 ]

@@ -1,1 +1,1 @@
-{"classification_head_trained": true, "finetune_mode": "head", "steps": 300, "dataset": "sst2", "seed": 42}
+{"classification_head_trained": true, "finetune_mode": "head", "steps": 800, "dataset": "sst2", "seed": 42}

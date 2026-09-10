@@ -1,42 +1,9 @@
 module,runner,exit_code,elapsed_s,status,error,timestamp
-a3,run_all_4_a3.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:17:27.899350
-aasvd,run_all_4_aasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:17:27.900975
-adaptive_compressor,run_all_4_adaptive_compressor.py,0,87.2,PASS,,2026-09-10T18:18:55.108648
-adaptive_ranks,run_all_4_adaptive_ranks.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:18:55.645350
-adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:18:55.646431
-adaptive_sparse,run_all_4_adaptive_sparse.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:18:55.647847
-adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,67.22,PASS,,2026-09-10T18:20:02.873612
-adaptive_svd_attention,run_all_4_adaptive_svd_attention.py,0,132.28,PASS,,2026-09-10T18:22:15.160429
-adaptive_svd_attn,run_all_4_adaptive_svd_attn.py,0,127.68,PASS,,2026-09-10T18:24:22.840754
-adasplash,run_all_4_adasplash.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:24:22.843960
-adasvd,run_all_4_adasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:24:22.845439
-admm,run_all_4_admm.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:24:22.846783
-admm_pruner,run_all_4_admm_pruner.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:24:22.848649
-aegis_hybrid,run_all_4_aegis_hybrid.py,0,63.04,PASS,,2026-09-10T18:25:25.894217
-aegis_spectron_fp8,run_all_4_aegis_spectron_fp8.py,0,65.7,PASS,,2026-09-10T18:26:31.593859
-aegis_v1,run_all_4_aegis_v1.py,0,123.94,PASS,,2026-09-10T18:28:35.538739
-aegis_v1_module,run_all_4_aegis_v1_module.py,0,121.56,PASS,,2026-09-10T18:30:37.106379
-aegis_v2,run_all_4_aegis_v2.py,0,118.64,PASS,,2026-09-10T18:32:35.748131
-aegis_v3,run_all_4_aegis_v3.py,0,123.06,PASS,,2026-09-10T18:34:38.818111
-aegis_v3_module,run_all_4_aegis_v3_module.py,0,118.27,PASS,,2026-09-10T18:36:37.098438
-aegis_v4,run_all_4_aegis_v4.py,1,22.92,FAIL,,2026-09-10T18:37:00.022298
-aegis_v4_module,run_all_4_aegis_v4_module.py,-1,23.6,FAIL,[Errno 28] No space left on device,2026-09-10T18:37:23.625485
-aegis_v5,run_all_4_aegis_v5.py,-1,23.19,FAIL,[Errno 28] No space left on device,2026-09-10T18:37:46.824709
-aegis_v5_module,run_all_4_aegis_v5_module.py,-1,24.24,FAIL,[Errno 28] No space left on device,2026-09-10T18:38:11.065864
-aegis_v6,run_all_4_aegis_v6.py,-1,39.01,FAIL,[Errno 28] No space left on device,2026-09-10T18:38:50.079199
-armor,run_all_4_armor.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:38:50.081757
-astro,run_all_4_astro.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:38:50.083646
-asvd,run_all_4_asvd.py,-1,24.06,FAIL,[Errno 28] No space left on device,2026-09-10T18:39:14.147018
-bam_umoe,run_all_4_bam_umoe.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:39:14.152463
-block_transformer_hiba,run_all_4_block_transformer_hiba.py,1,30.22,FAIL,,2026-09-10T18:39:44.371255
-cachenotes,run_all_4_cachenotes.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:39:44.376509
-chela_slay,run_all_4_chela_slay.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:39:44.378271
-cluster,run_all_4_cluster.py,-1,43.14,FAIL,[Errno 28] No space left on device,2026-09-10T18:40:27.518023
-come,run_all_4_come.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:40:27.523782
-compressed_attention,run_all_4_compressed_attention.py,-1,30.26,FAIL,[Errno 28] No space left on device,2026-09-10T18:40:57.788021
-compressed_attention_layer,run_all_4_compressed_attention_layer.py,-1,55.48,FAIL,[Errno 28] No space left on device,2026-09-10T18:41:53.274822
-compressed_mha,run_all_4_compressed_mha.py,0,75.99,PASS,,2026-09-10T18:43:09.285580
-cosformer,run_all_4_cosformer.py,0,91.6,PASS,,2026-09-10T18:44:40.889105
-cur,run_all_4_cur.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:44:40.911075
-cur_linear,run_all_4_cur_linear.py,0,114.5,PASS,,2026-09-10T18:46:35.417185
-cur_moe,run_all_4_cur_moe.py,0,82.37,PASS,,2026-09-10T18:47:57.791701
+a3,run_all_4_a3.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:48:49.438542
+aasvd,run_all_4_aasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:48:49.438985
+adaptive_compressor,run_all_4_adaptive_compressor.py,0,83.49,PASS,,2026-09-10T18:50:12.930422
+adaptive_ranks,run_all_4_adaptive_ranks.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:50:13.463666
+adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:50:13.464321
+adaptive_sparse,run_all_4_adaptive_sparse.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:50:13.465098
+adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,52.18,PASS,,2026-09-10T18:51:05.641280
+adaptive_svd_attention,run_all_4_adaptive_svd_attention.py,0,106.62,PASS,,2026-09-10T18:52:52.263335

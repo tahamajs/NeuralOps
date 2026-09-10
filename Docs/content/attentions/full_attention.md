@@ -233,6 +233,14 @@ To eliminate intermediate $N \times N$ score materialization, hardware-accelerat
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **gpt2** | sst2 | `PASS` | N/A | **59.29%** | N/A | 0.6179 | 1.00x | 0 | N/A | 2026-09-10 |
+| **roberta-base** | sst2 | `PASS` | N/A | **75.00%** | N/A | 0.7578 | 1.00x | 0 | N/A | 2026-09-10 |
+
+
 The empirical evaluation of `full_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
 
 ### 8.1 Language Modeling Quality & Throughput
@@ -401,4 +409,3 @@ The `FullAttention` architecture incorporates telemetry hooks for tracking singu
 - **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
 - **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
-

@@ -1,79 +1,125 @@
+Skipping attention module 'adaptive_sparse_attention' due to: expected an indented block after 'except' statement on line 544 (adaptive_sparse_attention.py, line 545)
+Skipping attention module 'aegis_hybrid' due to: expected an indented block after 'except' statement on line 465 (aegis_hybrid.py, line 466)
+Skipping attention module 'aegis_hybrid_attention' due to: expected an indented block after 'except' statement on line 465 (aegis_hybrid.py, line 466)
+Skipping attention module 'aegis_spectron_fp8' due to: expected an indented block after 'except' statement on line 503 (aegis_spectron_fp8.py, line 504)
+Skipping attention module 'asvd_attention' due to: expected an indented block after 'except' statement on line 516 (asvd_attention.py, line 517)
+Skipping attention module 'bam_umoe' due to: expected an indented block after 'except' statement on line 429 (bam_umoe.py, line 430)
+Skipping attention module 'block_transformer_hiba' due to: expected an indented block after 'except' statement on line 318 (block_transformer_hiba.py, line 319)
+Skipping attention module 'chela_slay' due to: expected an indented block after 'except' statement on line 359 (chela_slay.py, line 360)
+Skipping attention module 'cluster_attention' due to: expected an indented block after 'except' statement on line 290 (cluster_attention.py, line 291)
+Skipping attention module 'cosformer' due to: expected an indented block after 'except' statement on line 343 (cosformer.py, line 344)
+Skipping attention module 'decay_linear_attention' due to: expected an indented block after 'except' statement on line 315 (decay_linear_attention.py, line 316)
+Skipping attention module 'eat' due to: expected an indented block after 'except' statement on line 296 (eat.py, line 297)
+Skipping attention module 'expert_choice_moe' due to: expected an indented block after 'except' statement on line 410 (expert_choice_moe.py, line 411)
+Skipping attention module 'factorised_matrix_state' due to: expected an indented block after 'except' statement on line 337 (factorised_matrix_state.py, line 338)
+Skipping attention module 'flash_attention3' due to: expected an indented block after 'except' statement on line 315 (flash_attention3.py, line 316)
+Skipping attention module 'flash_attention3_fp8' due to: expected an indented block after 'except' statement on line 319 (flash_attention3_fp8.py, line 320)
+Skipping attention module 'fusion_attn' due to: expected an indented block after 'except' statement on line 312 (fusion_attn.py, line 313)
+Skipping attention module 'galerkin_attention' due to: expected an indented block after 'except' statement on line 320 (galerkin_attention.py, line 321)
+Skipping attention module 'gated_deltanet_block' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
+Skipping attention module 'gated_delta_net' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
+Skipping attention module 'granite_hybrid' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
+Skipping attention module 'griffin_ssd' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
+Skipping attention module 'hgrn2_gated_deltanet' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
+Skipping attention module 'jamba' due to: expected an indented block after 'except' statement on line 410 (expert_choice_moe.py, line 411)
+Skipping attention module 'kda_attention' due to: expected an indented block after 'except' statement on line 560 (kda_attention.py, line 561)
+Skipping compression_engine module 'adaptive_compressor' due to: name 'self' is not defined
+Skipping compression_engine module 'entropy_budget_allocation' due to: expected an indented block after 'except' statement on line 397 (entropy_budget_allocation.py, line 398)
+Skipping compression_engine module 'erc_svd' due to: expected an indented block after 'except' statement on line 313 (erc_svd.py, line 314)
+Skipping compression_engine module 'faq_quantizer' due to: expected an indented block after 'except' statement on line 359 (faq_quantizer.py, line 360)
+Skipping compression_engine module 'replaceme_compressor' due to: expected an indented block after 'except' statement on line 231 (replaceme_compressor.py, line 232)
+Skipping compression_engine module 'slicegpt_compressor' due to: expected an indented block after 'except' statement on line 318 (slicegpt_pca.py, line 319)
+Skipping compression_engine module 'slicegpt_pca' due to: expected an indented block after 'except' statement on line 318 (slicegpt_pca.py, line 319)
+Skipping compression_engine module 'spectraformer_attention' due to: expected an indented block after 'except' statement on line 450 (spectraformer_attention.py, line 451)
+Skipping attention module 'upi_stuffed_mamba' due to: expected an indented block after 'except' statement on line 206 (upi_stuffed_mamba.py, line 207)
+Skipping attention module 'wgqa_attention' due to: expected an indented block after 'except' statement on line 580 (wgqa_attention.py, line 581)
+Skipping attention module 'xattention' due to: expected an indented block after 'except' statement on line 442 (xattention.py, line 443)
+Skipping attention module 'zeros_attention' due to: expected an indented block after 'except' statement on line 430 (zeros_attention.py, line 431)
 `torch_dtype` is deprecated! Use `dtype` instead!
 
 Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 197/197 [00:00<00:00, 3125.89it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 6346.56it/s]
 [1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
 Key                             | Status     | 
 --------------------------------+------------+-
+lm_head.layer_norm.weight       | UNEXPECTED | 
 lm_head.dense.weight            | UNEXPECTED | 
-lm_head.dense.bias              | UNEXPECTED | 
 lm_head.layer_norm.bias         | UNEXPECTED | 
 lm_head.bias                    | UNEXPECTED | 
 roberta.embeddings.position_ids | UNEXPECTED | 
-lm_head.layer_norm.weight       | UNEXPECTED | 
-classifier.out_proj.weight      | MISSING    | 
-classifier.dense.bias           | MISSING    | 
-classifier.dense.weight         | MISSING    | 
+lm_head.dense.bias              | UNEXPECTED | 
 classifier.out_proj.bias        | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.dense.bias           | MISSING    | 
 
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-07 18:05:08,390 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-07 18:05:08,390 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-07 18:05:08,390 [INFO] QwenQualitySweep: ================================================================================
-2026-09-07 18:05:08,390 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-07 18:05:08,390 [INFO] QwenQualitySweep:   model:             models\roberta-base
-2026-09-07 18:05:08,390 [INFO] QwenQualitySweep:   family:            roberta
-2026-09-07 18:05:08,391 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-07 18:05:08,391 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-07 18:05:08,391 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-07 18:05:08,391 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-07 18:05:08,391 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-07 18:05:08,391 [INFO] QwenQualitySweep: ================================================================================
-2026-09-07 18:05:08,748 [INFO] QwenQualitySweep: Injected 73 LoRALinear layers into roberta backbone
-2026-09-07 18:05:08,748 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
-2026-09-07 18:05:09,384 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-07 18:05:10,104 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-07 18:05:19,422 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 88.76%
-2026-09-07 18:05:19,471 [INFO] QwenQualitySweep: ================================================================================
-2026-09-07 18:05:19,471 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-07 18:05:19,471 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-07 18:05:19,471 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-07 18:05:19,471 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-07 18:05:19,471 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-07 18:05:19,471 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-07 18:05:19,472 [INFO] QwenQualitySweep: ================================================================================
-2026-09-07 18:05:19,472 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-07 18:05:24,532 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v3_module\roberta\roberta-base_full_full_metrics.json
-2026-09-07 18:05:24,628 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v3_module\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=150)
-2026-09-07 18:05:25,389 [INFO] QwenQualitySweep: [1/2] full -> PASS 88.76% (F1: 0.8942, Peak VRAM: 299.92 MB)
-2026-09-07 18:05:25,389 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v3_module\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-07 18:05:25,631 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: aegis_v3_module (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-07 18:05:46,851 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v3_module' into 12 transformer blocks.
-2026-09-07 18:05:46,866 [INFO] QwenQualitySweep: module=aegis_v3_module path=adapted_roberta
-2026-09-07 18:05:46,868 [INFO] QwenQualitySweep: module=aegis_v3_module injection summary: 0 SVDLinear layers active
-2026-09-07 18:05:46,868 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v3_module (lr=2.0e-04)
-2026-09-07 18:05:47,535 [INFO] QwenQualitySweep: LoRA fine-tuning: 3959186 trainable parameters across 198 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-07 18:05:48,277 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6733 (bs=8, micro_bs=8)
-2026-09-07 18:05:50,337 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.8217 (bs=8, micro_bs=8)
-2026-09-07 18:05:52,901 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7034 (bs=8, micro_bs=8)
-2026-09-07 18:05:55,430 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5724 (bs=8, micro_bs=8)
-2026-09-07 18:05:57,947 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6719 (bs=8, micro_bs=8)
-2026-09-07 18:06:00,500 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.8491 (bs=8, micro_bs=8)
-2026-09-07 18:06:03,009 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6984 (bs=8, micro_bs=8)
-2026-09-07 18:06:05,577 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7104 (bs=8, micro_bs=8)
-2026-09-07 18:06:08,081 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6644 (bs=8, micro_bs=8)
-2026-09-07 18:06:10,598 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6682 (bs=8, micro_bs=8)
-2026-09-07 18:06:13,103 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6936 (bs=8, micro_bs=8)
-2026-09-07 18:06:32,260 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v3_module\roberta\roberta-base_aegis_v3_module_full_metrics.json
-2026-09-07 18:06:32,337 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v3_module\roberta\checkpoints\aegis_v3_module\weights.pt (module_params=0, lora_params=174)
-2026-09-07 18:06:33,118 [INFO] QwenQualitySweep: [2/2] aegis_v3_module -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 354.85 MB)
-2026-09-07 18:06:33,118 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v3_module' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning checkpoint artifacts.
-2026-09-07 18:06:33,379 [INFO] QwenQualitySweep: ================================================================================
-2026-09-07 18:06:33,379 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
-2026-09-07 18:06:33,383 [INFO] QwenQualitySweep: 
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep: ================================================================================
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep: ================================================================================
+2026-09-10 18:35:18,265 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
+2026-09-10 18:35:19,058 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.6811
+2026-09-10 18:35:19,515 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6746
+2026-09-10 18:35:19,994 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.6785
+2026-09-10 18:35:20,430 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6543
+2026-09-10 18:35:20,875 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6399
+2026-09-10 18:35:21,313 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7380
+2026-09-10 18:35:21,817 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5593
+2026-09-10 18:35:22,272 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6770
+2026-09-10 18:35:22,378 [WARNING] QwenQualitySweep: Failed to save fine-tuned checkpoint results\unified_aegis_v3_module\roberta\finetuned_model.pt: [enforce fail at inline_container.cc:626] . unexpected pos 44288 vs 44182 (continuing in-memory)
+2026-09-10 18:35:22,466 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-10 18:35:22,928 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-10 18:35:24,165 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.11%
+2026-09-10 18:35:24,178 [INFO] QwenQualitySweep: ================================================================================
+2026-09-10 18:35:24,178 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-10 18:35:24,178 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-10 18:35:24,178 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-10 18:35:24,178 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-10 18:35:24,178 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-10 18:35:24,178 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-10 18:35:24,178 [INFO] QwenQualitySweep: ================================================================================
+2026-09-10 18:35:24,179 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-10 18:35:25,874 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v3_module\roberta\roberta-base_full_full_metrics.json
+2026-09-10 18:35:25,880 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v3_module\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-10 18:35:25,955 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.11% (F1: 0.7586, Peak VRAM: 295.83 MB)
+2026-09-10 18:35:25,955 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v3_module\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-10 18:35:26,084 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: aegis_v3_module (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-10 18:35:34,301 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v3_module' into 12 transformer blocks.
+2026-09-10 18:35:34,304 [INFO] QwenQualitySweep: module=aegis_v3_module path=adapted_roberta
+2026-09-10 18:35:34,305 [INFO] QwenQualitySweep: module=aegis_v3_module injection summary: 0 SVDLinear layers active
+2026-09-10 18:35:34,305 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v3_module (lr=2.0e-04)
+2026-09-10 18:35:34,519 [INFO] framework.utils.compat: Recovery fine-tuning selected 2165186 trainable parameters across 172 tensors.
+2026-09-10 18:35:34,526 [INFO] QwenQualitySweep: LoRA fine-tuning: 2165186 trainable parameters across 172 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-10 18:35:34,755 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6841 (bs=8, micro_bs=8)
+2026-09-10 18:35:35,328 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7332 (bs=8, micro_bs=8)
+2026-09-10 18:35:36,092 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6223 (bs=8, micro_bs=8)
+2026-09-10 18:35:36,818 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.8162 (bs=8, micro_bs=8)
+2026-09-10 18:35:37,597 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6378 (bs=8, micro_bs=8)
+2026-09-10 18:35:38,358 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6650 (bs=8, micro_bs=8)
+2026-09-10 18:35:39,133 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7040 (bs=8, micro_bs=8)
+2026-09-10 18:35:39,885 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6952 (bs=8, micro_bs=8)
+2026-09-10 18:35:40,626 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7385 (bs=8, micro_bs=8)
+2026-09-10 18:35:41,376 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6194 (bs=8, micro_bs=8)
+2026-09-10 18:35:42,173 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7079 (bs=8, micro_bs=8)
+2026-09-10 18:35:47,972 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v3_module\roberta\roberta-base_aegis_v3_module_full_metrics.json
+2026-09-10 18:35:47,986 [WARNING] QwenQualitySweep: Failed to collect/export full metrics or weights for aegis_v3_module: [enforce fail at inline_container.cc:626] . unexpected pos 561728 vs 561616
+2026-09-10 18:35:48,094 [INFO] QwenQualitySweep: [2/2] aegis_v3_module -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 384.93 MB)
+2026-09-10 18:35:48,094 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v3_module' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-10 18:35:48,243 [INFO] QwenQualitySweep: ================================================================================
+2026-09-10 18:35:48,243 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-10 18:35:48,251 [INFO] QwenQualitySweep: 
          Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-           full     PASS   88.76% 0.00% (base) 0.8942                  0            1.00x  299.9 MB               3.69              4.23
-aegis_v3_module PASS_LOW   50.92%      -37.84% 0.6748                  0            1.14x  354.9 MB              18.64             21.37
-2026-09-07 18:06:33,383 [INFO] QwenQualitySweep: ================================================================================
+           full     PASS   75.11% 0.00% (base) 0.7586                  0            1.00x  295.8 MB               1.15              1.32
+aegis_v3_module PASS_LOW   50.92%      -24.19% 0.6748                  0            0.94x  384.9 MB               5.61              6.44
+2026-09-10 18:35:48,251 [INFO] QwenQualitySweep: ================================================================================
