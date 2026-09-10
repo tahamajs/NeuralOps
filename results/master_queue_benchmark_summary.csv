@@ -130,3 +130,8 @@ moba,run_all_4_moba.py,0,69.8,PASS,,2026-09-10T05:39:06.951856
 modegpt,run_all_4_modegpt.py,0,67.34,PASS,,2026-09-10T05:40:14.297079
 moe_deltakv_paged,run_all_4_moe_deltakv_paged.py,0,60.19,PASS,,2026-09-10T05:41:14.487803
 nasc,run_all_4_nasc.py,0,118.92,PASS,,2026-09-10T05:43:13.414930
+nasc_attention,run_all_4_nasc_attention.py,0,119.2,PASS,,2026-09-10T05:45:12.616760
+nexus,run_all_4_nexus.py,0,60.29,PASS,,2026-09-10T05:46:12.914189
+nha,run_all_4_nha.py,0,93.85,PASS,,2026-09-10T05:47:46.769204
+nha_compressor,run_all_4_nha_compressor.py,0,93.77,PASS,,2026-09-10T05:49:20.538601
+nli_softmax,run_all_4_nli_softmax.py,0,51.83,PASS,,2026-09-10T05:50:12.367899

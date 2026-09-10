@@ -1177,5 +1177,50 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T05:43:13.414930"
+  },
+  {
+    "module": "nasc_attention",
+    "runner": "run_all_4_nasc_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 119.2,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:45:12.616760"
+  },
+  {
+    "module": "nexus",
+    "runner": "run_all_4_nexus.py",
+    "exit_code": 0,
+    "elapsed_s": 60.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:46:12.914189"
+  },
+  {
+    "module": "nha",
+    "runner": "run_all_4_nha.py",
+    "exit_code": 0,
+    "elapsed_s": 93.85,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:47:46.769204"
+  },
+  {
+    "module": "nha_compressor",
+    "runner": "run_all_4_nha_compressor.py",
+    "exit_code": 0,
+    "elapsed_s": 93.77,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:49:20.538601"
+  },
+  {
+    "module": "nli_softmax",
+    "runner": "run_all_4_nli_softmax.py",
+    "exit_code": 0,
+    "elapsed_s": 51.83,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:50:12.367899"
   }
 ]
