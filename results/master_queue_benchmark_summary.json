@@ -61,5 +61,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T23:40:33.560092"
+  },
+  {
+    "module": "adaptive_svd_attention",
+    "runner": "run_all_4_adaptive_svd_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 1969.0,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-11T00:13:22.564503"
   }
 ]
