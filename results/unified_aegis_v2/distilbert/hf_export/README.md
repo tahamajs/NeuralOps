@@ -16,12 +16,12 @@ metrics:
 Validated factorized/adapted checkpoint of **distilbert** using **distilbert** evaluated on **SST-2**.
 
 ## Empirical Performance Results
-- **Validation Accuracy**: `78.90%`
-- **F1 Score (Binary)**: `0.8095`
-- **F1 Macro**: `0.7865`
-- **Precision**: `0.7988`
-- **Recall**: `0.7873`
-- **Validation Loss**: `0.5458`
+- **Validation Accuracy**: `79.01%`
+- **F1 Score (Binary)**: `0.8084`
+- **F1 Macro**: `0.7882`
+- **Precision**: `0.7974`
+- **Recall**: `0.7887`
+- **Validation Loss**: `0.5421`
 - **Quality Gate Status**: `PASS` (Pass Threshold: >= 56.00%)
 
 ## Efficiency Profile & Resource Footprint
@@ -31,9 +31,9 @@ Validated factorized/adapted checkpoint of **distilbert** using **distilbert** e
 - **Total Parameters After**: `55523882`
 - **Trainable Recovery Params**: `1181978`
 - **Compressed / Injected Layers**: `0`
-- **Peak VRAM**: `193.62 MB`
-- **Throughput**: `43616.13 tokens/sec`
-- **Evaluation Time**: `10.39 s`
+- **Peak VRAM**: `301.04 MB`
+- **Throughput**: `55739.1 tokens/sec`
+- **Evaluation Time**: `9.02 s`
 
 ## Reproduction & Usage
 ```python
