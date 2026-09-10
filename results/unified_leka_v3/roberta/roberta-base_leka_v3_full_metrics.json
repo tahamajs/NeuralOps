@@ -1,26 +1,26 @@
 {
     "model": "roberta-base_leka_v3",
     "performance": {
-        "accuracy_pct": 66.86,
-        "f1_score": 0.7445,
-        "f1_macro": 0.6365,
-        "precision": 0.7442,
-        "recall": 0.6634,
-        "val_loss": 0.5941,
-        "status": "PASS",
-        "elapsed_s": 44.16
+        "accuracy_pct": 50.92,
+        "f1_score": 0.6748,
+        "f1_macro": 0.3374,
+        "precision": 0.2546,
+        "recall": 0.5,
+        "val_loss": 0.8148,
+        "status": "PASS_LOW",
+        "elapsed_s": 9.83
     },
     "efficiency": {
-        "total_params_before": 127325954,
-        "total_params_after": 135323294,
-        "trainable_recovery_params": 4155650,
-        "compression_rate": 0.9409,
-        "compression_ratio_pct": -6.28,
+        "total_params_before": 124647170,
+        "total_params_after": 133529294,
+        "trainable_recovery_params": 2361650,
+        "compression_rate": 0.9335,
+        "compression_ratio_pct": -7.13,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 2973696,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 417.76,
-        "tokens_per_sec": 6397.2
+        "peak_vram_mb": 402.27,
+        "tokens_per_sec": 28136.71
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 375.11,
-        "L_256_vram_mb": 383.52,
-        "L_512_vram_mb": 409.9,
+        "L_128_vram_mb": 355.94,
+        "L_256_vram_mb": 366.09,
+        "L_512_vram_mb": 397.72,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-08T06:09:36.123372"
+    "timestamp": "2026-09-10T05:12:19.649987"
 }

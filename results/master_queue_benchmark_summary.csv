@@ -99,3 +99,6 @@ kronecker,run_all_4_kronecker.py,0,73.8,PASS,,2026-09-10T04:48:29.867459
 kronecker_linear,run_all_4_kronecker_linear.py,0,45.66,PASS,,2026-09-10T04:49:15.530120
 kronecker_tt_lora,run_all_4_kronecker_tt_lora.py,0,56.35,PASS,,2026-09-10T04:50:11.880563
 kvtc,run_all_4_kvtc.py,0,61.41,PASS,,2026-09-10T04:51:13.292168
+leka_v1,run_all_4_leka_v1.py,0,1158.47,PASS,,2026-09-10T05:10:31.767876
+leka_v2,run_all_4_leka_v2.py,0,71.96,PASS,,2026-09-10T05:11:43.730144
+leka_v3,run_all_4_leka_v3.py,0,65.57,PASS,,2026-09-10T05:12:49.306559
