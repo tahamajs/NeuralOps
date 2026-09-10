@@ -97,3 +97,5 @@ kda,run_all_4_kda.py,0,45.37,PASS,,2026-09-10T21:35:59.225226
 kmeans,run_all_4_kmeans.py,0,281.47,PASS,,2026-09-10T21:40:40.700765
 kronecker,run_all_4_kronecker.py,0,390.42,PASS,,2026-09-10T21:47:11.125110
 kronecker_linear,run_all_4_kronecker_linear.py,0,46.69,PASS,,2026-09-10T21:47:57.818539
+kronecker_tt_lora,run_all_4_kronecker_tt_lora.py,0,74.74,PASS,,2026-09-10T21:49:12.559670
+kvtc,run_all_4_kvtc.py,0,66.02,PASS,,2026-09-10T21:50:18.579374

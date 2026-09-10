@@ -880,5 +880,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:47:57.818539"
+  },
+  {
+    "module": "kronecker_tt_lora",
+    "runner": "run_all_4_kronecker_tt_lora.py",
+    "exit_code": 0,
+    "elapsed_s": 74.74,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:49:12.559670"
+  },
+  {
+    "module": "kvtc",
+    "runner": "run_all_4_kvtc.py",
+    "exit_code": 0,
+    "elapsed_s": 66.02,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:50:18.579374"
   }
 ]
