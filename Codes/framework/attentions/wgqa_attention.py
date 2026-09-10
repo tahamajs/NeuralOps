@@ -578,8 +578,8 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     from framework.utils.compat import maybe_apply_rotary
                     Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
                 except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                    print(f'copy_weights failed: {e}')
+                    return None
 
         # 3. GQA repeat
         if self.kv_repeat > 1:

@@ -501,8 +501,8 @@ class AegisSpectronFP8Attention(BaseAttention):
                         try:
                             mod.merge()
                         except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                            print(f'copy_weights failed: {e}')
+                            return None
                     base_mod = getattr(mod, "base_layer", mod)
                     w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                     if w is not None:
@@ -539,8 +539,8 @@ class AegisSpectronFP8Attention(BaseAttention):
                     try:
                         mod.merge()
                     except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                        print(f'copy_weights failed: {e}')
+                        return None
                 base_mod = getattr(mod, "base_layer", mod)
                 c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                 if c_w is not None:
@@ -599,8 +599,8 @@ class AegisSpectronFP8Attention(BaseAttention):
                 try:
                     w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
                 except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                    print(f'copy_weights failed: {e}')
+                    return None
 
             extracted_weights[proj] = (w, b)
 

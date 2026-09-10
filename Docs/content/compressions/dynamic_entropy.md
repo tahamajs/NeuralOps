@@ -121,3 +121,20 @@ Evaluated on SST-2 sentiment classification (FP16, singular entropy dynamic rank
 | DISTILBERT | 90.37% | 0.9071 | 1.0 | 0 | 183.82 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-dynamic-entropy-svd) |
 | ROBERTA | 73.97% | 0.7768 | 1.0 | 0 | 299.09 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-dynamic-entropy-svd) |
 | GPT2 | 53.67% | 0.6189 | 1.0 | 0 | 389.62 | `PASS_LOW` | N/A |
+
+## Usage Examples
+
+```python
+# TODO: Add specific usage example
+```
+
+## Benchmark Results
+
+| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
+|--------|----------|----------|-----------|-------------------|
+| Pending| Pending  | Pending  | Pending   | Pending           |
+
+
+## Limitations & Future Work
+
+TODO: Identify specific limitations and edge cases for this module.

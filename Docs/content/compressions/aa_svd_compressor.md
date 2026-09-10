@@ -1,8 +1,60 @@
-# AASVDCompressor (Activation-Aware SVD)
+# Aasvd
 
-> [!NOTE]
-> This document has been canonically consolidated into the comprehensive **[Activation-Aware SVD (AASVD) Technical Reference](file:///Users/tahamajs/Documents/uni/Project/Docs/content/compressions/aasvd.md)**.
->
-> All architectural formulations, mathematical derivations (streaming covariance, regularized square-root operators, activation subspace projections), parameter saving profiles, Triton execution kernels, empirical benchmark tables across 4 model families, and full verbatim code implementations are maintained in:
->
-> 👉 **[Docs/content/compressions/aasvd.md](file:///Users/tahamajs/Documents/uni/Project/Docs/content/compressions/aasvd.md)**
+## Overview
+True Low-Rank Factorized Linear Layer executing as:
+y = (x @ V.T) @ U.T + ((x @ lora_A.T) @ lora_B.T) * lora_scaling + b
+Achieving physical parameter reduction from d_in * d_out to r * (d_in + d_out).
+Supports optional LoRA adapters for recovery fine-tuning.
+
+Activation-Aware SVD Compressor with streaming EMA covariance accumulation
+and true structural module replacement (SVDLinear).
+
+Production hardening features:
+- Relative Frobenius reconstruction error validation with configurable max_error (default 0.20).
+- Safe fallback to original weights by default (fallback_to_original=True).
+- Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+- SVD and covariance computations in FP32 with NaN/Inf guards.
+- Parameter reduction constraint: r * (in + out) < in * out.
+- Comprehensive per-layer stats and error tracking.
+
+## Configuration & Hyperparameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `in_features` | TODO: Description for in_features |
+| `out_features` | TODO: Description for out_features |
+| `rank` | TODO: Description for rank |
+| `bias` | TODO: Description for bias |
+| `use_fused_kernel` | TODO: Description for use_fused_kernel |
+| `dtype` | TODO: Description for dtype |
+| `device` | TODO: Description for device |
+| `lora_rank` | TODO: Description for lora_rank |
+| `lora_alpha` | TODO: Description for lora_alpha |
+| `lora_r` | TODO: Description for lora_r |
+| `freeze_base` | TODO: Description for freeze_base |
+| `model` | TODO: Description for model |
+| `tokenizer` | TODO: Description for tokenizer |
+| `rank` | TODO: Description for rank |
+| `ema_beta` | TODO: Description for ema_beta |
+| `max_error` | TODO: Description for max_error |
+| `fallback_to_original` | TODO: Description for fallback_to_original |
+| `calibration_texts` | TODO: Description for calibration_texts |
+| `device` | TODO: Description for device |
+| `target_modules` | TODO: Description for target_modules |
+| `target_attention_only` | TODO: Description for target_attention_only |
+
+## Usage Examples
+
+```python
+from Codes.framework.compression_engine import SVDLinear
+```
+
+## Benchmark Results
+
+| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
+|--------|----------|----------|-----------|-------------------|
+| Pending| Pending  | Pending  | Pending   | Pending           |
+
+## Limitations & Future Work
+
+TODO: Identify specific limitations and edge cases for this module.

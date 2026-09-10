@@ -448,14 +448,14 @@ class SpectraformerAttention(BaseAttention):
                     try:
                         target_mod.lora_A.data.copy_(src_sub.lora_A.weight.data)
                     except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                        print(f'copy_weights failed: {e}')
+                        return None
                 if target_mod.lora_B is not None and hasattr(src_sub.lora_B, "weight"):
                     try:
                         target_mod.lora_B.data.copy_(src_sub.lora_B.weight.data)
                     except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                        print(f'copy_weights failed: {e}')
+                        return None
 
         return True
 

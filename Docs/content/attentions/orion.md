@@ -654,3 +654,20 @@ The `FactorisedLinear` architecture incorporates telemetry hooks for tracking si
 - **Repository URL**: `https://huggingface.co/tahamajs/orion-verified` *(status: model checkpoint pending final distributed sweep)*
 - **Pretrained Weights**: Base weights initialized from HuggingFace Hub with dynamic spectral injection.
 
+
+## Usage Examples
+
+```python
+# TODO: Add specific usage example
+```
+
+## Benchmark Results
+
+| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
+|--------|----------|----------|-----------|-------------------|
+| Pending| Pending  | Pending  | Pending   | Pending           |
+
+
+## Limitations & Future Work
+
+TODO: Identify specific limitations and edge cases for this module.
