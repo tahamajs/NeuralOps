@@ -10,20 +10,20 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "312.2 MB",
-    "Time (s)": "18.8"
+    "Time (s)": "16.1"
   },
   {
     "Model": "roberta",
     "Exit Code": 0,
-    "Baseline Acc": "75.11%",
-    "SambaMoE Acc": "72.13%",
-    "Delta Acc": "-2.98%",
-    "F1": "0.7670",
+    "Baseline Acc": "75.00%",
+    "SambaMoE Acc": "68.35%",
+    "Delta Acc": "-6.65%",
+    "F1": "0.7416",
     "Status": "PASS",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "301.0 MB",
-    "Time (s)": "24.3"
+    "Peak VRAM": "531.7 MB",
+    "Time (s)": "21.8"
   },
   {
     "Model": "gpt2",
@@ -36,6 +36,6 @@
     "Compressed Layers": "1",
     "Comp Rate": "1.00x",
     "Peak VRAM": "638.5 MB",
-    "Time (s)": "23.6"
+    "Time (s)": "21.8"
   }
 ]

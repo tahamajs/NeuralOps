@@ -104,3 +104,4 @@ leka_v2,run_all_4_leka_v2.py,0,81.34,PASS,,2026-09-10T22:12:50.733997
 leka_v3,run_all_4_leka_v3.py,0,73.31,PASS,,2026-09-10T22:14:04.046846
 liftr,run_all_4_liftr.py,0,58.63,PASS,,2026-09-10T22:15:02.687849
 lillama,run_all_4_lillama.py,0,229.06,PASS,,2026-09-10T22:18:51.754523
+linformer,run_all_4_linformer.py,0,63.19,PASS,,2026-09-10T22:19:54.944051

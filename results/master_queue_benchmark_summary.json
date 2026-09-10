@@ -943,5 +943,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T22:18:51.754523"
+  },
+  {
+    "module": "linformer",
+    "runner": "run_all_4_linformer.py",
+    "exit_code": 0,
+    "elapsed_s": 63.19,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T22:19:54.944051"
   }
 ]
