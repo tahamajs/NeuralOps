@@ -7,3 +7,10 @@ adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T19:5
 adaptive_sparse,run_all_4_adaptive_sparse.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T19:54:05.804457
 adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,48.12,PASS,,2026-09-10T19:54:53.926347
 adaptive_svd_attention,run_all_4_adaptive_svd_attention.py,0,489.83,PASS,,2026-09-10T20:03:03.761179
+adaptive_svd_attn,run_all_4_adaptive_svd_attn.py,0,376.51,PASS,,2026-09-10T20:09:20.276840
+adasplash,run_all_4_adasplash.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:09:20.279195
+adasvd,run_all_4_adasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:09:20.279995
+admm,run_all_4_admm.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:09:20.280529
+admm_pruner,run_all_4_admm_pruner.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:09:20.281089
+aegis_hybrid,run_all_4_aegis_hybrid.py,0,43.72,PASS,,2026-09-10T20:10:03.998500
+aegis_spectron_fp8,run_all_4_aegis_spectron_fp8.py,0,43.76,PASS,,2026-09-10T20:10:47.760453
