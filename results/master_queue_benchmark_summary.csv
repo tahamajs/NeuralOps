@@ -94,3 +94,4 @@ infini_attention,run_all_4_infini_attention.py,0,66.78,PASS,,2026-09-10T21:31:03
 jamba,run_all_4_jamba.py,0,45.73,PASS,,2026-09-10T21:31:49.349923
 jamba_info,run_all_4_jamba_info.py,0,204.49,PASS,,2026-09-10T21:35:13.846424
 kda,run_all_4_kda.py,0,45.37,PASS,,2026-09-10T21:35:59.225226
+kmeans,run_all_4_kmeans.py,0,281.47,PASS,,2026-09-10T21:40:40.700765
