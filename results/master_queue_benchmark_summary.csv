@@ -13,3 +13,4 @@ adasvd,run_all_4_adasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:24:22.845439
 admm,run_all_4_admm.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:24:22.846783
 admm_pruner,run_all_4_admm_pruner.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T18:24:22.848649
 aegis_hybrid,run_all_4_aegis_hybrid.py,0,63.04,PASS,,2026-09-10T18:25:25.894217
+aegis_spectron_fp8,run_all_4_aegis_spectron_fp8.py,0,65.7,PASS,,2026-09-10T18:26:31.593859

@@ -124,5 +124,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T18:25:25.894217"
+  },
+  {
+    "module": "aegis_spectron_fp8",
+    "runner": "run_all_4_aegis_spectron_fp8.py",
+    "exit_code": 0,
+    "elapsed_s": 65.7,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:26:31.593859"
   }
 ]
