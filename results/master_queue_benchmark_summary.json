@@ -1006,5 +1006,104 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T05:22:47.904090"
+  },
+  {
+    "module": "lsh_attention",
+    "runner": "run_all_4_lsh_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 62.99,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:23:50.895462"
+  },
+  {
+    "module": "mamba",
+    "runner": "run_all_4_mamba.py",
+    "exit_code": 0,
+    "elapsed_s": 60.07,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:24:50.972013"
+  },
+  {
+    "module": "mamba_inject",
+    "runner": "run_all_4_mamba_inject.py",
+    "exit_code": 0,
+    "elapsed_s": 46.16,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:25:37.189314"
+  },
+  {
+    "module": "mamba_shedder",
+    "runner": "run_all_4_mamba_shedder.py",
+    "exit_code": 0,
+    "elapsed_s": 68.81,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:26:45.998585"
+  },
+  {
+    "module": "mamba_svd_flash",
+    "runner": "run_all_4_mamba_svd_flash.py",
+    "exit_code": 0,
+    "elapsed_s": 49.9,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:27:35.899048"
+  },
+  {
+    "module": "mgie_budget",
+    "runner": "run_all_4_mgie_budget.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T05:27:35.905116"
+  },
+  {
+    "module": "mgie_svd",
+    "runner": "run_all_4_mgie_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 67.28,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:28:43.182741"
+  },
+  {
+    "module": "minimal_aurora",
+    "runner": "run_all_4_minimal_aurora.py",
+    "exit_code": 0,
+    "elapsed_s": 73.14,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:29:56.327418"
+  },
+  {
+    "module": "minimal_nova",
+    "runner": "run_all_4_minimal_nova.py",
+    "exit_code": 0,
+    "elapsed_s": 73.15,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:31:09.479116"
+  },
+  {
+    "module": "minimal_prism",
+    "runner": "run_all_4_minimal_prism.py",
+    "exit_code": 0,
+    "elapsed_s": 72.74,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:32:22.221797"
+  },
+  {
+    "module": "minimal_svd",
+    "runner": "run_all_4_minimal_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 72.6,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:33:34.822925"
   }
 ]

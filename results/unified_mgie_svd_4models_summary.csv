@@ -1,2 +1,4 @@
 Model,Exit Code,Baseline Acc,MGIE-SVD Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-roberta,0,88.76%,88.19%,-0.57%,0.8912,PASS,144,1.00x,313.4 MB,62.0
+distilbert,1,N/A,N/A,N/A,N/A,EXIT_1,N/A,1.00x,N/A,10.0
+roberta,0,75.11%,72.02%,-3.09%,0.7724,PASS,0,1.00x,299.1 MB,22.3
+gpt2,0,54.13%,55.05%,+0.92%,0.6787,PASS_LOW,1,1.00x,394.5 MB,24.1
