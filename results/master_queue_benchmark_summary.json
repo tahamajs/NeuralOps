@@ -205,5 +205,68 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T20:32:05.194922"
+  },
+  {
+    "module": "aegis_v5_module",
+    "runner": "run_all_4_aegis_v5_module.py",
+    "exit_code": 0,
+    "elapsed_s": 196.33,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:35:21.529573"
+  },
+  {
+    "module": "aegis_v6",
+    "runner": "run_all_4_aegis_v6.py",
+    "exit_code": 0,
+    "elapsed_s": 75.59,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:36:37.124544"
+  },
+  {
+    "module": "armor",
+    "runner": "run_all_4_armor.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T20:36:37.128588"
+  },
+  {
+    "module": "astro",
+    "runner": "run_all_4_astro.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T20:36:37.129459"
+  },
+  {
+    "module": "asvd",
+    "runner": "run_all_4_asvd.py",
+    "exit_code": 0,
+    "elapsed_s": 46.82,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:37:23.954228"
+  },
+  {
+    "module": "bam_umoe",
+    "runner": "run_all_4_bam_umoe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T20:37:23.958565"
+  },
+  {
+    "module": "block_transformer_hiba",
+    "runner": "run_all_4_block_transformer_hiba.py",
+    "exit_code": 0,
+    "elapsed_s": 45.71,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:38:09.664916"
   }
 ]
