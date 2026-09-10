@@ -25,5 +25,41 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T22:26:40.912081"
+  },
+  {
+    "module": "adaptive_ranks",
+    "runner": "run_all_4_adaptive_ranks.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T22:26:41.330137"
+  },
+  {
+    "module": "adaptive_span",
+    "runner": "run_all_4_adaptive_span.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T22:26:41.330636"
+  },
+  {
+    "module": "adaptive_sparse",
+    "runner": "run_all_4_adaptive_sparse.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T22:26:41.331230"
+  },
+  {
+    "module": "adaptive_sparse_attention",
+    "runner": "run_all_4_adaptive_sparse_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 835.13,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T22:40:36.459089"
   }
 ]

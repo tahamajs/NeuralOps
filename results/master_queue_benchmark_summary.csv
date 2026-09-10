@@ -2,3 +2,7 @@ module,runner,exit_code,elapsed_s,status,error,timestamp
 a3,run_all_4_a3.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T22:20:53.833554
 aasvd,run_all_4_aasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T22:20:53.833974
 adaptive_compressor,run_all_4_adaptive_compressor.py,0,347.08,PASS,,2026-09-10T22:26:40.912081
+adaptive_ranks,run_all_4_adaptive_ranks.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T22:26:41.330137
+adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T22:26:41.330636
+adaptive_sparse,run_all_4_adaptive_sparse.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T22:26:41.331230
+adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,835.13,PASS,,2026-09-10T22:40:36.459089
