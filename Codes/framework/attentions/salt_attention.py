@@ -531,11 +531,16 @@ def inject_salt_attention(
             **kwargs,
         )
 
-        for attr in ("attention", "self_attn", "attn", "self"):
+        for attr in ("self_attn", "attn", "self"):
             if hasattr(layer, attr):
                 setattr(layer, attr, new_attn)
                 return new_attn
-
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
+            return new_attn
         layer.attention = new_attn
         return new_attn
     except Exception as e:

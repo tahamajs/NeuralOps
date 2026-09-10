@@ -232,11 +232,16 @@ def inject_samba_moe(
             **kwargs,
         )
 
-        for attr in ("attention", "self_attn", "attn", "self"):
+        for attr in ("self_attn", "attn", "self"):
             if hasattr(layer, attr):
                 setattr(layer, attr, new_block)
                 return new_block
-
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_block
+            else:
+                layer.attention = new_block
+            return new_block
         layer.attention = new_block
         return new_block
     except Exception as e:
