@@ -1,2 +1,4 @@
 Model,Exit Code,Baseline Acc,MoDeGPT Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-roberta,0,88.76%,88.99%,+0.23%,0.8972,PASS,144,1.00x,325.5 MB,58.2
+distilbert,1,N/A,N/A,N/A,N/A,EXIT_1,N/A,1.00x,N/A,10.1
+roberta,0,75.11%,72.02%,-3.09%,0.7724,PASS,0,1.00x,299.6 MB,21.7
+gpt2,0,54.13%,47.36%,-6.77%,0.5302,PASS_LOW,1,1.00x,394.1 MB,24.1
