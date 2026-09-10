@@ -169,5 +169,86 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T03:52:30.105707"
+  },
+  {
+    "module": "aegis_v3_module",
+    "runner": "run_all_4_aegis_v3_module.py",
+    "exit_code": 0,
+    "elapsed_s": 97.97,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:54:08.078975"
+  },
+  {
+    "module": "aegis_v4",
+    "runner": "run_all_4_aegis_v4.py",
+    "exit_code": 0,
+    "elapsed_s": 98.86,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:55:46.939685"
+  },
+  {
+    "module": "aegis_v4_module",
+    "runner": "run_all_4_aegis_v4_module.py",
+    "exit_code": 0,
+    "elapsed_s": 98.1,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:57:25.045178"
+  },
+  {
+    "module": "aegis_v5",
+    "runner": "run_all_4_aegis_v5.py",
+    "exit_code": 0,
+    "elapsed_s": 98.94,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:59:03.991633"
+  },
+  {
+    "module": "aegis_v5_module",
+    "runner": "run_all_4_aegis_v5_module.py",
+    "exit_code": 0,
+    "elapsed_s": 99.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:00:43.290027"
+  },
+  {
+    "module": "aegis_v6",
+    "runner": "run_all_4_aegis_v6.py",
+    "exit_code": 0,
+    "elapsed_s": 78.18,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:02:01.478572"
+  },
+  {
+    "module": "armor",
+    "runner": "run_all_4_armor.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:02:01.483182"
+  },
+  {
+    "module": "astro",
+    "runner": "run_all_4_astro.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:02:01.484627"
+  },
+  {
+    "module": "asvd",
+    "runner": "run_all_4_asvd.py",
+    "exit_code": 0,
+    "elapsed_s": 49.51,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:02:51.001033"
   }
 ]

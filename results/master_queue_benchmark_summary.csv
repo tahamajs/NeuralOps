@@ -18,3 +18,12 @@ aegis_v1,run_all_4_aegis_v1.py,0,97.17,PASS,,2026-09-10T03:47:39.135256
 aegis_v1_module,run_all_4_aegis_v1_module.py,0,97.41,PASS,,2026-09-10T03:49:16.546345
 aegis_v2,run_all_4_aegis_v2.py,0,94.63,PASS,,2026-09-10T03:50:51.180535
 aegis_v3,run_all_4_aegis_v3.py,0,98.92,PASS,,2026-09-10T03:52:30.105707
+aegis_v3_module,run_all_4_aegis_v3_module.py,0,97.97,PASS,,2026-09-10T03:54:08.078975
+aegis_v4,run_all_4_aegis_v4.py,0,98.86,PASS,,2026-09-10T03:55:46.939685
+aegis_v4_module,run_all_4_aegis_v4_module.py,0,98.1,PASS,,2026-09-10T03:57:25.045178
+aegis_v5,run_all_4_aegis_v5.py,0,98.94,PASS,,2026-09-10T03:59:03.991633
+aegis_v5_module,run_all_4_aegis_v5_module.py,0,99.29,PASS,,2026-09-10T04:00:43.290027
+aegis_v6,run_all_4_aegis_v6.py,0,78.18,PASS,,2026-09-10T04:02:01.478572
+armor,run_all_4_armor.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T04:02:01.483182
+astro,run_all_4_astro.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T04:02:01.484627
+asvd,run_all_4_asvd.py,0,49.51,PASS,,2026-09-10T04:02:51.001033
