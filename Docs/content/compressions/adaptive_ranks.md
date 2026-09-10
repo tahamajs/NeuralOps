@@ -294,6 +294,16 @@ Continuously monitor output activation norms during inference to adjust $\eta$ d
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | N/A | **90.14%** | N/A | 0.9051 | 1.00x | 0 | [svd-linear-attention-distilbert-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adaptive-ranks) | 2026-09-10 |
+| **roberta** | sst2 | `PASS` | N/A | **66.97%** | N/A | 0.7338 | 1.00x | 0 | [svd-linear-attention-roberta-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive-ranks) | 2026-09-10 |
+| **gpt2** | sst2 | `PASS` | N/A | **59.06%** | N/A | 0.6490 | 1.00x | 1 | [svd-linear-attention-gpt2-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive-ranks) | 2026-09-10 |
+| **qwen3_5** | sst2 | `PASS` | N/A | **81.88%** | N/A | 0.7980 | 1.00x | 0 | [svd-linear-attention-qwen3_5-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-qwen3_5-adaptive-ranks) | 2026-09-10 |
+
+
 > [!NOTE]
 > Empirical benchmark results are currently **pending re-evaluation** following the production hardening and bug fixes (LoRA parameter preservation, Conv1D transposition, DataLoader multi-batch streaming, and rank floor adjustments). Prior evaluations on unhardened checkpoints are superseded. Full 4-architecture evaluation across DistilBERT, RoBERTa, GPT-2, and Qwen/LLaMA will be reported in the upcoming benchmarking sweep.
 
@@ -679,4 +689,3 @@ print('Compressed output logits:', outputs.logits.shape)
 - **Hardware-Fused Triton Kernels**: Co-designing block-level GPU kernel fusions to eliminate intermediate SRAM-to-HBM write cycles.
 - **Adaptive Singular Value Pruning**: Dynamic layer-wise singular spectrum allocation driven by real-time validation perplexity gradients.
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
-
