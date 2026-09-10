@@ -480,10 +480,16 @@ def inject_primal(
                 pretrained_attn=target if target is not layer else None,
                 **kwargs,
             )
-            for attr in ("attention", "self_attn", "attn", "self"):
+            for attr in ("self_attn", "attn", "self"):
                 if hasattr(layer, attr):
                     setattr(layer, attr, new_attn)
                     return layer
+            if hasattr(layer, "attention"):
+                if hasattr(layer.attention, "self"):
+                    layer.attention.self = new_attn
+                else:
+                    layer.attention = new_attn
+                return layer
             layer.attention = new_attn
             return layer
 

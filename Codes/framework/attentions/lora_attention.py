@@ -445,7 +445,32 @@ def inject_lora_attention(
             alpha=alpha,
             pretrained_attn=old_attn,
         )
-        layer.attention = new_attn
+        if hasattr(layer, 'attention'):
+            if hasattr(layer.attention, 'self'):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, 'attention'):
+
+            if hasattr(layer.attention, 'self'):
+
+                layer.attention.self = new_attn
+
+            else:
+
+                layer.attention = new_attn
+
+        elif hasattr(layer, 'self'):
+
+            layer.self = new_attn
+
+        elif hasattr(layer, 'attn'):
+
+            layer.attn = new_attn
+
+        else:
+
+            layer.attention = new_attn
         return new_attn
     except Exception:
         return None

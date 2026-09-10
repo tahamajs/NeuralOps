@@ -659,11 +659,26 @@ def inject_adaptive_svd(
                     layer.attention = test_module
             elif hasattr(layer, "self_attn"):
                 layer.self_attn = test_module
-            elif hasattr(layer, "self"):
+            elif hasattr(layer, 'attention'):
+
+                if hasattr(layer.attention, 'self'):
+
+                    layer.attention.self = test_module
+
+                else:
+
+                    layer.attention = test_module
+
+            elif hasattr(layer, 'self'):
+
                 layer.self = test_module
-            elif hasattr(layer, "attn"):
+
+            elif hasattr(layer, 'attn'):
+
                 layer.attn = test_module
+
             else:
+
                 layer.attention = test_module
         return test_module
     except Exception:
