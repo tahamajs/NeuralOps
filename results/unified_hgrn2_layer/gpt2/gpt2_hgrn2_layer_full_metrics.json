@@ -1,14 +1,14 @@
 {
     "model": "gpt2_hgrn2_layer",
     "performance": {
-        "accuracy_pct": 52.18,
-        "f1_score": 0.5223,
-        "f1_macro": 0.5218,
-        "precision": 0.5219,
-        "recall": 0.5219,
-        "val_loss": 0.74,
+        "accuracy_pct": 51.72,
+        "f1_score": 0.6224,
+        "f1_macro": 0.4766,
+        "precision": 0.5173,
+        "recall": 0.5123,
+        "val_loss": 0.7466,
         "status": "PASS_LOW",
-        "elapsed_s": 34.99
+        "elapsed_s": 35.47
     },
     "efficiency": {
         "total_params_before": 124441344,
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 334.11,
-        "tokens_per_sec": 12596.73
+        "peak_vram_mb": 587.88,
+        "tokens_per_sec": 11972.92
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 293.61,
-        "L_256_vram_mb": 299.55,
-        "L_512_vram_mb": 311.18,
+        "L_128_vram_mb": 546.2,
+        "L_256_vram_mb": 550.89,
+        "L_512_vram_mb": 566.39,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-10T04:29:34.860340"
+    "timestamp": "2026-09-10T21:13:10.224472"
 }

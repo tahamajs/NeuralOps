@@ -79,3 +79,7 @@ hashed_linear,run_all_4_hashed_linear.py,0,58.83,PASS,,2026-09-10T21:08:40.84312
 hashednets,run_all_4_hashednets.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T21:08:40.846456
 hgrn2,run_all_4_hgrn2.py,0,45.73,PASS,,2026-09-10T21:09:26.576163
 hgrn2_gated_deltanet,run_all_4_hgrn2_gated_deltanet.py,0,45.08,PASS,,2026-09-10T21:10:11.661001
+hgrn2_layer,run_all_4_hgrn2_layer.py,0,181.37,PASS,,2026-09-10T21:13:13.035312
+hgrn2_outer,run_all_4_hgrn2_outer.py,0,69.16,PASS,,2026-09-10T21:14:22.201398
+hla,run_all_4_hla.py,0,65.85,PASS,,2026-09-10T21:15:28.054836
+hla_attention,run_all_4_hla_attention.py,0,66.15,PASS,,2026-09-10T21:16:34.209180
