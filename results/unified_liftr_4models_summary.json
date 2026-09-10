@@ -1,16 +1,16 @@
 [
   {
     "Model": "distilbert",
-    "Exit Code": 1,
-    "Baseline Acc": "N/A",
-    "LIFTR Acc": "N/A",
-    "Delta Acc": "N/A",
-    "F1": "N/A",
-    "Status": "EXIT_1",
-    "Compressed Layers": "N/A",
+    "Exit Code": 0,
+    "Baseline Acc": "90.48%",
+    "LIFTR Acc": "90.14%",
+    "Delta Acc": "-0.34%",
+    "F1": "0.9029",
+    "Status": "PASS",
+    "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "N/A",
-    "Time (s)": "10.0"
+    "Peak VRAM": "337.6 MB",
+    "Time (s)": "13.6"
   },
   {
     "Model": "roberta",
@@ -22,20 +22,20 @@
     "Status": "PASS",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "354.3 MB",
-    "Time (s)": "19.7"
+    "Peak VRAM": "361.5 MB",
+    "Time (s)": "19.1"
   },
   {
     "Model": "gpt2",
     "Exit Code": 0,
-    "Baseline Acc": "54.13%",
-    "LIFTR Acc": "55.39%",
-    "Delta Acc": "+1.26%",
-    "F1": "0.6381",
-    "Status": "PASS_LOW",
+    "Baseline Acc": "60.78%",
+    "LIFTR Acc": "61.01%",
+    "Delta Acc": "+0.23%",
+    "F1": "0.6654",
+    "Status": "PASS",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "389.6 MB",
-    "Time (s)": "20.6"
+    "Peak VRAM": "634.9 MB",
+    "Time (s)": "18.2"
   }
 ]

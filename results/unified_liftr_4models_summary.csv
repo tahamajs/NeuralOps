@@ -1,4 +1,4 @@
 Model,Exit Code,Baseline Acc,LIFTR Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,1,N/A,N/A,N/A,N/A,EXIT_1,N/A,1.00x,N/A,10.0
-roberta,0,75.11%,81.65%,+6.54%,0.8422,PASS,0,1.00x,354.3 MB,19.7
-gpt2,0,54.13%,55.39%,+1.26%,0.6381,PASS_LOW,0,1.00x,389.6 MB,20.6
+distilbert,0,90.48%,90.14%,-0.34%,0.9029,PASS,0,1.00x,337.6 MB,13.6
+roberta,0,75.11%,81.65%,+6.54%,0.8422,PASS,0,1.00x,361.5 MB,19.1
+gpt2,0,60.78%,61.01%,+0.23%,0.6654,PASS,0,1.00x,634.9 MB,18.2
