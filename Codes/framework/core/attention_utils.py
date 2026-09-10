@@ -445,6 +445,12 @@ def inject_attention(
     family = detect_family(model)
     family_adapter = ModelAdapter(model, family)
 
+    is_dec = family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
+    if config is not None:
+        setattr(config, "is_decoder", bool(is_dec or getattr(config, "is_decoder", False)))
+        if not hasattr(config, "model_type") or not config.model_type:
+            setattr(config, "model_type", family)
+
     replaced = 0
     modules_list = list(get_attention_modules(model))
     if not modules_list:
@@ -488,6 +494,8 @@ def inject_attention(
                 head_dim=head_dim,
                 num_key_value_heads=num_kv_heads or num_heads,
                 dropout=0.1,
+                is_decoder=is_dec,
+                model_type=family,
             )
 
         # Ensure old_attn has canonical projection attributes for custom modules inspecting pretrained_attn
@@ -586,9 +594,15 @@ def inject_attention(
             new_attn.to(device=old_param.device, dtype=old_param.dtype)
 
         if copy_weights:
+            if is_dec or hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
+                setattr(old_attn, "is_decoder", True)
+                if hasattr(new_attn, "is_decoder"):
+                    new_attn.is_decoder = True
             if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
                 try:
                     new_attn.copy_weights(old_attn)
+                    if is_dec and hasattr(new_attn, "is_decoder"):
+                        new_attn.is_decoder = True
                     if old_param is not None:
                         new_attn.to(device=old_param.device, dtype=old_param.dtype)
                 except (AttributeError, RuntimeError, ValueError) as e:
