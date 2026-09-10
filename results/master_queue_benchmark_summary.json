@@ -835,5 +835,68 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T04:42:43.169792"
+  },
+  {
+    "module": "jamba_info",
+    "runner": "run_all_4_jamba_info.py",
+    "exit_code": 0,
+    "elapsed_s": 162.66,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:45:25.832444"
+  },
+  {
+    "module": "kda",
+    "runner": "run_all_4_kda.py",
+    "exit_code": 0,
+    "elapsed_s": 44.8,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:46:10.637959"
+  },
+  {
+    "module": "kmeans",
+    "runner": "run_all_4_kmeans.py",
+    "exit_code": 0,
+    "elapsed_s": 65.42,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:47:16.060297"
+  },
+  {
+    "module": "kronecker",
+    "runner": "run_all_4_kronecker.py",
+    "exit_code": 0,
+    "elapsed_s": 73.8,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:48:29.867459"
+  },
+  {
+    "module": "kronecker_linear",
+    "runner": "run_all_4_kronecker_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 45.66,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:49:15.530120"
+  },
+  {
+    "module": "kronecker_tt_lora",
+    "runner": "run_all_4_kronecker_tt_lora.py",
+    "exit_code": 0,
+    "elapsed_s": 56.35,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:50:11.880563"
+  },
+  {
+    "module": "kvtc",
+    "runner": "run_all_4_kvtc.py",
+    "exit_code": 0,
+    "elapsed_s": 61.41,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:51:13.292168"
   }
 ]

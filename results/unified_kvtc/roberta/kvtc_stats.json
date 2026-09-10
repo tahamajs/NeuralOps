@@ -1,10 +1,10 @@
 {
   "compressor_name": "kvtc",
-  "original_parameters": 127325954,
-  "compressed_parameters": 127325954,
-  "saved_parameters": 0,
-  "compression_ratio": 1.0,
-  "reduction_percentage": 0.0,
+  "original_parameters": 124647170,
+  "compressed_parameters": 124647215,
+  "saved_parameters": -45,
+  "compression_ratio": 1.0000003610190267,
+  "reduction_percentage": -3.6101902674565336e-05,
   "compressed_layers": [
     "roberta.encoder.layer.0.attention.self.query",
     "roberta.encoder.layer.0.attention.self.key",
@@ -92,7 +92,7 @@
   "target_attention_only": false,
   "avg_entropy_bits": 1.9,
   "avg_reconstruction_error": 0.39858680764834087,
-  "effective_parameter_ratio": 0.6418,
+  "effective_parameter_ratio": 0.6249,
   "theoretical_entropy_compression_ratio": 8.41,
   "theoretical_vram_saving": "75.0% vs FP16",
   "layer_errors": {

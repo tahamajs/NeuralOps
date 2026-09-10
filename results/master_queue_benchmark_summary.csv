@@ -92,3 +92,10 @@ hymba_transx,run_all_4_hymba_transx.py,0,47.36,PASS,,2026-09-10T04:39:53.727348
 infini,run_all_4_infini.py,0,63.94,PASS,,2026-09-10T04:40:57.674910
 infini_attention,run_all_4_infini_attention.py,0,59.99,PASS,,2026-09-10T04:41:57.667282
 jamba,run_all_4_jamba.py,0,45.5,PASS,,2026-09-10T04:42:43.169792
+jamba_info,run_all_4_jamba_info.py,0,162.66,PASS,,2026-09-10T04:45:25.832444
+kda,run_all_4_kda.py,0,44.8,PASS,,2026-09-10T04:46:10.637959
+kmeans,run_all_4_kmeans.py,0,65.42,PASS,,2026-09-10T04:47:16.060297
+kronecker,run_all_4_kronecker.py,0,73.8,PASS,,2026-09-10T04:48:29.867459
+kronecker_linear,run_all_4_kronecker_linear.py,0,45.66,PASS,,2026-09-10T04:49:15.530120
+kronecker_tt_lora,run_all_4_kronecker_tt_lora.py,0,56.35,PASS,,2026-09-10T04:50:11.880563
+kvtc,run_all_4_kvtc.py,0,61.41,PASS,,2026-09-10T04:51:13.292168
