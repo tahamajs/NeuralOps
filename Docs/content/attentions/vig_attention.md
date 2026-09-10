@@ -1022,3 +1022,20 @@ The `ViGAttention` architecture supports diagnostic instrumentation for tracking
 - **Quantized Low-Rank Representation**: Joint FP4/INT4 quantization of factorized projection matrices with non-uniform codebooks.
 
 
+
+## Usage Examples
+
+```python
+# TODO: Add specific usage example
+```
+
+## Benchmark Results
+
+| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
+|--------|----------|----------|-----------|-------------------|
+| Pending| Pending  | Pending  | Pending   | Pending           |
+
+
+## Limitations & Future Work
+
+TODO: Identify specific limitations and edge cases for this module.

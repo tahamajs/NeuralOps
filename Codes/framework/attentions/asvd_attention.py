@@ -514,8 +514,8 @@ class ASVDAttention(nn.Module):
                     if w is not None:
                         extracted_weights[proj] = (w, b)
                 except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                    print(f'copy_weights failed: {e}')
+                    return None
 
         # 6. Check for missing essential projections and Frobenius norm verification
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]

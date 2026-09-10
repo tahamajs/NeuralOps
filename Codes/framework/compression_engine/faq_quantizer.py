@@ -357,8 +357,8 @@ class FAQQuantizer(BaseCompressor):
                         try:
                             self.model(dummy_x)
                         except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                            print(f'copy_weights failed: {e}')
+                            return None
             except Exception as e:
                 print(f'copy_weights failed: {e}')
                 return None

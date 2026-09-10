@@ -495,3 +495,16 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | DISTILBERT | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
 | ROBERTA | 50.92% | 0.6748 | 1.0 | 45 | 454.95 | `PASS_LOW` | N/A |
 | GPT2 | 53.56% | 0.6757 | 1.0 | 8 | 422.5 | `PASS_LOW` | N/A |
+
+## Usage Examples
+
+```python
+# TODO: Add specific usage example
+```
+
+## Benchmark Results
+
+| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
+|--------|----------|----------|-----------|-------------------|
+| Pending| Pending  | Pending  | Pending   | Pending           |
+
