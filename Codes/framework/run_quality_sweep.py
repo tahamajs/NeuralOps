@@ -1295,8 +1295,14 @@ def main():
                 LOG.info("Fine-tuning classification head for %d steps before module injection", args.finetune_steps)
                 finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
                 try:
-                    torch.save(base.state_dict(), checkpoint)
-                    LOG.info("Saved fine-tuned checkpoint: %s", checkpoint)
+                    if "baseline" in str(checkpoint).lower():
+                        torch.save(base.state_dict(), checkpoint)
+                        LOG.info("Saved fine-tuned checkpoint: %s", checkpoint)
+                    else:
+                        # For module sweeps, save only classification head to avoid filling disk with 500MB per module
+                        head_st = {k: v for k, v in base.state_dict().items() if any(h in k for h in ("score", "classifier"))}
+                        torch.save(head_st, checkpoint)
+                        LOG.info("Saved lightweight fine-tuned head checkpoint: %s", checkpoint)
                 except Exception as e:
                     LOG.warning("Failed to save fine-tuned checkpoint %s: %s (continuing in-memory)", checkpoint, e)
     if args.precision == "fp16":
