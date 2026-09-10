@@ -293,10 +293,9 @@ class MLAAttention(BaseAttention):
         is_nested = False
         if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
             is_nested = True
-        elif (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj:
+        elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention") or cls_name.endswith("SelfAttention"):
+            is_nested = True
+        elif cls_name.endswith("Attention") and not has_out_proj:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -378,8 +377,16 @@ class MLAAttention(BaseAttention):
             u_kv, s_kv, vh_kv = torch.linalg.svd(w_kv, full_matrices=False)
             r = min(self.rank, s_kv.shape[0], self.kv_down.weight.shape[0], self.k_up.weight.shape[1], self.v_up.weight.shape[1])
 
+            orig_norm = torch.linalg.norm(w_kv)
+            approx_norm = torch.linalg.norm(s_kv[:r])
+            norm_scale = (orig_norm / torch.clamp(approx_norm, min=1e-12)).to(self.k_up.weight.device, self.k_up.weight.dtype)
+
+            self.kv_down.weight.data.zero_()
+            self.k_up.weight.data.zero_()
+            self.v_up.weight.data.zero_()
+
             self.kv_down.weight.data[:r, :].copy_(vh_kv[:r, :].to(self.kv_down.weight.device, self.kv_down.weight.dtype))
-            up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)).to(self.k_up.weight.device, self.k_up.weight.dtype)
+            up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)).to(self.k_up.weight.device, self.k_up.weight.dtype) * norm_scale
             d_k = min(self.kv_dim, self.k_up.weight.shape[0])
             d_v = min(self.kv_dim, self.v_up.weight.shape[0])
             self.k_up.weight.data[:d_k, :r].copy_(up[:d_k, :r])
@@ -391,6 +398,8 @@ class MLAAttention(BaseAttention):
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
+        elif cls_name in ("GPT2Attention", "GPT2Block") or hasattr(src, "c_attn") or "gpt" in cls_name.lower():
+            self.is_decoder = True
 
     def forward(
         self,
