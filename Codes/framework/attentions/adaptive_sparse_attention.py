@@ -542,24 +542,24 @@ class AdaptiveSparseAttention(BaseAttention):
                         cos, sin = res[0], res[1]
                         break
                 except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                    print(f'copy_weights failed: {e}')
+                    return None
                 try:
                     res = rotary_mod(probe_t, seq_len=N_k)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
                 except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                    print(f'copy_weights failed: {e}')
+                    return None
                 try:
                     res = rotary_mod(probe_t)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
                 except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                    print(f'copy_weights failed: {e}')
+                    return None
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
