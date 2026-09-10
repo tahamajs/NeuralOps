@@ -677,19 +677,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
-| ROBERTA | 0.00% | 0.7586 | 1.0 | 0 | 295.83 | `FAIL` | N/A |
-| GPT2 | 54.70% | 0.6711 | 0.9813 | 0 | 468.69 | `PASS_LOW` | N/A |
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
+| DISTILBERT | 90.60% | 0.9095 | 0.978 | 0 | 345.95 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-kronecker_tt_lora) |
+| ROBERTA | 83.72% | 0.8515 | 0.9764 | 0 | 333.23 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-kronecker_tt_lora) |
+| GPT2 | 55.16% | 0.6787 | 0.9813 | 0 | 804.54 | `PASS_LOW` | N/A |
