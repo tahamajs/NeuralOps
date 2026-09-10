@@ -634,12 +634,30 @@ def inject_spectraformer(
 
         if layer is not None:
             if hasattr(layer, "attention"):
-                layer.attention = new_attn
-            elif hasattr(layer, "self"):
+                if hasattr(layer.attention, "self"):
+                    layer.attention.self = new_attn
+                else:
+                    layer.attention = new_attn
+            elif hasattr(layer, 'attention'):
+
+                if hasattr(layer.attention, 'self'):
+
+                    layer.attention.self = new_attn
+
+                else:
+
+                    layer.attention = new_attn
+
+            elif hasattr(layer, 'self'):
+
                 layer.self = new_attn
-            elif hasattr(layer, "attn"):
+
+            elif hasattr(layer, 'attn'):
+
                 layer.attn = new_attn
+
             else:
+
                 layer.attention = new_attn
 
         return new_attn
