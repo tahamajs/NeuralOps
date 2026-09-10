@@ -1,26 +1,26 @@
 {
     "model": "roberta-base_infini",
     "performance": {
-        "accuracy_pct": 83.6,
-        "f1_score": 0.8566,
-        "f1_macro": 0.8326,
-        "precision": 0.8594,
-        "recall": 0.8337,
-        "val_loss": 0.4531,
+        "accuracy_pct": 56.54,
+        "f1_score": 0.6855,
+        "f1_macro": 0.4912,
+        "precision": 0.6317,
+        "recall": 0.5585,
+        "val_loss": 0.6798,
         "status": "PASS",
-        "elapsed_s": 30.97
+        "elapsed_s": 6.97
     },
     "efficiency": {
-        "total_params_before": 127325954,
-        "total_params_after": 135887630,
-        "trainable_recovery_params": 3565826,
-        "compression_rate": 0.937,
-        "compression_ratio_pct": -6.72,
+        "total_params_before": 124647170,
+        "total_params_after": 134093630,
+        "trainable_recovery_params": 2951474,
+        "compression_rate": 0.9296,
+        "compression_ratio_pct": -7.58,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 2973696,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 405.56,
-        "tokens_per_sec": 9728.68
+        "peak_vram_mb": 404.2,
+        "tokens_per_sec": 42880.43
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 372.01,
-        "L_256_vram_mb": 378.64,
-        "L_512_vram_mb": 402.39,
+        "L_128_vram_mb": 359.72,
+        "L_256_vram_mb": 368.41,
+        "L_512_vram_mb": 398.16,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-07T05:00:09.598269"
+    "timestamp": "2026-09-10T04:40:26.033038"
 }

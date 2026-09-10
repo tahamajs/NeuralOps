@@ -754,5 +754,86 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T04:32:41.825202"
+  },
+  {
+    "module": "huffman",
+    "runner": "run_all_4_huffman.py",
+    "exit_code": 0,
+    "elapsed_s": 164.51,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:35:26.336047"
+  },
+  {
+    "module": "huffman_coder",
+    "runner": "run_all_4_huffman_coder.py",
+    "exit_code": 0,
+    "elapsed_s": 46.01,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:36:12.351187"
+  },
+  {
+    "module": "hybrid_svd",
+    "runner": "run_all_4_hybrid_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 65.08,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:37:17.435761"
+  },
+  {
+    "module": "hybrid_svd_layer",
+    "runner": "run_all_4_hybrid_svd_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 45.5,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:38:02.939264"
+  },
+  {
+    "module": "hybridkv",
+    "runner": "run_all_4_hybridkv.py",
+    "exit_code": 0,
+    "elapsed_s": 63.42,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:39:06.365673"
+  },
+  {
+    "module": "hymba_transx",
+    "runner": "run_all_4_hymba_transx.py",
+    "exit_code": 0,
+    "elapsed_s": 47.36,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:39:53.727348"
+  },
+  {
+    "module": "infini",
+    "runner": "run_all_4_infini.py",
+    "exit_code": 0,
+    "elapsed_s": 63.94,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:40:57.674910"
+  },
+  {
+    "module": "infini_attention",
+    "runner": "run_all_4_infini_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 59.99,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:41:57.667282"
+  },
+  {
+    "module": "jamba",
+    "runner": "run_all_4_jamba.py",
+    "exit_code": 0,
+    "elapsed_s": 45.5,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:42:43.169792"
   }
 ]

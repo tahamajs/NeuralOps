@@ -83,3 +83,12 @@ hgrn2_layer,run_all_4_hgrn2_layer.py,0,143.0,PASS,,2026-09-10T04:29:37.147006
 hgrn2_outer,run_all_4_hgrn2_outer.py,0,63.37,PASS,,2026-09-10T04:30:40.527154
 hla,run_all_4_hla.py,0,60.44,PASS,,2026-09-10T04:31:40.967524
 hla_attention,run_all_4_hla_attention.py,0,60.85,PASS,,2026-09-10T04:32:41.825202
+huffman,run_all_4_huffman.py,0,164.51,PASS,,2026-09-10T04:35:26.336047
+huffman_coder,run_all_4_huffman_coder.py,0,46.01,PASS,,2026-09-10T04:36:12.351187
+hybrid_svd,run_all_4_hybrid_svd.py,0,65.08,PASS,,2026-09-10T04:37:17.435761
+hybrid_svd_layer,run_all_4_hybrid_svd_layer.py,0,45.5,PASS,,2026-09-10T04:38:02.939264
+hybridkv,run_all_4_hybridkv.py,0,63.42,PASS,,2026-09-10T04:39:06.365673
+hymba_transx,run_all_4_hymba_transx.py,0,47.36,PASS,,2026-09-10T04:39:53.727348
+infini,run_all_4_infini.py,0,63.94,PASS,,2026-09-10T04:40:57.674910
+infini_attention,run_all_4_infini_attention.py,0,59.99,PASS,,2026-09-10T04:41:57.667282
+jamba,run_all_4_jamba.py,0,45.5,PASS,,2026-09-10T04:42:43.169792

@@ -1,7 +1,7 @@
 {
   "compressor_name": "hybridkv",
-  "original_parameters": 127325954,
-  "compressed_parameters": 127325954,
+  "original_parameters": 124647170,
+  "compressed_parameters": 124647170,
   "saved_parameters": 0,
   "compression_ratio": 1.0,
   "reduction_percentage": 0.0,
@@ -10,17 +10,11 @@
   "max_cache_len": 128,
   "num_sinks": 4,
   "recent_window": 32,
-  "total_attention_heads": 864,
-  "static_heads_count": 576,
-  "dynamic_heads_count": 288,
+  "total_attention_heads": 432,
+  "static_heads_count": 288,
+  "dynamic_heads_count": 144,
   "head_classifications": {
     "roberta.encoder.layer.0.attention.self.query": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.0.attention.self.query.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -32,19 +26,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.0.attention.self.key.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.0.attention.self.value": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.0.attention.self.value.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -56,19 +38,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.1.attention.self.query.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.1.attention.self.key": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.1.attention.self.key.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -80,19 +50,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.1.attention.self.value.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.2.attention.self.query": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.2.attention.self.query.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -104,19 +62,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.2.attention.self.key.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.2.attention.self.value": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.2.attention.self.value.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -128,19 +74,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.3.attention.self.query.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.3.attention.self.key": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.3.attention.self.key.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -152,19 +86,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.3.attention.self.value.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.4.attention.self.query": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.4.attention.self.query.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -176,19 +98,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.4.attention.self.key.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.4.attention.self.value": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.4.attention.self.value.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -200,19 +110,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.5.attention.self.query.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.5.attention.self.key": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.5.attention.self.key.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -224,19 +122,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.5.attention.self.value.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.6.attention.self.query": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.6.attention.self.query.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -248,19 +134,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.6.attention.self.key.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.6.attention.self.value": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.6.attention.self.value.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -272,19 +146,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.7.attention.self.query.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.7.attention.self.key": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.7.attention.self.key.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -296,19 +158,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.7.attention.self.value.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.8.attention.self.query": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.8.attention.self.query.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -320,19 +170,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.8.attention.self.key.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.8.attention.self.value": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.8.attention.self.value.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -344,19 +182,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.9.attention.self.query.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.9.attention.self.key": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.9.attention.self.key.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -368,19 +194,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.9.attention.self.value.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.10.attention.self.query": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.10.attention.self.query.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -392,19 +206,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.10.attention.self.key.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.10.attention.self.value": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.10.attention.self.value.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -416,19 +218,7 @@
       "static_heads": 8,
       "dynamic_heads": 4
     },
-    "roberta.encoder.layer.11.attention.self.query.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
     "roberta.encoder.layer.11.attention.self.key": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.11.attention.self.key.base_layer": {
       "head_type": "static",
       "num_heads": 12,
       "static_heads": 8,
@@ -439,15 +229,9 @@
       "num_heads": 12,
       "static_heads": 8,
       "dynamic_heads": 4
-    },
-    "roberta.encoder.layer.11.attention.self.value.base_layer": {
-      "head_type": "static",
-      "num_heads": 12,
-      "static_heads": 8,
-      "dynamic_heads": 4
     }
   },
-  "attached_caches": 72,
+  "attached_caches": 36,
   "kv_cache_budget_saving": "70.0% Footprint Reduction",
   "forward_check_success": false
 }
