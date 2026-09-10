@@ -677,4 +677,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| ROBERTA | 0.00% | 0.8942 | 1.0 | 0 | 299.92 | `FAIL` | N/A |
+| DISTILBERT | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
+| ROBERTA | 0.00% | 0.7586 | 1.0 | 0 | 295.83 | `FAIL` | N/A |
+| GPT2 | 54.70% | 0.6711 | 0.9813 | 0 | 468.69 | `PASS_LOW` | N/A |
