@@ -367,5 +367,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T20:48:02.199996"
+  },
+  {
+    "module": "cure",
+    "runner": "run_all_4_cure.py",
+    "exit_code": 0,
+    "elapsed_s": 129.98,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:50:12.198035"
+  },
+  {
+    "module": "decay_linear_attention",
+    "runner": "run_all_4_decay_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 45.66,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T20:50:57.865203"
   }
 ]

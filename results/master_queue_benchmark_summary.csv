@@ -40,3 +40,5 @@ cosformer,run_all_4_cosformer.py,0,46.38,PASS,,2026-09-10T20:44:34.816925
 cur,run_all_4_cur.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:44:34.821388
 cur_linear,run_all_4_cur_linear.py,0,129.33,PASS,,2026-09-10T20:46:44.155223
 cur_moe,run_all_4_cur_moe.py,0,78.04,PASS,,2026-09-10T20:48:02.199996
+cure,run_all_4_cure.py,0,129.98,PASS,,2026-09-10T20:50:12.198035
+decay_linear_attention,run_all_4_decay_linear_attention.py,0,45.66,PASS,,2026-09-10T20:50:57.865203
