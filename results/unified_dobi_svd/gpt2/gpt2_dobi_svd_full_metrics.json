@@ -1,18 +1,18 @@
 {
     "model": "gpt2_dobi_svd",
     "performance": {
-        "accuracy_pct": 82.57,
-        "f1_score": 0.8393,
-        "f1_macro": 0.8244,
-        "precision": 0.8319,
-        "recall": 0.8244,
-        "val_loss": 0.3977,
-        "status": "PASS",
-        "elapsed_s": 6.25
+        "accuracy_pct": 54.7,
+        "f1_score": 0.6706,
+        "f1_macro": 0.4729,
+        "precision": 0.5867,
+        "recall": 0.5403,
+        "val_loss": 0.6978,
+        "status": "PASS_LOW",
+        "elapsed_s": 5.26
     },
     "efficiency": {
-        "total_params_before": 126800640,
-        "total_params_after": 126800640,
+        "total_params_before": 124441344,
+        "total_params_after": 124441344,
         "trainable_recovery_params": 1536,
         "compression_rate": 1.0,
         "compression_ratio_pct": 0.0,
@@ -20,9 +20,9 @@
         "num_compressed_layers": 0,
         "num_fallback_layers": 48,
         "num_injected_attention_layers": 0,
-        "lora_params": 2359296,
+        "lora_params": 0,
         "avg_reconstruction_error": 0.0,
-        "weighted_reconstruction_error": 0.8306,
+        "weighted_reconstruction_error": 0.8307,
         "per_layer_reconstruction_errors": {
             "transformer.h.0.attn.c_attn": 0.7762652061023925,
             "transformer.h.0.attn.c_proj": 0.6250940200328606,
@@ -125,8 +125,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 400.12,
-        "tokens_per_sec": 62996.2
+        "peak_vram_mb": 389.62,
+        "tokens_per_sec": 85140.82
     },
     "architecture": {
         "span_distribution": {},
@@ -134,10 +134,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 292.12,
-        "L_256_vram_mb": 306.94,
-        "L_512_vram_mb": 332.07,
+        "L_128_vram_mb": 282.5,
+        "L_256_vram_mb": 297.31,
+        "L_512_vram_mb": 321.94,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-08T19:06:40.575367"
+    "timestamp": "2026-09-10T04:13:19.092807"
 }
