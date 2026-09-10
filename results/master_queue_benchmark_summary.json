@@ -1105,5 +1105,77 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T05:33:34.822925"
+  },
+  {
+    "module": "minimal_svd_v2",
+    "runner": "run_all_4_minimal_svd_v2.py",
+    "exit_code": 0,
+    "elapsed_s": 73.41,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:34:48.233950"
+  },
+  {
+    "module": "mixattention_moska",
+    "runner": "run_all_4_mixattention_moska.py",
+    "exit_code": 0,
+    "elapsed_s": 64.36,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:35:52.596257"
+  },
+  {
+    "module": "mla",
+    "runner": "run_all_4_mla.py",
+    "exit_code": 0,
+    "elapsed_s": 57.73,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:36:50.332960"
+  },
+  {
+    "module": "mlorq",
+    "runner": "run_all_4_mlorq.py",
+    "exit_code": 0,
+    "elapsed_s": 66.82,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:37:57.152854"
+  },
+  {
+    "module": "moba",
+    "runner": "run_all_4_moba.py",
+    "exit_code": 0,
+    "elapsed_s": 69.8,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:39:06.951856"
+  },
+  {
+    "module": "modegpt",
+    "runner": "run_all_4_modegpt.py",
+    "exit_code": 0,
+    "elapsed_s": 67.34,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:40:14.297079"
+  },
+  {
+    "module": "moe_deltakv_paged",
+    "runner": "run_all_4_moe_deltakv_paged.py",
+    "exit_code": 0,
+    "elapsed_s": 60.19,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:41:14.487803"
+  },
+  {
+    "module": "nasc",
+    "runner": "run_all_4_nasc.py",
+    "exit_code": 0,
+    "elapsed_s": 118.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T05:43:13.414930"
   }
 ]

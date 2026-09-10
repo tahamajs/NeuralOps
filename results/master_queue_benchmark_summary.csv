@@ -122,3 +122,11 @@ minimal_aurora,run_all_4_minimal_aurora.py,0,73.14,PASS,,2026-09-10T05:29:56.327
 minimal_nova,run_all_4_minimal_nova.py,0,73.15,PASS,,2026-09-10T05:31:09.479116
 minimal_prism,run_all_4_minimal_prism.py,0,72.74,PASS,,2026-09-10T05:32:22.221797
 minimal_svd,run_all_4_minimal_svd.py,0,72.6,PASS,,2026-09-10T05:33:34.822925
+minimal_svd_v2,run_all_4_minimal_svd_v2.py,0,73.41,PASS,,2026-09-10T05:34:48.233950
+mixattention_moska,run_all_4_mixattention_moska.py,0,64.36,PASS,,2026-09-10T05:35:52.596257
+mla,run_all_4_mla.py,0,57.73,PASS,,2026-09-10T05:36:50.332960
+mlorq,run_all_4_mlorq.py,0,66.82,PASS,,2026-09-10T05:37:57.152854
+moba,run_all_4_moba.py,0,69.8,PASS,,2026-09-10T05:39:06.951856
+modegpt,run_all_4_modegpt.py,0,67.34,PASS,,2026-09-10T05:40:14.297079
+moe_deltakv_paged,run_all_4_moe_deltakv_paged.py,0,60.19,PASS,,2026-09-10T05:41:14.487803
+nasc,run_all_4_nasc.py,0,118.92,PASS,,2026-09-10T05:43:13.414930

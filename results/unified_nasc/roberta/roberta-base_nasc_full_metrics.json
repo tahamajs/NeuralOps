@@ -1,26 +1,26 @@
 {
     "model": "roberta-base_nasc",
     "performance": {
-        "accuracy_pct": 85.21,
-        "f1_score": 0.859,
-        "f1_macro": 0.8517,
-        "precision": 0.8536,
-        "recall": 0.8514,
-        "val_loss": 0.473,
+        "accuracy_pct": 82.57,
+        "f1_score": 0.8362,
+        "f1_macro": 0.825,
+        "precision": 0.8287,
+        "recall": 0.8248,
+        "val_loss": 0.4418,
         "status": "PASS",
-        "elapsed_s": 75.7
+        "elapsed_s": 18.0
     },
     "efficiency": {
-        "total_params_before": 127325954,
-        "total_params_after": 134784806,
-        "trainable_recovery_params": 3565826,
-        "compression_rate": 0.9447,
-        "compression_ratio_pct": -5.86,
+        "total_params_before": 124647170,
+        "total_params_after": 132990806,
+        "trainable_recovery_params": 1820978,
+        "compression_rate": 0.9373,
+        "compression_ratio_pct": -6.69,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 2973696,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 398.87,
-        "tokens_per_sec": 3775.03
+        "peak_vram_mb": 385.89,
+        "tokens_per_sec": 15797.01
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 369.03,
-        "L_256_vram_mb": 374.11,
-        "L_512_vram_mb": 396.46,
+        "L_128_vram_mb": 349.74,
+        "L_256_vram_mb": 356.49,
+        "L_512_vram_mb": 381.93,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-07T06:02:45.327143"
+    "timestamp": "2026-09-10T05:41:58.322868"
 }
