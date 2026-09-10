@@ -169,5 +169,41 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T17:55:19.251364"
+  },
+  {
+    "module": "aegis_v3_module",
+    "runner": "run_all_4_aegis_v3_module.py",
+    "exit_code": 0,
+    "elapsed_s": 33.02,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T17:55:52.278035"
+  },
+  {
+    "module": "aegis_v4",
+    "runner": "run_all_4_aegis_v4.py",
+    "exit_code": 0,
+    "elapsed_s": 32.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T17:56:25.206692"
+  },
+  {
+    "module": "aegis_v4_module",
+    "runner": "run_all_4_aegis_v4_module.py",
+    "exit_code": 0,
+    "elapsed_s": 32.26,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T17:56:57.470097"
+  },
+  {
+    "module": "aegis_v5",
+    "runner": "run_all_4_aegis_v5.py",
+    "exit_code": 0,
+    "elapsed_s": 32.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T17:57:29.770224"
   }
 ]
