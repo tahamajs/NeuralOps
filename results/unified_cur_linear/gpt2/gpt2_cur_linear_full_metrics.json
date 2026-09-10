@@ -1,14 +1,14 @@
 {
     "model": "gpt2_cur_linear",
     "performance": {
-        "accuracy_pct": 53.33,
-        "f1_score": 0.5966,
-        "f1_macro": 0.5214,
-        "precision": 0.5335,
-        "recall": 0.5306,
-        "val_loss": 0.686,
+        "accuracy_pct": 53.21,
+        "f1_score": 0.6389,
+        "f1_macro": 0.4872,
+        "precision": 0.54,
+        "recall": 0.5269,
+        "val_loss": 0.7004,
         "status": "PASS_LOW",
-        "elapsed_s": 10.24
+        "elapsed_s": 11.55
     },
     "efficiency": {
         "total_params_before": 124441344,
@@ -27,8 +27,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 390.12,
-        "tokens_per_sec": 84532.52
+        "peak_vram_mb": 636.29,
+        "tokens_per_sec": 65941.49
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +36,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 282.5,
-        "L_256_vram_mb": 297.31,
-        "L_512_vram_mb": 321.94,
+        "L_128_vram_mb": 519.04,
+        "L_256_vram_mb": 532.54,
+        "L_512_vram_mb": 560.67,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-10T04:09:17.031706"
+    "timestamp": "2026-09-10T18:46:16.488457"
 }
