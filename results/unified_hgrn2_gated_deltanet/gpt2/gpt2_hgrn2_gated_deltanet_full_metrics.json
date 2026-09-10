@@ -8,7 +8,7 @@
         "recall": 0.5126,
         "val_loss": 0.8645,
         "status": "FAIL",
-        "elapsed_s": 0.45
+        "elapsed_s": 1.58
     },
     "efficiency": {
         "total_params_before": 126800640,
