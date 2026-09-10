@@ -3,10 +3,11 @@
 finish_benchmark.py — Master Orchestrator for remaining benchmark modules.
 
 - Discovers all run_all_4_*.py that lack complete results
-- Runs each with a hard 600s timeout
+- Runs each with a hard 600s timeout using process-tree killing (taskkill /F /T)
+- Direct log file streaming (no pipe deadlock on Windows)
 - Uploads PASS modules to HuggingFace via huggingface_hub (no hf CLI)
 - Persists state to finish_benchmark_state.json (crash-safe resume)
-- Logs live status every 30 seconds
+- Live logging every 30 seconds
 - Final git push at end
 """
 
@@ -129,6 +130,15 @@ def _log_fn():
                  str(timedelta(seconds=int(elapsed))),
                  str(timedelta(seconds=int((total - done) * avg))))
 
+def kill_process_tree(pid):
+    try:
+        if sys.platform == "win32":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True, timeout=10)
+        else:
+            os.killpg(os.getpgid(pid), 9)
+    except Exception:
+        pass
+
 def run_module(runner, module):
     env = os.environ.copy()
     env.update({"HF_HUB_ENABLE_HF_TRANSFER": "1", "PYTHONUNBUFFERED": "1",
@@ -136,23 +146,21 @@ def run_module(runner, module):
     cmd = [sys.executable, "-u", str(runner), "--models", *MODELS]
     log_path = REPO_DIR / "benchmark_logs" / f"finish_{module}.log"
     log_path.parent.mkdir(exist_ok=True)
-    LOG.info("[%s] Launching runner...", module)
+    LOG.info("[%s] Launching runner: %s", module, runner.name)
     try:
         with open(log_path, "w", encoding="utf-8") as lf:
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, env=env, cwd=str(REPO_DIR))
-            deadline = time.time() + MODULE_TIMEOUT
-            for line in proc.stdout:
-                sys.stdout.write(line); lf.write(line)
-                if time.time() > deadline:
-                    LOG.warning("[%s] TIMEOUT — killing.", module)
-                    proc.kill(); proc.wait()
-                    return -999
-            proc.wait(timeout=30)
-            return proc.returncode
-    except subprocess.TimeoutExpired:
-        proc.kill(); return -999
+            proc = subprocess.Popen(cmd, stdout=lf, stderr=subprocess.STDOUT, env=env, cwd=str(REPO_DIR))
+            try:
+                proc.wait(timeout=MODULE_TIMEOUT)
+                return proc.returncode
+            except subprocess.TimeoutExpired:
+                LOG.warning("[%s] TIMEOUT after %ds — terminating process tree PID %d.", module, MODULE_TIMEOUT, proc.pid)
+                kill_process_tree(proc.pid)
+                proc.wait(timeout=10)
+                return -999
     except Exception as e:
-        LOG.error("[%s] Exception: %s", module, e); return -1
+        LOG.error("[%s] Exception: %s", module, e)
+        return -1
 
 def write_master_csv(state):
     out = RESULTS_DIR / "master_aggregated_results.csv"
