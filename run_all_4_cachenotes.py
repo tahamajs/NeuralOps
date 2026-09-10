@@ -294,10 +294,6 @@ print(f"\n[+] Master 4-model summary saved to {master_csv} and {master_json}")
 # ==============================================================================
 # PHASE 3: QUALITY-GATED HF UPLOAD & LOCAL CLEANUP
 # ==============================================================================
-if os.environ.get("SKIP_HF_UPLOAD") or os.environ.get("SKIP_STAGE2"):
-    print("[RUNNER] Skipping runner-level upload (handled asynchronously by background orchestrator).", flush=True)
-    sys.exit(0)
-
 import huggingface_hub as hfh
 
 os.environ["HF_HUB_DISABLE_XET"] = "1"

@@ -230,11 +230,7 @@ print(f"Starting Quality Gate & Automated Hugging Face Export...")
 print(f"========================================================\n", flush=True)
 
 try:
-    if os.environ.get("SKIP_HF_UPLOAD") or os.environ.get("SKIP_STAGE2"):
-    print("[RUNNER] Skipping runner-level upload (handled asynchronously by background orchestrator).", flush=True)
-    sys.exit(0)
-
-from huggingface_hub import HfApi
+    from huggingface_hub import HfApi
     api = HfApi()
 except ImportError:
     api = None
