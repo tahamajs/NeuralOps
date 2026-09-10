@@ -178,5 +178,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-11T00:57:53.884101"
+  },
+  {
+    "module": "aegis_v4",
+    "runner": "run_all_4_aegis_v4.py",
+    "exit_code": 0,
+    "elapsed_s": 376.08,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-11T01:04:09.970559"
+  },
+  {
+    "module": "aegis_v4_module",
+    "runner": "run_all_4_aegis_v4_module.py",
+    "exit_code": 0,
+    "elapsed_s": 362.15,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-11T01:10:12.120014"
   }
 ]
