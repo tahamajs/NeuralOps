@@ -1,14 +1,14 @@
 {
     "model": "gpt2_moe_deltakv_paged",
     "performance": {
-        "accuracy_pct": 50.57,
-        "f1_score": 0.6697,
-        "f1_macro": 0.344,
-        "precision": 0.4356,
-        "recall": 0.4968,
-        "val_loss": 0.729,
+        "accuracy_pct": 50.92,
+        "f1_score": 0.6439,
+        "f1_macro": 0.4271,
+        "precision": 0.5053,
+        "recall": 0.5024,
+        "val_loss": 0.7114,
         "status": "PASS_LOW",
-        "elapsed_s": 5.06
+        "elapsed_s": 5.44
     },
     "efficiency": {
         "total_params_before": 124441344,
@@ -27,8 +27,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 314.97,
-        "tokens_per_sec": 42368.29
+        "peak_vram_mb": 556.61,
+        "tokens_per_sec": 40936.57
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +36,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 273.98,
-        "L_256_vram_mb": 286.33,
-        "L_512_vram_mb": 302.87,
+        "L_128_vram_mb": 515.62,
+        "L_256_vram_mb": 524.78,
+        "L_512_vram_mb": 543.95,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-10T05:41:07.591611"
+    "timestamp": "2026-09-11T03:08:39.266517"
 }
