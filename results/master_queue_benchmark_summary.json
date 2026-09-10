@@ -70,5 +70,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T22:50:36.906931"
+  },
+  {
+    "module": "adaptive_svd_attn",
+    "runner": "run_all_4_adaptive_svd_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 1695.57,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T23:18:52.482335"
   }
 ]

@@ -7,3 +7,4 @@ adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T22:2
 adaptive_sparse,run_all_4_adaptive_sparse.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T22:26:41.331230
 adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,835.13,PASS,,2026-09-10T22:40:36.459089
 adaptive_svd_attention,run_all_4_adaptive_svd_attention.py,0,600.42,PASS,,2026-09-10T22:50:36.906931
+adaptive_svd_attn,run_all_4_adaptive_svd_attn.py,0,1695.57,PASS,,2026-09-10T23:18:52.482335
