@@ -233,5 +233,5 @@
   },
   "attached_caches": 36,
   "kv_cache_budget_saving": "70.0% Footprint Reduction",
-  "forward_check_success": false
+  "forward_check_success": true
 }

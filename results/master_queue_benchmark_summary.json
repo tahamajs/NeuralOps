@@ -772,5 +772,41 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:20:48.861489"
+  },
+  {
+    "module": "hybrid_svd",
+    "runner": "run_all_4_hybrid_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 333.02,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:26:21.888517"
+  },
+  {
+    "module": "hybrid_svd_layer",
+    "runner": "run_all_4_hybrid_svd_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 46.47,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:27:08.366907"
+  },
+  {
+    "module": "hybridkv",
+    "runner": "run_all_4_hybridkv.py",
+    "exit_code": 0,
+    "elapsed_s": 56.35,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:28:04.722885"
+  },
+  {
+    "module": "hymba_transx",
+    "runner": "run_all_4_hymba_transx.py",
+    "exit_code": 0,
+    "elapsed_s": 47.44,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:28:52.170788"
   }
 ]
