@@ -28,7 +28,7 @@
     },
     "hardware": {
         "peak_vram_mb": 389.51,
-        "tokens_per_sec": 160103.62
+        "tokens_per_sec": 158365.29
     },
     "architecture": {
         "span_distribution": {},
@@ -41,5 +41,5 @@
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-10T19:54:19.061242"
+    "timestamp": "2026-09-10T22:26:52.609799"
 }

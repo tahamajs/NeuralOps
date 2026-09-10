@@ -1,26 +1,26 @@
 {
     "model": "gpt2_adaptive_sparse_attention_attention",
     "performance": {
-        "accuracy_pct": 80.73,
-        "f1_score": 0.8178,
-        "f1_macro": 0.8067,
-        "precision": 0.8093,
-        "recall": 0.8066,
-        "val_loss": 0.429,
-        "status": "FAIL",
-        "elapsed_s": 0.67
+        "accuracy_pct": 51.26,
+        "f1_score": 0.6758,
+        "f1_macro": 0.3471,
+        "precision": 0.6555,
+        "recall": 0.5035,
+        "val_loss": 0.6965,
+        "status": "PASS_LOW",
+        "elapsed_s": 7.47
     },
     "efficiency": {
-        "total_params_before": 126800640,
-        "total_params_after": 177590160,
-        "trainable_recovery_params": 3540624,
-        "compression_rate": 0.714,
-        "compression_ratio_pct": -40.05,
+        "total_params_before": 124441344,
+        "total_params_after": 175230912,
+        "trainable_recovery_params": 1181376,
+        "compression_rate": 0.7102,
+        "compression_ratio_pct": -40.81,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 3538944,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 445.69,
-        "tokens_per_sec": 44873.72
+        "peak_vram_mb": 756.96,
+        "tokens_per_sec": 43401.38
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 407.07,
-        "L_256_vram_mb": 419.17,
-        "L_512_vram_mb": 467.49,
+        "L_128_vram_mb": 715.28,
+        "L_256_vram_mb": 726.74,
+        "L_512_vram_mb": 778.81,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-08T18:36:52.877954"
+    "timestamp": "2026-09-10T22:27:39.424523"
 }
