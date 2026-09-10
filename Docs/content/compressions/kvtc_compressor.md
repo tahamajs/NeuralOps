@@ -492,11 +492,19 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 87.73% | 0.8875 | 1.0 | 20 | 384.23 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa2f4e1-5c9fc1bf7bf005271383c105;0137b89e-8bfc-41ee-90a4-b895561c746a)
+| DISTILBERT | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
+| ROBERTA | 50.92% | 0.6748 | 1.0 | 45 | 454.95 | `PASS_LOW` | N/A |
+| GPT2 | 53.56% | 0.6757 | 1.0 | 8 | 422.5 | `PASS_LOW` | N/A |
 
-429 Too Many Requests: you have reached your 'api' rate limit.
-Retry after 16 seconds (0/1000 requests remaining in current 300s window).
-Url: https://huggingface.co/api/repos/create.
-We had to rate limit you, you hit the quota of 1000 api requests per 5 minutes period. Upgrade to a PRO user or Team/Enterprise organization account (https://hf.co/pricing) to get higher limits. See https://huggingface.co/docs/hub/rate-limits) |
-| ROBERTA | 50.92% | 0.6748 | 1.0 | 45 | 458.11 | `PASS_LOW` | N/A |
-| GPT2 | 54.24% | 0.6774 | 1.0 | 8 | 666.42 | `PASS_LOW` | N/A |
+## Usage Examples
+
+```python
+# TODO: Add specific usage example
+```
+
+## Benchmark Results
+
+| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
+|--------|----------|----------|-----------|-------------------|
+| Pending| Pending  | Pending  | Pending   | Pending           |
+
