@@ -10,11 +10,11 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "183.8 MB",
-    "Time (s)": "9.5"
+    "Time (s)": "9.7"
   },
   {
     "Model": "roberta",
-    "Exit Code": 0,
+    "Exit Code": 1,
     "Baseline Acc": "75.11%",
     "DynamicSVD Acc": "73.97%",
     "Delta Acc": "-1.14%",
@@ -23,11 +23,11 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "299.1 MB",
-    "Time (s)": "23.1"
+    "Time (s)": "9.8"
   },
   {
     "Model": "gpt2",
-    "Exit Code": 0,
+    "Exit Code": 1,
     "Baseline Acc": "54.13%",
     "DynamicSVD Acc": "53.67%",
     "Delta Acc": "-0.46%",
@@ -36,6 +36,6 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "389.6 MB",
-    "Time (s)": "24.4"
+    "Time (s)": "9.8"
   }
 ]
