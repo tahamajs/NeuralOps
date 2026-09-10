@@ -862,5 +862,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:40:40.700765"
+  },
+  {
+    "module": "kronecker",
+    "runner": "run_all_4_kronecker.py",
+    "exit_code": 0,
+    "elapsed_s": 390.42,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:47:11.125110"
+  },
+  {
+    "module": "kronecker_linear",
+    "runner": "run_all_4_kronecker_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 46.69,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:47:57.818539"
   }
 ]
