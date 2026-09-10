@@ -243,6 +243,7 @@ class AdaptiveSVDAttention(BaseAttention):
         self.dense = self.out_proj
         self.o_proj = self.out_proj
         self.c_proj = self.out_proj
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
@@ -560,8 +561,8 @@ class AdaptiveSVDAttention(BaseAttention):
             output = self.out_proj(context)
 
         if position_bias is not None:
-            return output, position_bias
-        return output, attn_weights if output_attentions else None
+            return output * self.output_scale, position_bias
+        return output * self.output_scale, attn_weights if output_attentions else None
 
 
 
@@ -648,14 +649,7 @@ def inject_adaptive_svd(
                 **kwargs,
             )
         except Exception:
-            test_module = AdaptiveSVDAttention(
-                config=model_config,
-                svd_rank=svd_rank,
-                residual_rank=residual_rank,
-                energy_threshold=energy_threshold,
-                pretrained_attn=None,
-                **kwargs,
-            )
+            return None
 
         if layer is not None:
             if hasattr(layer, "attention"):
