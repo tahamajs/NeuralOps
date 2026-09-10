@@ -516,7 +516,10 @@ def inject_minimal_nova(
             new_attn.to(device=p.device, dtype=p.dtype)
 
     if hasattr(layer, "attention"):
-        layer.attention = new_attn
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new_attn
+        else:
+            layer.attention = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
     return new_attn

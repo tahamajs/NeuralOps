@@ -482,7 +482,10 @@ def inject_compressed_mha(
             pretrained_attn=old_attn,
         )
         if hasattr(layer, "attention"):
-            layer.attention = new_attn
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
         elif hasattr(layer, "attn"):
