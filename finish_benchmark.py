@@ -5,13 +5,15 @@ finish_benchmark.py — Master Orchestrator for remaining benchmark modules.
 - Discovers all run_all_4_*.py that lack complete results
 - Runs each with a hard 600s timeout using process-tree killing (taskkill /F /T)
 - Direct log file streaming (no pipe deadlock on Windows)
-- Uploads PASS modules to HuggingFace via huggingface_hub (no hf CLI)
+- Completely asynchronous background upload to Hugging Face (runners never wait)
+- Runners skip Stage 2 uploads via SKIP_HF_UPLOAD=1 and SKIP_STAGE2=1
+- Background Git push runs via auto_git_push.py independently
 - Persists state to finish_benchmark_state.json (crash-safe resume)
 - Live logging every 30 seconds
 - Final git push at end
 """
 
-import os, sys, json, time, csv, logging, argparse, subprocess, threading
+import os, sys, json, time, csv, logging, argparse, subprocess, threading, queue
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -103,16 +105,32 @@ def upload_to_hf(module, model_slug, status, accuracy):
             if not weights:
                 weights = list(unified.rglob("weights.pt"))
             if weights:
-                LOG.info("Uploading weights.pt -> %s", repo_id)
+                LOG.info("[HF-ASYNC] Uploading weights.pt -> %s", repo_id)
                 api.upload_file(path_or_fileobj=str(weights[0]), path_in_repo="weights.pt", repo_id=repo_id, commit_message="Upload weights")
         csv_path = unified / model_slug / "summary.csv"
         if csv_path.exists():
             api.upload_file(path_or_fileobj=str(csv_path), path_in_repo="summary.csv", repo_id=repo_id, commit_message="Upload metrics")
-        LOG.info("HF upload done: %s", repo_id)
+        LOG.info("[HF-ASYNC] Upload done: %s", repo_id)
         return True
     except Exception as e:
-        LOG.warning("HF upload failed %s/%s: %s", module, model_slug, e)
+        LOG.warning("[HF-ASYNC] Upload failed %s/%s: %s", module, model_slug, e)
         return False
+
+# Asynchronous upload worker
+_upload_queue = queue.Queue()
+
+def _background_uploader_worker():
+    LOG.info("[HF-ASYNC] Background uploader worker thread started.")
+    while True:
+        try:
+            task = _upload_queue.get()
+            if task is None:
+                break
+            module, model_slug, status, acc = task
+            upload_to_hf(module, model_slug, status, acc)
+            _upload_queue.task_done()
+        except Exception as e:
+            LOG.warning("[HF-ASYNC] Worker exception: %s", e)
 
 _current_module = ["(starting)"]
 _completed = [0]
@@ -125,8 +143,9 @@ def _log_fn():
         elapsed = time.time() - _start_time[0]
         done, total = _completed[0], _total[0]
         avg = elapsed / max(done, 1)
-        LOG.info("STATUS | Module: %s | Done: %d/%d | Elapsed: %s | ETA: %s",
-                 _current_module[0], done, total,
+        qsize = _upload_queue.qsize()
+        LOG.info("STATUS | Module: %s | Done: %d/%d | UploadQueue: %d | Elapsed: %s | ETA: %s",
+                 _current_module[0], done, total, qsize,
                  str(timedelta(seconds=int(elapsed))),
                  str(timedelta(seconds=int((total - done) * avg))))
 
@@ -141,8 +160,13 @@ def kill_process_tree(pid):
 
 def run_module(runner, module):
     env = os.environ.copy()
-    env.update({"HF_HUB_ENABLE_HF_TRANSFER": "1", "PYTHONUNBUFFERED": "1",
-                 "ORCHESTRATOR_UPLOAD": "0", "SKIP_HF_UPLOAD": "1"})
+    env.update({
+        "HF_HUB_ENABLE_HF_TRANSFER": "1",
+        "PYTHONUNBUFFERED": "1",
+        "ORCHESTRATOR_UPLOAD": "0",
+        "SKIP_HF_UPLOAD": "1",
+        "SKIP_STAGE2": "1",
+    })
     cmd = [sys.executable, "-u", str(runner), "--models", *MODELS]
     log_path = REPO_DIR / "benchmark_logs" / f"finish_{module}.log"
     log_path.parent.mkdir(exist_ok=True)
@@ -192,7 +216,11 @@ def main():
         [print(f"  {extract_module_name(r)}") for r in to_run]; return
 
     _total[0] = len(to_run); _start_time[0] = time.time()
+    
+    # Start logging and background uploader
     threading.Thread(target=_log_fn, daemon=True).start()
+    if not args.no_upload:
+        threading.Thread(target=_background_uploader_worker, daemon=True).start()
 
     pass_c = pass_low_c = fail_c = timeout_c = 0
 
@@ -223,10 +251,12 @@ def main():
                 overall = "FAILED_LOW"; fail_c += 1
 
         LOG.info("[%s] Overall: %s", module, overall)
+        # Enqueue background upload immediately without waiting
         if not args.no_upload and overall in ("PASS", "PASS_LOW"):
             for model_slug, (model_status, model_acc) in accs.items():
                 if model_acc >= PASS_THRESHOLD:
-                    upload_to_hf(module, model_slug, model_status, model_acc)
+                    _upload_queue.put((module, model_slug, model_status, model_acc))
+                    LOG.info("[%s] Enqueued background HF upload for %s (non-blocking)", module, model_slug)
 
         state[module] = {"status": overall, "exit_code": exit_code, "elapsed_s": round(elapsed, 1),
                           "accuracies": {k: list(v) for k, v in accs.items()}, "timestamp": datetime.now().isoformat()}
