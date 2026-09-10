@@ -597,6 +597,21 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
-| ROBERTA | 77.18% | 0.8077 | 1.0 | 0 | 354.3 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-hybridkv) |
-| GPT2 | 55.28% | 0.6486 | 1.0 | 0 | 389.64 | `PASS_LOW` | N/A |
+| DISTILBERT | 90.94% | 0.9123 | 1.0 | 0 | 337.6 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa2efaa-3c094ad037b521ce2807bd03;0a8f12f4-56b6-496e-baad-4b6a21297098)
+
+429 Too Many Requests: you have reached your 'api' rate limit.
+Retry after 151 seconds (0/1000 requests remaining in current 300s window).
+Url: https://huggingface.co/api/repos/create.
+We had to rate limit you, you hit the quota of 1000 api requests per 5 minutes period. Upgrade to a PRO user or Team/Enterprise organization account (https://hf.co/pricing) to get higher limits. See https://huggingface.co/docs/hub/rate-limits) |
+| ROBERTA | 77.18% | 0.8077 | 1.0 | 0 | 361.56 | `PASS` | [`roberta`](Upload error: (Request ID: Root=1-6aa2efab-7453805d57876b56201f6a69;41d2f019-9ac1-4794-a5f2-b703f5c6296e)
+
+429 Too Many Requests: you have reached your 'api' rate limit.
+Retry after 150 seconds (0/1000 requests remaining in current 300s window).
+Url: https://huggingface.co/api/repos/create.
+We had to rate limit you, you hit the quota of 1000 api requests per 5 minutes period. Upgrade to a PRO user or Team/Enterprise organization account (https://hf.co/pricing) to get higher limits. See https://huggingface.co/docs/hub/rate-limits) |
+| GPT2 | 62.04% | 0.6783 | 1.0 | 0 | 634.93 | `PASS` | [`gpt2`](Upload error: (Request ID: Root=1-6aa2efab-49379cc81e7e2b694a80790b;72eda71c-09ff-4669-97c1-d593fa9ef319)
+
+429 Too Many Requests: you have reached your 'api' rate limit.
+Retry after 150 seconds (0/1000 requests remaining in current 300s window).
+Url: https://huggingface.co/api/repos/create.
+We had to rate limit you, you hit the quota of 1000 api requests per 5 minutes period. Upgrade to a PRO user or Team/Enterprise organization account (https://hf.co/pricing) to get higher limits. See https://huggingface.co/docs/hub/rate-limits) |
