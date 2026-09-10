@@ -745,5 +745,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T18:15:29.730585"
+  },
+  {
+    "module": "hla_attention",
+    "runner": "run_all_4_hla_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 34.24,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:16:03.970028"
+  },
+  {
+    "module": "huffman",
+    "runner": "run_all_4_huffman.py",
+    "exit_code": 0,
+    "elapsed_s": 42.14,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T18:16:46.118909"
   }
 ]

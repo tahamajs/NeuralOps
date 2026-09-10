@@ -82,3 +82,5 @@ hgrn2_gated_deltanet,run_all_4_hgrn2_gated_deltanet.py,0,32.46,PASS,,2026-09-10T
 hgrn2_layer,run_all_4_hgrn2_layer.py,0,32.68,PASS,,2026-09-10T18:14:22.577588
 hgrn2_outer,run_all_4_hgrn2_outer.py,0,34.56,PASS,,2026-09-10T18:14:57.140080
 hla,run_all_4_hla.py,0,32.59,PASS,,2026-09-10T18:15:29.730585
+hla_attention,run_all_4_hla_attention.py,0,34.24,PASS,,2026-09-10T18:16:03.970028
+huffman,run_all_4_huffman.py,0,42.14,PASS,,2026-09-10T18:16:46.118909
