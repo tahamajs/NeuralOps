@@ -705,7 +705,10 @@ def inject_asvd(
             new_attn = ASVDAttention(target_config, rank=rank, pretrained_attn=old_attn, **kwargs)
             if layer is not None:
                 if hasattr(layer, "attention"):
-                    layer.attention = new_attn
+                    if hasattr(layer.attention, "self"):
+                        layer.attention.self = new_attn
+                    else:
+                        layer.attention = new_attn
                 elif hasattr(layer, "self_attn"):
                     layer.self_attn = new_attn
                 elif hasattr(layer, "self"):
@@ -722,7 +725,10 @@ def inject_asvd(
     new_attn = ASVDAttention(target_config, rank=rank, **kwargs)
     if layer is not None:
         if hasattr(layer, "attention"):
-            layer.attention = new_attn
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
         elif hasattr(layer, "self"):

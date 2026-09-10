@@ -490,7 +490,10 @@ def inject_compressed_attention(
             pretrained_attn=src_attn,
         )
         if hasattr(layer, "attention"):
-            layer.attention = new_attn
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
         elif hasattr(layer, "self"):

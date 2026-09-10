@@ -610,7 +610,10 @@ def inject_decay_linear(
             **kwargs,
         )
         if hasattr(layer, "attention"):
-            layer.attention = new_block
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_block
+            else:
+                layer.attention = new_block
         elif hasattr(layer, "attn"):
             layer.attn = new_block
         elif hasattr(layer, "self_attn"):
