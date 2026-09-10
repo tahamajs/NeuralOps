@@ -229,8 +229,8 @@ class ReplaceMeCompressor(BaseCompressor):
                                 p.requires_grad = False
                             continue
                     except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                        print(f'copy_weights failed: {e}')
+                        return None
 
                 layers[i] = new_block
                 layers_replaced += 1

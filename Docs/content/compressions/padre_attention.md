@@ -364,3 +364,16 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | DISTILBERT | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
 | ROBERTA | 64.56% | 0.7066 | 0.9378 | 0 | 386.15 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-padre) |
 | GPT2 | 50.92% | 0.6748 | 0.9906 | 0 | 330.3 | `PASS_LOW` | N/A |
+
+## Usage Examples
+
+```python
+# TODO: Add specific usage example
+```
+
+## Benchmark Results
+
+| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
+|--------|----------|----------|-----------|-------------------|
+| Pending| Pending  | Pending  | Pending   | Pending           |
+
