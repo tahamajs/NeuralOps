@@ -754,5 +754,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:16:34.209180"
+  },
+  {
+    "module": "huffman",
+    "runner": "run_all_4_huffman.py",
+    "exit_code": 0,
+    "elapsed_s": 208.73,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:20:02.940323"
+  },
+  {
+    "module": "huffman_coder",
+    "runner": "run_all_4_huffman_coder.py",
+    "exit_code": 0,
+    "elapsed_s": 45.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:20:48.861489"
   }
 ]

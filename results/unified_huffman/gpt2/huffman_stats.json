@@ -7,7 +7,7 @@
   "reduction_percentage": 0.0,
   "quantize_bits": 8,
   "avg_entropy_bits": 0.0,
-  "total_compressed_bytes": 169869312,
+  "total_compressed_bytes": 339738624,
   "huffman_compression_ratio": 1.0,
   "theoretical_compression_ratio": 1.0,
   "num_compressed": 0,
@@ -66,5 +66,5 @@
   ],
   "skipped_layers": [],
   "avg_reconstruction_error": 0.0,
-  "forward_check_success": null
+  "forward_check_success": true
 }

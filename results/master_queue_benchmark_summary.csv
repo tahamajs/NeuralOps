@@ -83,3 +83,5 @@ hgrn2_layer,run_all_4_hgrn2_layer.py,0,181.37,PASS,,2026-09-10T21:13:13.035312
 hgrn2_outer,run_all_4_hgrn2_outer.py,0,69.16,PASS,,2026-09-10T21:14:22.201398
 hla,run_all_4_hla.py,0,65.85,PASS,,2026-09-10T21:15:28.054836
 hla_attention,run_all_4_hla_attention.py,0,66.15,PASS,,2026-09-10T21:16:34.209180
+huffman,run_all_4_huffman.py,0,208.73,PASS,,2026-09-10T21:20:02.940323
+huffman_coder,run_all_4_huffman_coder.py,0,45.92,PASS,,2026-09-10T21:20:48.861489
