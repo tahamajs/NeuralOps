@@ -628,5 +628,131 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T04:22:23.585862"
+  },
+  {
+    "module": "gqa",
+    "runner": "run_all_4_gqa.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:22:23.591681"
+  },
+  {
+    "module": "granite_hybrid",
+    "runner": "run_all_4_granite_hybrid.py",
+    "exit_code": 0,
+    "elapsed_s": 50.08,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:23:13.677196"
+  },
+  {
+    "module": "grecodec",
+    "runner": "run_all_4_grecodec.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:23:13.682210"
+  },
+  {
+    "module": "griffin_ssd",
+    "runner": "run_all_4_griffin_ssd.py",
+    "exit_code": 0,
+    "elapsed_s": 45.62,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:23:59.307055"
+  },
+  {
+    "module": "halo_regla",
+    "runner": "run_all_4_halo_regla.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:23:59.312313"
+  },
+  {
+    "module": "hamming",
+    "runner": "run_all_4_hamming.py",
+    "exit_code": 0,
+    "elapsed_s": 60.42,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:24:59.736602"
+  },
+  {
+    "module": "hashed_linear",
+    "runner": "run_all_4_hashed_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 58.03,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:25:57.772772"
+  },
+  {
+    "module": "hashednets",
+    "runner": "run_all_4_hashednets.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T04:25:57.777445"
+  },
+  {
+    "module": "hgrn2",
+    "runner": "run_all_4_hgrn2.py",
+    "exit_code": 0,
+    "elapsed_s": 45.62,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:26:43.400703"
+  },
+  {
+    "module": "hgrn2_gated_deltanet",
+    "runner": "run_all_4_hgrn2_gated_deltanet.py",
+    "exit_code": 0,
+    "elapsed_s": 30.73,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:27:14.140527"
+  },
+  {
+    "module": "hgrn2_layer",
+    "runner": "run_all_4_hgrn2_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 143.0,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:29:37.147006"
+  },
+  {
+    "module": "hgrn2_outer",
+    "runner": "run_all_4_hgrn2_outer.py",
+    "exit_code": 0,
+    "elapsed_s": 63.37,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:30:40.527154"
+  },
+  {
+    "module": "hla",
+    "runner": "run_all_4_hla.py",
+    "exit_code": 0,
+    "elapsed_s": 60.44,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:31:40.967524"
+  },
+  {
+    "module": "hla_attention",
+    "runner": "run_all_4_hla_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 60.85,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T04:32:41.825202"
   }
 ]

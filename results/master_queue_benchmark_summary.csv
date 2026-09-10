@@ -69,3 +69,17 @@ gated_delta_net,run_all_4_gated_delta_net.py,0,45.15,PASS,,2026-09-10T04:19:33.0
 gated_deltanet_block,run_all_4_gated_deltanet_block.py,0,46.1,PASS,,2026-09-10T04:20:19.117796
 gated_linear_attention,run_all_4_gated_linear_attention.py,0,65.53,PASS,,2026-09-10T04:21:24.652967
 goldfinch_ahn,run_all_4_goldfinch_ahn.py,0,58.93,PASS,,2026-09-10T04:22:23.585862
+gqa,run_all_4_gqa.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T04:22:23.591681
+granite_hybrid,run_all_4_granite_hybrid.py,0,50.08,PASS,,2026-09-10T04:23:13.677196
+grecodec,run_all_4_grecodec.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T04:23:13.682210
+griffin_ssd,run_all_4_griffin_ssd.py,0,45.62,PASS,,2026-09-10T04:23:59.307055
+halo_regla,run_all_4_halo_regla.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T04:23:59.312313
+hamming,run_all_4_hamming.py,0,60.42,PASS,,2026-09-10T04:24:59.736602
+hashed_linear,run_all_4_hashed_linear.py,0,58.03,PASS,,2026-09-10T04:25:57.772772
+hashednets,run_all_4_hashednets.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T04:25:57.777445
+hgrn2,run_all_4_hgrn2.py,0,45.62,PASS,,2026-09-10T04:26:43.400703
+hgrn2_gated_deltanet,run_all_4_hgrn2_gated_deltanet.py,0,30.73,PASS,,2026-09-10T04:27:14.140527
+hgrn2_layer,run_all_4_hgrn2_layer.py,0,143.0,PASS,,2026-09-10T04:29:37.147006
+hgrn2_outer,run_all_4_hgrn2_outer.py,0,63.37,PASS,,2026-09-10T04:30:40.527154
+hla,run_all_4_hla.py,0,60.44,PASS,,2026-09-10T04:31:40.967524
+hla_attention,run_all_4_hla_attention.py,0,60.85,PASS,,2026-09-10T04:32:41.825202
