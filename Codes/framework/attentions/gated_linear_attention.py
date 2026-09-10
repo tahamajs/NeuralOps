@@ -571,7 +571,10 @@ def inject_gated_linear(
             return None
 
     if hasattr(layer, "attention"):
-        layer.attention = new_block
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new_block
+        else:
+            layer.attention = new_block
     elif hasattr(layer, "self"):
         layer.self = new_block
     elif hasattr(layer, "attn"):

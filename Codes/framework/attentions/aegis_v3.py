@@ -283,6 +283,7 @@ def kernel_linear_attention(
     rff_proj: torch.Tensor,
     use_zero_sum: bool = True,
     max_clamp: float = 11.0,
+    is_causal: bool = False,
 ) -> torch.Tensor:
     B, H, N, D = Q.shape
     F_dim = rff_proj.size(-1)
@@ -301,12 +302,18 @@ def kernel_linear_attention(
     Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
     K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
 
-    KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_f)
-    K_sum = K_feat.sum(dim=2)
-    denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
-
-    ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)
-    ctx = ctx / (denom + 1e-5)
+    if is_causal:
+        kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_feat, V_f)
+        KV_cum = torch.cumsum(kv_outer, dim=2)
+        z_cum = torch.cumsum(K_feat, dim=2)
+        num = torch.einsum("bhnf,bhnfd->bhnd", Q_feat, KV_cum)
+        denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1e-5)
+        ctx = num / denom
+    else:
+        KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_f)
+        K_sum = K_feat.sum(dim=2)
+        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
+        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-5)
     return torch.nan_to_num(ctx, nan=0.0).to(orig_dtype)
 
 
@@ -649,7 +656,7 @@ class AegisAttention(BaseAttention):
             Q_local, K_local, V_local, self.cfg.local_window, self.cfg.softpick_temperature, token_valid, self.is_decoder
         )
         ctx_global = kernel_linear_attention(
-            Q_global, K_global, V_global, self.rff_proj, self.cfg.use_zero_sum_keys
+            Q_global, K_global, V_global, self.rff_proj, self.cfg.use_zero_sum_keys, is_causal=getattr(self, 'is_decoder', False)
         )
 
         if self.blend_logits is not None:
@@ -727,7 +734,10 @@ def inject_aegis_v3(
             new_attn.to(device=p.device, dtype=p.dtype)
 
     if hasattr(layer, "attention"):
-        layer.attention = new_attn
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new_attn
+        else:
+            layer.attention = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
     elif hasattr(layer, "attn"):
