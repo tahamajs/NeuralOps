@@ -92,3 +92,5 @@ hymba_transx,run_all_4_hymba_transx.py,0,47.44,PASS,,2026-09-10T21:28:52.170788
 infini,run_all_4_infini.py,0,64.66,PASS,,2026-09-10T21:29:56.834304
 infini_attention,run_all_4_infini_attention.py,0,66.78,PASS,,2026-09-10T21:31:03.619590
 jamba,run_all_4_jamba.py,0,45.73,PASS,,2026-09-10T21:31:49.349923
+jamba_info,run_all_4_jamba_info.py,0,204.49,PASS,,2026-09-10T21:35:13.846424
+kda,run_all_4_kda.py,0,45.37,PASS,,2026-09-10T21:35:59.225226

@@ -1,14 +1,14 @@
 {
     "model": "roberta-base_kmeans",
     "performance": {
-        "accuracy_pct": 83.14,
-        "f1_score": 0.8444,
-        "f1_macro": 0.8302,
-        "precision": 0.8376,
-        "recall": 0.8302,
-        "val_loss": 0.401,
+        "accuracy_pct": 83.37,
+        "f1_score": 0.8466,
+        "f1_macro": 0.8325,
+        "precision": 0.8399,
+        "recall": 0.8325,
+        "val_loss": 0.3998,
         "status": "PASS",
-        "elapsed_s": 7.75
+        "elapsed_s": 7.8
     },
     "efficiency": {
         "total_params_before": 124647170,
@@ -21,7 +21,7 @@
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 0,
         "lora_params": 0,
-        "avg_reconstruction_error": 0.03394243118560149,
+        "avg_reconstruction_error": 0.03394261644118362,
         "weighted_reconstruction_error": 0.0334,
         "per_layer_reconstruction_errors": {
             "roberta.encoder.layer.0.attention.self.query": 0.02265380322933197,
@@ -52,20 +52,20 @@
             "roberta.encoder.layer.4.attention.self.key": 0.030360480770468712,
             "roberta.encoder.layer.4.attention.self.value": 0.026115480810403824,
             "roberta.encoder.layer.4.attention.output.dense": 0.036437295377254486,
-            "roberta.encoder.layer.4.intermediate.dense": 0.033498141914606094,
+            "roberta.encoder.layer.4.intermediate.dense": 0.03349814563989639,
             "roberta.encoder.layer.4.output.dense": 0.046120475977659225,
             "roberta.encoder.layer.5.attention.self.query": 0.024943245574831963,
             "roberta.encoder.layer.5.attention.self.key": 0.029635949060320854,
             "roberta.encoder.layer.5.attention.self.value": 0.02270359732210636,
             "roberta.encoder.layer.5.attention.output.dense": 0.0357404462993145,
             "roberta.encoder.layer.5.intermediate.dense": 0.03316379338502884,
-            "roberta.encoder.layer.5.output.dense": 0.04534667730331421,
+            "roberta.encoder.layer.5.output.dense": 0.045348986983299255,
             "roberta.encoder.layer.6.attention.self.query": 0.0272790789604187,
             "roberta.encoder.layer.6.attention.self.key": 0.031812433153390884,
             "roberta.encoder.layer.6.attention.self.value": 0.023655328899621964,
             "roberta.encoder.layer.6.attention.output.dense": 0.04153263941407204,
             "roberta.encoder.layer.6.intermediate.dense": 0.03329926356673241,
-            "roberta.encoder.layer.6.output.dense": 0.0478498637676239,
+            "roberta.encoder.layer.6.output.dense": 0.04784989356994629,
             "roberta.encoder.layer.7.attention.self.query": 0.02802331931889057,
             "roberta.encoder.layer.7.attention.self.key": 0.03336259350180626,
             "roberta.encoder.layer.7.attention.self.value": 0.028116805478930473,
@@ -88,7 +88,7 @@
             "roberta.encoder.layer.10.attention.self.key": 0.025212164968252182,
             "roberta.encoder.layer.10.attention.self.value": 0.02425360307097435,
             "roberta.encoder.layer.10.attention.output.dense": 0.04100264608860016,
-            "roberta.encoder.layer.10.intermediate.dense": 0.02938499115407467,
+            "roberta.encoder.layer.10.intermediate.dense": 0.02939598634839058,
             "roberta.encoder.layer.10.output.dense": 0.04751952365040779,
             "roberta.encoder.layer.11.attention.self.query": 0.023063939064741135,
             "roberta.encoder.layer.11.attention.self.key": 0.023333029821515083,
@@ -100,8 +100,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 987.88,
-        "tokens_per_sec": 59400.76
+        "peak_vram_mb": 991.88,
+        "tokens_per_sec": 58877.44
     },
     "architecture": {
         "span_distribution": {},
@@ -109,10 +109,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 962.82,
-        "L_256_vram_mb": 966.39,
-        "L_512_vram_mb": 974.52,
+        "L_128_vram_mb": 964.83,
+        "L_256_vram_mb": 968.4,
+        "L_512_vram_mb": 978.02,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-10T04:46:43.676274"
+    "timestamp": "2026-09-10T21:36:39.175482"
 }

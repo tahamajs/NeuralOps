@@ -835,5 +835,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T21:31:49.349923"
+  },
+  {
+    "module": "jamba_info",
+    "runner": "run_all_4_jamba_info.py",
+    "exit_code": 0,
+    "elapsed_s": 204.49,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:35:13.846424"
+  },
+  {
+    "module": "kda",
+    "runner": "run_all_4_kda.py",
+    "exit_code": 0,
+    "elapsed_s": 45.37,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T21:35:59.225226"
   }
 ]

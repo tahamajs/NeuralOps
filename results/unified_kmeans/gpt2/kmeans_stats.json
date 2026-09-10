@@ -73,6 +73,6 @@
   "lora_r": 0,
   "lora_alpha": 1.0,
   "effective_parameter_ratio": 1.0,
-  "forward_check_success": false,
+  "forward_check_success": true,
   "theoretical_vram_saving": "50.0% vs FP16"
 }
