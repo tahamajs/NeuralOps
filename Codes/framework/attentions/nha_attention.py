@@ -273,6 +273,9 @@ class NativeHybridAttention(BaseAttention):
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", dropout)) if config else dropout
         self.dropout = nn.Dropout(dropout_p)
         self.gate = nn.Linear(self.dim, 1)
+        # Initialize gate to bias strongly towards pretrained local attention (sigmoid(3.0) ≈ 0.95)
+        nn.init.zeros_(self.gate.weight)
+        nn.init.constant_(self.gate.bias, 3.0)
         self.rotary_emb = getattr(source_attn, "rotary_emb", None)
 
         if source_attn is not None:
