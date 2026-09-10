@@ -17,6 +17,16 @@ import os, sys, json, time, csv, logging, argparse, subprocess, threading, queue
 from pathlib import Path
 from datetime import datetime, timedelta
 
+os.environ["TQDM_DISABLE"] = "1"
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["PYTHONUNBUFFERED"] = "1"
+
+try:
+    from huggingface_hub.utils import disable_progress_bars
+    disable_progress_bars()
+except Exception:
+    pass
+
 REPO_DIR       = Path(__file__).resolve().parent
 RESULTS_DIR    = REPO_DIR / "results"
 STATE_FILE     = REPO_DIR / "finish_benchmark_state.json"
@@ -32,7 +42,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout),
     ],
 )
 LOG = logging.getLogger("orchestrator")
@@ -75,6 +84,9 @@ def read_summary_accuracy(module):
                     reader = csv.DictReader(f)
                     best_status, best_acc = "FAIL", 0.0
                     for row in reader:
+                        m_name = (row.get("module_name") or "").strip()
+                        if m_name == "full":
+                            continue
                         try:
                             acc = float(row.get("accuracy_pct", row.get("mean_accuracy", 0)) or 0)
                             status = row.get("status", "FAIL")
