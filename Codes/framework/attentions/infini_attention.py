@@ -235,6 +235,7 @@ class InfiniAttention(BaseAttention):
 
         self.memory = nn.Parameter(torch.randn(1, self.num_heads, compress_dim, self.head_dim) * 0.001)
         self.beta = nn.Parameter(torch.zeros(1))
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.0)) if config else 0.0
         self.dropout = nn.Dropout(dropout_p)
@@ -460,7 +461,7 @@ class InfiniAttention(BaseAttention):
         else:
             out = self.out_proj(combined)
 
-        return out, (attn_local if output_attentions else None)
+        return out * self.output_scale, (attn_local if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("infini_inject")

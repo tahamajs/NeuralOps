@@ -238,6 +238,7 @@ class LEKAV1Attention(BaseAttention):
         self.norm = nn.LayerNorm(self.head_dim)
         self.dropout = nn.Dropout(dropout_p)
         self.pres_gate = nn.Parameter(torch.tensor(2.0))
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         # QR-orthogonalised random projection buffer
         proj_data = torch.randn(self.num_heads, self.head_dim, self.feature_dim)
@@ -485,7 +486,7 @@ class LEKAV1Attention(BaseAttention):
 
         alpha = torch.sigmoid(self.pres_gate)
         out = alpha * out + (1.0 - alpha) * hidden_states
-        return out, None
+        return out * self.output_scale, None
 
     def get_ortho_loss(self) -> float:
         return 0.0
