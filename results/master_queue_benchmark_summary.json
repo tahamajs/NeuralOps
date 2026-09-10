@@ -70,5 +70,104 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-10T03:42:42.850982"
+  },
+  {
+    "module": "adaptive_svd_attn",
+    "runner": "run_all_4_adaptive_svd_attn.py",
+    "exit_code": 0,
+    "elapsed_s": 100.53,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:44:23.386915"
+  },
+  {
+    "module": "adasplash",
+    "runner": "run_all_4_adasplash.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T03:44:23.389133"
+  },
+  {
+    "module": "adasvd",
+    "runner": "run_all_4_adasvd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T03:44:23.392419"
+  },
+  {
+    "module": "admm",
+    "runner": "run_all_4_admm.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T03:44:23.393792"
+  },
+  {
+    "module": "admm_pruner",
+    "runner": "run_all_4_admm_pruner.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-10T03:44:23.395259"
+  },
+  {
+    "module": "aegis_hybrid",
+    "runner": "run_all_4_aegis_hybrid.py",
+    "exit_code": 0,
+    "elapsed_s": 49.23,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:45:12.623590"
+  },
+  {
+    "module": "aegis_spectron_fp8",
+    "runner": "run_all_4_aegis_spectron_fp8.py",
+    "exit_code": 0,
+    "elapsed_s": 49.34,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:46:01.964009"
+  },
+  {
+    "module": "aegis_v1",
+    "runner": "run_all_4_aegis_v1.py",
+    "exit_code": 0,
+    "elapsed_s": 97.17,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:47:39.135256"
+  },
+  {
+    "module": "aegis_v1_module",
+    "runner": "run_all_4_aegis_v1_module.py",
+    "exit_code": 0,
+    "elapsed_s": 97.41,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:49:16.546345"
+  },
+  {
+    "module": "aegis_v2",
+    "runner": "run_all_4_aegis_v2.py",
+    "exit_code": 0,
+    "elapsed_s": 94.63,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:50:51.180535"
+  },
+  {
+    "module": "aegis_v3",
+    "runner": "run_all_4_aegis_v3.py",
+    "exit_code": 0,
+    "elapsed_s": 98.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-10T03:52:30.105707"
   }
 ]

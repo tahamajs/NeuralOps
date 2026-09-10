@@ -7,3 +7,14 @@ adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T03:4
 adaptive_sparse,run_all_4_adaptive_sparse.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T03:40:06.618466
 adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,55.14,PASS,,2026-09-10T03:41:01.760886
 adaptive_svd_attention,run_all_4_adaptive_svd_attention.py,0,100.82,PASS,,2026-09-10T03:42:42.850982
+adaptive_svd_attn,run_all_4_adaptive_svd_attn.py,0,100.53,PASS,,2026-09-10T03:44:23.386915
+adasplash,run_all_4_adasplash.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T03:44:23.389133
+adasvd,run_all_4_adasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T03:44:23.392419
+admm,run_all_4_admm.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T03:44:23.393792
+admm_pruner,run_all_4_admm_pruner.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T03:44:23.395259
+aegis_hybrid,run_all_4_aegis_hybrid.py,0,49.23,PASS,,2026-09-10T03:45:12.623590
+aegis_spectron_fp8,run_all_4_aegis_spectron_fp8.py,0,49.34,PASS,,2026-09-10T03:46:01.964009
+aegis_v1,run_all_4_aegis_v1.py,0,97.17,PASS,,2026-09-10T03:47:39.135256
+aegis_v1_module,run_all_4_aegis_v1_module.py,0,97.41,PASS,,2026-09-10T03:49:16.546345
+aegis_v2,run_all_4_aegis_v2.py,0,94.63,PASS,,2026-09-10T03:50:51.180535
+aegis_v3,run_all_4_aegis_v3.py,0,98.92,PASS,,2026-09-10T03:52:30.105707
