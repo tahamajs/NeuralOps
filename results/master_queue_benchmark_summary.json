@@ -151,5 +151,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-11T00:38:42.225725"
+  },
+  {
+    "module": "aegis_v2",
+    "runner": "run_all_4_aegis_v2.py",
+    "exit_code": 0,
+    "elapsed_s": 404.27,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-11T00:45:26.503731"
   }
 ]
