@@ -372,10 +372,6 @@ print("\n" + "=" * 80, flush=True)
 print("STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (FAQ Quantizer)", flush=True)
 print("=" * 80, flush=True)
 
-if os.environ.get("SKIP_HF_UPLOAD") or os.environ.get("SKIP_STAGE2"):
-    print("[RUNNER] Skipping runner-level upload (handled asynchronously by background orchestrator).", flush=True)
-    sys.exit(0)
-
 from huggingface_hub import HfApi
 
 hf_token = os.environ.get("HF_TOKEN")
