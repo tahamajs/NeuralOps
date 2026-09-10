@@ -276,6 +276,7 @@ class AdaptiveSparseAttention(BaseAttention):
         # Explicitly frozen per-head sparsity logit initialized to target sparsity
         init_logit = math.log(max(1e-4, min(0.9999, effective_sparsity)) / (1.0 - max(1e-4, min(0.9999, effective_sparsity))))
         self.sparsity_logits = nn.Parameter(torch.full((self.num_heads,), fill_value=init_logit), requires_grad=False)
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = getattr(
             config,
@@ -634,8 +635,8 @@ class AdaptiveSparseAttention(BaseAttention):
             output = self.out_proj(context)
 
         if position_bias is not None:
-            return output, position_bias
-        return output, (attn if output_attentions else None)
+            return output * self.output_scale, position_bias
+        return output * self.output_scale, (attn if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("adaptive_sparse_attention_inject")
