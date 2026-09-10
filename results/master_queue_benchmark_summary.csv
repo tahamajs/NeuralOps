@@ -34,3 +34,9 @@ chela_slay,run_all_4_chela_slay.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:38:09.6
 cluster,run_all_4_cluster.py,0,61.68,PASS,,2026-09-10T20:39:11.349361
 come,run_all_4_come.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:39:11.366454
 compressed_attention,run_all_4_compressed_attention.py,0,105.41,PASS,,2026-09-10T20:40:56.781808
+compressed_attention_layer,run_all_4_compressed_attention_layer.py,0,105.74,PASS,,2026-09-10T20:42:42.527453
+compressed_mha,run_all_4_compressed_mha.py,0,65.91,PASS,,2026-09-10T20:43:48.436856
+cosformer,run_all_4_cosformer.py,0,46.38,PASS,,2026-09-10T20:44:34.816925
+cur,run_all_4_cur.py,0,0.0,SKIPPED_EXISTING,,2026-09-10T20:44:34.821388
+cur_linear,run_all_4_cur_linear.py,0,129.33,PASS,,2026-09-10T20:46:44.155223
+cur_moe,run_all_4_cur_moe.py,0,78.04,PASS,,2026-09-10T20:48:02.199996
