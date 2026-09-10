@@ -380,8 +380,8 @@ class MoDeGPTCompressor(BaseCompressor):
                                         total_comp_params += p.numel()
                                 continue
 
-                        w1_rep = W1_approx.t() if is_conv1 else W1_approx
-                        w2_rep = W2_approx.t() if is_conv2 else W2_approx
+                        w1_rep = W1_approx
+                        w2_rep = W2_approx
 
                         layer1 = MoDeGPTLoRALinear.from_linear(
                             mod1,
@@ -455,7 +455,7 @@ class MoDeGPTCompressor(BaseCompressor):
                             total_comp_params += p.numel()
                         continue
 
-                w_rep = W_approx.t() if is_conv else W_approx
+                w_rep = W_approx
                 new_layer = MoDeGPTLoRALinear.from_linear(
                     module,
                     weight=w_rep.to(dtype=target_layer.weight.dtype, device=target_layer.weight.device),

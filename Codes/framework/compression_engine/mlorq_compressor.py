@@ -355,7 +355,7 @@ class MLoRQCompressor(BaseCompressor):
                 W_new = torch.nan_to_num(W_new, nan=0.0)
 
                 w_norm = torch.norm(W_orig, p="fro").item()
-                err = (torch.norm(W_orig - W_new.cpu(), p="fro") / max(w_norm, 1e-12)).item()
+                err = (torch.norm(W_orig - W_new, p="fro") / max(w_norm, 1e-12)).item()
                 self.layer_errors[name] = float(err)
                 self.layer_ranks[name] = r_actual
                 self.layer_bits[name] = b
