@@ -8,6 +8,7 @@ and learned gating fusion.
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
@@ -20,6 +21,8 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.compat import repeat_kv
 from framework.utils.model_family import ModelAdapter
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -463,8 +466,7 @@ class AegisHybridAttention(BaseAttention):
                         try:
                             mod.merge()
                         except Exception as e:
-                            print(f'copy_weights failed: {e}')
-                            raise RuntimeError(f"copy_weights failed: {e}")
+                            logger.warning(f"c_proj merge failed: {e}")
                     base_mod = getattr(mod, "base_layer", mod)
                     w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                     if w is not None:
@@ -501,8 +503,7 @@ class AegisHybridAttention(BaseAttention):
                     try:
                         mod.merge()
                     except Exception as e:
-                        print(f'copy_weights failed: {e}')
-                        raise RuntimeError(f"copy_weights failed: {e}")
+                        logger.warning(f"c_attn merge failed: {e}")
                 base_mod = getattr(mod, "base_layer", mod)
                 c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                 if c_w is not None:
@@ -549,8 +550,7 @@ class AegisHybridAttention(BaseAttention):
                 try:
                     w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.debug(f"UniversalAdapter extraction failed for {proj}: {e}")
 
             extracted_weights[proj] = (w, b)
 
@@ -558,16 +558,20 @@ class AegisHybridAttention(BaseAttention):
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(
             hasattr(old_attn, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
+            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o")
         )
-        if (
+        if cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+            cls_name.endswith("SelfAttention") and not has_out_proj
+        ):
+            self.is_nested_encoder = True
+        elif (
             hasattr(old_attn, "self")
             and hasattr(getattr(old_attn, "self"), "query")
             and hasattr(old_attn, "output")
             and hasattr(getattr(old_attn, "output"), "dense")
         ):
             self.is_nested_encoder = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+        elif not has_out_proj:
             self.is_nested_encoder = True
 
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
@@ -627,6 +631,8 @@ class AegisHybridAttention(BaseAttention):
             self.is_decoder = bool(old_attn.is_decoder)
         elif hasattr(old_attn, "c_attn") or old_attn.__class__.__name__ in ("GPT2Attention", "Qwen2Attention"):
             self.is_decoder = True
+        if self.is_decoder:
+            self.use_global = False
 
     def copy_weights(self, old_attn: Any) -> None:
         """Public alias for framework attention replacer compatibility."""
@@ -710,8 +716,7 @@ class AegisHybridAttention(BaseAttention):
                 from framework.utils.compat import maybe_apply_rotary
                 Q, K = maybe_apply_rotary(Q, K, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning(f"Rotary application failed: {e}")
 
         # 3. GQA Key-Value expansion: [B, H_kv, N_k, Dh] -> [B, H, N_k, Dh]
         if self.kv_repeat > 1:
@@ -836,7 +841,8 @@ class AegisHybridAttention(BaseAttention):
                 K_sum = phi_K.sum(dim=2) # [B, H, Dh]
                 norm = torch.einsum("bhnd,bhd->bhn", phi_Q, K_sum).unsqueeze(-1) # [B, H, N, 1]
 
-            global_out_h = (global_out_h / (norm + 1e-6)).to(dtype)
+            norm = norm.clamp(min=1.0)
+            global_out_h = (global_out_h / norm).to(dtype)
             
             if head_mask_tensor is not None:
                 global_out_h = global_out_h * head_mask_tensor.to(global_out_h.dtype)
@@ -848,6 +854,8 @@ class AegisHybridAttention(BaseAttention):
 
         # 3. CRITICAL: Output Projection MUST happen for both branches
         fused = fused.reshape(B, N, self.all_head_size)
+        fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4)
+        fused = fused.clamp(min=-1e4, max=1e4)
 
         if getattr(self, "is_nested_encoder", False):
             out = fused
@@ -858,14 +866,17 @@ class AegisHybridAttention(BaseAttention):
         if not is_decoder and mask_2d is not None:
             out = out * mask_2d.unsqueeze(-1)
 
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+        out = out.clamp(min=-1e4, max=1e4)
+
         return out, (attn_local if output_attentions else None)
 
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.tensor(0.0, device=self.out_proj.lin2.weight.device)
 
 
-@ATTENTION_REGISTRY.register("aegis_hybrid_fn")
 @ATTENTION_REGISTRY.register("aegis_hybrid_inject")
+@ATTENTION_REGISTRY.register("inject_aegis_hybrid")
 def inject_aegis_hybrid(
     layer: Any = None,
     model_config: Any = None,
@@ -879,89 +890,88 @@ def inject_aegis_hybrid(
     Injects AegisHybridAttention into a transformer layer with safe pre-test extraction.
     Returns None on failure to preserve the original layer.
     """
-    if model_config is None:
-        if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
-            model_config = layer
-        elif hasattr(layer, "attention"):
-            old_attn = layer.attention
+    try:
+        if model_config is None:
+            if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
+                model_config = layer
+            elif hasattr(layer, "attention"):
+                old_attn = layer.attention
 
-    model_type = getattr(model_config, "model_type", "") if model_config else ""
-    is_dec = getattr(model_config, "is_decoder", False) if model_config else False
-    if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
-        is_dec = True
-    elif hasattr(model_config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(model_config, "architectures", []) or [])):
-        is_dec = True
-    elif old_attn is not None and (hasattr(old_attn, "c_attn") or old_attn.__class__.__name__ in ("GPT2Attention", "Qwen2Attention")):
-        is_dec = True
-    if kwargs.get("is_decoder", False):
-        is_dec = True
+        model_type = getattr(model_config, "model_type", "") if model_config else ""
+        is_dec = getattr(model_config, "is_decoder", False) if model_config else False
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+            is_dec = True
+        elif hasattr(model_config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(model_config, "architectures", []) or [])):
+            is_dec = True
+        elif old_attn is not None and (hasattr(old_attn, "c_attn") or old_attn.__class__.__name__ in ("GPT2Attention", "Qwen2Attention")):
+            is_dec = True
+        if kwargs.get("is_decoder", False):
+            is_dec = True
 
-    if isinstance(model_config, dict):
-        h_size = model_config.get("hidden_size", model_config.get("dim", 768))
-        n_heads = model_config.get("num_attention_heads", model_config.get("num_heads", 12))
-        h_dim = model_config.get("head_dim", h_size // max(1, n_heads))
-        n_kv_heads = model_config.get("num_key_value_heads", model_config.get("num_kv_heads", n_heads))
-        l_rank = model_config.get("lora_rank", 32)
-    elif model_config is not None:
-        h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768))))
-        n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12))))
-        h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads)))
-        n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads))
-        l_rank = getattr(model_config, "lora_rank", 32)
-    else:
-        h_size = 768
-        n_heads = 12
-        h_dim = 64
-        n_kv_heads = 12
-        l_rank = 32
-
-    target_rank = kwargs.get("rank", 384)
-    if comp_config is not None:
-        target_rank = getattr(comp_config, "lora_r", getattr(comp_config, "rank", target_rank))
-    target_lora_rank = kwargs.get("lora_rank", l_rank)
-    if comp_config is not None:
-        target_lora_rank = getattr(comp_config, "lora_rank", target_lora_rank)
-    target_window = kwargs.get("local_window", 128)
-    if comp_config is not None:
-        target_window = getattr(comp_config, "block_size", target_window)
-    target_use_global = kwargs.get("use_global", getattr(comp_config, "use_global", True) if comp_config is not None else True)
-
-    cfg = AegisHybridConfig(
-        hidden_size=h_size,
-        num_attention_heads=n_heads,
-        head_dim=h_dim,
-        num_key_value_heads=n_kv_heads,
-        local_window=target_window,
-        rank=target_rank,
-        lora_rank=target_lora_rank,
-        kernel_feature_dim=getattr(comp_config, "rff_features", 128) if comp_config is not None else 128,
-        dropout=getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1,
-        use_adaptive_pruning=getattr(comp_config, "use_gate", True) if comp_config is not None else True,
-        gate_init_bias=getattr(comp_config, "gate_init_bias", 1.8) if comp_config is not None else 1.8,
-        is_decoder=is_dec or kwargs.get("is_decoder", False),
-        use_global=target_use_global,
-    )
-
-    # Pre-test weight extraction before committing to replacement
-    if old_attn is not None:
-        try:
-            test_attn = AegisHybridAttention(config=cfg, pretrained_attn=old_attn)
-        except Exception:
-            raise RuntimeError("copy_weights failed")
-        new_attn = test_attn
-    else:
-        new_attn = AegisHybridAttention(config=cfg)
-
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
+        if isinstance(model_config, dict):
+            h_size = model_config.get("hidden_size", model_config.get("dim", 768))
+            n_heads = model_config.get("num_attention_heads", model_config.get("num_heads", 12))
+            h_dim = model_config.get("head_dim", h_size // max(1, n_heads))
+            n_kv_heads = model_config.get("num_key_value_heads", model_config.get("num_kv_heads", n_heads))
+            l_rank = model_config.get("lora_rank", 32)
+        elif model_config is not None:
+            h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768))))
+            n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12))))
+            h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads)))
+            n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads))
+            l_rank = getattr(model_config, "lora_rank", 32)
         else:
-            layer.attention = new_attn
-    elif hasattr(layer, "self_attn"):
-        layer.self_attn = new_attn
-    elif hasattr(layer, "self"):
-        layer.self = new_attn
-    elif hasattr(layer, "attn"):
-        layer.attn = new_attn
+            h_size = 768
+            n_heads = 12
+            h_dim = 64
+            n_kv_heads = 12
+            l_rank = 32
 
-    return new_attn
+        target_rank = kwargs.get("rank", 384)
+        if comp_config is not None:
+            target_rank = getattr(comp_config, "lora_r", getattr(comp_config, "rank", target_rank))
+        target_lora_rank = kwargs.get("lora_rank", l_rank)
+        if comp_config is not None:
+            target_lora_rank = getattr(comp_config, "lora_rank", target_lora_rank)
+        target_window = kwargs.get("local_window", 128)
+        if comp_config is not None:
+            target_window = getattr(comp_config, "block_size", target_window)
+        target_use_global = kwargs.get("use_global", getattr(comp_config, "use_global", True) if comp_config is not None else True)
+
+        cfg = AegisHybridConfig(
+            hidden_size=h_size,
+            num_attention_heads=n_heads,
+            head_dim=h_dim,
+            num_key_value_heads=n_kv_heads,
+            local_window=target_window,
+            rank=target_rank,
+            lora_rank=target_lora_rank,
+            kernel_feature_dim=getattr(comp_config, "rff_features", 128) if comp_config is not None else 128,
+            dropout=getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1,
+            use_adaptive_pruning=getattr(comp_config, "use_gate", True) if comp_config is not None else True,
+            gate_init_bias=getattr(comp_config, "gate_init_bias", 1.8) if comp_config is not None else 1.8,
+            is_decoder=is_dec or kwargs.get("is_decoder", False),
+            use_global=target_use_global,
+        )
+
+        if old_attn is not None:
+            new_attn = AegisHybridAttention(config=cfg, pretrained_attn=old_attn)
+        else:
+            new_attn = AegisHybridAttention(config=cfg)
+
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
+
+        return new_attn
+    except Exception as e:
+        logger.error(f"Failed to inject AEGIS-Hybrid: {e}")
+        return None

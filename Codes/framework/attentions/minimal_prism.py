@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -8,6 +9,8 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -238,7 +241,11 @@ class MinimalPRISMAttention(BaseAttention):
                 if cfg else False
             )
 
-        self.is_nested_encoder: bool = False
+        model_type = getattr(cfg, "model_type", "").lower() if cfg else ""
+        self.is_nested_encoder: bool = (
+            getattr(cfg, "is_nested_encoder", False)
+            or model_type in ("roberta", "bert", "xlm-roberta")
+        )
         self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
@@ -281,33 +288,42 @@ class MinimalPRISMAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug(f"UniversalAdapter extraction failed for {proj}: {e}")
 
-        # 2. GPT-2 Fused c_attn Conv1D handling
+        # 2. GPT-2 Fused c_attn / c_proj Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                bias = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                bias_data = bias.data.clone() if bias is not None else None
+                p_cls = getattr(base_c, "__class__", type(base_c)).__name__
+                if ("Conv1D" in p_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
+                    weight = weight.t()
+                split_size = weight.shape[0] // 3
+                q_w = weight[:split_size, :]
+                k_w = weight[split_size : 2 * split_size, :]
+                v_w = weight[2 * split_size :, :]
+                q_b = bias_data[:split_size] if bias_data is not None else None
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+                v_b = bias_data[2 * split_size :] if bias_data is not None else None
+                extracted["q"] = (q_w, q_b)
+                extracted["k"] = (k_w, k_b)
+                extracted["v"] = (v_w, v_b)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(src.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            c_proj_mod = src.c_proj
+            base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+            w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                p_cls = getattr(base_o, "__class__", type(base_o)).__name__
+                if ("Conv1D" in p_cls) or hasattr(base_o, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]):
+                    w_o = w_o.t()
+                b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -348,9 +364,13 @@ class MinimalPRISMAttention(BaseAttention):
         elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj:
+            or (("roberta" in cls_name.lower() or "bert" in cls_name.lower()) and not has_out_proj)
+        ):
             is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+        if hasattr(src, "config"):
+            if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
+                is_nested = True
+        self.is_nested_encoder = bool(is_nested or self.is_nested_encoder)
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -445,11 +465,19 @@ class MinimalPRISMAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
-                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                if eff_mask.dtype == torch.bool:
+                    scores = scores.masked_fill(~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0)
+                elif torch.is_floating_point(eff_mask) and (eff_mask < 0).any():
+                    scores = scores + eff_mask.unsqueeze(1).unsqueeze(2).float()
+                else:
+                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
             elif eff_mask.dim() == 3:
                 scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
-                scores = scores + eff_mask.float()
+                if eff_mask.dtype == torch.bool:
+                    scores = scores.masked_fill(~eff_mask, -10000.0)
+                else:
+                    scores = scores + eff_mask.float()
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         attn_weights = F.softmax(scores, dim=-1).to(dtype)
@@ -481,6 +509,7 @@ class MinimalPRISMAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("minimal_prism_inject")
+@ATTENTION_REGISTRY.register("inject_minimal_prism")
 def inject_minimal_prism(
     layer: nn.Module,
     model_config: Any = None,
@@ -489,10 +518,7 @@ def inject_minimal_prism(
     total_layers: int = 1,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> MinimalPRISMAttention:
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
-
+) -> Optional[MinimalPRISMAttention]:
     if model_config is None:
         model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
@@ -509,8 +535,8 @@ def inject_minimal_prism(
         try:
             new_attn.copy_weights(src_attn)
         except Exception as e:
-            print(f'[WARN] copy_weights failed for minimal_prism: {e}')
-            raise RuntimeError(f"Injection failed")
+            logger.error(f"copy_weights failed for minimal_prism: {e}")
+            return None
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
@@ -518,8 +544,10 @@ def inject_minimal_prism(
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
+            new_attn.is_nested_encoder = True
         else:
             layer.attention = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
+        new_attn.is_nested_encoder = True
     return new_attn

@@ -201,9 +201,12 @@ class SqueezingHeadsDistiller(BaseAttention):
         else:
             self.is_decoder = (
                 bool(_cfg_get(config, "is_decoder", False))
+                or bool(_cfg_get(config, "is_causal", False))
                 or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama")
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
+                or bool(kwargs.get("is_causal", False))
             )
+        self.is_causal = self.is_decoder
 
         self.is_nested_encoder: bool = False
         self.lora_rank = int(lora_rank if lora_rank is not None else 16)
@@ -252,8 +255,33 @@ class SqueezingHeadsDistiller(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        if old_attn is not None:
-            self.copy_weights(old_attn)
+        src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn", None)
+        if src_attn is not None:
+            self.copy_weights(src_attn)
+
+    @property
+    def query(self) -> nn.Module:
+        return self.q_proj
+
+    @property
+    def key(self) -> nn.Module:
+        return self.k_proj
+
+    @property
+    def value(self) -> nn.Module:
+        return self.v_proj
+
+    @property
+    def q_lin(self) -> nn.Module:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> nn.Module:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> nn.Module:
+        return self.v_proj
 
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -285,24 +313,23 @@ class SqueezingHeadsDistiller(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+                p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
+                if ("Conv1D" in p_cls) or hasattr(src.c_attn, "nf") or (c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size):
                     c_attn_w = c_attn_w.t()
 
-                q_dim = self.q_head_size
-                k_dim = self.hidden_size
-                v_dim = self.hidden_size
-
-                w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
-                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                H = self.hidden_size
+                w_q = c_attn_w[:H, :]
+                w_k = c_attn_w[H : 2 * H, :]
+                w_v = c_attn_w[2 * H : 3 * H, :]
 
                 if c_attn_b is not None:
-                    b_q = c_attn_b[:q_dim]
-                    b_k = c_attn_b[q_dim : q_dim + k_dim]
-                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+                    b_q = c_attn_b[:H]
+                    b_k = c_attn_b[H : 2 * H]
+                    b_v = c_attn_b[2 * H : 3 * H]
 
                 out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                p_proj_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
+                if ("Conv1D" in p_proj_cls) or hasattr(src.c_proj, "nf") or (out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size):
                     out_w = out_w.t()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
@@ -377,25 +404,29 @@ class SqueezingHeadsDistiller(BaseAttention):
             if missing:
                 raise RuntimeError(f"Failed to extract required projections: {missing}")
 
-            # Frobenius norm checks
+            # Frobenius norm checks on source weights
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
                     raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
-            # Copy Q
-            self.q_proj.weight.copy_(w_q)
+            # Copy Q: preserve principal head dimensions
+            self.q_proj.weight.zero_()
+            m_q_out = min(self.q_head_size, w_q.shape[0])
+            m_q_in = min(self.hidden_size, w_q.shape[1])
+            self.q_proj.weight[:m_q_out, :m_q_in].copy_(w_q[:m_q_out, :m_q_in])
             if b_q is not None and self.q_proj.bias is not None:
-                self.q_proj.bias.copy_(b_q)
+                m_bq = min(self.q_proj.bias.shape[0], b_q.shape[0])
+                self.q_proj.bias[:m_bq].copy_(b_q[:m_bq])
 
-            # Copy K & V with GQA pooling if needed
-            if w_k.shape[0] == self.kv_head_size:
+            # Copy K & V with GQA pooling or principal head slice
+            if w_k.shape[0] == self.kv_head_size and w_k.shape[1] == self.hidden_size:
                 self.k_proj.weight.copy_(w_k)
                 if b_k is not None and self.k_proj.bias is not None:
                     self.k_proj.bias.copy_(b_k)
-            else:
+            elif w_k.shape[0] > self.kv_head_size and w_k.shape[0] % self.kv_head_size == 0 and w_k.shape[1] >= self.hidden_size:
                 rep = w_k.shape[0] // self.kv_head_size
                 w_k_pooled = (
-                    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+                    w_k[:, :self.hidden_size].view(self.num_kv_heads, rep, self.head_dim, -1)
                     .mean(dim=1)
                     .view(self.kv_head_size, -1)
                 )
@@ -405,15 +436,23 @@ class SqueezingHeadsDistiller(BaseAttention):
                         b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
                     )
                     self.k_proj.bias.copy_(b_k_pooled)
+            else:
+                self.k_proj.weight.zero_()
+                m_k_out = min(self.kv_head_size, w_k.shape[0])
+                m_k_in = min(self.hidden_size, w_k.shape[1])
+                self.k_proj.weight[:m_k_out, :m_k_in].copy_(w_k[:m_k_out, :m_k_in])
+                if b_k is not None and self.k_proj.bias is not None:
+                    m_bk = min(self.k_proj.bias.shape[0], b_k.shape[0])
+                    self.k_proj.bias[:m_bk].copy_(b_k[:m_bk])
 
-            if w_v.shape[0] == self.kv_head_size:
+            if w_v.shape[0] == self.kv_head_size and w_v.shape[1] == self.hidden_size:
                 self.v_proj.weight.copy_(w_v)
                 if b_v is not None and self.v_proj.bias is not None:
                     self.v_proj.bias.copy_(b_v)
-            else:
+            elif w_v.shape[0] > self.kv_head_size and w_v.shape[0] % self.kv_head_size == 0 and w_v.shape[1] >= self.hidden_size:
                 rep = w_v.shape[0] // self.kv_head_size
                 w_v_pooled = (
-                    w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
+                    w_v[:, :self.hidden_size].view(self.num_kv_heads, rep, self.head_dim, -1)
                     .mean(dim=1)
                     .view(self.kv_head_size, -1)
                 )
@@ -423,14 +462,43 @@ class SqueezingHeadsDistiller(BaseAttention):
                         b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
                     )
                     self.v_proj.bias.copy_(b_v_pooled)
+            else:
+                self.v_proj.weight.zero_()
+                m_v_out = min(self.kv_head_size, w_v.shape[0])
+                m_v_in = min(self.hidden_size, w_v.shape[1])
+                self.v_proj.weight[:m_v_out, :m_v_in].copy_(w_v[:m_v_out, :m_v_in])
+                if b_v is not None and self.v_proj.bias is not None:
+                    m_bv = min(self.v_proj.bias.shape[0], b_v.shape[0])
+                    self.v_proj.bias[:m_bv].copy_(b_v[:m_bv])
 
             # Copy Out projection if not nested encoder
-            if w_o is not None and not self.is_nested_encoder:
-                if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
-                self.out_proj.weight.copy_(w_o)
+            if self.is_nested_encoder:
+                nn.init.eye_(self.out_proj.weight)
+                if self.out_proj.bias is not None:
+                    nn.init.zeros_(self.out_proj.bias)
+            elif w_o is not None:
+                if w_o.shape == self.out_proj.weight.shape:
+                    self.out_proj.weight.copy_(w_o)
+                elif w_o.t().shape == self.out_proj.weight.shape:
+                    self.out_proj.weight.copy_(w_o.t())
+                else:
+                    self.out_proj.weight.zero_()
+                    m_out = min(self.hidden_size, w_o.shape[0])
+                    m_in = min(self.q_head_size, w_o.shape[1])
+                    self.out_proj.weight[:m_out, :m_in].copy_(w_o[:m_out, :m_in])
+
                 if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(b_o)
+                    m_bo = min(self.out_proj.bias.shape[0], b_o.shape[0])
+                    self.out_proj.bias[:m_bo].copy_(b_o[:m_bo])
+
+                fnorm_o = torch.norm(self.out_proj.weight.float(), p="fro").item()
+                if fnorm_o < 1e-4:
+                    raise RuntimeError(f"Copied out_proj weight has near-zero Frobenius norm (< 1e-4): {fnorm_o}")
+
+            # Frobenius norm checks on instantiated projections
+            for name, mod in [("q_proj", self.q_proj), ("k_proj", self.k_proj), ("v_proj", self.v_proj)]:
+                if torch.norm(mod.weight.float(), p="fro").item() < 1e-4:
+                    raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
     def forward(
         self,
@@ -525,8 +593,10 @@ class SqueezingHeadsDistiller(BaseAttention):
 
 @ATTENTION_REGISTRY.register("squeezing_heads_inject")
 @ATTENTION_REGISTRY.register("squeezing_heads_distill_inject")
+@ATTENTION_REGISTRY.register("squeezing_heads_distiller_inject")
 @ATTENTION_REGISTRY.register("inject_squeezing_heads")
 @ATTENTION_REGISTRY.register("inject_squeezing_heads_distill")
+@ATTENTION_REGISTRY.register("inject_squeezing_heads_distiller")
 def inject_squeezing_heads(
     layer: Any = None,
     config: Optional[Any] = None,
@@ -563,7 +633,7 @@ def inject_squeezing_heads(
                     total_layers=len(layers),
                     **kwargs,
                 )
-        return layer
+            return layer
 
     if old_attn is None and layer is not None:
         old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
@@ -589,12 +659,13 @@ def inject_squeezing_heads(
             **kwargs,
         )
     except Exception as e:
-        logger.warning(f"Failed to instantiate SqueezingHeadsDistiller: {e}")
-        raise RuntimeError(f"Injection failed")
+        logger.error("Failed to instantiate SqueezingHeadsDistiller at layer %d: %s", layer_idx, e)
+        return None
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
+            new_attn.is_nested_encoder = True
         else:
             layer.attention = new_attn
     elif hasattr(layer, "attn"):
@@ -603,6 +674,7 @@ def inject_squeezing_heads(
         layer.self_attn = new_attn
     elif hasattr(layer, "self"):
         layer.self = new_attn
+        new_attn.is_nested_encoder = True
 
     return new_attn
 
@@ -611,3 +683,5 @@ inject_squeezing_heads_distill = inject_squeezing_heads
 inject_squeezing_heads_attention = inject_squeezing_heads
 inject_squeezing_heads_distill_attention = inject_squeezing_heads
 inject_squeezing_heads_distiller = inject_squeezing_heads
+SqueezingHeads = SqueezingHeadsDistiller
+SqueezingHeadsAttention = SqueezingHeadsDistiller

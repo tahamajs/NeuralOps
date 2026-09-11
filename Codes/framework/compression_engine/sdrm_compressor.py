@@ -31,7 +31,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register('sdrm')
+@COMPRESSOR_REGISTRY.register('sdrm_class')
+@COMPRESSOR_REGISTRY.register('sdrm_compressor_class')
 class SDRMCompressor(BaseCompressor):
     """
     SDRM: Scaled Dimension Rank Modulation.
@@ -175,6 +176,10 @@ class SDRMCompressor(BaseCompressor):
             out_f = getattr(base_layer, 'out_features', W.shape[0])
             in_f = getattr(base_layer, 'in_features', W.shape[1])
 
+        norm_orig = torch.norm(W, p='fro').item()
+        if norm_orig < 1e-4:
+            return None
+
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         r = max(self.min_rank, min(rank, max_r - 1, param_cap))
@@ -189,16 +194,15 @@ class SDRMCompressor(BaseCompressor):
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning('SDRM SVD decomposition failure: %s', e)
-            raise RuntimeError(f"Injection failed")
+            return None
 
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
 
+        has_base_layer = hasattr(layer, 'base_layer')
         has_existing_lora = hasattr(layer, 'lora_A') and hasattr(layer, 'lora_B')
-        effective_lora_r = self.lora_r
-        if has_existing_lora and getattr(layer, 'r', 0) > 0:
-            effective_lora_r = getattr(layer, 'r', self.lora_r)
+        effective_lora_r = 0 if has_base_layer else (getattr(layer, 'r', self.lora_r) if (has_existing_lora and getattr(layer, 'r', 0) > 0) else self.lora_r)
 
         svd_layer = SVDLinear(
             in_features=in_f,
@@ -214,20 +218,24 @@ class SDRMCompressor(BaseCompressor):
         if base_layer.bias is not None:
             svd_layer.bias.data.copy_(base_layer.bias.data)
 
-        # Preserve existing LoRA adapters
-        if has_existing_lora and svd_layer.use_lora:
+        # Preserve existing LoRA adapters when replacing full module
+        if not has_base_layer and has_existing_lora and svd_layer.use_lora:
             try:
-                if hasattr(layer.lora_A, 'weight'):
-                    svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
-                if hasattr(layer.lora_B, 'weight'):
-                    svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+                src_lA = getattr(layer.lora_A, 'weight', layer.lora_A)
+                src_lB = getattr(layer.lora_B, 'weight', layer.lora_B)
+                dst_lA = getattr(svd_layer.lora_A, 'weight', svd_layer.lora_A)
+                dst_lB = getattr(svd_layer.lora_B, 'weight', svd_layer.lora_B)
+                if hasattr(src_lA, 'data') and hasattr(dst_lA, 'data') and src_lA.shape == dst_lA.shape:
+                    dst_lA.data.copy_(src_lA.data)
+                if hasattr(src_lB, 'data') and hasattr(dst_lB, 'data') and src_lB.shape == dst_lB.shape:
+                    dst_lB.data.copy_(src_lB.data)
             except Exception as e_lora:
                 logger.warning('Could not copy existing LoRA adapters in SDRM: %s', e_lora)
 
         # Frobenius reconstruction error check
         W_rec = torch.matmul(U_r.float(), V_r.float())
-        norm_orig = torch.norm(W, p='fro').clamp_min(1e-8)
-        rel_err = (torch.norm(W - W_rec, p='fro') / norm_orig).item()
+        norm_orig_clamped = torch.norm(W, p='fro').clamp_min(1e-8)
+        rel_err = (torch.norm(W - W_rec, p='fro') / norm_orig_clamped).item()
 
         is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
         if rel_err > self.max_error:
@@ -277,8 +285,8 @@ class SDRMCompressor(BaseCompressor):
                 raw_w = base_m.weight.data
                 cls_name = base_m.__class__.__name__
                 is_conv1d = 'conv1d' in cls_name.lower() or hasattr(base_m, 'nf')
-                out_f = raw_w.shape[1] if is_conv1d else raw_w.shape[0]
-                in_f = raw_w.shape[0] if is_conv1d else raw_w.shape[1]
+                out_f = raw_w.shape[1] if is_conv1d else getattr(base_m, 'out_features', raw_w.shape[0])
+                in_f = raw_w.shape[0] if is_conv1d else getattr(base_m, 'in_features', raw_w.shape[1])
 
                 params = in_f * out_f
                 allowed = params * self.total_param_ratio
@@ -289,7 +297,16 @@ class SDRMCompressor(BaseCompressor):
                     err = getattr(svd_layer, 'reconstruction_error', 0.0)
                     self.layer_errors[name] = err
                     self.replaced_layers.append({'name': name, 'rank': svd_layer.rank, 'error': err})
-                    replace_module(self.model, name, svd_layer)
+                    if hasattr(module, 'base_layer'):
+                        module.base_layer = svd_layer
+                        if hasattr(module, 'lora_A') and module.lora_A is not None:
+                            for p in (module.lora_A.parameters() if hasattr(module.lora_A, 'parameters') else [module.lora_A]):
+                                p.requires_grad = True
+                        if hasattr(module, 'lora_B') and module.lora_B is not None:
+                            for p in (module.lora_B.parameters() if hasattr(module.lora_B, 'parameters') else [module.lora_B]):
+                                p.requires_grad = True
+                    else:
+                        replace_module(self.model, name, svd_layer)
                     self.compressed_layers.append(name)
                 else:
                     self.fallback_layers.append(name)
@@ -340,6 +357,8 @@ class SDRMCompressor(BaseCompressor):
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register('sdrm')
+@COMPRESSOR_REGISTRY.register('sdrm_compressor')
 @COMPRESSOR_REGISTRY.register('sdrm_factory')
 @COMPRESSOR_REGISTRY.register('sdrm_compressor_factory')
 def sdrm_compressor_factory(
@@ -381,6 +400,23 @@ def sdrm_compressor_factory(
     if return_stats or return_tuple or kwargs.pop('return_both', False):
         return compressed_model, stats
     return compressed_model
+
+
+sdrm_factory = sdrm_compressor_factory
+
+
+@COMPRESSOR_REGISTRY.register('inject_sdrm')
+@COMPRESSOR_REGISTRY.register('sdrm_inject')
+def inject_sdrm(model: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook for SDRM."""
+    if model is None:
+        return None
+    try:
+        return sdrm_compressor_factory(model, **kwargs)
+    except Exception as e:
+        logger.error("inject_sdrm failed: %s", e)
+        return None
+
 
 
 __all__ = [

@@ -136,8 +136,9 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
 
 
-@COMPRESSOR_REGISTRY.register("dobi")
-@COMPRESSOR_REGISTRY.register("dobi_svd")
+@COMPRESSOR_REGISTRY.register("dobi_class")
+@COMPRESSOR_REGISTRY.register("dobi_svd_class")
+@COMPRESSOR_REGISTRY.register("dobi_compressor_class")
 class DobiSVDCompressor(BaseCompressor):
     """
     Dobi-SVD Compressor: Differentiable SVD with learnable spectral gating.
@@ -446,15 +447,19 @@ class DobiSVDCompressor(BaseCompressor):
                     total_comp_decomp_params += orig_params
                     continue
 
-            # If wrapped in LoRALinear, replace the base_layer or the whole module
-            if hasattr(module, "base_layer") and hasattr(module, "lora_A"):
+            # If wrapped in LoRALinear, replace the inner base_layer or linear
+            has_base_layer = hasattr(module, "base_layer") or (hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")))
+            if hasattr(module, "base_layer"):
                 module.base_layer = new_layer
-                if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
-                    module.lora_A.weight.requires_grad = True
-                if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
-                    module.lora_B.weight.requires_grad = True
+            elif hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")):
+                module.linear = new_layer
             else:
                 replace_module(self.model, name, new_layer)
+
+            if has_base_layer:
+                for p_name, p in module.named_parameters():
+                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                        p.requires_grad = True
 
             self.compressed_layers.append(name)
             # Parameters: U (out*r) + V (r*in) + gate (r)
@@ -500,6 +505,12 @@ class DobiSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register("dobi")
+@COMPRESSOR_REGISTRY.register("dobi_svd")
+@COMPRESSOR_REGISTRY.register("dobi_compressor")
+@COMPRESSOR_REGISTRY.register("dobi_svd_compressor")
+@COMPRESSOR_REGISTRY.register("dobi_factory")
+@COMPRESSOR_REGISTRY.register("dobi_svd_factory")
 def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Dobi factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
@@ -530,22 +541,30 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
             return compressed_model, stats
         return compressed_model
     except Exception as e:
-        logger.error("dobi_factory failed: %s", e)
+        logger.error("dobi_factory failed: %s", e, exc_info=True)
         return (model, {}) if return_stats else model
 
 
 @COMPRESSOR_REGISTRY.register("inject_dobi")
 @COMPRESSOR_REGISTRY.register("dobi_inject")
 def inject_dobi(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
-    """Safe injection hook for Dobi-SVD."""
+    """Safe injection hook for Dobi-SVD. Returns None on failure."""
     target = layer if layer is not None else model
     if target is None:
         return None
     try:
-        return dobi_factory(target, **kwargs)
+        res = dobi_factory(target, **kwargs)
+        if isinstance(res, tuple):
+            return res[0]
+        return res
     except Exception as e:
-        logger.error("inject_dobi failed: %s", e)
+        logger.error("inject_dobi failed: %s", e, exc_info=True)
         return None
+
+
+def dobi_inject(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook alias for dobi."""
+    return inject_dobi(model, layer, **kwargs)
 
 
 dobi_svd_factory = dobi_factory
@@ -558,4 +577,5 @@ __all__ = [
     "dobi_svd_factory",
     "dobi_svd_compressor_factory",
     "inject_dobi",
+    "dobi_inject",
 ]

@@ -68,20 +68,23 @@ class ToMoELinear(nn.Module):
         # Fix 2: Handle both nn.Linear, Conv1D, and LoRALinear wrappers
         if original is not None:
             base_layer = getattr(original, "base_layer", original)
-            if isinstance(base_layer, nn.Linear):
-                in_feat = base_layer.in_features
-                out_feat = base_layer.out_features
-                orig_w = base_layer.weight.data.clone()
-                orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
-            elif type(base_layer).__name__ == "Conv1D" or (hasattr(base_layer, "nx") and hasattr(base_layer, "nf")):
+            cls_name = base_layer.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or (hasattr(base_layer, "nx") and hasattr(base_layer, "nf"))
+            if is_conv1d:
                 # Conv1D stores weight as (nx, nf) where nx=in_features, nf=out_features
                 in_feat = base_layer.weight.shape[0]
                 out_feat = base_layer.weight.shape[1]
-                orig_w = base_layer.weight.data.t().clone()  # Transpose to (out_features, in_features)
+                orig_w = base_layer.weight.data.t().contiguous().clone()  # Transpose to (out_features, in_features)
+                orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
+            elif isinstance(base_layer, nn.Linear):
+                in_feat = base_layer.in_features
+                out_feat = base_layer.out_features
+                orig_w = base_layer.weight.data.contiguous().clone()
                 orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
             elif hasattr(base_layer, "weight") and base_layer.weight.ndim == 2:
-                out_feat, in_feat = base_layer.weight.shape
-                orig_w = base_layer.weight.data.clone()
+                in_feat = getattr(base_layer, "in_features", base_layer.weight.shape[1])
+                out_feat = getattr(base_layer, "out_features", base_layer.weight.shape[0])
+                orig_w = base_layer.weight.data.contiguous().clone()
                 orig_b = base_layer.bias.data.clone() if getattr(base_layer, "bias", None) is not None else None
             else:
                 raise TypeError(f"Unsupported module type: {type(base_layer)}")
@@ -498,24 +501,30 @@ class ToMoECompressor(BaseCompressor):
             if not self._is_target(name):
                 continue
 
-            # Fix 2: Check for supported layer type (nn.Linear or Conv1D)
-            is_linear = isinstance(module, nn.Linear)
-            is_conv1d = type(module).__name__ == "Conv1D" or (hasattr(module, "nx") and hasattr(module, "nf"))
+            # Fix 2: Check for supported layer type (nn.Linear or Conv1D) on base module
+            base_mod = getattr(module, "base_layer", module)
+            cls_name = base_mod.__class__.__name__.lower()
+            is_linear = isinstance(base_mod, nn.Linear)
+            is_conv1d = "conv1d" in cls_name or (hasattr(base_mod, "nx") and hasattr(base_mod, "nf"))
 
-            if not (is_linear or is_conv1d):
-                logger.warning("ToMoE: Skipping unsupported layer type %s for %s", type(module).__name__, name)
-                skipped_layers.append((name, f"unsupported_type_{type(module).__name__}"))
+            if not (is_linear or is_conv1d or (hasattr(base_mod, "weight") and base_mod.weight.ndim == 2)):
+                logger.warning("ToMoE: Skipping unsupported layer type %s for %s", type(base_mod).__name__, name)
+                skipped_layers.append((name, f"unsupported_type_{type(base_mod).__name__}"))
                 continue
 
-            # Determine weights and feature shapes
-            if is_linear:
-                in_f = module.in_features
-                out_f = module.out_features
-                orig_w_2d = module.weight.data
+            # Determine weights and feature shapes ensuring orientation is (out_features, in_features)
+            if is_conv1d:
+                in_f = base_mod.weight.shape[0]
+                out_f = base_mod.weight.shape[1]
+                orig_w_2d = base_mod.weight.data.t().contiguous()
             else:
-                in_f = module.weight.shape[0]
-                out_f = module.weight.shape[1]
-                orig_w_2d = module.weight.data.t()
+                in_f = getattr(base_mod, "in_features", base_mod.weight.shape[1])
+                out_f = getattr(base_mod, "out_features", base_mod.weight.shape[0])
+                orig_w_2d = base_mod.weight.data.contiguous()
+
+            if torch.linalg.norm(orig_w_2d.float()) < 1e-4:
+                skipped_layers.append((name, "frobenius_norm_too_small"))
+                continue
 
             if out_f < 2:
                 skipped_layers.append((name, f"out_features_too_small_{out_f}"))
@@ -571,10 +580,19 @@ class ToMoECompressor(BaseCompressor):
                     p.requires_grad = False
                 continue
 
-            # Replace layer in parent module
+            # Replace layer in parent module preserving outer LoRALinear wrapper if present
             orig_p_count = sum(p.numel() for p in module.parameters())
             new_p_count = sum(p.numel() for p in moe_layer.parameters())
-            setattr(parent, child_name, moe_layer)
+            if hasattr(module, "base_layer"):
+                module.base_layer = moe_layer
+                if hasattr(module, "lora_A") and module.lora_A is not None:
+                    for p in (module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]):
+                        p.requires_grad = True
+                if hasattr(module, "lora_B") and module.lora_B is not None:
+                    for p in (module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]):
+                        p.requires_grad = True
+            else:
+                setattr(parent, child_name, moe_layer)
 
             converted_layers.append(name)
             layer_details[name] = {
@@ -622,6 +640,8 @@ class ToMoECompressor(BaseCompressor):
         return self.model, self.stats
 
 
+@COMPRESSOR_REGISTRY.register("tomoe")
+@COMPRESSOR_REGISTRY.register("tomoe_compressor")
 @COMPRESSOR_REGISTRY.register("tomoe_factory")
 @COMPRESSOR_REGISTRY.register("tomoe_compressor_factory")
 def tomoe_compressor_factory(
@@ -646,3 +666,20 @@ def tomoe_compressor_factory(
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
+
+tomoe_factory = tomoe_compressor_factory
+
+
+@COMPRESSOR_REGISTRY.register("inject_tomoe")
+@COMPRESSOR_REGISTRY.register("tomoe_inject")
+def inject_tomoe(model: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook for ToMoE."""
+    if model is None:
+        return None
+    try:
+        return tomoe_compressor_factory(model, **kwargs)
+    except Exception as e:
+        logger.error("inject_tomoe failed: %s", e)
+        return None
+
