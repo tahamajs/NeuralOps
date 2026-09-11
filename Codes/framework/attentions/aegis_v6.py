@@ -292,7 +292,7 @@ class StableKernelFeatureMap(nn.Module):
         exp_in = phi - norm_sq
         exp_in = torch.clamp(exp_in, min=self.cfg.clamp_min, max=self.cfg.clamp_max)
         out = self.scale * torch.exp(exp_in)
-        return out * self.output_scale
+        return out
 
 
 class GatingModule(nn.Module):
@@ -438,6 +438,7 @@ class AegisAttentionV3(BaseAttention):
 
         self.gates = GatingModule(config.hidden_size, self.h, self.d, config.use_query_gate, config.use_input_gate)
         self.fusion = ContextFusionGate(config.hidden_size, self.h, self.d, init_bias=config.fusion_gate_bias)
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -748,6 +749,8 @@ class AegisAttentionV3(BaseAttention):
             out = fused
         else:
             out = self.out_proj(fused)
+
+        out = out * self.output_scale
 
         return out, None
 
