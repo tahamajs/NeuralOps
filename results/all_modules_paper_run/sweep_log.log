@@ -1,0 +1,2989 @@
+2026-08-28 07:11:30,396 [INFO] QualitySweep: ================================================================================
+2026-08-28 07:11:30,396 [INFO] QualitySweep: \U0001f680 STARTING NEURALOPS PHASE 2 QUALITY SWEEP
+2026-08-28 07:11:30,396 [INFO] QualitySweep: Run ID: run_quality_20260828_071130 | Output Directory: results\all_modules_paper_run
+2026-08-28 07:11:30,396 [INFO] QualitySweep: Modules (188): ['a3', 'aasvd', 'adaptive_span', 'adaptive_sparse', 'adaptive_svd', 'adasplash', 'adasvd', 'admm', 'admm_pruner', 'aegis_hybrid', 'aegis_spectron_fp8', 'aegis_v1', 'aegis_v2', 'aegis_v3', 'aegis_v4', 'aegis_v5', 'aegis_v6', 'armor', 'ast', 'astro', 'asvd', 'bam_umoe', 'block_transformer_hiba', 'bonsai', 'cachenotes', 'chela_slay', 'cluster', 'come', 'compot', 'compressed_attention', 'compressed_attention_layer_energy', 'compressed_mha', 'coopq', 'cosformer', 'cr', 'cur', 'cur_moe', 'cur_moe_compressor', 'decay_linear_attn', 'delta_kv', 'direct_svd', 'dobi', 'dynamic_rank', 'eat', 'enlighten', 'entropy_budget', 'entropy_rank_allocator', 'erc', 'expert_choice_moe', 'factorised_matrix_state', 'faq', 'fasa', 'flap', 'flash3', 'flash3_fp8', 'flat_llm', 'frandi', 'frandi_compressor', 'full', 'fused_svd_kernel', 'fusion_attn', 'galerkin', 'gated_delta_net', 'gated_deltanet_block', 'gated_linear_attn', 'gfws', 'goldfinch_ahn', 'gqa', 'granite_hybrid', 'grecodec', 'grecodec_compressor', 'griffin_ssd', 'halo_regla', 'hamming', 'hashed_net', 'hgrn2_gated_deltanet', 'hgrn2_layer', 'hgrn2_outer', 'hla', 'huffman', 'hybrid_svd', 'hybridkv', 'hymba_transx', 'infini', 'jamba', 'jamba_info', 'kda', 'kmeans', 'kronecker', 'kronecker_tt_lora', 'kvtc', 'leka_v1', 'leka_v2', 'leka_v3', 'liftr', 'lillama', 'linformer', 'lola', 'lora_attn', 'lsc', 'lsh', 'mamba', 'mamba_shedder', 'mamba_svd_flash', 'mgie', 'mgie_budget', 'minimal_aurora', 'minimal_nova', 'minimal_prism', 'minimal_svd', 'minimal_svd_v2', 'mixattention_moska', 'mla', 'mlorq', 'moba', 'modegpt', 'moe_deltakv_paged', 'nasc', 'nexus', 'nha', 'nli_softmax', 'nmf', 'nsa', 'nystrom', 'oats', 'oha', 'optimal_subspace_projection', 'orion', 'performer', 'phantom', 'primal', 'progressive_token_pruning', 'projection_factorized_attn', 'proxsparse', 'qcqa', 'rala', 'rala_compressor', 'reap_moe', 'regla', 'res_svd', 'rotational_slicegpt', 'routing', 'rpc', 'rpca', 'saes', 'salr', 'salt', 'samba_m3', 'samba_moe', 'sdrm', 'simple_ssm', 'slicegpt', 'slicegpt_pca', 'slim', 'soa_attn', 'soa_fused_attn', 'soka', 'span_expanded', 'sparsegpt', 'spectra_v2', 'spectral_mamba', 'spectral_residual_lora', 'spectron', 'squeezing_heads_distiller', 'subspace_projection', 'svd', 'svd-mamba', 'svd_compressed', 'svd_linear', 'svd_linear_decay', 'svd_llm_v2', 'svd_proj_attn', 'swift_svd', 'swift_svd_act', 'token_compressed', 'tpa', 'tt', 'unified_rope', 'uniql', 'upi_stuffed_mamba', 'vig', 'vspec', 'wgqa', 'xattention', 'your_attention_name', 'your_compressor_name', 'zerokv_neo', 'zeros']
+2026-08-28 07:11:30,398 [INFO] QualitySweep: Models (3): ['distilbert', 'bert', 'roberta'] | Datasets (4): ['sst2', 'mrpc', 'cola', 'stsb'] | Seeds (1): [42]
+2026-08-28 07:11:30,399 [INFO] QualitySweep: ================================================================================
+2026-08-28 07:11:30,595 [INFO] PersistentWorker: Spawned Persistent CUDA Worker [PID 5540] on cuda:0. Waiting for initialization...
+2026-08-28 07:11:43,272 [INFO] CachedTensors: Loading pre-tokenized dataset cache from D:\SVD_Project\Codes\data_cache\sst2_distilbert_len128.pt...
+2026-08-28 07:11:43,357 [INFO] CachedTensors: Loaded 67349 train and 872 val samples in 0.085s
+2026-08-28 07:11:43,357 [INFO] PersistentWorkerLoop: Pre-tokenized dataset ready: 67349 train, 872 val
+2026-08-28 07:11:43,357 [INFO] PersistentWorkerLoop: Persistent worker initialization COMPLETE. Ready for sweep stream.
+2026-08-28 07:11:43,359 [INFO] PersistentWorker: \u26a1 Persistent CUDA Worker [PID 5540] is 100% warmed up and READY.
+2026-08-28 07:11:43,359 [INFO] QualitySweep: \u26a1 Persistent CUDA Worker initialized successfully. Zero-overhead stream active.
+2026-08-28 07:11:43,359 [INFO] QualitySweep: [1/2256] Skipping already-completed full on DISTILBERT / SST2...
+2026-08-28 07:11:43,359 [INFO] QualitySweep: [2/2256] Skipping already-completed a3 on DISTILBERT / SST2...
+2026-08-28 07:11:43,359 [INFO] QualitySweep: [3/2256] Skipping already-completed aasvd on DISTILBERT / SST2...
+2026-08-28 07:11:43,359 [INFO] QualitySweep: [4/2256] Skipping already-completed adaptive_span on DISTILBERT / SST2...
+2026-08-28 07:11:43,359 [INFO] QualitySweep: [5/2256] Skipping already-completed adaptive_sparse on DISTILBERT / SST2...
+2026-08-28 07:11:43,359 [INFO] QualitySweep: [6/2256] Skipping already-completed adaptive_svd on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [7/2256] Skipping already-completed adasplash on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [8/2256] Skipping already-completed adasvd on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [9/2256] Skipping already-completed admm on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [10/2256] Skipping already-completed admm_pruner on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [11/2256] Skipping already-completed aegis_hybrid on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [12/2256] Skipping already-completed aegis_spectron_fp8 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [13/2256] Skipping already-completed aegis_v1 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [14/2256] Skipping already-completed aegis_v2 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [15/2256] Skipping already-completed aegis_v3 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [16/2256] Skipping already-completed aegis_v4 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [17/2256] Skipping already-completed aegis_v5 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [18/2256] Skipping already-completed aegis_v6 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [19/2256] Skipping already-completed armor on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [20/2256] Skipping already-completed ast on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [21/2256] Skipping already-completed astro on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [22/2256] Skipping already-completed asvd on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [23/2256] Skipping already-completed bam_umoe on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [24/2256] Skipping already-completed block_transformer_hiba on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [25/2256] Skipping already-completed bonsai on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [26/2256] Skipping already-completed cachenotes on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [27/2256] Skipping already-completed chela_slay on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [28/2256] Skipping already-completed cluster on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [29/2256] Skipping already-completed come on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [30/2256] Skipping already-completed compot on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [31/2256] Skipping already-completed compressed_attention on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [32/2256] Skipping already-completed compressed_attention_layer_energy on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [33/2256] Skipping already-completed compressed_mha on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [34/2256] Skipping already-completed coopq on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [35/2256] Skipping already-completed cosformer on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [36/2256] Skipping already-completed cr on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [37/2256] Skipping already-completed cur on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [38/2256] Skipping already-completed cur_moe on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [39/2256] Skipping already-completed cur_moe_compressor on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [40/2256] Skipping already-completed decay_linear_attn on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [41/2256] Skipping already-completed delta_kv on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [42/2256] Skipping already-completed direct_svd on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [43/2256] Skipping already-completed dobi on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [44/2256] Skipping already-completed dynamic_rank on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [45/2256] Skipping already-completed eat on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [46/2256] Skipping already-completed enlighten on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [47/2256] Skipping already-completed entropy_budget on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [48/2256] Skipping already-completed entropy_rank_allocator on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [49/2256] Skipping already-completed erc on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [50/2256] Skipping already-completed expert_choice_moe on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [51/2256] Skipping already-completed factorised_matrix_state on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [52/2256] Skipping already-completed faq on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [53/2256] Skipping already-completed fasa on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [54/2256] Skipping already-completed flap on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [55/2256] Skipping already-completed flash3 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [56/2256] Skipping already-completed flash3_fp8 on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [57/2256] Skipping already-completed flat_llm on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [58/2256] Skipping already-completed frandi on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [59/2256] Skipping already-completed frandi_compressor on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [60/2256] Skipping already-completed fused_svd_kernel on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [61/2256] Skipping already-completed fusion_attn on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [62/2256] Skipping already-completed galerkin on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [63/2256] Skipping already-completed gated_delta_net on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [64/2256] Skipping already-completed gated_deltanet_block on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [65/2256] Skipping already-completed gated_linear_attn on DISTILBERT / SST2...
+2026-08-28 07:11:43,360 [INFO] QualitySweep: [66/2256] Skipping already-completed gfws on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [67/2256] Skipping already-completed goldfinch_ahn on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [68/2256] Skipping already-completed gqa on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [69/2256] Skipping already-completed granite_hybrid on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [70/2256] Skipping already-completed grecodec on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [71/2256] Skipping already-completed grecodec_compressor on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [72/2256] Skipping already-completed griffin_ssd on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [73/2256] Skipping already-completed halo_regla on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [74/2256] Skipping already-completed hamming on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [75/2256] Skipping already-completed hashed_net on DISTILBERT / SST2...
+2026-08-28 07:11:43,361 [INFO] QualitySweep: [76/2256] Evaluating hgrn2_gated_deltanet on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 07:11:43,456 [INFO] PersistentWorkerLoop: [MEM] Before module 'hgrn2_gated_deltanet': allocated=0.0MB reserved=0.0MB
+2026-08-28 07:11:43,552 [INFO] QualitySweep: Module 'hgrn2_gated_deltanet' resolved via ATTENTION_REGISTRY path
+2026-08-28 07:11:43,556 [INFO] framework.core.attention_utils: Successfully injected 'hgrn2_gated_deltanet' into 2 transformer blocks.
+2026-08-28 07:11:43,582 [INFO] QualitySweep: \u26a1 Module 'hgrn2_gated_deltanet' seed 42 startup overhead: 127.5 ms (target < 2000 ms)
+2026-08-28 07:13:18,200 [INFO] QualitySweep: ================================================================================
+2026-08-28 07:13:18,200 [INFO] QualitySweep: \U0001f680 STARTING NEURALOPS PHASE 2 QUALITY SWEEP
+2026-08-28 07:13:18,201 [INFO] QualitySweep: Run ID: run_quality_20260828_071318 | Output Directory: results\all_modules_paper_run
+2026-08-28 07:13:18,201 [INFO] QualitySweep: Modules (188): ['a3', 'aasvd', 'adaptive_span', 'adaptive_sparse', 'adaptive_svd', 'adasplash', 'adasvd', 'admm', 'admm_pruner', 'aegis_hybrid', 'aegis_spectron_fp8', 'aegis_v1', 'aegis_v2', 'aegis_v3', 'aegis_v4', 'aegis_v5', 'aegis_v6', 'armor', 'ast', 'astro', 'asvd', 'bam_umoe', 'block_transformer_hiba', 'bonsai', 'cachenotes', 'chela_slay', 'cluster', 'come', 'compot', 'compressed_attention', 'compressed_attention_layer_energy', 'compressed_mha', 'coopq', 'cosformer', 'cr', 'cur', 'cur_moe', 'cur_moe_compressor', 'decay_linear_attn', 'delta_kv', 'direct_svd', 'dobi', 'dynamic_rank', 'eat', 'enlighten', 'entropy_budget', 'entropy_rank_allocator', 'erc', 'expert_choice_moe', 'factorised_matrix_state', 'faq', 'fasa', 'flap', 'flash3', 'flash3_fp8', 'flat_llm', 'frandi', 'frandi_compressor', 'full', 'fused_svd_kernel', 'fusion_attn', 'galerkin', 'gated_delta_net', 'gated_deltanet_block', 'gated_linear_attn', 'gfws', 'goldfinch_ahn', 'gqa', 'granite_hybrid', 'grecodec', 'grecodec_compressor', 'griffin_ssd', 'halo_regla', 'hamming', 'hashed_net', 'hgrn2_gated_deltanet', 'hgrn2_layer', 'hgrn2_outer', 'hla', 'huffman', 'hybrid_svd', 'hybridkv', 'hymba_transx', 'infini', 'jamba', 'jamba_info', 'kda', 'kmeans', 'kronecker', 'kronecker_tt_lora', 'kvtc', 'leka_v1', 'leka_v2', 'leka_v3', 'liftr', 'lillama', 'linformer', 'lola', 'lora_attn', 'lsc', 'lsh', 'mamba', 'mamba_shedder', 'mamba_svd_flash', 'mgie', 'mgie_budget', 'minimal_aurora', 'minimal_nova', 'minimal_prism', 'minimal_svd', 'minimal_svd_v2', 'mixattention_moska', 'mla', 'mlorq', 'moba', 'modegpt', 'moe_deltakv_paged', 'nasc', 'nexus', 'nha', 'nli_softmax', 'nmf', 'nsa', 'nystrom', 'oats', 'oha', 'optimal_subspace_projection', 'orion', 'performer', 'phantom', 'primal', 'progressive_token_pruning', 'projection_factorized_attn', 'proxsparse', 'qcqa', 'rala', 'rala_compressor', 'reap_moe', 'regla', 'res_svd', 'rotational_slicegpt', 'routing', 'rpc', 'rpca', 'saes', 'salr', 'salt', 'samba_m3', 'samba_moe', 'sdrm', 'simple_ssm', 'slicegpt', 'slicegpt_pca', 'slim', 'soa_attn', 'soa_fused_attn', 'soka', 'span_expanded', 'sparsegpt', 'spectra_v2', 'spectral_mamba', 'spectral_residual_lora', 'spectron', 'squeezing_heads_distiller', 'subspace_projection', 'svd', 'svd-mamba', 'svd_compressed', 'svd_linear', 'svd_linear_decay', 'svd_llm_v2', 'svd_proj_attn', 'swift_svd', 'swift_svd_act', 'token_compressed', 'tpa', 'tt', 'unified_rope', 'uniql', 'upi_stuffed_mamba', 'vig', 'vspec', 'wgqa', 'xattention', 'your_attention_name', 'your_compressor_name', 'zerokv_neo', 'zeros']
+2026-08-28 07:13:18,201 [INFO] QualitySweep: Models (3): ['distilbert', 'bert', 'roberta'] | Datasets (4): ['sst2', 'mrpc', 'cola', 'stsb'] | Seeds (1): [42]
+2026-08-28 07:13:18,201 [INFO] QualitySweep: ================================================================================
+2026-08-28 07:13:18,384 [INFO] PersistentWorker: Spawned Persistent CUDA Worker [PID 19496] on cuda:0. Waiting for initialization...
+2026-08-28 07:13:31,188 [INFO] CachedTensors: Loading pre-tokenized dataset cache from D:\SVD_Project\Codes\data_cache\sst2_distilbert_len128.pt...
+2026-08-28 07:13:31,271 [INFO] CachedTensors: Loaded 67349 train and 872 val samples in 0.083s
+2026-08-28 07:13:31,271 [INFO] PersistentWorkerLoop: Pre-tokenized dataset ready: 67349 train, 872 val
+2026-08-28 07:13:31,271 [INFO] PersistentWorkerLoop: Persistent worker initialization COMPLETE. Ready for sweep stream.
+2026-08-28 07:13:31,273 [INFO] PersistentWorker: \u26a1 Persistent CUDA Worker [PID 19496] is 100% warmed up and READY.
+2026-08-28 07:13:31,273 [INFO] QualitySweep: \u26a1 Persistent CUDA Worker initialized successfully. Zero-overhead stream active.
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [1/2256] Skipping already-completed full on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [2/2256] Skipping already-completed a3 on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [3/2256] Skipping already-completed aasvd on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [4/2256] Skipping already-completed adaptive_span on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [5/2256] Skipping already-completed adaptive_sparse on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [6/2256] Skipping already-completed adaptive_svd on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [7/2256] Skipping already-completed adasplash on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [8/2256] Skipping already-completed adasvd on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [9/2256] Skipping already-completed admm on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [10/2256] Skipping already-completed admm_pruner on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [11/2256] Skipping already-completed aegis_hybrid on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [12/2256] Skipping already-completed aegis_spectron_fp8 on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [13/2256] Skipping already-completed aegis_v1 on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [14/2256] Skipping already-completed aegis_v2 on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [15/2256] Skipping already-completed aegis_v3 on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [16/2256] Skipping already-completed aegis_v4 on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [17/2256] Skipping already-completed aegis_v5 on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [18/2256] Skipping already-completed aegis_v6 on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [19/2256] Skipping already-completed armor on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [20/2256] Skipping already-completed ast on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [21/2256] Skipping already-completed astro on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [22/2256] Skipping already-completed asvd on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [23/2256] Skipping already-completed bam_umoe on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [24/2256] Skipping already-completed block_transformer_hiba on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [25/2256] Skipping already-completed bonsai on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [26/2256] Skipping already-completed cachenotes on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [27/2256] Skipping already-completed chela_slay on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [28/2256] Skipping already-completed cluster on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [29/2256] Skipping already-completed come on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [30/2256] Skipping already-completed compot on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [31/2256] Skipping already-completed compressed_attention on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [32/2256] Skipping already-completed compressed_attention_layer_energy on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [33/2256] Skipping already-completed compressed_mha on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [34/2256] Skipping already-completed coopq on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [35/2256] Skipping already-completed cosformer on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [36/2256] Skipping already-completed cr on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [37/2256] Skipping already-completed cur on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [38/2256] Skipping already-completed cur_moe on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [39/2256] Skipping already-completed cur_moe_compressor on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [40/2256] Skipping already-completed decay_linear_attn on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [41/2256] Skipping already-completed delta_kv on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [42/2256] Skipping already-completed direct_svd on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [43/2256] Skipping already-completed dobi on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [44/2256] Skipping already-completed dynamic_rank on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [45/2256] Skipping already-completed eat on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [46/2256] Skipping already-completed enlighten on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [47/2256] Skipping already-completed entropy_budget on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [48/2256] Skipping already-completed entropy_rank_allocator on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [49/2256] Skipping already-completed erc on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [50/2256] Skipping already-completed expert_choice_moe on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [51/2256] Skipping already-completed factorised_matrix_state on DISTILBERT / SST2...
+2026-08-28 07:13:31,274 [INFO] QualitySweep: [52/2256] Skipping already-completed faq on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [53/2256] Skipping already-completed fasa on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [54/2256] Skipping already-completed flap on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [55/2256] Skipping already-completed flash3 on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [56/2256] Skipping already-completed flash3_fp8 on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [57/2256] Skipping already-completed flat_llm on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [58/2256] Skipping already-completed frandi on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [59/2256] Skipping already-completed frandi_compressor on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [60/2256] Skipping already-completed fused_svd_kernel on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [61/2256] Skipping already-completed fusion_attn on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [62/2256] Skipping already-completed galerkin on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [63/2256] Skipping already-completed gated_delta_net on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [64/2256] Skipping already-completed gated_deltanet_block on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [65/2256] Skipping already-completed gated_linear_attn on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [66/2256] Skipping already-completed gfws on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [67/2256] Skipping already-completed goldfinch_ahn on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [68/2256] Skipping already-completed gqa on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [69/2256] Skipping already-completed granite_hybrid on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [70/2256] Skipping already-completed grecodec on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [71/2256] Skipping already-completed grecodec_compressor on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [72/2256] Skipping already-completed griffin_ssd on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [73/2256] Skipping already-completed halo_regla on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [74/2256] Skipping already-completed hamming on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [75/2256] Skipping already-completed hashed_net on DISTILBERT / SST2...
+2026-08-28 07:13:31,275 [INFO] QualitySweep: [76/2256] Evaluating hgrn2_gated_deltanet on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 07:13:31,365 [INFO] PersistentWorkerLoop: [MEM] Before module 'hgrn2_gated_deltanet': allocated=0.0MB reserved=0.0MB
+2026-08-28 07:13:31,453 [INFO] QualitySweep: Module 'hgrn2_gated_deltanet' resolved via ATTENTION_REGISTRY path
+2026-08-28 07:13:31,457 [INFO] framework.core.attention_utils: Successfully injected 'hgrn2_gated_deltanet' into 2 transformer blocks.
+2026-08-28 07:13:31,486 [INFO] QualitySweep: \u26a1 Module 'hgrn2_gated_deltanet' seed 42 startup overhead: 121.9 ms (target < 2000 ms)
+2026-08-28 08:24:43,199 [INFO] QualitySweep: ================================================================================
+2026-08-28 08:24:43,199 [INFO] QualitySweep: \U0001f680 STARTING NEURALOPS PHASE 2 QUALITY SWEEP
+2026-08-28 08:24:43,199 [INFO] QualitySweep: Run ID: run_quality_20260828_082443 | Output Directory: results\all_modules_paper_run
+2026-08-28 08:24:43,200 [INFO] QualitySweep: Modules (203): ['a3', 'aasvd', 'adaptive_ranks', 'adaptive_span', 'adaptive_sparse', 'adaptive_svd', 'adasplash', 'adasvd', 'admm', 'aegisattentionv1', 'aegis_hybrid', 'aegis_spectron_fp8', 'aegis_v1', 'aegis_v2', 'aegis_v3', 'aegis_v4', 'aegis_v5', 'aegis_v6', 'armor', 'ast', 'astro', 'asvd', 'bam_umoe', 'block_transformer_hiba', 'bonsai', 'cachenotes', 'chela_slay', 'cluster', 'come', 'compot', 'compressed_attention', 'compressed_attention_layer', 'compressed_attention_layer_energy', 'compressed_mha', 'compression_unified_rope', 'coopq', 'cosformer', 'cr', 'cur', 'cur_moe', 'decay_gated_linear_attention', 'decay_linear_attn', 'delta_kv', 'direct_svd', 'direct_svd_encoder', 'dobi', 'dobi_svd', 'dynamic_entropy', 'dynamic_entropy_svd', 'dynamic_rank', 'eat', 'enlighten', 'entropy_budget', 'entropy_budget_allocation', 'entropy_rank_allocator', 'erc', 'erc_svd', 'expert_choice_moe', 'factorised_matrix_state', 'faq', 'fasa', 'flap', 'flash3', 'flash3_fp8', 'flash_attention3', 'flash_attention3_fp8', 'flat_llm', 'frandi', 'full', 'fused_svd_kernel', 'fusion_attn', 'galerkin', 'gated_delta_net', 'gated_linear_attn', 'gfws', 'gfws_d', 'goldfinch_ahn', 'gqa', 'granite_hybrid', 'grecodec', 'griffin_ssd', 'halo_regla', 'hamming', 'hashed_net', 'hgrn2_layer', 'hgrn2_gated_deltanet', 'hgrn2_outer', 'hla', 'huffman', 'hybridkv', 'hybrid_svd', 'hymba_transx', 'infini', 'jamba', 'jamba2', 'jamba_info', 'kda', 'kmeans', 'kmeans_quantize', 'kronecker', 'kronecker_tt_lora', 'kvtc', 'leka_v1', 'leka_v2', 'leka_v3', 'liftr', 'lillama', 'linformer', 'lola', 'lora_attn', 'lsc', 'lsh', 'mamba', 'mamba_shedder', 'mamba_svd_flash', 'mgie', 'mgie_budget', 'minimal_aurora', 'minimal_nova', 'minimal_prism', 'minimal_svd', 'minimal_svd_v2', 'mixattention_moska', 'mla', 'mlorq', 'moba', 'modegpt', 'moe_deltakv_paged', 'nasc', 'nexus', 'nha', 'nli_softmax', 'nmf', 'nsa', 'nystrom', 'oats', 'oha', 'optimal_subspace_projection', 'optimized_hybrid_attention', 'orion', 'performer', 'phantom', 'primal', 'progressive_token_pruning', 'projection_factorized_attn', 'proxsparse', 'qcqa', 'rala', 'reap_moe', 'regla', 'res_svd', 'rotational_slicegpt', 'rotational_slicegpt_int4', 'routing', 'rpc', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'salt', 'samba_m3', 'samba_moe', 'sdrm', 'simple_ssm', 'slicegpt', 'slicegpt_pca', 'slim', 'soa_attn', 'soa_fused_attn', 'soafusedattention', 'soka', 'span_expanded', 'sparsegpt', 'spectral_mamba', 'spectral_residual_lora', 'spectral_residual_svd', 'spectra_v2', 'spectron', 'squeezing_heads_distiller', 'subspace_projection', 'svd', 'svd-mamba', 'svd_compressed', 'svd_linear', 'svd_linear_decay', 'svd_llm_v2', 'svd_mamba', 'svd_proj_attn', 'svd_projection', 'swift_svd', 'swift_svd_act', 'token_compressed', 'tpa', 'tt', 'unified_rope', 'uniql', 'upi_stuffed_mamba', 'vig', 'vspec', 'wgqa', 'xattention', 'zerokv_neo', 'zeros']
+2026-08-28 08:24:43,200 [INFO] QualitySweep: Models (1): ['distilbert'] | Datasets (1): ['sst2'] | Seeds (1): [42]
+2026-08-28 08:24:43,200 [INFO] QualitySweep: ================================================================================
+2026-08-28 08:24:43,774 [INFO] PersistentWorker: Spawned Persistent CUDA Worker [PID 11056] on cuda:0. Waiting for initialization...
+2026-08-28 08:24:59,621 [INFO] QualitySweep: ================================================================================
+2026-08-28 08:24:59,621 [INFO] QualitySweep: \U0001f680 STARTING NEURALOPS PHASE 2 QUALITY SWEEP
+2026-08-28 08:24:59,621 [INFO] QualitySweep: Run ID: run_quality_20260828_082459 | Output Directory: results\all_modules_paper_run
+2026-08-28 08:24:59,621 [INFO] QualitySweep: Modules (203): ['a3', 'aasvd', 'adaptive_ranks', 'adaptive_span', 'adaptive_sparse', 'adaptive_svd', 'adasplash', 'adasvd', 'admm', 'aegisattentionv1', 'aegis_hybrid', 'aegis_spectron_fp8', 'aegis_v1', 'aegis_v2', 'aegis_v3', 'aegis_v4', 'aegis_v5', 'aegis_v6', 'armor', 'ast', 'astro', 'asvd', 'bam_umoe', 'block_transformer_hiba', 'bonsai', 'cachenotes', 'chela_slay', 'cluster', 'come', 'compot', 'compressed_attention', 'compressed_attention_layer', 'compressed_attention_layer_energy', 'compressed_mha', 'compression_unified_rope', 'coopq', 'cosformer', 'cr', 'cur', 'cur_moe', 'decay_gated_linear_attention', 'decay_linear_attn', 'delta_kv', 'direct_svd', 'direct_svd_encoder', 'dobi', 'dobi_svd', 'dynamic_entropy', 'dynamic_entropy_svd', 'dynamic_rank', 'eat', 'enlighten', 'entropy_budget', 'entropy_budget_allocation', 'entropy_rank_allocator', 'erc', 'erc_svd', 'expert_choice_moe', 'factorised_matrix_state', 'faq', 'fasa', 'flap', 'flash3', 'flash3_fp8', 'flash_attention3', 'flash_attention3_fp8', 'flat_llm', 'frandi', 'full', 'fused_svd_kernel', 'fusion_attn', 'galerkin', 'gated_delta_net', 'gated_linear_attn', 'gfws', 'gfws_d', 'goldfinch_ahn', 'gqa', 'granite_hybrid', 'grecodec', 'griffin_ssd', 'halo_regla', 'hamming', 'hashed_net', 'hgrn2_layer', 'hgrn2_gated_deltanet', 'hgrn2_outer', 'hla', 'huffman', 'hybridkv', 'hybrid_svd', 'hymba_transx', 'infini', 'jamba', 'jamba2', 'jamba_info', 'kda', 'kmeans', 'kmeans_quantize', 'kronecker', 'kronecker_tt_lora', 'kvtc', 'leka_v1', 'leka_v2', 'leka_v3', 'liftr', 'lillama', 'linformer', 'lola', 'lora_attn', 'lsc', 'lsh', 'mamba', 'mamba_shedder', 'mamba_svd_flash', 'mgie', 'mgie_budget', 'minimal_aurora', 'minimal_nova', 'minimal_prism', 'minimal_svd', 'minimal_svd_v2', 'mixattention_moska', 'mla', 'mlorq', 'moba', 'modegpt', 'moe_deltakv_paged', 'nasc', 'nexus', 'nha', 'nli_softmax', 'nmf', 'nsa', 'nystrom', 'oats', 'oha', 'optimal_subspace_projection', 'optimized_hybrid_attention', 'orion', 'performer', 'phantom', 'primal', 'progressive_token_pruning', 'projection_factorized_attn', 'proxsparse', 'qcqa', 'rala', 'reap_moe', 'regla', 'res_svd', 'rotational_slicegpt', 'rotational_slicegpt_int4', 'routing', 'rpc', 'rpca', 'saes', 'saes_svd_v2', 'salr', 'salt', 'samba_m3', 'samba_moe', 'sdrm', 'simple_ssm', 'slicegpt', 'slicegpt_pca', 'slim', 'soa_attn', 'soa_fused_attn', 'soafusedattention', 'soka', 'span_expanded', 'sparsegpt', 'spectral_mamba', 'spectral_residual_lora', 'spectral_residual_svd', 'spectra_v2', 'spectron', 'squeezing_heads_distiller', 'subspace_projection', 'svd', 'svd-mamba', 'svd_compressed', 'svd_linear', 'svd_linear_decay', 'svd_llm_v2', 'svd_mamba', 'svd_proj_attn', 'svd_projection', 'swift_svd', 'swift_svd_act', 'token_compressed', 'tpa', 'tt', 'unified_rope', 'uniql', 'upi_stuffed_mamba', 'vig', 'vspec', 'wgqa', 'xattention', 'zerokv_neo', 'zeros']
+2026-08-28 08:24:59,622 [INFO] QualitySweep: Models (1): ['distilbert'] | Datasets (1): ['sst2'] | Seeds (1): [42]
+2026-08-28 08:24:59,622 [INFO] QualitySweep: ================================================================================
+2026-08-28 08:24:59,805 [WARNING] QualitySweep: Could not initialize PersistentCUDAWorker: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        . Falling back to spawn runner.
+2026-08-28 08:24:59,805 [INFO] QualitySweep: [1/203] Skipping already-completed full on DISTILBERT / SST2...
+2026-08-28 08:24:59,805 [INFO] QualitySweep: [2/203] Skipping already-completed a3 on DISTILBERT / SST2...
+2026-08-28 08:24:59,805 [INFO] QualitySweep: [3/203] Skipping already-completed aasvd on DISTILBERT / SST2...
+2026-08-28 08:24:59,805 [INFO] QualitySweep: [4/203] Evaluating adaptive_ranks on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:24:59,850 [ERROR] QualitySweep: Seed 42 failed for adaptive_ranks on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:00,354 [INFO] QualitySweep: --> adaptive_ranks on DISTILBERT/SST2 completed in 0.55s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:00,659 [INFO] QualitySweep: [5/203] Skipping already-completed adaptive_span on DISTILBERT / SST2...
+2026-08-28 08:25:00,659 [INFO] QualitySweep: [6/203] Skipping already-completed adaptive_sparse on DISTILBERT / SST2...
+2026-08-28 08:25:00,659 [INFO] QualitySweep: [7/203] Skipping already-completed adaptive_svd on DISTILBERT / SST2...
+2026-08-28 08:25:00,659 [INFO] QualitySweep: [8/203] Skipping already-completed adasplash on DISTILBERT / SST2...
+2026-08-28 08:25:00,659 [INFO] QualitySweep: [9/203] Skipping already-completed adasvd on DISTILBERT / SST2...
+2026-08-28 08:25:00,659 [INFO] QualitySweep: [10/203] Skipping already-completed admm on DISTILBERT / SST2...
+2026-08-28 08:25:00,659 [INFO] QualitySweep: [11/203] Evaluating aegisattentionv1 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:00,695 [ERROR] QualitySweep: Seed 42 failed for aegisattentionv1 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:00,903 [INFO] QualitySweep: --> aegisattentionv1 on DISTILBERT/SST2 completed in 0.24s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:01,134 [INFO] QualitySweep: [12/203] Skipping already-completed aegis_hybrid on DISTILBERT / SST2...
+2026-08-28 08:25:01,135 [INFO] QualitySweep: [13/203] Skipping already-completed aegis_spectron_fp8 on DISTILBERT / SST2...
+2026-08-28 08:25:01,135 [INFO] QualitySweep: [14/203] Skipping already-completed aegis_v1 on DISTILBERT / SST2...
+2026-08-28 08:25:01,135 [INFO] QualitySweep: [15/203] Skipping already-completed aegis_v2 on DISTILBERT / SST2...
+2026-08-28 08:25:01,135 [INFO] QualitySweep: [16/203] Skipping already-completed aegis_v3 on DISTILBERT / SST2...
+2026-08-28 08:25:01,135 [INFO] QualitySweep: [17/203] Skipping already-completed aegis_v4 on DISTILBERT / SST2...
+2026-08-28 08:25:01,135 [INFO] QualitySweep: [18/203] Skipping already-completed aegis_v5 on DISTILBERT / SST2...
+2026-08-28 08:25:01,135 [INFO] QualitySweep: [19/203] Skipping already-completed aegis_v6 on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [20/203] Skipping already-completed armor on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [21/203] Skipping already-completed ast on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [22/203] Skipping already-completed astro on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [23/203] Skipping already-completed asvd on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [24/203] Skipping already-completed bam_umoe on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [25/203] Skipping already-completed block_transformer_hiba on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [26/203] Skipping already-completed bonsai on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [27/203] Skipping already-completed cachenotes on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [28/203] Skipping already-completed chela_slay on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [29/203] Skipping already-completed cluster on DISTILBERT / SST2...
+2026-08-28 08:25:01,136 [INFO] QualitySweep: [30/203] Skipping already-completed come on DISTILBERT / SST2...
+2026-08-28 08:25:01,137 [INFO] QualitySweep: [31/203] Skipping already-completed compot on DISTILBERT / SST2...
+2026-08-28 08:25:01,137 [INFO] QualitySweep: [32/203] Skipping already-completed compressed_attention on DISTILBERT / SST2...
+2026-08-28 08:25:01,137 [INFO] QualitySweep: [33/203] Evaluating compressed_attention_layer on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:01,173 [ERROR] QualitySweep: Seed 42 failed for compressed_attention_layer on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:01,712 [INFO] QualitySweep: --> compressed_attention_layer on DISTILBERT/SST2 completed in 0.57s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:01,942 [INFO] QualitySweep: [34/203] Skipping already-completed compressed_attention_layer_energy on DISTILBERT / SST2...
+2026-08-28 08:25:01,942 [INFO] QualitySweep: [35/203] Skipping already-completed compressed_mha on DISTILBERT / SST2...
+2026-08-28 08:25:01,942 [INFO] QualitySweep: [36/203] Evaluating compression_unified_rope on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:01,980 [ERROR] QualitySweep: Seed 42 failed for compression_unified_rope on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:02,535 [INFO] QualitySweep: --> compression_unified_rope on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:02,742 [INFO] QualitySweep: [37/203] Skipping already-completed coopq on DISTILBERT / SST2...
+2026-08-28 08:25:02,743 [INFO] QualitySweep: [38/203] Skipping already-completed cosformer on DISTILBERT / SST2...
+2026-08-28 08:25:02,743 [INFO] QualitySweep: [39/203] Skipping already-completed cr on DISTILBERT / SST2...
+2026-08-28 08:25:02,743 [INFO] QualitySweep: [40/203] Skipping already-completed cur on DISTILBERT / SST2...
+2026-08-28 08:25:02,743 [INFO] QualitySweep: [41/203] Skipping already-completed cur_moe on DISTILBERT / SST2...
+2026-08-28 08:25:02,743 [INFO] QualitySweep: [42/203] Evaluating decay_gated_linear_attention on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:02,807 [ERROR] QualitySweep: Seed 42 failed for decay_gated_linear_attention on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:03,355 [INFO] QualitySweep: --> decay_gated_linear_attention on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:03,574 [INFO] QualitySweep: [43/203] Skipping already-completed decay_linear_attn on DISTILBERT / SST2...
+2026-08-28 08:25:03,575 [INFO] QualitySweep: [44/203] Skipping already-completed delta_kv on DISTILBERT / SST2...
+2026-08-28 08:25:03,575 [INFO] QualitySweep: [45/203] Skipping already-completed direct_svd on DISTILBERT / SST2...
+2026-08-28 08:25:03,575 [INFO] QualitySweep: [46/203] Evaluating direct_svd_encoder on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:03,610 [ERROR] QualitySweep: Seed 42 failed for direct_svd_encoder on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:04,131 [INFO] QualitySweep: --> direct_svd_encoder on DISTILBERT/SST2 completed in 0.56s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:04,329 [INFO] QualitySweep: [47/203] Skipping already-completed dobi on DISTILBERT / SST2...
+2026-08-28 08:25:04,330 [INFO] QualitySweep: [48/203] Evaluating dobi_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:04,366 [ERROR] QualitySweep: Seed 42 failed for dobi_svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:04,919 [INFO] QualitySweep: --> dobi_svd on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:05,130 [INFO] QualitySweep: [49/203] Evaluating dynamic_entropy on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:05,164 [ERROR] QualitySweep: Seed 42 failed for dynamic_entropy on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:05,702 [INFO] QualitySweep: --> dynamic_entropy on DISTILBERT/SST2 completed in 0.57s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:05,915 [INFO] QualitySweep: [50/203] Evaluating dynamic_entropy_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:05,950 [ERROR] QualitySweep: Seed 42 failed for dynamic_entropy_svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:06,471 [INFO] QualitySweep: --> dynamic_entropy_svd on DISTILBERT/SST2 completed in 0.56s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:06,658 [INFO] QualitySweep: [51/203] Skipping already-completed dynamic_rank on DISTILBERT / SST2...
+2026-08-28 08:25:06,658 [INFO] QualitySweep: [52/203] Skipping already-completed eat on DISTILBERT / SST2...
+2026-08-28 08:25:06,658 [INFO] QualitySweep: [53/203] Skipping already-completed enlighten on DISTILBERT / SST2...
+2026-08-28 08:25:06,658 [INFO] QualitySweep: [54/203] Skipping already-completed entropy_budget on DISTILBERT / SST2...
+2026-08-28 08:25:06,658 [INFO] QualitySweep: [55/203] Evaluating entropy_budget_allocation on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:06,697 [ERROR] QualitySweep: Seed 42 failed for entropy_budget_allocation on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:07,211 [INFO] QualitySweep: --> entropy_budget_allocation on DISTILBERT/SST2 completed in 0.55s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:07,397 [INFO] QualitySweep: [56/203] Skipping already-completed entropy_rank_allocator on DISTILBERT / SST2...
+2026-08-28 08:25:07,397 [INFO] QualitySweep: [57/203] Skipping already-completed erc on DISTILBERT / SST2...
+2026-08-28 08:25:07,397 [INFO] QualitySweep: [58/203] Evaluating erc_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:07,441 [ERROR] QualitySweep: Seed 42 failed for erc_svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:07,971 [INFO] QualitySweep: --> erc_svd on DISTILBERT/SST2 completed in 0.57s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:08,165 [INFO] QualitySweep: [59/203] Skipping already-completed expert_choice_moe on DISTILBERT / SST2...
+2026-08-28 08:25:08,165 [INFO] QualitySweep: [60/203] Skipping already-completed factorised_matrix_state on DISTILBERT / SST2...
+2026-08-28 08:25:08,165 [INFO] QualitySweep: [61/203] Skipping already-completed faq on DISTILBERT / SST2...
+2026-08-28 08:25:08,165 [INFO] QualitySweep: [62/203] Skipping already-completed fasa on DISTILBERT / SST2...
+2026-08-28 08:25:08,165 [INFO] QualitySweep: [63/203] Skipping already-completed flap on DISTILBERT / SST2...
+2026-08-28 08:25:08,165 [INFO] QualitySweep: [64/203] Skipping already-completed flash3 on DISTILBERT / SST2...
+2026-08-28 08:25:08,165 [INFO] QualitySweep: [65/203] Skipping already-completed flash3_fp8 on DISTILBERT / SST2...
+2026-08-28 08:25:08,165 [INFO] QualitySweep: [66/203] Evaluating flash_attention3 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:08,200 [ERROR] QualitySweep: Seed 42 failed for flash_attention3 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:08,742 [INFO] QualitySweep: --> flash_attention3 on DISTILBERT/SST2 completed in 0.58s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:08,932 [INFO] QualitySweep: [67/203] Evaluating flash_attention3_fp8 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:08,975 [ERROR] QualitySweep: Seed 42 failed for flash_attention3_fp8 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:09,511 [INFO] QualitySweep: --> flash_attention3_fp8 on DISTILBERT/SST2 completed in 0.58s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:09,697 [INFO] QualitySweep: [68/203] Skipping already-completed flat_llm on DISTILBERT / SST2...
+2026-08-28 08:25:09,697 [INFO] QualitySweep: [69/203] Skipping already-completed frandi on DISTILBERT / SST2...
+2026-08-28 08:25:09,698 [INFO] QualitySweep: [70/203] Skipping already-completed fused_svd_kernel on DISTILBERT / SST2...
+2026-08-28 08:25:09,698 [INFO] QualitySweep: [71/203] Skipping already-completed fusion_attn on DISTILBERT / SST2...
+2026-08-28 08:25:09,698 [INFO] QualitySweep: [72/203] Skipping already-completed galerkin on DISTILBERT / SST2...
+2026-08-28 08:25:09,698 [INFO] QualitySweep: [73/203] Skipping already-completed gated_delta_net on DISTILBERT / SST2...
+2026-08-28 08:25:09,698 [INFO] QualitySweep: [74/203] Skipping already-completed gated_linear_attn on DISTILBERT / SST2...
+2026-08-28 08:25:09,698 [INFO] QualitySweep: [75/203] Skipping already-completed gfws on DISTILBERT / SST2...
+2026-08-28 08:25:09,698 [INFO] QualitySweep: [76/203] Evaluating gfws_d on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:09,735 [ERROR] QualitySweep: Seed 42 failed for gfws_d on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:10,281 [INFO] QualitySweep: --> gfws_d on DISTILBERT/SST2 completed in 0.58s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:10,491 [INFO] QualitySweep: [77/203] Skipping already-completed goldfinch_ahn on DISTILBERT / SST2...
+2026-08-28 08:25:10,492 [INFO] QualitySweep: [78/203] Skipping already-completed gqa on DISTILBERT / SST2...
+2026-08-28 08:25:10,492 [INFO] QualitySweep: [79/203] Skipping already-completed granite_hybrid on DISTILBERT / SST2...
+2026-08-28 08:25:10,492 [INFO] QualitySweep: [80/203] Skipping already-completed grecodec on DISTILBERT / SST2...
+2026-08-28 08:25:10,492 [INFO] QualitySweep: [81/203] Skipping already-completed griffin_ssd on DISTILBERT / SST2...
+2026-08-28 08:25:10,492 [INFO] QualitySweep: [82/203] Skipping already-completed halo_regla on DISTILBERT / SST2...
+2026-08-28 08:25:10,492 [INFO] QualitySweep: [83/203] Skipping already-completed hamming on DISTILBERT / SST2...
+2026-08-28 08:25:10,492 [INFO] QualitySweep: [84/203] Skipping already-completed hashed_net on DISTILBERT / SST2...
+2026-08-28 08:25:10,492 [INFO] QualitySweep: [85/203] Evaluating hgrn2_layer on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:10,528 [ERROR] QualitySweep: Seed 42 failed for hgrn2_layer on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:11,093 [INFO] QualitySweep: --> hgrn2_layer on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:11,310 [INFO] QualitySweep: [86/203] Evaluating hgrn2_gated_deltanet on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:11,357 [ERROR] QualitySweep: Seed 42 failed for hgrn2_gated_deltanet on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:11,912 [INFO] QualitySweep: --> hgrn2_gated_deltanet on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:12,131 [INFO] QualitySweep: [87/203] Evaluating hgrn2_outer on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:12,181 [ERROR] QualitySweep: Seed 42 failed for hgrn2_outer on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:12,739 [INFO] QualitySweep: --> hgrn2_outer on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:12,951 [INFO] QualitySweep: [88/203] Evaluating hla on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:12,994 [ERROR] QualitySweep: Seed 42 failed for hla on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:13,570 [INFO] QualitySweep: --> hla on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:13,788 [INFO] QualitySweep: [89/203] Evaluating huffman on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:13,836 [ERROR] QualitySweep: Seed 42 failed for huffman on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:14,406 [INFO] QualitySweep: --> huffman on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:14,621 [INFO] QualitySweep: [90/203] Evaluating hybridkv on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:14,662 [ERROR] QualitySweep: Seed 42 failed for hybridkv on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:15,218 [INFO] QualitySweep: --> hybridkv on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:15,427 [INFO] QualitySweep: [91/203] Evaluating hybrid_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:15,472 [ERROR] QualitySweep: Seed 42 failed for hybrid_svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:16,025 [INFO] QualitySweep: --> hybrid_svd on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:16,255 [INFO] QualitySweep: [92/203] Evaluating hymba_transx on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:16,297 [ERROR] QualitySweep: Seed 42 failed for hymba_transx on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:16,837 [INFO] QualitySweep: --> hymba_transx on DISTILBERT/SST2 completed in 0.58s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:17,061 [INFO] QualitySweep: [93/203] Evaluating infini on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:17,107 [ERROR] QualitySweep: Seed 42 failed for infini on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:17,650 [INFO] QualitySweep: --> infini on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:17,853 [INFO] QualitySweep: [94/203] Evaluating jamba on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:17,899 [ERROR] QualitySweep: Seed 42 failed for jamba on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:18,454 [INFO] QualitySweep: --> jamba on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:18,654 [INFO] QualitySweep: [95/203] Evaluating jamba2 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:18,688 [ERROR] QualitySweep: Seed 42 failed for jamba2 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:19,249 [INFO] QualitySweep: --> jamba2 on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:19,456 [INFO] QualitySweep: [96/203] Evaluating jamba_info on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:19,495 [ERROR] QualitySweep: Seed 42 failed for jamba_info on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:20,072 [INFO] QualitySweep: --> jamba_info on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:20,270 [INFO] QualitySweep: [97/203] Evaluating kda on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:20,317 [ERROR] QualitySweep: Seed 42 failed for kda on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:20,893 [INFO] QualitySweep: --> kda on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:21,115 [INFO] QualitySweep: [98/203] Evaluating kmeans on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:21,158 [ERROR] QualitySweep: Seed 42 failed for kmeans on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:21,747 [INFO] QualitySweep: --> kmeans on DISTILBERT/SST2 completed in 0.63s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:21,991 [INFO] QualitySweep: [99/203] Evaluating kmeans_quantize on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:22,035 [ERROR] QualitySweep: Seed 42 failed for kmeans_quantize on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:22,629 [INFO] QualitySweep: --> kmeans_quantize on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:22,846 [INFO] QualitySweep: [100/203] Evaluating kronecker on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:22,894 [ERROR] QualitySweep: Seed 42 failed for kronecker on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:23,496 [INFO] QualitySweep: --> kronecker on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:23,745 [INFO] QualitySweep: [101/203] Evaluating kronecker_tt_lora on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:23,785 [ERROR] QualitySweep: Seed 42 failed for kronecker_tt_lora on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:24,403 [INFO] QualitySweep: --> kronecker_tt_lora on DISTILBERT/SST2 completed in 0.66s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:24,627 [INFO] QualitySweep: [102/203] Evaluating kvtc on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:24,672 [ERROR] QualitySweep: Seed 42 failed for kvtc on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:25,249 [INFO] QualitySweep: --> kvtc on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:25,459 [INFO] QualitySweep: [103/203] Evaluating leka_v1 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:25,502 [ERROR] QualitySweep: Seed 42 failed for leka_v1 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:26,087 [INFO] QualitySweep: --> leka_v1 on DISTILBERT/SST2 completed in 0.63s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:26,305 [INFO] QualitySweep: [104/203] Evaluating leka_v2 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:26,345 [ERROR] QualitySweep: Seed 42 failed for leka_v2 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:26,902 [INFO] QualitySweep: --> leka_v2 on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:27,142 [INFO] QualitySweep: [105/203] Evaluating leka_v3 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:27,188 [ERROR] QualitySweep: Seed 42 failed for leka_v3 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:27,779 [INFO] QualitySweep: --> leka_v3 on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:28,022 [INFO] QualitySweep: [106/203] Evaluating liftr on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:28,059 [ERROR] QualitySweep: Seed 42 failed for liftr on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:28,688 [INFO] QualitySweep: --> liftr on DISTILBERT/SST2 completed in 0.67s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:28,901 [INFO] QualitySweep: [107/203] Evaluating lillama on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:28,944 [ERROR] QualitySweep: Seed 42 failed for lillama on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:29,503 [INFO] QualitySweep: --> lillama on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:29,716 [INFO] QualitySweep: [108/203] Evaluating linformer on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:29,755 [ERROR] QualitySweep: Seed 42 failed for linformer on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:30,328 [INFO] QualitySweep: --> linformer on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:30,560 [INFO] QualitySweep: [109/203] Evaluating lola on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:30,596 [ERROR] QualitySweep: Seed 42 failed for lola on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:31,145 [INFO] QualitySweep: --> lola on DISTILBERT/SST2 completed in 0.58s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:31,389 [INFO] QualitySweep: [110/203] Evaluating lora_attn on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:31,430 [ERROR] QualitySweep: Seed 42 failed for lora_attn on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:31,978 [INFO] QualitySweep: --> lora_attn on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:32,214 [INFO] QualitySweep: [111/203] Evaluating lsc on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:32,253 [ERROR] QualitySweep: Seed 42 failed for lsc on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:32,814 [INFO] QualitySweep: --> lsc on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:33,052 [INFO] QualitySweep: [112/203] Evaluating lsh on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:33,105 [ERROR] QualitySweep: Seed 42 failed for lsh on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:33,667 [INFO] QualitySweep: --> lsh on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:33,898 [INFO] QualitySweep: [113/203] Evaluating mamba on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:33,941 [ERROR] QualitySweep: Seed 42 failed for mamba on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:34,486 [INFO] QualitySweep: --> mamba on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:34,743 [INFO] QualitySweep: [114/203] Evaluating mamba_shedder on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:34,784 [ERROR] QualitySweep: Seed 42 failed for mamba_shedder on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:35,334 [INFO] QualitySweep: --> mamba_shedder on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:35,577 [INFO] QualitySweep: [115/203] Evaluating mamba_svd_flash on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:35,617 [ERROR] QualitySweep: Seed 42 failed for mamba_svd_flash on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:36,183 [INFO] QualitySweep: --> mamba_svd_flash on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:36,405 [INFO] QualitySweep: [116/203] Evaluating mgie on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:36,441 [ERROR] QualitySweep: Seed 42 failed for mgie on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:36,999 [INFO] QualitySweep: --> mgie on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:37,258 [INFO] QualitySweep: [117/203] Evaluating mgie_budget on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:37,303 [ERROR] QualitySweep: Seed 42 failed for mgie_budget on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:37,842 [INFO] QualitySweep: --> mgie_budget on DISTILBERT/SST2 completed in 0.58s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:38,066 [INFO] QualitySweep: [118/203] Evaluating minimal_aurora on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:38,101 [ERROR] QualitySweep: Seed 42 failed for minimal_aurora on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:38,664 [INFO] QualitySweep: --> minimal_aurora on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:38,906 [INFO] QualitySweep: [119/203] Evaluating minimal_nova on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:38,945 [ERROR] QualitySweep: Seed 42 failed for minimal_nova on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:39,505 [INFO] QualitySweep: --> minimal_nova on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:39,760 [INFO] QualitySweep: [120/203] Evaluating minimal_prism on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:39,794 [ERROR] QualitySweep: Seed 42 failed for minimal_prism on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:40,364 [INFO] QualitySweep: --> minimal_prism on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:40,587 [INFO] QualitySweep: [121/203] Evaluating minimal_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:40,632 [ERROR] QualitySweep: Seed 42 failed for minimal_svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:41,179 [INFO] QualitySweep: --> minimal_svd on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:41,380 [INFO] QualitySweep: [122/203] Evaluating minimal_svd_v2 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:41,428 [ERROR] QualitySweep: Seed 42 failed for minimal_svd_v2 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:41,923 [INFO] QualitySweep: --> minimal_svd_v2 on DISTILBERT/SST2 completed in 0.54s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:42,116 [INFO] QualitySweep: [123/203] Evaluating mixattention_moska on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:42,155 [ERROR] QualitySweep: Seed 42 failed for mixattention_moska on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:42,695 [INFO] QualitySweep: --> mixattention_moska on DISTILBERT/SST2 completed in 0.58s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:42,892 [INFO] QualitySweep: [124/203] Evaluating mla on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:42,938 [ERROR] QualitySweep: Seed 42 failed for mla on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:43,482 [INFO] QualitySweep: --> mla on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:43,695 [INFO] QualitySweep: [125/203] Evaluating mlorq on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:43,738 [ERROR] QualitySweep: Seed 42 failed for mlorq on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:44,298 [INFO] QualitySweep: --> mlorq on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:44,540 [INFO] QualitySweep: [126/203] Evaluating moba on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:44,600 [ERROR] QualitySweep: Seed 42 failed for moba on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:45,148 [INFO] QualitySweep: --> moba on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:45,415 [INFO] QualitySweep: [127/203] Evaluating modegpt on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:45,460 [ERROR] QualitySweep: Seed 42 failed for modegpt on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:45,997 [INFO] QualitySweep: --> modegpt on DISTILBERT/SST2 completed in 0.58s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:46,243 [INFO] QualitySweep: [128/203] Evaluating moe_deltakv_paged on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:46,291 [ERROR] QualitySweep: Seed 42 failed for moe_deltakv_paged on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:46,838 [INFO] QualitySweep: --> moe_deltakv_paged on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:47,070 [INFO] QualitySweep: [129/203] Evaluating nasc on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:47,104 [ERROR] QualitySweep: Seed 42 failed for nasc on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:47,692 [INFO] QualitySweep: --> nasc on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:47,937 [INFO] QualitySweep: [130/203] Evaluating nexus on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:47,981 [ERROR] QualitySweep: Seed 42 failed for nexus on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:48,545 [INFO] QualitySweep: --> nexus on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:48,793 [INFO] QualitySweep: [131/203] Evaluating nha on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:48,841 [ERROR] QualitySweep: Seed 42 failed for nha on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:49,401 [INFO] QualitySweep: --> nha on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:49,647 [INFO] QualitySweep: [132/203] Evaluating nli_softmax on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:49,680 [ERROR] QualitySweep: Seed 42 failed for nli_softmax on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:50,239 [INFO] QualitySweep: --> nli_softmax on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:50,485 [INFO] QualitySweep: [133/203] Evaluating nmf on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:50,527 [ERROR] QualitySweep: Seed 42 failed for nmf on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:51,086 [INFO] QualitySweep: --> nmf on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:51,324 [INFO] QualitySweep: [134/203] Evaluating nsa on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:51,372 [ERROR] QualitySweep: Seed 42 failed for nsa on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:51,948 [INFO] QualitySweep: --> nsa on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:52,179 [INFO] QualitySweep: [135/203] Evaluating nystrom on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:52,232 [ERROR] QualitySweep: Seed 42 failed for nystrom on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:52,798 [INFO] QualitySweep: --> nystrom on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:53,036 [INFO] QualitySweep: [136/203] Evaluating oats on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:53,076 [ERROR] QualitySweep: Seed 42 failed for oats on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:53,638 [INFO] QualitySweep: --> oats on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:53,884 [INFO] QualitySweep: [137/203] Evaluating oha on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:53,918 [ERROR] QualitySweep: Seed 42 failed for oha on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:54,480 [INFO] QualitySweep: --> oha on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:54,695 [INFO] QualitySweep: [138/203] Evaluating optimal_subspace_projection on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:54,734 [ERROR] QualitySweep: Seed 42 failed for optimal_subspace_projection on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:55,298 [INFO] QualitySweep: --> optimal_subspace_projection on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:55,542 [INFO] QualitySweep: [139/203] Evaluating optimized_hybrid_attention on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:55,585 [ERROR] QualitySweep: Seed 42 failed for optimized_hybrid_attention on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:56,146 [INFO] QualitySweep: --> optimized_hybrid_attention on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:56,397 [INFO] QualitySweep: [140/203] Evaluating orion on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:56,446 [ERROR] QualitySweep: Seed 42 failed for orion on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:56,998 [INFO] QualitySweep: --> orion on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:57,244 [INFO] QualitySweep: [141/203] Evaluating performer on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:57,289 [ERROR] QualitySweep: Seed 42 failed for performer on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:57,855 [INFO] QualitySweep: --> performer on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:58,114 [INFO] QualitySweep: [142/203] Evaluating phantom on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:58,160 [ERROR] QualitySweep: Seed 42 failed for phantom on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:58,723 [INFO] QualitySweep: --> phantom on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:58,973 [INFO] QualitySweep: [143/203] Evaluating primal on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:59,021 [ERROR] QualitySweep: Seed 42 failed for primal on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:25:59,586 [INFO] QualitySweep: --> primal on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:25:59,834 [INFO] QualitySweep: [144/203] Evaluating progressive_token_pruning on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:25:59,870 [ERROR] QualitySweep: Seed 42 failed for progressive_token_pruning on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:00,441 [INFO] QualitySweep: --> progressive_token_pruning on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:00,685 [INFO] QualitySweep: [145/203] Evaluating projection_factorized_attn on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:00,730 [ERROR] QualitySweep: Seed 42 failed for projection_factorized_attn on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:01,290 [INFO] QualitySweep: --> projection_factorized_attn on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:01,541 [INFO] QualitySweep: [146/203] Evaluating proxsparse on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:01,593 [ERROR] QualitySweep: Seed 42 failed for proxsparse on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:02,141 [INFO] QualitySweep: --> proxsparse on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:02,391 [INFO] QualitySweep: [147/203] Evaluating qcqa on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:02,439 [ERROR] QualitySweep: Seed 42 failed for qcqa on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:03,007 [INFO] QualitySweep: --> qcqa on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:03,257 [INFO] QualitySweep: [148/203] Evaluating rala on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:03,298 [ERROR] QualitySweep: Seed 42 failed for rala on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:03,858 [INFO] QualitySweep: --> rala on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:04,094 [INFO] QualitySweep: [149/203] Evaluating reap_moe on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:04,153 [ERROR] QualitySweep: Seed 42 failed for reap_moe on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:04,735 [INFO] QualitySweep: --> reap_moe on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:04,984 [INFO] QualitySweep: [150/203] Evaluating regla on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:05,029 [ERROR] QualitySweep: Seed 42 failed for regla on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:05,634 [INFO] QualitySweep: --> regla on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:05,873 [INFO] QualitySweep: [151/203] Evaluating res_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:05,917 [ERROR] QualitySweep: Seed 42 failed for res_svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:06,587 [INFO] QualitySweep: --> res_svd on DISTILBERT/SST2 completed in 0.71s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:06,868 [INFO] QualitySweep: [152/203] Evaluating rotational_slicegpt on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:06,914 [ERROR] QualitySweep: Seed 42 failed for rotational_slicegpt on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:07,517 [INFO] QualitySweep: --> rotational_slicegpt on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:07,748 [INFO] QualitySweep: [153/203] Evaluating rotational_slicegpt_int4 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:07,783 [ERROR] QualitySweep: Seed 42 failed for rotational_slicegpt_int4 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:08,384 [INFO] QualitySweep: --> rotational_slicegpt_int4 on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:08,617 [INFO] QualitySweep: [154/203] Evaluating routing on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:08,653 [ERROR] QualitySweep: Seed 42 failed for routing on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:09,261 [INFO] QualitySweep: --> routing on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:09,500 [INFO] QualitySweep: [155/203] Evaluating rpc on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:09,541 [ERROR] QualitySweep: Seed 42 failed for rpc on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:10,159 [INFO] QualitySweep: --> rpc on DISTILBERT/SST2 completed in 0.66s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:10,395 [INFO] QualitySweep: [156/203] Evaluating rpca on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:10,446 [ERROR] QualitySweep: Seed 42 failed for rpca on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:11,052 [INFO] QualitySweep: --> rpca on DISTILBERT/SST2 completed in 0.66s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:11,285 [INFO] QualitySweep: [157/203] Evaluating saes on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:11,318 [ERROR] QualitySweep: Seed 42 failed for saes on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:11,935 [INFO] QualitySweep: --> saes on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:12,166 [INFO] QualitySweep: [158/203] Evaluating saes_svd_v2 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:12,204 [ERROR] QualitySweep: Seed 42 failed for saes_svd_v2 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:12,836 [INFO] QualitySweep: --> saes_svd_v2 on DISTILBERT/SST2 completed in 0.67s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:13,068 [INFO] QualitySweep: [159/203] Evaluating salr on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:13,108 [ERROR] QualitySweep: Seed 42 failed for salr on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:13,737 [INFO] QualitySweep: --> salr on DISTILBERT/SST2 completed in 0.67s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:13,977 [INFO] QualitySweep: [160/203] Evaluating salt on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:14,026 [ERROR] QualitySweep: Seed 42 failed for salt on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:14,642 [INFO] QualitySweep: --> salt on DISTILBERT/SST2 completed in 0.67s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:14,880 [INFO] QualitySweep: [161/203] Evaluating samba_m3 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:14,921 [ERROR] QualitySweep: Seed 42 failed for samba_m3 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:15,545 [INFO] QualitySweep: --> samba_m3 on DISTILBERT/SST2 completed in 0.67s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:15,780 [INFO] QualitySweep: [162/203] Evaluating samba_moe on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:15,832 [ERROR] QualitySweep: Seed 42 failed for samba_moe on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:16,451 [INFO] QualitySweep: --> samba_moe on DISTILBERT/SST2 completed in 0.67s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:16,689 [INFO] QualitySweep: [163/203] Evaluating sdrm on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:16,729 [ERROR] QualitySweep: Seed 42 failed for sdrm on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:17,356 [INFO] QualitySweep: --> sdrm on DISTILBERT/SST2 completed in 0.67s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:17,587 [INFO] QualitySweep: [164/203] Evaluating simple_ssm on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:17,621 [ERROR] QualitySweep: Seed 42 failed for simple_ssm on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:18,268 [INFO] QualitySweep: --> simple_ssm on DISTILBERT/SST2 completed in 0.68s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:18,511 [INFO] QualitySweep: [165/203] Evaluating slicegpt on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:18,546 [ERROR] QualitySweep: Seed 42 failed for slicegpt on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:19,182 [INFO] QualitySweep: --> slicegpt on DISTILBERT/SST2 completed in 0.67s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:19,424 [INFO] QualitySweep: [166/203] Evaluating slicegpt_pca on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:19,461 [ERROR] QualitySweep: Seed 42 failed for slicegpt_pca on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:20,083 [INFO] QualitySweep: --> slicegpt_pca on DISTILBERT/SST2 completed in 0.66s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:20,299 [INFO] QualitySweep: [167/203] Evaluating slim on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:20,341 [ERROR] QualitySweep: Seed 42 failed for slim on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:20,906 [INFO] QualitySweep: --> slim on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:21,113 [INFO] QualitySweep: [168/203] Evaluating soa_attn on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:21,151 [ERROR] QualitySweep: Seed 42 failed for soa_attn on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:21,735 [INFO] QualitySweep: --> soa_attn on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:21,955 [INFO] QualitySweep: [169/203] Evaluating soa_fused_attn on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:21,993 [ERROR] QualitySweep: Seed 42 failed for soa_fused_attn on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:22,568 [INFO] QualitySweep: --> soa_fused_attn on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:22,778 [INFO] QualitySweep: [170/203] Evaluating soafusedattention on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:22,835 [ERROR] QualitySweep: Seed 42 failed for soafusedattention on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:23,395 [INFO] QualitySweep: --> soafusedattention on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:23,599 [INFO] QualitySweep: [171/203] Evaluating soka on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:23,635 [ERROR] QualitySweep: Seed 42 failed for soka on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:24,222 [INFO] QualitySweep: --> soka on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:24,428 [INFO] QualitySweep: [172/203] Evaluating span_expanded on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:24,465 [ERROR] QualitySweep: Seed 42 failed for span_expanded on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:25,056 [INFO] QualitySweep: --> span_expanded on DISTILBERT/SST2 completed in 0.63s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:25,261 [INFO] QualitySweep: [173/203] Evaluating sparsegpt on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:25,296 [ERROR] QualitySweep: Seed 42 failed for sparsegpt on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:25,855 [INFO] QualitySweep: --> sparsegpt on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:26,080 [INFO] QualitySweep: [174/203] Evaluating spectral_mamba on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:26,123 [ERROR] QualitySweep: Seed 42 failed for spectral_mamba on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:26,691 [INFO] QualitySweep: --> spectral_mamba on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:26,909 [INFO] QualitySweep: [175/203] Evaluating spectral_residual_lora on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:26,943 [ERROR] QualitySweep: Seed 42 failed for spectral_residual_lora on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:27,504 [INFO] QualitySweep: --> spectral_residual_lora on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:27,711 [INFO] QualitySweep: [176/203] Evaluating spectral_residual_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:27,755 [ERROR] QualitySweep: Seed 42 failed for spectral_residual_svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:28,352 [INFO] QualitySweep: --> spectral_residual_svd on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:28,560 [INFO] QualitySweep: [177/203] Evaluating spectra_v2 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:28,598 [ERROR] QualitySweep: Seed 42 failed for spectra_v2 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:29,177 [INFO] QualitySweep: --> spectra_v2 on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:29,388 [INFO] QualitySweep: [178/203] Evaluating spectron on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:29,435 [ERROR] QualitySweep: Seed 42 failed for spectron on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:30,009 [INFO] QualitySweep: --> spectron on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:30,239 [INFO] QualitySweep: [179/203] Evaluating squeezing_heads_distiller on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:30,279 [ERROR] QualitySweep: Seed 42 failed for squeezing_heads_distiller on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:30,847 [INFO] QualitySweep: --> squeezing_heads_distiller on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:31,049 [INFO] QualitySweep: [180/203] Evaluating subspace_projection on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:31,091 [ERROR] QualitySweep: Seed 42 failed for subspace_projection on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:31,664 [INFO] QualitySweep: --> subspace_projection on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:31,875 [INFO] QualitySweep: [181/203] Evaluating svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:31,912 [ERROR] QualitySweep: Seed 42 failed for svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:32,484 [INFO] QualitySweep: --> svd on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:32,693 [INFO] QualitySweep: [182/203] Evaluating svd-mamba on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:32,735 [ERROR] QualitySweep: Seed 42 failed for svd-mamba on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:33,313 [INFO] QualitySweep: --> svd-mamba on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:33,518 [INFO] QualitySweep: [183/203] Evaluating svd_compressed on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:33,557 [ERROR] QualitySweep: Seed 42 failed for svd_compressed on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:34,135 [INFO] QualitySweep: --> svd_compressed on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:34,354 [INFO] QualitySweep: [184/203] Evaluating svd_linear on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:34,394 [ERROR] QualitySweep: Seed 42 failed for svd_linear on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:34,976 [INFO] QualitySweep: --> svd_linear on DISTILBERT/SST2 completed in 0.62s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:35,186 [INFO] QualitySweep: [185/203] Evaluating svd_linear_decay on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:35,225 [ERROR] QualitySweep: Seed 42 failed for svd_linear_decay on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:35,796 [INFO] QualitySweep: --> svd_linear_decay on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:36,032 [INFO] QualitySweep: [186/203] Evaluating svd_llm_v2 on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:36,097 [ERROR] QualitySweep: Seed 42 failed for svd_llm_v2 on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:36,681 [INFO] QualitySweep: --> svd_llm_v2 on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:36,887 [INFO] QualitySweep: [187/203] Evaluating svd_mamba on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:36,920 [ERROR] QualitySweep: Seed 42 failed for svd_mamba on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:37,476 [INFO] QualitySweep: --> svd_mamba on DISTILBERT/SST2 completed in 0.59s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:37,694 [INFO] QualitySweep: [188/203] Evaluating svd_proj_attn on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:37,730 [ERROR] QualitySweep: Seed 42 failed for svd_proj_attn on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:38,304 [INFO] QualitySweep: --> svd_proj_attn on DISTILBERT/SST2 completed in 0.61s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:38,521 [INFO] QualitySweep: [189/203] Evaluating svd_projection on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:38,569 [ERROR] QualitySweep: Seed 42 failed for svd_projection on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:39,157 [INFO] QualitySweep: --> svd_projection on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:39,358 [INFO] QualitySweep: [190/203] Evaluating swift_svd on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:39,393 [ERROR] QualitySweep: Seed 42 failed for swift_svd on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:39,961 [INFO] QualitySweep: --> swift_svd on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:40,185 [INFO] QualitySweep: [191/203] Evaluating swift_svd_act on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:40,243 [ERROR] QualitySweep: Seed 42 failed for swift_svd_act on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:40,816 [INFO] QualitySweep: --> swift_svd_act on DISTILBERT/SST2 completed in 0.63s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:41,045 [INFO] QualitySweep: [192/203] Evaluating token_compressed on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:41,087 [ERROR] QualitySweep: Seed 42 failed for token_compressed on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:41,648 [INFO] QualitySweep: --> token_compressed on DISTILBERT/SST2 completed in 0.60s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:41,854 [INFO] QualitySweep: [193/203] Evaluating tpa on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:41,898 [ERROR] QualitySweep: Seed 42 failed for tpa on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:42,487 [INFO] QualitySweep: --> tpa on DISTILBERT/SST2 completed in 0.63s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:42,698 [INFO] QualitySweep: [194/203] Evaluating tt on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:42,739 [ERROR] QualitySweep: Seed 42 failed for tt on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:43,333 [INFO] QualitySweep: --> tt on DISTILBERT/SST2 completed in 0.63s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:43,559 [INFO] QualitySweep: [195/203] Evaluating unified_rope on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:43,595 [ERROR] QualitySweep: Seed 42 failed for unified_rope on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:43,772 [WARNING] PersistentWorker: Did not receive READY signal from worker: 
+2026-08-28 08:26:43,772 [INFO] QualitySweep: \u26a1 Persistent CUDA Worker initialized successfully. Zero-overhead stream active.
+2026-08-28 08:26:43,772 [INFO] QualitySweep: [1/203] Skipping already-completed full on DISTILBERT / SST2...
+2026-08-28 08:26:43,772 [INFO] QualitySweep: [2/203] Skipping already-completed a3 on DISTILBERT / SST2...
+2026-08-28 08:26:43,772 [INFO] QualitySweep: [3/203] Skipping already-completed aasvd on DISTILBERT / SST2...
+2026-08-28 08:26:43,772 [INFO] QualitySweep: [4/203] Evaluating adaptive_ranks on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:44,220 [INFO] QualitySweep: --> unified_rope on DISTILBERT/SST2 completed in 0.66s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:44,450 [INFO] QualitySweep: [196/203] Evaluating uniql on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:44,485 [ERROR] QualitySweep: Seed 42 failed for uniql on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:45,091 [INFO] QualitySweep: --> uniql on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:45,378 [INFO] QualitySweep: [197/203] Evaluating upi_stuffed_mamba on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:45,422 [ERROR] QualitySweep: Seed 42 failed for upi_stuffed_mamba on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:46,022 [INFO] QualitySweep: --> upi_stuffed_mamba on DISTILBERT/SST2 completed in 0.64s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:46,257 [INFO] QualitySweep: [198/203] Evaluating vig on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:46,297 [ERROR] QualitySweep: Seed 42 failed for vig on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:46,903 [INFO] QualitySweep: --> vig on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:47,155 [INFO] QualitySweep: [199/203] Evaluating vspec on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:47,194 [ERROR] QualitySweep: Seed 42 failed for vspec on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:47,808 [INFO] QualitySweep: --> vspec on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:48,049 [INFO] QualitySweep: [200/203] Evaluating wgqa on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:48,091 [ERROR] QualitySweep: Seed 42 failed for wgqa on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:48,697 [INFO] QualitySweep: --> wgqa on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:48,921 [INFO] QualitySweep: [201/203] Evaluating xattention on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:48,968 [ERROR] QualitySweep: Seed 42 failed for xattention on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:49,627 [INFO] QualitySweep: --> xattention on DISTILBERT/SST2 completed in 0.71s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:49,850 [INFO] QualitySweep: [202/203] Evaluating zerokv_neo on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:49,895 [ERROR] QualitySweep: Seed 42 failed for zerokv_neo on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:50,511 [INFO] QualitySweep: --> zerokv_neo on DISTILBERT/SST2 completed in 0.66s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:50,729 [INFO] QualitySweep: [203/203] Evaluating zeros on DISTILBERT / SST2 across 1 seeds...
+2026-08-28 08:26:50,764 [ERROR] QualitySweep: Seed 42 failed for zeros on distilbert/sst2: 
+        An attempt has been made to start a new process before the
+        current process has finished its bootstrapping phase.
+
+        This probably means that you are not using fork to start your
+        child processes and you have forgotten to use the proper idiom
+        in the main module:
+
+            if __name__ == '__main__':
+                freeze_support()
+                ...
+
+        The "freeze_support()" line can be omitted if the program
+        is not going to be frozen to produce an executable.
+
+        To fix this issue, refer to the "Safe importing of main module"
+        section in https://docs.python.org/3/library/multiprocessing.html
+        
+2026-08-28 08:26:51,375 [INFO] QualitySweep: --> zeros on DISTILBERT/SST2 completed in 0.65s: Acc=0.00% ± 0.00% (95% CI: [0.00, 0.00], p=0.0010), F1=0.0000, Fid=0.0000
+2026-08-28 08:26:51,595 [INFO] QualitySweep: ================================================================================
+2026-08-28 08:26:51,595 [INFO] QualitySweep: \u2705 PHASE 2 QUALITY SWEEP COMPLETED in 111.79 seconds (1.86 minutes)
+2026-08-28 08:26:51,595 [INFO] QualitySweep: Total Compute: 0.0311 GPU Hours | Estimated Emissions: 0.000717 kg CO2eq
+2026-08-28 08:26:51,595 [INFO] QualitySweep: Results saved to: results\all_modules_paper_run
+2026-08-28 08:26:51,596 [INFO] QualitySweep: ================================================================================
+2026-08-28 08:26:54,593 [INFO] PublicationReport: Generated Pareto Plot: results\all_modules_paper_run\plots\accuracy_vs_latency_pareto.png
+2026-08-28 08:26:55,966 [INFO] PublicationReport: Generated Radar Plot: results\all_modules_paper_run\plots\top5_radar_multimetric.png
+2026-08-28 08:26:58,500 [INFO] PublicationReport: Generated Heatmap: results\all_modules_paper_run\plots\accuracy_heatmap.png
+2026-08-28 08:26:58,500 [INFO] PublicationReport: \u2705 Successfully compiled publication tables, Markdown report, and vector plots in results\all_modules_paper_run
+2026-08-28 08:26:58,532 [INFO] CachedTensors: Loading pre-tokenized dataset cache from D:\SVD_Project\Codes\data_cache\sst2_distilbert_len128.pt...
+2026-08-28 08:26:58,647 [INFO] CachedTensors: Loaded 67349 train and 872 val samples in 0.114s
+2026-08-28 08:26:58,647 [INFO] PersistentWorkerLoop: Pre-tokenized dataset ready: 67349 train, 872 val
+Loaded 204 canonical modules from D:\SVD_Project\canonical_modules.txt
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|##########| 104/104 [00:00<00:00, 2769.36it/s]
+2026-08-28 08:26:59,193 [INFO] PersistentWorkerLoop: Base model models\distilbert_sst2 loaded and cached in RAM.
+2026-08-28 08:26:59,193 [INFO] PersistentWorkerLoop: Pre-computing baseline validation logits for pristine model...
+2026-08-28 08:27:02,272 [INFO] PersistentWorkerLoop: Pre-computed baseline validation logits: shape torch.Size([872, 2])
+2026-08-28 08:27:02,289 [INFO] PersistentWorkerLoop: Persistent worker initialization COMPLETE. Ready for sweep stream.
+2026-08-28 08:27:02,291 [INFO] QualitySweep: \u26a1 Module adaptive_ranks startup overhead: 0.0 ms (target < 2000 ms)
+Loaded 204 canonical modules from D:\SVD_Project\canonical_modules.txt
+2026-08-28 08:27:02,291 [INFO] PersistentWorkerLoop: [MEM] Before module 'adaptive_ranks': allocated=8.3MB reserved=22.0MB
+Traceback (most recent call last):
+  File "D:\SVD_Project\run_canonical_sweep.py", line 18, in <module>
+    run_quality_benchmark_sweep(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        modules=modules,
+        ^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+        pretrained=True
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\SVD_Project\Codes\framework\run_quality_sweep.py", line 1278, in run_quality_benchmark_sweep
+    valid_seeds = [r for r in seed_results if r.status == "PASS"]
+                                              ^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'status'

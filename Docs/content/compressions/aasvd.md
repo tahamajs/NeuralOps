@@ -887,6 +887,14 @@ model, stats = compressor.compress()
 
 ## 9. Comprehensive Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert** | sst2 | `PASS` | 90.48% | **89.45%** | -1.03% | 0.8996 | 1.02x | 11 | [svd-linear-attention-distilbert-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-aasvd) | 2026-09-11 |
+| **roberta** | sst2 | `PASS` | 75.11% | **88.07%** | +12.96% | 0.8877 | 1.01x | 10 | [svd-linear-attention-roberta-aasvd](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-aasvd) | 2026-09-11 |
+
+
 Evaluated across four distinct architectures on the Stanford Sentiment Treebank (SST-2) evaluation benchmark:
 
 | Model Architecture | Baseline Acc | AASVD Acc | $\Delta$ Acc | F1 Score | Status | Compressed Layers | Comp Rate | Peak VRAM | Latency (ms/sample) |
