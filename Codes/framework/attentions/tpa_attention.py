@@ -94,12 +94,14 @@ def apply_rotary_pos_emb(
     else:
         cos_k, sin_k = cos_sub, sin_sub
 
-    q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
-    k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-
-    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-    return q, k
+    q_out = torch.empty_like(q)
+    k_out = torch.empty_like(k)
+    q_out[..., :rotary_dim] = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+    k_out[..., :rotary_dim] = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+    if q_pass.numel() > 0:
+        q_out[..., rotary_dim:] = q_pass
+        k_out[..., rotary_dim:] = k_pass
+    return q_out, k_out
 
 
 class LoRALinear(nn.Module):
@@ -285,10 +287,12 @@ class TPAttention(BaseAttention):
 
             # Check nested encoder container
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
+            has_no_out_proj = not any(
+                hasattr(old_attn, attr)
+                for attr in ("dense", "out_proj", "o_proj", "c_proj", "out_lin", "proj")
+            )
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and has_no_out_proj
             ):
                 self.is_nested_encoder = True
 
@@ -301,28 +305,24 @@ class TPAttention(BaseAttention):
             else:
                 src = old_attn
 
-            # Pattern 1: GPT-2 Fused c_attn
-            if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
-                c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim:
-                    c_attn_w = c_attn_w.t()
+            # Pattern 1: GPT-2 Conv1D (c_attn fused QKV)
+            if hasattr(src, "c_attn"):
+                W = src.c_attn.weight.detach()
+                B_vec = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                if W.shape[0] != 3 * self.dim and W.shape[1] == 3 * self.dim:
+                    W = W.t()
+                if W.shape[0] == 3 * self.dim:
+                    w_q, w_k, w_v = W.chunk(3, dim=0)
+                    if B_vec is not None:
+                        b_q, b_k, b_v = B_vec.chunk(3, dim=0)
 
-                q_dim = self.q_head_size
-                k_dim = self.kv_head_size
-                v_dim = self.kv_head_size
+                if hasattr(src, "c_proj"):
+                    w_o = src.c_proj.weight.detach()
+                    if w_o.shape[0] != self.dim and w_o.shape[1] == self.dim:
+                        w_o = w_o.t()
+                    b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-                w_q = c_attn_w[:q_dim, :]
-                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
-                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
-
-                out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.dim and out_w.shape[1] != self.dim:
-                    out_w = out_w.t()
-                w_o = out_w
-                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
-
-            # Pattern 2: RoBERTa / BERT separate query, key, value
+            # Pattern 2: BERT / RoBERTa (query, key, value, dense)
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -393,19 +393,23 @@ class TPAttention(BaseAttention):
                     f"TPAttention: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
-            # SVD factorized initialization for Q and K factor pairs
-            def _init_tp(W: torch.Tensor, proj1: LoRALinear, proj2: LoRALinear, num_heads: int, r: int, src_sub=None) -> None:
+            # SVD factorized initialization for Q and K factor pairs across ALL hidden features
+            def _init_tp(W: torch.Tensor, proj1: LoRALinear, proj2: LoRALinear, num_h: int, r: int, src_sub=None) -> None:
                 W_f = W.float()
                 U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
-                eff_r = min(num_heads * r, U.size(1), Vt.size(0))
-                S_sqrt = torch.diag(torch.sqrt(S[:eff_r].clamp(min=1e-6)))
+                eff_r = min(num_h * r, U.size(1), Vt.size(0))
+
+                # Correct rank decomposition covering all in_features:
+                # proj1 projects (dim -> num_heads*r) and proj2 projects (dim -> num_heads*r)
+                # p1 uses scaled U, p2 uses scaled Vt to capture full input dimensionality
+                S_sqrt = torch.sqrt(S[:eff_r].clamp(min=1e-6))
+                p1 = U[:num_h * r, :eff_r] * S_sqrt.unsqueeze(0)  # [num_h*r, eff_r]
+                p2 = (S_sqrt.unsqueeze(1) * Vt[:eff_r, :])         # [eff_r, in_features]
 
                 proj1.weight.zero_()
                 proj2.weight.zero_()
 
-                p1 = (U[:num_heads * r, :eff_r] @ S_sqrt)
-                p2 = (S_sqrt @ Vt[:eff_r, :])
-
+                # If proj1 shape is [num_h*r, in_features], initialize properly
                 min_p1_0 = min(proj1.weight.shape[0], p1.size(0))
                 min_p1_1 = min(proj1.weight.shape[1], p1.size(1))
                 proj1.weight[:min_p1_0, :min_p1_1].copy_(p1[:min_p1_0, :min_p1_1].to(proj1.weight.dtype))
@@ -421,18 +425,18 @@ class TPAttention(BaseAttention):
 
                 if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
                     if src_sub.lora_A is not None and src_sub.lora_B is not None:
-                        s_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
-                        s_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
-                        if hasattr(s_lA, "data") and hasattr(s_lB, "data"):
+                        src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
+                        src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
+                        if hasattr(src_lA, "data") and hasattr(src_lB, "data"):
                             if proj1.lora_A is not None and proj1.lora_B is not None:
-                                r_min = min(proj1.lora_A.shape[0], s_lA.shape[0])
-                                in_min = min(proj1.lora_A.shape[1], s_lA.shape[1])
-                                proj1.lora_A.data[:r_min, :in_min].copy_(s_lA.data[:r_min, :in_min])
+                                r_min = min(proj1.lora_A.shape[0], src_lA.shape[0])
+                                in_min = min(proj1.lora_A.shape[1], src_lA.shape[1])
+                                proj1.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
                                 proj1.lora_A.requires_grad = True
 
-                                out_min = min(proj1.lora_B.shape[0], s_lB.shape[0])
-                                r_min_b = min(proj1.lora_B.shape[1], s_lB.shape[1])
-                                proj1.lora_B.data[:out_min, :r_min_b].copy_(s_lB.data[:out_min, :r_min_b])
+                                out_min = min(proj1.lora_B.shape[0], src_lB.shape[0])
+                                r_min_b = min(proj1.lora_B.shape[1], src_lB.shape[1])
+                                proj1.lora_B.data[:out_min, :r_min_b].copy_(src_lB.data[:out_min, :r_min_b])
                                 proj1.lora_B.requires_grad = True
 
             def _copy_layer(target_layer, w, b, src_sub=None):
@@ -559,7 +563,7 @@ class TPAttention(BaseAttention):
             attn_weights = None
         else:
             # Fallback path if output_attentions or head_mask are explicitly requested
-            scale = 1.0 / math.sqrt(r * r)
+            scale = 1.0 / float(r)
             scores = torch.matmul(Q, K.transpose(-1, -2)) * scale
             if is_causal_mask and custom_mask is None:
                 causal_mask = torch.triu(
