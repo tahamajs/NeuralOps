@@ -71,9 +71,8 @@ def fp8_cast_simulate(
     try:
         from torchao.quantization.quant_api import to_fp8
         return to_fp8(x, format=fmt).to(orig_dtype)
-    except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+    except Exception:
+        pass
 
     # Dynamic scaling factor calculation
     if per_channel:
@@ -90,9 +89,8 @@ def fp8_cast_simulate(
             x_fp8 = x_scaled.to(torch_dtype)
             x_dequant = (x_fp8.float() / scale.float()).to(orig_dtype)
             return x_dequant
-        except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+        except Exception:
+            pass
 
     # 3. Mathematical fallback: bit-depth IEEE-754 mantissa rounding
     abs_x = torch.abs(x_scaled).clamp(min=1e-12)
