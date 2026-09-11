@@ -33,10 +33,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
 
 
-@COMPRESSOR_REGISTRY.register("hashed_net")
-@COMPRESSOR_REGISTRY.register("hashed_net_compressor")
-@COMPRESSOR_REGISTRY.register("hashednets")
-@COMPRESSOR_REGISTRY.register("hashednets_compressor")
+@COMPRESSOR_REGISTRY.register("hashed_net_class")
+@COMPRESSOR_REGISTRY.register("hashednets_class")
 class HashedNetCompressor(BaseCompressor):
     """
     Compress a model by replacing target linear/Conv1D layers with HashedLinear,
@@ -397,6 +395,7 @@ class HashedNetCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("hashed_linear")
 @COMPRESSOR_REGISTRY.register("hashed_linear_factory")
 @COMPRESSOR_REGISTRY.register("hashed_net")
+@COMPRESSOR_REGISTRY.register("hashed_net_compressor")
 @COMPRESSOR_REGISTRY.register("hashed_net_factory")
 @COMPRESSOR_REGISTRY.register("hashednets")
 @COMPRESSOR_REGISTRY.register("hashednets_factory")
