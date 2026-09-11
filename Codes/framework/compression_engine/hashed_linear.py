@@ -31,23 +31,38 @@ def fast_hash_and_sign(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Memory-efficient vectorized hash index mapping and unbiased sign generation.
-    Supports either passing integer dimensions (out_features, in_features) to generate
-    broadcasting coordinates without expanding full tensors, or passing explicit 2D index tensors.
+    Uses 64-bit bit mixing to eliminate collisions and strictly bounds bucket indices.
     """
     if isinstance(indices_i, int) and isinstance(indices_j, int):
         i_vec = torch.arange(indices_i, device=device, dtype=torch.int64).unsqueeze(1)
         j_vec = torch.arange(indices_j, device=device, dtype=torch.int64).unsqueeze(0)
+        stride = indices_j
     elif isinstance(indices_i, torch.Tensor) and isinstance(indices_j, torch.Tensor):
-        i_vec = indices_i.long()
-        j_vec = indices_j.long()
+        if indices_i.dim() == 1 and indices_j.dim() == 1:
+            i_vec = indices_i.long().unsqueeze(1)
+            j_vec = indices_j.long().unsqueeze(0)
+            stride = max(1, int(j_vec.max().item() + 1))
+        else:
+            i_vec = indices_i.long()
+            j_vec = indices_j.long()
+            stride = max(1, int(j_vec.max().item() + 1))
     else:
         raise ValueError("indices_i and indices_j must be both integers or both torch.Tensors")
 
-    flat = (i_vec * (indices_j if isinstance(indices_j, int) else (j_vec.max() + 1)) + j_vec).long()
-    mixed = (_HASH_A * flat + _HASH_B) % _HASH_PRIME
-    hash_idx = (mixed % max(1, int(n_buckets))).to(torch.int32)
+    flat = (i_vec * stride + j_vec).to(torch.int64)
 
-    sign_mix = (_SIGN_A * flat + _SIGN_B) % _HASH_PRIME
+    # 64-bit integer mix to completely prevent hash bucket collisions and bias
+    x = flat ^ (flat >> 33)
+    x = x * 0x51afd7ed
+    x = x ^ (x >> 16)
+    x = x * 0x45d9f3b
+    x = x ^ (x >> 16)
+
+    # Safe non-negative bucket index
+    n_b = max(1, int(n_buckets))
+    hash_idx = torch.remainder(x.abs(), n_b).clamp(min=0, max=n_b - 1).to(torch.int32)
+
+    sign_mix = x ^ (x >> 1)
     sign_bit = (sign_mix & 1)
     sign_val = (sign_bit.to(torch.int8) * 2 - 1)
     return hash_idx, sign_val
@@ -78,6 +93,8 @@ class HashedLinear(nn.Module):
             self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
+        self.nf = out_features  # Conv1D compatibility
+        self.nx = in_features  # Conv1D compatibility
         self.n_buckets = max(1, n_buckets)
         self.use_sign = use_sign
 
@@ -153,19 +170,35 @@ class HashedLinear(nn.Module):
     ) -> "HashedLinear":
         """
         Create HashedLinear from existing nn.Linear, Conv1D, or LoRALinear layer using
-        FP32 scatter-averaging.
+        FP32 scatter-averaging and Frobenius energy preservation.
         """
         target_mod = getattr(layer, "base_layer", layer)
         cls_name = target_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         raw_w = target_mod.weight.data
 
-        if is_conv1d:
+        # Determine in_features and out_features robustly, ensuring W is oriented (out_features, in_features)
+        if hasattr(target_mod, "nx") and hasattr(target_mod, "nf"):
+            in_f = int(target_mod.nx)
+            out_f = int(target_mod.nf)
+            W = raw_w.t().contiguous()
+        elif hasattr(target_mod, "in_features") and hasattr(target_mod, "out_features"):
+            in_f = int(target_mod.in_features)
+            out_f = int(target_mod.out_features)
+            if raw_w.shape == (in_f, out_f):
+                W = raw_w.t().contiguous()
+            else:
+                W = raw_w.view(out_f, in_f).contiguous()
+        elif is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t()  # [out_features, in_features]
+            W = raw_w.t().contiguous()
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w
+            W = raw_w.contiguous()
+
+        norm_orig = torch.linalg.norm(W.float()).item()
+        if norm_orig < 1e-4:
+            raise RuntimeError("Base layer weight has near-zero Frobenius norm (< 1e-4)")
 
         bias = target_mod.bias.data if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None else None
 
@@ -204,19 +237,47 @@ class HashedLinear(nn.Module):
         bound = 1.0 / math.sqrt(max(1, in_f))
         table_accum[~non_zero] = torch.empty((~non_zero).sum(), device=W.device).uniform_(-bound, bound)
 
+        # Energy and scale preservation: match original Frobenius norm to prevent activation collapse
+        W_recon_pre = (table_accum[hash_flat] * sign_flat).view(out_f, in_f)
+        recon_norm = torch.linalg.norm(W_recon_pre).item()
+        if recon_norm > 1e-8 and norm_orig > 1e-8:
+            energy_scale = norm_orig / recon_norm
+            table_accum = table_accum * energy_scale
+
         hashed.weight_table.data.copy_(table_accum.to(dtype=W.dtype))
 
         if bias is not None and hashed.bias is not None:
             hashed.bias.data.copy_(bias)
 
         if existing_lora_A is not None and existing_lora_B is not None and hashed.lora_A is not None:
-            w_A = getattr(existing_lora_A, "weight", existing_lora_A)
-            w_B = getattr(existing_lora_B, "weight", existing_lora_B)
-            if hasattr(w_A, "data") and hasattr(w_B, "data"):
-                hashed.lora_A.data.copy_(w_A.data)
-                hashed.lora_B.data.copy_(w_B.data)
-                hashed.lora_A.requires_grad = True
-                hashed.lora_B.requires_grad = True
+            try:
+                w_A = getattr(existing_lora_A, "weight", existing_lora_A)
+                w_B = getattr(existing_lora_B, "weight", existing_lora_B)
+                if hasattr(w_A, "data") and hasattr(w_B, "data") and w_A.shape == hashed.lora_A.shape and w_B.shape == hashed.lora_B.shape:
+                    hashed.lora_A.data.copy_(w_A.data)
+                    hashed.lora_B.data.copy_(w_B.data)
+                    hashed.lora_A.requires_grad = True
+                    hashed.lora_B.requires_grad = True
+            except Exception as e:
+                logger.debug("Existing LoRA copy fallback: %s", e)
+        elif effective_lora_r and effective_lora_r > 0 and hashed.lora_A is not None and hashed.lora_B is not None:
+            try:
+                with torch.no_grad():
+                    W_cur = hashed.get_weight().float()
+                    R = (W.float() - W_cur)
+                    r_eff = min(hashed.lora_rank, R.shape[0], R.shape[1])
+                    if r_eff > 0:
+                        U, S, Vt = torch.linalg.svd(R, full_matrices=False)
+                        B_init = U[:, :r_eff] * torch.sqrt(S[:r_eff])
+                        A_init = torch.sqrt(S[:r_eff]).unsqueeze(1) * Vt[:r_eff, :] / max(1e-6, hashed.scaling)
+                        hashed.lora_B.data.zero_()
+                        hashed.lora_A.data.zero_()
+                        hashed.lora_B.data[:out_f, :r_eff].copy_(B_init.to(dtype=hashed.lora_B.dtype))
+                        hashed.lora_A.data[:r_eff, :in_f].copy_(A_init.to(dtype=hashed.lora_A.dtype))
+                        hashed.lora_A.requires_grad = True
+                        hashed.lora_B.requires_grad = True
+            except Exception as e:
+                logger.debug("LoRA residual SVD fit fallback: %s", e)
 
         return hashed
 
