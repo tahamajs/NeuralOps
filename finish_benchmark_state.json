@@ -139,25 +139,6 @@
     },
     "timestamp": "2026-09-11T03:41:43.137296"
   },
-  "adaptive_sparse": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 25.5,
-    "accuracies": {
-      "roberta": [
-        "PASS_LOW",
-        55.73
-      ]
-    },
-    "timestamp": "2026-09-11T03:42:08.664542"
-  },
-  "adaptive_sparse_attention": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 89.5,
-    "accuracies": {},
-    "timestamp": "2026-09-11T03:43:38.142719"
-  },
   "adaptive_svd_attention": {
     "status": "PASS",
     "exit_code": 0,
@@ -217,26 +198,6 @@
       ]
     },
     "timestamp": "2026-09-11T03:48:38.322061"
-  },
-  "aegis_spectron_fp8": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 55.1,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T03:49:33.376720"
   },
   "aegis_v1": {
     "status": "PASS",
@@ -418,26 +379,6 @@
     },
     "timestamp": "2026-09-11T04:05:24.558315"
   },
-  "aegis_v6": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 82.8,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        46.22
-      ]
-    },
-    "timestamp": "2026-09-11T04:06:47.375143"
-  },
   "asvd": {
     "status": "PASS",
     "exit_code": 0,
@@ -478,26 +419,6 @@
     },
     "timestamp": "2026-09-11T04:10:51.050328"
   },
-  "cluster": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 104.8,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T04:12:35.816711"
-  },
   "compressed_attention": {
     "status": "PASS",
     "exit_code": 0,
@@ -537,26 +458,6 @@
       ]
     },
     "timestamp": "2026-09-11T04:15:27.151678"
-  },
-  "compressed_mha": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 76.0,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T04:16:43.171316"
   },
   "cosformer": {
     "status": "PASS",
@@ -638,20 +539,6 @@
     },
     "timestamp": "2026-09-11T04:23:17.899964"
   },
-  "dobi": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 88.9,
-    "accuracies": {},
-    "timestamp": "2026-09-11T04:24:46.780200"
-  },
-  "dynamic_entropy": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 153.4,
-    "accuracies": {},
-    "timestamp": "2026-09-11T04:27:20.152407"
-  },
   "factorised_matrix_state": {
     "status": "PASS",
     "exit_code": 0,
@@ -691,373 +578,6 @@
       ]
     },
     "timestamp": "2026-09-11T04:30:25.713271"
-  },
-  "full": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 66.1,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T04:31:31.843223"
-  },
-  "fused_svd_kernel": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 67.2,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T04:32:39.038369"
-  },
-  "galerkin": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 66.6,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        51.26
-      ]
-    },
-    "timestamp": "2026-09-11T04:33:45.631805"
-  },
-  "galerkin_attention": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 68.7,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        51.26
-      ]
-    },
-    "timestamp": "2026-09-11T04:34:54.317928"
-  },
-  "gated_delta_net": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 49.7,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T04:35:44.033138"
-  },
-  "gated_deltanet_block": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 52.2,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T04:36:36.209427"
-  },
-  "gated_linear_attention": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 78.3,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T04:37:54.469102"
-  },
-  "goldfinch_ahn": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 71.0,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T04:39:05.461810"
-  },
-  "granite_hybrid": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 54.6,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T04:40:00.027682"
-  },
-  "griffin_ssd": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 49.1,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T04:40:49.085795"
-  },
-  "hamming": {
-    "status": "TIMEOUT",
-    "exit_code": -999,
-    "elapsed_s": 1200.2,
-    "accuracies": {
-      "distilbert": [
-        "PASS",
-        75.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        51.03
-      ]
-    },
-    "timestamp": "2026-09-11T05:00:49.240256"
-  },
-  "hgrn2": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 56.7,
-    "accuracies": {},
-    "timestamp": "2026-09-11T05:01:45.987191"
-  },
-  "hgrn2_gated_deltanet": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 52.7,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T05:02:38.697109"
-  },
-  "hgrn2_layer": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 184.8,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.23
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        51.72
-      ]
-    },
-    "timestamp": "2026-09-11T05:05:43.542726"
-  },
-  "hgrn2_outer": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 83.6,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        49.08
-      ],
-      "roberta": [
-        "PASS_LOW",
-        49.08
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        45.3
-      ]
-    },
-    "timestamp": "2026-09-11T05:07:07.103072"
-  },
-  "hla": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 83.2,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        54.24
-      ]
-    },
-    "timestamp": "2026-09-11T05:08:30.276455"
-  },
-  "hla_attention": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 81.1,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        54.24
-      ]
-    },
-    "timestamp": "2026-09-11T05:09:51.399658"
-  },
-  "huffman_coder": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 54.7,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T05:10:46.129627"
-  },
-  "hybrid_svd_layer": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 57.3,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T05:11:43.422364"
   },
   "hymba_transx": {
     "status": "PASS",
@@ -1119,26 +639,6 @@
     },
     "timestamp": "2026-09-11T05:21:13.529020"
   },
-  "jamba": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 53.7,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T05:22:07.266184"
-  },
   "jamba_info": {
     "status": "PASS",
     "exit_code": 0,
@@ -1158,46 +658,6 @@
       ]
     },
     "timestamp": "2026-09-11T05:25:50.288289"
-  },
-  "kda": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 73.0,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T05:27:03.257733"
-  },
-  "kronecker_linear": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 51.9,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T05:27:55.146811"
   },
   "kronecker_tt_lora": {
     "status": "PASS",
@@ -1239,26 +699,6 @@
     },
     "timestamp": "2026-09-11T05:33:07.982373"
   },
-  "leka_v1": {
-    "status": "TIMEOUT",
-    "exit_code": -999,
-    "elapsed_s": 1200.4,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        51.26
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T05:53:08.399488"
-  },
   "leka_v2": {
     "status": "PASS",
     "exit_code": 0,
@@ -1298,26 +738,6 @@
       ]
     },
     "timestamp": "2026-09-11T05:55:52.120880"
-  },
-  "linformer": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 65.0,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T05:56:57.103399"
   },
   "lola_attention": {
     "status": "PASS",
@@ -1439,66 +859,6 @@
     },
     "timestamp": "2026-09-11T06:23:30.833748"
   },
-  "mamba": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 63.5,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T06:24:34.354377"
-  },
-  "mamba_inject": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 53.8,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T06:25:28.180103"
-  },
-  "mamba_svd_flash": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 61.1,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T06:26:29.281567"
-  },
   "minimal_aurora": {
     "status": "PASS",
     "exit_code": 0,
@@ -1619,26 +979,6 @@
     },
     "timestamp": "2026-09-11T06:36:23.675972"
   },
-  "mla": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 72.0,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T06:37:35.643091"
-  },
   "moba": {
     "status": "PASS",
     "exit_code": 0,
@@ -1739,66 +1079,6 @@
     },
     "timestamp": "2026-09-11T06:47:09.419082"
   },
-  "nexus": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 78.2,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        51.03
-      ]
-    },
-    "timestamp": "2026-09-11T06:48:27.591790"
-  },
-  "nha": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 111.1,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T06:50:18.660345"
-  },
-  "nha_compressor": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 111.4,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T06:52:10.106317"
-  },
   "nli_softmax": {
     "status": "PASS",
     "exit_code": 0,
@@ -1839,66 +1119,6 @@
     },
     "timestamp": "2026-09-11T06:59:42.955101"
   },
-  "nsa": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 77.3,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:01:00.287867"
-  },
-  "nsa_attention": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 76.7,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:02:17.012256"
-  },
-  "nystrom": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 89.6,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:03:46.565974"
-  },
   "oats": {
     "status": "PASS",
     "exit_code": 0,
@@ -1918,26 +1138,6 @@
       ]
     },
     "timestamp": "2026-09-11T07:05:46.638235"
-  },
-  "oha": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 84.1,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:07:10.784167"
   },
   "optimal_subspace_projection": {
     "status": "PASS",
@@ -1959,66 +1159,6 @@
     },
     "timestamp": "2026-09-11T07:08:30.392354"
   },
-  "optimized_hybrid_attention": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 84.6,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:09:55.035493"
-  },
-  "orion": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 154.0,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:12:28.995704"
-  },
-  "orion_module": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 151.7,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:15:00.652282"
-  },
   "padre": {
     "status": "PASS",
     "exit_code": 0,
@@ -2038,26 +1178,6 @@
       ]
     },
     "timestamp": "2026-09-11T07:16:41.076501"
-  },
-  "performer": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 84.7,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        49.08
-      ],
-      "roberta": [
-        "PASS_LOW",
-        49.08
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:18:05.744541"
   },
   "phantom": {
     "status": "PASS",
@@ -2199,106 +1319,6 @@
     },
     "timestamp": "2026-09-11T07:30:23.715320"
   },
-  "rala": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 80.5,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:31:44.222720"
-  },
-  "rala_compressor": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 80.9,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:33:05.094479"
-  },
-  "reap_moe": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 59.3,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T07:34:04.422517"
-  },
-  "regla": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 97.4,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T07:35:41.808679"
-  },
-  "replace": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 54.2,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T07:36:36.059959"
-  },
   "replaceme": {
     "status": "PASS",
     "exit_code": 0,
@@ -2359,26 +1379,6 @@
     },
     "timestamp": "2026-09-11T07:47:13.246739"
   },
-  "roast_hashed_linear": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 59.3,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T07:48:12.590873"
-  },
   "rotational_slicegpt_int4": {
     "status": "PASS",
     "exit_code": 0,
@@ -2398,26 +1398,6 @@
       ]
     },
     "timestamp": "2026-09-11T08:00:35.312916"
-  },
-  "routing": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 89.4,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T08:02:04.760138"
   },
   "rpc": {
     "status": "PASS",
@@ -2458,26 +1438,6 @@
       ]
     },
     "timestamp": "2026-09-11T08:05:47.848986"
-  },
-  "saes_svd_compressor": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 58.3,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T08:06:46.151339"
   },
   "saes_svd_v2": {
     "status": "PASS",
@@ -2559,60 +1519,6 @@
     },
     "timestamp": "2026-09-11T08:12:41.072721"
   },
-  "samba_m3": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 60.3,
-    "accuracies": {},
-    "timestamp": "2026-09-11T08:13:41.330996"
-  },
-  "samba_moe": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 66.7,
-    "accuracies": {},
-    "timestamp": "2026-09-11T08:14:48.060457"
-  },
-  "sambam3": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 57.9,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T08:15:45.923423"
-  },
-  "sambamoe": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 62.8,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T08:16:48.766781"
-  },
   "sdrm": {
     "status": "PASS",
     "exit_code": 0,
@@ -2632,26 +1538,6 @@
       ]
     },
     "timestamp": "2026-09-11T08:18:17.868629"
-  },
-  "simple_ssm": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 242.4,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        47.82
-      ]
-    },
-    "timestamp": "2026-09-11T08:22:20.263623"
   },
   "slicegpt": {
     "status": "PASS",
@@ -2933,46 +1819,6 @@
     },
     "timestamp": "2026-09-11T08:41:50.149192"
   },
-  "spectral_mamba": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 55.7,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T08:42:45.812564"
-  },
-  "spectron": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 67.1,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T08:43:52.884086"
-  },
   "squeezing_heads": {
     "status": "PASS",
     "exit_code": 0,
@@ -3053,46 +1899,6 @@
     },
     "timestamp": "2026-09-11T08:48:52.624831"
   },
-  "svd-mamba": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 1029.8,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.23
-      ]
-    },
-    "timestamp": "2026-09-11T09:06:02.395853"
-  },
-  "svd": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 62.7,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T09:07:05.113934"
-  },
   "svd_compressed": {
     "status": "PASS",
     "exit_code": 0,
@@ -3153,26 +1959,6 @@
     },
     "timestamp": "2026-09-11T09:11:45.286876"
   },
-  "svd_linear_decay": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 53.9,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T09:12:39.186760"
-  },
   "svd_llm_v2": {
     "status": "PASS",
     "exit_code": 0,
@@ -3192,26 +1978,6 @@
       ]
     },
     "timestamp": "2026-09-11T09:14:01.675077"
-  },
-  "svd_mamba": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 1009.7,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.23
-      ]
-    },
-    "timestamp": "2026-09-11T09:30:51.338658"
   },
   "svd_proj": {
     "status": "PASS",
@@ -3273,46 +2039,6 @@
     },
     "timestamp": "2026-09-11T09:35:25.954389"
   },
-  "svd_sequence": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 56.5,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T09:36:22.496154"
-  },
-  "svd_sequence_attention": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 55.8,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T09:37:18.343862"
-  },
   "swift_svd": {
     "status": "PASS",
     "exit_code": 0,
@@ -3373,66 +2099,6 @@
     },
     "timestamp": "2026-09-11T09:41:24.790639"
   },
-  "tlinformer": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 78.2,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        52.29
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T09:42:42.960045"
-  },
-  "tlinformer_attention": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 76.6,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T09:43:59.611369"
-  },
-  "token_compressed": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 78.3,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T09:45:17.920117"
-  },
   "tomoe": {
     "status": "PASS",
     "exit_code": 0,
@@ -3473,22 +2139,6 @@
     },
     "timestamp": "2026-09-11T09:52:21.654385"
   },
-  "tpa": {
-    "status": "TIMEOUT",
-    "exit_code": -999,
-    "elapsed_s": 1200.2,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T10:12:21.891002"
-  },
   "tt": {
     "status": "PASS",
     "exit_code": 0,
@@ -3508,33 +2158,6 @@
       ]
     },
     "timestamp": "2026-09-11T10:15:35.672471"
-  },
-  "tt_linear": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 49.3,
-    "accuracies": {
-      "distilbert": [
-        "FAIL",
-        0.0
-      ],
-      "roberta": [
-        "FAIL",
-        0.0
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T10:16:24.986006"
-  },
-  "unified_rope": {
-    "status": "FAILED_LOW",
-    "exit_code": 0,
-    "elapsed_s": 93.8,
-    "accuracies": {},
-    "timestamp": "2026-09-11T10:17:58.740587"
   },
   "uniql": {
     "status": "PASS",
@@ -3556,86 +2179,6 @@
     },
     "timestamp": "2026-09-11T10:20:17.153211"
   },
-  "upi_mamba": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 603.7,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        52.29
-      ]
-    },
-    "timestamp": "2026-09-11T10:30:20.819524"
-  },
-  "upi_stuffed_mamba": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 499.6,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        51.15
-      ]
-    },
-    "timestamp": "2026-09-11T10:38:40.383744"
-  },
-  "vig": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 63.6,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T10:39:44.018910"
-  },
-  "vspec": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 88.3,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T10:41:12.318212"
-  },
   "weighted_ensemble": {
     "status": "PASS",
     "exit_code": 0,
@@ -3656,46 +2199,6 @@
     },
     "timestamp": "2026-09-11T10:42:12.033086"
   },
-  "wgqa": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 65.1,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T10:43:17.116429"
-  },
-  "xattention": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 59.4,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        50.92
-      ],
-      "gpt2": [
-        "FAIL",
-        0.0
-      ]
-    },
-    "timestamp": "2026-09-11T10:44:16.546190"
-  },
   "zerokv_neo": {
     "status": "PASS",
     "exit_code": 0,
@@ -3715,25 +2218,5 @@
       ]
     },
     "timestamp": "2026-09-11T10:45:36.052850"
-  },
-  "zeros": {
-    "status": "PASS_LOW",
-    "exit_code": 0,
-    "elapsed_s": 85.6,
-    "accuracies": {
-      "distilbert": [
-        "PASS_LOW",
-        50.92
-      ],
-      "roberta": [
-        "PASS_LOW",
-        51.15
-      ],
-      "gpt2": [
-        "PASS_LOW",
-        50.92
-      ]
-    },
-    "timestamp": "2026-09-11T10:47:01.622694"
   }
 }
