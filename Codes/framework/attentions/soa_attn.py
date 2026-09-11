@@ -635,6 +635,7 @@ def inject_soa_attn(
 
 inject_soa = inject_soa_attn
 inject_soa_attention = inject_soa_attn
+inject_soa_module = inject_soa_attn
 inject_soafusedattention = inject_soa_attn
 inject_soa_fused_module = inject_soa_attn
 SOAFusedAttention = SOAAttention
