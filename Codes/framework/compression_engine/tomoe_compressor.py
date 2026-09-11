@@ -17,21 +17,17 @@ Production-hardened with:
 
 from __future__ import annotations
 
-import os
-import warnings
-os.environ.setdefault("LOKY_MAX_CPU_COUNT", "4")
-os.environ.setdefault("OMP_NUM_THREADS", "1")
-warnings.filterwarnings("ignore", category=UserWarning, module="joblib")
-warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
-
+import inspect
 import logging
 import math
+import os
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, MiniBatchKMeans
 
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -69,9 +65,6 @@ class ToMoELinear(nn.Module):
     ):
         super().__init__()
 
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         # Fix 2: Handle both nn.Linear, Conv1D, and LoRALinear wrappers
         if original is not None:
             base_layer = getattr(original, "base_layer", original)
@@ -119,29 +112,58 @@ class ToMoELinear(nn.Module):
         self.freeze_experts = freeze_experts
         self.max_error = max_error
 
-        # Fix 4: Perform KMeans clustering in FP32 with safe equal-division fallback
+        # Perform clustering with MiniBatchKMeans for large layers, standard KMeans otherwise
         W_fp32 = orig_w.detach().float().cpu().numpy()
         assignments = None
 
         if self.num_experts > 1:
             try:
-                kmeans = KMeans(
-                    n_clusters=self.num_experts,
-                    random_state=42,
-                    n_init="auto" if hasattr(KMeans, "n_init") else 10,
-                )
-                pred = kmeans.fit_predict(W_fp32)
+                sig = inspect.signature(KMeans.__init__).parameters
+                n_init_val = "auto" if "n_init" in sig else 10
+                if self.out_features > 2048:
+                    km = MiniBatchKMeans(
+                        n_clusters=self.num_experts,
+                        random_state=42,
+                        batch_size=min(1024, self.out_features),
+                        n_init=n_init_val,
+                    )
+                else:
+                    km = KMeans(
+                        n_clusters=self.num_experts,
+                        random_state=42,
+                        n_init=n_init_val,
+                    )
+                pred = km.fit_predict(W_fp32)
                 counts = np.bincount(pred, minlength=self.num_experts)
                 if (counts == 0).any():
                     logger.warning("ToMoE: KMeans produced empty cluster(s). Falling back to equal division.")
                     assignments = None
                 else:
-                    assignments = pred
+                    # Balance KMeans clusters to equal size for fast vectorized path
+                    target_size = self.out_features // self.num_experts
+                    rem = self.out_features % self.num_experts
+                    if rem == 0 and not (counts == target_size).all():
+                        # Distances to cluster centers for balanced reassignment
+                        dists = km.transform(W_fp32)  # [out_features, num_experts]
+                        # Sort neurons by distance margin between assigned cluster and others
+                        order = np.argsort(np.min(dists, axis=1))
+                        balanced_assign = np.full(self.out_features, -1, dtype=int)
+                        exp_occupancy = np.zeros(self.num_experts, dtype=int)
+                        for idx in order:
+                            pref_order = np.argsort(dists[idx])
+                            for p in pref_order:
+                                if exp_occupancy[p] < target_size:
+                                    balanced_assign[idx] = p
+                                    exp_occupancy[p] += 1
+                                    break
+                        assignments = balanced_assign
+                    else:
+                        assignments = pred
             except Exception as e:
                 logger.warning("ToMoE: KMeans clustering failed (%s). Falling back to equal division.", e)
                 assignments = None
 
-        if assignments is None:
+        if assignments is None or (assignments < 0).any():
             # Deterministic equal contiguous division ensuring zero empty experts
             assignments = np.zeros(self.out_features, dtype=int)
             chunk = self.out_features // self.num_experts
@@ -170,12 +192,10 @@ class ToMoELinear(nn.Module):
             cluster_sizes.append(n_neurons)
 
             expert = nn.Linear(self.in_features, n_neurons, bias=orig_b is not None, device=device, dtype=dtype)
-            # Copy exact original weights to ensure zero initial reconstruction error
             expert.weight.data.copy_(orig_w[mask_bool])
             if orig_b is not None:
                 expert.bias.data.copy_(orig_b[mask_bool])
 
-            # Fix 7: Freeze expert base weights if requested
             if self.freeze_experts:
                 expert.weight.requires_grad = False
                 if expert.bias is not None:
@@ -183,19 +203,25 @@ class ToMoELinear(nn.Module):
 
             self.experts.append(expert)
 
-        self.expert_indices = [idx.to(device) for idx in expert_indices_list]
+        # Register padded expert indices as a proper buffer so it moves with .to(device)
+        max_size = max(len(idx) for idx in expert_indices_list)
+        padded_indices = torch.zeros(self.num_experts, max_size, dtype=torch.long)
+        for e, idx in enumerate(expert_indices_list):
+            padded_indices[e, :len(idx)] = idx
+        self.register_buffer("expert_indices_padded", padded_indices)
+        self.register_buffer("expert_lens", torch.tensor(cluster_sizes, dtype=torch.long))
+
         self.equal_expert_size = len(set(cluster_sizes)) == 1
 
         if self.equal_expert_size:
             self.expert_out_dim = cluster_sizes[0]
-            # Precompute column index map for scatter_add_: shape (num_experts, expert_out_dim)
             col_map = torch.stack(expert_indices_list, dim=0).to(device)
             self.register_buffer("expert_col_map", col_map)
         else:
             self.expert_out_dim = -1
 
-        # Router: learned linear projection to expert logits
-        self.router = nn.Linear(self.in_features, self.num_experts, device=device, dtype=dtype)
+        # Router in FP32 for numerical stability & speed
+        self.router = nn.Linear(self.in_features, self.num_experts, device=device, dtype=torch.float32)
         nn.init.normal_(self.router.weight, std=0.02)
         if self.router.bias is not None:
             nn.init.zeros_(self.router.bias)
@@ -203,7 +229,7 @@ class ToMoELinear(nn.Module):
         if self.router.bias is not None:
             self.router.bias.requires_grad = True
 
-        # Fix 7: Trainable LoRA Adapters
+        # Trainable LoRA Adapters
         if self.lora_r > 0:
             self.expert_lora_A = nn.ParameterList()
             self.expert_lora_B = nn.ParameterList()
@@ -216,8 +242,8 @@ class ToMoELinear(nn.Module):
                 self.expert_lora_A.append(l_A)
                 self.expert_lora_B.append(l_B)
 
-            self.lora_A_router = nn.Parameter(torch.empty(self.lora_r, self.in_features, device=device, dtype=dtype))
-            self.lora_B_router = nn.Parameter(torch.zeros(self.num_experts, self.lora_r, device=device, dtype=dtype))
+            self.lora_A_router = nn.Parameter(torch.empty(self.lora_r, self.in_features, device=device, dtype=torch.float32))
+            self.lora_B_router = nn.Parameter(torch.zeros(self.num_experts, self.lora_r, device=device, dtype=torch.float32))
             nn.init.kaiming_uniform_(self.lora_A_router, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B_router)
 
@@ -227,12 +253,12 @@ class ToMoELinear(nn.Module):
 
     @property
     def weight(self) -> torch.Tensor:
-        """Fix 1: Reconstructed effective full weight matrix (out_features, in_features)."""
+        """Reconstructed effective full weight matrix (out_features, in_features)."""
         device = self.experts[0].weight.device
         dtype = self.experts[0].weight.dtype
         W = torch.zeros(self.out_features, self.in_features, device=device, dtype=dtype)
         for e, expert in enumerate(self.experts):
-            mask = self._masks[e].to(device)
+            mask = self._masks[e]
             W[mask] = expert.weight
         return W
 
@@ -245,28 +271,22 @@ class ToMoELinear(nn.Module):
         dtype = self.experts[0].bias.dtype
         b = torch.zeros(self.out_features, device=device, dtype=dtype)
         for e, expert in enumerate(self.experts):
-            mask = self._masks[e].to(device)
+            mask = self._masks[e]
             b[mask] = expert.bias
         return b
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Fix 3: Vectorized forward pass with gather and scatter_add_ / index_add_.
-        Supports arbitrary batch and sequence dimensions; numerically stable in FP16/BF16/FP32.
-        """
         orig_shape = x.shape
         in_feat = orig_shape[-1]
         x_flat = x.reshape(-1, in_feat)
         N = x_flat.shape[0]
 
-        # Compute router logits in matching input dtype, cast to float32 for softmax stability
-        router_in = x_flat.to(self.router.weight.dtype)
-        router_logits = self.router(router_in).float()
+        # Compute router logits in FP32
+        router_logits = self.router(x_flat.float())
         if self.lora_r > 0 and hasattr(self, "lora_A_router") and hasattr(self, "lora_B_router"):
-            router_lora = (router_in @ self.lora_A_router.t()) @ self.lora_B_router.t() * self.lora_scale
-            router_logits = router_logits + router_lora.float()
+            router_lora = (x_flat.float() @ self.lora_A_router.t()) @ self.lora_B_router.t() * self.lora_scale
+            router_logits = router_logits + router_lora
 
-        # Graceful handling of non-finite logits
         if torch.isnan(router_logits).any() or torch.isinf(router_logits).any():
             router_logits = torch.nan_to_num(router_logits, nan=0.0, posinf=1.0, neginf=-1.0)
 
@@ -292,7 +312,7 @@ class ToMoELinear(nn.Module):
             selected_outs = torch.gather(all_expert_outs, dim=1, index=expanded_idx)  # (N, top_k, D_exp)
             weighted_selected = selected_outs * topk_weights.unsqueeze(-1)  # (N, top_k, D_exp)
 
-            col_map = self.expert_col_map.to(x.device)
+            col_map = self.expert_col_map
             dest_cols = col_map[topk_idx]  # (N, top_k, D_exp)
 
             out.scatter_add_(
@@ -301,7 +321,7 @@ class ToMoELinear(nn.Module):
                 src=weighted_selected.reshape(N, self.top_k * D_exp),
             )
         else:
-            # Vectorized token dispatch per expert for variable sized clusters
+            # Vectorized token dispatch per expert with scatter_add_
             for e in range(self.num_experts):
                 expert_match = (topk_idx == e)  # (N, top_k)
                 if not expert_match.any():
@@ -314,8 +334,10 @@ class ToMoELinear(nn.Module):
                     exp_out = exp_out + l_e.to(x.dtype)
                 gate_w = topk_weights[token_idx, rank_pos].unsqueeze(-1)
                 weighted_exp_out = exp_out * gate_w
-                exp_cols = self.expert_indices[e].to(x.device)
-                out[token_idx[:, None], exp_cols] += weighted_exp_out
+
+                exp_cols = self.expert_indices_padded[e, :self.expert_lens[e]]
+                flat_idx = token_idx[:, None] * self.out_features + exp_cols
+                out.view(-1).scatter_add_(0, flat_idx.reshape(-1), weighted_exp_out.reshape(-1))
 
         return out.reshape(*orig_shape[:-1], self.out_features)
 
@@ -376,10 +398,7 @@ class ToMoECompressor(BaseCompressor):
         **kwargs: Any,
     ):
         super().__init__(model, name="tomoe", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.pop("comp_config", kwargs.pop("cfg", None))
         if cfg is not None:
             num_experts = _cfg_get(cfg, "num_experts", _cfg_get(cfg, "tomoe_num_experts", num_experts))
             top_k = _cfg_get(cfg, "top_k", _cfg_get(cfg, "tomoe_top_k", top_k))
@@ -389,20 +408,13 @@ class ToMoECompressor(BaseCompressor):
             freeze_experts = _cfg_get(cfg, "freeze_experts", freeze_experts)
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
-        if "num_experts" in kwargs and kwargs["num_experts"] is not None:
-            num_experts = int(kwargs["num_experts"])
-        if "top_k" in kwargs and kwargs["top_k"] is not None:
-            top_k = int(kwargs["top_k"])
-        if "max_error" in kwargs and kwargs["max_error"] is not None:
-            max_error = float(kwargs["max_error"])
-        if "lora_r" in kwargs and kwargs["lora_r"] is not None:
-            lora_r = int(kwargs["lora_r"])
-        if "lora_alpha" in kwargs and kwargs["lora_alpha"] is not None:
-            lora_alpha = float(kwargs["lora_alpha"])
-        if "freeze_experts" in kwargs:
-            freeze_experts = bool(kwargs["freeze_experts"])
-        if "target_attention_only" in kwargs:
-            target_attention_only = bool(kwargs["target_attention_only"])
+        num_experts = int(kwargs.pop("num_experts", num_experts))
+        top_k = int(kwargs.pop("top_k", top_k))
+        max_error = float(kwargs.pop("max_error", max_error))
+        lora_r = int(kwargs.pop("lora_r", lora_r))
+        lora_alpha = float(kwargs.pop("lora_alpha", lora_alpha))
+        freeze_experts = bool(kwargs.pop("freeze_experts", freeze_experts))
+        target_attention_only = bool(kwargs.pop("target_attention_only", target_attention_only))
 
         self.num_experts = max(1, num_experts)
         self.top_k = max(1, min(top_k, self.num_experts))
@@ -423,11 +435,14 @@ class ToMoECompressor(BaseCompressor):
             return False
         if not should_compress_linear(self.model, name):
             return False
+        # Exclude fused QKV (c_attn) to prevent mixing semantic groups across heads in clustering
+        if "c_attn" in name.lower():
+            return False
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
         low = name.lower()
         if self.target_attention_only:
-            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"]
+            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_proj", "query", "key", "value"]
             return any(k in low for k in attn_keywords)
         # Default: target FFN, MLP, and linear projections across all supported families
         return any(
@@ -444,7 +459,6 @@ class ToMoECompressor(BaseCompressor):
                 "gate_proj",
                 "up_proj",
                 "down_proj",
-                "c_attn",
                 "q_proj",
                 "k_proj",
                 "v_proj",
@@ -536,14 +550,18 @@ class ToMoECompressor(BaseCompressor):
                 skipped_layers.append((name, f"construction_error_{e}"))
                 continue
 
-            # Fix 1: Validate relative Frobenius reconstruction error
-            W_rec = moe_layer.weight
-            W_orig = orig_w_2d.to(W_rec.device)
-            err = (torch.norm(W_rec.float() - W_orig.float()) / (torch.norm(W_orig.float()) + 1e-8)).item()
+            # Meaningful fidelity check: activation reconstruction error on a calibration batch
+            with torch.no_grad():
+                device = orig_w_2d.device
+                dtype = orig_w_2d.dtype
+                calib_x = torch.randn(4, 16, in_f, device=device, dtype=dtype)
+                orig_out = module(calib_x)
+                moe_out = moe_layer(calib_x)
+                err = (torch.norm(moe_out.float() - orig_out.float()) / (torch.norm(orig_out.float()) + 1e-8)).item()
 
             if err > self.max_error or np.isnan(err):
                 logger.warning(
-                    "ToMoE: %s reconstruction error (%.4f) exceeded max_error (%.4f). Keeping original layer.",
+                    "ToMoE: %s activation reconstruction error (%.4f) exceeded max_error (%.4f). Keeping original layer.",
                     name,
                     err,
                     self.max_error,
