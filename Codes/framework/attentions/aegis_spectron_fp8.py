@@ -14,6 +14,7 @@ Equipped with:
 - Support for RoPE (Rotary Position Embeddings) and GQA (Grouped-Query Attention).
 """
 
+import logging
 import math
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
@@ -21,6 +22,8 @@ from typing import Any, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+logger = logging.getLogger(__name__)
 
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
@@ -70,7 +73,7 @@ def fp8_cast_simulate(
     # 1. Prefer torchao if installed
     try:
         from torchao.quantization.quant_api import to_fp8
-        return to_fp8(x, format=fmt).to(orig_dtype)
+        return to_fp8(x, format=fmt).to(orig_dtype).clamp(min=-1e4, max=1e4)
     except Exception:
         pass
 
@@ -87,8 +90,8 @@ def fp8_cast_simulate(
     if torch_dtype is not None:
         try:
             x_fp8 = x_scaled.to(torch_dtype)
-            x_dequant = (x_fp8.float() / scale.float()).to(orig_dtype)
-            return x_dequant
+            x_dequant = (x_fp8.float() / scale.float().clamp(min=1e-8)).to(orig_dtype)
+            return x_dequant.clamp(min=-1e4, max=1e4)
         except Exception:
             pass
 
@@ -97,8 +100,8 @@ def fp8_cast_simulate(
     exp = torch.floor(torch.log2(abs_x))
     factor = 2.0 ** (exp - mantissa_bits)
     rounded = torch.round(abs_x / factor) * factor
-    x_dequant = ((torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale.float()).to(orig_dtype)
-    return x_dequant
+    x_dequant = ((torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale.float().clamp(min=1e-8)).to(orig_dtype)
+    return x_dequant.clamp(min=-1e4, max=1e4)
 
 
 @dataclass
@@ -260,8 +263,9 @@ class SpectronSpectralEntropyRouter(nn.Module):
             try:
                 # Calculate entropy across the feature dimension for EACH token
                 S_sq = X.float().pow(2)  # [B, N, D]
-                p = S_sq / (S_sq.sum(dim=-1, keepdim=True) + 1e-5)
-                entropy = -(p * torch.log(p + 1e-5)).sum(dim=-1)  # [B, N]
+                denom = S_sq.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+                p = (S_sq / denom).clamp(min=1e-8, max=1.0)
+                entropy = -(p * torch.log(p)).sum(dim=-1)  # [B, N]
             except Exception:
                 entropy = torch.ones((B, N), device=X.device, dtype=X.dtype)
 
@@ -270,8 +274,9 @@ class SpectronSpectralEntropyRouter(nn.Module):
         H_b = H_b * entropy.unsqueeze(-1).to(dtype=H_b.dtype)
 
         c = self.costs.to(dtype=H_b.dtype, device=X.device)
-        logits = (H_b - self.lam * c) / self.tau
-        return F.softmax(logits, dim=-1)  # [B, N, 3]
+        tau = max(float(self.tau), 1e-4)
+        logits = (H_b - self.lam * c) / tau
+        return F.softmax(logits.float(), dim=-1).to(X.dtype)  # [B, N, 3]
 
 
 @ATTENTION_REGISTRY.register("aegis_spectron_fp8", supports_causal=True, supports_bidirectional=True, supports_gqa=True, supports_rope=True)
