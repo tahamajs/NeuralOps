@@ -481,3 +481,17 @@ The `SliceGPTCompressor` architecture incorporates telemetry hooks for tracking 
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (SliceGPT)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 80.62% | 0.8312 | 1.0 | 0 | 339.71 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa3894c-183a97626d3bbf3a5f241164;5fde2426-0133-4422-b71e-3b128ce14823)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
+| ROBERTA | 50.92% | 0.6748 | 1.0 | 0 | 366.79 | `PASS_LOW` | N/A |
+| GPT2 | 59.06% | 0.627 | 1.0 | 0 | 637.16 | `PASS` | [`gpt2`](Upload error: (Request ID: Root=1-6aa3894d-775e571c7f4dcb5130713aeb;8b4ca830-6951-422a-a06c-7541331c8b8c)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
