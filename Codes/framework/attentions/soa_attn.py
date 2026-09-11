@@ -24,6 +24,41 @@ from framework.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Safely retrieve configuration value from dict, object, or None."""
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+class FactorizedLinear(nn.Module):
+    def __init__(self, down: nn.Linear, up: nn.Linear) -> None:
+        super().__init__()
+        self.down = down
+        self.up = up
+
+    @property
+    def weight(self) -> torch.Tensor:
+        return torch.matmul(self.up.weight, self.down.weight)
+
+    @property
+    def bias(self) -> Optional[torch.Tensor]:
+        return getattr(self.up, "bias", None)
+
+    @property
+    def in_features(self) -> int:
+        return self.down.in_features
+
+    @property
+    def out_features(self) -> int:
+        return self.up.out_features
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.up(self.down(x))
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
     x1 = x[..., : x.shape[-1] // 2]
