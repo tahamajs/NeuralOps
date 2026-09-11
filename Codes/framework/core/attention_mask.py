@@ -126,12 +126,23 @@ def get_token_valid_mask(
             return mask > 0.5
     elif mask.dim() == 4:
         # [B, 1, 1, N] or [B, 1, N, N]
-        if mask.size(2) == 1 or mask.size(2) == seq_len:
+        if mask.size(2) == 1:
             last_dim_mask = mask[:, 0, 0, :]
             if last_dim_mask.dtype == torch.bool:
                 return last_dim_mask
             elif torch.is_floating_point(last_dim_mask) and (last_dim_mask < 0).any():
                 return last_dim_mask >= -1.0
+            else:
+                return last_dim_mask > 0.5
+        elif mask.size(2) == seq_len:
+            # 4D causal or 2D attention mask [B, 1, N, N]
+            # Do NOT use mask[:, 0, 0, :] as row 0 only unmasks token 0 in causal masks!
+            if mask.dtype == torch.bool:
+                return mask.any(dim=2)[:, 0, :]
+            elif torch.is_floating_point(mask) and (mask < 0).any():
+                return (mask >= -1000.0).any(dim=2)[:, 0, :]
+            else:
+                return (mask > 0.5).any(dim=2)[:, 0, :]
     return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
 
 
