@@ -1,14 +1,14 @@
 {
     "model": "roberta-base_nystrom",
     "performance": {
-        "accuracy_pct": 50.92,
-        "f1_score": 0.6748,
-        "f1_macro": 0.3374,
-        "precision": 0.2546,
-        "recall": 0.5,
-        "val_loss": 0.6936,
+        "accuracy_pct": 52.18,
+        "f1_score": 0.68,
+        "f1_macro": 0.3672,
+        "precision": 0.7194,
+        "recall": 0.5129,
+        "val_loss": 0.6596,
         "status": "PASS_LOW",
-        "elapsed_s": 14.13
+        "elapsed_s": 39.61
     },
     "efficiency": {
         "total_params_before": 124647170,
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 385.2,
-        "tokens_per_sec": 21687.82
+        "peak_vram_mb": 666.24,
+        "tokens_per_sec": 7344.75
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 350.22,
-        "L_256_vram_mb": 353.41,
-        "L_512_vram_mb": 361.34,
+        "L_128_vram_mb": 635.19,
+        "L_256_vram_mb": 637.75,
+        "L_512_vram_mb": 646.08,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-11T07:03:12.106642"
+    "timestamp": "2026-09-11T14:18:50.480634"
 }
