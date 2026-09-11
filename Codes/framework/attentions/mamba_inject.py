@@ -72,7 +72,10 @@ def inject_mamba(
     src_attn = old_attn
     if src_attn is None and target is not None:
         if hasattr(target, "attention"):
-            src_attn = target.attention
+            if hasattr(target.attention, "self"):
+                src_attn = target.attention.self
+            else:
+                src_attn = target.attention
         elif hasattr(target, "self_attn"):
             src_attn = target.self_attn
         elif hasattr(target, "self"):
@@ -115,8 +118,6 @@ def inject_mamba(
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_module
-                if target.attention.__class__.forward is nn.Module.forward:
-                    target.attention.forward = new_module.forward
             else:
                 target.attention = new_module
         elif hasattr(target, "self_attn"):
