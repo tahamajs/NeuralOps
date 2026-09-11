@@ -453,3 +453,20 @@ The `LowRankCompressor` architecture incorporates telemetry hooks for tracking s
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (SOKA Compressor)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 89.91% | 0.8993 | 1.0 | 0 | 339.22 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa38bc7-5feb0d3f273c2a11110d5a8e;669e34ae-69a6-45ca-bd15-b24546c6de87)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
+| ROBERTA | 84.06% | 0.8494 | 1.0 | 0 | 359.04 | `PASS` | [`roberta`](Upload error: (Request ID: Root=1-6aa38bc7-0dad73da4b25ad72693bbd11;b98236c2-4f0c-4ce5-adf7-169edad1eb83)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
+| GPT2 | 60.78% | 0.6559 | 1.0032 | 0 | 637.1 | `PASS` | [`gpt2`](Upload error: (Request ID: Root=1-6aa38bc8-4f536c640be312a7044909d4;755b9684-0c7c-48cf-b84b-4cf5ae2b3f7f)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
