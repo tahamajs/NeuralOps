@@ -11,6 +11,7 @@ target_attention_only: Replaces self-attention modules only, preserving all FFN/
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -23,6 +24,8 @@ from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
+
+logger = logging.getLogger(__name__)
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -60,7 +63,7 @@ def apply_rotary_pos_emb(
     sin: torch.Tensor,
     position_ids: Optional[torch.Tensor] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies rotary position embeddings safely handling even or odd dimensions."""
+    """Applies rotary position embeddings safely handling even or odd dimensions and length mismatches."""
     if cos is None or sin is None:
         return q, k
 
@@ -75,9 +78,16 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        cos = cos[..., : q.shape[-2], :]
-        sin = sin[..., : q.shape[-2], :]
+    seq_len = q.shape[-2]
+    cos_len = cos.shape[-2]
+    if cos_len < seq_len:
+        # Repeat position embeddings if shorter than sequence length
+        repeat_factor = math.ceil(seq_len / cos_len)
+        cos = cos.repeat_interleave(repeat_factor, dim=-2)[..., :seq_len, :]
+        sin = sin.repeat_interleave(repeat_factor, dim=-2)[..., :seq_len, :]
+    elif cos_len > seq_len:
+        cos = cos[..., :seq_len, :]
+        sin = sin[..., :seq_len, :]
 
     head_dim = q.shape[-1]
     rotary_dim = 2 * (min(cos.shape[-1], head_dim) // 2)
@@ -111,8 +121,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -166,7 +174,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("xattention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -202,27 +210,36 @@ class XAttention(BaseAttention):
             self.adapter = None
             self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
             self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
-            self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
+            self.num_kv_heads = _cfg_get(config, "num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads))
             self.head_dim = self.hidden_size // max(1, self.num_heads)
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
             self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
 
-        # Prioritize explicit kwargs
+        # Prioritize explicit kwargs and recompute all head dimensions
         if "hidden_size" in kwargs:
             self.hidden_size = kwargs["hidden_size"]
+        if "num_heads" in kwargs:
+            self.num_heads = kwargs["num_heads"]
+        if "num_kv_heads" in kwargs:
+            self.num_kv_heads = kwargs["num_kv_heads"]
+        if "hidden_size" in kwargs or "num_heads" in kwargs or "num_kv_heads" in kwargs:
             self.head_dim = self.hidden_size // max(1, self.num_heads)
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
-        if "num_heads" in kwargs:
-            self.num_heads = kwargs["num_heads"]
-            self.head_dim = self.hidden_size // max(1, self.num_heads)
-            self.all_head_size = self.num_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.block_size: int = int(kwargs.get("block_size", _cfg_get(config, "xattn_block_size", block_size)))
-        self.sparsity: float = float(kwargs.get("sparsity", _cfg_get(config, "xattn_sparsity", sparsity)))
+        raw_keep = kwargs.get("keep_ratio", _cfg_get(config, "xattn_keep_ratio", None))
+        if raw_keep is not None:
+            self.keep_ratio: float = float(raw_keep)
+            self.sparsity: float = 1.0 - self.keep_ratio
+        else:
+            raw_sparsity = float(kwargs.get("sparsity", _cfg_get(config, "xattn_sparsity", sparsity)))
+            self.sparsity = raw_sparsity
+            self.keep_ratio = raw_sparsity
+
         self.is_nested_encoder: bool = False
         self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
 
@@ -231,11 +248,8 @@ class XAttention(BaseAttention):
         self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
         self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
 
-        # Standard aliases for universal compatibility
-        self.W_q = self.query
-        self.W_k = self.key
-        self.W_v = self.value
-        self.out = self.out_proj
+        # Trainable output scale for seamless optimizer adaptation
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = _cfg_get(
             config,
@@ -252,6 +266,23 @@ class XAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
+    # Properties for universal aliases without polluting state_dict
+    @property
+    def W_q(self) -> LoRALinear:
+        return self.query
+
+    @property
+    def W_k(self) -> LoRALinear:
+        return self.key
+
+    @property
+    def W_v(self) -> LoRALinear:
+        return self.value
+
+    @property
+    def out(self) -> LoRALinear:
+        return self.out_proj
+
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
@@ -262,20 +293,21 @@ class XAttention(BaseAttention):
             "o": (None, None),
         }
 
-        # 1. UniversalAdapter extraction
+        # 1. UniversalAdapter extraction via instance
+        adapter = UniversalAdapter()
         for proj in ["q", "k", "v", "o"]:
             try:
-                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                w, b = adapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                logger.warning("UniversalAdapter extraction for %s failed: %s", proj, e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
+            c_attn = getattr(src.c_attn, "base_layer", src.c_attn)
+            weight = c_attn.weight.data
+            bias = getattr(c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
                 weight = weight.t()
@@ -291,24 +323,28 @@ class XAttention(BaseAttention):
             extracted["v"] = (v_w, v_b)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
+            c_proj = getattr(src.c_proj, "base_layer", src.c_proj)
+            w_o = c_proj.weight.data
             if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
                 w_o = w_o.t()
-            b_o = getattr(src.c_proj, "bias", None)
+            b_o = getattr(c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             s = getattr(src, "self")
             if hasattr(s, "query"):
-                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
+                q_mod = getattr(s.query, "base_layer", s.query)
+                extracted["q"] = (q_mod.weight.data, getattr(q_mod, "bias", None))
             if hasattr(s, "key"):
-                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
+                k_mod = getattr(s.key, "base_layer", s.key)
+                extracted["k"] = (k_mod.weight.data, getattr(k_mod, "bias", None))
             if hasattr(s, "value"):
-                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+                v_mod = getattr(s.value, "base_layer", s.value)
+                extracted["v"] = (v_mod.weight.data, getattr(v_mod, "bias", None))
 
         if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
-            dense = src.output.dense
+            dense = getattr(src.output.dense, "base_layer", src.output.dense)
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
         # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
@@ -323,6 +359,7 @@ class XAttention(BaseAttention):
                 for name in names:
                     if hasattr(src, name):
                         layer = getattr(src, name)
+                        layer = getattr(layer, "base_layer", layer)
                         if hasattr(layer, "weight"):
                             extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
                             break
@@ -382,13 +419,21 @@ class XAttention(BaseAttention):
                                 target.lora_A.data.copy_(src_lA.data)
                                 target.lora_A.requires_grad = True
                             else:
-                                print(f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init.")
+                                logger.warning(
+                                    "LoRA A shape mismatch for %s: src %s vs target %s; resetting",
+                                    proj_key, src_lA.shape, target.lora_A.shape
+                                )
+                                nn.init.kaiming_uniform_(target.lora_A, a=math.sqrt(5))
                         if hasattr(src_lB, "data") and target.lora_B is not None:
                             if src_lB.shape[0] == target.lora_B.shape[0] and src_lB.shape[1] == target.lora_B.shape[1]:
                                 target.lora_B.data.copy_(src_lB.data)
                                 target.lora_B.requires_grad = True
                             else:
-                                print(f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init.")
+                                logger.warning(
+                                    "LoRA B shape mismatch for %s: src %s vs target %s; resetting",
+                                    proj_key, src_lB.shape, target.lora_B.shape
+                                )
+                                nn.init.zeros_(target.lora_B)
                         if hasattr(sub, "lora_scaling"):
                             target.lora_scaling = sub.lora_scaling
                         break
@@ -431,17 +476,10 @@ class XAttention(BaseAttention):
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif getattr(self, "rotary_emb", None) is not None:
             try:
-                rotary_out = self.rotary_emb(hidden_states, position_ids=kwargs.get("position_ids"))
-                if isinstance(rotary_out, tuple) and len(rotary_out) >= 2:
-                    cos, sin = rotary_out[0], rotary_out[1]
-                    Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
-            except Exception:
-                try:
-                    from framework.utils.compat import maybe_apply_rotary
-                    Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
-                except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    return None
+                from framework.utils.compat import maybe_apply_rotary
+                Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
+            except Exception as e:
+                logger.warning("maybe_apply_rotary failed: %s; continuing without RoPE", e)
 
         # GQA repeat
         if self.kv_repeat > 1:
@@ -451,16 +489,17 @@ class XAttention(BaseAttention):
         scale = d ** -0.5
 
         # Check for causal decoders
+        cfg = getattr(self, "config", None)
         is_decoder = (
             self.is_decoder
-            or bool(_cfg_get(self.config, "is_decoder", False))
-            or str(_cfg_get(self.config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or bool(_cfg_get(cfg, "is_decoder", False))
+            or str(_cfg_get(cfg, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
-        # True Block Sparse Routing
-        if self.block_size > 0 and self.sparsity < 1.0 and N_k > self.block_size:
+        # True Block Sparse Routing with Padding Awareness
+        if self.block_size > 0 and self.keep_ratio < 1.0 and N_k > self.block_size:
             bsz = self.block_size
             pad_q = (bsz - (N_q % bsz)) % bsz
             pad_k = (bsz - (N_k % bsz)) % bsz
@@ -468,12 +507,29 @@ class XAttention(BaseAttention):
             Q_pad = F.pad(Q, (0, 0, 0, pad_q)) if pad_q > 0 else Q
             K_pad = F.pad(K, (0, 0, 0, pad_k)) if pad_k > 0 else K
 
-            num_q_blocks = Q_pad.shape[2] // bsz
-            num_k_blocks = K_pad.shape[2] // bsz
+            total_q = Q_pad.shape[2]
+            total_k = K_pad.shape[2]
+            num_q_blocks = total_q // bsz
+            num_k_blocks = total_k // bsz
 
-            # Coarse block-level representations
-            Q_blocks = Q_pad.view(B, H, num_q_blocks, bsz, d).mean(dim=3)
-            K_blocks = K_pad.view(B, H, num_k_blocks, bsz, d).mean(dim=3)
+            # Build token validity mask for Q and K to ignore padding tokens during block averaging
+            q_valid = torch.zeros((B, 1, total_q, 1), device=device, dtype=Q.dtype)
+            q_valid[:, :, :N_q, :] = 1.0
+            k_valid = torch.zeros((B, 1, total_k, 1), device=device, dtype=K.dtype)
+            k_valid[:, :, :N_k, :] = 1.0
+
+            # If attention mask is present, factor token validity into K block averaging
+            mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+            if mask is not None:
+                valid_m = get_token_valid_mask(mask, B, N_k, device)
+                if valid_m is not None:
+                    k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).to(K.dtype)
+
+            q_valid_blocks = q_valid.view(B, 1, num_q_blocks, bsz, 1)
+            Q_blocks = (Q_pad.view(B, H, num_q_blocks, bsz, d) * q_valid_blocks).sum(dim=3) / q_valid_blocks.sum(dim=3).clamp(min=1.0)
+
+            k_valid_blocks = k_valid.view(B, 1, num_k_blocks, bsz, 1)
+            K_blocks = (K_pad.view(B, H, num_k_blocks, bsz, d) * k_valid_blocks).sum(dim=3) / k_valid_blocks.sum(dim=3).clamp(min=1.0)
 
             coarse_scores = torch.matmul(Q_blocks, K_blocks.transpose(-1, -2)) * scale
 
@@ -481,9 +537,9 @@ class XAttention(BaseAttention):
                 causal_block_mask = torch.tril(
                     torch.ones((num_q_blocks, num_k_blocks), device=device, dtype=torch.bool)
                 ).unsqueeze(0).unsqueeze(0)
-                coarse_scores = coarse_scores.masked_fill(~causal_block_mask, -1e9)
+                coarse_scores = coarse_scores.masked_fill(~causal_block_mask, -10000.0)
 
-            k_blocks = max(1, min(num_k_blocks, int(num_k_blocks * self.sparsity)))
+            k_blocks = max(1, min(num_k_blocks, int(math.ceil(num_k_blocks * self.keep_ratio))))
             _, topk_idx = torch.topk(coarse_scores, k=k_blocks, dim=-1)
 
             block_mask = torch.zeros((B, H, num_q_blocks, num_k_blocks), device=device, dtype=torch.bool)
@@ -495,10 +551,17 @@ class XAttention(BaseAttention):
                 diag_indices = torch.arange(diag_k, device=device)
                 block_mask[:, :, diag_indices, diag_indices] = True
 
-            token_mask = block_mask.repeat_interleave(bsz, dim=-2).repeat_interleave(bsz, dim=-1)
-            token_mask = token_mask[:, :, :N_q, :N_k]
+            # Efficiently apply block_mask to scores via broadcasting without repeat_interleave
+            pad_q_total = total_q - N_q
+            pad_k_total = total_k - N_k
+            if pad_q_total > 0 or pad_k_total > 0:
+                scores_padded = F.pad(scores, (0, pad_k_total, 0, pad_q_total), value=-10000.0)
+            else:
+                scores_padded = scores
 
-            scores = scores.masked_fill(~token_mask, -10000.0)
+            scores_padded = scores_padded.view(B, H, num_q_blocks, bsz, num_k_blocks, bsz)
+            scores_padded = scores_padded.masked_fill(~block_mask.unsqueeze(3).unsqueeze(5), -10000.0)
+            scores = scores_padded.view(B, H, total_q, total_k)[:, :, :N_q, :N_k]
 
         # Apply causal mask
         if is_decoder:
@@ -527,7 +590,6 @@ class XAttention(BaseAttention):
             elif head_mask.dim() == 3:
                 head_mask = head_mask.unsqueeze(-1)
             elif head_mask.dim() == 4:
-                # Assume [B, H, 1, 1] or [B, 1, 1, 1]; broadcast normally
                 pass
             attn = attn * head_mask.to(attn.dtype)
 
@@ -538,6 +600,8 @@ class XAttention(BaseAttention):
             output = context
         else:
             output = self.out_proj(context)
+
+        output = output * self.output_scale
 
         valid_m = get_token_valid_mask(attention_mask, B, N_q, device)
         if valid_m is not None:
@@ -564,6 +628,9 @@ def inject_xattention(
     """
     if old_attn is None:
         return None
+
+    if isinstance(old_attn, XAttention):
+        return old_attn
 
     if model_config is None and hasattr(layer, "config"):
         model_config = layer.config
@@ -615,17 +682,27 @@ def inject_xattention(
             **kwargs,
         )
 
+        cls_name = layer.__class__.__name__
         for attr in ("self_attn", "attn", "self"):
             if hasattr(layer, attr):
                 setattr(layer, attr, new_attn)
                 return new_attn
+
         if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
+            attn_mod = layer.attention
+            attn_cls = attn_mod.__class__.__name__
+            if hasattr(attn_mod, "self"):
+                attn_mod.self = new_attn
+                return new_attn
+            elif attn_cls in ("MultiHeadSelfAttention", "DistilBertAttention") or cls_name == "TransformerBlock":
+                layer.attention = new_attn
+                return new_attn
             else:
                 layer.attention = new_attn
-            return new_attn
+                return new_attn
+
         layer.attention = new_attn
         return new_attn
-    except Exception:
+    except Exception as e:
+        logger.error("inject_xattention failed at layer %d: %s", layer_idx, e)
         return None
