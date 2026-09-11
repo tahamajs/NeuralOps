@@ -610,7 +610,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(
             hasattr(old_attn, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "output")
+            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o")
         )
         if (
             hasattr(old_attn, "self")
@@ -623,10 +623,13 @@ class AegisSpectronFP8Attention(BaseAttention):
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention"]
             or "RobertaSelfAttention" in str(type(old_attn))
             or "BertSelfAttention" in str(type(old_attn))
+            or "roberta" in str(type(old_attn)).lower()
+            or ("bert" in str(type(old_attn)).lower() and "self" in str(type(old_attn)).lower())
+            or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ):
             self.is_nested_encoder = True
         else:
-            self.is_nested_encoder = cls_name.endswith("SelfAttention") and not has_out_proj
+            self.is_nested_encoder = False
 
         # Strict check for essential missing weights
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
@@ -634,6 +637,17 @@ class AegisSpectronFP8Attention(BaseAttention):
             missing.append("o")
         if missing:
             raise RuntimeError(f"Missing essential pretrained weights: {missing}. Aborting injection.")
+
+        for p in ["q", "k", "v"]:
+            w_chk = extracted_weights[p][0]
+            if w_chk is not None:
+                norm = float(torch.linalg.norm(w_chk.float()).item())
+                if norm < 1e-4:
+                    raise RuntimeError(f"AegisSpectronFP8 extracted weight for '{p}' has near-zero Frobenius norm ({norm:.2e})")
+        if extracted_weights["o"][0] is not None:
+            norm_o = float(torch.linalg.norm(extracted_weights["o"][0].float()).item())
+            if norm_o < 1e-4:
+                raise RuntimeError(f"AegisSpectronFP8 extracted weight for 'o' has near-zero Frobenius norm ({norm_o:.2e})")
 
         for proj, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj)]:
             w, b = extracted_weights[proj]
@@ -754,7 +768,7 @@ class AegisSpectronFP8Attention(BaseAttention):
 
                 # Denominator: cumsum_{j <= t} phi_K_j -> [B, N, rank]
                 K_cumsum = torch.cumsum(phi_K_f, dim=1)
-                den = (phi_Q_f * K_cumsum).sum(dim=-1, keepdim=True) + 1e-6
+                den = (phi_Q_f * K_cumsum).sum(dim=-1, keepdim=True).clamp(min=1.0)
 
                 out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
                 return out_lr.view(B, N, h, d).transpose(1, 2)
@@ -763,7 +777,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 KV = torch.matmul(phi_K_f.transpose(-1, -2), V_f)
                 Z = phi_K_f.sum(dim=1, keepdim=True)
                 num = torch.matmul(phi_Q_f, KV)
-                den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)) + 1e-6
+                den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)).clamp(min=1.0)
 
                 out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
                 return out_lr.view(B, N, h, d).transpose(1, 2)
