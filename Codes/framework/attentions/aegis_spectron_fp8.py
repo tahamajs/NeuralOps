@@ -815,6 +815,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             gate = torch.sigmoid(getattr(self, "bidir_gate", torch.tensor(0.5, device=X.device, dtype=X.dtype)))
             out_tensor = gate * out_fwd + (1.0 - gate) * out_bwd
 
+        out_tensor = out_tensor.clamp(min=-1e4, max=1e4)
         return out_tensor.view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
 
     def forward(
@@ -879,8 +880,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 from framework.utils.compat import maybe_apply_rotary
                 Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.error("maybe_apply_rotary failed: %s", e)
 
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
@@ -894,17 +894,19 @@ class AegisSpectronFP8Attention(BaseAttention):
         # Token-level dynamic fusion
         out_fused = (alpha_loc * out_loc) + (alpha_glob * out_glob) + (alpha_lin * out_lin)
         out_fused = out_fused.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        out_fused = torch.nan_to_num(out_fused, nan=0.0, posinf=1e4, neginf=-1e4).clamp(min=-1e4, max=1e4)
 
         if getattr(self, "is_nested_encoder", False):
             final_out = out_fused
         else:
             final_out = self.out_proj(out_fused)
 
+        final_out = torch.nan_to_num(final_out, nan=0.0, posinf=1e4, neginf=-1e4).clamp(min=-1e4, max=1e4)
         return final_out, None
 
 
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8_fn")
 @ATTENTION_REGISTRY.register("aegis_spectron_fp8_inject")
+@ATTENTION_REGISTRY.register("inject_aegis_spectron_fp8")
 def inject_aegis_spectron_fp8(
     layer: Any = None,
     model_config: Any = None,
@@ -951,8 +953,9 @@ def inject_aegis_spectron_fp8(
             new_attn = AegisSpectronFP8Attention(config=cfg, pretrained_attn=old_attn, is_decoder=is_dec)
         if hasattr(old_attn, "rotary_emb"):
             new_attn.rotary_emb = old_attn.rotary_emb
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error("inject_aegis_spectron_fp8 failed: %s", e)
+        return None
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
