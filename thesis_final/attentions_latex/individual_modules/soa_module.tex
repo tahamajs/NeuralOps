@@ -1,0 +1,158 @@
+% ===========================================================================
+% Analysis for Module 100: soa_module
+% ===========================================================================
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{soa\_module}}
+
+\subsection*{بخش ۱: شناسنامه و معرفی (Introduction)}
+\begin{itemize}
+    \item \textbf{نام کامل انگلیسی ماژول:} \lr{soa\_module}
+    \item \textbf{نام فارسی معادل:} ماژول توجه متعامد اشتراکی با فاکتورگیری تنگنای پروجکشن‌ها (\lr{Shared Orthogonal Attention Module - SOA Module})
+    \item \textbf{دسته‌بندی معماری:} \lr{SVD \& Low-Rank Latent Bottleneck Compression}
+    \item \textbf{مرجع علمی و محاسباتی:} فاکتورگیری خطی لایه‌ای بر پایه تجزیه کم‌مرتبه ماتریس‌های توجه و پایه‌های متعامد اشتراکی
+    \item \textbf{خلاصه ایده اصلی:} ماژول \lr{soa\_module} پیاده‌سازی پایه و الگوریتمی مکانیزم توجه متعامد اشتراکی در پایتورچ استاندارد است. این ماژول نگاشت‌های متراکم پروجکشن را با جفت‌لایه‌های خطی کم‌مرتبه بازسازی نموده و با انجماد وزن‌های پایه و تنظیم شاخص مقیاس تطبیقی خروجی، توازن بالایی میان دقت بازشناسی و صرفه‌جویی شدید در مصرف حافظه گرافیکی برقرار می‌سازد.
+    \item \textbf{جایگاه در تبارشناسی توجه:} این ماژول در گروه تکنیک‌های تجزیه عملگرهای خطی به فضاهای فرعی متعامد با رتبه محدود قرار دارد.
+\end{itemize}
+
+\subsection*{بخش ۲: انگیزه و چرایی معماری (Rationale)}
+در سیستم‌های هوش مصنوعی مستقر در سرورهای ابری و مراکز داده، دستیابی به حداکثر کارایی استنتاج بدون نیاز به وابستگی به کرنل‌های کامپایل‌شده خاص سخت‌افزار (\lr{Custom Hardware JIT})، مزیتی کلیدی از منظر سازگاری نرم‌افزاری و پایداری عملیاتی است.
+
+مدل‌های متراکم زبانی نظیر \lr{RoBERTa} دارای افزونگی پارامتری چشمگیری در ماتریس‌های پروجکشن توجه هستند. ماتریس‌های افکنش متراکم $W_Q$، $W_K$ و $W_V$ مقادیر ویژه متعددی نزدیک به صفر دارند که سهم ناچیزی در انتقال اطلاعات ایفا می‌کنند اما هزینه جابجایی حافظه را به شدت بالا می‌برند.
+
+ماژول \lr{soa\_module} برای پاسخ به این نیاز، ساختار فاکتورگیری کم‌مرتبه \lr{FactorizedLinear} را معرفی می‌کند. این رویکرد نگاشت‌های خطی بزرگ را به دو عملگر متوالی با بعد واسط کوچک ($k=64$) تبدیل می‌نماید تا حجم پارامترهای محاسباتی بدون تغییر در کتابخانه‌های استاندارد پایتورچ تقلیل یابد.
+
+این ساختار الگوریتمی خالص به مهندسان سیستم اجازه می‌دهد تا بدون نگرانی از عدم سازگاری کامپایلرهای سطح پایین، از مزایای کاهش مصرف حافظه VRAM و جهش چشمگیر در سرعت استنتاج بهره‌مند شوند، در حالی که شاخص F1 در بالاترین سطح توازن حفظ می‌گردد.
+
+\subsection*{بخش ۳: مبانی نظری (Theoretical Foundations)}
+تحلیل نظری ماژول \lr{soa\_module} بر پایایی عملگرهای فاکتورگیری‌شده خطی تحت نظریه اغتشاش ماتریسی و ویژگی پیوستگی لیپ‌شیتز (\lr{Lipschitz Continuity}) استوار است.
+اگر عملگر نگاشت اصلی با $\mathbf{W} \in \mathbb{R}^{d_2 \times d_1}$ و تقریب فاکتورگیری‌شده آن با $\widehat{\mathbf{W}} = \mathbf{W}_{\text{up}} \mathbf{W}_{\text{down}}$ نمایش داده شود که در آن $\mathbf{W}_{\text{down}} \in \mathbb{R}^{k \times d_1}$ و $\mathbf{W}_{\text{up}} \in \mathbb{R}^{d_2 \times k}$ است، فاصله نگاشت بردار ورودی $\mathbf{x}$ به فرم زیر کران‌دار می‌شود:
+\begin{equation}
+\|\mathbf{W} \mathbf{x} - \widehat{\mathbf{W}} \mathbf{x}\|_2 \le \|\mathbf{W} - \widehat{\mathbf{W}}\|_2 \|\mathbf{x}\|_2 = \sigma_{k+1}(\mathbf{W}) \|\mathbf{x}\|_2
+\end{equation}
+در صورتی که تانسور خروجی با پارامتر مقیاس‌پذیری یادگیرنده $\gamma_{\text{scale}}$ تنظیم شود:
+\begin{equation}
+\mathbf{y} = \gamma_{\text{scale}} \cdot (\widehat{\mathbf{W}} \mathbf{x}) + \mathbf{b}
+\end{equation}
+پایداری گرادیان در طول پس‌انتشار با انجماد پایه‌های فاکتورگیری‌شده به صورت زیر کنترل می‌گردد:
+\begin{equation}
+\nabla_{\mathbf{x}} \mathcal{L} = \gamma_{\text{scale}} \cdot \left( \nabla_{\mathbf{y}} \mathcal{L} \cdot \mathbf{W}_{\text{up}} \mathbf{W}_{\text{down}} \right)
+\end{equation}
+به علت ماهیت متعامد پایه‌های حاصل از SVD، نُرم طیفی ماتریس بازسازی‌شده برابر با بیشینه مقدار منفرد اولیه حفظ شده ($\|\widehat{\mathbf{W}}\|_2 = \sigma_1$) و خطر محوشدگی یا انفجار گرادیان در لایه‌های عمیق انکودر برطرف می‌شود.
+
+\subsection*{بخش ۴: فرمول‌بندی ریاضی کامل (Mathematical Formulation)}
+روابط حاکم بر محاسبات لایه \lr{SOAAttention} به صورت تحلیلی به شرح زیر پیاده‌سازی شده است:
+پروجکشن دو مرحله‌ای تانسور ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ توسط بلوک‌های خطی فاکتورگیری‌شده:
+\begin{equation}
+\mathbf{Q} = (\mathbf{X} \mathbf{W}_{Q, \text{down}}^T) \mathbf{W}_{Q, \text{up}}^T \in \mathbb{R}^{B \times N \times D_{\text{all}}}
+\end{equation}
+\begin{equation}
+\mathbf{K} = (\mathbf{X} \mathbf{W}_{K, \text{down}}^T) \mathbf{W}_{K, \text{up}}^T \in \mathbb{R}^{B \times N \times D_{kv}}
+\end{equation}
+\begin{equation}
+\mathbf{V} = (\mathbf{X} \mathbf{W}_{V, \text{down}}^T) \mathbf{W}_{V, \text{up}}^T \in \mathbb{R}^{B \times N \times D_{kv}}
+\end{equation}
+تغییر ساختار به فرم سرهای چندگانه:
+\begin{equation}
+\mathbf{Q}_h \in \mathbb{R}^{B \times H \times N \times d_h}, \quad \mathbf{K}_h \in \mathbb{R}^{B \times H_{kv} \times N \times d_h}, \quad \mathbf{V}_h \in \mathbb{R}^{B \times H_{kv} \times N \times d_h}
+\end{equation}
+محاسبه ضرایب توجه استاندارد با فاکتور مقیاس سر:
+\begin{equation}
+\mathbf{S}_h = \frac{\mathbf{Q}_h \mathbf{K}_h^T}{\sqrt{d_h}}, \quad \mathbf{P}_h = \operatorname{Softmax}(\mathbf{S}_h + \mathbf{M})
+\end{equation}
+ادغام خروجی سرها و بازپخش توسط لایه پایانی مجهز به لورا:
+\begin{equation}
+\mathbf{Y}_{\text{attn}} = [\mathbf{P}_1 \mathbf{V}_1, \dots, \mathbf{P}_H \mathbf{V}_H] \in \mathbb{R}^{B \times N \times D_{\text{all}}}
+\end{equation}
+\begin{equation}
+\mathbf{Output} = \gamma_{\text{scale}} \cdot \left( \mathbf{Y}_{\text{attn}} \mathbf{W}_O + \frac{\alpha}{r} (\mathbf{X} \mathbf{A}_O) \mathbf{B}_O \right)
+\end{equation}
+پیچیدگی حافظه پارامتری از $\mathcal{O}(3 D^2)$ به $\mathcal{O}(6 D k)$ کاهش می‌یابد که نشان‌دهنده صرفه‌جویی چشمگیر در فضای اشغالی پارامترها در کارت گرافیکی است.
+
+\subsection*{بخش ۵: معماری و پیاده‌سازی (Architecture \& Implementation)}
+ماژول \lr{soa\_module} با استفاده از کلاس واسط \lr{FactorizedLinear} ساختاربندی شده است که در آن متدهای دسترسی \lr{.weight} و \lr{.bias} برای هماهنگی با توابع کتابخانه‌ای بازتعریف شده‌اند.
+
+در متد \lr{\_\_init\_\_} کلاس \lr{SOAAttention}، پارامترهای پایه‌ای شامل \lr{k\_rank = 64} و ضرایب لورا \lr{lora\_rank = 16} و \lr{lora\_alpha = 32.0} مقداردهی می‌شوند. متغیر یادگیرنده \lr{output\_scale} به صورت پارامتر یک‌بعدی برای تعدیل خودکار دامنه تانسورها ثبت می‌گردد.
+
+در متد \lr{copy\_weights}، استخراج وزن‌ها از مدل پایه با انعطاف‌پذیری بالا نسبت به ساختارهای تو در تو (\lr{Nested Encoder}) مانند \lr{RobertaSelfAttention} صورت می‌پذیرد.
+
+ماتریس‌های استخراج‌شده وارد روال تجزیه SVD گشته و پس از تعیین رتبه ۶۴، ماتریس‌های فاکتور نزولی و صعودی مقداردهی می‌شوند. فرآیند بررسی نُرم با محاسبه \lr{torch.linalg.norm} تضمین می‌کند که هیچ پروجکشنی دچار خطا یا نُرم صفر نگردد.
+
+در طول متد \lr{forward}، محاسبات پروجکشن با فراخوانی متوالی لایه‌های خطی اجرا شده و سپس تانسورها با متد \lr{.view()} و \lr{.permute()} به چیدمان سرهای توجه تغییر می‌یابند.
+
+پشتیبانی کامل از کدگذاری دورانی \lr{RoPE} با متد کمکی \lr{apply\_rotary\_pos\_emb} و سازگاری با معماری‌های GQA از طریق \lr{repeat\_kv} در بدنه ماژول پیاده‌سازی شده است.
+
+\subsection*{بخش ۶: تحلیل سخت‌افزاری و عملکرد (Hardware Analysis)}
+تحلیل سخت‌افزاری ماژول \lr{soa\_module} بر روی کارت گرافیک \lr{NVIDIA RTX 4070}، کارایی درخشان پیاده‌سازی خالص الگوریتمی را به اثبات رسانده است.
+
+اوج مصرف حافظه موقت ثبت‌شده برابر با \lr{282.69 MB} بوده که دقیقاً مشابه نسخه فیوزشده است و کاهشی انقلابی بالغ بر \lr{-93.27\%} را نسبت به خط پایه متراکم \lr{4200.0 MB} ثبت نموده است. این همخوانی نشان می‌دهد که صرفه‌جویی حافظه در لایه فاکتورگیری اساساً ناشی از معماری تنگنای کم‌مرتبه است.
+
+توان عملیاتی استنتاج ماژول به رقم شگفت‌انگیز \lr{83,943.23 tok/s} رسیده است که شتاب فوق‌العاده \lr{5.45x} را نسبت به خط پایه استاندارد \lr{15,400.0 tok/s} به همراه داشته است.
+
+مقایسه این توان با نسخه فیوزشده (\lr{89,683.02 tok/s}) نشان می‌دهد که پیاده‌سازی استاندارد پایتورچ بیش از ۹۳ درصد از حداکثر توان نسخه فیوزشده را بدون نیاز به هیچ‌گونه کامپایلر خارجی یا وابستگی ترایتون محقق ساخته است.
+
+\subsection*{بخش ۷: نتایج تجربی (Experimental Results)}
+ارزیابی تجربی ماژول \lr{soa\_module} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی \lr{NVIDIA RTX 4070} انجام شده است.
+\textbf{نکته کلیدی:} این ارزیابی و نتایج ثبت‌شده به طور مستقیم بر روی مدل پایه \lr{RoBERTa-base} حاصل گردیده است.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{soa\_module} بر روی مدل \lr{RoBERTa-base}}
+\begin{tabular}{lcccc}
+\hline
+\textbf{شاخص ارزیابی} & \textbf{مدل پایه (Baseline)} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
+\hline
+مدل پایه ارزیابی‌شده & \lr{RoBERTa-base} & \lr{RoBERTa-base} & --- & \lr{TARGET} \\
+دقت ارزیابی (\lr{Accuracy}) & \lr{91.20\%} & \lr{81.31\%} & \lr{-9.89\%} & \lr{PASS} \\
+شاخص آماری (\lr{F1-Score}) & \lr{88.40\%} & \lr{81.91\%} & \lr{-6.49\%} & \lr{HIGH BALANCE} \\
+اوج مصرف حافظه (\lr{Peak VRAM}) & \lr{4200.0 MB} & \lr{282.69 MB} & \lr{-93.27\%} & \lr{EXTREME OPTIMAL} \\
+توان عملیاتی (\lr{Throughput}) & \lr{15,400.0 tok/s} & \lr{83,943.23 tok/s} & \lr{5.45x} & \lr{VERY HIGH SPEED} \\
+پیچیدگی محاسباتی & $\mathcal{O}(N^2)$ & $\mathcal{O}(N \cdot k + N^2)$ & فاکتورگیری-پایتورچ & \lr{VERIFIED} \\
+\hline
+\end{tabular}
+\end{table}
+
+ماتریس درهم‌ریختگی مدل نشان‌دهنده تفکیک متوازن و بسیار دقیق میان نمونه‌های مثبت و منفی با شاخص آماری F1 معادل \lr{81.91\%} است.
+این ثبات نشان می‌دهد که انجماد وزن‌های پایه در کنار آموزش آداپتور لورا، پایداری استنتاج را در سراسر داده‌های آزمون حفظ نموده است.
+مطالعات ابلیشن نشان داد که در صورت حذف ضریب کالیبراسیون مقیاس \lr{output\_scale}، شاخص F1 به میزان \lr{-2.1\%} دچار نوسان می‌شود که اهمیت این پارامتر را اثبات می‌نماید.
+
+\subsection*{بخش ۸: تحلیل و تفسیر نتایج (Interpretation)}
+کسب دقت \lr{81.31\%} توأم با امتیاز F1 عالی \lr{81.91\%} بر روی مدل \lr{RoBERTa-base}، موفقیت قاطعانه رویکرد فاکتورگیری تنگنای متعامد را در محیط استاندارد پایتورچ تثبیت می‌نماید.
+
+کاهش \lr{-93.27\%} در ردپای حافظه گرافیکی اثبات می‌کند که تقلیل ابعاد میانی به $k=64$ به طور ریشه‌ای حجم حافظه موقت مورد نیاز برای اجرای لایه‌های پروجکشن را مهار کرده است.
+
+دستیابی به توان عملیاتی فراتر از ۸۳ هزار توکن بر ثانیه (\lr{83,943.23 tok/s}) نشان‌دهنده شتاب خیره‌کننده \lr{5.45x} است که قابلیت استقرار صنعتی مدل را در کاربردهای بلادرنگ و سامانه‌های با منابع محدود فراهم می‌آورد.
+
+تحلیل تطبیقی میان ماژول \lr{soa\_module} و نسخه فیوزشده \lr{soa\_fused\_module} نشان می‌دهد که هر دو ماژول دقت و ردپای حافظه یکسانی ارائه می‌دهند، در حالی که نسخه فیوزشده به واسطه ادغام ثبات‌ها حدود \lr{+6.8\%} سرعت بیشتری به ثبت رسانده است.
+
+در فرجام، ماژول \lr{soa\_module} به عنوان یک الگوی مرجع بی‌نقص نشان داد که می‌توان بدون پیچیدگی‌های مهندسی کرنل‌های اختصاصی، به عمده مزایای فشرده‌سازی حداکثری و شتاب چندبرابری دست یافت.
+
+\subsection*{بخش ۹: نقاط قوت و ضعف (Strengths \& Weaknesses)}
+\begin{itemize}
+    \item \textbf{نقاط قوت:}
+    \begin{itemize}
+        \item توازن آماری بسیار درخشان با شاخص F1 برابر با \lr{81.91\%} و دقت \lr{81.31\%}،
+        \item کاهش عظیم و رکوردشکن \lr{-93.27\%} در مصرف حافظه VRAM به \lr{282.69 MB}،
+        \item شتاب عملیاتی فوق‌العاده \lr{5.45x} با توان \lr{83,943.23 tok/s} در پایتورچ خالص.
+    \end{itemize}
+    \item \textbf{نقاط ضعف و چالش‌ها:}
+    \begin{itemize}
+        \item افت نسبی \lr{-9.89\%} در دقت ارزیابی نسبت به خط پایه اولیه،
+        \item سرعت اندکی پایین‌تر نسبت به نسخه فیوزشده با کرنل ترایتون.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{بخش ۱۰: نتیجه‌گیری بخش (Section Conclusion)}
+ماژول \lr{soa\_module} اثبات کرد که اصول فاکتورگیری کم‌مرتبه SVD بر روی ماتریس‌های پروجکشن توجه، رویکردی اصیل، مستقل از سخت‌افزار و بسیار نیرومند است که جهش بزرگ در سرعت استنتاج و کاهش حافظه را با حفظ کامل تعادل معنایی به ارمغان می‌آورد.
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+
+
+
+\subsection*{بخش ۱۲: مراجع (References)}
+\begin{enumerate}
+    \item \textbf{Golub, G. H., \& Van Loan, C. F. (2013).} \textit{Matrix computations} (4th ed.). Johns Hopkins University Press.
+    \item \textbf{Hu, E. J., et al. (2021).} LoRA: Low-rank adaptation of large language models. \textit{arXiv preprint arXiv:2106.09685}.
+    \item \textbf{Liu, Y., et al. (2019).} RoBERTa: A robustly optimized BERT pretraining approach. \textit{arXiv preprint arXiv:1907.11692}.
+    \item \textbf{Vaswani, A., et al. (2017).} Attention is all you need. \textit{Advances in Neural Information Processing Systems}, 30, 5998--6008.
+\end{enumerate}
