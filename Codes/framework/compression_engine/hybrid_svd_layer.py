@@ -155,6 +155,7 @@ class DirectSVDEncoderLayer(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("hybrid_svd")
+@COMPRESSOR_REGISTRY.register("hybrid_svd_layer")
 @COMPRESSOR_REGISTRY.register("direct_svd_encoder")
 class HybridSVDCompressor(BaseCompressor):
     """
@@ -397,6 +398,7 @@ class HybridSVDCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("hybrid_svd")
+@COMPRESSOR_REGISTRY.register("hybrid_svd_layer")
 @COMPRESSOR_REGISTRY.register("hybrid_svd_factory")
 @COMPRESSOR_REGISTRY.register("direct_svd_encoder")
 @COMPRESSOR_REGISTRY.register("direct_svd_encoder_factory")

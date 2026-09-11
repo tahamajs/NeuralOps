@@ -37,6 +37,7 @@ _ATTN_NAMES = {
 
 
 @COMPRESSOR_REGISTRY.register("kronecker")
+@COMPRESSOR_REGISTRY.register("kronecker_linear")
 @COMPRESSOR_REGISTRY.register("kronecker_compressor")
 class KroneckerCompressor(BaseCompressor):
     """
