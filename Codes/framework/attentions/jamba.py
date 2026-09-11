@@ -151,6 +151,7 @@ class LoRALinear(nn.Module):
 class SVDMambaSub(nn.Module):
     def __init__(self, d_model: int = 768, config: Optional[Any] = None, rank: Optional[int] = None, is_decoder: bool = False, **kwargs: Any) -> None:
         super().__init__()
+        self.output_scale = nn.Parameter(torch.ones(1))
         if d_model is None and config is not None:
             d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
         d_model = int(d_model or 768)
