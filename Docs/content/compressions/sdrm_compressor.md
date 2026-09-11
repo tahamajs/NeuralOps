@@ -316,3 +316,14 @@ The `SDRMCompressor` architecture incorporates telemetry hooks for tracking sing
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (SDRM Compressor)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 76.49% | 0.7389 | 1.2358 | 36 | 518.32 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa38810-39d6421f3c2a0afc10b64624;baee5c05-6e11-481c-b9bb-ab4b944effc1)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
+| ROBERTA | 50.92% | 0.6748 | 1.2488 | 68 | 890.67 | `PASS_LOW` | N/A |
+| GPT2 | 50.92% | 0.6748 | 1.2579 | 48 | 1146.86 | `PASS_LOW` | N/A |
