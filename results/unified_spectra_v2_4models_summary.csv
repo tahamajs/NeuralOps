@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,SpectraV2 Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,90.48%,+0.00%,0.9075,PASS,0,0.99x,329.5 MB,19.9
+roberta,0,75.11%,75.57%,+0.46%,0.7966,PASS,0,0.94x,378.8 MB,33.4
+gpt2,0,60.78%,59.98%,-0.80%,0.6947,PASS,0,0.99x,567.8 MB,28.0
