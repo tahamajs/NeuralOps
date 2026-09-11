@@ -193,8 +193,9 @@ class ReGLAAttention(BaseAttention):
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         self.gate_proj = nn.Linear(self.dim, self.all_kv_head_size)
+        self.decay_gate = self.gate_proj
         nn.init.zeros_(self.gate_proj.weight)
-        nn.init.constant_(self.gate_proj.bias, 1.0)
+        nn.init.constant_(self.gate_proj.bias, 2.0)
 
         self.conv = nn.Conv1d(
             self.dim, self.dim, kernel_size, padding=0, groups=self.dim

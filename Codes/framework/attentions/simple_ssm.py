@@ -176,6 +176,9 @@ class SimpleSSM(BaseAttention):
             lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
+        nn.init.zeros_(self.out_proj.weight)
+        if self.out_proj.bias is not None:
+            nn.init.zeros_(self.out_proj.bias)
 
         nn.init.constant_(self.dt_proj.bias, 0.1)
 
