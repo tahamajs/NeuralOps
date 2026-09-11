@@ -36,6 +36,10 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
+@COMPRESSOR_REGISTRY.register("tt")
+@COMPRESSOR_REGISTRY.register("tt_linear")
+@COMPRESSOR_REGISTRY.register("tt_compressor")
+@COMPRESSOR_REGISTRY.register("tt_linear_compressor")
 class TTCompressor(BaseCompressor):
     """
     Compressor that replaces nn.Linear/Conv1D layers with Tensor-Train (TTLinearLayer) modules.
@@ -153,15 +157,14 @@ class TTCompressor(BaseCompressor):
 
             base_layer = getattr(module, "base_layer", module)
             raw_w = base_layer.weight.data
-            cls_name = base_layer.__class__.__name__
-            is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_layer, "nf") or (
-                raw_w.ndim == 2
-                and hasattr(base_layer, "in_features")
-                and base_layer.in_features == raw_w.shape[0]
-                and raw_w.shape[0] < raw_w.shape[1]
-            )
+            cls_name = base_layer.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
-            if is_conv1d:
+            if hasattr(base_layer, "nx") and hasattr(base_layer, "nf"):
+                in_f, out_f = int(base_layer.nx), int(base_layer.nf)
+            elif hasattr(base_layer, "in_features") and hasattr(base_layer, "out_features"):
+                in_f, out_f = int(base_layer.in_features), int(base_layer.out_features)
+            elif is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
@@ -263,7 +266,12 @@ class TTCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("tt")
+@COMPRESSOR_REGISTRY.register("tt_linear")
+@COMPRESSOR_REGISTRY.register("tt_compressor")
+@COMPRESSOR_REGISTRY.register("tt_linear_compressor")
+@COMPRESSOR_REGISTRY.register("tt_factory")
 @COMPRESSOR_REGISTRY.register("tt_compressor_factory")
+@COMPRESSOR_REGISTRY.register("tt_linear_factory")
 def tt_compressor_factory(
     model: nn.Module,
     comp_config: Optional[Any] = None,
@@ -282,7 +290,16 @@ def tt_compressor_factory(
         **kwargs,
     )
     compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
+
+tt_linear_compressor_factory = tt_compressor_factory
+
+__all__ = ["TTCompressor", "tt_compressor_factory", "tt_linear_compressor_factory"]
 

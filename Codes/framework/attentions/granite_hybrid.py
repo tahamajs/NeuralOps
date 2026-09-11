@@ -302,8 +302,10 @@ class GraniteHybridBlock(BaseAttention):
         tk = int(_get("top_k", kwargs.get("top_k", top_k)))
         rat = int(_get("ratio", kwargs.get("ratio", ratio)))
         self.moe: MixtureOfExperts = MixtureOfExperts(self.dim, self.dim * 4, num_exp, tk)
-        self.ratio: int = rat
-        self.register_buffer("counter", torch.tensor(0, dtype=torch.long))
+        self.alpha = nn.Parameter(torch.tensor(3.0))
+        self.moe_scale = nn.Parameter(torch.zeros(1))
+        self.is_nested_encoder = False
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         self.rotary_emb = getattr(src_attn, "rotary_emb", None) if src_attn is not None else None
         self.comp_config = comp_config
@@ -468,7 +470,10 @@ class GraniteHybridBlock(BaseAttention):
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
         context = torch.matmul(attn_weights, v)
         context = context.transpose(1, 2).contiguous().view(B, L_q, self.all_head_size)
-        out = self.out_proj(context)
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
         return out, attn_weights
 
     def forward(
@@ -492,22 +497,19 @@ class GraniteHybridBlock(BaseAttention):
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
 
-        self.counter += 1
-        attn_weights: Optional[torch.Tensor] = None
+        attn_out, attn_weights = self._attn_forward(
+            hidden_states,
+            hidden_states,
+            hidden_states,
+            attention_mask=attention_mask,
+            position_embeddings=position_embeddings,
+            **kwargs,
+        )
 
-        if self.counter % (self.ratio + 1) < self.ratio:
-            x = self.mamba(hidden_states)
-        else:
-            x, attn_weights = self._attn_forward(
-                hidden_states,
-                hidden_states,
-                hidden_states,
-                attention_mask=attention_mask,
-                position_embeddings=position_embeddings,
-                **kwargs,
-            )
-
-        x = x + self.moe(x)
+        mamba_out = self.mamba(hidden_states)
+        gate = torch.sigmoid(self.alpha)
+        x = gate * attn_out + (1.0 - gate) * mamba_out
+        x = x + self.moe_scale * self.moe(x)
 
         if x.shape[-1] != hidden_states.shape[-1]:
             if x.shape[-1] < hidden_states.shape[-1]:
@@ -519,7 +521,7 @@ class GraniteHybridBlock(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid_inject")
-@ATTENTION_REGISTRY.register("granite_hybrid")
+@ATTENTION_REGISTRY.register("inject_granite_hybrid")
 def inject_granite_hybrid(
     layer: Any = None,
     model: Any = None,
@@ -604,16 +606,18 @@ def inject_granite_hybrid(
         )
     except Exception as ex:
         logger.warning("Failed to instantiate GraniteHybridBlock: %s", ex)
-        raise RuntimeError(f"Injection failed")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_layer
+                new_layer.is_nested_encoder = True
             else:
                 target.attention = new_layer
         elif hasattr(target, "self"):
             target.self = new_layer
+            new_layer.is_nested_encoder = True
         elif hasattr(target, "attn"):
             target.attn = new_layer
         elif hasattr(target, "self_attn"):
