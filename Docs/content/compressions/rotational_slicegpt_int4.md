@@ -571,17 +571,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| ROBERTA | 91.06% | 0.915 | 1.0 | 0 | 336.33 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-rotational_slicegpt_int4) |
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
+| DISTILBERT | 88.99% | 0.8987 | 1.0 | 0 | 339.84 | `PASS` | [`distilbert`](Upload error: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond) |
+| ROBERTA | 87.50% | 0.8771 | 1.0 | 0 | 360.79 | `PASS` | [`roberta`](Upload error: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond) |
+| GPT2 | 61.70% | 0.6706 | 1.0 | 0 | 636.04 | `PASS` | [`gpt2`](Upload error: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond) |
