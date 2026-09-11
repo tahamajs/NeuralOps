@@ -416,3 +416,12 @@ The `TTCompressor` architecture incorporates telemetry hooks for tracking singul
 ## Limitations & Future Work
 
 TODO: Identify specific limitations and edge cases for this module.
+
+## Unified 4-Architecture Benchmark Results (Tensor Train (TT))
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 81.08% | 0.7919 | 0.9039 | 0 | 508.09 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-tt) |
+| ROBERTA | 50.92% | 0.6748 | 0.8975 | 0 | 684.03 | `PASS_LOW` | N/A |
+| GPT2 | 50.92% | 0.6748 | 0.9655 | 0 | 784.09 | `PASS_LOW` | N/A |
