@@ -4,10 +4,18 @@ from typing import Optional, Tuple
 import os
 import sys
 
-# Add root project dir to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+import pytest
+
+# Add Codes dir to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from framework.core.registry import ATTENTION_REGISTRY
 
+MODULES_TO_TEST = [
+    "mamba_svd_flash", "upi_stuffed_mamba",
+    "simple_ssm", "decay_linear_attention"
+]
+
+@pytest.mark.parametrize("module_name", MODULES_TO_TEST)
 def test_module(module_name: str, B=2, L=128, D=768):
     if module_name not in ATTENTION_REGISTRY:
         print(f"Skipping {module_name} (not in registry)")
