@@ -263,9 +263,17 @@ class NativeHybridAttention(BaseAttention):
         self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        self.query = self.q_proj
-        self.key = self.k_proj
-        self.value = self.v_proj
+    @property
+    def query(self) -> LoRALinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> LoRALinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> LoRALinear:
+        return self.v_proj
 
         omega = self._build_orthogonal_matrix(self.head_dim, self.rff_features)
         self.register_buffer("rff_proj", omega)
@@ -460,24 +468,47 @@ class NativeHybridAttention(BaseAttention):
     ) -> torch.Tensor:
         B, H, N, d = Q.shape
         scale = 1.0 / math.sqrt(d)
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        chunk = 64
+        window = self.window_size
+        out = torch.zeros_like(V)
 
-        idx = torch.arange(N, device=Q.device)
-        i = idx.unsqueeze(1)
-        j = idx.unsqueeze(0)
+        for i in range(0, N, chunk):
+            end = min(i + chunk, N)
+            q_block = Q[:, :, i:end]
 
-        if is_causal:
-            band_mask = (j > i) | ((i - j) > self.window_size)
-        else:
-            band_mask = (i - j).abs() > self.window_size
+            if is_causal:
+                k_start = max(0, i - window)
+                k_end = end
+            else:
+                k_start = max(0, i - window)
+                k_end = min(N, end + window)
 
-        scores = scores.masked_fill(band_mask.unsqueeze(0).unsqueeze(0), -1e4)
-        pad_mask = ~valid_mask.unsqueeze(1).unsqueeze(2)
-        scores = scores.masked_fill(pad_mask, -1e4)
+            k_block = K[:, :, k_start:k_end]
+            v_block = V[:, :, k_start:k_end]
 
-        attn = F.softmax(scores, dim=-1).to(Q.dtype)
-        attn = self.dropout(attn)
-        return torch.matmul(attn, V)
+            scores = torch.matmul(q_block.float(), k_block.float().transpose(-2, -1)) * scale
+
+            q_idx = torch.arange(i, end, device=Q.device).unsqueeze(1)
+            k_idx = torch.arange(k_start, k_end, device=Q.device).unsqueeze(0)
+
+            if is_causal:
+                band_mask = (k_idx > q_idx) | ((q_idx - k_idx) > window)
+            else:
+                band_mask = (q_idx - k_idx).abs() > window
+
+            scores = scores.masked_fill(band_mask.unsqueeze(0).unsqueeze(0), -10000.0)
+
+            if valid_mask is not None:
+                k_valid = valid_mask[:, k_start:k_end]
+                pad_mask = ~k_valid.unsqueeze(1).unsqueeze(2)
+                scores = scores.masked_fill(pad_mask, -10000.0)
+
+            attn = F.softmax(scores, dim=-1).to(Q.dtype)
+            attn = torch.nan_to_num(attn, nan=0.0)
+            attn = self.dropout(attn)
+            out[:, :, i:end] = torch.matmul(attn, v_block)
+
+        return out
 
     def _global_rff_attention(
         self,
@@ -502,22 +533,46 @@ class NativeHybridAttention(BaseAttention):
 
         pad = valid_mask.unsqueeze(1).unsqueeze(-1).to(Q.dtype)
         phi_K = phi_K * pad
+        phi_Q = phi_Q * pad
         V_masked = V * pad
 
         if is_causal:
-            kv_outer = phi_K.unsqueeze(-1) * V_masked.unsqueeze(-2)
-            cum_KV = torch.cumsum(kv_outer.float(), dim=2).to(Q.dtype)
-            num = (phi_Q.unsqueeze(-2) @ cum_KV).squeeze(-2)
+            chunk_size = min(64, N)
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            m = phi_Q.shape[-1]
+            S = torch.zeros(B, H, m, d, dtype=torch.float32, device=Q.device)
+            Z = torch.zeros(B, H, m, dtype=torch.float32, device=Q.device)
+            out_list = []
 
-            cum_K = torch.cumsum(phi_K.float(), dim=2).to(Q.dtype)
-            den = (phi_Q * cum_K).sum(dim=-1, keepdim=True).clamp(min=1e-5)
-            out = (num / den) * pad
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, N)
+                L = end - start
+
+                q_c = phi_Q[:, :, start:end].float()
+                k_c = phi_K[:, :, start:end].float()
+                v_c = V_masked[:, :, start:end].float()
+
+                causal_mask = torch.tril(torch.ones(L, L, device=Q.device, dtype=torch.float32))
+                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+                intra_num = torch.matmul(intra_attn, v_c)
+                inter_num = torch.matmul(q_c, S)
+
+                intra_den = intra_attn.sum(dim=-1, keepdim=True)
+                inter_den = torch.matmul(q_c, Z.unsqueeze(-1))
+
+                den = (intra_den + inter_den).clamp(min=1.0)
+                out_list.append(((intra_num + inter_num) / den).to(Q.dtype))
+
+                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                Z = Z + k_c.sum(dim=2)
+
+            out = torch.cat(out_list, dim=2) * pad
         else:
-            phi_Q = phi_Q * pad
             KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
             Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=1e-5)
+            den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=1.0)
             out = (num / den) * pad
 
         return out
@@ -538,7 +593,7 @@ class NativeHybridAttention(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         if encoder_hidden_states is not None or kwargs.get("encoder_hidden_states") is not None:
-            return hidden_states, None
+            raise NotImplementedError("NativeHybridAttention does not support cross-attention")
 
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
@@ -547,6 +602,8 @@ class NativeHybridAttention(BaseAttention):
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
         valid_mask = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
+        if valid_mask is None:
+            valid_mask = torch.ones(B, N, device=hidden_states.device, dtype=torch.bool)
 
         Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
@@ -610,8 +667,7 @@ class NativeHybridAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("nha_inject")
-@ATTENTION_REGISTRY.register("nha")
-@ATTENTION_REGISTRY.register("nha_attention")
+@ATTENTION_REGISTRY.register("inject_nha")
 def inject_nha(
     layer: Any = None,
     model: Any = None,
@@ -696,8 +752,8 @@ def inject_nha(
             **kwargs,
         )
     except Exception as e:
-        logger.warning("NativeHybridAttention construction/weight copying failed: %s", e)
-        raise RuntimeError(f"Injection failed")
+        logger.error("NativeHybridAttention construction/weight copying failed: %s", e)
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):

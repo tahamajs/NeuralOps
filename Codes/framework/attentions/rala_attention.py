@@ -412,12 +412,7 @@ class RALALinearAttention(BaseAttention):
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
         if is_causal:
-            # True linear-time recurrence via chunked scan (O(chunk_size * d^2) memory, no O(N * d^2) allocation)
-            cum_k = torch.cumsum(k_prime.float(), dim=2).to(q.dtype)
-            denom = (q_prime * cum_k).sum(dim=-1, keepdim=True).clamp(min=1e-5)
-
-            chunk_size = min(64, seq_len)
-            num_chunks = (seq_len + chunk_size - 1) // chunk_size
+            # True state-based linear scan matching [B, H, m, d]
             S = torch.zeros(
                 batch_size,
                 self.num_heads,
@@ -426,25 +421,33 @@ class RALALinearAttention(BaseAttention):
                 dtype=q.dtype,
                 device=hidden_states.device,
             )
+            z = torch.zeros(
+                batch_size,
+                self.num_heads,
+                self.head_dim,
+                dtype=q.dtype,
+                device=hidden_states.device,
+            )
+            
             num_list = []
+            denom_list = []
 
-            for c in range(num_chunks):
-                start = c * chunk_size
-                end = min(start + chunk_size, seq_len)
-                L = end - start
-                q_c = q_prime[:, :, start:end]
-                k_c = k_prime[:, :, start:end]
-                v_c = v_masked[:, :, start:end]
+            for i in range(seq_len):
+                q_i = q_prime[:, :, i, :]
+                k_i = k_prime[:, :, i, :]
+                v_i = v_masked[:, :, i, :]
 
-                causal_mask = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=q.dtype))
-                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
-                intra_out = torch.matmul(intra_attn, v_c)
-                inter_out = torch.matmul(q_c, S)
+                S = S + torch.einsum("b h d, b h e -> b h d e", k_i, v_i)
+                z = z + k_i
 
-                num_list.append(intra_out + inter_out)
-                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                num_i = torch.einsum("b h d, b h d e -> b h e", q_i, S)
+                denom_i = torch.einsum("b h d, b h d -> b h", q_i, z).unsqueeze(-1)
+                
+                num_list.append(num_i)
+                denom_list.append(denom_i)
 
-            num = torch.cat(num_list, dim=2)
+            num = torch.stack(num_list, dim=2)
+            denom = torch.stack(denom_list, dim=2).clamp(min=1.0)
             lin_out = torch.nan_to_num(num / denom)
 
             rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)
@@ -452,7 +455,7 @@ class RALALinearAttention(BaseAttention):
         else:
             kv = torch.einsum("b h n d, b h n e -> b h d e", k_prime, v_masked)
             z = k_prime.sum(dim=2)  # (B, H, d)
-            denom = (torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1) + 1e-5)
+            denom = torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1).clamp(min=1.0)
             lin_out = torch.nan_to_num(torch.einsum("b h n d, b h d e -> b h n e", q_prime, kv) / denom)
 
             rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)
