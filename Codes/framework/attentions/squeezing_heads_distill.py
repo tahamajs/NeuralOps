@@ -590,7 +590,7 @@ def inject_squeezing_heads(
         )
     except Exception as e:
         logger.warning(f"Failed to instantiate SqueezingHeadsDistiller: {e}")
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):

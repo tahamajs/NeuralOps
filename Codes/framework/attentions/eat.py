@@ -295,7 +295,7 @@ class EATBlock(BaseAttention):
                     c_attn_mod.merge()
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -316,7 +316,7 @@ class EATBlock(BaseAttention):
                         c_proj_mod.merge()
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        return None
+                        raise RuntimeError(f"copy_weights failed: {e}")
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
@@ -367,7 +367,7 @@ class EATBlock(BaseAttention):
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -456,7 +456,7 @@ class EATBlock(BaseAttention):
                 q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, position_ids or kwargs.get("position_ids", None))
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 3. Grouped Query Attention (GQA) head expansion
         if self.kv_repeat > 1:
@@ -556,4 +556,4 @@ def inject_eat(
                     return new_attn
         return new_attn
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")

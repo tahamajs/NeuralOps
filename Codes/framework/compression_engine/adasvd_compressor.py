@@ -225,7 +225,7 @@ class AdaSVDCompressor(BaseCompressor):
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("AdaSVD SVD computation failed on %s: %s", name, e)
-            return None, 1.0, 0
+            raise RuntimeError(f"Injection failed"), 1.0, 0
 
         # Symmetric square-root singular value initialization
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))

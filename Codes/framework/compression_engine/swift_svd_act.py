@@ -254,7 +254,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 B = sqrt_S.unsqueeze(1) * Vt[:r, :]
             except Exception as e:
                 logger.warning("SwiftSVDActivation SVD failure: %s", e)
-                return None
+                raise RuntimeError(f"Injection failed")
 
         # Frobenius reconstruction error check
         W_rec = torch.matmul(A, B)
@@ -275,7 +275,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                     A, B, r, rel_err = A_direct, B_direct, r_direct, rel_err_direct
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         if not math.isfinite(rel_err) or (self.fallback_to_original and rel_err > self.max_error):
             logger.warning(
@@ -315,7 +315,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                     svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         svd_layer.reconstruction_error = rel_err
         return svd_layer

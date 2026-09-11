@@ -517,7 +517,7 @@ def inject_soa_attn(
         return new_attn
     except Exception as e:
         logger.error("inject_soa_attn failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")
 
 
 inject_soa = inject_soa_attn

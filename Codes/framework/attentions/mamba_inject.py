@@ -40,7 +40,7 @@ def inject_mamba(
             new_module.copy_weights(src_attn)
         except Exception as e:
             print(f'copy_weights failed: {e}')
-            return None
+            raise RuntimeError(f"copy_weights failed: {e}")
 
     if layer is not None:
         if hasattr(layer, "attention"):

@@ -398,7 +398,7 @@ class OATSCompressor(BaseCompressor):
                 L = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
             R = W_scaled - L
             if self.structured_24:

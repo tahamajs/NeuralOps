@@ -370,7 +370,7 @@ class AdaptiveSparseAttention(BaseAttention):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn / c_proj (handling Conv1D and LoRALinear wrapper)
         if hasattr(src, "c_attn") and src.c_attn is not None and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -544,7 +544,7 @@ class AdaptiveSparseAttention(BaseAttention):
                         break
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
                 try:
                     res = rotary_mod(probe_t, seq_len=N_k)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
@@ -552,7 +552,7 @@ class AdaptiveSparseAttention(BaseAttention):
                         break
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
                 try:
                     res = rotary_mod(probe_t)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
@@ -560,7 +560,7 @@ class AdaptiveSparseAttention(BaseAttention):
                         break
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
@@ -745,7 +745,7 @@ def inject_adaptive_sparse(
             **kwargs,
         )
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")
 
     if target is not None:
         if hasattr(target, "attention"):

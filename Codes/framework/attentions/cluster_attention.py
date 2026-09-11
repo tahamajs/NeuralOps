@@ -280,7 +280,7 @@ class ClusterAttention(BaseAttention):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn Conv1D handling (including LoRALinear wrappers)
         if hasattr(src, "c_attn") and src.c_attn is not None and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -290,7 +290,7 @@ class ClusterAttention(BaseAttention):
                     c_attn_mod.merge()
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if weight is not None:
@@ -311,7 +311,7 @@ class ClusterAttention(BaseAttention):
                     c_proj_mod.merge()
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
             base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
             w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
             if w_o is not None:
@@ -742,7 +742,7 @@ def inject_cluster(
             **kwargs,
         )
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")
 
     if target is not None:
         if hasattr(target, "attention"):

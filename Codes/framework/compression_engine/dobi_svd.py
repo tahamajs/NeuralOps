@@ -274,7 +274,7 @@ class DobiSVDCompressor(BaseCompressor):
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("DobiSVD SVD computation failed: %s", e)
-            return None, 1.0, 0
+            raise RuntimeError(f"Injection failed"), 1.0, 0
 
         best_layer: Optional[DobiSVDLinearLayer] = None
         best_err = 1.0

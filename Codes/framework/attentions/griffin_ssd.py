@@ -234,7 +234,7 @@ class GriffinSSDBlock(BaseAttention):
                     extracted[proj] = (w, b)
         except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
@@ -576,7 +576,7 @@ def inject_griffin_ssd(
         )
     except Exception as ex:
         logger.warning("Failed to instantiate GriffinSSDBlock: %s", ex)
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if target is not None:
         if hasattr(target, "attention"):

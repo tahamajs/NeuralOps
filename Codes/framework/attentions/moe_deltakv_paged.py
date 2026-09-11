@@ -187,7 +187,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         if hasattr(pretrained_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             weight = pretrained_attn.c_attn.weight.data
@@ -471,4 +471,4 @@ def inject_moe_deltakv_paged(
                 layer.self = new_attn
         return new_attn
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")

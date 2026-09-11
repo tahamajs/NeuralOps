@@ -230,7 +230,7 @@ class ReplaceMeCompressor(BaseCompressor):
                             continue
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        return None
+                        raise RuntimeError(f"copy_weights failed: {e}")
 
                 layers[i] = new_block
                 layers_replaced += 1

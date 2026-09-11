@@ -572,7 +572,7 @@ def inject_hamming_attention(
             **kwargs,
         )
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")
 
     if target is not None:
         if hasattr(target, "attention"):

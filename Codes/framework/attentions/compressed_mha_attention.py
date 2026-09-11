@@ -191,7 +191,7 @@ class CompressedDistilBertAttention(BaseAttention):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -499,7 +499,7 @@ def inject_compressed_mha(
                 layer.attention = new_attn
         return new_attn
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")
 
 
 @ATTENTION_REGISTRY.register("compressed_mha_fn")

@@ -705,4 +705,4 @@ def inject_xattention(
         return new_attn
     except Exception as e:
         logger.error("inject_xattention failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")
