@@ -18,8 +18,11 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -431,7 +434,7 @@ class GalerkinAttention(BaseAttention):
                     nn.init.zeros_(target_mod.bias)
 
                 # Weight verification (Frobenius norm >= 1e-4)
-                w_norm = float(torch.norm(target_mod.weight.data).item())
+                w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"GalerkinAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
@@ -440,14 +443,19 @@ class GalerkinAttention(BaseAttention):
 
     def _get_orthonormal_basis(self, N: int, r: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
         r"""Constructs an orthonormal projection basis Phi in R^{N x r} with Phi^T Phi = I_r."""
-        r_actual = min(r, N)
+        r_actual = max(1, min(r, N))
         n = torch.arange(N, device=device, dtype=torch.float32).unsqueeze(1)
         k = torch.arange(r_actual, device=device, dtype=torch.float32).unsqueeze(0)
 
-        phi = torch.cos((math.pi * k * (2.0 * n + 1.0)) / (2.0 * N))
-        phi[:, 0] = phi[:, 0] * (1.0 / math.sqrt(N))
+        phi = torch.cos((math.pi * k * (2.0 * n + 1.0)) / (2.0 * max(1, N)))
+        phi[:, 0] = phi[:, 0] * (1.0 / math.sqrt(max(1, N)))
         if r_actual > 1:
-            phi[:, 1:] = phi[:, 1:] * math.sqrt(2.0 / N)
+            phi[:, 1:] = phi[:, 1:] * math.sqrt(2.0 / max(1, N))
+
+        # EPS regularization and orthonormalization via QR to prevent singular system in FP16
+        eye = torch.eye(N, r_actual, device=device, dtype=torch.float32)
+        phi = phi + 1e-4 * eye
+        phi, _ = torch.linalg.qr(phi)
 
         return phi.to(dtype=dtype)
 
@@ -505,8 +513,9 @@ class GalerkinAttention(BaseAttention):
         if self.is_decoder and not is_cross_attention:
             # Scaled dot-product causal attention
             scale = d**-0.5
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale  # [B, H, N, N]
-            causal_mask = torch.triu(torch.full((N, N), float("-inf"), device=device, dtype=torch.float32), diagonal=1)
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale  # [B, H, N, kv_len]
+            causal_diag = 1 + max(0, kv_len - N)
+            causal_mask = torch.triu(torch.full((N, kv_len), float("-inf"), device=device, dtype=torch.float32), diagonal=causal_diag)
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
             if eff_mask is not None:
@@ -518,38 +527,42 @@ class GalerkinAttention(BaseAttention):
                 elif eff_mask.dim() == 4:
                     scores = scores + eff_mask.float()
 
-            probs = F.softmax(scores, dim=-1)
+            scores_max = scores.max(dim=-1, keepdim=True).values
+            exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=50.0))
+            denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1.0)
+            probs = exp_scores / denom
             probs = torch.nan_to_num(probs, nan=0.0)
             probs = self.dropout(probs)
             context = torch.matmul(probs.to(dtype), V)  # [B, H, N, d]
         else:
             # Petrov-Galerkin projection onto orthonormal harmonic basis
             valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)
+            if valid_mask is None:
+                valid_mask = torch.ones(B, kv_len, device=device, dtype=torch.bool)
             mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             K_masked = K * mask_expanded
             V_masked = V * mask_expanded
 
-            r_actual = min(self.rank, kv_len)
+            r_actual = max(1, min(self.rank, kv_len))
             Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
 
-            # Project Queries, Keys, and Values onto Orthonormal Basis: preserving inner product
-            Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)
+            # Project Keys and Values onto Orthonormal Basis: preserving inner product
             K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
             V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
             scale = d**-0.5
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale  # [B, H, N, kv_len]
-            if eff_mask is not None:
-                if eff_mask.dim() == 2:
-                    scores = scores + (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
-                elif eff_mask.dim() == 4:
-                    scores = scores + eff_mask.float()
+            scores = torch.matmul(Q.float(), K_basis.float().transpose(-2, -1)) * scale  # [B, H, N, r]
 
-            probs = F.softmax(scores, dim=-1)
+            # Numerically stable softmax with denominator clamping (min=1.0)
+            scores_max = scores.max(dim=-1, keepdim=True).values
+            exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=50.0))
+            denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1.0)
+            probs = exp_scores / denom
             probs = torch.nan_to_num(probs, nan=0.0)
             probs = self.dropout(probs)
 
-            context = torch.matmul(probs.to(dtype), V)
+            # Attended representation in basis space: [B, H, N, d]
+            context = torch.matmul(probs.to(dtype), V_basis)
 
             # Output token valid mask
             if eff_mask is not None and not is_cross_attention:
@@ -578,6 +591,7 @@ class GalerkinAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("galerkin_inject")
+@ATTENTION_REGISTRY.register("inject_galerkin")
 def inject_galerkin(
     layer: nn.Module,
     model_config: Any = None,
@@ -616,5 +630,6 @@ def inject_galerkin(
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"Galerkin injection failed: {e}")
+        return None
