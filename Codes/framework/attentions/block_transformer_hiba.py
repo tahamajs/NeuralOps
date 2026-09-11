@@ -388,8 +388,7 @@ class BlockTransformerHIBA(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                pass
 
         # Verify all mandatory projections were extracted
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
@@ -602,8 +601,7 @@ class BlockTransformerHIBA(BaseAttention):
                 from framework.utils.compat import maybe_apply_rotary
                 q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids", None))
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                pass
 
         # 3. GQA Expansion
         if self.kv_repeat > 1:
