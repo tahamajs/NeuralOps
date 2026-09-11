@@ -1,14 +1,14 @@
 {
     "model": "roberta-base_asvd",
     "performance": {
-        "accuracy_pct": 82.57,
-        "f1_score": 0.8417,
-        "f1_macro": 0.8239,
-        "precision": 0.8353,
-        "recall": 0.8241,
-        "val_loss": 0.4348,
+        "accuracy_pct": 81.19,
+        "f1_score": 0.837,
+        "f1_macro": 0.8074,
+        "precision": 0.8375,
+        "recall": 0.8094,
+        "val_loss": 0.5118,
         "status": "PASS",
-        "elapsed_s": 14.46
+        "elapsed_s": 13.96
     },
     "efficiency": {
         "total_params_before": 124647170,
@@ -100,8 +100,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 716.6,
-        "tokens_per_sec": 41476.3
+        "peak_vram_mb": 396.3,
+        "tokens_per_sec": 40672.66
     },
     "architecture": {
         "span_distribution": {},
@@ -109,10 +109,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 683.16,
-        "L_256_vram_mb": 688.3,
-        "L_512_vram_mb": 716.8,
+        "L_128_vram_mb": 364.47,
+        "L_256_vram_mb": 371.38,
+        "L_512_vram_mb": 398.64,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-11T01:19:28.152039"
+    "timestamp": "2026-09-11T04:07:40.632430"
 }
