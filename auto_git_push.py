@@ -22,6 +22,9 @@ while True:
         subprocess.run(["git", "add", "finish_benchmark_state.json"], cwd=REPO_DIR, env=env, stderr=subprocess.DEVNULL)
         subprocess.run(["git", "add", "results/*.csv"], cwd=REPO_DIR, env=env, stderr=subprocess.DEVNULL)
 
+        # Untrack any log files if accidentally staged
+        subprocess.run(["git", "rm", "--cached", "*.log", "results/**/console.log"], cwd=REPO_DIR, env=env, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
         status = subprocess.run(
             ["git", "status", "--porcelain"],
             cwd=REPO_DIR,
@@ -32,6 +35,7 @@ while True:
 
         staged_lines = [l for l in status.stdout.splitlines() if l.startswith(("M ", "A ", "AM", "MM"))]
         if staged_lines:
+            subprocess.run(["git", "pull", "--autostash", "--rebase", "origin", "main"], cwd=REPO_DIR, env=env, timeout=60, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             commit_res = subprocess.run(
                 ["git", "commit", "-m", "chore(results): auto-sync latest GPU benchmark results"],
                 cwd=REPO_DIR,
@@ -51,9 +55,8 @@ while True:
                 print(f"[Auto-Git-Push] Successfully pushed {len(staged_lines)} files to GitHub.", flush=True)
             else:
                 print(f"[Auto-Git-Push] Push returned code {push_res.returncode}: {push_res.stderr.strip()}", flush=True)
-                # Pull rebase if rejected
                 if "rejected" in push_res.stderr.lower():
-                    subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=REPO_DIR, env=env, timeout=60)
+                    subprocess.run(["git", "pull", "--autostash", "--rebase", "origin", "main"], cwd=REPO_DIR, env=env, timeout=60)
                     subprocess.run(["git", "push", "origin", "main"], cwd=REPO_DIR, env=env, timeout=60)
         else:
             print("[Auto-Git-Push] No staged results to push.", flush=True)

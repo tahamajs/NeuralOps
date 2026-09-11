@@ -103,6 +103,7 @@ class DobiSVDLinearLayer(nn.Module):
         V_gated = self.V * g                       # [rank, in_features]
         latent = F.linear(x_flat, V_gated)         # [..., rank]
         out = F.linear(latent, self.U, self.bias)  # [..., out_features]
+        out = out * self.output_scale
         return out.view(*orig_shape[:-1], self.out_features)
 
     def extra_repr(self) -> str:

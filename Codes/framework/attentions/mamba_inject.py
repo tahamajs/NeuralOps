@@ -53,6 +53,9 @@ def inject_mamba(
         elif hasattr(layer, "self"):
             layer.self = new_module
         else:
-            layer.attention = new_module
+            if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                layer.attention.self = new_module
+            else:
+                layer.attention = new_module
 
     return new_module

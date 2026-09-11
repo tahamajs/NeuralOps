@@ -762,7 +762,10 @@ def inject_all_layers(
             add_sparse=add_sparse,
             sparsity_level=sparsity,
         )
-        distil_layer.attention = new_attn
+        if hasattr(distil_layer, "attention") and hasattr(distil_layer.attention, "self"):
+            distil_layer.attention.self = new_attn
+        else:
+            distil_layer.attention = new_attn
 
 
 # =============================================================================

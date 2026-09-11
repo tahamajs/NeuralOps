@@ -677,7 +677,10 @@ def inject_spectral_mamba(
 
                 else:
 
-                    layer.attention = new_attn
+                    if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                        layer.attention.self = new_attn
+                    else:
+                        layer.attention = new_attn
 
             elif hasattr(layer, 'self'):
 
@@ -689,7 +692,10 @@ def inject_spectral_mamba(
 
             else:
 
-                layer.attention = new_attn
+                if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                    layer.attention.self = new_attn
+                else:
+                    layer.attention = new_attn
         return new_attn
     except Exception:
         return None
