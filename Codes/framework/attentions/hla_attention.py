@@ -149,11 +149,19 @@ class HLAAttention(BaseAttention):
             else:
                 num_heads = kwargs.get("num_attention_heads", 12)
 
+        comp_cfg = kwargs.get("comp_config", None)
+        if comp_cfg is not None:
+            lora_rank = getattr(comp_cfg, "lora_rank", getattr(comp_cfg, "rank", lora_rank))
+            lora_alpha = getattr(comp_cfg, "lora_alpha", getattr(comp_cfg, "alpha", lora_alpha))
+        elif config is not None:
+            lora_rank = getattr(config, "lora_rank", lora_rank)
+            lora_alpha = getattr(config, "lora_alpha", lora_alpha)
+
         self.hidden_size: int = int(d_model)
         self.num_heads: int = int(num_heads)
         self.head_dim: int = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
-        self.lora_rank: int = lora_rank
-        self.lora_alpha: float = lora_alpha
+        self.lora_rank: int = int(lora_rank) if lora_rank is not None else 16
+        self.lora_alpha: float = float(lora_alpha) if lora_alpha is not None else 32.0
 
         cfg_kv = (
             getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
@@ -443,9 +451,11 @@ class HLAAttention(BaseAttention):
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        # ELU + 1 kernelization
+        # ELU + 1 kernelization with zero-mean centering to match pretrained zero-mean Q/K
         q = F.elu(q) + 1.0
         k = F.elu(k) + 1.0
+        q = q - q.mean(dim=-1, keepdim=True)
+        k = k - k.mean(dim=-1, keepdim=True)
 
         decay = torch.sigmoid(self.beta).unsqueeze(0)  # [1, H, 1, 1]
 
@@ -517,7 +527,13 @@ def inject_hla(
             d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 768))
             num_heads = getattr(layer.config, "num_attention_heads", getattr(layer.config, "n_heads", 12))
 
-        new_block = HLAAttention(config=model_config, d_model=d_model, num_heads=num_heads, **kwargs)
+        new_block = HLAAttention(
+            config=model_config,
+            comp_config=comp_config,
+            d_model=d_model,
+            num_heads=num_heads,
+            **kwargs,
+        )
         try:
             new_block.copy_weights(src)
         except Exception as e:
