@@ -1,345 +1,193 @@
-module_name,model_family,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,num_compressed_layers,num_injected_attention_layers,lora_params,error,timestamp,source_csv
-a3,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.764,28.07,684.23,36024.99,66955010,79525634,55634690,0.8419,-18.77,0,0,0,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T12:20:53.952787,D:\SVD_Project\results\unified_a3\distilbert\summary.csv
-a3,gpt2,PASS,75.34,0.7898,0.7458,0.7806,0.7505,0.5496,80.2,468.84,10877.23,126800640,150444288,2385408,0.8428,-18.65,0,0,2383872,,2026-09-07T12:25:54.436869,D:\SVD_Project\results\unified_a3\gpt2\summary.csv
-a3,roberta,PASS,85.67,0.8731,0.8542,0.8763,0.8546,0.387,97.03,389.89,8249.33,127325954,153586946,3307778,0.829,-20.63,0,0,2715648,,2026-09-07T12:23:13.751100,D:\SVD_Project\results\unified_a3\roberta\summary.csv
-aasvd,roberta,PASS,90.02,0.9024,0.9002,0.9003,0.9001,0.4631,109.67,318.39,12402.79,127325954,120248066,3270914,1.0589,5.56,48,0,2678784,,2026-09-06T03:38:07.546496,D:\SVD_Project\results\unified_aasvd\roberta\summary.csv
-adaptive_compressor,qwen3_5,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,3.71,1796.78,1241.44,763217728,763217728,0,1.0,0.0,0,0,10822656,RuntimeError: Compressor 'adaptive_compressor' not found in COMPRESSOR_REGISTRY,2026-09-09T03:13:39.421010,D:\SVD_Project\results\unified_adaptive_compressor\qwen3_5\summary.csv
-adaptive_ranks,distilbert,PASS,85.21,0.8593,0.8517,0.8538,0.8514,0.363,21.08,227.44,41366.43,66955010,57038594,4849922,1.1739,14.81,24,0,0,,2026-09-06T03:16:02.180574,D:\SVD_Project\results\unified_adaptive_ranks\distilbert\summary.csv
-adaptive_ranks,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.9509,45.19,528.57,17610.91,126800640,105911040,9819648,1.1972,16.47,24,0,1474560,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-06T03:18:50.113693,D:\SVD_Project\results\unified_adaptive_ranks\gpt2\summary.csv
-adaptive_ranks,roberta,PASS,65.02,0.4925,0.6128,0.7643,0.6562,0.7623,40.26,612.76,21628.74,124647170,104814338,9107714,1.1892,15.91,48,0,0,,2026-09-06T03:17:22.156343,D:\SVD_Project\results\unified_adaptive_ranks\roberta\summary.csv
-adaptive_span,distilbert,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.5554,11.69,378.26,26524.2,66955010,81719114,1182026,0.8193,-22.05,0,12,589824,,2026-09-07T17:07:32.842153,D:\SVD_Project\results\unified_adaptive_span\distilbert\summary.csv
-adaptive_span,gpt2,PASS,80.39,0.8217,0.8019,0.8125,0.8023,0.4447,28.27,445.69,10705.54,126800640,177590160,3540624,0.714,-40.05,0,24,3538944,,2026-09-07T17:09:35.248109,D:\SVD_Project\results\unified_adaptive_span\gpt2\summary.csv
-adaptive_span,roberta,PASS,82.34,0.8493,0.818,0.8584,0.8205,0.6067,29.76,414.86,10456.72,127325954,163941266,4450706,0.7767,-28.76,0,24,3858432,,2026-09-07T17:08:36.077678,D:\SVD_Project\results\unified_adaptive_span\roberta\summary.csv
-adaptive_sparse,distilbert,SKIP_BERT_ARCHITECTURAL,0.0,0.9077,0.9047,0.9052,0.9046,0.3091,0.56,390.7,51010.48,66955010,66955010,0,1.0,0.0,0,0,0,note: architecture unsupported by module (Could not instantiate attention class inject_adaptive_sparse),2026-09-06T23:14:04.514870,D:\SVD_Project\results\unified_adaptive_sparse\distilbert\summary.csv
-adaptive_sparse,gpt2,SKIP_GPT_ARCHITECTURAL,0.0,0.8372,0.8089,0.8364,0.8106,0.5075,1.08,392.04,28563.05,126800640,126800640,0,1.0,0.0,0,0,2359296,note: architecture unsupported by module (Could not instantiate attention class inject_adaptive_sparse),2026-09-06T23:15:51.662138,D:\SVD_Project\results\unified_adaptive_sparse\gpt2\summary.csv
-adaptive_sparse,qwen3_5,SKIP_QWEN3_5_ARCHITECTURAL,0.0,0.5501,0.6481,0.7703,0.6808,0.6364,3.51,1810.59,1318.97,763217728,763217728,0,1.0,0.0,0,0,10822656,note: architecture unsupported by module (Could not instantiate attention class inject_adaptive_sparse),2026-09-06T23:20:09.970887,D:\SVD_Project\results\unified_adaptive_sparse\qwen3_5\summary.csv
-adaptive_sparse,roberta,PASS,87.39,0.8868,0.8722,0.8892,0.872,0.4475,122.42,419.78,10306.12,127325954,163941266,4450562,0.7767,-28.76,0,12,3858432,,2026-09-06T23:47:40.821117,D:\SVD_Project\results\unified_adaptive_sparse\roberta\summary.csv
-adaptive_sparse_attention_attention,distilbert,PASS,90.14,0.9059,0.9011,0.9031,0.9008,0.5786,3.01,238.51,110067.11,66955010,81719114,1182026,0.8193,-22.05,0,6,589824,,2026-09-08T18:36:05.349512,D:\SVD_Project\results\unified_adaptive_sparse_attention_attention\distilbert\summary.csv
-adaptive_sparse_attention_attention,gpt2,PASS,80.73,0.8178,0.8067,0.8093,0.8066,0.429,6.98,445.69,44873.72,126800640,177590160,3540624,0.714,-40.05,0,12,3538944,,2026-09-08T18:36:53.228441,D:\SVD_Project\results\unified_adaptive_sparse_attention_attention\gpt2\summary.csv
-adaptive_sparse_attention_attention,qwen3_5,PASS,56.65,0.6927,0.4786,0.6663,0.5592,0.6785,230.1,1918.44,4519.62,763217728,795584368,11709488,0.9593,-4.24,0,6,11707392,,2026-09-08T18:42:27.982157,D:\SVD_Project\results\unified_adaptive_sparse_attention_attention\qwen3_5\summary.csv
-adaptive_sparse_attention_attention,roberta,PASS,83.83,0.8589,0.8348,0.8628,0.8359,0.4959,7.87,420.6,40879.57,127325954,163941266,4450706,0.7767,-28.76,0,12,3858432,,2026-09-08T18:36:30.321603,D:\SVD_Project\results\unified_adaptive_sparse_attention_attention\roberta\summary.csv
-adaptive_svd_attention,distilbert,PASS,85.78,0.8714,0.8562,0.8698,0.8562,0.5175,22.92,293.51,25377.03,66955010,58107650,1181954,1.1523,13.21,0,6,589824,,2026-09-07T17:15:26.556223,D:\SVD_Project\results\unified_adaptive_svd_attention\distilbert\summary.csv
-adaptive_svd_attention,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.6959,47.88,301.19,10688.07,126800640,108221184,2655744,1.1717,14.65,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:18:08.097266,D:\SVD_Project\results\unified_adaptive_svd_attention\gpt2\summary.csv
-adaptive_svd_attention,roberta,PASS,75.92,0.7677,0.7588,0.7595,0.7588,0.58,48.9,361.47,10434.39,127325954,115833602,3565826,1.0992,9.03,0,12,2973696,,2026-09-07T17:16:48.734529,D:\SVD_Project\results\unified_adaptive_svd_attention\roberta\summary.csv
-adaptive_svd_attn,distilbert,PASS,85.78,0.8714,0.8562,0.8698,0.8562,0.5175,22.97,293.51,25656.25,66955010,58107650,1181954,1.1523,13.21,0,6,589824,,2026-09-07T17:19:50.145228,D:\SVD_Project\results\unified_adaptive_svd_attn\distilbert\summary.csv
-adaptive_svd_attn,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.6959,49.27,301.19,10596.06,126800640,108221184,2655744,1.1717,14.65,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:22:36.828736,D:\SVD_Project\results\unified_adaptive_svd_attn\gpt2\summary.csv
-adaptive_svd_attn,roberta,PASS,75.92,0.7677,0.7588,0.7595,0.7588,0.58,49.0,361.47,10500.86,127325954,115833602,3565826,1.0992,9.03,0,12,2973696,,2026-09-07T17:21:12.657819,D:\SVD_Project\results\unified_adaptive_svd_attn\roberta\summary.csv
-adasplash,distilbert,PASS,89.91,,,,,,50.16,,,,,,,,,,,,2026-09-05T00:15:59.884532,D:\SVD_Project\results\unified_adasplash\distilbert\summary.csv
-adasplash,gpt2,PASS,79.36,,,,,,109.54,,,,,,,,,,,,2026-09-05T00:20:52.787502,D:\SVD_Project\results\unified_adasplash\gpt2\summary.csv
-adasplash,qwen3_5,PASS_LOW,52.18,,,,,,456.61,,,,,,,,,,,note: evaluated accuracy (52.18%) below chance threshold (56.00%),2026-09-05T00:30:52.241064,D:\SVD_Project\results\unified_adasplash\qwen3_5\summary.csv
-adasplash,roberta,PASS,67.09,,,,,,100.23,,,,,,,,,,,,2026-09-05T00:18:20.968659,D:\SVD_Project\results\unified_adasplash\roberta\summary.csv
-adasvd,distilbert,PASS,84.86,0.8514,0.8486,0.8486,0.8486,0.5471,34.69,413.21,44807.97,66955010,63416066,11227394,1.0558,5.29,24,0,0,,2026-09-06T03:50:29.884110,D:\SVD_Project\results\unified_adasvd\distilbert\summary.csv
-adasvd,gpt2,PASS,77.06,0.8051,0.7633,0.8014,0.7677,0.6093,88.22,393.51,15039.99,126800640,118795008,2360832,1.0674,6.31,24,0,2359296,,2026-09-06T03:55:30.566285,D:\SVD_Project\results\unified_adasvd\gpt2\summary.csv
-adasvd,roberta,PASS,87.84,0.8868,0.8778,0.8836,0.8774,0.3854,112.06,318.35,12363.56,127325954,120229634,3270914,1.059,5.57,48,0,2678784,,2026-09-06T03:53:12.922915,D:\SVD_Project\results\unified_adasvd\roberta\summary.csv
-admm,distilbert,PASS,88.53,0.8922,0.8848,0.889,0.8844,0.8687,21.2,339.42,54607.47,66955010,66955010,4135682,1.0,0.0,11,0,0,,2026-09-06T04:20:32.884865,D:\SVD_Project\results\unified_admm\distilbert\summary.csv
-admm,gpt2,PASS,84.63,0.8537,0.8459,0.8479,0.8457,0.4204,77.03,409.87,15433.04,126800640,126800640,1476096,1.0,0.0,0,0,2359296,,2026-09-06T04:25:04.023528,D:\SVD_Project\results\unified_admm\gpt2\summary.csv
-admm,qwen3_5,PASS,88.42,0.8947,0.883,0.8955,0.8826,1.5309,1355.44,1851.31,1099.69,763217728,763217728,5776384,1.0,0.0,28,0,10822656,,2026-09-06T04:51:58.367759,D:\SVD_Project\results\unified_admm\qwen3_5\summary.csv
-admm,roberta,PASS,89.11,0.8966,0.8907,0.8934,0.8904,0.5094,94.59,333.44,13290.18,127325954,127325954,2754818,1.0,0.0,27,0,2678784,,2026-09-06T04:22:58.465674,D:\SVD_Project\results\unified_admm\roberta\summary.csv
-admm_pruner,distilbert,PASS,84.29,0.8603,0.8404,0.8601,0.8409,0.6574,25.31,551.24,43663.37,66955010,66955010,4135682,1.0,0.0,36,0,0,,2026-09-06T05:07:23.627199,D:\SVD_Project\results\unified_admm_pruner\distilbert\summary.csv
-admm_pruner,gpt2,PASS,80.73,0.8146,0.807,0.8079,0.8069,0.4777,83.7,414.93,15380.14,126800640,126800640,2360832,1.0,0.0,48,0,2359296,,2026-09-06T05:12:06.484832,D:\SVD_Project\results\unified_admm_pruner\gpt2\summary.csv
-admm_pruner,qwen3_5,PASS,78.21,0.8201,0.772,0.8326,0.7785,2.3223,1382.28,1879.76,1102.95,763217728,763217728,10824704,1.0,0.0,48,0,10822656,,2026-09-06T05:39:27.392824,D:\SVD_Project\results\unified_admm_pruner\qwen3_5\summary.csv
-admm_pruner,roberta,PASS,80.62,0.7966,0.8058,0.8112,0.8073,0.4539,100.32,336.39,13333.06,127325954,127325954,3270914,1.0,0.0,72,0,2678784,,2026-09-06T05:09:54.345720,D:\SVD_Project\results\unified_admm_pruner\roberta\summary.csv
-aegis_hybrid,distilbert,PASS,78.44,0.805,0.782,0.7935,0.7827,0.6117,20.26,298.9,15970.76,66955010,55523858,1237322,1.2059,17.07,0,6,589824,,2026-09-07T17:24:13.240590,D:\SVD_Project\results\unified_aegis_hybrid\distilbert\summary.csv
-aegis_hybrid,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7191,33.04,291.93,10366.29,126800640,103053600,2766480,1.2304,18.73,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:26:36.481322,D:\SVD_Project\results\unified_aegis_hybrid\gpt2\summary.csv
-aegis_hybrid,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7497,45.23,364.18,6880.69,127325954,110666018,3676562,1.1505,13.08,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:25:31.983147,D:\SVD_Project\results\unified_aegis_hybrid\roberta\summary.csv
-aegis_spectron_fp8,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7202,22.28,291.24,13004.85,66955010,54753044,1352450,1.2229,18.22,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:27:30.723081,D:\SVD_Project\results\unified_aegis_spectron_fp8\distilbert\summary.csv
-aegis_spectron_fp8,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7062,49.72,464.57,5926.91,126800640,101511972,2996736,1.2491,19.94,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:30:16.377201,D:\SVD_Project\results\unified_aegis_spectron_fp8\gpt2\summary.csv
-aegis_spectron_fp8,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7235,50.77,355.08,5872.19,127325954,109124390,3906818,1.1668,14.3,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:28:55.825907,D:\SVD_Project\results\unified_aegis_spectron_fp8\roberta\summary.csv
-aegis_v1,distilbert,PASS,80.16,0.813,0.8009,0.8039,0.8008,0.5133,30.51,279.52,14619.12,66955010,55945034,1378634,1.1968,16.44,0,6,589824,,2026-09-07T17:31:10.634616,D:\SVD_Project\results\unified_aegis_v1\distilbert\summary.csv
-aegis_v1,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7458,48.41,294.07,9998.97,126800640,103895952,3049104,1.2205,18.06,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:34:09.732884,D:\SVD_Project\results\unified_aegis_v1\gpt2\summary.csv
-aegis_v1,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7001,65.39,355.32,6472.52,127325954,111508370,3959186,1.1419,12.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:32:49.921590,D:\SVD_Project\results\unified_aegis_v1\roberta\summary.csv
-aegis_v1_module,distilbert,PASS,80.16,0.813,0.8009,0.8039,0.8008,0.5133,30.15,279.52,14569.17,66955010,55945034,1378634,1.1968,16.44,0,6,589824,,2026-09-07T17:52:56.743932,D:\SVD_Project\results\unified_aegis_v1_module\distilbert\summary.csv
-aegis_v1_module,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7458,47.84,294.07,10005.93,126800640,103895952,3049104,1.2205,18.06,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:55:52.306154,D:\SVD_Project\results\unified_aegis_v1_module\gpt2\summary.csv
-aegis_v1_module,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7001,64.26,355.32,6492.59,127325954,111508370,3959186,1.1419,12.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:54:33.565611,D:\SVD_Project\results\unified_aegis_v1_module\roberta\summary.csv
-aegis_v2,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7112,27.59,290.52,15797.67,66955010,55523858,1237322,1.2059,17.07,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:56:57.884646,D:\SVD_Project\results\unified_aegis_v2\distilbert\summary.csv
-aegis_v2,gpt2,PASS_LOW,50.8,0.6738,0.3369,0.2543,0.4989,0.7998,49.08,291.56,9653.57,126800640,103053600,2766480,1.2304,18.73,0,12,2654208,note: evaluated accuracy (50.80%) below chance threshold (56.00%),2026-09-07T17:59:50.182108,D:\SVD_Project\results\unified_aegis_v2\gpt2\summary.csv
-aegis_v2,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7248,59.48,355.3,7129.19,127325954,110666018,3676562,1.1505,13.08,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T17:58:30.254588,D:\SVD_Project\results\unified_aegis_v2\roberta\summary.csv
-aegis_v3,distilbert,PASS,62.84,0.7286,0.5698,0.7531,0.6219,1.5005,31.03,288.41,13911.05,66955010,55945034,1378634,1.1968,16.44,0,6,589824,,2026-09-07T18:00:44.738804,D:\SVD_Project\results\unified_aegis_v3\distilbert\summary.csv
-aegis_v3,gpt2,PASS_LOW,51.49,0.6754,0.3581,0.6023,0.506,0.7943,50.16,294.07,9165.2,126800640,103895952,3049104,1.2205,18.06,0,12,2654208,note: evaluated accuracy (51.49%) below chance threshold (56.00%),2026-09-07T18:03:45.239096,D:\SVD_Project\results\unified_aegis_v3\gpt2\summary.csv
-aegis_v3,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7025,67.23,354.85,6041.77,127325954,111508370,3959186,1.1419,12.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T18:02:24.486128,D:\SVD_Project\results\unified_aegis_v3\roberta\summary.csv
-aegis_v3_module,distilbert,PASS,62.84,0.7286,0.5698,0.7531,0.6219,1.5005,31.01,288.41,13708.76,66955010,55945034,1378634,1.1968,16.44,0,6,589824,,2026-09-07T18:04:53.094694,D:\SVD_Project\results\unified_aegis_v3_module\distilbert\summary.csv
-aegis_v3_module,gpt2,PASS_LOW,51.49,0.6754,0.3581,0.6023,0.506,0.7943,50.2,294.07,9242.83,126800640,103895952,3049104,1.2205,18.06,0,12,2654208,note: evaluated accuracy (51.49%) below chance threshold (56.00%),2026-09-07T18:07:53.617724,D:\SVD_Project\results\unified_aegis_v3_module\gpt2\summary.csv
-aegis_v3_module,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7025,67.49,354.85,5988.49,127325954,111508370,3959186,1.1419,12.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T18:06:33.117345,D:\SVD_Project\results\unified_aegis_v3_module\roberta\summary.csv
-aegis_v4,distilbert,PASS,62.84,0.7286,0.5698,0.7531,0.6219,1.5005,31.43,288.41,13723.34,66955010,55945034,1378634,1.1968,16.44,0,6,589824,,2026-09-07T18:08:53.865436,D:\SVD_Project\results\unified_aegis_v4\distilbert\summary.csv
-aegis_v4,gpt2,PASS_LOW,51.49,0.6754,0.3581,0.6023,0.506,0.7943,49.27,294.07,9603.78,126800640,103895952,3049104,1.2205,18.06,0,12,2654208,note: evaluated accuracy (51.49%) below chance threshold (56.00%),2026-09-07T18:11:51.611593,D:\SVD_Project\results\unified_aegis_v4\gpt2\summary.csv
-aegis_v4,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7025,66.09,354.85,6242.83,127325954,111508370,3959186,1.1419,12.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T18:10:32.602129,D:\SVD_Project\results\unified_aegis_v4\roberta\summary.csv
-aegis_v4_module,distilbert,PASS,62.84,0.7286,0.5698,0.7531,0.6219,1.5005,30.46,288.41,14166.28,66955010,55945034,1378634,1.1968,16.44,0,6,589824,,2026-09-07T18:12:55.358921,D:\SVD_Project\results\unified_aegis_v4_module\distilbert\summary.csv
-aegis_v4_module,gpt2,PASS_LOW,51.49,0.6754,0.3581,0.6023,0.506,0.7943,49.69,294.07,9464.65,126800640,103895952,3049104,1.2205,18.06,0,12,2654208,note: evaluated accuracy (51.49%) below chance threshold (56.00%),2026-09-07T18:15:53.298834,D:\SVD_Project\results\unified_aegis_v4_module\gpt2\summary.csv
-aegis_v4_module,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7025,66.64,354.85,6227.87,127325954,111508370,3959186,1.1419,12.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T18:14:33.673058,D:\SVD_Project\results\unified_aegis_v4_module\roberta\summary.csv
-aegis_v5,distilbert,PASS,62.84,0.7286,0.5698,0.7531,0.6219,1.5005,30.61,288.41,14210.76,66955010,55945034,1378634,1.1968,16.44,0,6,589824,,2026-09-07T18:16:54.271308,D:\SVD_Project\results\unified_aegis_v5\distilbert\summary.csv
-aegis_v5,gpt2,PASS_LOW,51.49,0.6754,0.3581,0.6023,0.506,0.7943,49.63,294.07,9499.04,126800640,103895952,3049104,1.2205,18.06,0,12,2654208,note: evaluated accuracy (51.49%) below chance threshold (56.00%),2026-09-07T18:19:51.344532,D:\SVD_Project\results\unified_aegis_v5\gpt2\summary.csv
-aegis_v5,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7025,65.8,354.85,6203.63,127325954,111508370,3959186,1.1419,12.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T18:18:31.924457,D:\SVD_Project\results\unified_aegis_v5\roberta\summary.csv
-aegis_v5_module,distilbert,PASS,62.84,0.7286,0.5698,0.7531,0.6219,1.5005,30.63,288.41,14311.47,66955010,55945034,1378634,1.1968,16.44,0,6,589824,,2026-09-07T18:20:50.731436,D:\SVD_Project\results\unified_aegis_v5_module\distilbert\summary.csv
-aegis_v5_module,gpt2,PASS_LOW,51.49,0.6754,0.3581,0.6023,0.506,0.7943,49.12,294.07,9540.76,126800640,103895952,3049104,1.2205,18.06,0,12,2654208,note: evaluated accuracy (51.49%) below chance threshold (56.00%),2026-09-07T18:23:47.731120,D:\SVD_Project\results\unified_aegis_v5_module\gpt2\summary.csv
-aegis_v5_module,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7025,66.3,354.85,6222.1,127325954,111508370,3959186,1.1419,12.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T18:22:28.419783,D:\SVD_Project\results\unified_aegis_v5_module\roberta\summary.csv
-aegis_v6,distilbert,PASS_LOW,52.52,0.6042,0.5055,0.5254,0.5217,0.7043,29.88,304.26,14246.72,66955010,53449040,1260368,1.2527,20.17,0,6,0,note: evaluated accuracy (52.52%) below chance threshold (56.00%),2026-09-07T18:24:53.809895,D:\SVD_Project\results\unified_aegis_v6\distilbert\summary.csv
-aegis_v6,gpt2,PASS_LOW,49.89,0.6255,0.4341,0.4873,0.4928,0.7531,59.68,299.87,6396.7,126800640,98903964,2774940,1.2821,22.0,0,12,1474560,note: evaluated accuracy (49.89%) below chance threshold (56.00%),2026-09-07T18:28:01.594650,D:\SVD_Project\results\unified_aegis_v6\gpt2\summary.csv
-aegis_v6,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7075,67.09,368.88,5795.82,127325954,106516382,3685022,1.1954,16.34,0,12,1794048,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T18:26:32.316456,D:\SVD_Project\results\unified_aegis_v6\roberta\summary.csv
-armor_pruner,distilbert,PASS,89.68,0.9002,0.8967,0.8973,0.8965,0.4013,15.51,311.89,54217.15,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-06T05:51:02.055709,D:\SVD_Project\results\unified_armor\distilbert\summary.csv
-armor_pruner,gpt2,PASS,75.11,0.7823,0.7459,0.768,0.7488,0.5002,44.94,401.55,15707.94,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-06T05:54:20.933208,D:\SVD_Project\results\unified_armor\gpt2\summary.csv
-armor_pruner,roberta,PASS,87.84,0.8843,0.8781,0.8803,0.8778,0.3422,53.58,322.44,13310.31,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-06T05:52:47.331677,D:\SVD_Project\results\unified_armor\roberta\summary.csv
-astro,distilbert,PASS,89.45,0.8982,0.8944,0.8952,0.8941,0.8832,6.03,337.59,46716.18,66955010,66955010,4135682,1.0,0.0,33,0,0,,2026-09-07T18:28:31.608398,D:\SVD_Project\results\unified_astro\distilbert\summary.csv
-astro,gpt2,PASS,77.06,0.8084,0.7614,0.8112,0.7673,0.5137,18.17,412.45,15775.19,126800640,126800640,2176512,1.0,0.0,45,0,2359296,,2026-09-07T18:30:14.581363,D:\SVD_Project\results\unified_astro\gpt2\summary.csv
-astro,qwen3_5,PASS,87.5,0.8659,0.8744,0.8855,0.8765,0.3983,370.61,1878.83,993.53,763217728,763217728,10824704,1.0,0.0,48,0,10822656,,2026-09-07T18:40:24.450945,D:\SVD_Project\results\unified_astro\qwen3_5\summary.csv
-astro,roberta,PASS,86.47,0.8801,0.8624,0.8844,0.8626,0.5307,22.35,337.21,13435.58,127325954,127325954,3270914,1.0,0.0,72,0,2678784,,2026-09-07T18:29:26.533249,D:\SVD_Project\results\unified_astro\roberta\summary.csv
-asvd,distilbert,PASS,90.6,0.9101,0.9058,0.9075,0.9054,0.7747,22.89,347.32,24044.58,66955010,68940424,1181954,0.9712,-2.97,0,6,589824,,2026-09-07T18:41:10.722263,D:\SVD_Project\results\unified_asvd\distilbert\summary.csv
-asvd,gpt2,PASS_LOW,52.75,0.6688,0.4224,0.5656,0.5199,0.6939,47.51,340.94,10113.21,126800640,128863090,2655744,0.984,-1.63,0,12,2654208,note: evaluated accuracy (52.75%) below chance threshold (56.00%),2026-09-07T18:43:50.769752,D:\SVD_Project\results\unified_asvd\gpt2\summary.csv
-asvd,roberta,PASS,85.78,0.8737,0.8555,0.8762,0.8558,0.4423,50.89,413.14,9662.9,127325954,142920149,3565826,0.8909,-12.25,0,12,2973696,,2026-09-07T18:42:33.244986,D:\SVD_Project\results\unified_asvd\roberta\summary.csv
-bam_umoe,distilbert,PASS,90.02,0.9043,0.9,0.9014,0.8998,0.5382,20.09,769.82,13912.8,66955010,180947720,1181960,0.37,-170.25,0,6,589824,,2026-09-07T18:46:42.862635,D:\SVD_Project\results\unified_bam_umoe\distilbert\summary.csv
-bam_umoe,gpt2,PASS,81.42,0.8076,0.814,0.8174,0.8151,0.4087,44.29,777.43,6950.65,126800640,353901324,2655756,0.3583,-179.1,0,12,2654208,,2026-09-07T18:49:14.601275,D:\SVD_Project\results\unified_bam_umoe\gpt2\summary.csv
-bam_umoe,roberta,PASS,84.63,0.863,0.844,0.8626,0.8444,0.4533,45.47,849.7,6897.2,127325954,361513742,3565838,0.3522,-183.93,0,12,2973696,,2026-09-07T18:48:00.731559,D:\SVD_Project\results\unified_bam_umoe\roberta\summary.csv
-block_transformer_hiba,distilbert,PASS,90.48,0.9075,0.9047,0.9051,0.9046,0.588,10.56,324.69,26740.15,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,,2026-09-07T18:50:19.376806,D:\SVD_Project\results\unified_block_transformer_hiba\distilbert\summary.csv
-block_transformer_hiba,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.772,25.87,340.52,11099.21,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T18:52:13.467994,D:\SVD_Project\results\unified_block_transformer_hiba\gpt2\summary.csv
-block_transformer_hiba,roberta,PASS,88.76,0.8977,0.8865,0.8987,0.8861,0.4392,27.08,399.22,10833.46,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-07T18:51:18.171135,D:\SVD_Project\results\unified_block_transformer_hiba\roberta\summary.csv
-cachenotes,distilbert,PASS,88.65,0.8845,0.8864,0.888,0.8871,0.4582,11.07,340.59,54669.29,66955010,66955010,4135682,1.0,0.0,24,0,0,,2026-09-07T18:53:05.463334,D:\SVD_Project\results\unified_cachenotes\distilbert\summary.csv
-cachenotes,gpt2,PASS,81.88,0.8394,0.8158,0.8357,0.8167,0.4325,23.49,402.87,16006.61,126800640,126800640,394752,1.0,0.0,14,0,2359296,,2026-09-07T18:54:58.830833,D:\SVD_Project\results\unified_cachenotes\gpt2\summary.csv
-cachenotes,qwen3_5,PASS,89.22,0.8956,0.8921,0.8926,0.8919,0.3758,363.01,1858.27,1046.74,763217728,763217728,7285760,1.0,0.0,0,0,10822656,,2026-09-07T19:05:01.575187,D:\SVD_Project\results\unified_cachenotes\qwen3_5\summary.csv
-cachenotes,roberta,PASS,85.32,0.8702,0.8507,0.873,0.8511,0.5279,28.51,328.53,13574.94,127325954,127325954,1747202,1.0,0.0,46,0,2678784,,2026-09-07T18:54:05.518968,D:\SVD_Project\results\unified_cachenotes\roberta\summary.csv
-chela_slay,distilbert,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.5477,15.98,373.51,17590.53,66955010,67600202,1181954,0.9905,-0.96,0,6,589824,,2026-09-07T19:05:44.375758,D:\SVD_Project\results\unified_chela_slay\distilbert\summary.csv
-chela_slay,gpt2,PASS,85.89,0.8712,0.8577,0.8683,0.8575,0.334,198.1,2291.25,4127.17,126800640,127206288,2655744,0.9968,-0.32,0,12,2654208,,2026-09-07T19:10:47.007763,D:\SVD_Project\results\unified_chela_slay\gpt2\summary.csv
-chela_slay,roberta,PASS,83.83,0.8583,0.835,0.861,0.836,0.5359,39.19,438.26,7433.83,127325954,134818706,3565826,0.9444,-5.88,0,12,2973696,,2026-09-07T19:06:57.937496,D:\SVD_Project\results\unified_chela_slay\roberta\summary.csv
-cluster,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7132,20.39,336.74,12405.31,66955010,67544840,1181960,0.9913,-0.88,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:12:01.542588,D:\SVD_Project\results\unified_cluster\distilbert\summary.csv
-cluster,gpt2,PASS,82.0,0.8265,0.8197,0.8205,0.8195,0.4033,25.57,339.82,11301.92,126800640,127095564,2655756,0.9977,-0.23,0,12,2654208,,2026-09-07T19:14:19.636071,D:\SVD_Project\results\unified_cluster\gpt2\summary.csv
-cluster,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.726,48.49,401.86,5471.2,127325954,134707982,3565838,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:13:23.319650,D:\SVD_Project\results\unified_cluster\roberta\summary.csv
-come,distilbert,PASS,86.24,0.8701,0.8619,0.8652,0.8616,0.4341,4.15,179.06,72211.64,66955010,53958916,2954500,1.2409,19.41,1,0,0,,2026-09-08T05:16:36.341551,D:\SVD_Project\results\unified_come\distilbert\summary.csv
-come,gpt2,PASS,73.17,0.7776,0.7197,0.7701,0.7281,0.6211,13.82,332.05,21796.34,126800640,100022020,1574400,1.2677,21.12,1,0,1572864,,2026-09-08T05:18:11.144104,D:\SVD_Project\results\unified_come\gpt2\summary.csv
-come,qwen3_5,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,14.99,1796.78,1289.77,763217728,763217728,0,1.0,0.0,0,0,10822656,"RuntimeError: Expected attn_mask dtype to be bool or float or to match query dtype, but got attn_mask.dtype: __int64 and  query.dtype: struct c10::Half instead.",2026-09-08T05:25:46.366831,D:\SVD_Project\results\unified_come\qwen3_5\summary.csv
-come,roberta,PASS,78.33,0.8177,0.7752,0.8217,0.78,0.5,16.73,276.45,18269.81,127325954,100449030,2386178,1.2676,21.11,1,0,1794048,,2026-09-08T05:17:25.999958,D:\SVD_Project\results\unified_come\roberta\summary.csv
-compressed_attention,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7283,11.02,285.58,31962.63,66955010,54126722,1938050,1.237,19.16,0,6,442368,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:20:51.188651,D:\SVD_Project\results\unified_compressed_attention\distilbert\summary.csv
-compressed_attention,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7074,27.83,299.36,11863.12,126800640,100259328,4167936,1.2647,20.93,0,12,2359296,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:22:52.510344,D:\SVD_Project\results\unified_compressed_attention\gpt2\summary.csv
-compressed_attention,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7104,27.92,357.35,11458.58,127325954,107871746,5078018,1.1803,15.28,0,12,2678784,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:21:52.555004,D:\SVD_Project\results\unified_compressed_attention\roberta\summary.csv
-compressed_attention_layer,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7283,11.07,285.58,31688.63,66955010,54126722,1938050,1.237,19.16,0,6,442368,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:23:26.934363,D:\SVD_Project\results\unified_compressed_attention_layer\distilbert\summary.csv
-compressed_attention_layer,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7074,27.37,299.36,11817.1,126800640,100259328,4167936,1.2647,20.93,0,12,2359296,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:25:25.915207,D:\SVD_Project\results\unified_compressed_attention_layer\gpt2\summary.csv
-compressed_attention_layer,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7104,27.58,357.35,11549.99,127325954,107871746,5078018,1.1803,15.28,0,12,2678784,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:24:27.371487,D:\SVD_Project\results\unified_compressed_attention_layer\roberta\summary.csv
-compressed_mha,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7286,11.13,291.86,31601.32,66955010,54126722,1938050,1.237,19.16,0,6,442368,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:26:00.442265,D:\SVD_Project\results\unified_compressed_mha\distilbert\summary.csv
-compressed_mha,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.724,28.79,299.86,11042.79,126800640,100259328,4167936,1.2647,20.93,0,12,2359296,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:27:59.886842,D:\SVD_Project\results\unified_compressed_mha\gpt2\summary.csv
-compressed_mha,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7349,27.45,361.85,11733.16,127325954,107871746,5078018,1.1803,15.28,0,12,2678784,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:27:00.504453,D:\SVD_Project\results\unified_compressed_mha\roberta\summary.csv
-cosformer,distilbert,PASS,78.1,0.7885,0.7807,0.7813,0.7806,0.4792,15.26,336.97,18046.26,66955010,67544840,1181960,0.9913,-0.88,0,6,589824,,2026-09-07T19:28:46.651781,D:\SVD_Project\results\unified_cosformer\distilbert\summary.csv
-cosformer,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7199,49.57,1282.79,5806.74,126800640,127095564,2655756,0.9977,-0.23,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:31:29.532761,D:\SVD_Project\results\unified_cosformer\gpt2\summary.csv
-cosformer,roberta,PASS,65.48,0.731,0.6247,0.7141,0.6498,0.6202,36.86,402.52,7913.02,127325954,134707982,3565838,0.9452,-5.8,0,12,2973696,,2026-09-07T19:30:07.427390,D:\SVD_Project\results\unified_cosformer\roberta\summary.csv
-cur,distilbert,PASS,88.42,0.891,0.8837,0.8877,0.8833,0.7317,11.67,338.34,52426.3,66955010,66955010,4135682,1.0,0.0,0,0,0,,2026-09-07T19:32:25.789567,D:\SVD_Project\results\unified_cur\distilbert\summary.csv
-cur,gpt2,PASS,83.03,0.8442,0.8289,0.8375,0.8289,0.4792,41.89,411.93,13474.58,126800640,126630864,2191056,1.0013,0.13,0,0,2189520,,2026-09-07T19:35:01.020242,D:\SVD_Project\results\unified_cur\gpt2\summary.csv
-cur,roberta,PASS,90.37,0.903,0.9037,0.9044,0.9041,0.251,50.24,336.26,11877.02,127325954,127222418,3167378,1.0008,0.08,0,0,2575248,,2026-09-07T19:33:48.492511,D:\SVD_Project\results\unified_cur\roberta\summary.csv
-cur_linear,distilbert,FAIL,0.0,0.9077,0.9047,0.9052,0.9046,0.309,0.42,181.06,56742.15,66955010,66955010,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'cur_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T03:14:29.743517,D:\SVD_Project\results\unified_cur_linear\distilbert\summary.csv
-cur_linear,gpt2,FAIL,0.0,0.639,0.505,0.5502,0.5365,0.6903,0.93,390.24,26397.59,124441344,124441344,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'cur_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T03:16:11.623886,D:\SVD_Project\results\unified_cur_linear\gpt2\summary.csv
-cur_linear,qwen3_5,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,5.98,1796.78,1173.06,763217728,763217728,0,1.0,0.0,0,0,10822656,RuntimeError: Compressor 'cur_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T03:24:41.921451,D:\SVD_Project\results\unified_cur_linear\qwen3_5\summary.csv
-cur_linear,roberta,FAIL,0.0,0.7586,0.7509,0.7512,0.7508,0.5699,1.03,295.83,26924.88,124647170,124647170,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'cur_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T03:15:21.617126,D:\SVD_Project\results\unified_cur_linear\roberta\summary.csv
-cur_moe,distilbert,PASS,73.74,0.7753,0.7297,0.761,0.7345,0.5164,8.72,270.96,42757.36,66955010,48496386,4649730,1.3806,27.57,0,0,0,,2026-09-07T19:35:54.684688,D:\SVD_Project\results\unified_cur_moe\distilbert\summary.csv
-cur_moe,gpt2,PASS,58.94,0.6961,0.5318,0.6561,0.5832,0.6754,33.89,343.64,10875.25,126800640,90508800,2008320,1.401,28.62,0,0,2006784,,2026-09-07T19:38:07.687521,D:\SVD_Project\results\unified_cur_moe\gpt2\summary.csv
-cur_moe,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7068,35.92,255.61,9912.21,127325954,87864834,2918402,1.4491,30.99,0,0,2326272,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:37:03.248038,D:\SVD_Project\results\unified_cur_moe\roberta\summary.csv
-cure,distilbert,FAIL,0.0,0.9077,0.9047,0.9052,0.9046,0.309,0.69,181.06,22704.76,66955010,66955010,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'cure' not found in COMPRESSOR_REGISTRY,2026-09-09T03:26:04.630742,D:\SVD_Project\results\unified_cure\distilbert\summary.csv
-cure,gpt2,FAIL,0.0,0.639,0.505,0.5502,0.5365,0.6903,0.94,390.24,28532.49,124441344,124441344,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'cure' not found in COMPRESSOR_REGISTRY,2026-09-09T03:27:24.380266,D:\SVD_Project\results\unified_cure\gpt2\summary.csv
-cure,qwen3_5,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,3.44,1796.78,1275.56,763217728,763217728,0,1.0,0.0,0,0,10822656,RuntimeError: Compressor 'cure' not found in COMPRESSOR_REGISTRY,2026-09-09T03:35:05.962395,D:\SVD_Project\results\unified_cure\qwen3_5\summary.csv
-cure,roberta,FAIL,0.0,0.7586,0.7509,0.7512,0.7508,0.5699,0.92,295.83,32036.42,124647170,124647170,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'cure' not found in COMPRESSOR_REGISTRY,2026-09-09T03:26:44.505557,D:\SVD_Project\results\unified_cure\roberta\summary.csv
-decay_linear_attention,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7335,657.41,326.98,554.91,66955010,67600202,1181954,0.9905,-0.96,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-07T19:49:43.493382,D:\SVD_Project\results\unified_decay_linear_attention\distilbert\summary.csv
-decay_linear_attention,gpt2,PASS_LOW,52.64,0.6821,0.377,0.7297,0.5176,0.6677,686.09,340.03,533.02,126800640,127206288,2655744,0.9968,-0.32,0,12,2654208,note: evaluated accuracy (52.64%) below chance threshold (56.00%),2026-09-07T20:27:55.977042,D:\SVD_Project\results\unified_decay_linear_attention\gpt2\summary.csv
-decay_linear_attention,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7053,39.65,412.68,7214.76,127325954,134818706,3565826,0.9444,-5.88,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T05:12:40.399927,D:\SVD_Project\results\unified_decay_linear_attention\roberta\summary.csv
-delta_kv,distilbert,PASS,90.14,0.9029,0.9014,0.9013,0.9014,0.7623,7.94,338.34,54200.9,66955010,66955010,4135682,1.0,0.0,0,0,0,,2026-09-07T20:28:29.885988,D:\SVD_Project\results\unified_delta_kv\distilbert\summary.csv
-delta_kv,roberta,PASS,87.5,0.888,0.8733,0.8908,0.8732,0.5098,26.43,337.21,13155.11,127325954,127325954,3270914,1.0,0.0,0,0,2678784,,2026-09-07T20:29:31.316596,D:\SVD_Project\results\unified_delta_kv\roberta\summary.csv
-direct_svd,distilbert,PASS,89.33,0.8959,0.8933,0.8934,0.8932,0.7258,9.9,357.79,43350.07,66955010,65332994,5466626,1.0248,2.42,11,0,0,,2026-09-07T21:32:04.559585,D:\SVD_Project\results\unified_direct_svd\distilbert\summary.csv
-direct_svd,gpt2,PASS,81.77,0.8239,0.8174,0.8181,0.8173,0.4129,27.45,406.32,15937.39,126800640,125768448,148992,1.0082,0.81,6,0,2359296,,2026-09-07T21:34:14.235317,D:\SVD_Project\results\unified_direct_svd\gpt2\summary.csv
-direct_svd,roberta,PASS,84.98,0.8665,0.8474,0.8674,0.8478,0.3754,36.84,346.97,12500.93,127325954,123934466,1181954,1.0274,2.66,23,0,2678784,,2026-09-07T21:33:15.270830,D:\SVD_Project\results\unified_direct_svd\roberta\summary.csv
-dobi_svd,distilbert,PASS,90.37,0.9069,0.9036,0.9042,0.9033,0.5619,3.25,183.82,201990.77,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-08T19:05:53.072506,D:\SVD_Project\results\unified_dobi_svd\distilbert\summary.csv
-dobi_svd,gpt2,PASS,82.57,0.8393,0.8244,0.8319,0.8244,0.3977,6.25,400.12,62996.2,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-08T19:06:40.865318,D:\SVD_Project\results\unified_dobi_svd\gpt2\summary.csv
-dobi_svd,qwen3_5,PASS,89.45,0.895,0.8945,0.8946,0.8947,0.3863,214.18,1850.64,4747.76,763217728,763217728,7285760,1.0,0.0,0,0,10822656,,2026-09-08T19:12:01.195530,D:\SVD_Project\results\unified_dobi_svd\qwen3_5\summary.csv
-dobi_svd,roberta,PASS,88.53,0.8938,0.8846,0.8919,0.8841,0.3724,8.18,321.64,56554.75,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-08T19:06:17.337209,D:\SVD_Project\results\unified_dobi_svd\roberta\summary.csv
-dynamic_entropy_svd,distilbert,PASS,90.37,0.9071,0.9035,0.9044,0.9033,0.6775,3.92,183.82,209693.91,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-08T19:24:17.888281,D:\SVD_Project\results\unified_dynamic_entropy_svd\distilbert\summary.csv
-dynamic_entropy_svd,gpt2,PASS,82.68,0.8409,0.8255,0.8337,0.8255,0.4059,7.65,400.12,63474.18,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-08T19:25:08.594248,D:\SVD_Project\results\unified_dynamic_entropy_svd\gpt2\summary.csv
-dynamic_entropy_svd,qwen3_5,PASS,89.22,0.8951,0.8921,0.8924,0.892,0.3674,203.11,1850.64,4908.12,763217728,763217728,7285760,1.0,0.0,0,0,10822656,,2026-09-08T19:30:15.404774,D:\SVD_Project\results\unified_dynamic_entropy_svd\qwen3_5\summary.csv
-dynamic_entropy_svd,roberta,PASS,88.42,0.8924,0.8835,0.8901,0.8831,0.3432,9.29,321.64,55863.97,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-08T19:24:43.737375,D:\SVD_Project\results\unified_dynamic_entropy_svd\roberta\summary.csv
-eat,distilbert,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.5551,2.9,327.69,110050.03,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,,2026-09-07T22:37:01.050891,D:\SVD_Project\results\unified_eat\distilbert\summary.csv
-eat,gpt2,PASS,82.11,0.8278,0.8208,0.8217,0.8207,0.402,7.97,340.52,37880.54,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,,2026-09-07T22:37:50.975959,D:\SVD_Project\results\unified_eat\gpt2\summary.csv
-eat,roberta,PASS,82.68,0.8506,0.8223,0.8562,0.8242,0.4899,7.34,399.12,44013.42,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-07T22:37:25.671481,D:\SVD_Project\results\unified_eat\roberta\summary.csv
-enlighten,distilbert,PASS,89.33,0.897,0.8932,0.894,0.893,0.424,3.96,338.84,164078.18,66955010,66955010,4135682,1.0,0.0,36,0,0,,2026-09-07T22:38:36.784127,D:\SVD_Project\results\unified_enlighten\distilbert\summary.csv
-enlighten,gpt2,PASS,73.85,0.7824,0.7274,0.776,0.7351,0.576,8.38,413.5,57435.74,126800640,126800640,2360832,1.0,0.0,48,0,2359296,,2026-09-07T22:39:29.775534,D:\SVD_Project\results\unified_enlighten\gpt2\summary.csv
-enlighten,roberta,PASS,80.73,0.8197,0.8064,0.8107,0.8063,0.4089,9.93,337.21,53061.4,127325954,127325954,3270914,1.0,0.0,72,0,2678784,,2026-09-07T22:39:04.051805,D:\SVD_Project\results\unified_enlighten\roberta\summary.csv
-entropy_budget,distilbert,PASS,90.48,0.9077,0.9047,0.9052,0.9046,0.5069,4.08,310.69,163382.79,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-07T22:41:37.971455,D:\SVD_Project\results\unified_entropy_budget\distilbert\summary.csv
-entropy_budget,gpt2,PASS,82.57,0.84,0.8243,0.8328,0.8243,0.4064,7.71,400.12,53239.2,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-07T22:42:29.970638,D:\SVD_Project\results\unified_entropy_budget\gpt2\summary.csv
-entropy_budget,roberta,PASS,88.65,0.8941,0.8859,0.8915,0.8854,0.3507,9.4,321.14,52532.35,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-07T22:42:04.888419,D:\SVD_Project\results\unified_entropy_budget\roberta\summary.csv
-erc,distilbert,PASS,90.48,0.9077,0.9047,0.9052,0.9046,0.487,3.8,310.69,162182.44,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-07T22:46:19.265870,D:\SVD_Project\results\unified_erc\distilbert\summary.csv
-erc,gpt2,PASS,82.45,0.8374,0.8234,0.8297,0.8234,0.3941,7.75,400.12,56499.34,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-07T22:47:11.503632,D:\SVD_Project\results\unified_erc\gpt2\summary.csv
-erc,roberta,PASS,88.53,0.8932,0.8847,0.8906,0.8843,0.3409,9.62,321.64,50864.97,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-07T22:46:46.573700,D:\SVD_Project\results\unified_erc\roberta\summary.csv
-expert_choice_moe,distilbert,PASS,90.14,0.9053,0.9012,0.9024,0.9009,0.5554,7.05,764.29,46334.82,66955010,180947720,1181960,0.37,-170.25,0,6,589824,,2026-09-07T22:52:18.535003,D:\SVD_Project\results\unified_expert_choice_moe\distilbert\summary.csv
-expert_choice_moe,gpt2,PASS,80.5,0.8041,0.805,0.8055,0.8054,0.4172,15.32,777.43,21269.75,126800640,353901324,2655756,0.3583,-179.1,0,12,2654208,,2026-09-07T22:53:25.360202,D:\SVD_Project\results\unified_expert_choice_moe\gpt2\summary.csv
-expert_choice_moe,roberta,PASS,84.29,0.862,0.8398,0.865,0.8406,0.4496,15.13,842.17,22254.65,127325954,361513742,3565838,0.3522,-183.93,0,12,2973696,,2026-09-07T22:52:52.420811,D:\SVD_Project\results\unified_expert_choice_moe\roberta\summary.csv
-factorised_matrix_state,distilbert,PASS_LOW,49.43,0.5756,0.475,0.4895,0.4909,nan,156.88,333.18,2410.87,66955010,67839818,1476938,0.987,-1.32,0,6,589824,note: recovery_loss_nan,2026-09-07T22:56:54.566606,D:\SVD_Project\results\unified_factorised_matrix_state\distilbert\summary.csv
-factorised_matrix_state,gpt2,PASS_LOW,49.08,0.0,0.3292,0.2454,0.5,nan,188.34,345.54,2008.83,126800640,127685520,3245712,0.9931,-0.7,0,12,2654208,note: recovery_loss_nan,2026-09-07T23:18:51.070537,D:\SVD_Project\results\unified_factorised_matrix_state\gpt2\summary.csv
-factorised_matrix_state,roberta,PASS_LOW,49.08,0.0,0.3292,0.2454,0.5,nan,1091.94,403.79,1093.4,127325954,135297938,4155794,0.9411,-6.26,0,12,2973696,note: recovery_loss_nan,2026-09-07T23:15:24.420471,D:\SVD_Project\results\unified_factorised_matrix_state\roberta\summary.csv
-faq,distilbert,PASS,90.71,0.9099,0.907,0.9075,0.9068,0.5923,7.1,417.84,32256.63,66955010,68282114,1919234,0.9806,-1.98,0,0,1327104,,2026-09-07T23:19:13.853795,D:\SVD_Project\results\unified_faq\distilbert\summary.csv
-faq,gpt2,PASS,57.22,0.6403,0.5564,0.5792,0.569,0.66,10.88,510.99,21600.89,126800640,126800640,2360832,1.0,0.0,0,0,2359296,,2026-09-07T23:20:12.899615,D:\SVD_Project\results\unified_faq\gpt2\summary.csv
-faq,roberta,PASS,63.3,0.726,0.5852,0.7253,0.627,0.6043,12.75,535.79,17542.06,127325954,127325954,3270914,1.0,0.0,0,0,2678784,,2026-09-07T23:19:44.403130,D:\SVD_Project\results\unified_faq\roberta\summary.csv
-fasa,distilbert,PASS,90.71,0.9107,0.907,0.9081,0.9067,0.5899,3.77,321.69,79214.18,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,,2026-09-07T23:23:30.682387,D:\SVD_Project\results\unified_fasa\distilbert\summary.csv
-fasa,gpt2,PASS,87.5,0.8832,0.8744,0.8795,0.874,0.3129,7.38,339.81,45665.26,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,,2026-09-07T23:24:21.481185,D:\SVD_Project\results\unified_fasa\gpt2\summary.csv
-fasa,roberta,PASS,90.94,0.9135,0.9092,0.9111,0.9088,0.3499,8.79,400.09,32287.17,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-07T23:23:57.025329,D:\SVD_Project\results\unified_fasa\roberta\summary.csv
-flap,distilbert,PASS,90.48,0.9077,0.9047,0.9052,0.9046,0.5069,1.77,311.19,164428.56,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-07T23:25:21.749110,D:\SVD_Project\results\unified_flap\distilbert\summary.csv
-flap,gpt2,PASS,82.68,0.8405,0.8255,0.8333,0.8255,0.4088,5.84,400.26,53356.34,126800640,126800640,26112,1.0,0.0,1,0,2359296,,2026-09-07T23:26:07.552746,D:\SVD_Project\results\unified_flap\gpt2\summary.csv
-flap,roberta,PASS,88.53,0.8936,0.8846,0.8915,0.8842,0.3492,4.71,321.14,52450.16,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-07T23:25:44.137617,D:\SVD_Project\results\unified_flap\roberta\summary.csv
-flash3,distilbert,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.6005,2.63,317.25,125650.95,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,,2026-09-07T23:29:55.874566,D:\SVD_Project\results\unified_flash3\distilbert\summary.csv
-flash3,gpt2,PASS,82.0,0.8222,0.8199,0.8199,0.82,0.4057,6.92,339.81,46474.95,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,,2026-09-07T23:30:44.169109,D:\SVD_Project\results\unified_flash3\gpt2\summary.csv
-flash3,roberta,PASS,83.94,0.8606,0.8357,0.8665,0.837,0.3715,6.48,398.75,49622.46,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-07T23:30:20.020443,D:\SVD_Project\results\unified_flash3\roberta\summary.csv
-flash3_fp8,distilbert,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.6005,2.59,317.25,131061.61,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,,2026-09-07T23:31:50.343667,D:\SVD_Project\results\unified_flash3_fp8\distilbert\summary.csv
-flash3_fp8,gpt2,PASS,82.0,0.8222,0.8199,0.8199,0.82,0.4057,6.54,339.81,48569.28,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,,2026-09-07T23:32:37.788879,D:\SVD_Project\results\unified_flash3_fp8\gpt2\summary.csv
-flash3_fp8,roberta,PASS,83.94,0.8606,0.8357,0.8665,0.837,0.3715,6.27,398.75,52546.36,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-07T23:32:14.181129,D:\SVD_Project\results\unified_flash3_fp8\roberta\summary.csv
-flat_llm,distilbert,PASS,90.48,0.9077,0.9047,0.9052,0.9046,0.5069,2.93,311.69,166422.26,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-07T23:33:35.752485,D:\SVD_Project\results\unified_flat_llm\distilbert\summary.csv
-flat_llm,gpt2,PASS,82.57,0.8397,0.8244,0.8323,0.8244,0.4092,6.7,401.62,58669.32,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-07T23:34:22.981379,D:\SVD_Project\results\unified_flat_llm\gpt2\summary.csv
-flat_llm,roberta,PASS,88.53,0.8936,0.8846,0.8915,0.8842,0.3492,6.83,321.14,55601.08,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-07T23:33:59.270454,D:\SVD_Project\results\unified_flat_llm\roberta\summary.csv
-fms,distilbert,PASS_LOW,49.43,0.5756,0.475,0.4895,0.4909,nan,144.78,333.18,2654.67,66955010,67839818,1476938,0.987,-1.32,0,6,589824,note: recovery_loss_nan,2026-09-07T23:44:31.308976,D:\SVD_Project\results\unified_fms\distilbert\summary.csv
-fms,gpt2,PASS_LOW,49.08,0.0,0.3292,0.2454,0.5,nan,149.9,345.54,2517.36,126800640,127685520,3245712,0.9931,-0.7,0,12,2654208,note: recovery_loss_nan,2026-09-08T00:07:39.881916,D:\SVD_Project\results\unified_fms\gpt2\summary.csv
-fms,roberta,PASS,65.71,0.7337,0.6261,0.7205,0.652,0.6107,39.26,407.41,6943.57,127325954,135297938,4155650,0.9411,-6.26,0,12,2973696,,2026-09-08T05:13:57.941081,D:\SVD_Project\results\unified_fms\roberta\summary.csv
-frandi,distilbert,PASS,90.37,0.9067,0.9036,0.9041,0.9034,0.6168,3.67,310.69,163195.48,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-08T00:07:58.964770,D:\SVD_Project\results\unified_frandi\distilbert\summary.csv
-frandi,gpt2,PASS,82.57,0.8397,0.8244,0.8323,0.8244,0.4108,6.44,400.12,58889.65,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-08T00:08:47.369288,D:\SVD_Project\results\unified_frandi\gpt2\summary.csv
-frandi,roberta,PASS,88.76,0.8951,0.887,0.8925,0.8866,0.315,7.96,321.64,55462.92,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-08T00:08:24.426900,D:\SVD_Project\results\unified_frandi\roberta\summary.csv
-fused_svd_kernel,distilbert,PASS,80.28,0.8219,0.8004,0.8131,0.801,0.5295,20.73,280.1,11815.51,66955010,54624074,1181954,1.2257,18.42,24,6,589824,,2026-09-08T00:17:57.669419,D:\SVD_Project\results\unified_fused_svd_kernel\distilbert\summary.csv
-fused_svd_kernel,gpt2,PASS_LOW,51.38,0.6748,0.3556,0.5891,0.5048,0.7292,84.95,288.28,2248.4,126800640,101254032,2655744,1.2523,20.15,48,12,2654208,note: evaluated accuracy (51.38%) below chance threshold (56.00%),2026-09-08T00:21:32.734288,D:\SVD_Project\results\unified_fused_svd_kernel\gpt2\summary.csv
-fused_svd_kernel,roberta,PASS,75.92,0.7294,0.7562,0.7771,0.7615,0.5308,96.88,346.5,1914.33,127325954,108866450,3565826,1.1696,14.5,48,12,2973696,,2026-09-08T00:19:51.065867,D:\SVD_Project\results\unified_fused_svd_kernel\roberta\summary.csv
-fusion_attn,distilbert,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.5529,2.83,328.08,116367.68,66955010,67646222,1181960,0.9898,-1.03,0,6,589824,,2026-09-08T00:22:09.305688,D:\SVD_Project\results\unified_fusion_attn\distilbert\summary.csv
-fusion_attn,gpt2,PASS,82.11,0.8274,0.8209,0.8216,0.8207,0.4045,7.07,340.92,45401.23,126800640,127298328,2655756,0.9961,-0.39,0,12,2654208,,2026-09-08T00:22:56.715641,D:\SVD_Project\results\unified_fusion_attn\gpt2\summary.csv
-fusion_attn,roberta,PASS,84.52,0.8635,0.8423,0.8657,0.843,0.4132,6.92,399.52,46342.58,127325954,134910746,3565838,0.9438,-5.96,0,12,2973696,,2026-09-08T00:22:33.071165,D:\SVD_Project\results\unified_fusion_attn\roberta\summary.csv
-galerkin,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7142,3.27,325.16,92022.35,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T00:23:19.421136,D:\SVD_Project\results\unified_galerkin\distilbert\summary.csv
-galerkin,gpt2,PASS,82.11,0.8278,0.8208,0.8217,0.8207,0.402,6.8,340.52,46494.18,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,,2026-09-08T00:24:08.006814,D:\SVD_Project\results\unified_galerkin\gpt2\summary.csv
-galerkin,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7051,7.83,399.22,38552.42,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T00:23:44.444554,D:\SVD_Project\results\unified_galerkin\roberta\summary.csv
-galerkin_attention,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7142,3.32,325.16,91749.79,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T00:24:36.488707,D:\SVD_Project\results\unified_galerkin_attention\distilbert\summary.csv
-galerkin_attention,gpt2,PASS,82.11,0.8278,0.8208,0.8217,0.8207,0.402,6.77,340.52,47281.46,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,,2026-09-08T00:25:24.162118,D:\SVD_Project\results\unified_galerkin_attention\gpt2\summary.csv
-galerkin_attention,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7051,7.85,399.22,38375.34,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T00:25:00.860315,D:\SVD_Project\results\unified_galerkin_attention\roberta\summary.csv
-gated_delta_net,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7121,139.93,403.99,2911.61,66955010,85520786,1329410,0.7829,-27.73,0,6,737280,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T00:28:01.470330,D:\SVD_Project\results\unified_gated_delta_net\distilbert\summary.csv
-gated_delta_net,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7226,224.17,462.45,2127.77,126800640,185193504,3835392,0.6847,-46.05,0,12,3833856,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T00:54:49.998176,D:\SVD_Project\results\unified_gated_delta_net\gpt2\summary.csv
-gated_delta_net,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.8152,67.85,442.45,4354.06,127325954,171544610,4745474,0.7422,-34.73,0,12,4153344,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T05:15:55.289052,D:\SVD_Project\results\unified_gated_delta_net\roberta\summary.csv
-gated_deltanet_block,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.71,140.57,403.53,2932.13,66955010,85530002,1329410,0.7828,-27.74,0,6,737280,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T00:57:25.840305,D:\SVD_Project\results\unified_gated_deltanet_block\distilbert\summary.csv
-gated_deltanet_block,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7064,270.07,466.99,2212.16,126800640,185211936,3835392,0.6846,-46.07,0,12,3833856,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:22:40.188467,D:\SVD_Project\results\unified_gated_deltanet_block\gpt2\summary.csv
-gated_deltanet_block,roberta,SKIP_ROBERTA_TIMEOUT,0.0,0.8942,0.8872,0.891,0.8868,0.295,1200.45,299.92,106957.25,127325954,127325954,0,1.0,0.0,0,0,2678784,Module pipeline exceeded hard 1200s timeout,2026-09-08T01:17:43.464579,D:\SVD_Project\results\unified_gated_deltanet_block\roberta\summary.csv
-gated_linear_attention,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.709,5.74,362.63,59471.56,66955010,71272778,1329410,0.9394,-6.45,0,6,737280,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:23:07.067917,D:\SVD_Project\results\unified_gated_linear_attention\distilbert\summary.csv
-gated_linear_attention,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.748,10.12,359.8,31127.22,126800640,134551440,2950656,0.9424,-6.11,0,12,2949120,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:24:07.003793,D:\SVD_Project\results\unified_gated_linear_attention\gpt2\summary.csv
-gated_linear_attention,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.6974,12.72,429.03,30567.38,127325954,142163858,3860738,0.8956,-11.65,0,12,3268608,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:23:39.313284,D:\SVD_Project\results\unified_gated_linear_attention\roberta\summary.csv
-goldfinch_ahn,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7055,3.63,370.97,84508.59,66955010,71143760,4725512,0.9411,-6.26,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:24:26.460679,D:\SVD_Project\results\unified_goldfinch_ahn\distilbert\summary.csv
-goldfinch_ahn,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7216,7.47,425.26,44548.2,126800640,134293404,9742860,0.9442,-5.91,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:25:17.646121,D:\SVD_Project\results\unified_goldfinch_ahn\gpt2\summary.csv
-goldfinch_ahn,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.8057,8.2,473.39,39368.99,127325954,141905822,10652942,0.8973,-11.45,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:24:52.420368,D:\SVD_Project\results\unified_goldfinch_ahn\roberta\summary.csv
-gqa,distilbert,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.5554,3.09,324.69,96233.27,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,,2026-09-08T01:25:35.014279,D:\SVD_Project\results\unified_gqa\distilbert\summary.csv
-gqa,gpt2,PASS,82.0,0.8265,0.8197,0.8205,0.8195,0.4033,6.46,339.81,49007.46,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,,2026-09-08T01:26:20.950504,D:\SVD_Project\results\unified_gqa\gpt2\summary.csv
-gqa,roberta,PASS,84.4,0.8623,0.8412,0.8641,0.8419,0.4539,6.66,400.59,46819.95,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-08T01:25:57.577287,D:\SVD_Project\results\unified_gqa\roberta\summary.csv
-granite_hybrid,distilbert,PASS,63.53,0.7319,0.581,0.754,0.6289,0.5722,24.13,1605.33,12421.3,66955010,216526106,1338626,0.3092,-223.39,0,6,589824,,2026-09-08T01:27:32.999776,D:\SVD_Project\results\unified_granite_hybrid\distilbert\summary.csv
-granite_hybrid,gpt2,PASS_LOW,52.29,0.6698,0.4052,0.5621,0.5149,0.6945,45.83,1610.66,6613.29,126800640,425058096,2969088,0.2983,-235.22,0,12,2654208,note: evaluated accuracy (52.29%) below chance threshold (56.00%),2026-09-08T01:29:46.449701,D:\SVD_Project\results\unified_granite_hybrid\gpt2\summary.csv
-granite_hybrid,roberta,PASS,60.21,0.7186,0.5198,0.7747,0.5947,0.6496,48.59,1686.96,6427.6,127325954,432670514,3879170,0.2943,-239.81,0,12,2973696,,2026-09-08T01:28:42.124888,D:\SVD_Project\results\unified_granite_hybrid\roberta\summary.csv
-grecodec,distilbert,PASS,90.37,0.9069,0.9036,0.9042,0.9033,0.5143,4.12,310.69,173191.15,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-08T01:30:23.334420,D:\SVD_Project\results\unified_grecodec\distilbert\summary.csv
-grecodec,gpt2,PASS,82.57,0.838,0.8247,0.8303,0.8246,0.3906,7.89,398.74,60393.06,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-08T01:31:15.948521,D:\SVD_Project\results\unified_grecodec\gpt2\summary.csv
-grecodec,roberta,PASS,88.53,0.8936,0.8846,0.8915,0.8842,0.3457,11.55,321.64,42992.33,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-08T01:30:51.252637,D:\SVD_Project\results\unified_grecodec\roberta\summary.csv
-griffin_ssd,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7279,4.07,362.74,77605.82,66955010,71217482,1329482,0.9401,-6.37,0,6,737280,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:32:58.972913,D:\SVD_Project\results\unified_griffin_ssd\distilbert\summary.csv
-griffin_ssd,gpt2,PASS,83.03,0.8455,0.8286,0.8395,0.8287,0.4118,8.84,358.28,34167.48,126800640,134440848,2950800,0.9432,-6.03,0,12,2949120,,2026-09-08T01:33:50.473419,D:\SVD_Project\results\unified_griffin_ssd\gpt2\summary.csv
-griffin_ssd,roberta,PASS_LOW,55.5,0.6572,0.5116,0.5747,0.5498,0.6893,9.36,428.89,33805.67,127325954,142053266,3860882,0.8963,-11.57,0,12,3268608,note: evaluated accuracy (55.50%) below chance threshold (56.00%),2026-09-08T01:33:24.472365,D:\SVD_Project\results\unified_griffin_ssd\roberta\summary.csv
-halo_regla,distilbert,PASS,90.6,0.9081,0.9059,0.906,0.9058,0.5728,3.6,336.22,87116.79,66955010,67600202,1181954,0.9905,-0.96,0,6,589824,,2026-09-08T01:34:20.894233,D:\SVD_Project\results\unified_halo_regla\distilbert\summary.csv
-halo_regla,gpt2,PASS,81.42,0.8204,0.814,0.8146,0.8139,0.4239,27.75,996.93,9245.92,126800640,127206288,2655744,0.9968,-0.32,0,12,2654208,,2026-09-08T01:35:30.288107,D:\SVD_Project\results\unified_halo_regla\gpt2\summary.csv
-halo_regla,roberta,PASS,87.84,0.8896,0.8772,0.8899,0.8769,0.4731,8.76,400.47,39305.88,127325954,134818706,3565826,0.9444,-5.88,0,12,2973696,,2026-09-08T01:34:45.496436,D:\SVD_Project\results\unified_halo_regla\roberta\summary.csv
-hamming,distilbert,PASS,75.92,0.7965,0.7508,0.7914,0.7561,0.7328,3.29,331.45,93288.52,66955010,67544984,1182104,0.9913,-0.88,0,6,589824,,2026-09-08T01:36:29.526325,D:\SVD_Project\results\unified_hamming\distilbert\summary.csv
-hamming,gpt2,PASS,74.31,0.7068,0.7391,0.7643,0.7456,0.5495,6.51,340.1,50053.2,126800640,127095852,2656044,0.9977,-0.23,0,12,2654208,,2026-09-08T01:37:17.267299,D:\SVD_Project\results\unified_hamming\gpt2\summary.csv
-hamming,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7209,7.55,400.16,47320.28,127325954,134708270,3566126,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T01:36:54.200235,D:\SVD_Project\results\unified_hamming\roberta\summary.csv
-hashed_linear,distilbert,FAIL,0.0,0.9077,0.9047,0.9052,0.9046,0.309,0.44,181.06,60137.99,66955010,66955010,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'hashed_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T03:35:48.103777,D:\SVD_Project\results\unified_hashed_linear\distilbert\summary.csv
-hashed_linear,gpt2,FAIL,0.0,0.639,0.505,0.5502,0.5365,0.6903,0.93,390.24,28251.77,124441344,124441344,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'hashed_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T03:37:04.268547,D:\SVD_Project\results\unified_hashed_linear\gpt2\summary.csv
-hashed_linear,qwen3_5,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,3.67,1796.78,1303.54,763217728,763217728,0,1.0,0.0,0,0,10822656,RuntimeError: Compressor 'hashed_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T03:46:04.513459,D:\SVD_Project\results\unified_hashed_linear\qwen3_5\summary.csv
-hashed_linear,roberta,FAIL,0.0,0.7586,0.7509,0.7512,0.7508,0.5699,0.97,295.83,31888.08,124647170,124647170,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'hashed_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T03:36:25.658484,D:\SVD_Project\results\unified_hashed_linear\roberta\summary.csv
-hashednets,distilbert,PASS,90.48,0.9079,0.9047,0.9053,0.9045,0.5672,1.83,311.19,181139.14,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-08T01:37:45.697219,D:\SVD_Project\results\unified_hashednets\distilbert\summary.csv
-hashednets,gpt2,PASS,82.45,0.8374,0.8234,0.8297,0.8234,0.4009,4.02,401.74,66410.32,126800640,126800640,1536,1.0,0.0,0,0,2359296,,2026-09-08T01:38:26.648120,D:\SVD_Project\results\unified_hashednets\gpt2\summary.csv
-hashednets,roberta,PASS,88.53,0.8934,0.8847,0.891,0.8842,0.3416,4.71,321.14,59556.94,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-08T01:38:06.175720,D:\SVD_Project\results\unified_hashednets\roberta\summary.csv
-hgrn2_gated_deltanet,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7288,164.64,513.56,2296.98,66955010,110758820,1771778,0.6045,-65.42,0,6,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T03:49:25.623923,D:\SVD_Project\results\unified_hgrn2_gated_deltanet\distilbert\summary.csv
-hgrn2_gated_deltanet,gpt2,SKIP_GPT_TIMEOUT,0.0,0.639,0.505,0.5502,0.5365,0.6903,180.93,390.24,28345.59,124441344,124441344,0,1.0,0.0,0,0,0,Module pipeline exceeded hard 180s timeout,2026-09-09T03:56:41.528824,D:\SVD_Project\results\unified_hgrn2_gated_deltanet\gpt2\summary.csv
-hgrn2_gated_deltanet,qwen3_5,SKIP_QWEN3_5_TIMEOUT,0.0,0.557,0.6526,0.7722,0.6842,0.6349,183.73,1796.78,1301.19,763217728,763217728,0,1.0,0.0,0,0,10822656,Module pipeline exceeded hard 180s timeout,2026-09-09T04:07:00.003000,D:\SVD_Project\results\unified_hgrn2_gated_deltanet\qwen3_5\summary.csv
-hgrn2_gated_deltanet,roberta,SKIP_ROBERTA_TIMEOUT,0.0,0.7578,0.7497,0.7501,0.7497,0.5699,181.17,712.34,28193.43,124647170,124647170,0,1.0,0.0,0,0,0,Module pipeline exceeded hard 180s timeout,2026-09-09T03:52:56.378638,D:\SVD_Project\results\unified_hgrn2_gated_deltanet\roberta\summary.csv
-hgrn2_layer,distilbert,SKIP_BERT_TIMEOUT,0.0,0.9077,0.9047,0.9052,0.9046,0.3091,1200.29,389.51,172664.93,66955010,66955010,0,1.0,0.0,0,0,0,Module pipeline exceeded hard 1200s timeout,2026-09-08T03:02:43.526178,D:\SVD_Project\results\unified_hgrn2_layer\distilbert\summary.csv
-hgrn2_layer,roberta,PASS_LOW,49.77,0.4456,0.4932,0.4996,0.4996,0.715,279.54,406.2,1362.94,127325954,141186818,2976002,0.9018,-10.89,0,12,2383872,note: evaluated accuracy (49.77%) below chance threshold (56.00%),2026-09-08T05:01:47.704591,D:\SVD_Project\results\unified_hgrn2_layer\roberta\summary.csv
-hgrn2_outer,roberta,PASS_LOW,49.08,0.0,0.3292,0.2454,0.5,0.8986,41.06,423.03,7030.58,127325954,134791058,3565826,0.9446,-5.86,0,12,2973696,note: evaluated accuracy (49.08%) below chance threshold (56.00%),2026-09-08T03:46:25.973296,D:\SVD_Project\results\unified_hgrn2_outer\roberta\summary.csv
-hla,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7138,34.55,402.47,7927.92,127325954,134680466,3565826,0.9454,-5.78,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T05:09:31.855529,D:\SVD_Project\results\unified_hla\roberta\summary.csv
-huffman_coder,distilbert,FAIL,0.0,0.9077,0.9047,0.9052,0.9046,0.309,0.5,181.06,46354.73,66955010,66955010,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'huffman_coder' not found in COMPRESSOR_REGISTRY,2026-09-09T04:08:03.303736,D:\SVD_Project\results\unified_huffman_coder\distilbert\summary.csv
-huffman_coder,gpt2,FAIL,0.0,0.639,0.505,0.5502,0.5365,0.6903,1.03,390.24,27002.09,124441344,124441344,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'huffman_coder' not found in COMPRESSOR_REGISTRY,2026-09-09T04:09:45.653484,D:\SVD_Project\results\unified_huffman_coder\gpt2\summary.csv
-huffman_coder,qwen3_5,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,3.8,1796.78,1270.75,763217728,763217728,0,1.0,0.0,0,0,10822656,RuntimeError: Compressor 'huffman_coder' not found in COMPRESSOR_REGISTRY,2026-09-09T04:17:30.659891,D:\SVD_Project\results\unified_huffman_coder\qwen3_5\summary.csv
-huffman_coder,roberta,FAIL,0.0,0.7586,0.7509,0.7512,0.7508,0.5699,1.02,295.83,30732.74,124647170,124647170,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'huffman_coder' not found in COMPRESSOR_REGISTRY,2026-09-09T04:08:54.931736,D:\SVD_Project\results\unified_huffman_coder\roberta\summary.csv
-hybrid_svd,roberta,PASS,88.53,0.8936,0.8846,0.8915,0.8842,0.3492,21.26,321.14,12284.94,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-08T04:44:48.034824,D:\SVD_Project\results\unified_hybrid_svd\roberta\summary.csv
-hybrid_svd_layer,distilbert,FAIL,0.0,0.9077,0.9047,0.9052,0.9046,0.309,0.43,181.06,60829.38,66955010,66955010,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'hybrid_svd_layer' not found in COMPRESSOR_REGISTRY,2026-09-09T04:18:12.858765,D:\SVD_Project\results\unified_hybrid_svd_layer\distilbert\summary.csv
-hybrid_svd_layer,gpt2,FAIL,0.0,0.639,0.505,0.5502,0.5365,0.6903,0.93,390.24,28697.7,124441344,124441344,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'hybrid_svd_layer' not found in COMPRESSOR_REGISTRY,2026-09-09T04:19:35.695521,D:\SVD_Project\results\unified_hybrid_svd_layer\gpt2\summary.csv
-hybrid_svd_layer,qwen3_5,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,3.76,1796.78,1292.52,763217728,763217728,0,1.0,0.0,0,0,10822656,RuntimeError: Compressor 'hybrid_svd_layer' not found in COMPRESSOR_REGISTRY,2026-09-09T04:26:56.514769,D:\SVD_Project\results\unified_hybrid_svd_layer\qwen3_5\summary.csv
-hybrid_svd_layer,roberta,FAIL,0.0,0.7586,0.7509,0.7512,0.7508,0.5699,0.95,295.83,29018.05,124647170,124647170,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'hybrid_svd_layer' not found in COMPRESSOR_REGISTRY,2026-09-09T04:18:51.472533,D:\SVD_Project\results\unified_hybrid_svd_layer\roberta\summary.csv
-hybridkv,roberta,PASS,87.39,0.8873,0.872,0.8908,0.872,0.6876,24.15,337.24,12363.4,127325954,127325954,3270914,1.0,0.0,0,0,2678784,,2026-09-08T04:46:24.221376,D:\SVD_Project\results\unified_hybridkv\roberta\summary.csv
-infini,roberta,PASS,83.6,0.8566,0.8326,0.8594,0.8337,0.4531,30.97,405.56,9728.68,127325954,135887630,3565826,0.937,-6.72,0,12,2973696,,2026-09-07T05:00:11.314155,D:\SVD_Project\results\unified_infini\roberta\summary.csv
-infini_attention,roberta,PASS,83.49,0.8569,0.8309,0.8625,0.8323,0.5408,30.33,412.31,9730.44,127325954,135887630,4745474,0.937,-6.72,0,12,2973696,,2026-09-08T05:54:23.131368,D:\SVD_Project\results\unified_infini_attention\roberta\summary.csv
-jamba,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7428,324.41,739.2,1194.61,127325954,321147650,5482754,0.3965,-152.22,0,12,4890624,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T09:20:33.658084,D:\SVD_Project\results\unified_jamba\roberta\summary.csv
-jamba_info,roberta,PASS,85.44,0.8639,0.8536,0.8585,0.8534,0.3715,307.11,543.33,1273.25,127325954,180170498,5187842,0.7067,-41.5,0,12,4595712,,2026-09-08T08:50:38.379639,D:\SVD_Project\results\unified_jamba_info\roberta\summary.csv
-kda,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.738,47.97,414.91,5791.72,127325954,134708114,3565826,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:01:45.745702,D:\SVD_Project\results\unified_kda\roberta\summary.csv
-kmeans,roberta,PASS,87.96,0.8901,0.8785,0.8895,0.8781,0.3788,29.09,1020.65,11647.96,127325954,42409730,3270914,3.0023,66.69,72,0,2678784,,2026-09-08T09:21:52.395352,D:\SVD_Project\results\unified_kmeans\roberta\summary.csv
-kronecker,roberta,PASS,88.65,0.8946,0.8858,0.8924,0.8854,0.3675,25.55,321.14,12666.73,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-08T06:03:18.333217,D:\SVD_Project\results\unified_kronecker\roberta\summary.csv
-kronecker_linear,distilbert,FAIL,0.0,0.9077,0.9047,0.9052,0.9046,0.309,0.42,181.06,60730.57,66955010,66955010,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'kronecker_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T04:27:46.126440,D:\SVD_Project\results\unified_kronecker_linear\distilbert\summary.csv
-kronecker_linear,gpt2,FAIL,0.0,0.639,0.505,0.5502,0.5365,0.6903,0.96,390.24,25390.03,124441344,124441344,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'kronecker_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T04:29:05.654253,D:\SVD_Project\results\unified_kronecker_linear\gpt2\summary.csv
-kronecker_linear,qwen3_5,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,3.82,1796.78,1285.76,763217728,763217728,0,1.0,0.0,0,0,10822656,RuntimeError: Compressor 'kronecker_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T04:36:27.119587,D:\SVD_Project\results\unified_kronecker_linear\qwen3_5\summary.csv
-kronecker_linear,roberta,FAIL,0.0,0.7586,0.7509,0.7512,0.7508,0.5699,1.01,295.83,32256.52,124647170,124647170,0,1.0,0.0,0,0,0,RuntimeError: Compressor 'kronecker_linear' not found in COMPRESSOR_REGISTRY,2026-09-09T04:28:25.940422,D:\SVD_Project\results\unified_kronecker_linear\roberta\summary.csv
-kronecker_tt_lora,roberta,FAIL,0.0,0.8942,0.8872,0.891,0.8868,0.295,3.06,299.92,30960.28,127325954,127325954,0,1.0,0.0,0,0,2678784,"RuntimeError: CUDA error: device-side assert triggered
-CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1
-Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-",2026-09-08T06:04:30.956204,D:\SVD_Project\results\unified_kronecker_tt_lora\roberta\summary.csv
-kvtc,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7913,27.23,421.97,12946.69,127325954,127325954,2054402,1.0,0.0,45,0,2678784,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:05:36.960088,D:\SVD_Project\results\unified_kvtc\roberta\summary.csv
-leka_v1,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7031,37.41,462.09,7796.14,127325954,134709518,3565838,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:06:53.721481,D:\SVD_Project\results\unified_leka_v1\roberta\summary.csv
-leka_v2,roberta,PASS,80.73,0.8268,0.8049,0.819,0.8055,0.488,46.38,437.03,5952.41,127325954,135594398,4155794,0.939,-6.49,0,12,2973696,,2026-09-08T06:08:15.351331,D:\SVD_Project\results\unified_leka_v2\roberta\summary.csv
-leka_v3,roberta,PASS,66.86,0.7445,0.6365,0.7442,0.6634,0.5941,44.16,417.76,6397.2,127325954,135323294,4155650,0.9409,-6.28,0,12,2973696,,2026-09-08T06:09:37.234332,D:\SVD_Project\results\unified_leka_v3\roberta\summary.csv
-liftr,roberta,PASS,87.5,0.888,0.8733,0.8908,0.8732,0.5098,22.54,337.21,13118.56,127325954,127325954,3270914,1.0,0.0,0,0,2678784,,2026-09-08T09:23:45.236689,D:\SVD_Project\results\unified_liftr\roberta\summary.csv
-lillama,roberta,PASS,85.55,0.8732,0.8526,0.879,0.8532,0.5679,24.19,337.21,12734.72,127325954,127325954,3270914,1.0,0.0,0,0,2678784,,2026-09-08T09:24:57.379655,D:\SVD_Project\results\unified_lillama\roberta\summary.csv
-linformer,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7561,34.55,405.25,8711.01,127325954,135497486,4355342,0.9397,-6.42,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:11:30.008863,D:\SVD_Project\results\unified_linformer\roberta\summary.csv
-lola_attention,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7249,50.44,395.14,9431.57,127325954,108755738,3565850,1.1708,14.58,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T11:09:58.589847,D:\SVD_Project\results\unified_lola_attention\roberta\summary.csv
-lola_attn,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7261,50.24,395.14,9587.37,127325954,108755738,3565850,1.1708,14.58,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:14:20.127672,D:\SVD_Project\results\unified_lola_attn\roberta\summary.csv
-lora_attention,roberta,PASS,84.63,0.8649,0.8434,0.8683,0.8441,0.4875,29.2,411.84,10456.4,127325954,135887618,4745474,0.937,-6.72,0,12,4153344,,2026-09-07T05:22:40.860775,D:\SVD_Project\results\unified_lora_attention\roberta\summary.csv
-lora_attn,roberta,PASS,84.63,0.8649,0.8434,0.8683,0.8441,0.4875,29.35,411.84,10142.24,127325954,135887618,4745474,0.937,-6.72,0,12,4153344,,2026-09-08T06:15:23.844913,D:\SVD_Project\results\unified_lora_attn\roberta\summary.csv
-lsc,roberta,PASS,88.99,0.897,0.8894,0.8944,0.8889,0.3304,17.58,321.14,13140.26,127325954,127325954,616706,1.0,0.0,144,0,2678784,,2026-09-08T09:26:21.918162,D:\SVD_Project\results\unified_lsc\roberta\summary.csv
-lsh,roberta,PASS_LOW,53.21,0.6808,0.4026,0.6424,0.5237,0.6901,47.88,402.61,5204.99,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (53.21%) below chance threshold (56.00%),2026-09-08T06:17:17.556843,D:\SVD_Project\results\unified_lsh\roberta\summary.csv
-lsh_attention,roberta,PASS_LOW,53.21,0.6808,0.4026,0.6424,0.5237,0.6901,45.6,402.61,5418.38,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (53.21%) below chance threshold (56.00%),2026-09-08T08:39:13.978545,D:\SVD_Project\results\unified_lsh_attention\roberta\summary.csv
-mamba,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7357,20.96,381.5,13952.11,127325954,127187726,3123458,1.0011,0.11,0,12,2531328,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:18:12.919684,D:\SVD_Project\results\unified_mamba\roberta\summary.csv
-mamba_inject,roberta,SKIP_ROBERTA_ARCHITECTURAL,0.0,0.8942,0.8872,0.891,0.8868,0.295,1.1,299.92,30725.14,127325954,127325954,0,1.0,0.0,0,0,2678784,note: architecture unsupported by module (Could not instantiate attention class inject_mamba),2026-09-08T06:18:48.336001,D:\SVD_Project\results\unified_mamba_inject\roberta\summary.csv
-mamba_shedder,roberta,PASS,85.55,0.8732,0.8526,0.879,0.8532,0.5679,23.54,337.21,13015.45,127325954,127325954,3270914,1.0,0.0,0,0,2678784,,2026-09-08T09:27:56.674859,D:\SVD_Project\results\unified_mamba_shedder\roberta\summary.csv
-mamba_svd_flash,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7047,1377.19,1699.59,534.63,127325954,639072386,5040386,0.1992,-401.92,0,12,4448256,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T11:07:44.576082,D:\SVD_Project\results\unified_mamba_svd_flash\roberta\summary.csv
-mgie_budget,distilbert,PASS,90.14,0.9051,0.9012,0.9023,0.901,0.7407,5.36,183.82,113421.55,66955010,66955010,592130,1.0,0.0,0,0,0,,2026-09-08T20:33:05.580405,D:\SVD_Project\results\unified_mgie_budget\distilbert\summary.csv
-mgie_budget,gpt2,PASS,81.88,0.8271,0.8184,0.82,0.8182,0.4074,11.37,400.63,33065.77,126800640,126431488,1536,1.0029,0.29,95,0,2383360,,2026-09-08T20:34:14.665316,D:\SVD_Project\results\unified_mgie_budget\gpt2\summary.csv
-mgie_budget,roberta,PASS,88.19,0.8912,0.881,0.8897,0.8806,0.3635,14.83,315.15,28037.14,127325954,127362818,616706,0.9997,-0.03,144,0,2715648,,2026-09-08T20:33:41.732959,D:\SVD_Project\results\unified_mgie_budget\roberta\summary.csv
-mgie_svd,roberta,PASS,88.19,0.8912,0.881,0.8897,0.8806,0.361,27.85,313.45,8833.1,127325954,126779922,616706,1.0043,0.43,144,0,2132752,,2026-09-08T09:30:08.686901,D:\SVD_Project\results\unified_mgie_svd\roberta\summary.csv
-minimal_aurora,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7577,47.99,361.47,10336.97,127325954,115833614,3565838,1.0992,9.03,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:42:16.645934,D:\SVD_Project\results\unified_minimal_aurora\roberta\summary.csv
-minimal_nova,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7577,48.28,361.47,10370.77,127325954,115833602,3565826,1.0992,9.03,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:43:39.774685,D:\SVD_Project\results\unified_minimal_nova\roberta\summary.csv
-minimal_prism,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7577,48.18,361.47,10354.98,127325954,115833602,3565826,1.0992,9.03,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:45:02.329188,D:\SVD_Project\results\unified_minimal_prism\roberta\summary.csv
-minimal_svd,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7577,48.16,361.47,10372.55,127325954,115833602,3565826,1.0992,9.03,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:46:25.033180,D:\SVD_Project\results\unified_minimal_svd\roberta\summary.csv
-minimal_svd_v2,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7577,48.0,361.47,10230.69,127325954,115833602,3565826,1.0992,9.03,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:47:47.635992,D:\SVD_Project\results\unified_minimal_svd_v2\roberta\summary.csv
-mixattention_moska,roberta,PASS,90.94,0.9135,0.9092,0.9111,0.9088,0.3499,34.52,400.09,8349.47,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-07T05:56:54.291929,D:\SVD_Project\results\unified_mixattention_moska\roberta\summary.csv
-mla,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.732,24.75,367.37,12686.97,127325954,120828674,2976002,1.0538,5.1,0,12,2383872,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:48:46.605250,D:\SVD_Project\results\unified_mla\roberta\summary.csv
-mlorq,roberta,PASS,88.65,0.8941,0.8859,0.8915,0.8854,0.3507,21.21,321.64,13139.32,127325954,127325954,616706,1.0,0.0,0,0,2678784,,2026-09-08T09:31:41.787234,D:\SVD_Project\results\unified_mlorq\roberta\summary.csv
-moba,roberta,PASS,85.55,0.8732,0.8526,0.879,0.8532,0.5879,39.92,400.09,7226.1,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-07T06:00:17.271671,D:\SVD_Project\results\unified_moba\roberta\summary.csv
-modegpt,roberta,PASS,88.99,0.8972,0.8893,0.8948,0.8889,0.3541,24.88,325.54,13022.92,127325954,127325954,1206530,1.0,0.0,144,0,2678784,,2026-09-08T09:33:35.831533,D:\SVD_Project\results\unified_modegpt\roberta\summary.csv
-moe_deltakv_paged,roberta,PASS,81.08,0.8243,0.8097,0.8153,0.8096,0.434,30.99,388.07,9304.65,127325954,133577474,2386178,0.9532,-4.91,0,12,1794048,,2026-09-08T06:50:32.041105,D:\SVD_Project\results\unified_moe_deltakv_paged\roberta\summary.csv
-nasc,roberta,PASS,85.21,0.859,0.8517,0.8536,0.8514,0.473,75.7,398.87,3775.03,127325954,134784806,3565826,0.9447,-5.86,0,12,2973696,,2026-09-07T06:02:46.952501,D:\SVD_Project\results\unified_nasc\roberta\summary.csv
-nasc_attention,roberta,PASS,85.21,0.8584,0.8518,0.8532,0.8515,0.4799,73.32,401.12,3745.94,127325954,134784806,3614978,0.9447,-5.86,0,12,2973696,,2026-09-08T08:41:05.902343,D:\SVD_Project\results\unified_nasc_attention\roberta\summary.csv
-nexus,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.6989,35.57,410.9,8360.94,127325954,134837762,3664130,0.9443,-5.9,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:51:53.215649,D:\SVD_Project\results\unified_nexus\roberta\summary.csv
-nha,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7007,36.65,399.66,7778.87,127325954,134717198,3565826,0.9451,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:53:04.459906,D:\SVD_Project\results\unified_nha\roberta\summary.csv
-nha_compressor,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7007,37.01,399.66,7661.29,127325954,134717198,3565826,0.9451,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T06:54:15.580991,D:\SVD_Project\results\unified_nha_compressor\roberta\summary.csv
-nmf,roberta,PASS_LOW,49.08,0.0,0.3292,0.2454,0.5,nan,1144.61,353.46,5717.14,127325954,121362498,3002946,1.0491,4.68,0,0,2410816,note: recovery_loss_nan,2026-09-08T09:53:50.124453,D:\SVD_Project\results\unified_nmf\roberta\summary.csv
-nsa_attention,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7007,30.11,400.69,9417.01,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T08:44:05.976781,D:\SVD_Project\results\unified_nsa_attention\roberta\summary.csv
-nystrom,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7061,6.37,198.28,41549.9,66955010,67544834,1181954,0.9913,-0.88,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T20:21:33.947388,D:\SVD_Project\results\unified_nystrom\distilbert\summary.csv
-nystrom,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7012,11.59,339.81,26687.17,126800640,127095552,2655744,0.9977,-0.23,0,12,2654208,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T20:32:43.212159,D:\SVD_Project\results\unified_nystrom\gpt2\summary.csv
-nystrom,qwen3_5,SKIP_QWEN3_5_TIMEOUT,0.0,0.557,0.6526,0.7722,0.6842,0.6349,1501.92,1796.78,2597.75,763217728,763217728,0,1.0,0.0,0,0,10822656,Module pipeline exceeded hard 1500s timeout,2026-09-08T21:00:31.315033,D:\SVD_Project\results\unified_nystrom\qwen3_5\summary.csv
-nystrom,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7007,14.17,400.59,19358.05,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T20:22:14.486062,D:\SVD_Project\results\unified_nystrom\roberta\summary.csv
-oats,roberta,PASS,87.73,0.8853,0.8767,0.8818,0.8763,0.3478,39.62,500.51,14409.12,127325954,127325954,616706,1.0,0.0,72,0,2678784,,2026-09-08T09:55:14.744055,D:\SVD_Project\results\unified_oats\roberta\summary.csv
-oha,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7123,14.47,204.74,19220.48,66955010,67895114,1181954,0.9862,-1.4,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T04:37:23.658185,D:\SVD_Project\results\unified_oha\distilbert\summary.csv
-oha,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.737,31.95,327.71,8911.57,124441344,126321552,1181184,0.9851,-1.51,0,12,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T04:39:42.802145,D:\SVD_Project\results\unified_oha\gpt2\summary.csv
-oha,qwen3_5,SKIP_QWEN3_5_TIMEOUT,0.0,0.557,0.6526,0.7722,0.6842,0.6349,183.94,1796.78,1290.54,763217728,763217728,0,1.0,0.0,0,0,10822656,Module pipeline exceeded hard 180s timeout,2026-09-09T04:50:02.281075,D:\SVD_Project\results\unified_oha\qwen3_5\summary.csv
-oha,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7097,30.33,381.15,9581.91,124647170,133614482,1771778,0.9329,-7.19,0,12,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T04:38:31.896184,D:\SVD_Project\results\unified_oha\roberta\summary.csv
-optimal_subspace_projection,roberta,PASS,88.76,0.8953,0.887,0.8929,0.8866,0.3179,21.2,341.79,13156.36,127325954,127325954,616706,1.0,0.0,64,0,2678784,,2026-09-08T09:57:54.461221,D:\SVD_Project\results\unified_optimal_subspace_projection\roberta\summary.csv
-optimized_hybrid_attention,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7123,14.27,204.74,19121.54,66955010,67895114,1181954,0.9862,-1.4,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T04:50:59.301397,D:\SVD_Project\results\unified_optimized_hybrid_attention\distilbert\summary.csv
-optimized_hybrid_attention,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.737,33.72,327.71,8209.23,124441344,126321552,1181184,0.9851,-1.51,0,12,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T04:53:45.421104,D:\SVD_Project\results\unified_optimized_hybrid_attention\gpt2\summary.csv
-optimized_hybrid_attention,qwen3_5,SKIP_QWEN3_5_TIMEOUT,0.0,0.557,0.6526,0.7722,0.6842,0.6349,183.47,1796.78,1275.31,763217728,763217728,0,1.0,0.0,0,0,10822656,Module pipeline exceeded hard 180s timeout,2026-09-09T05:04:23.304586,D:\SVD_Project\results\unified_optimized_hybrid_attention\qwen3_5\summary.csv
-optimized_hybrid_attention,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7097,33.33,381.15,9034.25,124647170,133614482,1771778,0.9329,-7.19,0,12,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T04:52:21.940177,D:\SVD_Project\results\unified_optimized_hybrid_attention\roberta\summary.csv
-orion,distilbert,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.707,28.08,202.86,16034.16,66955010,54568706,1181954,1.227,18.5,0,6,589824,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T05:05:46.854113,D:\SVD_Project\results\unified_orion\distilbert\summary.csv
-orion,gpt2,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7217,83.51,2070.57,3992.22,124441344,99668736,1181184,1.2485,19.91,0,12,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T05:09:55.198322,D:\SVD_Project\results\unified_orion\gpt2\summary.csv
-orion,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.714,58.93,353.29,7349.92,124647170,106961666,1771778,1.1653,14.19,0,12,1179648,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-09T05:07:36.163086,D:\SVD_Project\results\unified_orion\roberta\summary.csv
-padre,roberta,PASS,86.58,0.879,0.8642,0.8791,0.8641,0.4589,29.97,402.0,9695.8,127325954,134707970,3565826,0.9452,-5.8,0,12,2973696,,2026-09-08T10:01:44.031760,D:\SVD_Project\results\unified_padre\roberta\summary.csv
-primal,roberta,PASS,76.15,0.7792,0.7599,0.7655,0.7603,0.4933,21.86,1533.9,5946.16,127325954,127325954,0,1.0,0.0,0,0,2678784,fp32 retry: expected scalar type Float but found Half,2026-09-08T10:09:34.989803,D:\SVD_Project\results\unified_primal\roberta\summary.csv
-proxsparse,roberta,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.8285,24.56,337.21,13123.74,127325954,127325954,3270914,1.0,0.0,0,0,2678784,note: evaluated accuracy (50.92%) below chance threshold (56.00%),2026-09-08T10:11:21.236055,D:\SVD_Project\results\unified_proxsparse\roberta\summary.csv
-replace,roberta,FAIL,0.0,0.8942,0.8872,0.891,0.8868,0.295,1.12,299.92,30475.46,127325954,127325954,0,1.0,0.0,0,0,2678784,RuntimeError: Could not inject attention 'replace': No valid attention class found in module 'replace',2026-09-08T10:14:54.941568,D:\SVD_Project\results\unified_replace\roberta\summary.csv
-replaceme,roberta,PASS,88.19,0.8917,0.8809,0.8907,0.8805,0.5023,19.41,306.84,15144.64,127325954,113892098,2828546,1.118,10.55,0,0,2236416,,2026-09-08T10:19:10.233979,D:\SVD_Project\results\unified_replaceme\roberta\summary.csv
-res_svd,roberta,PASS,65.94,0.5139,0.6259,0.7665,0.6651,0.6259,57.49,444.72,7529.25,127325954,117013250,14182658,1.0881,8.1,0,12,4153344,,2026-09-08T10:22:16.247885,D:\SVD_Project\results\unified_res_svd\roberta\summary.csv
-roast,roberta,PASS,87.84,0.8903,0.877,0.8919,0.8768,0.4421,52.73,327.2,13092.16,127325954,127325954,1501442,1.0,0.0,0,0,2678784,,2026-09-08T10:25:18.331916,D:\SVD_Project\results\unified_roast\roberta\summary.csv
-rotational_slicegpt_int4,roberta,PASS,91.06,0.915,0.9103,0.9129,0.9099,0.3986,359.2,336.33,13135.7,127325954,127325954,3270914,1.0,0.0,0,0,2678784,,2026-09-08T10:32:52.539943,D:\SVD_Project\results\unified_rotational_slicegpt_int4\roberta\summary.csv
-rpca,roberta,PASS,88.65,0.8941,0.8859,0.8915,0.8854,0.3334,77.91,313.89,8970.47,127325954,127026434,616706,1.0024,0.24,144,0,2379264,,2026-09-08T10:35:39.552653,D:\SVD_Project\results\unified_rpca\roberta\summary.csv
-saes_svd_v2,roberta,PASS,88.88,0.8974,0.888,0.8962,0.8875,0.4236,37.39,335.85,11314.66,127325954,127181442,3126402,1.0011,0.11,68,0,2534272,,2026-09-08T10:38:24.444430,D:\SVD_Project\results\unified_saes_svd_v2\roberta\summary.csv
-salr,roberta,PASS,88.3,0.8926,0.8821,0.8916,0.8817,0.4029,34.7,328.21,10910.4,127325954,127185378,1717218,1.0011,0.11,0,0,2538208,,2026-09-08T10:41:35.669965,D:\SVD_Project\results\unified_salr\roberta\summary.csv
-tomoe,gpt2,PASS_LOW,52.41,0.6224,0.4895,0.526,0.5195,0.7485,144.9,553.12,2823.94,124441344,124699584,1536,0.9979,-0.21,0,0,0,note: evaluated accuracy (52.41%) below chance threshold (56.00%),2026-09-09T03:12:47.870297,D:\SVD_Project\results\unified_tomoe\gpt2\summary.csv
-tomoe,qwen3_5,SKIP_QWEN3_5_TIMEOUT,0.0,0.557,0.6526,0.7722,0.6842,0.6349,183.76,1796.78,1277.88,763217728,763217728,0,1.0,0.0,0,0,10822656,Module pipeline exceeded hard 180s timeout,2026-09-09T03:23:36.100849,D:\SVD_Project\results\unified_tomoe\qwen3_5\summary.csv
-tomoe,roberta,SKIP_ROBERTA_TIMEOUT,0.0,0.7586,0.7509,0.7512,0.7508,0.5699,180.95,295.83,30516.53,124647170,124647170,0,1.0,0.0,0,0,0,Module pipeline exceeded hard 180s timeout,2026-09-09T03:09:32.017566,D:\SVD_Project\results\unified_tomoe\roberta\summary.csv
+module,exit_code,status,distilbert_acc,roberta_acc,gpt2_acc,elapsed_s,timestamp
+liftr,0,PASS,90.48,80.16,61.01,79.1,2026-09-11T02:35:41.005177
+lillama,0,PASS,90.48,85.44,60.78,96.1,2026-09-11T02:37:34.234239
+mamba_shedder,0,PASS,90.48,85.44,60.78,83.8,2026-09-11T02:46:45.313234
+mgie_svd,0,PASS,90.48,75.11,60.78,92.4,2026-09-11T02:49:12.396485
+mlorq,0,PASS,90.48,72.02,62.04,91.2,2026-09-11T03:04:55.403487
+aasvd,0,PASS,89.45,88.07,50.92,112.7,2026-09-11T03:40:17.015809
+adaptive_compressor,0,PASS,90.37,72.13,52.75,86.1,2026-09-11T03:41:43.137296
+adaptive_sparse,0,PASS_LOW,0,55.73,0,25.5,2026-09-11T03:42:08.664542
+adaptive_sparse_attention,0,FAILED_LOW,0,0,0,89.5,2026-09-11T03:43:38.142719
+adaptive_svd_attention,0,PASS,85.89,50.92,51.15,106.0,2026-09-11T03:45:24.110709
+adaptive_svd_attn,0,PASS,85.89,50.92,51.15,108.3,2026-09-11T03:47:12.431310
+aegis_hybrid,0,PASS,78.44,50.92,51.03,85.9,2026-09-11T03:48:38.322061
+aegis_spectron_fp8,0,FAILED_LOW,0.0,0.0,0.0,55.1,2026-09-11T03:49:33.376720
+aegis_v1,0,PASS,78.56,50.92,53.56,100.0,2026-09-11T03:51:13.411537
+aegis_v1_module,0,PASS,78.56,50.92,53.56,102.8,2026-09-11T03:52:56.223785
+aegis_v2,0,PASS,79.82,50.92,51.03,95.5,2026-09-11T03:54:31.745295
+aegis_v3,0,PASS,83.72,50.92,56.31,113.6,2026-09-11T03:56:25.382032
+aegis_v3_module,0,PASS,83.72,50.92,56.31,109.9,2026-09-11T03:58:15.315308
+aegis_v4,0,PASS,83.72,50.92,56.31,107.2,2026-09-11T04:00:02.471388
+aegis_v4_module,0,PASS,83.72,50.92,56.31,106.2,2026-09-11T04:01:48.660423
+aegis_v5,0,PASS,83.72,50.92,56.31,109.6,2026-09-11T04:03:38.246258
+aegis_v5_module,0,PASS,83.72,50.92,56.31,106.3,2026-09-11T04:05:24.558315
+aegis_v6,0,PASS_LOW,0.0,0.0,46.22,82.8,2026-09-11T04:06:47.375143
+asvd,0,PASS,90.14,81.19,55.85,156.0,2026-09-11T04:09:23.395614
+block_transformer_hiba,0,PASS,90.48,75.57,59.98,87.7,2026-09-11T04:10:51.050328
+cluster,0,PASS_LOW,50.92,50.92,50.92,104.8,2026-09-11T04:12:35.816711
+compressed_attention,0,PASS,77.18,50.92,50.92,81.0,2026-09-11T04:13:56.794837
+compressed_attention_layer,0,PASS,77.18,50.92,50.92,90.4,2026-09-11T04:15:27.151678
+compressed_mha,0,PASS_LOW,50.92,50.92,50.92,76.0,2026-09-11T04:16:43.171316
+cosformer,0,PASS,78.21,56.77,50.92,135.9,2026-09-11T04:18:59.092433
+cur_moe,0,PASS,67.43,50.92,50.92,81.3,2026-09-11T04:20:20.439995
+decay_linear_attention,0,PASS,50.92,50.92,63.19,87.3,2026-09-11T04:21:47.780599
+delta_kv,0,PASS,90.14,81.65,55.96,90.1,2026-09-11T04:23:17.899964
+dobi,0,FAILED_LOW,0,0,0,88.9,2026-09-11T04:24:46.780200
+dynamic_entropy,0,FAILED_LOW,0,0,0,153.4,2026-09-11T04:27:20.152407
+factorised_matrix_state,0,PASS,77.06,54.36,60.89,95.9,2026-09-11T04:28:56.022143
+fms,0,PASS,77.06,54.36,60.89,89.7,2026-09-11T04:30:25.713271
+full,0,FAILED_LOW,0.0,0.0,0.0,66.1,2026-09-11T04:31:31.843223
+fused_svd_kernel,0,FAILED_LOW,0.0,0.0,0.0,67.2,2026-09-11T04:32:39.038369
+galerkin,0,PASS_LOW,50.92,50.92,51.26,66.6,2026-09-11T04:33:45.631805
+galerkin_attention,0,PASS_LOW,50.92,50.92,51.26,68.7,2026-09-11T04:34:54.317928
+gated_delta_net,0,FAILED_LOW,0.0,0.0,0.0,49.7,2026-09-11T04:35:44.033138
+gated_deltanet_block,0,FAILED_LOW,0.0,0.0,0.0,52.2,2026-09-11T04:36:36.209427
+gated_linear_attention,0,PASS_LOW,50.92,50.92,50.92,78.3,2026-09-11T04:37:54.469102
+goldfinch_ahn,0,PASS_LOW,50.92,50.92,50.92,71.0,2026-09-11T04:39:05.461810
+granite_hybrid,0,FAILED_LOW,0.0,0.0,0.0,54.6,2026-09-11T04:40:00.027682
+griffin_ssd,0,FAILED_LOW,0.0,0.0,0.0,49.1,2026-09-11T04:40:49.085795
+hamming,-999,TIMEOUT,75.92,50.92,51.03,1200.2,2026-09-11T05:00:49.240256
+hgrn2,0,FAILED_LOW,0,0,0,56.7,2026-09-11T05:01:45.987191
+hgrn2_gated_deltanet,0,FAILED_LOW,0.0,0.0,0.0,52.7,2026-09-11T05:02:38.697109
+hgrn2_layer,0,PASS_LOW,50.92,50.23,51.72,184.8,2026-09-11T05:05:43.542726
+hgrn2_outer,0,PASS_LOW,49.08,49.08,45.3,83.6,2026-09-11T05:07:07.103072
+hla,0,PASS_LOW,50.92,50.92,54.24,83.2,2026-09-11T05:08:30.276455
+hla_attention,0,PASS_LOW,50.92,50.92,54.24,81.1,2026-09-11T05:09:51.399658
+huffman_coder,0,FAILED_LOW,0.0,0.0,0.0,54.7,2026-09-11T05:10:46.129627
+hybrid_svd_layer,0,FAILED_LOW,0.0,0.0,0.0,57.3,2026-09-11T05:11:43.422364
+hymba_transx,0,PASS,0.0,51.15,57.57,381.2,2026-09-11T05:18:04.647798
+infini,0,PASS,90.25,56.54,51.26,116.6,2026-09-11T05:20:01.216796
+infini_attention,0,PASS,90.25,56.54,51.26,72.3,2026-09-11T05:21:13.529020
+jamba,0,FAILED_LOW,0.0,0.0,0.0,53.7,2026-09-11T05:22:07.266184
+jamba_info,0,PASS,89.68,52.98,50.8,223.0,2026-09-11T05:25:50.288289
+kda,0,PASS_LOW,50.92,50.92,50.92,73.0,2026-09-11T05:27:03.257733
+kronecker_linear,0,FAILED_LOW,0.0,0.0,0.0,51.9,2026-09-11T05:27:55.146811
+kronecker_tt_lora,0,PASS,90.6,83.72,55.16,202.9,2026-09-11T05:31:18.064008
+kvtc,0,PASS,89.68,50.92,52.75,109.9,2026-09-11T05:33:07.982373
+leka_v1,-999,TIMEOUT,51.26,50.92,0.0,1200.4,2026-09-11T05:53:08.399488
+leka_v2,0,PASS,86.01,50.92,50.92,85.5,2026-09-11T05:54:33.948059
+leka_v3,0,PASS,70.53,50.92,50.92,78.2,2026-09-11T05:55:52.120880
+linformer,0,PASS_LOW,50.92,50.92,50.92,65.0,2026-09-11T05:56:57.103399
+lola_attention,0,PASS,77.87,50.92,50.92,229.0,2026-09-11T06:00:46.140155
+lola_attn,0,PASS,77.87,50.92,50.92,174.8,2026-09-11T06:03:40.977821
+lora_attention,0,PASS,89.91,58.03,51.26,277.2,2026-09-11T06:08:18.208691
+lora_attn,0,PASS,89.91,59.52,51.26,79.4,2026-09-11T06:20:58.407616
+lsh,0,PASS,80.28,49.54,51.61,75.4,2026-09-11T06:22:13.760986
+lsh_attention,0,PASS,80.28,49.54,51.61,77.1,2026-09-11T06:23:30.833748
+mamba,0,PASS_LOW,50.92,50.92,50.92,63.5,2026-09-11T06:24:34.354377
+mamba_inject,0,FAILED_LOW,0.0,0.0,0.0,53.8,2026-09-11T06:25:28.180103
+mamba_svd_flash,0,FAILED_LOW,0.0,0.0,0.0,61.1,2026-09-11T06:26:29.281567
+minimal_aurora,0,PASS,85.44,50.92,50.92,112.7,2026-09-11T06:28:21.951009
+minimal_nova,0,PASS,85.44,50.92,50.92,99.8,2026-09-11T06:30:01.772597
+minimal_prism,0,PASS,85.44,50.92,50.92,100.0,2026-09-11T06:31:41.756511
+minimal_svd,0,PASS,85.44,50.92,50.92,98.7,2026-09-11T06:33:20.507787
+minimal_svd_v2,0,PASS,85.44,50.92,50.92,98.3,2026-09-11T06:34:58.806015
+mixattention_moska,0,PASS,90.71,86.24,51.61,84.9,2026-09-11T06:36:23.675972
+mla,0,PASS_LOW,50.92,50.92,50.92,72.0,2026-09-11T06:37:35.643091
+moba,0,PASS,73.62,84.17,50.92,91.7,2026-09-11T06:39:07.386372
+modegpt,0,PASS,90.48,72.02,60.55,93.9,2026-09-11T06:40:41.264323
+moe_deltakv_paged,0,PASS,86.47,59.75,50.92,78.9,2026-09-11T06:42:00.190900
+nasc,0,PASS,89.11,85.55,50.92,153.6,2026-09-11T06:44:33.807971
+nasc_attention,0,PASS,89.11,85.55,50.92,155.6,2026-09-11T06:47:09.419082
+nexus,0,PASS_LOW,50.92,50.92,51.03,78.2,2026-09-11T06:48:27.591790
+nha,0,PASS_LOW,50.92,50.92,50.92,111.1,2026-09-11T06:50:18.660345
+nha_compressor,0,PASS_LOW,50.92,50.92,50.92,111.4,2026-09-11T06:52:10.106317
+nli_softmax,0,PASS,90.94,0.0,62.04,74.8,2026-09-11T06:53:24.873813
+nmf,0,PASS,89.91,49.08,58.03,378.1,2026-09-11T06:59:42.955101
+nsa,0,PASS_LOW,50.92,50.92,50.92,77.3,2026-09-11T07:01:00.287867
+nsa_attention,0,PASS_LOW,50.92,50.92,50.92,76.7,2026-09-11T07:02:17.012256
+nystrom,0,PASS_LOW,50.92,50.92,50.92,89.6,2026-09-11T07:03:46.565974
+oats,0,PASS,90.37,59.06,0.0,120.1,2026-09-11T07:05:46.638235
+oha,0,PASS_LOW,50.92,50.92,50.92,84.1,2026-09-11T07:07:10.784167
+optimal_subspace_projection,0,PASS,90.6,70.87,0.0,79.6,2026-09-11T07:08:30.392354
+optimized_hybrid_attention,0,PASS_LOW,50.92,50.92,50.92,84.6,2026-09-11T07:09:55.035493
+orion,0,PASS_LOW,50.92,50.92,50.92,154.0,2026-09-11T07:12:28.995704
+orion_module,0,PASS_LOW,50.92,50.92,50.92,151.7,2026-09-11T07:15:00.652282
+padre,0,PASS,90.37,64.56,50.92,100.4,2026-09-11T07:16:41.076501
+performer,0,PASS_LOW,49.08,49.08,50.92,84.7,2026-09-11T07:18:05.744541
+phantom,0,PASS,72.59,50.92,50.92,132.3,2026-09-11T07:20:18.037043
+primal,0,PASS,90.14,68.0,63.07,85.3,2026-09-11T07:21:43.330335
+progressive_token_pruning,0,PASS,90.48,75.34,50.92,86.4,2026-09-11T07:23:09.774854
+projection_factorized_attn,0,PASS,80.16,59.29,52.75,138.2,2026-09-11T07:25:27.999104
+proxsparse,0,PASS,78.33,50.92,54.01,130.0,2026-09-11T07:27:38.009885
+proxsparse_pruner,0,PASS,78.33,50.92,54.01,77.0,2026-09-11T07:28:54.984782
+qcqa,0,PASS,63.76,51.03,50.92,88.7,2026-09-11T07:30:23.715320
+rala,0,PASS_LOW,50.92,50.92,50.92,80.5,2026-09-11T07:31:44.222720
+rala_compressor,0,PASS_LOW,50.92,50.92,50.92,80.9,2026-09-11T07:33:05.094479
+reap_moe,0,FAILED_LOW,0.0,0.0,0.0,59.3,2026-09-11T07:34:04.422517
+regla,0,PASS_LOW,50.92,50.92,50.92,97.4,2026-09-11T07:35:41.808679
+replace,0,FAILED_LOW,0.0,0.0,0.0,54.2,2026-09-11T07:36:36.059959
+replaceme,0,PASS,82.0,80.62,56.77,119.0,2026-09-11T07:38:35.047378
+res_svd,0,PASS,83.83,50.92,50.92,298.0,2026-09-11T07:43:33.074713
+roast,0,PASS,90.14,87.39,56.54,220.2,2026-09-11T07:47:13.246739
+roast_hashed_linear,0,FAILED_LOW,0.0,0.0,0.0,59.3,2026-09-11T07:48:12.590873
+rotational_slicegpt_int4,0,PASS,88.99,87.5,61.7,742.7,2026-09-11T08:00:35.312916
+routing,0,PASS_LOW,50.92,50.92,50.92,89.4,2026-09-11T08:02:04.760138
+rpc,0,PASS,87.84,66.97,57.34,102.2,2026-09-11T08:03:46.940926
+rpca,0,PASS,90.37,72.02,60.21,120.9,2026-09-11T08:05:47.848986
+saes_svd_compressor,0,FAILED_LOW,0.0,0.0,0.0,58.3,2026-09-11T08:06:46.151339
+saes_svd_v2,0,PASS,87.5,85.44,56.88,78.5,2026-09-11T08:08:04.701425
+salr,0,PASS,90.37,80.96,58.94,78.4,2026-09-11T08:09:23.098874
+salt,0,PASS,80.28,50.92,50.92,99.3,2026-09-11T08:11:02.438464
+salt_attention,0,PASS,80.28,50.92,50.92,98.6,2026-09-11T08:12:41.072721
+samba_m3,0,FAILED_LOW,0,0,0,60.3,2026-09-11T08:13:41.330996
+samba_moe,0,FAILED_LOW,0,0,0,66.7,2026-09-11T08:14:48.060457
+sambam3,0,FAILED_LOW,0.0,0.0,0.0,57.9,2026-09-11T08:15:45.923423
+sambamoe,0,FAILED_LOW,0.0,0.0,0.0,62.8,2026-09-11T08:16:48.766781
+sdrm,0,PASS,76.49,50.92,50.92,89.1,2026-09-11T08:18:17.868629
+simple_ssm,0,PASS_LOW,50.92,50.92,47.82,242.4,2026-09-11T08:22:20.263623
+slicegpt,0,PASS,80.62,50.92,59.06,74.7,2026-09-11T08:23:34.995898
+slicegpt_pca,0,PASS,90.48,67.66,62.04,98.9,2026-09-11T08:25:13.917087
+slim,0,PASS,87.96,50.92,52.41,77.3,2026-09-11T08:26:31.220649
+smart_weighted_ensemble,0,PASS,90.14,0.0,61.01,62.7,2026-09-11T08:27:33.878308
+soa_attn,0,PASS,81.31,50.92,50.92,79.3,2026-09-11T08:28:53.138217
+soa_fused_module,0,PASS,81.31,50.92,50.92,80.2,2026-09-11T08:30:13.379633
+soa_module,0,PASS,81.31,50.92,50.92,78.8,2026-09-11T08:31:32.172497
+soafusedattention,0,PASS,81.31,50.92,50.92,79.3,2026-09-11T08:32:51.464765
+soka,0,PASS,89.91,84.06,60.78,78.9,2026-09-11T08:34:10.389649
+span_expanded,0,PASS,90.48,75.57,59.98,81.4,2026-09-11T08:35:31.834656
+sparsegpt,0,PASS,86.93,50.92,53.33,120.4,2026-09-11T08:37:32.286181
+spectra_v2,0,PASS,90.48,75.57,59.98,85.2,2026-09-11T08:38:57.494046
+spectraformer,0,PASS,78.67,57.8,50.92,92.0,2026-09-11T08:40:29.494335
+spectraformer_attention,0,PASS,77.64,57.45,50.92,80.7,2026-09-11T08:41:50.149192
+spectral_mamba,0,FAILED_LOW,0.0,0.0,0.0,55.7,2026-09-11T08:42:45.812564
+spectron,0,FAILED_LOW,0.0,0.0,0.0,67.1,2026-09-11T08:43:52.884086
+squeezing_heads,0,PASS,90.37,51.49,51.61,74.8,2026-09-11T08:45:07.702343
+squeezing_heads_distill,0,PASS,90.37,51.49,51.61,74.1,2026-09-11T08:46:21.836674
+squeezing_heads_distiller,0,PASS,90.37,51.49,51.61,73.6,2026-09-11T08:47:35.408769
+subspace_projection,0,PASS,89.91,84.17,59.52,77.2,2026-09-11T08:48:52.624831
+svd-mamba,0,PASS_LOW,50.92,50.92,50.23,1029.8,2026-09-11T09:06:02.395853
+svd,0,FAILED_LOW,0.0,0.0,0.0,62.7,2026-09-11T09:07:05.113934
+svd_compressed,0,PASS,84.75,50.92,50.92,88.7,2026-09-11T09:08:33.823785
+svd_linear,0,PASS,86.58,54.01,57.22,98.4,2026-09-11T09:10:12.210087
+svd_linear_attn,0,PASS,80.16,59.29,52.75,93.1,2026-09-11T09:11:45.286876
+svd_linear_decay,0,FAILED_LOW,0.0,0.0,0.0,53.9,2026-09-11T09:12:39.186760
+svd_llm_v2,0,PASS,81.88,50.92,50.92,82.5,2026-09-11T09:14:01.675077
+svd_mamba,0,PASS_LOW,50.92,50.92,50.23,1009.7,2026-09-11T09:30:51.338658
+svd_proj,0,PASS,76.15,50.92,50.92,95.0,2026-09-11T09:32:26.326789
+svd_proj_attn,0,PASS,76.15,50.92,50.92,90.0,2026-09-11T09:33:56.282965
+svd_projection,0,PASS,76.15,50.92,50.92,89.7,2026-09-11T09:35:25.954389
+svd_sequence,0,FAILED_LOW,0.0,0.0,0.0,56.5,2026-09-11T09:36:22.496154
+svd_sequence_attention,0,FAILED_LOW,0.0,0.0,0.0,55.8,2026-09-11T09:37:18.343862
+swift_svd,0,PASS,90.71,50.92,50.92,79.6,2026-09-11T09:38:37.905672
+swift_svd_act,0,PASS,90.48,72.02,60.09,91.0,2026-09-11T09:40:08.896052
+template_attention,0,PASS,89.91,58.37,51.26,75.9,2026-09-11T09:41:24.790639
+tlinformer,0,PASS_LOW,52.29,50.92,50.92,78.2,2026-09-11T09:42:42.960045
+tlinformer_attention,0,PASS_LOW,50.92,50.92,50.92,76.6,2026-09-11T09:43:59.611369
+token_compressed,0,PASS_LOW,50.92,50.92,50.92,78.3,2026-09-11T09:45:17.920117
+tomoe,0,PASS,69.5,50.92,54.24,208.0,2026-09-11T09:48:45.908946
+tomoe_compressor,0,PASS,69.5,50.92,54.24,215.7,2026-09-11T09:52:21.654385
+tpa,-999,TIMEOUT,50.92,0.0,0,1200.2,2026-09-11T10:12:21.891002
+tt,0,PASS,81.08,50.92,50.92,193.8,2026-09-11T10:15:35.672471
+tt_linear,0,FAILED_LOW,0.0,0.0,0.0,49.3,2026-09-11T10:16:24.986006
+unified_rope,0,FAILED_LOW,0,0,0,93.8,2026-09-11T10:17:58.740587
+uniql,0,PASS,90.14,82.45,60.89,138.4,2026-09-11T10:20:17.153211
+upi_mamba,0,PASS_LOW,50.92,50.92,52.29,603.7,2026-09-11T10:30:20.819524
+upi_stuffed_mamba,0,PASS_LOW,50.92,50.92,51.15,499.6,2026-09-11T10:38:40.383744
+vig,0,PASS_LOW,50.92,50.92,0.0,63.6,2026-09-11T10:39:44.018910
+vspec,0,PASS_LOW,50.92,50.92,50.92,88.3,2026-09-11T10:41:12.318212
+weighted_ensemble,0,PASS,90.14,0.0,61.01,59.7,2026-09-11T10:42:12.033086
+wgqa,0,PASS_LOW,50.92,50.92,50.92,65.1,2026-09-11T10:43:17.116429
+xattention,0,PASS_LOW,50.92,50.92,0.0,59.4,2026-09-11T10:44:16.546190
+zerokv_neo,0,PASS,70.64,50.92,56.77,79.5,2026-09-11T10:45:36.052850
+zeros,0,PASS_LOW,50.92,51.15,50.92,85.6,2026-09-11T10:47:01.622694
