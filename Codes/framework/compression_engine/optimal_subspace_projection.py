@@ -63,6 +63,11 @@ class OptimalSubspaceLoRALinear(nn.Module):
         target_device = device if device is not None else weight.device
         target_dtype = dtype if dtype is not None else weight.dtype
 
+        # Normalize to nn.Linear orientation (out_features, in_features); some
+        # call sites pass Conv1D-style (in, out) weights for non-square layers.
+        if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
+            weight = weight.t()
+
         self.weight = nn.Parameter(
             weight.to(device=target_device, dtype=target_dtype),
             requires_grad=False,
