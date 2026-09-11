@@ -143,14 +143,18 @@ class Mamba2(nn.Module):
         dt = F.softplus(self.dt_proj(x_ssm))
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
 
-        dA_exp_arg = torch.clamp(torch.einsum("bli,in->blin", dt, A), min=-30.0, max=10.0)
+        dA_exp_arg = torch.clamp(torch.einsum("bli,in->blin", dt, A), min=-20.0, max=0.0)
         dA = torch.exp(dA_exp_arg)
         dBX = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))
 
-        log_dA = torch.log(dA.clamp_min(1e-12))
-        log_dA_cumsum = torch.cumsum(log_dA, dim=1)
-        decay_factor = torch.exp(torch.clamp(log_dA_cumsum, min=-30.0, max=10.0))
-        h = torch.cumsum(dBX / (decay_factor + 1e-12), dim=1) * decay_factor
+        # Numerically stable recurrence bounded without exponential overflow
+        h_t = torch.zeros(B, inner_dim, self.d_state, device=x.device, dtype=x.dtype)
+        h_list = []
+        for t in range(L):
+            h_t = dA[:, t] * h_t + dBX[:, t]
+            h_t = torch.clamp(h_t, min=-1e4, max=1e4)
+            h_list.append(h_t)
+        h = torch.stack(h_list, dim=1)
 
         out = (h * self.D.view(1, 1, inner_dim, 1)).sum(dim=-1) * F.silu(z)
         return self.out_proj(out)
@@ -171,7 +175,7 @@ class MixtureOfExperts(nn.Module):
         self.output_scale = nn.Parameter(torch.ones(1))
         self.dim: int = dim
         self.num_experts: int = num_experts
-        self.top_k: int = top_k
+        self.top_k = top_k
         self.experts: nn.ModuleList = nn.ModuleList(
             [
                 nn.Sequential(

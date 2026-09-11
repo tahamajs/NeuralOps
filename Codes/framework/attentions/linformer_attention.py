@@ -13,6 +13,7 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -20,10 +21,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import get_token_valid_mask
+from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -230,38 +233,47 @@ class LinformerAttention(BaseAttention):
         self.freeze_base = (self.lora_rank > 0)
 
         # Projections
-        self.query = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.key = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.value = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-
-        # Aliases
-        self.q_proj = self.query
-        self.k_proj = self.key
-        self.v_proj = self.value
-        self.q_lin = self.query
-        self.k_lin = self.key
-        self.v_lin = self.value
-        self.out_lin = self.out_proj
-        self.dense = self.out_proj
-        self.o_proj = self.out_proj
-        self.c_proj = self.out_proj
 
         self.E = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
         self.F = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
-        nn.init.normal_(self.E, std=1.0 / math.sqrt(self.k_proj_dim))
-        nn.init.normal_(self.F, std=1.0 / math.sqrt(self.k_proj_dim))
+        with torch.no_grad():
+            nn.init.normal_(self.E, std=0.02)
+            nn.init.normal_(self.F, std=0.02)
+            min_dim = min(self.k_proj_dim, self.max_seq_len)
+            self.E.data[:min_dim, :min_dim].fill_diagonal_(1.0)
+            self.F.data[:min_dim, :min_dim].fill_diagonal_(1.0)
 
         dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1))) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
-        # Preservation gate: sigmoid(-3) ≈ 0.047 → output starts as ~95% passthrough of hidden_states.
-        # This prevents the majority-baseline collapse before LoRA has recovered the attention behavior.
-        # Trained jointly with LoRA; becomes trainable parameter so get_recovery_params picks it up.
-        self.output_gate = nn.Parameter(torch.tensor(-3.0))
-
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    # State dict compatibility aliases via properties
+    @property
+    def query(self) -> LoRALinear: return self.q_proj
+    @property
+    def key(self) -> LoRALinear: return self.k_proj
+    @property
+    def value(self) -> LoRALinear: return self.v_proj
+    @property
+    def q_lin(self) -> LoRALinear: return self.q_proj
+    @property
+    def k_lin(self) -> LoRALinear: return self.k_proj
+    @property
+    def v_lin(self) -> LoRALinear: return self.v_proj
+    @property
+    def out_lin(self) -> LoRALinear: return self.out_proj
+    @property
+    def dense(self) -> LoRALinear: return self.out_proj
+    @property
+    def o_proj(self) -> LoRALinear: return self.out_proj
+    @property
+    def c_proj(self) -> LoRALinear: return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         """Transfer pretrained projection weights with Frobenius norm verification."""
@@ -299,7 +311,7 @@ class LinformerAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if ("Conv1D" in c_attn_mod.__class__.__name__) or ("Conv1D" in base_c.__class__.__name__) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -314,7 +326,7 @@ class LinformerAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if ("Conv1D" in c_proj_mod.__class__.__name__) or ("Conv1D" in base_o.__class__.__name__) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -366,9 +378,9 @@ class LinformerAttention(BaseAttention):
             )
 
         target_map = {
-            "q": self.query,
-            "k": self.key,
-            "v": self.value,
+            "q": self.q_proj,
+            "k": self.k_proj,
+            "v": self.v_proj,
             "o": self.out_proj,
         }
 
@@ -398,7 +410,7 @@ class LinformerAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                w_norm = float(torch.norm(target_mod.weight.data).item())
+                w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"LinformerAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
@@ -462,34 +474,45 @@ class LinformerAttention(BaseAttention):
         k = k * mask_expanded
         v = v * mask_expanded
 
-        # Slice or pad E, F
-        if N <= self.max_seq_len:
-            E_act = self.E[:, :N]
-            F_act = self.F[:, :N]
+        L = N
+        k_eff = min(self.k_proj_dim, L)
+
+        if L <= self.k_proj_dim:
+            E_act = self.E[:L, :L].to(dtype=dtype, device=device)
+            F_act = self.F[:L, :L].to(dtype=dtype, device=device)
+        elif L <= self.max_seq_len:
+            E_act = self.E[:k_eff, :L].to(dtype=dtype, device=device)
+            F_act = self.F[:k_eff, :L].to(dtype=dtype, device=device)
         else:
-            E_act = F.pad(self.E, (0, N - self.max_seq_len))
-            F_act = F.pad(self.F, (0, N - self.max_seq_len))
+            E_act = F.interpolate(
+                self.E[:k_eff].unsqueeze(0), size=L, mode="linear", align_corners=False
+            ).squeeze(0).to(dtype=dtype, device=device)
+            F_act = F.interpolate(
+                self.F[:k_eff].unsqueeze(0), size=L, mode="linear", align_corners=False
+            ).squeeze(0).to(dtype=dtype, device=device)
 
-        E_act = E_act.to(dtype=dtype, device=device)
-        F_act = F_act.to(dtype=dtype, device=device)
-
-        # Project key/value sequence dimensions: (k, N) @ (B, H, N, d) -> (B, H, k, d)
+        # Project key/value sequence dimensions: (k_eff, L) @ (B, H, L, d) -> (B, H, k_eff, d)
         K_proj = torch.matmul(E_act, k)
         V_proj = torch.matmul(F_act, v)
 
         scale = 1.0 / math.sqrt(d)
-        scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).float()) * scale  # [B, H, N, k]
+        scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).float()) * scale  # [B, H, L, k_eff]
 
-        # Decoder causal masking: query at position i can attend to projected tokens
         if self.is_decoder:
-            causal_mask = torch.tril(torch.ones(N, self.k_proj_dim, device=device, dtype=torch.bool))
-            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+            if L <= self.k_proj_dim:
+                causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+                scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+            else:
+                causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).float()) * scale
+                causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+                scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+                V_proj = v
 
         if attention_mask is not None:
-            if attention_mask.dim() == 4:
-                # Add 4D attention bias sliced to k_proj_dim if compatible
-                k_slice = min(attention_mask.size(-1), self.k_proj_dim)
-                scores[..., :k_slice] = scores[..., :k_slice] + attention_mask[..., :N, :k_slice].clamp(min=-1e4)
+            if L <= self.k_proj_dim:
+                scores = apply_attention_mask(scores, attention_mask)
+            else:
+                scores = scores.masked_fill((~valid_mask).unsqueeze(1).unsqueeze(-1), -1e4)
 
         attn = F.softmax(scores, dim=-1).to(dtype)
         attn = torch.nan_to_num(attn, nan=0.0)
@@ -504,24 +527,20 @@ class LinformerAttention(BaseAttention):
                 hm = head_mask
             attn = attn * hm
 
-        context = torch.matmul(attn, V_proj)  # [B, H, N, d]
+        context = torch.matmul(attn, V_proj)  # [B, H, L, d]
         context = context * mask_expanded
-        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
             out = context * self.output_scale
         else:
             out = self.out_proj(context * self.output_scale)
 
-        # Preservation gate: blend new attention output with original hidden_states.
-        # sigmoid(-3) ≈ 0.047 at init → 95% passthrough preserves pretrained activations.
-        alpha = torch.sigmoid(self.output_gate)
-        out = alpha * out + (1.0 - alpha) * hidden_states
-
         return out, (attn if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("linformer_inject")
+@ATTENTION_REGISTRY.register("inject_linformer")
 def inject_linformer(
     layer: Any = None,
     model: Any = None,
@@ -610,8 +629,9 @@ def inject_linformer(
             num_attention_heads=num_heads,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error("Failed to inject LinformerAttention: %s", e)
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):

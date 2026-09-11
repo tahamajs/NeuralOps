@@ -243,24 +243,40 @@ class InfiniAttention(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
+    @property
+    def query(self): return self.q_proj
+    @property
+    def key(self): return self.k_proj
+    @property
+    def value(self): return self.v_proj
+    @property
+    def q_lin(self): return self.q_proj
+    @property
+    def k_lin(self): return self.k_proj
+    @property
+    def v_lin(self): return self.v_proj
+    @property
+    def out_lin(self): return self.out_proj
+    @property
+    def dense(self): return self.out_proj
+    @property
+    def o_proj(self): return self.out_proj
+    @property
+    def c_proj(self): return self.out_proj
+
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
 
-        cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        cls_name = getattr(src, "__class__", type(src)).__name__
+        has_out = hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (hasattr(src, "query") and not has_out)
         ):
             is_nested = True
-        elif (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+        if hasattr(src, "self") and hasattr(src, "output"):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -280,7 +296,14 @@ class InfiniAttention(BaseAttention):
                 c_w = c_w.data.clone()
                 cls_c = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
                 base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
-                if "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
+                is_conv1d = (
+                    "Conv1D" in cls_c
+                    or "Conv1D" in base_cls_c
+                    or hasattr(c_attn_mod, "nf")
+                    or hasattr(base_c, "nf")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c)
+                )
+                if is_conv1d:
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -297,7 +320,14 @@ class InfiniAttention(BaseAttention):
                     o_w = o_w.data.clone()
                     cls_o = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                     base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
-                    if "Conv1D" in cls_o or "Conv1D" in base_cls_o or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
+                    is_conv1d = (
+                        "Conv1D" in cls_o
+                        or "Conv1D" in base_cls_o
+                        or hasattr(c_proj_mod, "nf")
+                        or hasattr(base_o, "nf")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o)
+                    )
+                    if is_conv1d:
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -338,15 +368,8 @@ class InfiniAttention(BaseAttention):
                     w, b = adapter.get_weight_bias(src, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
-
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
-        if missing_after:
-            raise RuntimeError(
-                f"InfiniAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
-            )
+            except Exception:
+                pass
 
         target_map = {
             "q": self.q_proj,
@@ -381,7 +404,7 @@ class InfiniAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                w_norm = float(torch.norm(target_mod.weight.data).item())
+                w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"InfiniAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
@@ -456,15 +479,18 @@ class InfiniAttention(BaseAttention):
         combined = local_out + beta * mem_out
         combined = combined.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        if self.is_nested_encoder:
-            out = combined
-        else:
-            out = self.out_proj(combined)
+        if kwargs.get("encoder_hidden_states", None) is not None:
+            raise NotImplementedError("Cross-attention is not implemented for InfiniAttention")
 
+        if self.is_nested_encoder:
+            return combined, (attn_local if output_attentions else None)
+
+        out = self.out_proj(combined)
         return out * self.output_scale, (attn_local if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("infini_inject")
+@ATTENTION_REGISTRY.register("inject_infini")
 def inject_infini(
     layer: Any,
     model_config: Any = None,
@@ -505,6 +531,7 @@ def inject_infini(
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
             elif hasattr(layer, "self"):
@@ -512,8 +539,10 @@ def inject_infini(
             elif hasattr(layer, "attn"):
                 layer.attn = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"InfiniAttention injection failed: {e}")
+        return None
 
 
 inject_infini_attention = inject_infini

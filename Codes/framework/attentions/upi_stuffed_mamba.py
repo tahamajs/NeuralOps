@@ -198,6 +198,30 @@ class UPIMambaBlock(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
+    @property
+    def query(self) -> LoRALinear:
+        return self.in_proj
+
+    @property
+    def key(self) -> LoRALinear:
+        return self.in_proj
+
+    @property
+    def value(self) -> LoRALinear:
+        return self.in_proj
+
+    @property
+    def q_lin(self) -> LoRALinear:
+        return self.in_proj
+
+    @property
+    def k_lin(self) -> LoRALinear:
+        return self.in_proj
+
+    @property
+    def v_lin(self) -> LoRALinear:
+        return self.in_proj
+
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa, GPT-2 Conv1D, or Qwen/LLaMA."""
         with torch.no_grad():
@@ -227,7 +251,7 @@ class UPIMambaBlock(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim:
+                if c_attn_w.dim() == 2 and (c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim):
                     c_attn_w = c_attn_w.t()
 
                 split_q = min(self.dim, c_attn_w.shape[0] // 3)
@@ -236,7 +260,7 @@ class UPIMambaBlock(BaseAttention):
                 w_v = c_attn_w[2 * split_q : 3 * split_q, :]
 
                 out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.dim and out_w.shape[1] != self.dim:
+                if out_w.dim() == 2 and (out_w.shape[0] != self.dim and out_w.shape[1] == self.dim):
                     out_w = out_w.t()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
@@ -405,7 +429,7 @@ class UPIMambaBlock(BaseAttention):
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
     ) -> torch.Tensor:
-        """Vectorized chunked associative SSM scan in FP32."""
+        """Bounded chunked associative SSM scan in FP32 with O(chunk=64) memory."""
         if reverse:
             x = torch.flip(x, dims=[1])
             dt = torch.flip(dt, dims=[1])
@@ -423,34 +447,37 @@ class UPIMambaBlock(BaseAttention):
             x = x * m
             dt = dt * m
 
-        # log decay factor per token: -dt * A
-        log_alpha = -(dt.unsqueeze(-1) * A.view(1, 1, self.inner_dim, self.d_state)).float()
-        # driving input: dt * B * x  --> [B, L, D, d_state]
-        u = (dt.unsqueeze(-1) * B_t.unsqueeze(2) * x.unsqueeze(-1)).float()
-
         chunk_size = 64
         num_chunks = (seqlen + chunk_size - 1) // chunk_size
         h_running = x.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
         y_chunks = []
+        A_view = A.view(1, 1, self.inner_dim, self.d_state)
 
         for c in range(num_chunks):
             s_idx = c * chunk_size
             e_idx = min(seqlen, s_idx + chunk_size)
 
-            u_c = u[:, s_idx:e_idx]
-            log_a_c = log_alpha[:, s_idx:e_idx]
+            dt_c = dt[:, s_idx:e_idx]
+            x_c = x[:, s_idx:e_idx]
+            B_c = B_t[:, s_idx:e_idx]
+            C_c = C_t[:, s_idx:e_idx]
+
+            # Compute u and log_a strictly for current 64-token chunk to avoid buffer overflow
+            log_a_c = -(dt_c.unsqueeze(-1) * A_view).float()
+            u_c = (dt_c.unsqueeze(-1) * B_c.unsqueeze(2) * x_c.unsqueeze(-1)).float()
+
             lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0)
 
             decay_c = torch.exp(lambda_c)
-            decay_inv_c = torch.exp(-lambda_c)
+            decay_inv_c = torch.exp(-lambda_c).clamp(max=1e10)
 
             h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
             h_inter = decay_c * h_running.unsqueeze(1)
 
-            h_chunk = h_intra + h_inter
-            y_c = (C_t[:, s_idx:e_idx].unsqueeze(2).float() * h_chunk).sum(dim=-1).to(x.dtype)
+            h_chunk = torch.clamp(h_intra + h_inter, min=-1e4, max=1e4)
+            y_c = (C_c.unsqueeze(2).float() * h_chunk).sum(dim=-1).to(x.dtype)
             y_chunks.append(y_c)
-            h_running = torch.clamp(h_chunk[:, -1], min=-1e3, max=1e3)
+            h_running = h_chunk[:, -1]
 
         y = torch.cat(y_chunks, dim=1)
         y = y + self.D * x
@@ -521,7 +548,7 @@ class UPIMambaBlock(BaseAttention):
         gated = y * F.silu(z)
 
         if self.is_nested_encoder:
-            out = gated
+            out = gated if gated.shape[-1] == self.dim else self.out_proj(gated)
         else:
             out = self.out_proj(gated)
 
@@ -535,8 +562,10 @@ class UPIMambaBlock(BaseAttention):
 @ATTENTION_REGISTRY.register("upi_stuffed_mamba_inject")
 @ATTENTION_REGISTRY.register("inject_upi_mamba")
 @ATTENTION_REGISTRY.register("upi_mamba_inject")
+@ATTENTION_REGISTRY.register("inject_upi_stuffed_mamba")
 def inject_upi_mamba(
-    layer: nn.Module,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -545,41 +574,77 @@ def inject_upi_mamba(
     **kwargs: Any,
 ) -> Optional[UPIMambaBlock]:
     """Safe injection hook for UPIMambaBlock."""
-    # 1. Detect existing attention module
-    src = old_attn
-    if src is None and layer is not None:
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                src = layer.attention.self
-            else:
-                src = layer.attention
-        elif hasattr(layer, "self_attn"):
-            src = layer.self_attn
-        elif hasattr(layer, "attn"):
-            src = layer.attn
-        elif hasattr(layer, "self"):
-            src = layer.self
-
-    if src is None or isinstance(src, UPIMambaBlock):
-        return None
-
-    cfg = model_config or getattr(layer, "config", getattr(src, "config", None))
-    dim = (
-        _cfg_get(cfg, "hidden_size")
-        or _cfg_get(cfg, "d_model")
-        or _cfg_get(cfg, "dim")
-        or getattr(src, "hidden_size", None)
-        or getattr(src, "embed_dim", None)
-        or (src.q_proj.in_features if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features") else None)
-        or (src.q_lin.in_features if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features") else None)
-        or (src.query.in_features if hasattr(src, "query") and hasattr(src.query, "in_features") else None)
-        or 768
-    )
-
-    lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
-
+    target = layer if layer is not None else model
     try:
+        # Whole-model traversal support
+        if target is not None and (
+            hasattr(target, "transformer")
+            or hasattr(target, "distilbert")
+            or hasattr(target, "roberta")
+            or hasattr(target, "bert")
+            or (hasattr(target, "model") and hasattr(target.model, "layers"))
+            or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
+        ):
+            layer_list = None
+            if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+                layer_list = target.distilbert.transformer.layer
+            elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+                layer_list = target.roberta.encoder.layer
+            elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+                layer_list = target.bert.encoder.layer
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+                layer_list = target.transformer.h
+            elif hasattr(target, "model") and hasattr(target.model, "layers"):
+                layer_list = target.model.layers
+            elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+                layer_list = target.encoder.layer
+
+            if layer_list is not None:
+                tot = len(layer_list)
+                for idx, lyr in enumerate(layer_list):
+                    inject_upi_mamba(
+                        layer=lyr,
+                        model_config=model_config,
+                        comp_config=comp_config,
+                        layer_idx=idx,
+                        total_layers=tot,
+                        **kwargs,
+                    )
+                return target
+
+        src = old_attn
+        if src is None and target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    src = target.attention.self
+                else:
+                    src = target.attention
+            elif hasattr(target, "self_attn"):
+                src = target.self_attn
+            elif hasattr(target, "attn"):
+                src = target.attn
+            elif hasattr(target, "self"):
+                src = target.self
+
+        if src is None or isinstance(src, UPIMambaBlock):
+            return None
+
+        cfg = model_config or getattr(target, "config", getattr(src, "config", None))
+        dim = (
+            _cfg_get(cfg, "hidden_size")
+            or _cfg_get(cfg, "d_model")
+            or _cfg_get(cfg, "dim")
+            or getattr(src, "hidden_size", None)
+            or getattr(src, "embed_dim", None)
+            or (src.q_proj.in_features if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features") else None)
+            or (src.q_lin.in_features if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features") else None)
+            or (src.query.in_features if hasattr(src, "query") and hasattr(src.query, "in_features") else None)
+            or 768
+        )
+
+        lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
+        rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
+
         new_block = UPIMambaBlock(
             config=cfg,
             dim=dim,
@@ -589,21 +654,26 @@ def inject_upi_mamba(
             **kwargs,
         )
 
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_block
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_block
+                    new_block.is_nested_encoder = True
+                    return new_block
+                else:
+                    target.attention = new_block
+                    return new_block
+            elif hasattr(target, "self_attn"):
+                target.self_attn = new_block
+            elif hasattr(target, "attn"):
+                target.attn = new_block
+            elif hasattr(target, "self"):
+                target.self = new_block
+                new_block.is_nested_encoder = True
             else:
-                layer.attention = new_block
-        elif hasattr(layer, "self_attn"):
-            layer.self_attn = new_block
-        elif hasattr(layer, "attn"):
-            layer.attn = new_block
-        elif hasattr(layer, "self"):
-            layer.self = new_block
-        else:
-            layer.attention = new_block
+                target.attention = new_block
 
         return new_block
     except Exception as e:
         logger.error("inject_upi_mamba failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None

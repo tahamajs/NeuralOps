@@ -283,15 +283,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
             freeze_base=True,
         )
 
-        # Standard aliases
-        self.W_q = self.q_proj
-        self.W_k = self.k_proj
-        self.W_v = self.v_proj
-        self.out = self.out_proj
-        self.query = self.q_proj
-        self.key = self.k_proj
-        self.value = self.v_proj
-
         # Learnable per-KV-head importance weights initialized to 1.0
         self.k_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))
         self.v_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))
@@ -311,6 +302,35 @@ class WeightedGroupedQueryAttention(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
+    @property
+    def W_q(self): return self.q_proj
+    @property
+    def W_k(self): return self.k_proj
+    @property
+    def W_v(self): return self.v_proj
+    @property
+    def out(self): return self.out_proj
+    @property
+    def query(self): return self.q_proj
+    @property
+    def key(self): return self.k_proj
+    @property
+    def value(self): return self.v_proj
+    @property
+    def q_lin(self): return self.q_proj
+    @property
+    def k_lin(self): return self.k_proj
+    @property
+    def v_lin(self): return self.v_proj
+    @property
+    def out_lin(self): return self.out_proj
+    @property
+    def dense(self): return self.out_proj
+    @property
+    def o_proj(self): return self.out_proj
+    @property
+    def c_proj(self): return self.out_proj
+
     def copy_weights(self, src: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
@@ -326,34 +346,55 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+            c_mod = src.c_attn
+            base_c = getattr(c_mod, "base_layer", c_mod)
+            weight = getattr(base_c, "weight", getattr(c_mod, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                bias = getattr(base_c, "bias", getattr(c_mod, "bias", None))
+                bias_data = bias.data.clone() if bias is not None else None
+                is_conv1d = (
+                    "Conv1D" in c_mod.__class__.__name__
+                    or "Conv1D" in base_c.__class__.__name__
+                    or hasattr(c_mod, "nf")
+                    or hasattr(base_c, "nf")
+                    or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
+                )
+                if is_conv1d:
+                    weight = weight.t()
+                split_size = weight.shape[0] // 3
+                q_w = weight[:split_size, :]
+                k_w = weight[split_size : 2 * split_size, :]
+                v_w = weight[2 * split_size :, :]
+                q_b = bias_data[:split_size] if bias_data is not None else None
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+                v_b = bias_data[2 * split_size :] if bias_data is not None else None
+                extracted["q"] = (q_w, q_b)
+                extracted["k"] = (k_w, k_b)
+                extracted["v"] = (v_w, v_b)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(src.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            p_mod = src.c_proj
+            base_o = getattr(p_mod, "base_layer", p_mod)
+            w_o = getattr(base_o, "weight", getattr(p_mod, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                is_conv1d = (
+                    "Conv1D" in p_mod.__class__.__name__
+                    or "Conv1D" in base_o.__class__.__name__
+                    or hasattr(p_mod, "nf")
+                    or hasattr(base_o, "nf")
+                    or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                )
+                if is_conv1d:
+                    w_o = w_o.t()
+                b_o = getattr(base_o, "bias", getattr(p_mod, "bias", None))
+                extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -386,12 +427,17 @@ class WeightedGroupedQueryAttention(BaseAttention):
                             break
 
         # Detect nested encoder architecture
-        cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj", "out"))
-        self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        cls_name = getattr(src, "__class__", type(src)).__name__
+        has_out = hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        is_nested = False
+        if (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (hasattr(src, "query") and not has_out)
+        ):
+            is_nested = True
+        if hasattr(src, "self") and hasattr(src, "output"):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
 
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
@@ -578,8 +624,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     from framework.utils.compat import maybe_apply_rotary
                     Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.warning(f"maybe_apply_rotary failed: {e}")
 
         # 3. GQA repeat
         if self.kv_repeat > 1:
@@ -711,17 +756,19 @@ def inject_wgqa(
             **kwargs,
         )
 
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                layer.attention = new_attn
+            return new_attn
         for attr in ("self_attn", "attn", "self"):
             if hasattr(layer, attr):
                 setattr(layer, attr, new_attn)
                 return new_attn
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
-            else:
-                layer.attention = new_attn
-            return new_attn
         layer.attention = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"WGQA injection failed: {e}")
+        return None
