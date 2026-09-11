@@ -282,4 +282,7 @@ class HashedLinear(nn.Module):
         return hashed
 
 
-__all__ = ["fast_hash_and_sign", "HashedLinear"]
+HashedLinearLayer = HashedLinear
+
+__all__ = ["fast_hash_and_sign", "HashedLinear", "HashedLinearLayer"]
+

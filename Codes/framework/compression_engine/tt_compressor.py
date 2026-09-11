@@ -36,10 +36,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("tt")
-@COMPRESSOR_REGISTRY.register("tt_linear")
-@COMPRESSOR_REGISTRY.register("tt_compressor")
-@COMPRESSOR_REGISTRY.register("tt_linear_compressor")
 class TTCompressor(BaseCompressor):
     """
     Compressor that replaces nn.Linear/Conv1D layers with Tensor-Train (TTLinearLayer) modules.
