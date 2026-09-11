@@ -566,7 +566,7 @@ def inject_svd_mamba(
         return new_module
     except Exception as e:
         logger.error("inject_svd_mamba failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")
 
 
 inject_svd_mamba_attention = inject_svd_mamba

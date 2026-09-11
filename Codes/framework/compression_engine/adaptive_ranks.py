@@ -431,7 +431,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
             return svd_layer, best_err, best_rank, False
         except Exception as e:
             logger.warning("AdaptiveRanks standard SVD failed: %s", e)
-            return None, 1.0, r_floor, False
+            raise RuntimeError(f"Injection failed"), 1.0, r_floor, False
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress target layers with activation covariance whitening and safe validation."""

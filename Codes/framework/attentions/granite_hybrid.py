@@ -326,7 +326,7 @@ class GraniteHybridBlock(BaseAttention):
                     extracted[p] = (w, b)
         except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
             c_w, c_b = _unpack_weight_bias(old_attn.c_attn)
@@ -600,7 +600,7 @@ def inject_granite_hybrid(
         )
     except Exception as ex:
         logger.warning("Failed to instantiate GraniteHybridBlock: %s", ex)
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if target is not None:
         if hasattr(target, "attention"):

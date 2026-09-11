@@ -449,7 +449,7 @@ class AASVDCompressor(BaseCompressor):
         except Exception as e:
             # Fix 2: Return (None, float('inf'), 0) on failure
             logger.warning("AASVD factorization failed on linear: %s", e)
-            return None, float("inf"), 0
+            raise RuntimeError(f"Injection failed"), float("inf"), 0
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes streaming covariance estimation over calibration batches and factorizes target layers."""

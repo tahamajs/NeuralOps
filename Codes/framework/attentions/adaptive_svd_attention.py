@@ -344,7 +344,7 @@ class AdaptiveSVDAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
             if w is None:
                 # Manual fallback for GPT-2 Fused c_attn Conv1D
@@ -649,7 +649,7 @@ def inject_adaptive_svd(
                 **kwargs,
             )
         except Exception:
-            return None
+            raise RuntimeError("copy_weights failed")
 
         if layer is not None:
             if hasattr(layer, "attention"):
@@ -688,7 +688,7 @@ def inject_adaptive_svd(
                     layer.attention = test_module
         return test_module
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")
 
 
 

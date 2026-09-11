@@ -426,7 +426,7 @@ class VSpecAttention(BaseAttention):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -602,7 +602,7 @@ class VSpecAttention(BaseAttention):
                 Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # GQA expansion
         if self.kv_repeat > 1:
@@ -740,4 +740,4 @@ def inject_vspec_attn(
         return new_block
     except Exception as e:
         logger.error("inject_vspec_attn failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")

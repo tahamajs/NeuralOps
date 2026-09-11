@@ -317,7 +317,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                     h.remove()
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
 
         aggregated: Dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():

@@ -515,7 +515,7 @@ class ASVDAttention(nn.Module):
                         extracted_weights[proj] = (w, b)
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
 
         # 6. Check for missing essential projections and Frobenius norm verification
         missing = [p for p in ["q", "k", "v"] if extracted_weights[p][0] is None]
@@ -602,7 +602,7 @@ class ASVDAttention(nn.Module):
                     q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 3. GQA Expansion: Expand key/value heads to match query heads if kv_H < H
         if kv_H < H:

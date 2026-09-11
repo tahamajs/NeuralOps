@@ -282,7 +282,7 @@ class MinimalSVDAttention(BaseAttention):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -510,7 +510,7 @@ def inject_minimal_svd(
             new_attn.copy_weights(src_attn)
         except Exception as e:
             print(f'[WARN] copy_weights failed for minimal_svd: {e}')
-            return None
+            raise RuntimeError(f"Injection failed")
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)

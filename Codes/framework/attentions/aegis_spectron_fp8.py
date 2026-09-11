@@ -500,7 +500,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                             mod.merge()
                         except Exception as e:
                             print(f'copy_weights failed: {e}')
-                            return None
+                            raise RuntimeError(f"copy_weights failed: {e}")
                     base_mod = getattr(mod, "base_layer", mod)
                     w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                     if w is not None:
@@ -538,7 +538,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                         mod.merge()
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        return None
+                        raise RuntimeError(f"copy_weights failed: {e}")
                 base_mod = getattr(mod, "base_layer", mod)
                 c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                 if c_w is not None:
@@ -598,7 +598,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                     w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
 
             extracted_weights[proj] = (w, b)
 
@@ -861,7 +861,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                 Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         if self.kv_repeat > 1:
             K = repeat_kv(K, self.kv_repeat)
@@ -933,7 +933,7 @@ def inject_aegis_spectron_fp8(
         if hasattr(old_attn, "rotary_emb"):
             new_attn.rotary_emb = old_attn.rotary_emb
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):

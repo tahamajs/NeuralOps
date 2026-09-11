@@ -682,7 +682,7 @@ def inject_svd_proj_attn(
         )
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDProjectionAttention: {e}")
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if target is not None:
         for attr in ("attention", "attn", "self_attn", "self"):

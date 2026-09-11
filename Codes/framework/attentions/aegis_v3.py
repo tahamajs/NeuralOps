@@ -444,7 +444,7 @@ class AegisAttention(BaseAttention):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn Conv3D handling
         if hasattr(old_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -728,7 +728,7 @@ def inject_aegis_v3(
             new_attn.copy_weights(src_attn)
         except Exception as e:
             print(f'copy_weights failed: {e}')
-            return None
+            raise RuntimeError(f"copy_weights failed: {e}")
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)

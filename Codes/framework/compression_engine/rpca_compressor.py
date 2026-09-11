@@ -219,7 +219,7 @@ class RPCACompressor(BaseCompressor):
                 U, S_vals, Vt = torch.linalg.svd(W, full_matrices=False)
             except Exception as e_fb:
                 logger.warning('RPCA standard SVD fallback failed: %s', e_fb)
-                return None
+                raise RuntimeError(f"Injection failed")
 
         sqrt_S = torch.sqrt(torch.clamp(S_vals[:r], min=1e-12))
         U_final = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)

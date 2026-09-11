@@ -1065,7 +1065,7 @@ def inject_svd_compressed(
         )
     except Exception as e:
         log.warning(f"Failed to instantiate SVDCompressedAttention: {e}")
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):

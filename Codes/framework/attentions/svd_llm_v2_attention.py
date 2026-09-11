@@ -618,7 +618,7 @@ def inject_svd_llm_v2(
         )
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDLLMV2Attention: {e}")
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if target is not None:
         for attr in ("attention", "attn", "self_attn", "self"):

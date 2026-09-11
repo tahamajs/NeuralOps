@@ -367,7 +367,7 @@ class TTLinearLayer(nn.Module):
                     best_layer.lora_B.data.copy_(linear_layer.lora_B.data)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         return best_layer
 

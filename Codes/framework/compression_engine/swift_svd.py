@@ -203,7 +203,7 @@ class SwiftSVDCompressor(BaseCompressor):
                 U, S, Vt = U.to(device), S.to(device), Vt.to(device)
             except Exception as e2:
                 logger.warning("SwiftSVD SVD computation failed for %s: %s. Keeping original module.", name, e2)
-                return None, 1.0, 0
+                raise RuntimeError(f"Injection failed"), 1.0, 0
 
         norm_orig = torch.linalg.norm(W).item() + 1e-8
         cur_r = target_r
@@ -280,7 +280,7 @@ class SwiftSVDCompressor(BaseCompressor):
                     svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # Dimensional integrity verification
         if svd_layer.in_features != in_f or svd_layer.out_features != out_f:
