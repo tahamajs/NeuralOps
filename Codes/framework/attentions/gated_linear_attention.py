@@ -208,7 +208,23 @@ class GatedLinearAttention(BaseAttention):
                 if config else False
             )
 
-        self.is_nested_encoder: bool = False
+        src_attn = kwargs.get("pretrained_attn", None)
+        if src_attn is None:
+            src_attn = kwargs.get("old_attn", None)
+
+        is_nested = False
+        if src_attn is not None:
+            src_cls = src_attn.__class__.__name__
+            if (
+                src_cls in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+                or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
+                or (hasattr(src_attn, "self") and hasattr(src_attn, "output"))
+            ):
+                is_nested = True
+        model_type = getattr(config, "model_type", "").lower() if config else ""
+        if not is_nested and model_type in ["roberta", "bert", "xlm-roberta"] and not self.is_decoder:
+            is_nested = True
+        self.is_nested_encoder: bool = bool(is_nested)
 
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
         self.k_proj = LoRALinear(self.dim, self.kv_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
@@ -221,9 +237,6 @@ class GatedLinearAttention(BaseAttention):
         self.log_decay = nn.Parameter(torch.full((self.num_heads,), -1.0))
         nn.init.constant_(self.decay_gate.bias, -1.0)
 
-        src_attn = kwargs.get("pretrained_attn", None)
-        if src_attn is None:
-            src_attn = kwargs.get("old_attn", None)
         if src_attn is not None:
             self.copy_weights(src_attn)
 
@@ -238,6 +251,34 @@ class GatedLinearAttention(BaseAttention):
     @property
     def value(self) -> LoRALinear:
         return self.v_proj
+
+    @property
+    def q_lin(self) -> LoRALinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> LoRALinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> LoRALinear:
+        return self.v_proj
+
+    @property
+    def o_proj(self) -> LoRALinear:
+        return self.out_proj
+
+    @property
+    def out_lin(self) -> LoRALinear:
+        return self.out_proj
+
+    @property
+    def dense(self) -> LoRALinear:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -> LoRALinear:
+        return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
@@ -279,7 +320,8 @@ class GatedLinearAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.dim and w_o.shape[1] == self.dim:
+            cls_cp = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
+            if hasattr(src.c_proj, "nf") or "Conv1D" in cls_cp or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]):
                 w_o = w_o.t()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -316,16 +358,17 @@ class GatedLinearAttention(BaseAttention):
 
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        is_nested = False
         if hasattr(src, "self") and hasattr(getattr(src, "self"), "query") and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
-            self.is_nested_encoder = True
+            is_nested = True
         elif (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj:
-            self.is_nested_encoder = True
-        else:
-            self.is_nested_encoder = False
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention")
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+        ):
+            is_nested = True
+        if not is_nested and getattr(self, "is_nested_encoder", False):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
