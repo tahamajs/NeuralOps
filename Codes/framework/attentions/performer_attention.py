@@ -509,18 +509,47 @@ class PerformerAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         valid_mask = get_token_valid_mask(attention_mask, B, N, device)
-        mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+        if valid_mask is not None:
+            mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+        else:
+            mask_expanded = torch.ones(B, 1, N, 1, device=device, dtype=dtype)
 
         Q_feat = self._feature_map(Q)
         K_feat = self._feature_map(K) * mask_expanded
 
         if self.is_decoder:
-            # Causal FAVOR+: outer product then cumsum
-            kv_outer = torch.einsum("bhnm,bhnd->bhnmd", K_feat.float(), V.float())
-            KV_cum = torch.cumsum(kv_outer, dim=2)
-            num = torch.einsum("bhnm,bhnmd->bhnd", Q_feat.float(), KV_cum)
-            z_cum = torch.cumsum(K_feat.float(), dim=2)
-            den = torch.einsum("bhnm,bhnm->bhn", Q_feat.float(), z_cum).unsqueeze(-1) + self.eps
+            M = Q_feat.shape[-1]
+            chunk_size = min(64, N)
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            S = torch.zeros(B, H, M, d, dtype=torch.float32, device=device)
+            z = torch.zeros(B, H, M, dtype=torch.float32, device=device)
+            num_list = []
+            den_list = []
+
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, N)
+                L = end - start
+
+                q_c = Q_feat[:, :, start:end].float()
+                k_c = K_feat[:, :, start:end].float()
+                v_c = V[:, :, start:end].float()
+
+                causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.float32))
+                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+                intra_num = torch.matmul(intra_attn, v_c)
+                inter_num = torch.matmul(q_c, S)
+                num_list.append(intra_num + inter_num)
+
+                intra_den = intra_attn.sum(dim=-1, keepdim=True)
+                inter_den = torch.matmul(q_c, z.unsqueeze(-1))
+                den_list.append(intra_den + inter_den)
+
+                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                z = z + k_c.sum(dim=2)
+
+            num = torch.cat(num_list, dim=2)
+            den = torch.cat(den_list, dim=2).clamp(min=self.eps)
             context = (num / den).to(dtype)
         else:
             # 3. Mask Q_feat in bidirectional branch to prevent padding query tokens from influencing output
@@ -561,8 +590,7 @@ class PerformerAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("performer_inject")
-@ATTENTION_REGISTRY.register("performer")
-@ATTENTION_REGISTRY.register("performer_attention")
+@ATTENTION_REGISTRY.register("inject_performer")
 def inject_performer(
     layer: Any = None,
     model: Any = None,

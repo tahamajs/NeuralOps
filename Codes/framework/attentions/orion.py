@@ -28,6 +28,17 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -83,14 +94,9 @@ class ORIONConfig:
 
 
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    orig_dtype = x.dtype
-    x = x.float()
-    m = x.max(dim=dim, keepdim=True).values
-    e = torch.exp((x - m) / temperature)
-    m_scaled = torch.clamp(-m / temperature, max=80.0)
-    denom = e - torch.exp(m_scaled)
-    p = F.relu(denom)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
+    x_f = x.float()
+    p = F.relu(torch.exp(x_f / temperature) - 1.0)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-8)).to(x.dtype)
 
 
 class FactorisedLinear(nn.Module):
@@ -123,7 +129,7 @@ class FactorisedLinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        rank = max(min_rank, min(max_rank, min(in_features, out_features) // 4, 16))
+        rank = max(min_rank, min(max_rank, min(in_features, out_features)))
         self.rank = rank
 
         self.down = nn.Linear(in_features, rank, bias=False, device=device, dtype=dtype)
@@ -162,22 +168,24 @@ class FactorisedLinear(nn.Module):
             total = (S ** 2).sum()
             cum = torch.cumsum(S ** 2, dim=0) / torch.clamp(total, min=1e-8)
             rank = int((cum < self.energy).sum().item()) + 1
-            rank = max(self.min_rank, min(rank, min(out_dim, in_dim), self.max_rank))
+            max_avail_rank = self.down.weight.shape[0]
+            rank = max(self.min_rank, min(rank, min(out_dim, in_dim), self.max_rank, max_avail_rank))
             self.rank = rank
 
             device = self.down.weight.device
             dtype = self.down.weight.dtype
 
-            self.down = nn.Linear(in_dim, rank, bias=False, device=device, dtype=dtype)
-            self.up = nn.Linear(rank, out_dim, bias=(bias is not None or self.up.bias is not None), device=device, dtype=dtype)
-
             A = U[:, :rank] * S[:rank].unsqueeze(0)
             B = Vt[:rank, :]
-            self.down.weight.data.copy_(B.to(device=device, dtype=dtype))
-            self.up.weight.data.copy_(A.to(device=device, dtype=dtype))
+
+            self.down.weight.data.zero_()
+            self.up.weight.data.zero_()
+            self.down.weight.data[:rank, :in_dim].copy_(B.to(device=device, dtype=dtype))
+            self.up.weight.data[:out_dim, :rank].copy_(A.to(device=device, dtype=dtype))
 
             if bias is not None and self.up.bias is not None:
-                self.up.bias.data.copy_(bias.to(device=device, dtype=dtype))
+                min_b = min(self.up.bias.numel(), bias.numel())
+                self.up.bias.data[:min_b].copy_(bias[:min_b].to(device=device, dtype=dtype))
             elif self.up.bias is not None:
                 self.up.bias.data.zero_()
 
@@ -205,7 +213,7 @@ class FactorisedLinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("orion_module", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -242,11 +250,11 @@ class ORIONAttention(BaseAttention):
         if hidden_size is None or num_heads is None:
             if cfg is not None:
                 if hidden_size is None:
-                    hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "d_model", getattr(cfg, "dim", 768)))
+                    hidden_size = _cfg_get(cfg, "hidden_size", _cfg_get(cfg, "d_model", _cfg_get(cfg, "dim", 768)))
                 if num_heads is None:
-                    num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 12))
+                    num_heads = _cfg_get(cfg, "num_attention_heads", _cfg_get(cfg, "num_heads", 12))
                 if num_kv_heads is None:
-                    num_kv_heads = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", num_heads))
+                    num_kv_heads = _cfg_get(cfg, "num_key_value_heads", _cfg_get(cfg, "num_kv_heads", num_heads))
             elif source_attn is not None:
                 if hidden_size is None:
                     out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
@@ -268,12 +276,14 @@ class ORIONAttention(BaseAttention):
 
         self.num_heads = max(1, int(num_heads))
         self.num_kv_heads = max(1, int(num_kv_heads))
-        self.head_dim = hidden_size // self.num_heads if self.num_heads > 0 else 64
+        self.hidden_size = int(hidden_size)
+        if self.hidden_size % self.num_heads != 0:
+            raise ValueError(f"hidden_size {self.hidden_size} must be divisible by num_heads {self.num_heads}")
+        self.head_dim = self.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
-        self.hidden_size = hidden_size
         self.cfg = orion_cfg
         self.bert_mode = bert_mode
 
@@ -309,11 +319,23 @@ class ORIONAttention(BaseAttention):
         self.v_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = FactorisedLinear(self.all_head_size, hidden_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        self.register_buffer("rff_proj", torch.randn(max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features) * 0.02, persistent=True)
+        self.register_buffer("rff_proj", torch.randn(max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features) * (1.0 / math.sqrt(self.head_dim)), persistent=False)
         self.dropout = nn.Dropout(orion_cfg.dropout)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    @property
+    def query(self) -> FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> FactorisedLinear:
+        return self.v_proj
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -447,24 +469,48 @@ class ORIONAttention(BaseAttention):
         Q, K, V = Q.float(), K.float(), V.float()
         proj = self.rff_proj[:Hk].to(Q.device).float()
 
-        Q_norm = F.normalize(Q, p=2, dim=-1)
-        K_norm = F.normalize(K, p=2, dim=-1)
-        Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, proj).clamp(max=11.0)
-        K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, proj).clamp(max=11.0)
-        Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
-        K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
+        scale = 1.0 / math.sqrt(self.head_dim)
+        Q_proj = torch.einsum("bhnd,hdf->bhnf", Q * scale, proj)
+        K_proj = torch.einsum("bhnd,hdf->bhnf", K * scale, proj)
+        Q_feat = torch.cat([torch.cos(Q_proj), torch.sin(Q_proj)], dim=-1) / math.sqrt(2 * F_dim)
+        K_feat = torch.cat([torch.cos(K_proj), torch.sin(K_proj)], dim=-1) / math.sqrt(2 * F_dim)
 
+        M = Q_feat.shape[-1]
         if self.is_decoder:
-            kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_feat, V)
-            KV_cum = torch.cumsum(kv_outer, dim=2)
-            num = torch.einsum("bhnf,bhnfd->bhnd", Q_feat, KV_cum)
-            z_cum = torch.cumsum(K_feat, dim=2)
-            denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1e-5)
-            ctx = num / denom
+            chunk_size = min(64, N)
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            S = torch.zeros(B, Hk, M, D, dtype=torch.float32, device=Q.device)
+            Z = torch.zeros(B, Hk, M, dtype=torch.float32, device=Q.device)
+            ctx_list = []
+
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, N)
+                L = end - start
+
+                q_c = Q_feat[:, :, start:end]
+                k_c = K_feat[:, :, start:end]
+                v_c = V[:, :, start:end]
+
+                causal_mask = torch.tril(torch.ones(L, L, device=Q.device, dtype=torch.float32))
+                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+                intra_out = torch.matmul(intra_attn, v_c)
+                inter_out = torch.matmul(q_c, S)
+
+                intra_den = intra_attn.sum(dim=-1, keepdim=True)
+                inter_den = torch.matmul(q_c, Z.unsqueeze(-1))
+
+                den = (intra_den + inter_den).clamp(min=1.0)
+                ctx_list.append((intra_out + inter_out) / den)
+
+                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                Z = Z + k_c.sum(dim=2)
+
+            ctx = torch.cat(ctx_list, dim=2)
         else:
             KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
             K_sum = K_feat.sum(dim=2)
-            denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-5)
+            denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1.0)
             ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
         return ctx.to(orig_dtype)
 
@@ -619,47 +665,23 @@ def inject_orion(
             **kwargs,
         )
         if src_attn is not None:
-            try:
-                new_attn.copy_weights(src_attn)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            new_attn.copy_weights(src_attn)
         if layer is not None:
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
                 else:
                     layer.attention = new_attn
-            elif hasattr(layer, 'attention'):
-
-                if hasattr(layer.attention, 'self'):
-
-                    layer.attention.self = new_attn
-
-                else:
-
-                    if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                        layer.attention.self = new_attn
-                    else:
-                        layer.attention = new_attn
-
-            elif hasattr(layer, 'self'):
-
+            elif hasattr(layer, "self_attn"):
+                layer.self_attn = new_attn
+            elif hasattr(layer, "self"):
                 layer.self = new_attn
-
-            elif hasattr(layer, 'attn'):
-
+            elif hasattr(layer, "attn"):
                 layer.attn = new_attn
-
-            else:
-
-                if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                    layer.attention.self = new_attn
-                else:
-                    layer.attention = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error("inject_orion failed: %s", e)
+        return None
 
 
 # Aliases
