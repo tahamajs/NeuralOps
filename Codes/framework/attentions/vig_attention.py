@@ -538,8 +538,8 @@ class ViGAttention(BaseAttention):
 
         is_decoder = (
             self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(getattr(self, "config", None), "is_decoder", False)
+            or getattr(getattr(self, "config", None), "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
         if is_decoder:
@@ -553,7 +553,7 @@ class ViGAttention(BaseAttention):
             tril_r = torch.tril(torch.ones(H, H, device=q.device, dtype=torch.bool))
             scores_r = scores_r.masked_fill(~tril_r.unsqueeze(0).unsqueeze(0), float("-inf"))
             valid_r_mask = valid_row.squeeze(-2)  # [B, Hh * W, H]
-            scores_r = scores_r.masked_fill(~valid_r_mask.unsqueeze(-2), float("-inf"))
+            scores_r = scores_r.masked_fill(~(valid_r_mask.bool()).unsqueeze(-2), float("-inf"))
             # If an entire row is masked out, softmax produces NaNs: fill with 0.0 after nan_to_num
             attn_r = torch.softmax(scores_r, dim=-1)
             attn_r = torch.nan_to_num(attn_r, nan=0.0)
@@ -595,7 +595,7 @@ class ViGAttention(BaseAttention):
             tril_c = torch.tril(torch.ones(W, W, device=q.device, dtype=torch.bool))
             scores_c = scores_c.masked_fill(~tril_c.unsqueeze(0), float("-inf"))
             valid_c_mask = valid_col.squeeze(-1)  # [B * Hh * H, W]
-            scores_c = scores_c.masked_fill(~valid_c_mask.unsqueeze(-2), float("-inf"))
+            scores_c = scores_c.masked_fill(~(valid_c_mask.bool()).unsqueeze(-2), float("-inf"))
             attn_c = torch.softmax(scores_c, dim=-1)
             attn_c = torch.nan_to_num(attn_c, nan=0.0)
             out_col = torch.matmul(attn_c, v_col_flat.float())
