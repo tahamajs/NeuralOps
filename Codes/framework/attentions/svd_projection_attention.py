@@ -19,6 +19,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -181,8 +182,8 @@ class SVDProjectionLinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("svd_proj", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_proj_attn", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_projection_attention")
-@ATTENTION_REGISTRY.register("svd_projection")
+@ATTENTION_REGISTRY.register("svd_projection_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("svd_projection", supports_causal=True, supports_gqa=True)
 class SVDProjectionAttention(BaseAttention):
     r"""Multi-Head Attention using Factorized SVD Linear Projections.
     Hardened for production use across diverse transformer architectures.
@@ -292,14 +293,6 @@ class SVDProjectionAttention(BaseAttention):
             freeze_base=True,
         )
 
-        self.query = self.q_proj
-        self.key = self.k_proj
-        self.value = self.v_proj
-        self.q_lin = self.q_proj
-        self.k_lin = self.k_proj
-        self.v_lin = self.v_proj
-        self.out_lin = self.out_proj
-
         dropout_p = _cfg_get(
             config,
             "dropout",
@@ -314,6 +307,34 @@ class SVDProjectionAttention(BaseAttention):
         # 4. Copy weights if old_attn passed
         if old_attn is not None:
             self.copy_weights(old_attn)
+
+    @property
+    def query(self) -> SVDProjectionLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> SVDProjectionLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> SVDProjectionLinear:
+        return self.v_proj
+
+    @property
+    def q_lin(self) -> SVDProjectionLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> SVDProjectionLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> SVDProjectionLinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> SVDProjectionLinear:
+        return self.out_proj
 
     def _decompose_and_set(
         self, target: SVDProjectionLinear, weight: torch.Tensor, bias: Optional[torch.Tensor]
@@ -367,14 +388,26 @@ class SVDProjectionAttention(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
                 if c_attn_w is not None:
-                    split_size = c_attn_w.size(0) // 3
-                    w_q = c_attn_w[:split_size, :]
-                    w_k = c_attn_w[split_size : 2 * split_size, :]
-                    w_v = c_attn_w[2 * split_size :, :]
-                    if c_attn_b is not None:
-                        b_q = c_attn_b[:split_size]
-                        b_k = c_attn_b[split_size : 2 * split_size]
-                        b_v = c_attn_b[2 * split_size :]
+                    q_dim = self.q_head_size
+                    k_dim = self.kv_head_size
+                    v_dim = self.kv_head_size
+                    if c_attn_w.size(0) >= q_dim + k_dim + v_dim:
+                        w_q = c_attn_w[:q_dim, :]
+                        w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                        w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                        if c_attn_b is not None:
+                            b_q = c_attn_b[:q_dim]
+                            b_k = c_attn_b[q_dim : q_dim + k_dim]
+                            b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+                    else:
+                        split_size = c_attn_w.size(0) // 3
+                        w_q = c_attn_w[:split_size, :]
+                        w_k = c_attn_w[split_size : 2 * split_size, :]
+                        w_v = c_attn_w[2 * split_size : 3 * split_size, :]
+                        if c_attn_b is not None:
+                            b_q = c_attn_b[:split_size]
+                            b_k = c_attn_b[split_size : 2 * split_size]
+                            b_v = c_attn_b[2 * split_size : 3 * split_size]
 
                 w_o, b_o = _unpack_weight_bias(src.c_proj)
 
@@ -409,18 +442,11 @@ class SVDProjectionAttention(BaseAttention):
             # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
                 try:
-                    adapter = UniversalAdapter(old_attn)
-                    extracted = adapter.extract_qkv_out()
-                    if extracted:
-                        w_q = extracted.get("q_weight")
-                        b_q = extracted.get("q_bias")
-                        w_k = extracted.get("k_weight")
-                        b_k = extracted.get("k_bias")
-                        w_v = extracted.get("v_weight")
-                        b_v = extracted.get("v_bias")
-                        if w_o is None:
-                            w_o = extracted.get("out_weight")
-                            b_o = extracted.get("out_bias")
+                    w_q, b_q = UniversalAdapter.get_weight_bias(old_attn, "q")
+                    w_k, b_k = UniversalAdapter.get_weight_bias(old_attn, "k")
+                    w_v, b_v = UniversalAdapter.get_weight_bias(old_attn, "v")
+                    if w_o is None:
+                        w_o, b_o = UniversalAdapter.get_weight_bias(old_attn, "o")
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
@@ -443,38 +469,43 @@ class SVDProjectionAttention(BaseAttention):
             # Decompose and set Q
             self._decompose_and_set(self.q_proj, w_q, b_q)
 
-            # Handle GQA pooling for K and V if necessary
-            if w_k.shape[0] == self.kv_head_size:
-                self._decompose_and_set(self.k_proj, w_k, b_k)
-            else:
-                rep = w_k.shape[0] // self.kv_head_size
-                w_k_pooled = (
-                    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
-                    .mean(dim=1)
-                    .view(self.kv_head_size, -1)
-                )
-                b_k_pooled = (
-                    b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                    if b_k is not None
-                    else None
-                )
-                self._decompose_and_set(self.k_proj, w_k_pooled, b_k_pooled)
+            # Handle GQA pooling/repetition for K and V
+            def _align_kv(w: torch.Tensor, b: Optional[torch.Tensor]) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+                if w.shape[0] == self.kv_head_size:
+                    return w, b
+                elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
+                    rep = w.shape[0] // self.kv_head_size
+                    w_pooled = (
+                        w.view(self.num_kv_heads, rep, self.head_dim, -1)
+                        .mean(dim=1)
+                        .view(self.kv_head_size, -1)
+                    )
+                    b_pooled = (
+                        b.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
+                        if b is not None else None
+                    )
+                    return w_pooled, b_pooled
+                elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
+                    rep = self.kv_head_size // w.shape[0]
+                    w_rep = w.repeat(rep, 1)
+                    b_rep = b.repeat(rep) if b is not None else None
+                    return w_rep, b_rep
+                else:
+                    new_w = torch.zeros(self.kv_head_size, w.shape[1], device=w.device, dtype=w.dtype)
+                    new_w[:min(self.kv_head_size, w.shape[0]), :min(self.hidden_size, w.shape[1])].copy_(
+                        w[:min(self.kv_head_size, w.shape[0]), :min(self.hidden_size, w.shape[1])]
+                    )
+                    new_b = None
+                    if b is not None:
+                        new_b = torch.zeros(self.kv_head_size, device=b.device, dtype=b.dtype)
+                        new_b[:min(self.kv_head_size, b.shape[0])].copy_(b[:min(self.kv_head_size, b.shape[0])])
+                    return new_w, new_b
 
-            if w_v.shape[0] == self.kv_head_size:
-                self._decompose_and_set(self.v_proj, w_v, b_v)
-            else:
-                rep = w_v.shape[0] // self.kv_head_size
-                w_v_pooled = (
-                    w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
-                    .mean(dim=1)
-                    .view(self.kv_head_size, -1)
-                )
-                b_v_pooled = (
-                    b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                    if b_v is not None
-                    else None
-                )
-                self._decompose_and_set(self.v_proj, w_v_pooled, b_v_pooled)
+            w_k_aligned, b_k_aligned = _align_kv(w_k, b_k)
+            self._decompose_and_set(self.k_proj, w_k_aligned, b_k_aligned)
+
+            w_v_aligned, b_v_aligned = _align_kv(w_v, b_v)
+            self._decompose_and_set(self.v_proj, w_v_aligned, b_v_aligned)
 
             # Decompose and set out_proj if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
@@ -556,6 +587,8 @@ class SVDProjectionAttention(BaseAttention):
 
         # 7. Context computation & Head Merge
         context = torch.matmul(attn_weights, V).transpose(1, 2).contiguous().view(B, N, -1)
+        valid_mask = get_token_valid_mask(eff_mask, B, N, hidden_states.device)
+        context = context * valid_mask.unsqueeze(-1).to(context.dtype)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # 8. Output projection (bypassed if nested encoder)
@@ -573,10 +606,10 @@ class SVDProjectionAttention(BaseAttention):
         return output, (attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("svd_projection_attention")
-@ATTENTION_REGISTRY.register("svd_proj_attn")
+@ATTENTION_REGISTRY.register("svd_projection_attention_inject")
 @ATTENTION_REGISTRY.register("svd_proj_attn_inject")
 @ATTENTION_REGISTRY.register("inject_svd_proj_attn")
+@ATTENTION_REGISTRY.register("inject_svd_projection_attention")
 @ATTENTION_REGISTRY.register("inject_svd_projection")
 def inject_svd_proj_attn(
     layer: Any = None,
