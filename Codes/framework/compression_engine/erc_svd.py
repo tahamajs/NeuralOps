@@ -158,7 +158,7 @@ class ERCCompressor(BaseCompressor):
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("ERC-SVD SVD computation failed: %s", e)
-            raise RuntimeError(f"Injection failed"), 1.0, 0
+            return None, 1.0, 0
 
         # Cumulative energy calculation
         s_squared = S ** 2
