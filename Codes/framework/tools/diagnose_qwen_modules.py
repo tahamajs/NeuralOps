@@ -66,9 +66,14 @@ def main():
     tok.padding_side = "left"
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
-    base = AutoModelForSequenceClassification.from_pretrained(
-        args.model, num_labels=2, local_files_only=True, torch_dtype=dtype
-    )
+    try:
+        base = AutoModelForSequenceClassification.from_pretrained(
+            args.model, num_labels=2, local_files_only=True, dtype=dtype
+        )
+    except TypeError:
+        base = AutoModelForSequenceClassification.from_pretrained(
+            args.model, num_labels=2, local_files_only=True, torch_dtype=dtype
+        )
     state = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
     base.load_state_dict(state, strict=False)
     base.config.pad_token_id = tok.pad_token_id
