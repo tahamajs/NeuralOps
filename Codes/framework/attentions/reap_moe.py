@@ -182,6 +182,7 @@ class REAPMoE(nn.Module):
         self.top_k = min(top_k, n_experts)
         self.noise_std = noise_std
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         self.router_ln = nn.LayerNorm(self.d_model)
         self.router = nn.Linear(d_model, n_experts, bias=False)

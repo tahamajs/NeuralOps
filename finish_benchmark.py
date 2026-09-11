@@ -95,7 +95,8 @@ def is_module_done(module):
     return True
 
 def discover_remaining():
-    return sorted([r for r in REPO_DIR.glob("run_all_4_*.py") if not is_module_done(extract_module_name(r))])
+    excluded = {"replace"}
+    return sorted([r for r in REPO_DIR.glob("run_all_4_*.py") if extract_module_name(r) not in excluded and not is_module_done(extract_module_name(r))])
 
 def read_summary_accuracy(module):
     results = {}

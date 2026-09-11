@@ -199,6 +199,10 @@ class RoutingAttention(BaseAttention):
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
+        self.router_gate = nn.Linear(self.dim, self.num_clusters, bias=True)
+        nn.init.normal_(self.router_gate.weight, mean=0.0, std=1e-4)
+        if self.router_gate.bias is not None:
+            nn.init.zeros_(self.router_gate.bias)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
