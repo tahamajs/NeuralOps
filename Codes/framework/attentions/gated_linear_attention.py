@@ -254,7 +254,7 @@ class GatedLinearAttention(BaseAttention):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -573,7 +573,7 @@ def inject_gated_linear(
             new_block.copy_weights(src_attn)
         except Exception as e:
             print(f'copy_weights failed: {e}')
-            return None
+            raise RuntimeError(f"copy_weights failed: {e}")
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):

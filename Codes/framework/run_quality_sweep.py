@@ -1140,7 +1140,7 @@ def main():
                 args.dataset_dir = str(cand)
                 break
     ds = load_from_disk(args.dataset_dir); train, val = ds["train"], ds["validation"]
-    tokenizer = AutoTokenizer.from_pretrained(args.model); tokenizer.padding_side = "left"
+    tokenizer = AutoTokenizer.from_pretrained(args.model); tokenizer.padding_side = "right"
     if tokenizer.pad_token_id is None: tokenizer.pad_token = tokenizer.eos_token
     # Train the newly initialized classifier in fp32. GradScaler cannot
     # unscale gradients belonging to fp16 parameters. Cast the trained model

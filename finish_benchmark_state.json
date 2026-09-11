@@ -2218,5 +2218,318 @@
       ]
     },
     "timestamp": "2026-09-11T10:45:36.052850"
+  },
+  "adaptive_sparse": {
+    "status": "PASS",
+    "exit_code": 0,
+    "elapsed_s": 82.0,
+    "accuracies": {
+      "roberta": [
+        "PASS",
+        58.14
+      ]
+    },
+    "timestamp": "2026-09-11T10:52:03.687037"
+  },
+  "adaptive_sparse_attention": {
+    "status": "FAILED_LOW",
+    "exit_code": 0,
+    "elapsed_s": 261.3,
+    "accuracies": {},
+    "timestamp": "2026-09-11T10:56:25.002509"
+  },
+  "aegis_spectron_fp8": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 212.0,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        50.92
+      ]
+    },
+    "timestamp": "2026-09-11T10:59:57.016139"
+  },
+  "aegis_v6": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 238.3,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        52.87
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        50.46
+      ]
+    },
+    "timestamp": "2026-09-11T11:03:55.367633"
+  },
+  "cluster": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 303.8,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        50.92
+      ]
+    },
+    "timestamp": "2026-09-11T11:08:59.220512"
+  },
+  "compressed_mha": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 140.3,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        50.92
+      ]
+    },
+    "timestamp": "2026-09-11T11:11:19.487668"
+  },
+  "dobi": {
+    "status": "FAILED_LOW",
+    "exit_code": 0,
+    "elapsed_s": 167.8,
+    "accuracies": {},
+    "timestamp": "2026-09-11T11:14:07.331307"
+  },
+  "dynamic_entropy": {
+    "status": "FAILED_LOW",
+    "exit_code": 0,
+    "elapsed_s": 264.4,
+    "accuracies": {},
+    "timestamp": "2026-09-11T11:18:31.702538"
+  },
+  "full": {
+    "status": "FAILED_LOW",
+    "exit_code": 0,
+    "elapsed_s": 170.4,
+    "accuracies": {
+      "distilbert": [
+        "FAIL",
+        0.0
+      ],
+      "roberta": [
+        "FAIL",
+        0.0
+      ],
+      "gpt2": [
+        "FAIL",
+        0.0
+      ]
+    },
+    "timestamp": "2026-09-11T11:21:22.072733"
+  },
+  "fused_svd_kernel": {
+    "status": "PASS",
+    "exit_code": 0,
+    "elapsed_s": 214.4,
+    "accuracies": {
+      "distilbert": [
+        "FAIL",
+        0.0
+      ],
+      "roberta": [
+        "PASS",
+        70.07
+      ],
+      "gpt2": [
+        "FAIL",
+        0.0
+      ]
+    },
+    "timestamp": "2026-09-11T11:24:56.515321"
+  },
+  "galerkin": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 149.6,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        51.26
+      ]
+    },
+    "timestamp": "2026-09-11T11:27:26.168017"
+  },
+  "galerkin_attention": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 149.9,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        51.26
+      ]
+    },
+    "timestamp": "2026-09-11T11:29:56.083121"
+  },
+  "gated_delta_net": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 227.8,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        49.54
+      ]
+    },
+    "timestamp": "2026-09-11T11:33:43.859418"
+  },
+  "gated_deltanet_block": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 235.4,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        51.49
+      ]
+    },
+    "timestamp": "2026-09-11T11:37:39.251569"
+  },
+  "gated_linear_attention": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 194.9,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        50.92
+      ]
+    },
+    "timestamp": "2026-09-11T11:40:54.184621"
+  },
+  "goldfinch_ahn": {
+    "status": "PASS_LOW",
+    "exit_code": 0,
+    "elapsed_s": 163.8,
+    "accuracies": {
+      "distilbert": [
+        "PASS_LOW",
+        50.92
+      ],
+      "roberta": [
+        "PASS_LOW",
+        50.92
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        50.92
+      ]
+    },
+    "timestamp": "2026-09-11T11:43:37.964166"
+  },
+  "granite_hybrid": {
+    "status": "PASS",
+    "exit_code": 0,
+    "elapsed_s": 295.3,
+    "accuracies": {
+      "distilbert": [
+        "PASS",
+        63.65
+      ],
+      "roberta": [
+        "PASS_LOW",
+        53.33
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        51.72
+      ]
+    },
+    "timestamp": "2026-09-11T11:48:33.292204"
+  },
+  "griffin_ssd": {
+    "status": "PASS",
+    "exit_code": 0,
+    "elapsed_s": 174.1,
+    "accuracies": {
+      "distilbert": [
+        "PASS",
+        88.19
+      ],
+      "roberta": [
+        "PASS_LOW",
+        54.7
+      ],
+      "gpt2": [
+        "PASS_LOW",
+        54.47
+      ]
+    },
+    "timestamp": "2026-09-11T11:51:27.447706"
   }
 }
