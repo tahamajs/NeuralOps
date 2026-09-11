@@ -10,8 +10,8 @@
   "params_total": null,
   "params_active": null,
   "param_reduction_pct": null,
-  "peak_vram_mb": 387.72,
-  "tokens_per_sec": 52682.33,
+  "peak_vram_mb": 390.86,
+  "tokens_per_sec": 53692.79,
   "elapsed_seconds": null,
   "full_metrics": {
     "module_name": "lora_attention",
@@ -22,9 +22,9 @@
     "precision": 0.6291,
     "recall": 0.5743,
     "val_loss": 0.6798,
-    "elapsed_s": 6.09,
-    "peak_vram_mb": 387.72,
-    "tokens_per_sec": 52682.33,
+    "elapsed_s": 6.34,
+    "peak_vram_mb": 390.86,
+    "tokens_per_sec": 53692.79,
     "total_params_before": 124647170,
     "total_params_after": 134093618,
     "trainable_recovery_params": 2951474,
@@ -39,6 +39,6 @@
     "lora_params": 2359296,
     "error": NaN,
     "path": "adapted_roberta",
-    "timestamp": "2026-09-10T05:19:11.380818"
+    "timestamp": "2026-09-11T06:04:19.274474"
   }
 }
