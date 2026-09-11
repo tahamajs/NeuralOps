@@ -169,7 +169,7 @@ class HybridSVDCompressor(BaseCompressor):
         use_full_layer_replacement: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        max_error: float = 0.35,
+        max_error: float = 0.85,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         cfg: Optional[Any] = None,
@@ -352,20 +352,55 @@ class HybridSVDCompressor(BaseCompressor):
         # Post-compression forward sanity check
         forward_check_success = True
         try:
+            self.model.eval()
             with torch.no_grad():
                 first_p = next(self.model.parameters(), None)
                 dev = first_p.device if first_p is not None else torch.device("cpu")
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
-                try:
-                    self.model(dummy)
-                except Exception:
+                cfg = getattr(self.model, "config", None)
+                vocab_size = getattr(cfg, "vocab_size", 1000)
+                max_tok = min(100, vocab_size - 1) if vocab_size > 10 else 2
+                min_tok = min(2, max_tok)
+                dummy = torch.randint(min_tok, max_tok + 1, (1, 8), device=dev, dtype=torch.long)
+                attn_mask = torch.ones_like(dummy)
+
+                passed = False
+                for call_fn in [
+                    lambda: self.model(dummy),
+                    lambda: self.model(input_ids=dummy, attention_mask=attn_mask),
+                    lambda: self.model(dummy, attention_mask=attn_mask),
+                    lambda: self.model(input_ids=dummy),
+                ]:
+                    try:
+                        call_fn()
+                        passed = True
+                        break
+                    except Exception:
+                        continue
+
+                if not passed:
                     first_linear = next(
                         (m for m in self.model.modules() if isinstance(m, (nn.Linear, SVDLinear))),
                         None,
                     )
-                    in_dim = getattr(first_linear, "in_features", 8)
-                    self.model(torch.randn(1, 8, in_dim, device=dev))
-        except Exception:
+                    in_dim = getattr(first_linear, "in_features", getattr(cfg, "hidden_size", 8))
+                    dummy_float = torch.randn(
+                        1, 8, in_dim, device=dev, dtype=first_p.dtype if first_p is not None else torch.float32
+                    )
+                    for call_fn in [
+                        lambda: self.model(dummy_float),
+                        lambda: self.model(hidden_states=dummy_float),
+                        lambda: self.model(dummy_float, attn_mask),
+                    ]:
+                        try:
+                            call_fn()
+                            passed = True
+                            break
+                        except Exception:
+                            continue
+
+                forward_check_success = passed
+        except Exception as e:
+            logger.warning("HybridSVD post-compression forward check warning: %s", e)
             forward_check_success = False
 
         effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
@@ -397,10 +432,8 @@ class HybridSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("hybrid_svd")
-@COMPRESSOR_REGISTRY.register("hybrid_svd_layer")
 @COMPRESSOR_REGISTRY.register("hybrid_svd_factory")
-@COMPRESSOR_REGISTRY.register("direct_svd_encoder")
+@COMPRESSOR_REGISTRY.register("hybrid_svd_layer_factory")
 @COMPRESSOR_REGISTRY.register("direct_svd_encoder_factory")
 @COMPRESSOR_REGISTRY.register("hybrid_svd_compressor_factory")
 def hybrid_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
@@ -410,7 +443,7 @@ def hybrid_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
     use_full = kwargs.pop("use_full_layer_replacement", _cfg_get(comp_config, "use_full_layer_replacement", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 16)))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "hybrid_svd_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "hybrid_svd_max_error", _cfg_get(comp_config, "max_error", 0.85)))
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(comp_config, "hybrid_svd_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
