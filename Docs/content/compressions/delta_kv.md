@@ -539,3 +539,11 @@ The `DeltaKVCompressor` architecture incorporates telemetry hooks for tracking s
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (DeltaKV)
+Evaluated on SST-2 sentiment classification (FP16, rank 16 low-rank + 29% sparse residual, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.14% | 0.9029 | 1.0 | 0 | 338.34 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-delta-kv) |
+| ROBERTA | 81.65% | 0.8422 | 1.0 | 0 | 359.04 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-delta-kv) |
+| GPT2 | 55.96% | 0.6784 | 1.0 | 0 | 636.41 | `PASS_LOW` | N/A |
