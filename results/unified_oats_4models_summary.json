@@ -1,41 +1,41 @@
 [
   {
     "Model": "distilbert",
-    "Exit Code": 0,
-    "Baseline Acc": "90.48%",
-    "OATS Acc": "90.37%",
-    "Delta Acc": "-0.11%",
-    "F1": "0.9058",
-    "Status": "PASS",
-    "Compressed Layers": "36",
+    "Exit Code": 1,
+    "Baseline Acc": "N/A",
+    "OATS Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_1",
+    "Compressed Layers": "N/A",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "401.5 MB",
-    "Time (s)": "26.8"
+    "Peak VRAM": "N/A",
+    "Time (s)": "9.9"
   },
   {
     "Model": "roberta",
     "Exit Code": 0,
     "Baseline Acc": "75.11%",
-    "OATS Acc": "59.06%",
-    "Delta Acc": "-16.05%",
-    "F1": "0.7128",
+    "OATS Acc": "62.16%",
+    "Delta Acc": "-12.95%",
+    "F1": "0.7286",
     "Status": "PASS",
     "Compressed Layers": "72",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "539.7 MB",
-    "Time (s)": "40.4"
+    "Peak VRAM": "542.6 MB",
+    "Time (s)": "39.4"
   },
   {
     "Model": "gpt2",
     "Exit Code": 0,
-    "Baseline Acc": "60.78%",
+    "Baseline Acc": "54.13%",
     "OATS Acc": "0.00%",
-    "Delta Acc": "-60.78%",
-    "F1": "0.6354",
+    "Delta Acc": "-54.13%",
+    "F1": "0.6390",
     "Status": "FAIL",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "793.2 MB",
-    "Time (s)": "30.3"
+    "Peak VRAM": "390.2 MB",
+    "Time (s)": "31.5"
   }
 ]

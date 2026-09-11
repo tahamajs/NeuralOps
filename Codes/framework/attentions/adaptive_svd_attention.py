@@ -667,7 +667,10 @@ def inject_adaptive_svd(
 
                 else:
 
-                    layer.attention = test_module
+                    if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                        layer.attention.self = test_module
+                    else:
+                        layer.attention = test_module
 
             elif hasattr(layer, 'self'):
 
@@ -679,7 +682,10 @@ def inject_adaptive_svd(
 
             else:
 
-                layer.attention = test_module
+                if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                    layer.attention.self = test_module
+                else:
+                    layer.attention = test_module
         return test_module
     except Exception:
         return None

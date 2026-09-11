@@ -77,6 +77,7 @@ class CRLinear(nn.Module):
         x_p = F.linear(x_flat, self.P)
         out = F.linear(x_p, self.C, self.bias)
 
+        out = out * self.output_scale
         return out.view(*orig_shape[:-1], self.out_features)
 
     def get_weight(self) -> torch.Tensor:

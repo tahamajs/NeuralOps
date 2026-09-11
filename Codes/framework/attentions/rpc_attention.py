@@ -520,7 +520,10 @@ def inject_rpc(
                     setattr(layer, attr, new_attn)
                     return new_attn
 
-            layer.attention = new_attn
+            if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
             return new_attn
 
         if isinstance(layer, nn.Module):

@@ -1,3 +1,0 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-full,PASS,81.31,0.8372,0.8089,0.8364,0.8106,0.5075,2.07,391.24,82590.97,126800640,126800640,0,1.0,0.0,0.0,0,0,,,0,2359296,,adapted_gpt,2026-09-08T01:33:41.513755
-griffin_ssd,PASS,83.03,0.8455,0.8286,0.8395,0.8287,0.4118,8.84,358.28,34167.48,126800640,134440848,2950800,0.9432,-6.03,0.0,0,0,,,12,2949120,,adapted_gpt,2026-09-08T01:33:50.473419

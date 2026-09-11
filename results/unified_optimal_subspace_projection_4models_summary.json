@@ -1,16 +1,16 @@
 [
   {
     "Model": "distilbert",
-    "Exit Code": 0,
-    "Baseline Acc": "90.48%",
-    "Optimal Subspace Projection Acc": "90.60%",
-    "Delta Acc": "+0.12%",
-    "F1": "0.9091",
-    "Status": "PASS",
-    "Compressed Layers": "1",
+    "Exit Code": 1,
+    "Baseline Acc": "N/A",
+    "Optimal Subspace Projection Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_1",
+    "Compressed Layers": "N/A",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "311.3 MB",
-    "Time (s)": "16.9"
+    "Peak VRAM": "N/A",
+    "Time (s)": "9.9"
   },
   {
     "Model": "roberta",
@@ -22,20 +22,20 @@
     "Status": "PASS",
     "Compressed Layers": "4",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "321.1 MB",
-    "Time (s)": "23.2"
+    "Peak VRAM": "318.6 MB",
+    "Time (s)": "20.9"
   },
   {
     "Model": "gpt2",
     "Exit Code": 0,
-    "Baseline Acc": "60.78%",
+    "Baseline Acc": "54.13%",
     "Optimal Subspace Projection Acc": "0.00%",
-    "Delta Acc": "-60.78%",
-    "F1": "0.6354",
+    "Delta Acc": "-54.13%",
+    "F1": "0.6390",
     "Status": "FAIL",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "793.2 MB",
-    "Time (s)": "18.8"
+    "Peak VRAM": "390.2 MB",
+    "Time (s)": "22.4"
   }
 ]
