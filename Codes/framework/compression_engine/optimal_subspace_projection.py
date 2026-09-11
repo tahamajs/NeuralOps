@@ -56,6 +56,7 @@ class OptimalSubspaceLoRALinear(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
+        self.nx = in_features   # Conv1D compatibility
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
@@ -102,8 +103,11 @@ class OptimalSubspaceLoRALinear(nn.Module):
     ) -> OptimalSubspaceLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
         bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
-        in_features = getattr(base_layer, "in_features", weight.shape[1])
-        out_features = getattr(base_layer, "out_features", weight.shape[0])
+        in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
+        out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
+        if in_features is None or out_features is None:
+            out_features = out_features or weight.shape[0]
+            in_features = in_features or weight.shape[1]
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
@@ -411,7 +415,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                                 total_comp_params += p.numel()
                             continue
 
-                    W_target = new_weight.t() if is_conv1d else new_weight
+                    W_target = new_weight
                     compressed_layer = OptimalSubspaceLoRALinear.from_linear(
                         module,
                         weight=W_target.to(dtype=dtype, device=device),
@@ -483,34 +487,63 @@ SubspaceProjectionCompressor = OptimalSubspaceProjectionCompressor
 @COMPRESSOR_REGISTRY.register("optimal_subspace_projection_factory")
 def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Optimal Subspace Projection factory."""
-    calibration_loader = kwargs.pop("calibration_loader", _cfg_get(comp_config, "calibration_loader", None))
-    rank_ratio = kwargs.pop("rank_ratio", _cfg_get(comp_config, "optimal_subspace_rank_ratio", _cfg_get(comp_config, "rank_ratio", 0.5)))
-    power_iters = kwargs.pop("power_iters", _cfg_get(comp_config, "optimal_subspace_power_iters", _cfg_get(comp_config, "power_iters", 2)))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "optimal_subspace_max_error", _cfg_get(comp_config, "max_error", 0.50)))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(
-        comp_config, "optimal_subspace_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    ))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
-    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None))
-    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
-    lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    try:
+        calibration_loader = kwargs.pop("calibration_loader", _cfg_get(comp_config, "calibration_loader", None))
+        rank_ratio = kwargs.pop("rank_ratio", _cfg_get(comp_config, "optimal_subspace_rank_ratio", _cfg_get(comp_config, "rank_ratio", 0.5)))
+        power_iters = kwargs.pop("power_iters", _cfg_get(comp_config, "optimal_subspace_power_iters", _cfg_get(comp_config, "power_iters", 2)))
+        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "optimal_subspace_max_error", _cfg_get(comp_config, "max_error", 0.50)))
+        fallback = kwargs.pop("fallback_to_original", _cfg_get(
+            comp_config, "optimal_subspace_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+        ))
+        target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+        tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None))
+        lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
+        lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
+        return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
-    compressor = OptimalSubspaceProjectionCompressor(
-        model,
-        calibration_loader=calibration_loader,
-        rank_ratio=rank_ratio,
-        power_iters=power_iters,
-        tokenizer=tokenizer,
-        max_error=max_error,
-        fallback_to_original=fallback,
-        target_attention_only=target_attention_only,
-        lora_r=lora_r,
-        lora_alpha=lora_alpha,
-        comp_config=comp_config,
-        **kwargs,
-    )
-    compressed_model, stats = compressor.compress()
-    if return_stats:
-        return compressed_model, stats
-    return compressed_model
+        compressor = OptimalSubspaceProjectionCompressor(
+            model,
+            calibration_loader=calibration_loader,
+            rank_ratio=rank_ratio,
+            power_iters=power_iters,
+            tokenizer=tokenizer,
+            max_error=max_error,
+            fallback_to_original=fallback,
+            target_attention_only=target_attention_only,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            comp_config=comp_config,
+            **kwargs,
+        )
+        compressed_model, stats = compressor.compress()
+        if return_stats:
+            return compressed_model, stats
+        return compressed_model
+    except Exception as e:
+        logger.error("optimal_subspace_projection_factory failed: %s", e)
+        if kwargs.get("return_stats", False) or kwargs.get("return_tuple", False):
+            return None, {}
+        return None
+
+
+@COMPRESSOR_REGISTRY.register("optimal_subspace_projection_inject")
+@COMPRESSOR_REGISTRY.register("inject_optimal_subspace_projection")
+def inject_optimal_subspace_projection(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook for Optimal Subspace Projection."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+    try:
+        return optimal_subspace_projection_factory(target, **kwargs)
+    except Exception as e:
+        logger.error("inject_optimal_subspace_projection failed: %s", e)
+        return None
+
+
+__all__ = [
+    "OptimalSubspaceLoRALinear",
+    "OptimalSubspaceProjectionCompressor",
+    "SubspaceProjectionCompressor",
+    "optimal_subspace_projection_factory",
+    "inject_optimal_subspace_projection",
+]

@@ -68,9 +68,9 @@ class OATSLoRALinear(nn.Module):
         target_device = device if device is not None else weight.device
         target_dtype = dtype if dtype is not None else weight.dtype
 
-        # Normalize to nn.Linear orientation (out_features, in_features); some
-        # call sites pass Conv1D-style (in, out) weights for non-square layers.
-        if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
+        # Strictly ensure nn.Linear weight orientation (out_features, in_features) for F.linear.
+        # Conv1D stores weight as (in_features, out_features) = (nx, nf).
+        if weight.shape == (in_features, out_features) and in_features != out_features:
             weight = weight.t()
 
         self.weight = nn.Parameter(
@@ -101,21 +101,28 @@ class OATSLoRALinear(nn.Module):
     def from_linear(
         cls,
         linear: nn.Module,
-        weight: torch.Tensor,
+        weight: Optional[torch.Tensor] = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
+        **kwargs: Any,
     ) -> OATSLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
+        if weight is None and hasattr(base_layer, "weight"):
+            weight = base_layer.weight.detach()
+        if "rank" in kwargs and lora_r == 0:
+            lora_r = kwargs["rank"]
         bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
         in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
-        if in_features is None:
-            in_features = weight.shape[1]
         out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
-        if out_features is None:
-            out_features = weight.shape[0]
+        if in_features is None and out_features is None:
+            out_features, in_features = weight.shape
+        elif in_features is None:
+            in_features = weight.shape[1] if weight.shape[0] == out_features else weight.shape[0]
+        elif out_features is None:
+            out_features = weight.shape[0] if weight.shape[1] == in_features else weight.shape[1]
 
-        # Ensure weight matches (out_features, in_features)
-        if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
+        # Strictly orient weight as (out_features, in_features) for F.linear
+        if weight.shape == (in_features, out_features) and in_features != out_features:
             weight = weight.t()
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
@@ -405,8 +412,8 @@ class OATSCompressor(BaseCompressor):
                 r = min(rank, len(S))
                 L = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning("OATS SVD alternating iteration failed: %s; keeping previous decomposition", e)
+                break
 
             R = W_scaled - L
             if self.structured_24:
@@ -419,8 +426,14 @@ class OATSCompressor(BaseCompressor):
                 S_mat = R * mask
 
         # De-scale: W_comp = (L + S_mat) @ L_M^-1
-        W_comp = torch.matmul(L + S_mat, L_M_inv)
+        try:
+            W_comp = torch.matmul(L + S_mat, L_M_inv)
+        except Exception as e:
+            logger.warning("OATS de-scaling failed: %s; returning original weight", e)
+            return W, rank
+
         if torch.isnan(W_comp).any() or torch.isinf(W_comp).any():
+            logger.warning("OATS decomposition produced NaNs or Infs; returning original weight")
             return W, rank
         return W_comp, r
 
