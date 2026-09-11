@@ -560,7 +560,7 @@ def inject_upi_mamba(
         elif hasattr(layer, "self"):
             src = layer.self
 
-    if src is None:
+    if src is None or isinstance(src, UPIMambaBlock):
         return None
 
     cfg = model_config or getattr(layer, "config", getattr(src, "config", None))

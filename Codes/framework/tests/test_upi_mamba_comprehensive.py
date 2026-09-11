@@ -184,3 +184,39 @@ def test_upi_mamba_copy_weights_all_4_architectures():
     out4, _ = m_qwen(x)
     assert out4.shape == (2, 8, d)
 
+
+def test_upi_mamba_is_selective():
+    """Verify the SSM is truly selective: B_t, C_t depend on input, and a spike evolves state."""
+    d = 64
+    cfg = make_config(hidden_size=d, is_decoder=True, model_type="gpt2")
+    m = UPIMambaBlock(cfg, pretrained_attn=DummyAttn(d), is_decoder=True)
+    m.eval()
+
+    L = 16
+    x1 = torch.randn(1, L, d)
+    x2 = x1.clone()
+    # Inject large perturbation only at position 5
+    x2[0, 5, :] += 10.0
+
+    with torch.no_grad():
+        out1, _ = m(x1)
+        out2, _ = m(x2)
+
+    # State evolution: outputs prior to position 5 should be identical (causal)
+    diff_before = torch.norm(out1[0, :5] - out2[0, :5]).item()
+    assert diff_before < 1e-4, f"Causality violated before spike: diff={diff_before}"
+
+    # Output at and after position 5 must differ due to state evolution
+    diff_at_and_after = torch.norm(out1[0, 5:] - out2[0, 5:]).item()
+    assert diff_at_and_after > 1.0, f"Expected state to evolve after spike, got diff={diff_at_and_after}"
+
+    # Verify B_t and C_t projections are input-dependent
+    x_proj_out1 = m.x_proj(x1)
+    _, B_t1, C_t1 = torch.split(x_proj_out1, [m.inner_dim, m.d_state, m.d_state], dim=-1)
+    x_proj_out2 = m.x_proj(x2)
+    _, B_t2, C_t2 = torch.split(x_proj_out2, [m.inner_dim, m.d_state, m.d_state], dim=-1)
+
+    assert not torch.allclose(B_t1[0, 5], B_t2[0, 5]), "B_t must be input-dependent"
+    assert not torch.allclose(C_t1[0, 5], C_t2[0, 5]), "C_t must be input-dependent"
+
+
