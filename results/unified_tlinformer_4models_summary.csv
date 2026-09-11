@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,TLinFormer Attention Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,52.29%,-38.19%,0.6800,PASS_LOW,0,0.99x,336.0 MB,19.0
+roberta,0,75.11%,50.92%,-24.19%,0.6748,PASS_LOW,0,0.93x,388.2 MB,27.9
+gpt2,0,60.78%,50.92%,-9.86%,0.6748,PASS_LOW,0,0.98x,581.5 MB,26.9
