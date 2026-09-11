@@ -452,7 +452,7 @@ class TPAttention(BaseAttention):
                     if src_sub.lora_A is not None and src_sub.lora_B is not None and target_layer.lora_A is not None and target_layer.lora_B is not None:
                         src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
                         src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
-                        if hasattr(s_lA, "data") and hasattr(s_lB, "data"):
+                        if hasattr(src_lA, "data") and hasattr(src_lB, "data"):
                             r_min = min(target_layer.lora_A.shape[0], src_lA.shape[0])
                             in_min = min(target_layer.lora_A.shape[1], src_lA.shape[1])
                             target_layer.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
@@ -499,30 +499,32 @@ class TPAttention(BaseAttention):
         B, L, D = hidden_states.shape
         H, H_kv, r, hd = self.num_heads, self.num_kv_heads, self.rank, self.head_dim
 
-        q1 = self.q_proj1(hidden_states).view(B, L, H, r)
-        q2 = self.q_proj2(hidden_states).view(B, L, H, r)
-        k1 = self.k_proj1(hidden_states).view(B, L, H_kv, r)
-        k2 = self.k_proj2(hidden_states).view(B, L, H_kv, r)
-        v = self.v_proj(hidden_states).view(B, L, H_kv, hd)
+        # Reshape directly to [B, H, L, r] to avoid expensive intermediate materialization
+        q1 = self.q_proj1(hidden_states).view(B, L, H, r).permute(0, 2, 1, 3)
+        q2 = self.q_proj2(hidden_states).view(B, L, H, r).permute(0, 2, 1, 3)
+        k1 = self.k_proj1(hidden_states).view(B, L, H_kv, r).permute(0, 2, 1, 3)
+        k2 = self.k_proj2(hidden_states).view(B, L, H_kv, r).permute(0, 2, 1, 3)
+        v = self.v_proj(hidden_states).view(B, L, H_kv, hd).permute(0, 2, 1, 3)  # (B, H_kv, L, hd)
 
-        # Tensor product: Q = q1 ⊗ q2, shape [B, L, H, r*r]
-        Q = torch.einsum("blhi,blhj->blhij", q1, q2).reshape(B, L, H, r * r).permute(0, 2, 1, 3)
-        K = torch.einsum("blhi,blhj->blhij", k1, k2).reshape(B, L, H_kv, r * r).permute(0, 2, 1, 3)
-        v = v.permute(0, 2, 1, 3)  # (B, H_kv, L, hd)
+        # GQA expansion
+        if H_kv != H:
+            k1 = repeat_kv(k1, self.num_key_value_groups)
+            k2 = repeat_kv(k2, self.num_key_value_groups)
+            v = repeat_kv(v, self.num_key_value_groups)
 
         # Partial Rotary Position Embeddings (RoPE)
         pos_emb = kwargs.get("position_embeddings", None)
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
             cos, sin = pos_emb
-            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+            q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
 
-        # GQA expansion
-        if H_kv != H:
-            K = repeat_kv(K, self.num_key_value_groups)
-            v = repeat_kv(v, self.num_key_value_groups)
-
-        scale = 1.0 / math.sqrt(r * r)
-        scores = torch.matmul(Q.float(), K.float().transpose(-1, -2)) * scale
+        # Exploit Tensor Product Factorization:
+        # score[b, h, i, j] = (q1[i] · k1[j]) * (q2[i] · k2[j]) / r
+        # This replaces [B, L, H, r*r] memory footprint with two small [B, H, L, L] contractions
+        scale = 1.0 / max(1.0, float(r))
+        s1 = torch.matmul(q1, k1.transpose(-1, -2))
+        s2 = torch.matmul(q2, k2.transpose(-1, -2))
+        scores = (s1 * s2) * scale
 
         # Causal mask for decoders
         if self.is_decoder and L > 1:
@@ -536,9 +538,9 @@ class TPAttention(BaseAttention):
         if mask is not None:
             scores = apply_attention_mask(scores, mask)
 
-        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-        attn_weights = self.dropout(attn_weights.to(v.dtype))
+        attn_weights = self.dropout(attn_weights)
 
         if head_mask is not None:
             if head_mask.dim() == 1:
@@ -547,8 +549,6 @@ class TPAttention(BaseAttention):
                 head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
             elif head_mask.dim() == 3:
                 head_mask = head_mask.unsqueeze(1)
-            elif head_mask.dim() == 4:
-                head_mask = head_mask
             attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
         context = torch.matmul(attn_weights, v)
