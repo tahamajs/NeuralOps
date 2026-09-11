@@ -57,11 +57,18 @@ class MinimalMoEFallback(nn.Module):
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        logits = self.router(x)
+        router_in = self.router.in_features
+        if x.shape[-1] != router_in:
+            x_in = F.pad(x, (0, router_in - x.shape[-1])) if x.shape[-1] < router_in else x[..., :router_in]
+        else:
+            x_in = x
+        logits = self.router(x_in)
         weights = F.softmax(logits, dim=-1)
-        out = torch.zeros_like(x)
+        out = torch.zeros_like(x_in)
         for i, exp in enumerate(self.experts):
-            out = out + weights[..., i : i + 1] * exp(x)
+            out = out + weights[..., i : i + 1] * exp(x_in)
+        if out.shape[-1] != x.shape[-1]:
+            out = F.pad(out, (0, x.shape[-1] - out.shape[-1])) if out.shape[-1] < x.shape[-1] else out[..., :x.shape[-1]]
         self.aux_loss = torch.tensor(0.0, device=x.device)
         return out * self.output_scale, weights
 
@@ -88,16 +95,27 @@ class SambaMoEBlock(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or d_model
+        if pretrained_attn is not None:
+            cand = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", getattr(pretrained_attn, "all_head_size", None)))
+            if cand is None and hasattr(pretrained_attn, "q_proj") and hasattr(pretrained_attn.q_proj, "in_features"):
+                cand = pretrained_attn.q_proj.in_features
+            elif cand is None and hasattr(pretrained_attn, "q_lin") and hasattr(pretrained_attn.q_lin, "in_features"):
+                cand = pretrained_attn.q_lin.in_features
+            if cand is not None:
+                hidden_size = cand
+        if hidden_size is None and config is not None:
+            hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", None))
+        hidden_size = int(hidden_size or 768)
+
         if config is not None:
-            d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", d_model or 768))
             n_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "n_heads", n_heads or 12))
             n_experts = _cfg_get(config, "num_experts", _cfg_get(config, "n_experts", n_experts))
             window = _cfg_get(config, "window_size", window)
         else:
-            d_model = d_model or 768
             n_heads = n_heads or 12
 
-        self.d_model = int(d_model)
+        self.d_model = hidden_size
         self.n_heads = int(n_heads)
         self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
         self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
@@ -115,7 +133,7 @@ class SambaMoEBlock(BaseAttention):
 
         if REAPMoE is not None:
             try:
-                self.moe = REAPMoE(self.d_model, n_experts, config=config)
+                self.moe = REAPMoE(self.d_model, n_experts=n_experts)
             except Exception as e:
                 logger.warning("REAPMoE construction failed: %s, using MinimalMoEFallback", e)
                 self.moe = MinimalMoEFallback(self.d_model, n_experts=min(4, n_experts))
@@ -129,8 +147,41 @@ class SambaMoEBlock(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
+    @property
+    def is_nested_encoder(self) -> bool:
+        return getattr(self.swa_mamba, "is_nested_encoder", False)
+
+    @is_nested_encoder.setter
+    def is_nested_encoder(self, val: bool) -> None:
+        if hasattr(self, "swa_mamba"):
+            self.swa_mamba.is_nested_encoder = val
+
+    @property
+    def query(self) -> nn.Module:
+        return getattr(self.swa_mamba, "q_lin", None)
+
+    @property
+    def key(self) -> nn.Module:
+        return getattr(self.swa_mamba, "k_lin", None)
+
+    @property
+    def value(self) -> nn.Module:
+        return getattr(self.swa_mamba, "v_lin", None)
+
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         """Propagate weight transfer to internal SAMBA-M3 and SSM components."""
+        src_cls_name = getattr(pretrained_attn, "__class__", type(pretrained_attn)).__name__
+        has_out_proj = any(hasattr(pretrained_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        if (
+            src_cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            or (src_cls_name.endswith("SelfAttention") and not has_out_proj)
+            or (hasattr(pretrained_attn, "query") and not has_out_proj)
+            or (hasattr(pretrained_attn, "self") and hasattr(pretrained_attn, "output"))
+        ):
+            self.is_nested_encoder = True
+            if hasattr(self, "swa_mamba"):
+                self.swa_mamba.is_nested_encoder = True
+
         if hasattr(self.swa_mamba, "copy_weights"):
             self.swa_mamba.copy_weights(pretrained_attn)
 
@@ -148,6 +199,9 @@ class SambaMoEBlock(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("SambaMoEBlock does not support cross-attention")
+
         x, attn_w = self.swa_mamba(
             hidden_states,
             attention_mask=attention_mask,
@@ -161,21 +215,32 @@ class SambaMoEBlock(BaseAttention):
             **kwargs,
         )
 
-        if self.swa_mamba.is_nested_encoder:
-            # Nested encoder bypass
-            if x.shape[-1] != hidden_states.shape[-1]:
-                x = F.pad(x, (0, hidden_states.shape[-1] - x.shape[-1])) if x.shape[-1] < hidden_states.shape[-1] else x[..., :hidden_states.shape[-1]]
-            return (x, attn_w)
+        router_in = getattr(self.moe, "d_model", self.d_model)
+        if hasattr(self.moe, "router") and hasattr(self.moe.router, "in_features"):
+            router_in = self.moe.router.in_features
 
-        moe_out, _ = self.moe(x)
+        if x.shape[-1] != router_in:
+            x_moe = F.pad(x, (0, router_in - x.shape[-1])) if x.shape[-1] < router_in else x[..., :router_in]
+        else:
+            x_moe = x
+
+        moe_out, _ = self.moe(x_moe)
         self.aux_loss = getattr(self.moe, "aux_loss", torch.tensor(0.0, device=x.device))
-        out = self.norm(x + moe_out)
+
+        if moe_out.shape[-1] != x.shape[-1]:
+            moe_out = F.pad(moe_out, (0, x.shape[-1] - moe_out.shape[-1])) if moe_out.shape[-1] < x.shape[-1] else moe_out[..., :x.shape[-1]]
+
+        if self.is_nested_encoder:
+            # Nested encoder: bypass outer LayerNorm (self.norm) and double residual
+            out = x + moe_out
+        else:
+            out = self.norm(x + moe_out)
+
         if out.shape[-1] != hidden_states.shape[-1]:
             out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
         return (out, attn_w)
 
 
-@ATTENTION_REGISTRY.register("samba_moe")
 @ATTENTION_REGISTRY.register("samba_moe_inject")
 @ATTENTION_REGISTRY.register("inject_samba_moe")
 def inject_samba_moe(
@@ -189,6 +254,44 @@ def inject_samba_moe(
 ) -> Optional[SambaMoEBlock]:
     """Safe injection hook for SambaMoEBlock."""
     try:
+        target = layer
+        if target is None:
+            return None
+
+        # 1. Whole model traversal
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+            layer_list = target.layers
+
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_samba_moe(
+                    layer=lyr,
+                    model_config=model_config,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected > 0 else None
+
+        # 2. Single layer injection
         src = old_attn
         if src is None:
             for attr in ("attention", "self_attn", "attn", "self"):
@@ -247,4 +350,4 @@ def inject_samba_moe(
         return new_block
     except Exception as e:
         logger.error("inject_samba_moe failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None
