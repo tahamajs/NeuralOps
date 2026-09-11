@@ -364,6 +364,8 @@ class RALALinearAttention(BaseAttention):
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
                 mod.freeze_base_weights()
+            self.U.requires_grad = False
+            self.V.requires_grad = False
 
     def forward(
         self,
@@ -456,7 +458,8 @@ class RALALinearAttention(BaseAttention):
             rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)
             aug_out = torch.nan_to_num(torch.einsum("b h n d, h d e -> b h n e", q_prime, rank_mat) / denom)
 
-        out = (lin_out + self.alpha * aug_out) * mask_4d
+        scale_factor = math.sqrt(self.head_dim)
+        out = (lin_out + self.alpha * aug_out) * scale_factor * mask_4d
 
         # head_mask handling
         if head_mask is not None:

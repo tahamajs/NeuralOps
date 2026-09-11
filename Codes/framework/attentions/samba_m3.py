@@ -161,6 +161,7 @@ class SpectralMamba(nn.Module):
 
         self.mamba = SimpleSSM(config=config, d_model=d_model, **kwargs)
         self.dt_scale = nn.Parameter(torch.zeros(d_model))
+        self.output_scale = nn.Parameter(torch.ones(1))
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         out = self.mamba(x, **kwargs)
@@ -277,6 +278,7 @@ class SAMBAM3Block(nn.Module):
             else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)

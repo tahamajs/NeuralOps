@@ -47,6 +47,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 @COMPRESSOR_REGISTRY.register("saes_svd_v2")
+@COMPRESSOR_REGISTRY.register("saes_svd_compressor")
+@COMPRESSOR_REGISTRY.register("saes_svd")
 @COMPRESSOR_REGISTRY.register("saes")
 class SAESSVDCompressorV2(BaseCompressor):
     """

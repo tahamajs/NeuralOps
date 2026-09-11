@@ -124,6 +124,7 @@ class SambaMoEBlock(BaseAttention):
 
         self.norm = nn.LayerNorm(self.d_model)
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
