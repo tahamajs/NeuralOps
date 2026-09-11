@@ -1,0 +1,41 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 0,
+    "Baseline Acc": "90.48%",
+    "Tensor Train (TT) Acc": "81.08%",
+    "Delta Acc": "-9.40%",
+    "F1": "0.7919",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "0.90x",
+    "Peak VRAM": "508.1 MB",
+    "Time (s)": "26.3"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "75.11%",
+    "Tensor Train (TT) Acc": "50.92%",
+    "Delta Acc": "-24.19%",
+    "F1": "0.6748",
+    "Status": "PASS_LOW",
+    "Compressed Layers": "0",
+    "Comp Rate": "0.90x",
+    "Peak VRAM": "684.0 MB",
+    "Time (s)": "36.5"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 0,
+    "Baseline Acc": "60.78%",
+    "Tensor Train (TT) Acc": "50.92%",
+    "Delta Acc": "-9.86%",
+    "F1": "0.6748",
+    "Status": "PASS_LOW",
+    "Compressed Layers": "0",
+    "Comp Rate": "0.97x",
+    "Peak VRAM": "784.1 MB",
+    "Time (s)": "60.7"
+  }
+]
