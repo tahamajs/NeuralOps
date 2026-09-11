@@ -469,3 +469,20 @@ The `SwiftSVDActivationCompressor` architecture incorporates telemetry hooks for
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (Swift-SVD Activation Aware)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.48% | 0.9077 | 1.0 | 0 | 311.19 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa39b3d-09fbd39a0a69dd473009e6f8;8ac082f0-523c-40bd-bb1c-36d4cf0763c7)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 22 hours.) |
+| ROBERTA | 72.02% | 0.7724 | 1.0 | 0 | 301.72 | `PASS` | [`roberta`](Upload error: (Request ID: Root=1-6aa39b3d-60652da511ef96283e6e5111;0d64f641-1fc0-4040-ab33-651ceec5d900)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 22 hours.) |
+| GPT2 | 60.09% | 0.6463 | 1.0032 | 1 | 637.29 | `PASS` | [`gpt2`](Upload error: (Request ID: Root=1-6aa39b3e-050b41a841b353657d809c81;07e543d8-3128-42b5-a56c-3ced06332ac7)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 22 hours.) |
