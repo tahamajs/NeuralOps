@@ -132,12 +132,20 @@ def load_backbone(
     if dtype is None:
         dtype = torch.float16 if (device.type == "cuda" and family in {"qwen", "qwen3_5", "qwen2"}) else torch.float32
 
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_path,
-        num_labels=2,
-        torch_dtype=dtype,
-        local_files_only=Path(model_path).exists(),
-    ).to(device)
+    try:
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_path,
+            num_labels=2,
+            dtype=dtype,
+            local_files_only=Path(model_path).exists(),
+        ).to(device)
+    except TypeError:
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_path,
+            num_labels=2,
+            torch_dtype=dtype,
+            local_files_only=Path(model_path).exists(),
+        ).to(device)
 
     if getattr(model.config, "pad_token_id", None) is None:
         model.config.pad_token_id = 0

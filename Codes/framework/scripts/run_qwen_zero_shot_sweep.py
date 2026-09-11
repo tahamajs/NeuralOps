@@ -119,11 +119,19 @@ def load_model(model_id: str, device: torch.device, dtype: torch.dtype | None = 
     tokenizer = AutoTokenizer.from_pretrained(model_id, local_files_only=True)
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        local_files_only=True,
-        torch_dtype=dtype or (torch.float16 if device.type == "cuda" else torch.float32),
-    ).to(device)
+    eff_dtype = dtype or (torch.float16 if device.type == "cuda" else torch.float32)
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            local_files_only=True,
+            dtype=eff_dtype,
+        ).to(device)
+    except TypeError:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            local_files_only=True,
+            torch_dtype=eff_dtype,
+        ).to(device)
     model.eval()
     install_qwen_aliases(model)
     return model, tokenizer
