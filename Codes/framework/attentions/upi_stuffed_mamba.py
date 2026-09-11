@@ -109,8 +109,11 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("upi_stuffed_mamba", supports_causal=True, supports_bidirectional=True)
+@ATTENTION_REGISTRY.register("upi_mamba", supports_causal=True, supports_bidirectional=True)
 class UPIMambaBlock(BaseAttention):
-    r"""Bidirectional / Causal Uncertainty-Penalized Interpolated Mamba Block."""
+    r"""Bidirectional / Causal Uncertainty-Penalized Interpolated Selective Mamba Block.
+    Hardened for production use across diverse transformer architectures.
+    """
 
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -160,6 +163,7 @@ class UPIMambaBlock(BaseAttention):
             self.is_decoder = False
 
         self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))
 
         self.in_proj = LoRALinear(
             self.dim, self.inner_dim * 2, bias=False,
@@ -172,12 +176,20 @@ class UPIMambaBlock(BaseAttention):
             groups=self.inner_dim,
             padding=d_conv - 1,
         )
+        # S4/Mamba parameterization: A_log over [inner_dim, d_state]
         self.A_log = nn.Parameter(
-            torch.log(torch.arange(1, d_state + 1, dtype=torch.float32).repeat(self.dim, 1))
+            torch.log(torch.arange(1, d_state + 1, dtype=torch.float32).unsqueeze(0).repeat(self.inner_dim, 1))
         )
-        self.D = nn.Parameter(torch.ones(self.dim))
-        self.x_proj = nn.Linear(self.inner_dim, self.inner_dim * 2, bias=False)
+        # Trainable skip connection D matching inner_dim
+        self.D = nn.Parameter(torch.ones(self.inner_dim))
+
+        # Trainable selective projections: produces dt_raw [inner_dim], B_t [d_state], C_t [d_state]
+        self.x_proj = nn.Linear(self.inner_dim, self.inner_dim + 2 * self.d_state, bias=False)
+        self.x_proj.weight.requires_grad = True
         self.dt_proj = nn.Linear(self.inner_dim, self.inner_dim, bias=True)
+        self.dt_proj.weight.requires_grad = True
+        self.dt_proj.bias.requires_grad = True
+
         self.out_proj = LoRALinear(
             self.inner_dim, self.dim, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
@@ -193,19 +205,6 @@ class UPIMambaBlock(BaseAttention):
             w_k, b_k = None, None
             w_v, b_v = None, None
             w_o, b_o = None, None
-
-            # UniversalAdapter extraction
-            for proj in ["q", "k", "v", "o"]:
-                try:
-                    w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
-                    if w is not None:
-                        if proj == "q": w_q, b_q = w, b
-                        elif proj == "k": w_k, b_k = w, b
-                        elif proj == "v": w_v, b_v = w, b
-                        elif proj == "o": w_o, b_o = w, b
-                except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    return None
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
@@ -224,16 +223,17 @@ class UPIMambaBlock(BaseAttention):
             else:
                 src = old_attn
 
-            # GPT-2 Fused c_attn
+            # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 if c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim:
                     c_attn_w = c_attn_w.t()
 
-                w_q = c_attn_w[: self.dim, :]
-                w_k = c_attn_w[self.dim : 2 * self.dim, :]
-                w_v = c_attn_w[2 * self.dim : 3 * self.dim, :]
+                split_q = min(self.dim, c_attn_w.shape[0] // 3)
+                w_q = c_attn_w[: split_q, :]
+                w_k = c_attn_w[split_q : 2 * split_q, :]
+                w_v = c_attn_w[2 * split_q : 3 * split_q, :]
 
                 out_w = src.c_proj.weight.detach()
                 if out_w.shape[0] == self.dim and out_w.shape[1] != self.dim:
@@ -241,7 +241,7 @@ class UPIMambaBlock(BaseAttention):
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-            # RoBERTa / BERT separate query, key, value
+            # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -258,7 +258,7 @@ class UPIMambaBlock(BaseAttention):
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            # Qwen / LLaMA
+            # Pattern 3: Qwen / LLaMA
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
@@ -271,7 +271,7 @@ class UPIMambaBlock(BaseAttention):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
-            # DistilBERT
+            # Pattern 4: DistilBERT
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
@@ -284,11 +284,25 @@ class UPIMambaBlock(BaseAttention):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
+            # Fallback: UniversalAdapter extraction
+            if w_q is None or w_v is None or (w_o is None and not self.is_nested_encoder):
+                for proj in ["q", "k", "v", "o"]:
+                    try:
+                        w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+                        if w is not None:
+                            if proj == "q" and w_q is None: w_q, b_q = w, b
+                            elif proj == "k" and w_k is None: w_k, b_k = w, b
+                            elif proj == "v" and w_v is None: w_v, b_v = w, b
+                            elif proj == "o" and w_o is None: w_o, b_o = w, b
+                    except Exception as e:
+                        logger.debug("UniversalAdapter extraction for %s failed: %s", proj, e)
+
             missing = []
             if w_q is None: missing.append("Q projection")
             if w_v is None: missing.append("V projection")
             if w_o is None and not self.is_nested_encoder: missing.append("Out projection")
             if missing:
+                logger.error("UPIMambaBlock: Failed to extract weights: %s from %s", ", ".join(missing), type(old_attn))
                 raise RuntimeError(f"UPIMambaBlock: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}")
 
             def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
@@ -299,14 +313,19 @@ class UPIMambaBlock(BaseAttention):
             w_v_or = _orient(w_v, self.dim)
             w_q_or = _orient(w_q, self.dim)
 
-            # Copy input projection: [V; Q]
+            # Support GQA and wider inner_dim: repeat if smaller
+            if w_v_or.shape[0] < self.inner_dim:
+                rep = math.ceil(self.inner_dim / w_v_or.shape[0])
+                w_v_or = w_v_or.repeat(rep, 1)[: self.inner_dim, : self.dim]
+            if w_q_or.shape[0] < self.inner_dim:
+                rep = math.ceil(self.inner_dim / w_q_or.shape[0])
+                w_q_or = w_q_or.repeat(rep, 1)[: self.inner_dim, : self.dim]
+
             v_chunk = w_v_or[: self.inner_dim, : self.dim]
             q_chunk = w_q_or[: self.inner_dim, : self.dim]
 
-            min_in = min(self.inner_dim, v_chunk.shape[0])
-            self.in_proj.weight.data[:min_in, : self.dim].copy_(v_chunk[:min_in, : self.dim])
-            min_q = min(self.inner_dim, q_chunk.shape[0])
-            self.in_proj.weight.data[self.inner_dim : self.inner_dim + min_q, : self.dim].copy_(q_chunk[:min_q, : self.dim])
+            self.in_proj.weight.data[: self.inner_dim, : self.dim].copy_(v_chunk)
+            self.in_proj.weight.data[self.inner_dim : 2 * self.inner_dim, : self.dim].copy_(q_chunk)
 
             if w_o is not None:
                 w_o_or = _orient(w_o, self.inner_dim)
@@ -321,8 +340,16 @@ class UPIMambaBlock(BaseAttention):
                 min_d = min(self.out_proj.weight.shape[0], self.out_proj.weight.shape[1])
                 self.out_proj.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
 
+            # Frobenius norm checks
+            for name, w in [("in_proj", self.in_proj.weight), ("out_proj", self.out_proj.weight)]:
+                if torch.norm(w.float(), p="fro").item() < 1e-4:
+                    raise RuntimeError(f"UPIMambaBlock: {name} has near-zero Frobenius norm (< 1e-4)")
+
             self.in_proj.freeze_base_weights()
             self.out_proj.freeze_base_weights()
+            self.x_proj.weight.requires_grad = True
+            self.dt_proj.weight.requires_grad = True
+            self.dt_proj.bias.requires_grad = True
 
             # Preserve source LoRA adapters
             source_submodules = {
@@ -369,50 +396,69 @@ class UPIMambaBlock(BaseAttention):
                             self.out_proj.scaling = sub.lora_scaling
                         break
 
-    def _upi_scan(
+    def _selective_scan(
         self,
-        x_ssm: torch.Tensor,
+        x: torch.Tensor,
         dt: torch.Tensor,
-        gamma: torch.Tensor,
+        B_t: torch.Tensor,
+        C_t: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
     ) -> torch.Tensor:
-        """Sequential UPI SSM scan with FP32 precision."""
-        B, L, D = x_ssm.shape
-        d_state = self.d_state
-        A = torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0))
-
-        h = torch.zeros(B, D, d_state, device=x_ssm.device, dtype=torch.float32)
-        outputs = []
-
-        x_f = x_ssm.float()
-        dt_f = dt.float()
-        gamma_f = gamma.float()
-
-        step_range = range(L - 1, -1, -1) if reverse else range(L)
-        for t in step_range:
-            xt = x_f[:, t, :]
-            dt_t = dt_f[:, t, :].unsqueeze(-1)
-            gamma_t = gamma_f[:, t, :].unsqueeze(-1)
-
-            dA = torch.exp(torch.clamp(-dt_t * A.unsqueeze(0), min=-20.0, max=0.0)) * (1.0 - 0.5 * gamma_t)
-            dB_x = (dt_t * xt.unsqueeze(-1)).repeat(1, 1, d_state)
-
-            h_next = dA * h + dB_x
-
+        """Vectorized chunked associative SSM scan in FP32."""
+        if reverse:
+            x = torch.flip(x, dims=[1])
+            dt = torch.flip(dt, dims=[1])
+            B_t = torch.flip(B_t, dims=[1])
+            C_t = torch.flip(C_t, dims=[1])
             if mask is not None:
-                m_t = mask[:, t].view(B, 1, 1).float()
-                h = m_t * h_next + (1.0 - m_t) * h
-            else:
-                h = h_next
+                mask = torch.flip(mask, dims=[1])
 
-            out_t = (h * self.D.unsqueeze(-1)).sum(dim=-1)
-            outputs.append(out_t.to(x_ssm.dtype))
+        batch, seqlen, _ = x.shape
+        A = torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0))  # [inner_dim, d_state]
+
+        # In case of padding mask, zero out invalid token inputs
+        if mask is not None:
+            m = mask.unsqueeze(-1).float()
+            x = x * m
+            dt = dt * m
+
+        # log decay factor per token: -dt * A
+        log_alpha = -(dt.unsqueeze(-1) * A.view(1, 1, self.inner_dim, self.d_state)).float()
+        # driving input: dt * B * x  --> [B, L, D, d_state]
+        u = (dt.unsqueeze(-1) * B_t.unsqueeze(2) * x.unsqueeze(-1)).float()
+
+        chunk_size = 64
+        num_chunks = (seqlen + chunk_size - 1) // chunk_size
+        h_running = x.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
+        y_chunks = []
+
+        for c in range(num_chunks):
+            s_idx = c * chunk_size
+            e_idx = min(seqlen, s_idx + chunk_size)
+
+            u_c = u[:, s_idx:e_idx]
+            log_a_c = log_alpha[:, s_idx:e_idx]
+            lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0)
+
+            decay_c = torch.exp(lambda_c)
+            decay_inv_c = torch.exp(-lambda_c)
+
+            h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
+            h_inter = decay_c * h_running.unsqueeze(1)
+
+            h_chunk = h_intra + h_inter
+            y_c = (C_t[:, s_idx:e_idx].unsqueeze(2).float() * h_chunk).sum(dim=-1).to(x.dtype)
+            y_chunks.append(y_c)
+            h_running = torch.clamp(h_chunk[:, -1], min=-1e3, max=1e3)
+
+        y = torch.cat(y_chunks, dim=1)
+        y = y + self.D * x
 
         if reverse:
-            outputs.reverse()
+            y = torch.flip(y, dims=[1])
 
-        return torch.stack(outputs, dim=1)
+        return y
 
     def forward(
         self,
@@ -428,6 +474,12 @@ class UPIMambaBlock(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        # Cross-attention support
+        if encoder_hidden_states is not None:
+            hidden_states = encoder_hidden_states
+            if encoder_attention_mask is not None:
+                attention_mask = encoder_attention_mask
+
         B, L, D = hidden_states.shape
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
@@ -446,23 +498,24 @@ class UPIMambaBlock(BaseAttention):
         x_conv = self.conv1d(x_in.transpose(1, 2))[:, :, :L].transpose(1, 2)
         x_ssm = F.silu(x_conv)
 
-        x_dbl = self.x_proj(x_ssm)
-        dt_raw, gamma_raw = x_dbl.chunk(2, dim=-1)
+        # Selective projections: dt_raw [inner_dim], B_t [d_state], C_t [d_state]
+        x_proj_out = self.x_proj(x_ssm)
+        dt_raw, B_t, C_t = torch.split(x_proj_out, [self.inner_dim, self.d_state, self.d_state], dim=-1)
         dt = F.softplus(self.dt_proj(dt_raw))
-        gamma = torch.sigmoid(gamma_raw)
-
-        y_fwd = self._upi_scan(x_ssm, dt, gamma, mask=mask_bool, reverse=False)
+        dt = torch.clamp(dt, min=1e-3, max=1.0)
 
         is_decoder = (
             self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(getattr(self, "config", None), "is_decoder", False)
+            or getattr(getattr(self, "config", None), "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
+
+        y_fwd = self._selective_scan(x_ssm, dt, B_t, C_t, mask=mask_bool, reverse=False)
 
         if is_decoder:
             y = y_fwd
         else:
-            y_bwd = self._upi_scan(x_ssm, dt, gamma, mask=mask_bool, reverse=True)
+            y_bwd = self._selective_scan(x_ssm, dt, B_t, C_t, mask=mask_bool, reverse=True)
             y = 0.5 * (y_fwd + y_bwd)
 
         gated = y * F.silu(z)
@@ -475,6 +528,7 @@ class UPIMambaBlock(BaseAttention):
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
+        out = out * self.output_scale
         return (out, None)
 
 
@@ -491,23 +545,34 @@ def inject_upi_mamba(
     **kwargs: Any,
 ) -> Optional[UPIMambaBlock]:
     """Safe injection hook for UPIMambaBlock."""
-    if old_attn is None:
+    # 1. Detect existing attention module
+    src = old_attn
+    if src is None and layer is not None:
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                src = layer.attention.self
+            else:
+                src = layer.attention
+        elif hasattr(layer, "self_attn"):
+            src = layer.self_attn
+        elif hasattr(layer, "attn"):
+            src = layer.attn
+        elif hasattr(layer, "self"):
+            src = layer.self
+
+    if src is None:
         return None
 
-    if model_config is None and hasattr(layer, "config"):
-        model_config = layer.config
-    if model_config is None and hasattr(old_attn, "config"):
-        model_config = old_attn.config
-
+    cfg = model_config or getattr(layer, "config", getattr(src, "config", None))
     dim = (
-        _cfg_get(model_config, "hidden_size")
-        or _cfg_get(model_config, "d_model")
-        or _cfg_get(model_config, "dim")
-        or getattr(old_attn, "hidden_size", None)
-        or getattr(old_attn, "embed_dim", None)
-        or (old_attn.q_proj.in_features if hasattr(old_attn, "q_proj") and hasattr(old_attn.q_proj, "in_features") else None)
-        or (old_attn.q_lin.in_features if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "in_features") else None)
-        or (old_attn.query.in_features if hasattr(old_attn, "query") and hasattr(old_attn.query, "in_features") else None)
+        _cfg_get(cfg, "hidden_size")
+        or _cfg_get(cfg, "d_model")
+        or _cfg_get(cfg, "dim")
+        or getattr(src, "hidden_size", None)
+        or getattr(src, "embed_dim", None)
+        or (src.q_proj.in_features if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features") else None)
+        or (src.q_lin.in_features if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features") else None)
+        or (src.query.in_features if hasattr(src, "query") and hasattr(src.query, "in_features") else None)
         or 768
     )
 
@@ -516,25 +581,28 @@ def inject_upi_mamba(
 
     try:
         new_block = UPIMambaBlock(
-            config=model_config,
+            config=cfg,
             dim=dim,
             rank=rank,
             lora_rank=lora_rank,
-            pretrained_attn=old_attn,
+            pretrained_attn=src,
             **kwargs,
         )
 
-        for attr in ("self_attn", "attn", "self"):
-            if hasattr(layer, attr):
-                setattr(layer, attr, new_block)
-                return new_block
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
                 layer.attention.self = new_block
             else:
                 layer.attention = new_block
-            return new_block
-        layer.attention = new_block
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_block
+        elif hasattr(layer, "attn"):
+            layer.attn = new_block
+        elif hasattr(layer, "self"):
+            layer.self = new_block
+        else:
+            layer.attention = new_block
+
         return new_block
     except Exception as e:
         logger.error("inject_upi_mamba failed at layer %d: %s", layer_idx, e)
