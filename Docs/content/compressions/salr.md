@@ -452,17 +452,15 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| ROBERTA | 88.30% | 0.8926 | 1.0011 | 0 | 328.21 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-salr) |
+| DISTILBERT | 90.37% | 0.9067 | 1.0 | 0 | 310.69 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa385f8-79c77ad54cf85b3629776e1f;4e4689a1-aeb0-4b48-b863-dbd027b82591)
 
-## Usage Examples
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
+| ROBERTA | 80.96% | 0.8363 | 1.0 | 0 | 364.29 | `PASS` | [`roberta`](Upload error: (Request ID: Root=1-6aa385f8-3414b9b972fda27c0082e353;db40a979-fe9e-46f4-a03e-2f4718ab8ebe)
 
-```python
-# TODO: Add specific usage example
-```
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
+| GPT2 | 58.94% | 0.6679 | 1.0 | 0 | 635.79 | `PASS` | [`gpt2`](Upload error: (Request ID: Root=1-6aa385f9-040c075975a32d305cb412bc;7f21ceb5-5ede-4053-8b16-71aa0907b489)
 
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
