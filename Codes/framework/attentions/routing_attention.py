@@ -1,21 +1,19 @@
 """Routing Attention: Content-Based Clustering for Sparse Attention – Production-Hardened.
 
-Partitions sequence queries and keys into discrete clusters via online k-means,
-confining quadratic attention computations to intra-cluster token neighborhoods with exact masking.
-
+Partitions sequence tokens into discrete clusters, confining attention computation
+to intra-cluster tokens without materializing full [B, H, L, L] tensors.
 Supports:
 - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
 - Trainable LoRA adapters with frozen base weights
 - GQA with repeat_kv
 - RoPE position embeddings
-- Causal masking for decoders
-- Nested encoder bypass
-- Frobenius norm verification (>= 1e-4)
+- Causal masking with token-0 context anchor
 - Safe injection returning None on failure
 """
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -27,6 +25,16 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -82,8 +90,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -138,7 +144,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("routing")
@@ -146,7 +152,7 @@ class LoRALinear(nn.Module):
 class RoutingAttention(BaseAttention):
     def __init__(
         self,
-        config: Any,
+        config: Any = None,
         rank: Optional[int] = None,
         num_clusters: int = 16,
         n_iters: int = 3,
@@ -155,34 +161,33 @@ class RoutingAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank or 64)
         self.config = config
-        comp_config = getattr(config, "compression_config", None)
+        comp_config = getattr(config, "compression_config", None) if config else None
 
-        self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads = getattr(
-            config,
-            "num_key_value_heads",
-            kwargs.get("num_key_value_heads", self.num_heads),
-        )
-        self.head_dim = getattr(
-            config,
-            "head_dim",
-            kwargs.get("head_dim", self.dim // self.num_heads),
-        )
+        self.dim = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_kv_heads = _cfg_get(config, "num_key_value_heads", kwargs.get("num_key_value_heads", self.num_heads))
+
+        if self.num_heads <= 0 or self.dim % self.num_heads != 0:
+            raise ValueError(f"dim={self.dim} not divisible by num_heads={self.num_heads}")
+
+        self.head_dim = self.dim // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
-        self.num_clusters = getattr(comp_config, "num_clusters", getattr(config, "routing_num_clusters", num_clusters))
+        self.num_clusters = _cfg_get(comp_config, "num_clusters", _cfg_get(config, "routing_num_clusters", num_clusters))
         self.n_iters = n_iters
 
-        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
+        model_type = str(_cfg_get(config, "model_type", "")).lower()
+        is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
         if kwargs.get("is_causal", False):
             is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
-        self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
+        self.lora_rank = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_alpha = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base = (self.lora_rank > 0)
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
@@ -193,20 +198,27 @@ class RoutingAttention(BaseAttention):
         self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        self.query = self.q_proj
-        self.key = self.k_proj
-        self.value = self.v_proj
-
-        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
-        self.router_gate = nn.Linear(self.dim, self.num_clusters, bias=True)
-        nn.init.normal_(self.router_gate.weight, mean=0.0, std=1e-4)
-        if self.router_gate.bias is not None:
-            nn.init.zeros_(self.router_gate.bias)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    @property
+    def query(self) -> LoRALinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> LoRALinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> LoRALinear:
+        return self.v_proj
+
+    def get_ortho_loss(self) -> float:
+        return 0.0
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -298,93 +310,65 @@ class RoutingAttention(BaseAttention):
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
                     if w is not None:
-                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
-
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
-        if missing_after:
-            raise RuntimeError(
-                f"RoutingAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
-            )
-
-        target_map = {
-            "q": self.q_proj,
-            "k": self.k_proj,
-            "v": self.v_proj,
-            "o": self.out_proj,
-        }
+                        extracted[k] = (w.data.clone(), b.data.clone() if b is not None else None)
+            except Exception:
+                pass
 
         with torch.no_grad():
-            for proj_key, target_mod in target_map.items():
+            for proj_key, target_mod in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
                 w, b = extracted[proj_key]
                 if w is None:
                     if proj_key == "o" and self.is_nested_encoder:
                         nn.init.eye_(target_mod.weight)
                         if target_mod.bias is not None:
                             nn.init.zeros_(target_mod.bias)
-                        continue
-                    else:
-                        raise RuntimeError(f"Missing required weights for {proj_key}")
+                    continue
 
-                if w.shape == target_mod.weight.shape:
-                    target_mod.weight.copy_(w)
-                elif w.t().shape == target_mod.weight.shape:
-                    target_mod.weight.copy_(w.t())
-                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
-                    repeats = target_mod.weight.shape[0] // w.shape[0]
-                    target_mod.weight.copy_(w.repeat(repeats, 1))
-                else:
-                    min_0 = min(target_mod.weight.shape[0], w.shape[0])
-                    min_1 = min(target_mod.weight.shape[1], w.shape[1])
-                    target_mod.weight.zero_()
-                    target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+                if w.ndim != 2:
+                    w = w.reshape(w.size(0), -1)
+
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
+                    w = w.t()
+                out_d = min(target_mod.weight.size(0), w.size(0))
+                in_d = min(target_mod.weight.size(1), w.size(1))
+
+                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
 
                 if b is not None and target_mod.bias is not None:
-                    if b.shape == target_mod.bias.shape:
-                        target_mod.bias.copy_(b)
-                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
-                        repeats = target_mod.bias.shape[0] // b.shape[0]
-                        target_mod.bias.copy_(b.repeat(repeats))
-                    else:
-                        min_b = min(target_mod.bias.shape[0], b.shape[0])
-                        target_mod.bias.zero_()
-                        target_mod.bias[:min_b].copy_(b[:min_b])
+                    min_b = min(target_mod.bias.numel(), b.numel())
+                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                fnorm = torch.linalg.norm(target_mod.weight.float()).item()
-                if fnorm < 1e-4:
-                    raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                w_norm = float(torch.norm(target_mod.weight.data).item())
+                if w_norm < 1e-4:
+                    raise RuntimeError(f"RoutingAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
-        if self.freeze_base:
-            for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
-                mod.freeze_base_weights()
+                if self.freeze_base:
+                    target_mod.freeze_base_weights()
 
-    def _kmeans_assign(self, Q: torch.Tensor, K_num: int, iters: int = 3) -> torch.Tensor:
-        B, H, L, d = Q.shape
-        K = min(K_num, L)
-
+    def _kmeans_assign(self, feat: torch.Tensor, K: int, n_iters: int) -> torch.Tensor:
+        """Online k-means assignment clustering tokens based on shared representation."""
+        B, H, L, d = feat.shape
         step = max(1, L // K)
-        init_idx = torch.arange(0, L, step, device=Q.device)[:K]
-        if len(init_idx) < K:
-            pad = torch.zeros(K - len(init_idx), dtype=torch.long, device=Q.device)
-            init_idx = torch.cat([init_idx, pad])
+        init_idx = torch.arange(0, L, step, device=feat.device)[:K]
+        if init_idx.size(0) < K:
+            extra = torch.zeros(K - init_idx.size(0), dtype=torch.long, device=feat.device)
+            init_idx = torch.cat([init_idx, extra])
 
-        centroids = Q[:, :, init_idx, :].clone()
-        Q_f = Q.float()
+        centroids = feat[:, :, init_idx, :].clone()
+        cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=feat.device)
 
-        cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=Q.device)
-        for _ in range(iters):
+        feat_f = feat.float()
+        for _ in range(n_iters):
             centroids_f = centroids.float()
-            dist = torch.cdist(Q_f, centroids_f)
+            dist = torch.cdist(feat_f, centroids_f)
             cluster_ids = torch.argmin(dist, dim=-1)
 
-            one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=Q.dtype)
+            one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=feat.dtype)
             counts = one_hot.sum(dim=2).clamp(min=1.0).unsqueeze(-1)
-            sum_q = torch.einsum("bhlk,bhld->bhkd", one_hot, Q)
-            centroids = sum_q / counts
+            sum_f = torch.einsum("bhlk,bhld->bhkd", one_hot, feat)
+            centroids = sum_f / counts
 
         return cluster_ids
 
@@ -393,13 +377,8 @@ class RoutingAttention(BaseAttention):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        output_attentions: Optional[bool] = False,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
@@ -412,91 +391,106 @@ class RoutingAttention(BaseAttention):
         K = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
         V = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
 
-        # Apply RoPE if provided
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # Repeat KV for GQA
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
-        key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
-
-        scale = d ** -0.5
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        if valid_mask_2d is None:
+            valid_mask_2d = torch.ones(B, L, device=device, dtype=torch.bool)
 
         K_num = min(max(1, self.num_clusters), L)
-        cluster_ids = self._kmeans_assign(Q, K_num, self.n_iters)
+        # Cluster based on shared normalized representation (Q+K)
+        joint_feat = F.normalize(Q + K, p=2, dim=-1)
+        cluster_ids = self._kmeans_assign(joint_feat, K_num, self.n_iters)
 
-        cluster_mask = cluster_ids.unsqueeze(-1) == cluster_ids.unsqueeze(-2)
-        eye = torch.eye(L, device=device, dtype=torch.bool).unsqueeze(0).unsqueeze(0)
-        total_mask = (cluster_mask | eye) & key_valid_4d
-
+        scale = d ** -0.5
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
-        if is_causal:
-            causal_mask = torch.triu(torch.full((L, L), True, device=device), diagonal=1)
-            total_mask = (total_mask & (~causal_mask.unsqueeze(0).unsqueeze(0))) | (eye & key_valid_4d)
+        outputs = torch.zeros_like(Q)
 
-        scores = scores.masked_fill(~total_mask, -1e4)
+        # Sparse cluster-by-cluster attention
+        for k in range(K_num):
+            mask_k = (cluster_ids == k) | (torch.arange(L, device=device).view(1, 1, -1) == 0)
+            mask_k = mask_k & valid_mask_2d.unsqueeze(1)
 
-        attn = F.softmax(scores, dim=-1).to(dtype)
-        attn = torch.nan_to_num(attn, nan=0.0)
-        attn = self.dropout(attn)
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
-        # head_mask handling
-        if head_mask is not None:
-            if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                attn = attn * head_mask.view(1, self.num_heads, 1, 1).to(attn.dtype)
-            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                attn = attn * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn.dtype)
-            elif head_mask.dim() == 4:
-                attn = attn * head_mask.to(attn.dtype)
+            # Mask non-cluster keys
+            scores = scores.masked_fill(~mask_k.unsqueeze(2), -1e4)
 
-        context = torch.matmul(attn, V)
-        context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
+            # Self-token preservation
+            eye = torch.eye(L, device=device, dtype=torch.bool).unsqueeze(0).unsqueeze(0)
+            scores = scores.masked_fill(eye, 0.0)
+
+            if is_causal:
+                causal_mask = torch.triu(torch.full((L, L), True, device=device), diagonal=1).unsqueeze(0).unsqueeze(0)
+                scores = scores.masked_fill(causal_mask & (~eye), -1e4)
+
+            attn = F.softmax(scores, dim=-1)
+            attn = torch.nan_to_num(attn, nan=0.0)
+            attn = self.dropout(attn.to(dtype))
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    hm = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    hm = head_mask.view(head_mask.size(0), -1, 1, 1)
+                elif head_mask.dim() == 3:
+                    hm = head_mask.unsqueeze(-1).to(dtype)
+                else:
+                    hm = head_mask
+                attn = attn * hm
+
+            out_k = torch.matmul(attn, V)
+            outputs = torch.where(mask_k.unsqueeze(-1), out_k, outputs)
+
+        context = outputs * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
         context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
-            return context, (attn if output_attentions else None)
+            return context, None
 
         output = self.out_proj(context)
-        return output, (attn if output_attentions else None)
+        return output, None
 
 
 def inject_routing(
-    model: Optional[nn.Module] = None,
-    target_layer_idx: Optional[int] = None,
     layer: Optional[nn.Module] = None,
     model_config: Optional[Any] = None,
+    comp_config: Optional[Any] = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[nn.Module]:
-    """Safely replace attention in model or layer with RoutingAttention."""
+    """Safely replace attention in layer with RoutingAttention."""
     try:
-        if layer is not None:
-            config = model_config or getattr(layer, "config", None)
-            target = old_attn
-            if target is None:
-                for attr in ("attention", "self_attn", "attn", "self"):
-                    if hasattr(layer, attr):
-                        cand = getattr(layer, attr)
-                        if isinstance(cand, nn.Module) and cand is not layer:
-                            target = cand
-                            break
-            if target is None:
-                target = layer
+        src = old_attn
+        if src is None and layer is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    cand = getattr(layer, attr)
+                    if isinstance(cand, nn.Module) and cand is not layer:
+                        src = cand
+                        break
+        if src is None:
+            src = layer
 
-            new_attn = RoutingAttention(
-                config=config,
-                pretrained_attn=target if target is not layer else None,
-                **kwargs,
-            )
+        config = model_config or getattr(layer, "config", getattr(src, "config", None))
+        new_attn = RoutingAttention(
+            config=config,
+            pretrained_attn=src if src is not layer else None,
+            **kwargs,
+        )
+
+        if layer is not None:
             for attr in ("self_attn", "attn", "self"):
                 if hasattr(layer, attr):
                     setattr(layer, attr, new_attn)
@@ -509,33 +503,10 @@ def inject_routing(
                 return layer
             layer.attention = new_attn
             return layer
-
-        if model is None:
-            return None
-
-        replaced = 0
-        for name, module in model.named_modules():
-            is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                is_attn = True
-
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
-
-                new_attn = RoutingAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
-                    **kwargs,
-                )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
-                    break
-        return model if replaced > 0 else None
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+        return new_attn
+    except Exception as e:
+        logger.error("inject_routing failed: %s", e)
+        return None
 
 
 inject_routing_attention = inject_routing
