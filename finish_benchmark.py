@@ -27,13 +27,16 @@ try:
 except Exception:
     pass
 
+import socket
+socket.setdefaulttimeout(90)
+
 REPO_DIR       = Path(__file__).resolve().parent
 RESULTS_DIR    = REPO_DIR / "results"
 STATE_FILE     = REPO_DIR / "finish_benchmark_state.json"
 LOG_FILE       = REPO_DIR / "finish_benchmark.log"
 MODELS         = ["distilbert", "roberta", "gpt2"]
 PASS_THRESHOLD = 56.0
-MODULE_TIMEOUT = 600
+MODULE_TIMEOUT = 1200
 LOG_INTERVAL   = 30
 HF_ORG         = "Hooshaai"
 
@@ -67,6 +70,27 @@ def is_module_done(module):
     for model in MODELS:
         csv_path = unified / model / "summary.csv"
         if not csv_path.exists():
+            return False
+        # Verify it actually reached PASS with >= 56.0% accuracy
+        try:
+            with open(csv_path, newline="", encoding="utf-8", errors="ignore") as f:
+                reader = csv.DictReader(f)
+                best_acc = 0.0
+                best_status = "FAIL"
+                for row in reader:
+                    m_name = (row.get("module_name") or "").strip()
+                    if m_name == "full":
+                        continue
+                    try:
+                        acc = float(row.get("accuracy_pct", row.get("mean_accuracy", 0)) or 0)
+                        status = row.get("status", "FAIL")
+                        if acc > best_acc:
+                            best_acc, best_status = acc, status
+                    except Exception:
+                        pass
+                if best_status != "PASS" or best_acc < PASS_THRESHOLD:
+                    return False
+        except Exception:
             return False
     return True
 
@@ -137,12 +161,11 @@ def upload_to_hf(module, model_slug, status, accuracy):
         LOG.warning("[HF-ASYNC] Upload failed %s/%s: %s", module, model_slug, e)
         return False
 
-# Asynchronous upload worker
+# Asynchronous upload worker (resilient daemon thread, fire-and-forget per item)
 _upload_queue = queue.Queue()
 
 def _background_uploader_worker():
     LOG.info("[HF-ASYNC] Background uploader worker thread started.")
-    import concurrent.futures
     while True:
         try:
             task = _upload_queue.get()
@@ -150,11 +173,8 @@ def _background_uploader_worker():
                 break
             module, model_slug, status, acc = task
             try:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(upload_to_hf, module, model_slug, status, acc)
-                    future.result(timeout=120)
-            except concurrent.futures.TimeoutError:
-                LOG.warning("[HF-ASYNC] Upload timed out (120s) for %s/%s. Skipping to next.", module, model_slug)
+                # Direct invocation with global socket timeout (90s)
+                upload_to_hf(module, model_slug, status, acc)
             except Exception as e:
                 LOG.warning("[HF-ASYNC] Worker exception on %s/%s: %s", module, model_slug, e)
             finally:

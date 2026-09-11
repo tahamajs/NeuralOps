@@ -107,6 +107,7 @@ class GreCoDeCLinear(nn.Module):
                 F.linear(x_flat.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
 
+        out = out * self.output_scale
         return out.view(*orig_shape[:-1], self.out_features)
 
     def get_weight(self) -> torch.Tensor:

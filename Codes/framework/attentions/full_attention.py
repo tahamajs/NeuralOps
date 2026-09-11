@@ -461,7 +461,10 @@ def inject_full_attention(
             config=model_config,
             pretrained_attn=old_attn,
         )
-        layer.attention = new_attn
+        if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+            layer.attention.self = new_attn
+        else:
+            layer.attention = new_attn
         return new_attn
     except Exception:
         return None

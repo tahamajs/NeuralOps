@@ -761,7 +761,10 @@ def inject_adasplash(
             elif hasattr(layer, "self"):
                 layer.self = test_module
             else:
-                layer.attention = test_module
+                if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                    layer.attention.self = test_module
+                else:
+                    layer.attention = test_module
         return test_module
     except (RuntimeError, Exception):
         return None

@@ -152,7 +152,10 @@ def _replace_distilbert_attention(
             old_attn,
         )
         if isinstance(res, nn.Module) and getattr(layer, "attention", None) is not res:
-            layer.attention = res
+            if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                layer.attention.self = res
+            else:
+                layer.attention = res
 
 
 def build_attention(
