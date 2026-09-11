@@ -256,8 +256,38 @@ class SVDLinearAttention(BaseAttention):
         self.dropout: nn.Dropout = nn.Dropout(dropout_val)
         self._last_u_r: Optional[torch.Tensor] = None
 
+        # Deterministic projection buffer for SVD subspace
+        init_rank = max(1, self.rank or 64)
+        omega = torch.empty(self.hidden_size, init_rank)
+        nn.init.orthogonal_(omega)
+        self.register_buffer("omega", omega, persistent=False)
+
         if old_attn is not None:
             self.copy_weights(old_attn)
+
+    @property
+    def q_proj(self) -> LoRALinear:
+        return self.query
+
+    @property
+    def k_proj(self) -> LoRALinear:
+        return self.key
+
+    @property
+    def v_proj(self) -> LoRALinear:
+        return self.value
+
+    @property
+    def q_lin(self) -> LoRALinear:
+        return self.query
+
+    @property
+    def k_lin(self) -> LoRALinear:
+        return self.key
+
+    @property
+    def v_lin(self) -> LoRALinear:
+        return self.value
 
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -293,8 +323,8 @@ class SVDLinearAttention(BaseAttention):
                     c_attn_w = c_attn_w.t()
 
                 q_dim = self.q_head_size
-                k_dim = self.hidden_size
-                v_dim = self.hidden_size
+                k_dim = self.kv_head_size
+                v_dim = self.kv_head_size
 
                 w_q = c_attn_w[:q_dim, :]
                 w_k = c_attn_w[q_dim : q_dim + k_dim, :]
@@ -355,18 +385,11 @@ class SVDLinearAttention(BaseAttention):
             # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
                 try:
-                    adapter = UniversalAdapter(old_attn)
-                    extracted = adapter.extract_qkv_out()
-                    if extracted:
-                        w_q = extracted.get("q_weight")
-                        b_q = extracted.get("q_bias")
-                        w_k = extracted.get("k_weight")
-                        b_k = extracted.get("k_bias")
-                        w_v = extracted.get("v_weight")
-                        b_v = extracted.get("v_bias")
-                        if w_o is None:
-                            w_o = extracted.get("out_weight")
-                            b_o = extracted.get("out_bias")
+                    w_q, b_q = UniversalAdapter.get_weight_bias(old_attn, "q")
+                    w_k, b_k = UniversalAdapter.get_weight_bias(old_attn, "k")
+                    w_v, b_v = UniversalAdapter.get_weight_bias(old_attn, "v")
+                    if w_o is None:
+                        w_o, b_o = UniversalAdapter.get_weight_bias(old_attn, "o")
                 except Exception as e:
                     logger.debug("UniversalAdapter fallback failed: %s", e)
 
@@ -472,12 +495,14 @@ class SVDLinearAttention(BaseAttention):
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         effective_rank = min(self.rank, kv_len) if self.rank is not None else kv_len
+        is_causal = self.is_decoder and not is_cross
 
-        # Full attention if rank is disabled or sequence length is short
-        if self.rank is None or kv_len <= self.rank:
+        # Full attention if rank is disabled, sequence length <= rank, or causal decoder mode
+        # (SVD sequence projection collapses temporal causality in decoders)
+        if self.rank is None or kv_len <= self.rank or is_causal:
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) / math.sqrt(self.head_dim)
 
-            if self.is_decoder and not is_cross and seq_len > 1:
+            if is_causal and seq_len > 1:
                 causal_mask = torch.triu(
                     torch.full((seq_len, kv_len), float("-inf"), device=device, dtype=torch.float32),
                     diagonal=1,
@@ -506,16 +531,23 @@ class SVDLinearAttention(BaseAttention):
                 probs = probs * head_mask
 
             context = torch.matmul(probs, V)
+            q_valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, device)
+            context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
         else:
             # Batched randomized QR subspace extraction without per-sample Python loops
             valid_mask = get_token_valid_mask(eff_mask, batch_size, kv_len, device)
             masked_h = kv_input * valid_mask.unsqueeze(-1).to(dtype)
 
+            D_dim = masked_h.size(-1)
+            if not hasattr(self, "omega") or self.omega.shape[0] != D_dim or self.omega.shape[1] < effective_rank:
+                new_omega = torch.empty(D_dim, max(effective_rank, self.rank or 64), device=device, dtype=torch.float32)
+                nn.init.orthogonal_(new_omega)
+                self.register_buffer("omega", new_omega, persistent=False)
+
             with torch.no_grad():
-                D_dim = masked_h.size(-1)
-                omega = torch.randn(batch_size, D_dim, effective_rank, device=device, dtype=torch.float32)
-                Y = torch.bmm(masked_h.float(), omega)  # [B, kv_len, r]
+                omega = self.omega[:D_dim, :effective_rank].to(device=device, dtype=torch.float32)
+                Y = torch.matmul(masked_h.float(), omega)  # [B, kv_len, r]
                 Q_mat, _ = torch.linalg.qr(Y, mode="reduced")  # [B, kv_len, r]
                 U_r = Q_mat[:, :, :effective_rank].to(device=device, dtype=dtype)
 
@@ -526,10 +558,6 @@ class SVDLinearAttention(BaseAttention):
             V_proj = torch.matmul(U_r_t.transpose(-2, -1), V)  # [B, H, r, d]
 
             scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)  # [B, H, N, r]
-
-            # In decoder causal mode, modulate SVD subspace retrieval weights
-            if self.is_decoder and not is_cross and seq_len > 1:
-                pass  # SVD projections inherently collapse temporal dependencies; keep scores bounded
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             probs = F.softmax(scores, dim=-1).to(dtype)
@@ -567,13 +595,15 @@ class SVDLinearAttention(BaseAttention):
 
     def get_ortho_loss(self) -> torch.Tensor:
         """Compute orthogonality regularization loss for left-singular vectors."""
+        device = self.query.weight.device
         if self._last_u_r is None:
-            return torch.tensor(0.0, device=self.query.weight.device)
+            return torch.tensor(0.0, device=device, requires_grad=True)
         U = self._last_u_r
         r = U.size(-1)
-        I = torch.eye(r, device=U.device, dtype=U.dtype).unsqueeze(0)
-        gram = torch.matmul(U.transpose(-2, -1), U)
-        return F.mse_loss(gram, I.expand_as(gram))
+        I = torch.eye(r, device=U.device, dtype=torch.float32).unsqueeze(0)
+        gram = torch.matmul(U.transpose(-2, -1).float(), U.float())
+        loss = F.mse_loss(gram, I.expand_as(gram))
+        return loss.requires_grad_(True)
 
 
 LowRankSVDSequenceAttention = SVDLinearAttention
