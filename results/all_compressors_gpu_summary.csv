@@ -1,0 +1,3 @@
+module,device,status,forward_finite,backward_finite,compression_ratio,peak_vram_mb,elapsed_s,error
+adaptive_svd,cuda,PASS,True,True,0.97,150.7,1.316,
+res_svd,cuda,PASS,True,True,20.87,105.6,0.87,
