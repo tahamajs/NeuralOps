@@ -1,4 +1,4 @@
 Model,Exit Code,Baseline Acc,SambaMoE Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,0.00%,-90.48%,0.9077,FAIL,0,1.00x,389.5 MB,16.4
-roberta,0,75.11%,0.00%,-75.11%,0.7586,FAIL,0,1.00x,298.7 MB,21.4
-gpt2,0,60.78%,0.00%,-60.78%,0.6354,FAIL,0,1.00x,793.2 MB,19.1
+distilbert,0,90.94%,90.14%,-0.80%,0.9040,PASS,0,1.00x,337.6 MB,35.4
+roberta,0,75.46%,86.81%,+11.35%,0.8791,PASS,0,1.00x,583.5 MB,53.8
+gpt2,0,57.91%,51.72%,-6.19%,0.6774,PASS_LOW,0,1.00x,634.9 MB,52.9
