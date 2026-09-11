@@ -219,7 +219,7 @@ class DirectSVDCompressor(BaseCompressor):
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("DirectSVD SVD computation failed: %s", e)
-            raise RuntimeError(f"Injection failed"), 1.0, 0
+            return None, 1.0, 0
 
         best_svd_layer: Optional[SVDLinear] = None
         best_err = 1.0
