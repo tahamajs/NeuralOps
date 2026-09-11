@@ -417,12 +417,12 @@
 
 \section{مدل قهرمان پایان‌نامه: \lr{Fusion Attention}}
 \subsection{ایده و فرمول‌بندی}
-ماژول \lr{Fusion Attention}} با ادغام دو استراتژی پیشرفته ابداع گردیده است: قطعه‌بندی بلاکی تانسورها (\lr{Block-Sparse Tiling}) با انتخاب پویا بر اساس امتیازات میانگین سنتروید بلاک‌ها، همراه با تجزیه مقادیر منفرد بر روی ماتریس تصویرسازی مقادیر ($\mathbf{V}$). بدین ترتیب، تنها بلاک‌های پرس‌وجو و کلید با همبستگی بالا ضرب شده و عملیات پروجکشن ارزش با ماتریس کم‌مرتبه انجام می‌پذیرد.
+ماژول \lr{Fusion Attention} با ادغام دو استراتژی پیشرفته ابداع گردیده است: قطعه‌بندی بلاکی تانسورها (\lr{Block-Sparse Tiling}) با انتخاب پویا بر اساس امتیازات میانگین سنتروید بلاک‌ها، همراه با تجزیه مقادیر منفرد بر روی ماتریس تصویرسازی مقادیر ($\mathbf{V}$). بدین ترتیب، تنها بلاک‌های پرس‌وجو و کلید با همبستگی بالا ضرب شده و عملیات پروجکشن ارزش با ماتریس کم‌مرتبه انجام می‌پذیرد.
 
 \subsection{تحلیل نتایج تجربی مدل قهرمان}
 \begin{table}[htbp]
 \centering
-\caption{کارنامه تجربی مدل قهرمان \lr{Fusion Attention}} در مقایسه با خط پایه بر روی \lr{RoBERTa-base}}}
+\caption{کارنامه تجربی مدل قهرمان \lr{Fusion Attention} در مقایسه با خط پایه بر روی \lr{RoBERTa-base}}
 \begin{tabular}{|l|c|c|c|}
 \hline
 \textbf{شاخص ارزیابی} & \textbf{خط پایه استاندارد} & \textbf{مدل قهرمان \lr{Fusion}} & \textbf{میزان بهبود / تغییر} \\
@@ -491,7 +491,7 @@
 \begin{itemize}
     \item \textbf{پاسخ به سوال و فرضیه ۱ (امکان فشرده‌سازی SVD):} نتایج تجربی کاملاً تایید کرد که با فاکتورسازی مقادیر منفرد ماتریس‌های توجه و حفظ آستانه انرژی $\ge 0.92$، دقت مدل پایه در سطح \lr{90.5\%} حفظ شده و اوج مصرف حافظه از ۴۲۰۰ مگابایت به کمتر از ۳۵۰ مگابایت می‌رسد.
     \item \textbf{پاسخ به سوال و فرضیه ۲ (نقش آداپتورهای LoRA):} آداپتورهای کم‌مرتبه \lr{LoRA} با تثبیت وزن‌های سنگین، در کمتر از ۵۰ تا ۲۵۰ گام توانستند هرگونه افت ناشی از شکست رتبه را جبران نمایند.
-    \item \textbf{پاسخ به سوال و فرضیه ۳ (فیوژن سخت‌افزاری و مدل Roofline):} پیاده‌سازی کرنل‌های فیوزشده ترایتون در ماژول‌هایی نظیر \lr{FlashAttention-3} و \lr{Fusion Attention}} توان عملیاتی را تا بیش از \lr{131,000 tok/s} رساند که معادل شتاب بیش از ۸ برابری است.
+    \item \textbf{پاسخ به سوال و فرضیه ۳ (فیوژن سخت‌افزاری و مدل Roofline):} پیاده‌سازی کرنل‌های فیوزشده ترایتون در ماژول‌هایی نظیر \lr{FlashAttention-3} و \lr{Fusion Attention} توان عملیاتی را تا بیش از \lr{131,000 tok/s} رساند که معادل شتاب بیش از ۸ برابری است.
 \end{itemize}
 
 \section{دستاوردهای علمی و عملی}
@@ -504,7 +504,7 @@
 \section{پیشنهادات برای پژوهش‌های آینده}
 \begin{itemize}
     \item توسعه کوانتایزاسیون تطبیقی ۴ بیتی (\lr{FP4/INT4}) به صورت ترکیب‌شده با فاکتورسازی SVD.
-    \item اعمال مکانیزم \lr{Fusion Attention}} روی مدل‌های زبانی بسیار بزرگ (نظیر مدل‌های ۷۰ میلیارد پارامتری).
+    \item اعمال مکانیزم \lr{Fusion Attention} روی مدل‌های زبانی بسیار بزرگ (نظیر مدل‌های ۷۰ میلیارد پارامتری).
     \item گسترش به حوزه‌های چندوجهی (\lr{Multimodal Attention}) شامل تصویر و صوت.
 \end{itemize}
 
@@ -550,9 +550,9 @@
 
 Large language models (LLMs) based on the Transformer architecture have fundamentally reshaped modern natural language processing. However, their standard Multi-Head Attention (MHA) exhibits quadratic computational and memory complexity, $\mathcal{O}(N^2)$, with respect to sequence length. This memory footprint creates a severe hardware bottleneck—the "Memory Wall"—especially when deploying models on consumer-grade edge GPUs.
 
-This thesis presents \textbf{NeuralOps}, a hardware-aware framework for the empirical benchmarking, drop-in injection, and compression of attention mechanisms. We systematically evaluate the \textbf{Top 100 attention mechanisms selected from over 130 implementations} across four diverse language model architectures: \lr{DistilBERT}}, \lr{RoBERTa-base}}, \lr{GPT-2}}, and \lr{Qwen3.5-0.8B}} on the \lr{GLUE SST-2} benchmark under identical laboratory conditions using an \lr{NVIDIA GeForce RTX 4070 Laptop GPU (8GB GDDR6)}.
+This thesis presents \textbf{NeuralOps}, a hardware-aware framework for the empirical benchmarking, drop-in injection, and compression of attention mechanisms. We systematically evaluate the \textbf{Top 100 attention mechanisms selected from over 130 implementations} across four diverse language model architectures: DistilBERT, RoBERTa-base, GPT-2, and Qwen3.5-0.8B on the GLUE SST-2 benchmark under identical laboratory conditions using an NVIDIA GeForce RTX 4070 Laptop GPU (8GB GDDR6).
 
-Through a four-phase evaluation pipeline (drop-in injection, weight alignment, rapid recovery calibration, and hardware roofline profiling), we demonstrate that low-rank Singular Value Decomposition \lr{(SVD)} combined with trainable \lr{LoRA} residual adapters effectively preserves linguistic representation while slashing peak VRAM. Our champion model, \textbf{\lr{Fusion Attention}}, cuts peak VRAM from 4200.0 MB to 480.0 MB (an 88.6\% reduction), boosts throughput by 4.38x from 15,400 to 67,500 tokens/sec, and achieves an outstanding accuracy of 93.12\% (outperforming standard attention). These findings confirm that transformer attention can be linearised and compressed for efficient local inference without compromising representation capacity.
+Through a four-phase evaluation pipeline (drop-in injection, weight alignment, rapid recovery calibration, and hardware roofline profiling), we demonstrate that low-rank Singular Value Decomposition (SVD) combined with trainable LoRA residual adapters effectively preserves linguistic representation while slashing peak VRAM. Our champion model, \textbf{Fusion Attention}, cuts peak VRAM from 4200.0 MB to 480.0 MB (an 88.6\% reduction), boosts throughput by 4.38x from 15,400 to 67,500 tokens/sec, and achieves an outstanding accuracy of 93.12\% (outperforming standard attention). These findings confirm that transformer attention can be linearised and compressed for efficient local inference without compromising representation capacity.
 
 \vspace{0.8cm}
 \noindent \textbf{Keywords:} Large Language Models, Linear Attention, Singular Value Decomposition \lr{(SVD)}, Model Compression, Roofline Model, NeuralOps Framework.
