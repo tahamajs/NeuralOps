@@ -1,67 +1,59 @@
-Skipping attention module 'adaptive_sparse_attention' due to: expected an indented block after 'except' statement on line 544 (adaptive_sparse_attention.py, line 545)
-Skipping attention module 'aegis_hybrid' due to: expected an indented block after 'except' statement on line 465 (aegis_hybrid.py, line 466)
-Skipping attention module 'aegis_hybrid_attention' due to: expected an indented block after 'except' statement on line 465 (aegis_hybrid.py, line 466)
-Skipping attention module 'aegis_spectron_fp8' due to: expected an indented block after 'except' statement on line 503 (aegis_spectron_fp8.py, line 504)
-Skipping attention module 'asvd_attention' due to: expected an indented block after 'except' statement on line 516 (asvd_attention.py, line 517)
-Skipping attention module 'bam_umoe' due to: expected an indented block after 'except' statement on line 429 (bam_umoe.py, line 430)
-Skipping attention module 'block_transformer_hiba' due to: expected an indented block after 'except' statement on line 318 (block_transformer_hiba.py, line 319)
-Skipping attention module 'chela_slay' due to: expected an indented block after 'except' statement on line 359 (chela_slay.py, line 360)
-Skipping attention module 'cluster_attention' due to: expected an indented block after 'except' statement on line 290 (cluster_attention.py, line 291)
-Skipping attention module 'cosformer' due to: expected an indented block after 'except' statement on line 343 (cosformer.py, line 344)
-Skipping attention module 'decay_linear_attention' due to: expected an indented block after 'except' statement on line 315 (decay_linear_attention.py, line 316)
-Skipping attention module 'eat' due to: expected an indented block after 'except' statement on line 296 (eat.py, line 297)
-Skipping attention module 'expert_choice_moe' due to: expected an indented block after 'except' statement on line 410 (expert_choice_moe.py, line 411)
-Skipping attention module 'factorised_matrix_state' due to: expected an indented block after 'except' statement on line 337 (factorised_matrix_state.py, line 338)
-Skipping attention module 'flash_attention3' due to: expected an indented block after 'except' statement on line 315 (flash_attention3.py, line 316)
-Skipping attention module 'flash_attention3_fp8' due to: expected an indented block after 'except' statement on line 319 (flash_attention3_fp8.py, line 320)
-Skipping attention module 'fusion_attn' due to: expected an indented block after 'except' statement on line 312 (fusion_attn.py, line 313)
-Skipping attention module 'galerkin_attention' due to: expected an indented block after 'except' statement on line 320 (galerkin_attention.py, line 321)
-Skipping attention module 'gated_deltanet_block' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'gated_delta_net' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'granite_hybrid' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'griffin_ssd' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'hgrn2_gated_deltanet' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'jamba' due to: expected an indented block after 'except' statement on line 410 (expert_choice_moe.py, line 411)
-Skipping attention module 'kda_attention' due to: expected an indented block after 'except' statement on line 560 (kda_attention.py, line 561)
-Skipping compression_engine module 'adaptive_compressor' due to: name 'self' is not defined
-Skipping compression_engine module 'entropy_budget_allocation' due to: expected an indented block after 'except' statement on line 397 (entropy_budget_allocation.py, line 398)
-Skipping compression_engine module 'erc_svd' due to: expected an indented block after 'except' statement on line 313 (erc_svd.py, line 314)
-Skipping compression_engine module 'faq_quantizer' due to: expected an indented block after 'except' statement on line 359 (faq_quantizer.py, line 360)
-Skipping compression_engine module 'replaceme_compressor' due to: expected an indented block after 'except' statement on line 231 (replaceme_compressor.py, line 232)
-Skipping compression_engine module 'slicegpt_compressor' due to: expected an indented block after 'except' statement on line 318 (slicegpt_pca.py, line 319)
-Skipping compression_engine module 'slicegpt_pca' due to: expected an indented block after 'except' statement on line 318 (slicegpt_pca.py, line 319)
-Skipping compression_engine module 'spectraformer_attention' due to: expected an indented block after 'except' statement on line 450 (spectraformer_attention.py, line 451)
-Skipping attention module 'upi_stuffed_mamba' due to: expected an indented block after 'except' statement on line 206 (upi_stuffed_mamba.py, line 207)
-Skipping attention module 'wgqa_attention' due to: expected an indented block after 'except' statement on line 580 (wgqa_attention.py, line 581)
-Skipping attention module 'xattention' due to: expected an indented block after 'except' statement on line 442 (xattention.py, line 443)
-Skipping attention module 'zeros_attention' due to: expected an indented block after 'except' statement on line 430 (zeros_attention.py, line 431)
 `torch_dtype` is deprecated! Use `dtype` instead!
-
-Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 104/104 [00:00<00:00, 14171.79it/s]
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep: ================================================================================
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep:   family:            bert
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-10 05:55:04,980 [INFO] QwenQualitySweep: ================================================================================
-2026-09-10 05:55:04,981 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
-Traceback (most recent call last):
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2516, in <module>
-    if __name__ == "__main__": main()
-                               ~~~~^^
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 1285, in main
-    state = torch.load(parent_checkpoint, map_location="cpu", weights_only=False)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\serialization.py", line 1432, in load
-    with _open_zipfile_reader(opened_file) as opened_zipfile:
-         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\serialization.py", line 763, in __init__
-    super().__init__(torch._C.PyTorchFileReader(name_or_buffer))
-                     ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
-OSError: [Errno 22] Invalid argument
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep:   family:            bert
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 07:01:10,859 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 07:01:10,860 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 07:01:10,860 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 07:01:10,860 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:01:10,861 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
+2026-09-11 07:01:10,931 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 07:01:11,439 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 07:01:12,581 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.48%
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:01:12,593 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 07:01:13,694 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nsa_attention\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-11 07:01:13,700 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nsa_attention\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-11 07:01:13,806 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.48% (F1: 0.9077, Peak VRAM: 389.51 MB)
+2026-09-11 07:01:13,806 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nsa_attention\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 07:01:13,944 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: nsa_attention (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 07:01:14,317 [INFO] framework.core.attention_utils: Successfully injected 'nsa_attention' into 6 transformer blocks.
+2026-09-11 07:01:14,318 [INFO] QwenQualitySweep: module=nsa_attention path=legacy_bert
+2026-09-11 07:01:14,318 [INFO] QwenQualitySweep: module=nsa_attention injection summary: 0 SVDLinear layers active
+2026-09-11 07:01:14,318 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for nsa_attention (lr=2.0e-04)
+2026-09-11 07:01:14,344 [INFO] framework.utils.compat: Recovery fine-tuning selected 1181978 trainable parameters across 76 tensors.
+2026-09-11 07:01:14,344 [INFO] QwenQualitySweep: LoRA fine-tuning: 1181978 trainable parameters across 76 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-11 07:01:14,506 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6856 (bs=8, micro_bs=8)
+2026-09-11 07:01:14,660 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7216 (bs=8, micro_bs=8)
+2026-09-11 07:01:14,855 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6478 (bs=8, micro_bs=8)
+2026-09-11 07:01:15,076 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6523 (bs=8, micro_bs=8)
+2026-09-11 07:01:15,303 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7020 (bs=8, micro_bs=8)
+2026-09-11 07:01:15,545 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7545 (bs=8, micro_bs=8)
+2026-09-11 07:01:15,782 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7499 (bs=8, micro_bs=8)
+2026-09-11 07:01:15,998 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7214 (bs=8, micro_bs=8)
+2026-09-11 07:01:16,245 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7125 (bs=8, micro_bs=8)
+2026-09-11 07:01:16,460 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6764 (bs=8, micro_bs=8)
+2026-09-11 07:01:16,717 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7020 (bs=8, micro_bs=8)
+2026-09-11 07:01:18,666 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nsa_attention\distilbert\distilbert_sst2_nsa_attention_full_metrics.json
+2026-09-11 07:01:18,704 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nsa_attention\distilbert\checkpoints\nsa_attention\weights.pt (module_params=0, lora_params=88)
+2026-09-11 07:01:18,851 [INFO] QwenQualitySweep: [2/2] nsa_attention -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 339.85 MB)
+2026-09-11 07:01:18,851 [INFO] QwenQualitySweep: [Quality Guard] Module 'nsa_attention' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-11 07:01:18,977 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 07:01:18,978 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-11 07:01:18,985 [INFO] QwenQualitySweep: 
+       Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+         full     PASS   90.48% 0.00% (base) 0.9077                  0            1.00x  389.5 MB               0.76              0.87
+nsa_attention PASS_LOW   50.92%      -39.56% 0.6748                  0            0.99x  339.9 MB               1.90              2.18
+2026-09-11 07:01:18,985 [INFO] QwenQualitySweep: ================================================================================

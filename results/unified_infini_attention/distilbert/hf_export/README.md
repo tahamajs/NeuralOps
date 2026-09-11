@@ -6,7 +6,7 @@ metrics: [accuracy, f1]
 # SVD Linear Attention: DISTILBERT (infini_attention)
 Infini-Attention with Compressive Memory and Sliding Window — validated checkpoint evaluated on SST-2.
 - **Accuracy**: `90.25%` | **Status**: `PASS` (threshold >= 56%)
-- **F1**: `N/A` | **Peak VRAM**: `352.22 MB`
+- **F1**: `N/A` | **Peak VRAM**: `352.72 MB`
 ```python
 import torch; checkpoint = torch.load("weights.pt", map_location="cpu")
 ```
