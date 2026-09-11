@@ -282,6 +282,7 @@ class HuffmanCoder:
 
 
 @COMPRESSOR_REGISTRY.register("huffman")
+@COMPRESSOR_REGISTRY.register("huffman_coder")
 class HuffmanCompressor(BaseCompressor):
     """
     HuffmanCompressor: Model-wide entropy compression profiler and simulator.
@@ -503,6 +504,7 @@ class HuffmanCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("huffman")
+@COMPRESSOR_REGISTRY.register("huffman_coder")
 def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Huffman compressor factory function."""
     bits = kwargs.pop("quantize_bits", kwargs.pop("bits", _cfg_get(comp_config, "huffman_bits", _cfg_get(comp_config, "quantize_bits", 8))))
