@@ -593,8 +593,7 @@ class BAMUMoEBlock(BaseAttention):
                 from framework.utils.compat import maybe_apply_rotary
                 q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids", None))
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                return None
+                pass
 
         # 3. GQA expansion: repeat key/value heads to match query heads
         if self.kv_repeat > 1:
