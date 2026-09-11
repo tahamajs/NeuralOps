@@ -606,4 +606,4 @@ def inject_upi_mamba(
         return new_block
     except Exception as e:
         logger.error("inject_upi_mamba failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")

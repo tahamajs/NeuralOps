@@ -200,7 +200,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 w_o, b_o = adapter.get_weight_bias(old_attn, "o")
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
             if w_o is None:
                 for cand in ("out_proj", "out_lin", "o_proj", "output", "proj", "c_proj", "dense"):
@@ -371,7 +371,7 @@ def inject_hgrn2_gated_deltanet(
         )
     except Exception as ex:
         logger.warning("Failed to instantiate HGRN2GatedDeltaNet: %s", ex)
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if target is not None:
         if hasattr(target, "attention"):

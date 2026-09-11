@@ -386,7 +386,7 @@ class NativeHybridAttention(BaseAttention):
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -567,7 +567,7 @@ class NativeHybridAttention(BaseAttention):
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, pos_ids)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # GQA repeat_kv
         if self.num_heads != self.num_kv_heads:
@@ -697,7 +697,7 @@ def inject_nha(
         )
     except Exception as e:
         logger.warning("NativeHybridAttention construction/weight copying failed: %s", e)
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if target is not None:
         if hasattr(target, "attention"):

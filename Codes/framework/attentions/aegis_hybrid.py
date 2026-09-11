@@ -464,7 +464,7 @@ class AegisHybridAttention(BaseAttention):
                             mod.merge()
                         except Exception as e:
                             print(f'copy_weights failed: {e}')
-                            return None
+                            raise RuntimeError(f"copy_weights failed: {e}")
                     base_mod = getattr(mod, "base_layer", mod)
                     w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                     if w is not None:
@@ -502,7 +502,7 @@ class AegisHybridAttention(BaseAttention):
                         mod.merge()
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        return None
+                        raise RuntimeError(f"copy_weights failed: {e}")
                 base_mod = getattr(mod, "base_layer", mod)
                 c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                 if c_w is not None:
@@ -550,7 +550,7 @@ class AegisHybridAttention(BaseAttention):
                     w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
 
             extracted_weights[proj] = (w, b)
 
@@ -711,7 +711,7 @@ class AegisHybridAttention(BaseAttention):
                 Q, K = maybe_apply_rotary(Q, K, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 3. GQA Key-Value expansion: [B, H_kv, N_k, Dh] -> [B, H, N_k, Dh]
         if self.kv_repeat > 1:
@@ -947,7 +947,7 @@ def inject_aegis_hybrid(
         try:
             test_attn = AegisHybridAttention(config=cfg, pretrained_attn=old_attn)
         except Exception:
-            return None
+            raise RuntimeError("copy_weights failed")
         new_attn = test_attn
     else:
         new_attn = AegisHybridAttention(config=cfg)

@@ -403,7 +403,7 @@ class ORIONAttention(BaseAttention):
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -623,7 +623,7 @@ def inject_orion(
                 new_attn.copy_weights(src_attn)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
         if layer is not None:
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
@@ -659,7 +659,7 @@ def inject_orion(
                     layer.attention = new_attn
         return new_attn
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")
 
 
 # Aliases

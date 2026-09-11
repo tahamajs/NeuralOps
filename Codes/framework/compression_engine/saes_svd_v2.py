@@ -161,7 +161,7 @@ class SAESSVDCompressorV2(BaseCompressor):
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("SAES-SVD SVD failure for %s: %s", name, e)
-            return None
+            raise RuntimeError(f"Injection failed")
 
         # Initial symmetric square-root singular value allocation
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))

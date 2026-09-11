@@ -220,4 +220,4 @@ def inject_gated_deltanet_block(
 
         return new_block
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")

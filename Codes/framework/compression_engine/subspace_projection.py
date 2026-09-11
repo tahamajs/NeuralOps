@@ -175,7 +175,7 @@ class SubspaceLinear(nn.Module):
                     subspace_layer.lora_B.data.copy_(linear.lora_B.weight.data)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         return subspace_layer
 

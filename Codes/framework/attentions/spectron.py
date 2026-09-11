@@ -843,7 +843,7 @@ def inject_spectron_layer(
         )
     except Exception as e:
         log.warning(f"Failed to instantiate SpectronAttention: {e}")
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):

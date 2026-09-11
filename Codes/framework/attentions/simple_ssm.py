@@ -460,7 +460,7 @@ def inject_simple_ssm(
         return new_block
     except Exception as e:
         logger.error("inject_simple_ssm failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")
 
 
 inject_simple_ssm_attention = inject_simple_ssm

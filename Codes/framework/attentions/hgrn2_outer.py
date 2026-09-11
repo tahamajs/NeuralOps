@@ -554,4 +554,4 @@ def inject_hgrn2_outer(
         return new_block
     except Exception as e:
         logger.error("inject_hgrn2_outer failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")

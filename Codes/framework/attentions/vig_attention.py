@@ -295,7 +295,7 @@ class ViGAttention(BaseAttention):
                     extracted[proj] = (w, b)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(old_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -504,7 +504,7 @@ class ViGAttention(BaseAttention):
                 q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         # GQA expansion
         if self.kv_repeat > 1:
@@ -719,4 +719,4 @@ def inject_vig(
         return new_attn
     except Exception as e:
         logger.error("inject_vig failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")

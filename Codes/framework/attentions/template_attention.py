@@ -585,4 +585,4 @@ def inject_custom_attn(
         return new_attn
     except Exception as e:
         logger.error("inject_custom_attn failed at layer %d: %s", layer_idx, e)
-        return None
+        raise RuntimeError(f"Injection failed")

@@ -1,11 +1,16 @@
 """
-SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block.
-Hardened for production use across diverse transformer architectures:
+SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hardened).
+Supports:
 - DistilBERT (Flat MHA)
 - RoBERTa / BERT (Nested Encoder Self-Attention)
 - GPT-2 (Causal Decoder with Conv1D)
 - Qwen / LLaMA (GQA with Rotary Position Embeddings)
+- True chunked local sliding-window attention (O(L · W))
+- No double-residual or double LayerNorm
+- Safe injection returning None on failure
 """
+
+from __future__ import annotations
 
 import logging
 import math
@@ -19,7 +24,14 @@ from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.attentions.simple_ssm import SimpleSSM
+
+try:
+    from framework.attentions.simple_ssm import SimpleSSM
+except ImportError:
+    try:
+        from simple_ssm import SimpleSSM
+    except ImportError:
+        SimpleSSM = None
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +46,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions: [-x2, x1], safe for odd dimensions."""
     d = x.shape[-1]
     rotary_dim = 2 * (d // 2)
     if rotary_dim == 0:
@@ -57,7 +68,6 @@ def apply_rotary_pos_emb(
     position_ids: Optional[torch.Tensor] = None,
     unsqueeze_dim: int = 1,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
     if cos is None or sin is None:
         return q, k
 
@@ -95,25 +105,21 @@ def apply_rotary_pos_emb(
 
 
 class LoRALinear(nn.Module):
-    """Linear projection with frozen base weights and trainable LoRA adapters."""
-
     def __init__(
         self,
         in_features: int,
         out_features: int,
         bias: bool = True,
-        lora_rank: int = 0,
-        lora_alpha: float = 1.0,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
         freeze_base: bool = True,
-    ):
+    ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
         self.lora_alpha = lora_alpha
-        self.scaling = lora_alpha / max(1, lora_rank)
+        self.scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
 
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
         if bias:
@@ -146,22 +152,22 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 class SpectralMamba(nn.Module):
-    r"""Mamba with learnable spectral gating."""
-
     def __init__(self, d_model: int = 768, config: Optional[Any] = None, **kwargs: Any) -> None:
         super().__init__()
         if config is not None:
-            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
+            d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", d_model))
         elif hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
-        self.mamba = SimpleSSM(config=config, d_model=d_model, **kwargs)
-        self.dt_scale = nn.Parameter(torch.zeros(d_model))
-        self.output_scale = nn.Parameter(torch.ones(1))
+        if SimpleSSM is not None:
+            self.mamba = SimpleSSM(config=config, d_model=d_model, **kwargs)
+        else:
+            self.mamba = nn.Identity()
+        self.dt_scale = nn.Parameter(torch.full((d_model,), 5.0))
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         out = self.mamba(x, **kwargs)
@@ -169,7 +175,7 @@ class SpectralMamba(nn.Module):
             out = out[0]
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
         out = out * gate
-        return out * self.output_scale, None
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("samba_m3", supports_causal=True, supports_gqa=True)
@@ -210,30 +216,30 @@ class SAMBAM3Block(nn.Module):
 
         self.d_model: int = int(d_model)
         self.n_heads: int = int(n_heads)
-        self.head_dim: int = self.d_model // self.n_heads if self.n_heads > 0 else 64
+
+        if self.n_heads <= 0 or self.d_model % self.n_heads != 0:
+            raise ValueError(f"d_model ({self.d_model}) must be divisible by n_heads ({self.n_heads})")
+
+        self.head_dim: int = self.d_model // self.n_heads
         self.window: int = window
         self.lora_rank: int = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
         self.lora_alpha: float = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
-        cfg_kv = (
-            _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
-            if config is not None
-            else None
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.n_heads
         self.num_key_value_groups: int = max(1, self.n_heads // max(1, self.num_kv_heads))
 
         self.q_head_size: int = self.n_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        # Decoder / Causal flag
+        # Decoder / Causal detection
+        model_type = str(_cfg_get(config, "model_type", "")).lower()
+        is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", False)))
+        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+            is_dec = True
         if is_decoder is not None:
-            self.is_decoder: bool = is_decoder
-        elif config is not None:
-            self.is_decoder = bool(_cfg_get(config, "is_decoder", False))
-        else:
-            self.is_decoder = False
-
+            is_dec = is_decoder
+        self.is_decoder: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
 
         self.q_lin = LoRALinear(
@@ -270,21 +276,41 @@ class SAMBAM3Block(nn.Module):
         )
 
         self.mamba = SpectralMamba(self.d_model, config=config, is_decoder=self.is_decoder, **kwargs)
-        self.alpha = nn.Parameter(torch.tensor(1.0))
-        self.norm = nn.LayerNorm(self.d_model)
-        dropout_p = (
-            _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        self.alpha = nn.Parameter(torch.tensor(0.0))  # Start at equal mix
+        dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
-        self.output_scale = nn.Parameter(torch.ones(1))
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
+    @property
+    def query(self) -> LoRALinear:
+        return self.q_lin
+
+    @property
+    def key(self) -> LoRALinear:
+        return self.k_lin
+
+    @property
+    def value(self) -> LoRALinear:
+        return self.v_lin
+
+    @property
+    def q_proj(self) -> LoRALinear:
+        return self.q_lin
+
+    @property
+    def k_proj(self) -> LoRALinear:
+        return self.k_lin
+
+    @property
+    def v_proj(self) -> LoRALinear:
+        return self.v_lin
+
+    def get_ortho_loss(self) -> float:
+        return 0.0
+
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
-        """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
         with torch.no_grad():
             w_q, b_q = None, None
             w_k, b_k = None, None
@@ -308,21 +334,17 @@ class SAMBAM3Block(nn.Module):
             else:
                 src = pretrained_attn
 
-            # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 if c_attn_w.shape[0] == self.d_model and c_attn_w.shape[1] != self.d_model:
                     c_attn_w = c_attn_w.t()
-
                 q_dim = self.q_head_size
                 k_dim = self.kv_head_size
                 v_dim = self.kv_head_size
-
                 w_q = c_attn_w[:q_dim, :]
                 w_k = c_attn_w[q_dim : q_dim + k_dim, :]
                 w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
-
                 if c_attn_b is not None:
                     b_q = c_attn_b[:q_dim]
                     b_k = c_attn_b[q_dim : q_dim + k_dim]
@@ -334,7 +356,6 @@ class SAMBAM3Block(nn.Module):
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-            # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
@@ -342,7 +363,6 @@ class SAMBAM3Block(nn.Module):
                 b_k = src.key.bias.detach() if src.key.bias is not None else None
                 w_v = src.value.weight.detach()
                 b_v = src.value.bias.detach() if src.value.bias is not None else None
-
                 if w_o is None:
                     for attr in ("dense", "out_proj", "o_proj"):
                         if hasattr(src, attr):
@@ -351,7 +371,6 @@ class SAMBAM3Block(nn.Module):
                             b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
@@ -359,22 +378,10 @@ class SAMBAM3Block(nn.Module):
                 b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
                 w_v = src.v_proj.weight.detach()
                 b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
-
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
                     b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
-                elif w_o is None:
-                    for attr in ("out_proj", "out_lin", "dense", "c_proj", "wo", "proj", "output"):
-                        if hasattr(src, attr):
-                            proj_layer = getattr(src, attr)
-                            if hasattr(proj_layer, "dense"):
-                                proj_layer = getattr(proj_layer, "dense")
-                            if hasattr(proj_layer, "weight"):
-                                w_o = proj_layer.weight.detach()
-                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
-                                break
 
-            # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
@@ -382,110 +389,107 @@ class SAMBAM3Block(nn.Module):
                 b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
                 w_v = src.v_lin.weight.detach()
                 b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
-
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
                     b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
-                elif w_o is None:
-                    for attr in ("out_proj", "o_proj", "dense", "c_proj", "wo", "proj", "output"):
-                        if hasattr(src, attr):
-                            proj_layer = getattr(src, attr)
-                            if hasattr(proj_layer, "dense"):
-                                proj_layer = getattr(proj_layer, "dense")
-                            if hasattr(proj_layer, "weight"):
-                                w_o = proj_layer.weight.detach()
-                                b_o = proj_layer.bias.detach() if proj_layer.bias is not None else None
-                                break
 
-            # Pattern 5: UniversalAdapter fallback
-            if w_q is None or w_k is None or w_v is None or w_o is None:
-                try:
-                    adapter = UniversalAdapter()
-                    if w_q is None:
-                        w_q, b_q = adapter.get_weight_bias(src, "q")
-                    if w_k is None:
-                        w_k, b_k = adapter.get_weight_bias(src, "k")
-                    if w_v is None:
-                        w_v, b_v = adapter.get_weight_bias(src, "v")
-                    if w_o is None:
-                        w_o, b_o = adapter.get_weight_bias(src, "o")
-                except Exception as e:
-                    logger.debug("UniversalAdapter fallback failed: %s", e)
+            for target_mod, w_src, b_src, name in [
+                (self.q_lin, w_q, b_q, "q_lin"),
+                (self.k_lin, w_k, b_k, "k_lin"),
+                (self.v_lin, w_v, b_v, "v_lin"),
+            ]:
+                if w_src is not None:
+                    tw = target_mod.weight
+                    w_cast = w_src.to(tw.dtype)
+                    min_r = min(tw.shape[0], w_cast.shape[0])
+                    min_c = min(tw.shape[1], w_cast.shape[1])
+                    tw.data[:min_r, :min_c].copy_(w_cast[:min_r, :min_c])
+                    if b_src is not None and target_mod.bias is not None:
+                        tb = target_mod.bias
+                        b_cast = b_src.to(tb.dtype)
+                        min_b = min(tb.numel(), b_cast.numel())
+                        tb.data[:min_b].copy_(b_cast[:min_b])
+                    fnorm = float(torch.linalg.norm(tw.data.float()))
+                    if fnorm < 1e-4:
+                        raise RuntimeError(f"SAMBAM3Block: {name} norm too small ({fnorm:.2e})")
 
-            # Strict validation
-            missing = []
-            if w_q is None:
-                missing.append("Q projection")
-            if w_k is None:
-                missing.append("K projection")
-            if w_v is None:
-                missing.append("V projection")
-            if w_o is None and not self.is_nested_encoder:
-                missing.append("Out projection")
-
-            if missing:
-                raise RuntimeError(
-                    f"SAMBAM3Block: Failed to extract weights: {', '.join(missing)} from {type(pretrained_attn)}"
-                )
-
-            def _copy_layer(target_layer, w, b, src_sub=None):
-                if w is not None:
-                    if w.shape == target_layer.weight.shape:
-                        target_layer.weight.copy_(w.to(target_layer.weight.dtype))
-                    elif w.t().shape == target_layer.weight.shape:
-                        target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
-                    else:
-                        min_0 = min(target_layer.weight.shape[0], w.shape[0])
-                        min_1 = min(target_layer.weight.shape[1], w.shape[1])
-                        target_layer.weight.zero_()
-                        target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
-                if b is not None and target_layer.bias is not None:
-                    if b.shape == target_layer.bias.shape:
-                        target_layer.bias.copy_(b.to(target_layer.bias.dtype))
-                    else:
-                        min_b = min(target_layer.bias.shape[0], b.shape[0])
-                        target_layer.bias.zero_()
-                        target_layer.bias[:min_b].copy_(b[:min_b].to(target_layer.bias.dtype))
-                elif target_layer.bias is not None:
-                    target_layer.bias.zero_()
-
-                if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
-                    if src_sub.lora_A is not None and src_sub.lora_B is not None and target_layer.lora_A is not None and target_layer.lora_B is not None:
-                        src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
-                        src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
-                        if hasattr(src_lA, "data") and hasattr(src_lB, "data"):
-                            r_min = min(target_layer.lora_A.shape[0], src_lA.shape[0])
-                            in_min = min(target_layer.lora_A.shape[1], src_lA.shape[1])
-                            target_layer.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
-                            target_layer.lora_A.requires_grad = True
-
-                            out_min = min(target_layer.lora_B.shape[0], src_lB.shape[0])
-                            r_min_b = min(target_layer.lora_B.shape[1], src_lB.shape[1])
-                            target_layer.lora_B.data[:out_min, :r_min_b].copy_(src_lB.data[:out_min, :r_min_b])
-                            target_layer.lora_B.requires_grad = True
-                        if hasattr(src_sub, "lora_scaling"):
-                            target_layer.scaling = src_sub.lora_scaling
-
-            sub_q = getattr(src, "q_proj", getattr(src, "q_lin", getattr(src, "query", None)))
-            sub_k = getattr(src, "k_proj", getattr(src, "k_lin", getattr(src, "key", None)))
-            sub_v = getattr(src, "v_proj", getattr(src, "v_lin", getattr(src, "value", None)))
-            sub_o = getattr(src, "o_proj", getattr(src, "out_lin", getattr(src, "dense", getattr(src, "out_proj", None))))
-
-            _copy_layer(self.q_lin, w_q, b_q, sub_q)
-            _copy_layer(self.k_lin, w_k, b_k, sub_k)
-            _copy_layer(self.v_lin, w_v, b_v, sub_v)
             if w_o is not None:
-                _copy_layer(self.out_lin, w_o, b_o, sub_o)
+                tw_o = self.out_lin.weight
+                w_o_cast = w_o.to(tw_o.dtype)
+                min_r = min(tw_o.shape[0], w_o_cast.shape[0])
+                min_c = min(tw_o.shape[1], w_o_cast.shape[1])
+                tw_o.data[:min_r, :min_c].copy_(w_o_cast[:min_r, :min_c])
+                if b_o is not None and self.out_lin.bias is not None:
+                    tb_o = self.out_lin.bias
+                    b_o_cast = b_o.to(tb_o.dtype)
+                    min_b = min(tb_o.numel(), b_o_cast.numel())
+                    tb_o.data[:min_b].copy_(b_o_cast[:min_b])
+                fnorm_o = float(torch.linalg.norm(tw_o.data.float()))
+                if fnorm_o < 1e-4:
+                    raise RuntimeError(f"SAMBAM3Block: out_lin norm too small ({fnorm_o:.2e})")
 
-            f_norm_q = float(torch.linalg.norm(self.q_lin.weight))
-            if f_norm_q < 1e-4:
-                raise RuntimeError(f"SAMBAM3Block: Q weight norm is near zero: {f_norm_q}")
+    def _chunked_sliding_window_attention(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        B, H, L, d = q.shape
+        scale = 1.0 / math.sqrt(d)
+        chunk = 64
+        outputs = []
 
-            # Also transfer weights to spectral mamba
-            try:
-                self.mamba.mamba.copy_weights(pretrained_attn)
-            except Exception as e:
-                logger.debug("Failed copying weights to mamba: %s", e)
+        for start in range(0, L, chunk):
+            end = min(start + chunk, L)
+            q_c = q[:, :, start:end]  # [B, H, C_q, d]
+            C_q = end - start
+
+            k_start = max(0, start - self.window)
+            k_end = end if self.is_decoder else min(L, end + self.window)
+            k_c = k[:, :, k_start:k_end]  # [B, H, C_k, d]
+            v_c = v[:, :, k_start:k_end]  # [B, H, C_k, d]
+
+            scores = torch.matmul(q_c.float(), k_c.transpose(-2, -1).float()) * scale
+
+            q_idx = torch.arange(start, end, device=q.device).view(1, 1, C_q, 1)
+            k_idx = torch.arange(k_start, k_end, device=q.device).view(1, 1, 1, -1)
+            dist = (q_idx - k_idx).abs()
+            valid = dist <= self.window
+            if self.is_decoder:
+                valid = valid & (k_idx <= q_idx)
+
+            scores = scores.masked_fill(~valid, -1e4)
+
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    pad = (attention_mask[:, k_start:k_end] == 0).unsqueeze(1).unsqueeze(2)
+                    scores = scores.masked_fill(pad, -1e4)
+                elif attention_mask.dim() == 3:
+                    scores = scores + attention_mask[:, start:end, k_start:k_end].unsqueeze(1).to(scores.dtype)
+                elif attention_mask.dim() == 4:
+                    scores = scores + attention_mask[:, :, start:end, k_start:k_end].to(scores.dtype)
+
+            probs = F.softmax(scores, dim=-1)
+            probs = torch.nan_to_num(probs, nan=0.0)
+            probs = self.dropout(probs.to(v.dtype))
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    hm = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    hm = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
+                elif head_mask.dim() == 3:
+                    hm = head_mask.unsqueeze(-1).to(probs.dtype)
+                else:
+                    hm = head_mask
+                probs = probs * hm
+
+            out_c = torch.matmul(probs, v_c)
+            outputs.append(out_c)
+
+        return torch.cat(outputs, dim=2)
 
     def forward(
         self,
@@ -501,76 +505,50 @@ class SAMBAM3Block(nn.Module):
         *args: Any,
         **kwargs: Any,
     ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("SAMBAM3Block does not support cross-attention")
+
         B, L, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, L, self.n_heads, self.head_dim).transpose(1, 2)
         k = self.k_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
         v = self.v_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
 
-        # Partial Rotary Position Embeddings (RoPE)
         pos_emb = kwargs.get("position_embeddings", None)
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
             cos, sin = pos_emb
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        # Grouped-Query Attention expansion
         if self.num_kv_heads != self.n_heads:
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
-
-        # Sliding window mask
-        idx = torch.arange(L, device=q.device)
-        if self.is_decoder:
-            diff = idx.unsqueeze(0) - idx.unsqueeze(1)  # [L, L], diff[i, j] = j - i
-            causal_window_mask = (diff > 0) | ((-diff) > self.window)
-            scores = scores.masked_fill(causal_window_mask.unsqueeze(0).unsqueeze(0), -10000.0)
-        else:
-            dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
-            window_mask = dist > self.window
-            scores = scores.masked_fill(window_mask.unsqueeze(0).unsqueeze(0), -10000.0)
-
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)
-                scores = scores.masked_fill(pad_mask, -10000.0)
-            elif attention_mask.dim() == 3:
-                scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
-            elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.to(scores.dtype)
-
-        probs = F.softmax(scores, dim=-1)
-        probs = torch.nan_to_num(probs, nan=0.0)
-        probs = self.dropout(probs.to(v.dtype))
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
-            probs = probs * head_mask
-
-        attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, self.q_head_size)
+        attn_out = self._chunked_sliding_window_attention(
+            q, k, v, attention_mask=attention_mask, head_mask=head_mask
+        )
+        attn_out = attn_out.transpose(1, 2).contiguous().view(B, L, self.q_head_size)
 
         mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask, **kwargs)
         alpha = torch.sigmoid(self.alpha)
 
+        # Remove internal double residual and norm
         if self.is_nested_encoder:
-            if attn_out.shape[-1] != self.d_model:
-                attn_out = self.out_lin(attn_out)
             out = alpha * attn_out + (1.0 - alpha) * mamba_out
         else:
             attn_proj = self.out_lin(attn_out)
-            out = self.norm(hidden_states + alpha * attn_proj + (1.0 - alpha) * mamba_out)
+            out = alpha * attn_proj + (1.0 - alpha) * mamba_out
+
+        out = torch.nan_to_num(out, nan=0.0)
+
+        if attention_mask is not None and attention_mask.dim() == 2:
+            out = out * attention_mask.unsqueeze(-1).to(out.dtype)
 
         if out.shape[-1] != D:
             out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
 
-        return (out, (probs if output_attentions else None))
+        return (out, None)
 
 
-@ATTENTION_REGISTRY.register("samba_m3")
 @ATTENTION_REGISTRY.register("samba_m3_inject")
 @ATTENTION_REGISTRY.register("inject_samba_m3")
 def inject_samba_m3(

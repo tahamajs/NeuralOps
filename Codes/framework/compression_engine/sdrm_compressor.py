@@ -189,7 +189,7 @@ class SDRMCompressor(BaseCompressor):
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning('SDRM SVD decomposition failure: %s', e)
-            return None
+            raise RuntimeError(f"Injection failed")
 
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)

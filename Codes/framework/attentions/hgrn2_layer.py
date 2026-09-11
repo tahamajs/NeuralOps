@@ -457,7 +457,7 @@ def inject_hgrn2_layer(
         )
     except Exception as ex:
         logger.warning("Failed to instantiate HGRN2Layer: %s", ex)
-        return None
+        raise RuntimeError(f"Injection failed")
 
     if target is not None:
         if hasattr(target, "attention"):

@@ -317,7 +317,7 @@ class BlockTransformerHIBA(BaseAttention):
                     c_attn_mod.merge()
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    return None
+                    raise RuntimeError(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -339,7 +339,7 @@ class BlockTransformerHIBA(BaseAttention):
                         c_proj_mod.merge()
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        return None
+                        raise RuntimeError(f"copy_weights failed: {e}")
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
@@ -745,4 +745,4 @@ def inject_block_transformer_hiba(
             layer.attn = new_attn
         return new_attn
     except Exception:
-        return None
+        raise RuntimeError("copy_weights failed")

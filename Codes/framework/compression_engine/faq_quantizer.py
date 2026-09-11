@@ -358,10 +358,10 @@ class FAQQuantizer(BaseCompressor):
                             self.model(dummy_x)
                         except Exception as e:
                             print(f'copy_weights failed: {e}')
-                            return None
+                            raise RuntimeError(f"copy_weights failed: {e}")
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         for h in hooks:
             h.remove()
