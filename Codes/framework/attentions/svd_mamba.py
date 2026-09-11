@@ -203,11 +203,11 @@ class SVDMamba(BaseAttention):
         )
         self.x_proj = SVDLinear(
             self.inner_dim, self.dt_rank + 2 * self.d_state,
-            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False
         )
         self.dt_proj = SVDLinear(
             self.dt_rank, self.inner_dim,
-            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False
         )
 
         # Causal depthwise convolution
@@ -228,7 +228,7 @@ class SVDMamba(BaseAttention):
         self.global_V = nn.Parameter(torch.randn(self.d_model, self.global_rank) * 0.02)
         self.global_out = SVDLinear(
             self.global_rank, self.inner_dim, rank=self.global_rank,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False
         )
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
@@ -407,7 +407,7 @@ class SVDMamba(BaseAttention):
         C = x_proj[:, :, self.dt_rank + self.d_state :]
 
         delta = self.dt_proj(delta)
-        delta = F.softplus(delta + self.dt_bias).clamp(min=1e-3, max=0.1)
+        delta = F.softplus(delta + self.dt_bias).clamp(min=1e-3, max=1.0)
 
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x_conv.dtype)
 
@@ -415,7 +415,7 @@ class SVDMamba(BaseAttention):
         log_alpha = (delta.unsqueeze(-1) * A.view(1, 1, 1, -1)).float()
         u = (delta.unsqueeze(-1) * B.unsqueeze(2) * x_conv.unsqueeze(-1)).float()
 
-        chunk_size = 16
+        chunk_size = 64
         num_chunks = (seqlen + chunk_size - 1) // chunk_size
         h_running = x_conv.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
         y_chunks = []
@@ -437,7 +437,7 @@ class SVDMamba(BaseAttention):
             h_chunk = h_intra + h_inter
             y_c = (C[:, s_idx:e_idx].unsqueeze(2).float() * h_chunk).sum(dim=-1).to(x_conv.dtype)
             y_chunks.append(y_c)
-            h_running = torch.clamp(h_chunk[:, -1], min=-1e4, max=1e4)
+            h_running = torch.clamp(h_chunk[:, -1], min=-1e3, max=1e3)
 
         y = torch.cat(y_chunks, dim=1)
         y = y + self.D * x_conv
@@ -448,8 +448,11 @@ class SVDMamba(BaseAttention):
         global_mix = self.global_out(global_scores)
         y = y + global_mix
 
-        # out_proj maps inner_dim (expand * d_model) back to d_model
-        out = self.out_proj(y)
+        # out_proj maps inner_dim (expand * d_model) back to d_model (bypassed for nested encoders)
+        if self.is_nested_encoder:
+            out = y
+        else:
+            out = self.out_proj(y)
 
         # Masking
         if attention_mask is not None:
@@ -491,7 +494,7 @@ def inject_svd_mamba(
         or hasattr(target, "distilbert")
         or hasattr(target, "roberta")
         or hasattr(target, "bert")
-        or (hasattr(target, "model") and not hasattr(target, "forward"))
+        or (hasattr(target, "model") and hasattr(target.model, "layers"))
     ):
         layer_list = None
         if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
