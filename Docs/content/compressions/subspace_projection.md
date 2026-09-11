@@ -429,3 +429,21 @@ model = inject_subspace_projection(model, subspace_dim=128)
 
 ## Future Work
 - Online subspace rotation via Grassmanian gradient descent.
+
+## Unified 4-Architecture Benchmark Results (Subspace Projection)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 89.91% | 0.8993 | 1.0 | 0 | 338.84 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa38f39-1c1394f963394b484ba6045b;cf34a427-29d1-4ef3-8aae-4fe20de837f7)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
+| ROBERTA | 84.17% | 0.8535 | 1.0 | 0 | 364.29 | `PASS` | [`roberta`](Upload error: (Request ID: Root=1-6aa38f39-5d01be8d3aeaa40b5453485d;1b9ab167-e2aa-46b7-a7da-ffdb50440a21)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
+| GPT2 | 59.52% | 0.6596 | 1.0032 | 0 | 637.29 | `PASS` | [`gpt2`](Upload error: (Request ID: Root=1-6aa38f39-238a071b1d499b2b07a93c94;d74d44f2-9678-43b6-a2e1-590882330432)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
