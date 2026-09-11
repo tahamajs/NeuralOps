@@ -138,6 +138,11 @@ class HashedLinear(nn.Module):
         """Reconstruct the effective full weight matrix W."""
         return self.get_weight()
 
+    @property
+    def bucket_indices(self) -> torch.Tensor:
+        """Alias for hash_idx."""
+        return self.hash_idx
+
     def get_weight(self) -> torch.Tensor:
         """
         Reconstruct dense 2D weight matrix from parameter hash table:
@@ -167,6 +172,8 @@ class HashedLinear(nn.Module):
         use_sign: bool = True,
         lora_rank: Optional[int] = None,
         lora_alpha: float = 1.0,
+        compression_ratio: Optional[float] = None,
+        **kwargs: Any,
     ) -> "HashedLinear":
         """
         Create HashedLinear from existing nn.Linear, Conv1D, or LoRALinear layer using
@@ -176,6 +183,9 @@ class HashedLinear(nn.Module):
         cls_name = target_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         raw_w = target_mod.weight.data
+
+        if compression_ratio is not None and compression_ratio > 0.0:
+            n_buckets = max(16, int(raw_w.numel() * float(compression_ratio)))
 
         # Determine in_features and out_features robustly, ensuring W is oriented (out_features, in_features)
         if hasattr(target_mod, "nx") and hasattr(target_mod, "nf"):
