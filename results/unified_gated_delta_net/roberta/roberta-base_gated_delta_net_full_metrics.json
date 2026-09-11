@@ -2,25 +2,25 @@
     "model": "roberta-base_gated_delta_net",
     "performance": {
         "accuracy_pct": 50.92,
-        "f1_score": 0.6748,
-        "f1_macro": 0.3374,
-        "precision": 0.2546,
-        "recall": 0.5,
-        "val_loss": 0.8152,
-        "status": "FAIL",
-        "elapsed_s": 0.79
+        "f1_score": 0.6672,
+        "f1_macro": 0.3663,
+        "precision": 0.5048,
+        "recall": 0.5006,
+        "val_loss": 0.8732,
+        "status": "PASS_LOW",
+        "elapsed_s": 66.01
     },
     "efficiency": {
-        "total_params_before": 127325954,
-        "total_params_after": 171544610,
-        "trainable_recovery_params": 4745474,
-        "compression_rate": 0.7422,
-        "compression_ratio_pct": -34.73,
+        "total_params_before": 124647170,
+        "total_params_after": 168865898,
+        "trainable_recovery_params": 2066690,
+        "compression_rate": 0.7381,
+        "compression_ratio_pct": -35.48,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 4153344,
+        "lora_params": 1474560,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 442.45,
-        "tokens_per_sec": 4354.06
+        "peak_vram_mb": 736.96,
+        "tokens_per_sec": 4497.4
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 400.98,
-        "L_256_vram_mb": 405.23,
-        "L_512_vram_mb": 415.16,
+        "L_128_vram_mb": 692.91,
+        "L_256_vram_mb": 696.56,
+        "L_512_vram_mb": 709.83,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-08T05:15:54.215800"
+    "timestamp": "2026-09-11T11:32:22.546904"
 }
