@@ -1,3 +1,3 @@
 module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-full,PASS,90.48,0.9077,0.9047,0.9052,0.9046,0.3091,1.07,389.51,156228.68,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T03:42:20.976957
-adaptive_sparse_attention_attention,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.5722,4.26,396.52,68306.51,66955010,81719144,1182056,0.8193,-22.05,0.0,0,0,,,6,589824,,legacy_bert,2026-09-11T03:42:25.345912
+full,PASS,90.48,0.9077,0.9047,0.9052,0.9046,0.3091,3.79,389.51,38796.68,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T10:52:29.854190
+adaptive_sparse_attention_attention,PASS,89.91,0.9033,0.8989,0.9003,0.8986,0.5722,16.28,396.52,16770.04,66955010,81719144,1182056,0.8193,-22.05,0.0,0,0,,,6,589824,,legacy_bert,2026-09-11T10:52:46.435363
