@@ -178,3 +178,132 @@ def test_inject_xattention():
     # When old_attn is None, should return None gracefully
     none_res = inject_xattention(layer=layer, old_attn=None)
     assert none_res is None
+
+
+def test_forward_never_returns_none():
+    cfg = make_config(hidden_size=64, num_heads=4)
+    attn = XAttention(cfg, pretrained_attn=DummyAttn(64))
+    attn.eval()
+    
+    # Intentionally broken rotary embedding that raises an exception
+    class BrokenRotary(nn.Module):
+        def forward(self, *args, **kwargs):
+            raise RuntimeError("Forced RoPE failure for resilience testing")
+
+    attn.rotary_emb = BrokenRotary()
+    x = torch.randn(2, 16, 64)
+    out, attn_weights = attn(x)
+    assert out is not None, "forward() must never return None even if RoPE fails"
+    assert out.shape == (2, 16, 64)
+    assert not torch.isnan(out).any()
+
+
+def test_state_dict_keys_clean():
+    cfg = make_config(hidden_size=64, num_heads=4)
+    attn = XAttention(cfg, pretrained_attn=DummyAttn(64))
+    sd = attn.state_dict()
+    # Aliases W_q, W_k, W_v, out should be properties and NOT present in state_dict
+    for key in sd.keys():
+        assert not key.startswith("W_q."), f"Duplicate key {key} found in state_dict"
+        assert not key.startswith("W_k."), f"Duplicate key {key} found in state_dict"
+        assert not key.startswith("W_v."), f"Duplicate key {key} found in state_dict"
+        assert not key.startswith("out."), f"Duplicate key {key} found in state_dict"
+    assert "query.weight" in sd
+    assert "key.weight" in sd
+    assert "value.weight" in sd
+    assert "out_proj.weight" in sd
+    assert "output_scale" in sd
+
+
+def test_position_embeddings_shorter_than_q():
+    cfg = make_config(hidden_size=64, num_heads=4)
+    attn = XAttention(cfg, pretrained_attn=DummyAttn(64))
+    attn.eval()
+    B, L, D = 2, 32, 64
+    x = torch.randn(B, L, D)
+    # Cos and sin shorter than sequence length (8 < 32)
+    cos = torch.randn(8, 16)
+    sin = torch.randn(8, 16)
+    out, _ = attn(x, position_embeddings=(cos, sin))
+    assert out is not None
+    assert out.shape == (B, L, D)
+    assert not torch.isnan(out).any()
+
+
+def test_padding_masked_block_routing():
+    cfg = make_config(hidden_size=64, num_heads=4, block_size=4, sparsity=0.5)
+    attn = XAttention(cfg, pretrained_attn=DummyAttn(64), block_size=4, sparsity=0.5)
+    attn.eval()
+    B, L, D = 2, 16, 64
+    x = torch.randn(B, L, D)
+    # Mask out last 6 tokens
+    mask = torch.ones(B, L)
+    mask[:, 10:] = 0
+    out, _ = attn(x, attention_mask=mask)
+    assert out is not None
+    assert out.shape == (B, L, D)
+    assert not torch.isnan(out).any()
+    # Masked positions should be zeroed
+    assert (out[:, 10:, :] == 0.0).all()
+
+
+def test_qwen_and_distilbert_architectures():
+    # 1. DistilBERT architecture simulation
+    class DummyDistilBertAttn(nn.Module):
+        def __init__(self, d=64):
+            super().__init__()
+            self.q_lin = nn.Linear(d, d)
+            self.k_lin = nn.Linear(d, d)
+            self.v_lin = nn.Linear(d, d)
+            self.out_lin = nn.Linear(d, d)
+            self.n_heads = 4
+            self.dim = d
+
+    class DummyDistilBertBlock(nn.Module):
+        def __init__(self, d=64):
+            super().__init__()
+            self.attention = DummyDistilBertAttn(d)
+
+    dbert_block = DummyDistilBertBlock(64)
+    injected_dbert = inject_xattention(layer=dbert_block, old_attn=dbert_block.attention)
+    assert injected_dbert is not None
+    assert isinstance(dbert_block.attention, XAttention)
+    x_db = torch.randn(2, 12, 64)
+    out_db, _ = dbert_block.attention(x_db)
+    assert out_db.shape == (2, 12, 64)
+
+    # 2. Qwen3.5 architecture simulation with GQA and RoPE
+    class DummyQwenAttn(nn.Module):
+        def __init__(self, d=64, num_heads=4, num_kv_heads=2):
+            super().__init__()
+            self.q_proj = nn.Linear(d, d)
+            self.k_proj = nn.Linear(d, d // 2)
+            self.v_proj = nn.Linear(d, d // 2)
+            self.o_proj = nn.Linear(d, d)
+            self.num_heads = num_heads
+            self.num_key_value_heads = num_kv_heads
+            self.hidden_size = d
+            self.head_dim = d // num_heads
+
+    qwen_cfg = types.SimpleNamespace(
+        hidden_size=64,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        is_decoder=True,
+        model_type="qwen3_5",
+        dropout=0.0,
+        lora_rank=16,
+    )
+    qwen_attn_dummy = DummyQwenAttn(64, num_heads=4, num_kv_heads=2)
+    qwen_xattn = XAttention(qwen_cfg, pretrained_attn=qwen_attn_dummy, block_size=4, sparsity=0.5)
+    assert qwen_xattn.num_kv_heads == 2
+    assert qwen_xattn.kv_repeat == 2
+
+    x_qw = torch.randn(2, 16, 64)
+    cos = torch.randn(16, 16)
+    sin = torch.randn(16, 16)
+    out_qw, _ = qwen_xattn(x_qw, position_embeddings=(cos, sin))
+    assert out_qw.shape == (2, 16, 64)
+    assert not torch.isnan(out_qw).any()
+
+

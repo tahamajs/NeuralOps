@@ -32,8 +32,8 @@ Validated factorized/adapted checkpoint of **roberta** using **roberta** evaluat
 - **Trainable Recovery Params**: `1771982`
 - **Compressed / Injected Layers**: `0`
 - **Peak VRAM**: `702.77 MB`
-- **Throughput**: `43687.69 tokens/sec`
-- **Evaluation Time**: `7.11 s`
+- **Throughput**: `11149.35 tokens/sec`
+- **Evaluation Time**: `28.84 s`
 
 ## Reproduction & Usage
 ```python

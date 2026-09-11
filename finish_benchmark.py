@@ -13,7 +13,7 @@ finish_benchmark.py — Master Orchestrator for remaining benchmark modules.
 - Final git push at end
 """
 
-import os, sys, json, time, csv, logging, argparse, subprocess, threading, queue
+import os, sys, json, time, csv, logging, argparse, subprocess, threading, queue, re
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -63,8 +63,33 @@ def save_state(state):
 def extract_module_name(path):
     return path.stem[len("run_all_4_"):]
 
+def find_unified_dir(module):
+    candidates = [
+        RESULTS_DIR / f"unified_{module}",
+        RESULTS_DIR / f"unified_{module}_attention",
+        RESULTS_DIR / f"unified_{module}_svd",
+        RESULTS_DIR / f"unified_{module.replace('-', '_')}",
+        RESULTS_DIR / f"unified_{module.replace('_', '')}",
+    ]
+    runner_file = REPO_DIR / f"run_all_4_{module}.py"
+    if runner_file.exists():
+        try:
+            content = runner_file.read_text(encoding="utf-8", errors="ignore")
+            dirs = re.findall(r'unified_([a-zA-Z0-9_\-]+)', content)
+            for d in dirs:
+                candidates.append(RESULTS_DIR / f"unified_{d}")
+        except Exception:
+            pass
+    for cand in candidates:
+        if cand.exists() and any((cand / m / "summary.csv").exists() for m in MODELS):
+            return cand
+    for cand in candidates:
+        if cand.exists():
+            return cand
+    return RESULTS_DIR / f"unified_{module}"
+
 def is_module_done(module):
-    unified = RESULTS_DIR / f"unified_{module}"
+    unified = find_unified_dir(module)
     if not unified.exists():
         return False
     for model in MODELS:
@@ -100,7 +125,7 @@ def discover_remaining():
 
 def read_summary_accuracy(module):
     results = {}
-    unified = RESULTS_DIR / f"unified_{module}"
+    unified = find_unified_dir(module)
     for model in MODELS:
         csv_path = unified / model / "summary.csv"
         if csv_path.exists():
@@ -137,7 +162,7 @@ def upload_to_hf(module, model_slug, status, accuracy):
             pass
         readme = f"---\ntags: [svd-linear-attention, {module}, pytorch]\ndatasets: [sst2]\n---\n# {module} / {model_slug}\nAccuracy: {accuracy:.2f}% | Status: {status}\n"
         api.upload_file(path_or_fileobj=readme.encode("utf-8"), path_in_repo="README.md", repo_id=repo_id, commit_message=f"Update card acc={accuracy:.2f}%")
-        unified = RESULTS_DIR / f"unified_{module}"
+        unified = find_unified_dir(module)
         if status == "PASS":
             candidate_weights = [
                 unified / model_slug / "checkpoints" / module / "weights.pt",

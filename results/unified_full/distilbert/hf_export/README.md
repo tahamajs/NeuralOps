@@ -32,8 +32,8 @@ Validated factorized/adapted checkpoint of **distilbert** using **distilbert** e
 - **Trainable Recovery Params**: `0`
 - **Compressed / Injected Layers**: `0`
 - **Peak VRAM**: `388.01 MB`
-- **Throughput**: `160830.81 tokens/sec`
-- **Evaluation Time**: `1.05 s`
+- **Throughput**: `35200.61 tokens/sec`
+- **Evaluation Time**: `4.23 s`
 
 ## Reproduction & Usage
 ```python

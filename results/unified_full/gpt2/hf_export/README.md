@@ -32,8 +32,8 @@ Validated factorized/adapted checkpoint of **gpt2** using **gpt2** evaluated on 
 - **Trainable Recovery Params**: `0`
 - **Compressed / Injected Layers**: `0`
 - **Peak VRAM**: `791.56 MB`
-- **Throughput**: `69861.01 tokens/sec`
-- **Evaluation Time**: `2.42 s`
+- **Throughput**: `27186.49 tokens/sec`
+- **Evaluation Time**: `6.09 s`
 
 ## Reproduction & Usage
 ```python

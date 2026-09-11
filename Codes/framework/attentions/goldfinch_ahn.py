@@ -397,7 +397,7 @@ class GoldFinchAHNBlock(BaseAttention):
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
                 print(f'copy_weights failed: {e}')
-                return None
+                raise RuntimeError(f"copy_weights failed: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -569,7 +569,7 @@ def inject_goldfinch_ahn(
 ) -> Optional[Union[GoldFinchAHNBlock, nn.Module]]:
     target = layer if layer is not None else model
     if target is None:
-        return None
+        raise RuntimeError(f"copy_weights failed: {e}")
 
     cfg = model_config
     if cfg is None and hasattr(target, "config"):
@@ -625,7 +625,7 @@ def inject_goldfinch_ahn(
         src_attn = target
 
     if src_attn is None and cfg is None:
-        return None
+        raise RuntimeError(f"copy_weights failed: {e}")
 
     hidden_size = (
         getattr(src_attn, 'hidden_size', None) or
@@ -654,7 +654,7 @@ def inject_goldfinch_ahn(
             **kwargs,
         )
     except Exception:
-        return None
+        raise RuntimeError(f"copy_weights failed: {e}")
 
     if target is not None:
         if hasattr(target, "attention"):
