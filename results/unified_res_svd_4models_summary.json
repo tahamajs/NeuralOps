@@ -1,15 +1,41 @@
 [
   {
-    "Model": "roberta",
+    "Model": "distilbert",
     "Exit Code": 0,
-    "Baseline Acc": "88.76%",
-    "Spectral Residual LoRA (res_svd) Acc": "65.94%",
-    "Delta Acc": "-22.82%",
-    "F1": "0.5139",
+    "Baseline Acc": "90.48%",
+    "Spectral Residual LoRA (res_svd) Acc": "83.83%",
+    "Delta Acc": "-6.65%",
+    "F1": "0.8569",
     "Status": "PASS",
     "Compressed Layers": "0",
-    "Comp Rate": "1.09x",
-    "Peak VRAM": "444.7 MB",
-    "Time (s)": "91.7"
+    "Comp Rate": "1.14x",
+    "Peak VRAM": "329.4 MB",
+    "Time (s)": "21.4"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "75.11%",
+    "Spectral Residual LoRA (res_svd) Acc": "50.92%",
+    "Delta Acc": "-24.19%",
+    "F1": "0.6748",
+    "Status": "PASS_LOW",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.08x",
+    "Peak VRAM": "426.1 MB",
+    "Time (s)": "35.9"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 0,
+    "Baseline Acc": "60.78%",
+    "Spectral Residual LoRA (res_svd) Acc": "50.92%",
+    "Delta Acc": "-9.86%",
+    "F1": "0.6748",
+    "Status": "PASS_LOW",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.15x",
+    "Peak VRAM": "561.0 MB",
+    "Time (s)": "33.5"
   }
 ]
