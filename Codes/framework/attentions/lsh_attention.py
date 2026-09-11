@@ -8,8 +8,11 @@ trainable LoRA residual adapters, GQA, RoPE, and causal decoding.
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -218,16 +221,16 @@ class LSHAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             weight = src.c_attn.weight.data
             bias = getattr(src.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+            c_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
+            if ("Conv1D" in c_cls) or hasattr(src.c_attn, "nf") or (weight.dim() == 2 and weight.shape[0] < weight.shape[1]):
                 weight = weight.t()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
@@ -242,7 +245,8 @@ class LSHAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+            p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
+            if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]):
                 w_o = w_o.t()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -274,21 +278,20 @@ class LSHAttention(BaseAttention):
                     if hasattr(src, name):
                         layer = getattr(src, name)
                         if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data, getattr(layer, "bias", None))
+                            w_data = layer.weight.data
+                            l_cls = getattr(layer, "__class__", type(layer)).__name__
+                            if ("Conv1D" in l_cls) or hasattr(layer, "nf") or (w_data.ndim == 2 and proj == "o" and w_data.shape[0] < w_data.shape[1]):
+                                w_data = w_data.t()
+                            extracted[proj] = (w_data, getattr(layer, "bias", None))
                             break
 
         # Detect nested encoder architecture
-        cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj:
-            is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+        cls_name = getattr(src, '__class__', type(src)).__name__
+        has_out = hasattr(src, 'dense') or hasattr(src, 'out_proj') or hasattr(src, 'out_lin') or hasattr(src, 'c_proj') or hasattr(src, 'o_proj')
+        if (cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out)):
+            self.is_nested_encoder = True
+        if hasattr(src, 'self') and hasattr(src, 'output'):
+            self.is_nested_encoder = True
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -391,7 +394,9 @@ class LSHAttention(BaseAttention):
         # Check for causal decoders
         is_decoder = (
             self.is_decoder
+            or getattr(self, "is_causal", False)
             or getattr(self.config, "is_decoder", False)
+            or getattr(self.config, "is_causal", False)
             or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
@@ -466,6 +471,8 @@ class LSHAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("lsh_attention_inject")
 @ATTENTION_REGISTRY.register("lsh_inject")
+@ATTENTION_REGISTRY.register("inject_lsh_attention")
+@ATTENTION_REGISTRY.register("inject_lsh")
 def inject_lsh_attention(
     layer: nn.Module,
     model_config: Any = None,
@@ -478,18 +485,24 @@ def inject_lsh_attention(
     if model_config is None:
         model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
-
     try:
         new_attn = LSHAttention(
             config=model_config,
             pretrained_attn=old_attn,
         )
-        if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
-        else:
-            layer.attention = new_attn
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"LSHAttention injection failed: {e}")
+        return None

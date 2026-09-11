@@ -41,7 +41,9 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+        cls_n = getattr(module, "__class__", type(module)).__name__
+        base_n = getattr(base, "__class__", type(base)).__name__
+        if ("Conv1D" in cls_n) or ("Conv1D" in base_n) or hasattr(module, "nf") or hasattr(base, "nf") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
             w = w.t()
     if b is not None:
         b = b.data.clone()
@@ -333,12 +335,12 @@ class HammingAttention(BaseAttention):
                             break
 
         # Detect nested encoder architecture
-        cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        cls_name = getattr(src, '__class__', type(src)).__name__
+        has_out = hasattr(src, 'dense') or hasattr(src, 'out_proj') or hasattr(src, 'out_lin') or hasattr(src, 'c_proj') or hasattr(src, 'o_proj')
+        if (cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out)):
+            self.is_nested_encoder = True
+        if hasattr(src, 'self') and hasattr(src, 'output'):
+            self.is_nested_encoder = True
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -450,7 +452,9 @@ class HammingAttention(BaseAttention):
         # Explicit Causal Masking for decoders
         is_decoder = (
             self.is_decoder
+            or getattr(self, "is_causal", False)
             or getattr(self.config, "is_decoder", False)
+            or getattr(self.config, "is_causal", False)
             or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
         if is_decoder:
@@ -488,7 +492,8 @@ class HammingAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("hamming_attention_inject")
 @ATTENTION_REGISTRY.register("hamming_inject")
-@ATTENTION_REGISTRY.register("hamming")
+@ATTENTION_REGISTRY.register("inject_hamming_attention")
+@ATTENTION_REGISTRY.register("inject_hamming")
 def inject_hamming_attention(
     layer: Any = None,
     model: Any = None,
@@ -571,13 +576,15 @@ def inject_hamming_attention(
             lora_rank=lora_rank,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"HammingAttention injection failed: {e}")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_layer
+                new_layer.is_nested_encoder = True
             else:
                 target.attention = new_layer
         elif hasattr(target, "self"):

@@ -39,7 +39,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         w = w.data.clone()
         cls_name = getattr(module, "__class__", type(module)).__name__
         base_cls_name = getattr(base, "__class__", type(base)).__name__
-        if "Conv1D" in cls_name or "Conv1D" in base_cls_name:
+        if "Conv1D" in cls_name or "Conv1D" in base_cls_name or hasattr(base, "nf"):
             if w.ndim == 2:
                 w = w.t()
     if b is not None:
@@ -60,7 +60,7 @@ class HGRN2Layer(BaseAttention):
         config: Optional[Any] = None,
         rank: Optional[int] = None,
         d_model: Optional[Union[int, Any]] = None,
-        res_clip: float = 5.0,
+        res_clip: float = 30.0,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         is_decoder: Optional[bool] = None,
@@ -111,9 +111,9 @@ class HGRN2Layer(BaseAttention):
         self.state_norm = nn.LayerNorm(self.d_model)
         self.out_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
-        # Initialize forget gate weight/bias for moderate decay: softplus(-1.0) ~ 0.31 => f_t ~ 0.73
-        nn.init.uniform_(self.forget_gate.weight, 0.01, 0.1)
-        nn.init.constant_(self.forget_gate.bias, 1.0)
+        # Initialize forget gate weight/bias for long-term retention: softplus(-2.5) ~ 0.0788 => f_t ~ 0.924
+        nn.init.normal_(self.forget_gate.weight, mean=0.0, std=0.01)
+        nn.init.constant_(self.forget_gate.bias, -2.5)
         nn.init.constant_(self.input_gate.bias, 0.0)
 
         # LoRA Adapters
@@ -347,7 +347,7 @@ class HGRN2Layer(BaseAttention):
 
         # 1. Compute gates and values with bounded log decay to prevent gate saturation
         raw_log_decay = -F.softplus(self.forget_gate(hidden_states))
-        bounded_log_decay = raw_log_decay.clamp(min=-5.0, max=-0.01)
+        bounded_log_decay = raw_log_decay.clamp(min=-3.0, max=-1e-4)
         f = torch.exp(bounded_log_decay)
 
         # Input modulation: tie input scale with (1 - f) to prevent recurrence state sign-flipping
@@ -381,7 +381,6 @@ class HGRN2Layer(BaseAttention):
 
         # 4. Gating and output projection
         gated = h * F.silu(z)
-        gated = gated * self.output_scale
         if self.is_nested_encoder:
             out = gated
         else:
@@ -462,11 +461,16 @@ def inject_hgrn2_layer(
 
     # 2. Single layer injection
     curr_attn = old_attn
+    is_nested_target = False
     if curr_attn is None and target is not None:
-        if hasattr(target, "attention"):
+        if hasattr(target, "attention") and hasattr(target.attention, "self"):
+            curr_attn = target.attention.self
+            is_nested_target = True
+        elif hasattr(target, "attention"):
             curr_attn = target.attention
         elif hasattr(target, "self"):
             curr_attn = target.self
+            is_nested_target = True
         elif hasattr(target, "attn"):
             curr_attn = target.attn
 
@@ -481,12 +485,16 @@ def inject_hgrn2_layer(
             lora_alpha=lora_alpha,
             **kwargs,
         )
+        if is_nested_target:
+            new_layer.is_nested_encoder = True
     except Exception as ex:
         logger.error("Failed to instantiate HGRN2Layer: %s", ex)
         return None
 
     if target is not None:
-        if hasattr(target, "attention"):
+        if is_nested_target and hasattr(target, "attention") and hasattr(target.attention, "self"):
+            target.attention.self = new_layer
+        elif hasattr(target, "attention"):
             target.attention = new_layer
         elif hasattr(target, "self"):
             target.self = new_layer

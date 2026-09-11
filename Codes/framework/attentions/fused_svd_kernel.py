@@ -137,7 +137,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         norm_weight: Optional[torch.Tensor] = None,
         bias: Optional[torch.Tensor] = None,
         eps: float = 1e-6,
-        use_rms_norm: bool = True,
+        use_rms_norm: bool = False,
     ) -> torch.Tensor:
         orig_shape = x.shape
         x_2d = x.reshape(-1, orig_shape[-1]).contiguous()
@@ -284,10 +284,10 @@ def fused_svd_linear(
     norm_weight: Optional[torch.Tensor] = None,
     bias: Optional[torch.Tensor] = None,
     eps: float = 1e-6,
-    use_rms_norm: bool = True,
+    use_rms_norm: bool = False,
 ) -> torch.Tensor:
     """
-    Functional interface for Fused SVD-Linear with in-SRAM RMSNorm.
+    Functional interface for Fused SVD-Linear with optional in-SRAM RMSNorm.
     
     Args:
         x: Input tensor of shape (..., in_features).
@@ -317,7 +317,7 @@ class FusedSVDLinear(nn.Module):
         out_features: int,
         rank: int = 32,
         bias: bool = True,
-        use_rms_norm: bool = True,
+        use_rms_norm: bool = False,
         eps: float = 1e-6,
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None,
@@ -440,9 +440,16 @@ def apply_rotary_pos_emb(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+    elif cos.dim() < q.dim():
+        while cos.dim() < q.dim():
+            cos = cos.unsqueeze(0)
+            sin = sin.unsqueeze(0)
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
     if rotary_dim < head_dim:
@@ -480,7 +487,7 @@ class FusedSVDKernelAttention(BaseAttention):
         rank: Optional[int] = None,
         old_attn: Optional[nn.Module] = None,
         use_fused_kernel: bool = True,
-        use_rms_norm: bool = True,
+        use_rms_norm: bool = False,
         dropout: float = 0.1,
         **kwargs: Any,
     ) -> None:
@@ -616,16 +623,29 @@ class FusedSVDKernelAttention(BaseAttention):
                     base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
                     if "Conv1D" in cls_c or "Conv1D" in base_cls_c or hasattr(mod_c, "nf") or hasattr(base_c, "nf") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
                         w = w.t()
-                    split_size = w.shape[0] // 3
-                    w_q = w[:split_size, :]
-                    w_k = w[split_size : 2 * split_size, :]
-                    w_v = w[2 * split_size :, :]
+                    q_dim = self.q_head_size
+                    k_dim = self.kv_head_size
+                    v_dim = self.kv_head_size
+                    if w.shape[0] == q_dim + k_dim + v_dim:
+                        w_q = w[:q_dim, :]
+                        w_k = w[q_dim : q_dim + k_dim, :]
+                        w_v = w[q_dim + k_dim :, :]
+                    else:
+                        split_size = w.shape[0] // 3
+                        w_q = w[:split_size, :]
+                        w_k = w[split_size : 2 * split_size, :]
+                        w_v = w[2 * split_size :, :]
                     b = getattr(base_c, "bias", getattr(mod_c, "bias", None))
                     if b is not None:
                         b_data = b.data.clone()
-                        b_q = b_data[:split_size]
-                        b_k = b_data[split_size : 2 * split_size]
-                        b_v = b_data[2 * split_size :]
+                        if b_data.shape[0] == q_dim + k_dim + v_dim:
+                            b_q = b_data[:q_dim]
+                            b_k = b_data[q_dim : q_dim + k_dim]
+                            b_v = b_data[q_dim + k_dim :]
+                        else:
+                            b_q = b_data[:split_size]
+                            b_k = b_data[split_size : 2 * split_size]
+                            b_v = b_data[2 * split_size :]
 
                 if hasattr(src, "c_proj") and src.c_proj is not None:
                     mod_o = src.c_proj
@@ -637,7 +657,7 @@ class FusedSVDKernelAttention(BaseAttention):
                         base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
                         if "Conv1D" in cls_o or "Conv1D" in base_cls_o or hasattr(mod_o, "nf") or hasattr(base_o, "nf"):
                             out_w = out_w.t()
-                        elif out_w.ndim == 2 and out_w.shape[0] == self.hidden_size and out_w.shape[1] == self.hidden_size and "Linear" not in cls_o:
+                        elif out_w.ndim == 2 and out_w.shape[0] < out_w.shape[1]:
                             out_w = out_w.t()
                         w_o = out_w
                         out_b = getattr(base_o, "bias", getattr(mod_o, "bias", None))
@@ -655,17 +675,55 @@ class FusedSVDKernelAttention(BaseAttention):
                     w_o = src.out_lin.weight.data.clone()
                     b_o = src.out_lin.bias.data.clone() if getattr(src.out_lin, "bias", None) is not None else None
 
-            # 3. Flat projection splitting (single in_proj_weight or qkv_proj)
-            elif hasattr(src, "in_proj_weight") and getattr(src, "in_proj_weight", None) is not None:
-                in_w = src.in_proj_weight.data.clone()
-                split_sz = in_w.shape[0] // 3
-                w_q, w_k, w_v = in_w[:split_sz, :], in_w[split_sz:2*split_sz, :], in_w[2*split_sz:, :]
-                if hasattr(src, "in_proj_bias") and getattr(src, "in_proj_bias", None) is not None:
-                    in_b = src.in_proj_bias.data.clone()
-                    b_q, b_k, b_v = in_b[:split_sz], in_b[split_sz:2*split_sz], in_b[2*split_sz:]
-                if hasattr(src, "out_proj") and getattr(src, "out_proj", None) is not None and hasattr(src.out_proj, "weight"):
-                    w_o = src.out_proj.weight.data.clone()
-                    b_o = src.out_proj.bias.data.clone() if getattr(src.out_proj, "bias", None) is not None else None
+            # 3. Flat projection splitting (single in_proj_weight or qkv_proj / Wqkv / qkv)
+            elif (
+                (hasattr(src, "in_proj_weight") and getattr(src, "in_proj_weight", None) is not None)
+                or (hasattr(src, "qkv_proj") and getattr(src, "qkv_proj", None) is not None and hasattr(getattr(src, "qkv_proj"), "weight"))
+                or (hasattr(src, "qkv") and getattr(src, "qkv", None) is not None and hasattr(getattr(src, "qkv"), "weight"))
+                or (hasattr(src, "Wqkv") and getattr(src, "Wqkv", None) is not None and hasattr(getattr(src, "Wqkv"), "weight"))
+            ):
+                qkv_mod = getattr(src, "qkv_proj", getattr(src, "qkv", getattr(src, "Wqkv", None)))
+                if qkv_mod is not None:
+                    in_w = qkv_mod.weight.data.clone()
+                    in_b = qkv_mod.bias.data.clone() if getattr(qkv_mod, "bias", None) is not None else None
+                else:
+                    in_w = src.in_proj_weight.data.clone()
+                    in_b = getattr(src, "in_proj_bias", None)
+                    in_b = in_b.data.clone() if in_b is not None else None
+
+                if in_w.ndim == 2 and in_w.shape[0] < in_w.shape[1]:
+                    in_w = in_w.t()
+
+                q_dim = self.q_head_size
+                k_dim = self.kv_head_size
+                v_dim = self.kv_head_size
+                if in_w.shape[0] == q_dim + k_dim + v_dim:
+                    w_q = in_w[:q_dim, :]
+                    w_k = in_w[q_dim : q_dim + k_dim, :]
+                    w_v = in_w[q_dim + k_dim :, :]
+                else:
+                    split_sz = in_w.shape[0] // 3
+                    w_q = in_w[:split_sz, :]
+                    w_k = in_w[split_sz : 2 * split_sz, :]
+                    w_v = in_w[2 * split_sz :, :]
+
+                if in_b is not None:
+                    if in_b.shape[0] == q_dim + k_dim + v_dim:
+                        b_q = in_b[:q_dim]
+                        b_k = in_b[q_dim : q_dim + k_dim]
+                        b_v = in_b[q_dim + k_dim :]
+                    else:
+                        split_sz = in_b.shape[0] // 3
+                        b_q = in_b[:split_sz]
+                        b_k = in_b[split_sz : 2 * split_sz]
+                        b_v = in_b[2 * split_sz :]
+
+                for out_name in ("out_proj", "o_proj", "dense", "out_lin"):
+                    if hasattr(src, out_name) and getattr(src, out_name, None) is not None and hasattr(getattr(src, out_name), "weight"):
+                        m_out = getattr(src, out_name)
+                        w_o = m_out.weight.data.clone()
+                        b_o = m_out.bias.data.clone() if getattr(m_out, "bias", None) is not None else None
+                        break
 
             # 4. RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
@@ -743,7 +801,7 @@ class FusedSVDKernelAttention(BaseAttention):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         encoder_hidden_states: Optional[torch.Tensor] = None,
@@ -757,7 +815,12 @@ class FusedSVDKernelAttention(BaseAttention):
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross-attention is not supported in FusedSVDKernelAttention")
 
-        x = hidden_states
+        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x", None))
+        if x is None and len(args) > 0:
+            x = args[0]
+        if attention_mask is None:
+            attention_mask = kwargs.get("mask", kwargs.get("attn_mask", None))
+
         B, L, _ = x.shape
 
         q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
@@ -813,21 +876,118 @@ def fused_svd_kernel_factory(config: Any = None, **kwargs: Any) -> nn.Module:
 @ATTENTION_REGISTRY.register("inject_fused_svd_kernel")
 def inject_fused_svd_kernel(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[FusedSVDKernelAttention]:
+) -> Optional[Any]:
     """Safe injection hook for fused SVD kernel attention."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config or getattr(target, "config", None)
+
+    # 1. Whole model traversal support
+    if (
+        old_attn is None
+        and target is not None
+        and (
+            hasattr(target, "transformer")
+            or hasattr(target, "distilbert")
+            or hasattr(target, "roberta")
+            or hasattr(target, "bert")
+            or (hasattr(target, "model") and hasattr(target.model, "layers"))
+            or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
+        )
+        and not (
+            hasattr(target, "q_lin")
+            or hasattr(target, "q_proj")
+            or hasattr(target, "c_attn")
+            or hasattr(target, "query")
+        )
+    ):
+        try:
+            layer_list = None
+            if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+                layer_list = target.distilbert.transformer.layer
+            elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+                layer_list = target.roberta.encoder.layer
+            elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+                layer_list = target.bert.encoder.layer
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+                layer_list = target.transformer.h
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "layer"):
+                layer_list = target.transformer.layer
+            elif hasattr(target, "model") and hasattr(target.model, "layers"):
+                layer_list = target.model.layers
+            elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+                layer_list = target.encoder.layer
+
+            if layer_list is not None:
+                tot = len(layer_list)
+                for idx, lyr in enumerate(layer_list):
+                    inject_fused_svd_kernel(
+                        layer=lyr,
+                        model_config=cfg,
+                        comp_config=comp_config,
+                        layer_idx=idx,
+                        total_layers=tot,
+                        **kwargs,
+                    )
+                return target
+        except Exception as e:
+            logger.error("inject_fused_svd_kernel whole-model traversal failed: %s", e)
+            return None
+
+    # 2. Named modules whole-model fallback
+    if (
+        old_attn is None
+        and target is not None
+        and hasattr(target, "named_modules")
+        and not (
+            hasattr(target, "attention")
+            or hasattr(target, "self")
+            or hasattr(target, "attn")
+            or hasattr(target, "q_proj")
+            or hasattr(target, "q_lin")
+            or hasattr(target, "query")
+            or hasattr(target, "c_attn")
+        )
+    ):
+        try:
+            replaced = 0
+            for name, module in list(target.named_modules()):
+                if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
+                    parent_name = name.rsplit(".", 1)[0] if "." in name else ""
+                    child_name = name.rsplit(".", 1)[-1] if "." in name else name
+                    parent = target.get_submodule(parent_name) if parent_name else target
+                    new_attn = inject_fused_svd_kernel(
+                        layer=None,
+                        model_config=cfg,
+                        comp_config=comp_config,
+                        old_attn=module,
+                        **kwargs,
+                    )
+                    if new_attn is not None:
+                        setattr(parent, child_name, new_attn)
+                        replaced += 1
+            if replaced > 0:
+                return target
+        except Exception as e:
+            logger.error("inject_fused_svd_kernel named_modules replacement failed: %s", e)
+            return None
+
     try:
         src_attn = old_attn if old_attn is not None else (
             getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
             if layer is not None else None
         )
         new_attn = FusedSVDKernelAttention(
-            config=model_config,
+            config=cfg,
             old_attn=src_attn,
             **kwargs,
         )
@@ -837,10 +997,12 @@ def inject_fused_svd_kernel(
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
             elif hasattr(layer, "self"):
                 layer.self = new_attn
+                new_attn.is_nested_encoder = True
             elif hasattr(layer, "attn"):
                 layer.attn = new_attn
         return new_attn

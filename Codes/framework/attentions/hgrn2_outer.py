@@ -228,7 +228,8 @@ class HGRN2OuterBlock(BaseAttention):
             freeze_base=True,
         )
 
-        nn.init.constant_(self.W_f.bias, 0.0)
+        nn.init.normal_(self.W_f.weight, mean=0.0, std=0.01)
+        nn.init.constant_(self.W_f.bias, -2.5)
 
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
@@ -264,7 +265,8 @@ class HGRN2OuterBlock(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim:
+                cls_c = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
+                if hasattr(src.c_attn, "nf") or "Conv1D" in cls_c or (c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim):
                     c_attn_w = c_attn_w.t()
 
                 q_dim = self.q_head_size
@@ -275,11 +277,14 @@ class HGRN2OuterBlock(BaseAttention):
                 w_k = c_attn_w[q_dim : q_dim + k_dim, :]
                 w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
 
+                if c_attn_b is not None:
+                    b_q = c_attn_b[:q_dim]
+                    b_k = c_attn_b[q_dim : q_dim + k_dim]
+                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+
                 out_w = src.c_proj.weight.detach()
                 cls_p = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
-                if "Conv1D" in cls_p or (out_w.ndim == 2 and out_w.shape[0] != self.dim):
-                    out_w = out_w.t()
-                elif "Conv1D" in cls_name or "Conv1D" in getattr(src, "__class__", type(src)).__name__:
+                if hasattr(src.c_proj, "nf") or "Conv1D" in cls_p or (out_w.ndim == 2 and out_w.shape[0] != self.dim):
                     out_w = out_w.t()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
@@ -358,7 +363,11 @@ class HGRN2OuterBlock(BaseAttention):
                 )
                 return
 
-            for target_mod, w_src in [(self.q_proj, w_q), (self.k_proj, w_k), (self.v_proj, w_v)]:
+            for target_mod, w_src, b_src in [
+                (self.q_proj, w_q, b_q),
+                (self.k_proj, w_k, b_k),
+                (self.v_proj, w_v, b_v),
+            ]:
                 tw = target_mod.weight
                 w_cast = w_src.to(tw.dtype)
                 if w_cast.shape == tw.shape:
@@ -367,6 +376,12 @@ class HGRN2OuterBlock(BaseAttention):
                     min_r = min(tw.shape[0], w_cast.shape[0])
                     min_c = min(tw.shape[1], w_cast.shape[1])
                     tw.data[:min_r, :min_c].copy_(w_cast[:min_r, :min_c])
+
+                if b_src is not None and getattr(target_mod, "bias", None) is not None:
+                    tb = target_mod.bias
+                    b_cast = b_src.to(tb.dtype)
+                    min_b = min(tb.numel(), b_cast.numel())
+                    tb.data[:min_b].copy_(b_cast[:min_b])
 
             f_norm_q = float(torch.linalg.norm(self.q_proj.weight.float()))
             if f_norm_q < 1e-4:
@@ -399,45 +414,78 @@ class HGRN2OuterBlock(BaseAttention):
         f: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Parallel outer-product attention scan (zero Python loops)."""
+        """Outer-product associative matrix recurrence with running states in FP32."""
         B, H, L, d = q.shape
 
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
-        f_f = f.float()
+        f_f = f.float()  # [B, H, L]
 
-        log_f = torch.log(f_f.clamp(min=1e-4, max=1.0 - 1e-4))  # [B, H, L]
-        C = torch.cumsum(log_f, dim=-1)                         # [B, H, L]
-        C_diff = C.unsqueeze(-1) - C.unsqueeze(-2)              # [B, H, L, L]
-
-        tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
-        D_causal = torch.exp(C_diff.clamp(min=-30.0, max=0.0)) * tril_mask.float()  # [B, H, L, L]
-
-        attn_scores = q_f @ k_f.transpose(-1, -2)   # [B, H, L, L]
-        weight_in = (1.0 - f_f).unsqueeze(-1)        # [B, H, L, 1]
-        v_scaled = v_f * weight_in                   # [B, H, L, d]
-
+        mask_float = None
         if mask is not None:
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
-            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
-            D_causal = D_causal * mask_2d
 
-        num_fwd = (attn_scores * D_causal) @ v_scaled
-        denom_fwd = (attn_scores * D_causal) @ weight_in
-        y_fwd = (num_fwd / denom_fwd.clamp(min=1.0)).to(q.dtype)
+        # Sequential running-state recurrence avoiding O(L^2) memory explosions
+        S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
+        z = torch.zeros(B, H, d, device=q.device, dtype=torch.float32)
+        y_fwd_list = []
 
-        if not self.is_decoder:
-            triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
-            D_anti = torch.exp((-C_diff).clamp(min=-30.0, max=0.0)) * triu_mask.float()
-            if mask is not None:
-                D_anti = D_anti * mask_2d
-            num_bwd = (attn_scores * D_anti) @ v_scaled
-            denom_bwd = (attn_scores * D_anti) @ weight_in
-            y_bwd = (num_bwd / denom_bwd.clamp(min=1.0)).to(q.dtype)
-        else:
-            y_bwd = None
+        for t in range(L):
+            ft = f_f[:, :, t, None, None]  # [B, H, 1, 1]
+            ft_z = f_f[:, :, t, None]       # [B, H, 1]
+            kt = k_f[:, :, t, :]            # [B, H, d]
+            vt = v_f[:, :, t, :]            # [B, H, d]
+            qt = q_f[:, :, t, :]            # [B, H, d]
 
+            if mask_float is not None:
+                m_t = mask_float[:, None, t, None]  # [B, 1, 1]
+                kt = kt * m_t
+                vt = vt * m_t
+
+            # Outer-product update: S_t = f_t * S_{t-1} + (1 - f_t) * (k_t \otimes v_t)
+            kv = kt.unsqueeze(-1) @ vt.unsqueeze(-2)  # [B, H, d, d]
+            S = ft * S + (1.0 - ft) * kv
+            # Denominator running state: z_t = f_t * z_{t-1} + (1 - f_t) * k_t
+            z = ft_z * z + (1.0 - ft_z) * kt
+
+            num = (qt.unsqueeze(-2) @ S).squeeze(-2)                              # [B, H, d]
+            denom = (qt * z).sum(dim=-1, keepdim=True).clamp(min=1.0)             # [B, H, 1]
+            y_t = num / denom
+            y_fwd_list.append(y_t)
+
+        y_fwd = torch.stack(y_fwd_list, dim=2).to(q.dtype)  # [B, H, L, d]
+
+        if self.is_decoder:
+            return y_fwd, None
+
+        # Anticausal backward outer-product recurrence for bidirectional encoders
+        S_bwd = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
+        z_bwd = torch.zeros(B, H, d, device=q.device, dtype=torch.float32)
+        y_bwd_list = []
+
+        for t in reversed(range(L)):
+            ft = f_f[:, :, t, None, None]
+            ft_z = f_f[:, :, t, None]
+            kt = k_f[:, :, t, :]
+            vt = v_f[:, :, t, :]
+            qt = q_f[:, :, t, :]
+
+            if mask_float is not None:
+                m_t = mask_float[:, None, t, None]
+                kt = kt * m_t
+                vt = vt * m_t
+
+            kv = kt.unsqueeze(-1) @ vt.unsqueeze(-2)
+            S_bwd = ft * S_bwd + (1.0 - ft) * kv
+            z_bwd = ft_z * z_bwd + (1.0 - ft_z) * kt
+
+            num_b = (qt.unsqueeze(-2) @ S_bwd).squeeze(-2)
+            denom_b = (qt * z_bwd).sum(dim=-1, keepdim=True).clamp(min=1.0)
+            y_t_b = num_b / denom_b
+            y_bwd_list.append(y_t_b)
+
+        y_bwd = torch.stack(list(reversed(y_bwd_list)), dim=2).to(q.dtype)  # [B, H, L, d]
         return y_fwd, y_bwd
 
     @property
@@ -496,7 +544,7 @@ class HGRN2OuterBlock(BaseAttention):
         k = (F.elu(k) + 1.0) / math.sqrt(d)
 
         # Bounded forget gating to prevent saturation
-        f = torch.exp((-F.softplus(self.W_f(hidden_states))).clamp(min=-5.0, max=-0.01)).transpose(1, 2)  # [B, H, L]
+        f = torch.exp((-F.softplus(self.W_f(hidden_states))).clamp(min=-3.0, max=-1e-4)).transpose(1, 2)  # [B, H, L]
 
         mask_bool = None
         if attention_mask is not None:
@@ -549,11 +597,20 @@ def inject_hgrn2_outer(
     r"""Safe injection hook for HGRN2OuterBlock."""
     try:
         src = old_attn
-        if src is None:
-            for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(layer, attr):
-                    src = getattr(layer, attr)
-                    break
+        is_nested_target = False
+        if src is None and layer is not None:
+            if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+                src = layer.attention.self
+                is_nested_target = True
+            elif hasattr(layer, "attention"):
+                src = layer.attention
+            elif hasattr(layer, "self"):
+                src = layer.self
+                is_nested_target = True
+            elif hasattr(layer, "attn"):
+                src = layer.attn
+            elif hasattr(layer, "self_attn"):
+                src = layer.self_attn
 
         if src is None:
             return None
@@ -568,12 +625,25 @@ def inject_hgrn2_outer(
             num_heads = getattr(layer.config, "num_attention_heads", 12)
 
         new_block = HGRN2OuterBlock(dim=dim, num_heads=num_heads, config=model_config, **kwargs)
+        if is_nested_target:
+            new_block.is_nested_encoder = True
         new_block.copy_weights(src)
 
-        for attr in ("attention", "self_attn", "attn", "self"):
-            if hasattr(layer, attr):
-                setattr(layer, attr, new_block)
-                return new_block
+        if is_nested_target and hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+            layer.attention.self = new_block
+            return new_block
+        elif hasattr(layer, "attention"):
+            layer.attention = new_block
+            return new_block
+        elif hasattr(layer, "self"):
+            layer.self = new_block
+            return new_block
+        elif hasattr(layer, "attn"):
+            layer.attn = new_block
+            return new_block
+        elif hasattr(layer, "self_attn"):
+            layer.self_attn = new_block
+            return new_block
 
         return new_block
     except Exception as e:
