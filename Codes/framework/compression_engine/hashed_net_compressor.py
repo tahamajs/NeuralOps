@@ -209,7 +209,18 @@ class HashedNetCompressor(BaseCompressor):
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
             raw_w = target_mod.weight.data
 
-            if is_conv1d:
+            if hasattr(target_mod, "nx") and hasattr(target_mod, "nf"):
+                in_f = int(target_mod.nx)
+                out_f = int(target_mod.nf)
+                W_target = raw_w.t().float()
+            elif hasattr(target_mod, "in_features") and hasattr(target_mod, "out_features"):
+                in_f = int(target_mod.in_features)
+                out_f = int(target_mod.out_features)
+                if raw_w.shape == (in_f, out_f):
+                    W_target = raw_w.t().float()
+                else:
+                    W_target = raw_w.view(out_f, in_f).float()
+            elif is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
                 W_target = raw_w.t().float()
             else:
@@ -296,7 +307,26 @@ class HashedNetCompressor(BaseCompressor):
             if self.freeze_hash_table and layer_compressed is not None:
                 layer_compressed.weight_table.requires_grad = False
 
-            replace_module(self.model, name, layer_compressed)
+            try:
+                if hasattr(module, "base_layer"):
+                    module.base_layer = layer_compressed
+                    if hasattr(module, "lora_A") and module.lora_A is not None:
+                        for p in (module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]):
+                            p.requires_grad = True
+                    if hasattr(module, "lora_B") and module.lora_B is not None:
+                        for p in (module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]):
+                            p.requires_grad = True
+                else:
+                    replace_module(self.model, name, layer_compressed)
+            except Exception as e:
+                logger.warning("Module replacement failed for %s: %s", name, e)
+                if self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    total_comp_params += orig_layer_params
+                    continue
+
             self.compressed_layers.append(name)
             comp_layer_params = layer_compressed.n_buckets
             if layer_compressed.lora_rank > 0:
