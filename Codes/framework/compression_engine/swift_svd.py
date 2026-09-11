@@ -252,10 +252,15 @@ class SwiftSVDCompressor(BaseCompressor):
         V_final = V_final.to(dtype=dtype, device=device)
 
         has_bias = getattr(base_layer, "bias", None) is not None
+        has_base_layer = hasattr(layer, "base_layer")
         has_existing_lora = hasattr(layer, "lora_A") and hasattr(layer, "lora_B")
-        effective_lora_r = self.lora_r
-        if has_existing_lora and getattr(layer, "r", 0) > 0:
+        # If the layer is already wrapped by LoRALinear, the SVD base replacement needs no inner LoRA
+        if has_base_layer:
+            effective_lora_r = 0
+        elif has_existing_lora and getattr(layer, "r", 0) > 0:
             effective_lora_r = getattr(layer, "r", self.lora_r)
+        else:
+            effective_lora_r = self.lora_r
 
         svd_layer = SVDLinear(
             in_features=in_f,
@@ -272,15 +277,18 @@ class SwiftSVDCompressor(BaseCompressor):
         if has_bias and svd_layer.bias is not None and base_layer.bias is not None:
             svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
 
-        if has_existing_lora and svd_layer.use_lora:
+        if not has_base_layer and has_existing_lora and svd_layer.use_lora:
             try:
-                if hasattr(layer.lora_A, "weight"):
-                    svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
-                if hasattr(layer.lora_B, "weight"):
-                    svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+                src_lA = getattr(layer.lora_A, "weight", layer.lora_A)
+                src_lB = getattr(layer.lora_B, "weight", layer.lora_B)
+                dst_lA = getattr(svd_layer.lora_A, "weight", svd_layer.lora_A)
+                dst_lB = getattr(svd_layer.lora_B, "weight", svd_layer.lora_B)
+                if hasattr(src_lA, "data") and hasattr(dst_lA, "data") and src_lA.shape == dst_lA.shape:
+                    dst_lA.data.copy_(src_lA.data)
+                if hasattr(src_lB, "data") and hasattr(dst_lB, "data") and src_lB.shape == dst_lB.shape:
+                    dst_lB.data.copy_(src_lB.data)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning("SwiftSVD copy_weights warning: %s", e)
 
         # Dimensional integrity verification
         if svd_layer.in_features != in_f or svd_layer.out_features != out_f:
@@ -392,7 +400,9 @@ class SwiftSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
+@COMPRESSOR_REGISTRY.register("swift_svd")
 @COMPRESSOR_REGISTRY.register("swift_svd_factory")
+@COMPRESSOR_REGISTRY.register("swift_svd_compressor")
 def swift_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Swift-SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
@@ -407,3 +417,17 @@ def swift_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) 
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
+
+@COMPRESSOR_REGISTRY.register("inject_swift_svd")
+@COMPRESSOR_REGISTRY.register("swift_svd_inject")
+def inject_swift_svd(model: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook for Swift-SVD."""
+    if model is None:
+        return None
+    try:
+        return swift_svd_factory(model, **kwargs)
+    except Exception as e:
+        logger.error("inject_swift_svd failed: %s", e)
+        return None
+

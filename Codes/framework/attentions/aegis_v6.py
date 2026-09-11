@@ -7,6 +7,7 @@ and context fusion initialized to prioritize high-fidelity local attention.
 Hardened for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
 
+import logging
 import math
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
@@ -17,6 +18,8 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.attention_utils import repeat_kv
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -505,28 +508,38 @@ class AegisAttentionV3(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(old_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = old_attn.c_attn.weight.data
-            bias = getattr(old_attn.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+            c_attn_mod = old_attn.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                is_conv1d = (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf")
+                if is_conv1d or (weight.dim() == 2 and weight.shape[0] < weight.shape[1]) or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
+                    weight = weight.t().contiguous()
+                bias = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                bias_data = bias.data if bias is not None else None
+                split_size = weight.shape[0] // 3
+                q_w = weight[:split_size, :]
+                k_w = weight[split_size : 2 * split_size, :]
+                v_w = weight[2 * split_size :, :]
+                q_b = bias_data[:split_size] if bias_data is not None else None
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+                v_b = bias_data[2 * split_size :] if bias_data is not None else None
+                extracted["q"] = (q_w, q_b)
+                extracted["k"] = (k_w, k_b)
+                extracted["v"] = (v_w, v_b)
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
-            w_o = old_attn.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(old_attn.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            c_proj_mod = old_attn.c_proj
+            base_p = getattr(c_proj_mod, "base_layer", c_proj_mod)
+            w_o = getattr(base_p, "weight", getattr(c_proj_mod, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                is_conv1d = (c_proj_mod.__class__.__name__ == "Conv1D") or (base_p.__class__.__name__ == "Conv1D") or hasattr(c_proj_mod, "nf") or hasattr(base_p, "nf")
+                if is_conv1d or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]) or (w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size):
+                    w_o = w_o.t().contiguous()
+                b_o = getattr(base_p, "bias", getattr(c_proj_mod, "bias", None))
+                extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(old_attn, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -568,9 +581,13 @@ class AegisAttentionV3(BaseAttention):
         ):
             self.is_nested_encoder = True
         elif (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention")
+            or "RobertaSelfAttention" in str(type(old_attn))
+            or "BertSelfAttention" in str(type(old_attn))
+            or "roberta" in str(type(old_attn)).lower()
+            or ("bert" in str(type(old_attn)).lower() and "self" in str(type(old_attn)).lower())
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj:
+        ):
             self.is_nested_encoder = True
         else:
             self.is_nested_encoder = False
@@ -611,6 +628,8 @@ class AegisAttentionV3(BaseAttention):
 
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
+        elif hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
+            self.is_decoder = True
 
     def _reshape(self, x: torch.Tensor, num_heads: int) -> torch.Tensor:
         B, N, _ = x.shape
