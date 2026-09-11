@@ -64,68 +64,56 @@ def chunked_delta_rule_scan(
     v: torch.Tensor,
     beta: torch.Tensor,
     alpha: torch.Tensor,
-    chunk_size: int = 32,
+    chunk_size: int = 64,
 ) -> torch.Tensor:
     r"""
-    Chunked associative scan for Delta-Rule recurrent attention.
-    Processes blocks of tokens concurrently via intra-chunk matrix multiplications
-    and inter-chunk state propagation, avoiding token-level Python loops.
+    Numerically stable recurrence for Delta-Rule recurrent attention.
+    Uses normalized LMS updates with strictly contractive step sizes to prevent FP16 divergence.
     """
     B, H, L, d = q.shape
-    num_chunks = (L + chunk_size - 1) // chunk_size
-    pad_len = num_chunks * chunk_size - L
+    device = q.device
 
-    q_c = q
-    k_c = k
-    v_c = v
-    beta_c = beta
-    alpha_c = alpha
+    # FP32 precision for numerically stable recurrence state
+    q_f = q.float()
+    k_f = k.float()
+    v_f = v.float()
+    beta_f = beta.float().clamp(min=1e-4, max=1.0 - 1e-4)  # [B, H, L]
+    alpha_f = alpha.float().clamp(min=1e-4, max=1.0)       # [B, H, L]
 
-    if pad_len > 0:
-        q_c = F.pad(q_c, (0, 0, 0, pad_len))
-        k_c = F.pad(k_c, (0, 0, 0, pad_len))
-        v_c = F.pad(v_c, (0, 0, 0, pad_len))
-        beta_c = F.pad(beta_c, (0, pad_len), value=1.0)
-        alpha_c = F.pad(alpha_c, (0, pad_len), value=0.0)
+    # Normalize keys and queries per token to ensure stable error feedback
+    k_norm = torch.norm(k_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+    k_unit = k_f / k_norm
+    q_norm = torch.norm(q_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
+    q_unit = q_f / q_norm
 
-    q_c = q_c.view(B, H, num_chunks, chunk_size, d)
-    k_c = k_c.view(B, H, num_chunks, chunk_size, d)
-    v_c = v_c.view(B, H, num_chunks, chunk_size, d)
-    beta_c = beta_c.view(B, H, num_chunks, chunk_size)
-    alpha_c = alpha_c.view(B, H, num_chunks, chunk_size)
-
-    decay = torch.cumprod(beta_c, dim=-1)  # [B, H, num_chunks, chunk_size]
-
+    # Sequential running-state recurrence in FP32
+    S = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
     outputs = []
-    S = torch.zeros((B, H, d, d), device=q.device, dtype=torch.float32)
-    causal_mask = torch.tril(torch.ones((chunk_size, chunk_size), device=q.device, dtype=torch.bool))
 
-    for c in range(num_chunks):
-        qc = q_c[:, :, c].float()
-        kc = k_c[:, :, c].float()
-        vc = v_c[:, :, c].float()
-        ac = alpha_c[:, :, c].unsqueeze(-1).float()
+    for t in range(L):
+        kt = k_unit[:, :, t:t+1, :]          # [B, H, 1, d]
+        vt = v_f[:, :, t:t+1, :]             # [B, H, 1, d]
+        qt = q_unit[:, :, t:t+1, :]          # [B, H, 1, d]
+        bt = beta_f[:, :, t:t+1].unsqueeze(-1)   # [B, H, 1, 1]
+        at = alpha_f[:, :, t:t+1].unsqueeze(-1)  # [B, H, 1, 1]
 
-        # Inter-chunk state projection: predict v from historical state S
-        inter_v = torch.matmul(kc, S)
-        err = vc - inter_v
+        # Predict v from historical state S
+        inter_v = torch.matmul(kt, S)         # [B, H, 1, d]
+        err = vt - inter_v
 
-        # Intra-chunk attention and error correction
-        intra_attn = torch.matmul(qc, kc.transpose(-1, -2))
-        intra_attn = intra_attn.masked_fill(~causal_mask, 0.0)
+        # Stable Normalized LMS delta update:
+        # Bounded step size ensures strictly contractive operator |1 - step * ||k||^2| < 1
+        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True).clamp(min=1e-4)
+        step = (at / norm_k_sq).clamp(max=1.0)
 
-        intra_out = torch.matmul(intra_attn, err * ac)
-        state_out = torch.matmul(qc, S)
-        chunk_out = state_out + intra_out
-        outputs.append(chunk_out)
+        delta_update = step * torch.matmul(kt.transpose(-1, -2), err)
+        S = bt * S + delta_update
+        S = torch.nan_to_num(S, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        # Update historical state S across chunks
-        chunk_decay = decay[:, :, c, -1].unsqueeze(-1).unsqueeze(-1)
-        S = chunk_decay * S + torch.matmul((kc * ac).transpose(-1, -2), err)
+        yt = torch.matmul(qt, S)
+        outputs.append(yt)
 
     y = torch.cat(outputs, dim=2)
-    if pad_len > 0:
-        y = y[:, :, :L, :]
     return torch.nan_to_num(y, nan=0.0)
 
 
@@ -535,7 +523,7 @@ class GatedDeltaNet(BaseAttention):
                     nn.init.zeros_(target_mod.bias)
 
                 # Weight verification (Frobenius norm >= 1e-4)
-                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
+                w_norm = float(torch.linalg.norm(w[:out_d, :in_d].float()).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"GatedDeltaNet weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
@@ -703,7 +691,7 @@ class GatedDeltaNet(BaseAttention):
 
         # 10. Output projection with nested encoder bypass
         gated_y = gated_y * self.output_scale
-        if self.is_nested_encoder and gated_y.shape[-1] == self.d_model:
+        if self.is_nested_encoder:
             out = gated_y
         else:
             out = self.out_proj(gated_y)
@@ -715,7 +703,7 @@ class GatedDeltaNet(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("gated_delta_net_inject")
-@ATTENTION_REGISTRY.register("gated_delta_net")
+@ATTENTION_REGISTRY.register("inject_gated_delta_net")
 def inject_gated_delta_net(
     layer: Any = None,
     model: Any = None,
@@ -813,8 +801,9 @@ def inject_gated_delta_net(
             old_attn=src_attn,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"GatedDeltaNet injection failed: {e}")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):

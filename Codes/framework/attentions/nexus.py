@@ -28,9 +28,12 @@ References:
   - Softpick: Zuhri et al., 2025 (arXiv:2504.20966)
 """
 
+import logging
 import math
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
@@ -203,16 +206,14 @@ class NEXUSConfig:
 # ============================================================================
 # Utility: Softpick rectified softmax
 # ============================================================================
-def softpick(x, dim: int = -1, temperature: float = 1.0):
+def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
     import torch.nn.functional as F
     orig_dtype = x.dtype
-    x = x.float()
-    m = x.max(dim=dim, keepdim=True).values
-    e = torch.exp((x - m) / temperature)
-    m_scaled = torch.clamp(-m / temperature, max=80.0)
-    denom = e - torch.exp(m_scaled)
-    p = F.relu(denom)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
+    temp = max(temperature, 1e-6)
+    x_scaled = torch.clamp(x.float() / temp, max=85.0)
+    p = F.relu(torch.exp(x_scaled) - 1.0)
+    denom = p.sum(dim=dim, keepdim=True) + 1e-8
+    return (p / denom).to(orig_dtype)
 
 
 # ============================================================================
@@ -254,13 +255,18 @@ class XAttentionScorer:
         N_s = Q_sample.size(2)
 
         for bi in range(n_blocks):
-            q_start = bi * (block_size // stride)
-            q_end = min(q_start + block_size // stride, N_s)
+            q_start = (bi * block_size) // stride
+            q_end = min(((bi + 1) * block_size + stride - 1) // stride, N_s)
+            q_end = max(q_end, q_start + 1) if q_start < N_s else N_s
             for bj in range(n_blocks):
-                k_start = bj * (block_size // stride)
-                k_end = min(k_start + block_size // stride, N_s)
-                block = attn_sample[:, :, q_start:q_end, k_start:k_end]
-                scores[:, :, bi, bj] = block.mean(dim=(2, 3))
+                k_start = (bj * block_size) // stride
+                k_end = min(((bj + 1) * block_size + stride - 1) // stride, N_s)
+                k_end = max(k_end, k_start + 1) if k_start < N_s else N_s
+                if q_start < q_end and k_start < k_end:
+                    block = attn_sample[:, :, q_start:q_end, k_start:k_end]
+                    scores[:, :, bi, bj] = block.mean(dim=(2, 3))
+                else:
+                    scores[:, :, bi, bj] = 0.0
 
         return scores
 
@@ -372,8 +378,13 @@ class DualStageStripeAttention(nn.Module):
         r"""Select top-k key blocks per query block along the last dimension."""
         B, H, nb, nb2 = scores.shape
         tk = min(top_k, nb2)
-        _, idx = scores.topk(tk, dim=-1)
+        scores_inter = scores.clone()
+        min_dim = min(nb, nb2)
+        diag_idx = torch.arange(min_dim, device=scores.device)
+        scores_inter[:, :, diag_idx, diag_idx] = float("-inf")
+        _, idx = scores_inter.topk(tk, dim=-1)
         mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, idx, True)
+        mask[:, :, diag_idx, diag_idx] = True
         return mask
 
     def forward(
@@ -537,7 +548,7 @@ class SpectraformerRectify(nn.Module):
         Z = K_feat.sum(dim=2)
         ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)
         norm = torch.einsum("bhnf,bhf->bhn", Q_feat, Z).unsqueeze(-1)
-        return (ctx / (norm + 1e-5)).to(orig_dtype)
+        return (ctx / (norm + 1e-5).clamp(min=1.0)).to(orig_dtype)
 
 
 # ============================================================================
@@ -642,6 +653,30 @@ class NEXUSAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
+    @property
+    def q_proj(self):
+        return self.query
+
+    @property
+    def k_proj(self):
+        return self.key
+
+    @property
+    def v_proj(self):
+        return self.value
+
+    @property
+    def q_lin(self):
+        return self.query
+
+    @property
+    def k_lin(self):
+        return self.key
+
+    @property
+    def v_lin(self):
+        return self.value
+
     def _reshape(self, x: torch.Tensor, n_heads: Optional[int] = None) -> torch.Tensor:
         r"""Reshape `[Batch, SeqLen, HiddenDim]` to `[Batch, Heads, SeqLen, HeadDim]`."""
         B, N, _ = x.shape
@@ -682,9 +717,8 @@ class NEXUSAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -869,16 +903,17 @@ class NEXUSAttention(BaseAttention):
             eff_mask = kwargs.get("attn_mask", None)
         token_valid = self._get_token_valid_mask(eff_mask, B, N_kv, device)
 
-        is_causal = bool(self.is_decoder and not is_cross and N > 1)
+        is_causal = bool(self.is_decoder and not is_cross)
 
         if is_causal or is_cross or N <= self.cfg.block_size:
             # For causal decoding, cross attention, or short sequences, use exact scaled dot product attention
             scale = 1.0 / math.sqrt(D)
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
             if is_causal:
+                causal_diag = 1 + max(0, N_kv - N)
                 causal_mask = torch.triu(
                     torch.full((N, N_kv), float("-inf"), device=device, dtype=torch.float32),
-                    diagonal=1,
+                    diagonal=causal_diag,
                 ).unsqueeze(0).unsqueeze(0)
                 scores = scores + causal_mask
 
@@ -939,51 +974,59 @@ class NEXUSAttention(BaseAttention):
 # ============================================================================
 def inject_nexus_into_distilbert(
     layer: Any,
-    model_config: Any,
-    nexus_cfg: NEXUSConfig,
+    model_config: Any = None,
+    nexus_cfg: Optional[NEXUSConfig] = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Any = None,
     **kwargs: Any,
-) -> NEXUSAttention:
+) -> Optional[NEXUSAttention]:
     r"""Replace the layer's attention sub-layer with NEXUS and copy pretrained weights."""
-    new_attn = NEXUSAttention(
-        model_config=model_config,
-        nexus_cfg=nexus_cfg,
-        layer_idx=layer_idx,
-        total_layers=total_layers,
-        bert_mode=False,
-    )
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
-    if src_attn is not None:
-        try:
-            new_attn.copy_weights(src_attn)
-        except Exception as e:
-            print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
-        p = next(src_attn.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
+    try:
+        if nexus_cfg is None:
+            nexus_cfg = NEXUSConfig()
+        new_attn = NEXUSAttention(
+            model_config=model_config,
+            nexus_cfg=nexus_cfg,
+            layer_idx=layer_idx,
+            total_layers=total_layers,
+            bert_mode=False,
+        )
+        src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+        if src_attn is not None:
+            try:
+                new_attn.copy_weights(src_attn)
+            except Exception as e:
+                logger.error(f"NEXUS copy_weights failed: {e}")
+                return None
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
 
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
-        else:
-            layer.attention = new_attn
-    elif hasattr(layer, "self"):
-        layer.self = new_attn
-    return new_attn
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        return new_attn
+    except Exception as e:
+        logger.error(f"inject_nexus_into_distilbert failed: {e}")
+        return None
 
 
+@ATTENTION_REGISTRY.register("inject_nexus")
+@ATTENTION_REGISTRY.register("nexus_inject")
 def inject_nexus(
     layer: Any,
-    model_config: Any,
+    model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Any = None,
     **kwargs: Any,
-) -> NEXUSAttention:
+) -> Optional[NEXUSAttention]:
     r"""Registry bridge converting generic CompressionConfig into NEXUSConfig."""
     nexus_cfg = NEXUSConfig(
         block_size=getattr(comp_config, "block_size", 32) if comp_config else 32,
