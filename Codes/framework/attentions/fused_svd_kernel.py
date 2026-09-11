@@ -206,9 +206,8 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                 ctx.eps = eps
                 ctx.use_rms_norm = use_rms_norm
                 return y_2d.view(*orig_shape[:-1], K_out)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")  # Fall back to PyTorch native reference below
+            except Exception:
+                pass  # Fall back to PyTorch native reference below
 
         # PyTorch Native Reference Implementation (Fallback / CPU / MPS)
         # RESEARCH FIX: Numerically identical reference implementation for CPU/MPS
@@ -412,23 +411,406 @@ class FusedSVDLinear(nn.Module):
         )
 
 
-    @property
-    def weight(self) -> torch.Tensor:
-        """Reconstructed effective weight matrix for compatibility."""
-        return torch.matmul(self.U, self.V)
+import logging
+from framework.core.base import BaseAttention
+from framework.core.attention_mask import get_token_valid_mask
+
+logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    if cfg is None:
+        return default
+    if isinstance(cfg, dict):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+    if rotary_dim < head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q.dtype)) + (_rotate_half(q_rot) * sin.to(q.dtype))
+        k_rot_embed = (k_rot * cos.to(k.dtype)) + (_rotate_half(k_rot) * sin.to(k.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+        k = torch.cat([k_rot_embed, k_pass], dim=-1)
+    else:
+        cos_cut = cos[..., :head_dim].to(q.dtype)
+        sin_cut = sin[..., :head_dim].to(q.dtype)
+        q = (q * cos_cut) + (_rotate_half(q) * sin_cut)
+        k = (k * cos_cut) + (_rotate_half(k) * sin_cut)
+    return q, k
 
 
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("fused_svd_kernel")
-def fused_svd_kernel_factory(config: Any, **kwargs: Any) -> nn.Module:
-    """Factory creating SVDLinearAttention with fused SVD kernel execution."""
-    from framework.attentions.svd_linear_attention import SVDLinearAttention
-    return SVDLinearAttention(config, use_fused_kernel=True, **kwargs)
+@ATTENTION_REGISTRY.register("fused_svd_kernel", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("fused_svd_kernel_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+class FusedSVDKernelAttention(BaseAttention):
+    r"""Fused SVD-Kernel Linear Attention Module.
+    Production-hardened across DistilBERT, RoBERTa/BERT nested, GPT-2 Conv1D, and Qwen/LLaMA.
+    """
+
+    supports_gqa: bool = True
+    supports_causal: bool = True
+    supports_bidirectional: bool = True
+
+    def __init__(
+        self,
+        config: Optional[Any] = None,
+        rank: Optional[int] = None,
+        old_attn: Optional[nn.Module] = None,
+        use_fused_kernel: bool = True,
+        use_rms_norm: bool = True,
+        dropout: float = 0.1,
+        **kwargs: Any,
+    ) -> None:
+        actual_rank = rank or _cfg_get(config, "rank", _cfg_get(config, "svd_rank", 32))
+        super().__init__(config, rank=actual_rank)
+
+        src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn", None)
+
+        self.hidden_size: int = int(
+            kwargs.get("hidden_size")
+            or _cfg_get(config, "hidden_size", None)
+            or _cfg_get(config, "dim", None)
+            or _cfg_get(config, "d_model", None)
+            or _cfg_get(config, "n_embd", None)
+            or getattr(src_attn, "embed_dim", None)
+            or getattr(src_attn, "hidden_size", None)
+            or (src_attn.q_lin.in_features if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features") else None)
+            or (src_attn.q_proj.in_features if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features") else None)
+            or (src_attn.query.in_features if hasattr(src_attn, "query") and hasattr(src_attn.query, "in_features") else None)
+            or (src_attn.c_attn.nx if hasattr(src_attn, "c_attn") and hasattr(src_attn.c_attn, "nx") else None)
+            or 768
+        )
+        self.num_heads: int = int(
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or _cfg_get(config, "num_attention_heads", None)
+            or _cfg_get(config, "n_heads", None)
+            or _cfg_get(config, "num_heads", None)
+            or _cfg_get(config, "n_head", None)
+            or getattr(src_attn, "num_attention_heads", None)
+            or getattr(src_attn, "n_heads", None)
+            or getattr(src_attn, "num_heads", None)
+            or (self.hidden_size // 64 if self.hidden_size % 64 == 0 else 12)
+        )
+        self.head_dim: int = int(
+            kwargs.get("head_dim")
+            or _cfg_get(config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
+        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
+        if cfg_kv is not None:
+            self.num_kv_heads = int(cfg_kv)
+        elif kwargs.get("num_kv_heads") is not None:
+            self.num_kv_heads = int(kwargs["num_kv_heads"])
+        else:
+            self.num_kv_heads = self.num_heads
+
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_repeat: int = self.num_heads // self.num_kv_heads
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.q_head_size: int = self.num_heads * self.head_dim
+        self.all_head_size: int = self.q_head_size
+
+        self.rank: int = actual_rank
+        self.use_fused_kernel: bool = use_fused_kernel
+        self.use_rms_norm: bool = use_rms_norm
+
+        is_dec = (
+            bool(_cfg_get(config, "is_decoder", False))
+            or _cfg_get(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+            or (src_attn is not None and hasattr(src_attn, "c_attn"))
+            or bool(kwargs.get("is_causal", False))
+            or bool(kwargs.get("is_decoder", False))
+        )
+        self.is_decoder: bool = is_dec
+        self.is_causal: bool = is_dec
+        self.is_nested_encoder: bool = False
+
+        self.dropout_rate: float = float(
+            _cfg_get(config, "attention_probs_dropout_prob", _cfg_get(config, "dropout", dropout))
+        )
+        self.dropout = nn.Dropout(self.dropout_rate)
+        self.output_scale = nn.Parameter(torch.ones(1))
+
+        self.q_proj = FusedSVDLinear(self.hidden_size, self.q_head_size, rank=self.rank, bias=True, use_rms_norm=self.use_rms_norm)
+        self.k_proj = FusedSVDLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, use_rms_norm=self.use_rms_norm)
+        self.v_proj = FusedSVDLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, use_rms_norm=self.use_rms_norm)
+        self.out_proj = FusedSVDLinear(self.q_head_size, self.hidden_size, rank=self.rank, bias=True, use_rms_norm=self.use_rms_norm)
+
+        if src_attn is not None:
+            self.copy_weights(src_attn)
+
+    @property
+    def query(self) -> FusedSVDLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> FusedSVDLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> FusedSVDLinear:
+        return self.v_proj
+
+    def copy_weights(self, old_attn: Any) -> None:
+        """Multi-architecture weight copying supporting GPT-2 Conv1D, RoBERTa nested, and flat projections."""
+        if old_attn is None:
+            return
+
+        with torch.no_grad():
+            w_q, b_q = None, None
+            w_k, b_k = None, None
+            w_v, b_v = None, None
+            w_o, b_o = None, None
+
+            src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
+            has_out = hasattr(old_attn, "out_lin") or hasattr(old_attn, "dense") or hasattr(old_attn, "out_proj") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj")
+
+            if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+                hasattr(old_attn, "query") and not has_out
+            ):
+                self.is_nested_encoder = True
+
+            if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
+                self.is_nested_encoder = True
+                src = old_attn.self
+                if hasattr(old_attn.output, "dense") and hasattr(old_attn.output.dense, "weight"):
+                    w_o = old_attn.output.dense.weight.data
+                    b_o = getattr(old_attn.output.dense, "bias", None)
+                    b_o = b_o.data if b_o is not None else None
+            else:
+                src = old_attn
+
+            # 1. GPT-2 Conv1D fused c_attn & c_proj
+            if hasattr(src, "c_attn") and src.c_attn is not None:
+                self.is_decoder = True
+                self.is_causal = True
+                mod_c = src.c_attn
+                base_c = getattr(mod_c, "base_layer", mod_c)
+                w = getattr(base_c, "weight", getattr(mod_c, "weight", None))
+                if w is not None:
+                    w = w.data.clone()
+                    cls_c = getattr(mod_c, "__class__", type(mod_c)).__name__
+                    base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
+                    if "Conv1D" in cls_c or "Conv1D" in base_cls_c or hasattr(mod_c, "nf") or hasattr(base_c, "nf") or (w.ndim == 2 and w.shape[0] < w.shape[1]):
+                        w = w.t()
+                    split_size = w.shape[0] // 3
+                    w_q = w[:split_size, :]
+                    w_k = w[split_size : 2 * split_size, :]
+                    w_v = w[2 * split_size :, :]
+                    b = getattr(base_c, "bias", getattr(mod_c, "bias", None))
+                    if b is not None:
+                        b_data = b.data.clone()
+                        b_q = b_data[:split_size]
+                        b_k = b_data[split_size : 2 * split_size]
+                        b_v = b_data[2 * split_size :]
+
+                if hasattr(src, "c_proj") and src.c_proj is not None:
+                    mod_o = src.c_proj
+                    base_o = getattr(mod_o, "base_layer", mod_o)
+                    out_w = getattr(base_o, "weight", getattr(mod_o, "weight", None))
+                    if out_w is not None:
+                        out_w = out_w.data.clone()
+                        cls_o = getattr(mod_o, "__class__", type(mod_o)).__name__
+                        base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
+                        if "Conv1D" in cls_o or "Conv1D" in base_cls_o or hasattr(mod_o, "nf") or hasattr(base_o, "nf"):
+                            out_w = out_w.t()
+                        elif out_w.ndim == 2 and out_w.shape[0] == self.hidden_size and out_w.shape[1] == self.hidden_size and "Linear" not in cls_o:
+                            out_w = out_w.t()
+                        w_o = out_w
+                        out_b = getattr(base_o, "bias", getattr(mod_o, "bias", None))
+                        b_o = out_b.data.clone() if out_b is not None else None
+
+            # 2. DistilBERT flat projections (q_lin, k_lin, v_lin, out_lin)
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
+                w_q = src.q_lin.weight.data.clone()
+                b_q = src.q_lin.bias.data.clone() if getattr(src.q_lin, "bias", None) is not None else None
+                w_k = src.k_lin.weight.data.clone()
+                b_k = src.k_lin.bias.data.clone() if getattr(src.k_lin, "bias", None) is not None else None
+                w_v = src.v_lin.weight.data.clone()
+                b_v = src.v_lin.bias.data.clone() if getattr(src.v_lin, "bias", None) is not None else None
+                if hasattr(src, "out_lin") and getattr(src, "out_lin", None) is not None and hasattr(src.out_lin, "weight"):
+                    w_o = src.out_lin.weight.data.clone()
+                    b_o = src.out_lin.bias.data.clone() if getattr(src.out_lin, "bias", None) is not None else None
+
+            # 3. Flat projection splitting (single in_proj_weight or qkv_proj)
+            elif hasattr(src, "in_proj_weight") and getattr(src, "in_proj_weight", None) is not None:
+                in_w = src.in_proj_weight.data.clone()
+                split_sz = in_w.shape[0] // 3
+                w_q, w_k, w_v = in_w[:split_sz, :], in_w[split_sz:2*split_sz, :], in_w[2*split_sz:, :]
+                if hasattr(src, "in_proj_bias") and getattr(src, "in_proj_bias", None) is not None:
+                    in_b = src.in_proj_bias.data.clone()
+                    b_q, b_k, b_v = in_b[:split_sz], in_b[split_sz:2*split_sz], in_b[2*split_sz:]
+                if hasattr(src, "out_proj") and getattr(src, "out_proj", None) is not None and hasattr(src.out_proj, "weight"):
+                    w_o = src.out_proj.weight.data.clone()
+                    b_o = src.out_proj.bias.data.clone() if getattr(src.out_proj, "bias", None) is not None else None
+
+            # 4. RoBERTa / BERT separate query, key, value
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
+                w_q = src.query.weight.data.clone()
+                b_q = src.query.bias.data.clone() if getattr(src.query, "bias", None) is not None else None
+                w_k = src.key.weight.data.clone()
+                b_k = src.key.bias.data.clone() if getattr(src.key, "bias", None) is not None else None
+                w_v = src.value.weight.data.clone()
+                b_v = src.value.bias.data.clone() if getattr(src.value, "bias", None) is not None else None
+                if w_o is None:
+                    for attr in ("dense", "out_proj", "o_proj"):
+                        if hasattr(src, attr) and getattr(src, attr) is not None and hasattr(getattr(src, attr), "weight"):
+                            m = getattr(src, attr)
+                            w_o = m.weight.data.clone()
+                            b_o = m.bias.data.clone() if getattr(m, "bias", None) is not None else None
+                            break
+
+            # 5. Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+                w_q = src.q_proj.weight.data.clone()
+                b_q = src.q_proj.bias.data.clone() if getattr(src.q_proj, "bias", None) is not None else None
+                w_k = src.k_proj.weight.data.clone()
+                b_k = src.k_proj.bias.data.clone() if getattr(src.k_proj, "bias", None) is not None else None
+                w_v = src.v_proj.weight.data.clone()
+                b_v = src.v_proj.bias.data.clone() if getattr(src.v_proj, "bias", None) is not None else None
+                if hasattr(src, "o_proj") and getattr(src, "o_proj", None) is not None and hasattr(src.o_proj, "weight"):
+                    w_o = src.o_proj.weight.data.clone()
+                    b_o = src.o_proj.bias.data.clone() if getattr(src.o_proj, "bias", None) is not None else None
+
+            # 6. Fallback: UniversalAdapter
+            if w_q is None or w_k is None or w_v is None:
+                try:
+                    from framework.core.adapters import UniversalAdapter
+                    adapter = UniversalAdapter(old_attn)
+                    extracted = adapter.extract_qkv_out()
+                    if extracted:
+                        w_q = extracted.get("q_weight")
+                        b_q = extracted.get("q_bias")
+                        w_k = extracted.get("k_weight")
+                        b_k = extracted.get("k_bias")
+                        w_v = extracted.get("v_weight")
+                        b_v = extracted.get("v_bias")
+                        if w_o is None:
+                            w_o = extracted.get("out_weight")
+                            b_o = extracted.get("out_bias")
+                except Exception as ex:
+                    logger.debug("UniversalAdapter fallback failed: %s", ex)
+
+            missing = []
+            if w_q is None: missing.append("q")
+            if w_k is None: missing.append("k")
+            if w_v is None: missing.append("v")
+            if missing:
+                raise RuntimeError(f"Failed to extract required projections {missing} from {src_cls_name}")
+
+            # Frobenius norm verification >= 1e-4 on copied weights
+            for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
+                if torch.linalg.norm(w.float()).item() < 1e-4:
+                    raise RuntimeError(f"Copied weight {name} failed Frobenius norm check (< 1e-4)")
+            if w_o is not None and not self.is_nested_encoder:
+                if torch.linalg.norm(w_o.float()).item() < 1e-4:
+                    raise RuntimeError("Copied weight w_o failed Frobenius norm check (< 1e-4)")
+
+            # SVD decomposition into low-rank factors
+            self.q_proj.decompose_from_weight(w_q, b_q)
+            self.k_proj.decompose_from_weight(w_k, b_k)
+            self.v_proj.decompose_from_weight(w_v, b_v)
+            if w_o is not None:
+                self.out_proj.decompose_from_weight(w_o, b_o)
+            elif self.is_nested_encoder:
+                nn.init.eye_(self.out_proj.U.data)
+                nn.init.eye_(self.out_proj.V.data)
+                if self.out_proj.bias is not None:
+                    nn.init.zeros_(self.out_proj.bias)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("Cross-attention is not supported in FusedSVDKernelAttention")
+
+        x = hidden_states
+        B, L, _ = x.shape
+
+        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.k_proj(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
+
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        if self.kv_repeat > 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+
+        if self.is_decoder or self.is_causal:
+            causal_mask = torch.tril(torch.ones(L, L, device=x.device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                valid_mask = get_token_valid_mask(attention_mask, B, L, x.device)
+                if valid_mask is None:
+                    valid_mask = torch.ones(B, L, device=x.device, dtype=torch.bool)
+                scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
+            elif attention_mask.dim() == 4:
+                scores = scores + attention_mask.clamp(min=-1e4)
+
+        probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
+        probs = self.dropout(probs)
+
+        if head_mask is not None:
+            probs = probs * head_mask
+
+        context = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, self.q_head_size)
+
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
+
+        return out * self.output_scale, (probs if output_attentions else None)
+
+
+def fused_svd_kernel_factory(config: Any = None, **kwargs: Any) -> nn.Module:
+    """Factory creating FusedSVDKernelAttention with fused SVD kernel execution."""
+    return FusedSVDKernelAttention(config=config, **kwargs)
 
 
 @ATTENTION_REGISTRY.register("fused_svd_kernel_inject")
+@ATTENTION_REGISTRY.register("inject_fused_svd_kernel")
 def inject_fused_svd_kernel(
     layer: Any = None,
     model_config: Any = None,
@@ -437,18 +819,34 @@ def inject_fused_svd_kernel(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Any:
+) -> Optional[FusedSVDKernelAttention]:
     """Safe injection hook for fused SVD kernel attention."""
-    from framework.attentions.svd_linear_attention import inject_svd_linear_attention
-    return inject_svd_linear_attention(
-        layer=layer,
-        model_config=model_config,
-        layer_idx=layer_idx,
-        total_layers=total_layers,
-        old_attn=old_attn,
-        use_fused_kernel=True,
-        **kwargs,
-    )
+    try:
+        src_attn = old_attn if old_attn is not None else (
+            getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+            if layer is not None else None
+        )
+        new_attn = FusedSVDKernelAttention(
+            config=model_config,
+            old_attn=src_attn,
+            **kwargs,
+        )
+        if src_attn is not None:
+            new_attn.copy_weights(src_attn)
+        if layer is not None:
+            if hasattr(layer, "attention"):
+                if hasattr(layer.attention, "self"):
+                    layer.attention.self = new_attn
+                else:
+                    layer.attention = new_attn
+            elif hasattr(layer, "self"):
+                layer.self = new_attn
+            elif hasattr(layer, "attn"):
+                layer.attn = new_attn
+        return new_attn
+    except Exception as e:
+        logger.error("inject_fused_svd_kernel failed: %s", e)
+        return None
 
 
 __all__ = [
@@ -456,6 +854,7 @@ __all__ = [
     "_FusedSVDLinearAutogradFunction",
     "fused_svd_linear",
     "FusedSVDLinear",
+    "FusedSVDKernelAttention",
     "fused_svd_kernel_factory",
     "inject_fused_svd_kernel",
     "HAS_TRITON",

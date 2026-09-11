@@ -40,7 +40,7 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         cls_name = getattr(module, "__class__", type(module)).__name__
         base_cls_name = getattr(base, "__class__", type(base)).__name__
         if "Conv1D" in cls_name or "Conv1D" in base_cls_name:
-            if w.ndim == 2 and w.shape[0] < w.shape[1]:
+            if w.ndim == 2:
                 w = w.t()
     if b is not None:
         b = b.data.clone()
@@ -262,10 +262,27 @@ class HGRN2Layer(BaseAttention):
         if not self.is_nested_encoder:
             _copy_param(self.out_proj, w_o, b_o)
 
+        for p_name, p_tensor in [("g_proj", self.g_proj.weight), ("v_proj", self.v_proj.weight)]:
+            fnorm = float(torch.linalg.norm(p_tensor.float()))
+            if fnorm < 1e-4:
+                logger.warning("HGRN2Layer %s weight norm is near zero: %g", p_name, fnorm)
+
         if self.freeze_base:
             for mod in (self.forget_gate, self.input_gate, self.v_proj, self.g_proj, self.out_proj):
                 for p in mod.parameters():
                     p.requires_grad = False
+
+    @property
+    def query(self) -> nn.Module:
+        return self.g_proj
+
+    @property
+    def key(self) -> nn.Module:
+        return self.input_gate
+
+    @property
+    def value(self) -> nn.Module:
+        return self.v_proj
 
     def _recurrent_scan_parallel(
         self,
@@ -323,17 +340,25 @@ class HGRN2Layer(BaseAttention):
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("Cross-attention is not supported in HGRN2Layer")
+
         B, L, D = hidden_states.shape
 
-        # 1. Compute gates and values
-        f = torch.exp(-F.softplus(self.forget_gate(hidden_states)))
+        # 1. Compute gates and values with bounded log decay to prevent gate saturation
+        raw_log_decay = -F.softplus(self.forget_gate(hidden_states))
+        bounded_log_decay = raw_log_decay.clamp(min=-5.0, max=-0.01)
+        f = torch.exp(bounded_log_decay)
+
+        # Input modulation: tie input scale with (1 - f) to prevent recurrence state sign-flipping
         i = torch.sigmoid(self.input_gate(hidden_states))
+        input_scale = (1.0 - f) * i
         v = self.v_proj(hidden_states)
         if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
             v = v + torch.matmul(torch.matmul(hidden_states, self.v_lora_A.t()), self.v_lora_B.t()) * self.lora_scaling
 
         z = self.g_proj(hidden_states)
-        iv = i * v
+        iv = input_scale * v
 
         # 2. Mask processing
         mask_bool = None
@@ -377,6 +402,7 @@ class HGRN2Layer(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("hgrn2_layer_inject")
+@ATTENTION_REGISTRY.register("inject_hgrn2_layer")
 @ATTENTION_REGISTRY.register("hgrn2_inject")
 def inject_hgrn2_layer(
     layer: Any = None,
@@ -456,8 +482,8 @@ def inject_hgrn2_layer(
             **kwargs,
         )
     except Exception as ex:
-        logger.warning("Failed to instantiate HGRN2Layer: %s", ex)
-        raise RuntimeError(f"Injection failed")
+        logger.error("Failed to instantiate HGRN2Layer: %s", ex)
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):

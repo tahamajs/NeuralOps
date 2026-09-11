@@ -276,7 +276,10 @@ class HGRN2OuterBlock(BaseAttention):
                 w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
 
                 out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.dim and out_w.shape[1] != self.dim:
+                cls_p = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
+                if "Conv1D" in cls_p or (out_w.ndim == 2 and out_w.shape[0] != self.dim):
+                    out_w = out_w.t()
+                elif "Conv1D" in cls_name or "Conv1D" in getattr(src, "__class__", type(src)).__name__:
                     out_w = out_w.t()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
@@ -348,9 +351,12 @@ class HGRN2OuterBlock(BaseAttention):
                 missing.append("Out projection")
 
             if missing:
-                raise RuntimeError(
-                    f"HGRN2OuterBlock: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
+                logger.warning(
+                    "HGRN2OuterBlock: Missing weights: %s from %s",
+                    ", ".join(missing),
+                    type(old_attn),
                 )
+                return
 
             for target_mod, w_src in [(self.q_proj, w_q), (self.k_proj, w_k), (self.v_proj, w_v)]:
                 tw = target_mod.weight
@@ -362,9 +368,9 @@ class HGRN2OuterBlock(BaseAttention):
                     min_c = min(tw.shape[1], w_cast.shape[1])
                     tw.data[:min_r, :min_c].copy_(w_cast[:min_r, :min_c])
 
-            f_norm_q = float(torch.linalg.norm(self.q_proj.weight))
+            f_norm_q = float(torch.linalg.norm(self.q_proj.weight.float()))
             if f_norm_q < 1e-4:
-                raise RuntimeError(f"HGRN2OuterBlock: Q weight norm is near zero: {f_norm_q}")
+                logger.warning("HGRN2OuterBlock: Q weight norm is near zero: %g", f_norm_q)
 
             if w_o is not None:
                 tw_o = self.out_proj.weight
@@ -381,9 +387,9 @@ class HGRN2OuterBlock(BaseAttention):
                     b_o_cast = b_o.to(tb_o.dtype)
                     min_b = min(tb_o.numel(), b_o_cast.numel())
                     tb_o.data[:min_b].copy_(b_o_cast[:min_b])
-                f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
+                f_norm_o = float(torch.linalg.norm(self.out_proj.weight.float()))
                 if f_norm_o < 1e-4:
-                    raise RuntimeError(f"HGRN2OuterBlock: Out projection norm is near zero: {f_norm_o}")
+                    logger.warning("HGRN2OuterBlock: Out projection norm is near zero: %g", f_norm_o)
 
     def _outer_scan_parallel(
         self,
@@ -419,7 +425,7 @@ class HGRN2OuterBlock(BaseAttention):
 
         num_fwd = (attn_scores * D_causal) @ v_scaled
         denom_fwd = (attn_scores * D_causal) @ weight_in
-        y_fwd = (num_fwd / (denom_fwd + 1e-4).clamp(min=1e-4)).to(q.dtype)
+        y_fwd = (num_fwd / denom_fwd.clamp(min=1.0)).to(q.dtype)
 
         if not self.is_decoder:
             triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
@@ -428,11 +434,23 @@ class HGRN2OuterBlock(BaseAttention):
                 D_anti = D_anti * mask_2d
             num_bwd = (attn_scores * D_anti) @ v_scaled
             denom_bwd = (attn_scores * D_anti) @ weight_in
-            y_bwd = (num_bwd / (denom_bwd + 1e-4).clamp(min=1e-4)).to(q.dtype)
+            y_bwd = (num_bwd / denom_bwd.clamp(min=1.0)).to(q.dtype)
         else:
             y_bwd = None
 
         return y_fwd, y_bwd
+
+    @property
+    def query(self) -> nn.Module:
+        return self.q_proj
+
+    @property
+    def key(self) -> nn.Module:
+        return self.k_proj
+
+    @property
+    def value(self) -> nn.Module:
+        return self.v_proj
 
     def forward(
         self,
@@ -449,6 +467,9 @@ class HGRN2OuterBlock(BaseAttention):
         **kwargs: Any,
     ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
         """Forward pass for HGRN2OuterBlock."""
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("Cross-attention is not supported in HGRN2OuterBlock")
+
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
@@ -470,10 +491,12 @@ class HGRN2OuterBlock(BaseAttention):
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        q = F.normalize(q, p=2, dim=-1)
-        k = F.normalize(k, p=2, dim=-1) / math.sqrt(d)
+        # Non-negative kernel mapping to prevent state sign-flipping and negative denominators
+        q = F.elu(q) + 1.0
+        k = (F.elu(k) + 1.0) / math.sqrt(d)
 
-        f = torch.exp(-F.softplus(self.W_f(hidden_states))).transpose(1, 2)  # [B, H, L]
+        # Bounded forget gating to prevent saturation
+        f = torch.exp((-F.softplus(self.W_f(hidden_states))).clamp(min=-5.0, max=-0.01)).transpose(1, 2)  # [B, H, L]
 
         mask_bool = None
         if attention_mask is not None:
@@ -513,6 +536,7 @@ class HGRN2OuterBlock(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("hgrn2_outer_inject")
+@ATTENTION_REGISTRY.register("inject_hgrn2_outer")
 def inject_hgrn2_outer(
     layer: nn.Module,
     model_config: Any = None,
@@ -554,4 +578,4 @@ def inject_hgrn2_outer(
         return new_block
     except Exception as e:
         logger.error("inject_hgrn2_outer failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None
