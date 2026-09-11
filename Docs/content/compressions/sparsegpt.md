@@ -593,3 +593,14 @@ The `SparseGPTCompressor` architecture incorporates telemetry hooks for tracking
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (SparseGPT)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 86.93% | 0.8747 | 1.0 | 0 | 340.09 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa38c8e-34aeda7f369e5a6c7fd4cede;03e2521b-2822-4650-989b-5dc3d1942049)
+
+429 Too Many Requests for url: https://huggingface.co/api/repos/create.
+You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
+| ROBERTA | 50.92% | 0.6748 | 1.0 | 0 | 363.54 | `PASS_LOW` | N/A |
+| GPT2 | 53.33% | 0.6661 | 1.0 | 0 | 634.41 | `PASS_LOW` | N/A |
