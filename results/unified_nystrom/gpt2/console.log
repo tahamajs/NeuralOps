@@ -1,4 +1,6 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+Skipping attention module 'SOAFusedAttention' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_fused_module' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_module' due to: cannot import name 'inject_soa_module' from 'framework.attentions.soa_attn' (D:\SVD_Project\Codes\framework\attentions\soa_attn.py)
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -6,61 +8,61 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 07:03:24,056 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 07:03:24,056 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 07:03:24,056 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:03:24,056 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 07:03:24,057 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-11 07:03:24,057 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-11 07:03:24,057 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 07:03:24,057 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 07:03:24,057 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 07:03:24,057 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 07:03:24,057 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 07:03:24,057 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:03:24,221 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
-2026-09-11 07:03:24,590 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 07:03:25,029 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 07:03:27,122 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 60.78%
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:03:27,135 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 07:03:29,401 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\gpt2\gpt2_full_full_metrics.json
-2026-09-11 07:03:29,408 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-11 07:03:29,726 [INFO] QwenQualitySweep: [1/2] full -> PASS 60.78% (F1: 0.6354, Peak VRAM: 793.19 MB)
-2026-09-11 07:03:29,726 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nystrom\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 07:03:29,864 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: nystrom (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 07:03:30,647 [INFO] framework.core.attention_utils: Successfully injected 'nystrom' into 12 transformer blocks.
-2026-09-11 07:03:30,650 [INFO] QwenQualitySweep: module=nystrom path=adapted_gpt
-2026-09-11 07:03:30,650 [INFO] QwenQualitySweep: module=nystrom injection summary: 0 SVDLinear layers active
-2026-09-11 07:03:30,650 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for nystrom (lr=2.0e-04)
-2026-09-11 07:03:30,750 [INFO] framework.utils.compat: Recovery fine-tuning selected 1181232 trainable parameters across 145 tensors.
-2026-09-11 07:03:30,750 [INFO] QwenQualitySweep: LoRA fine-tuning: 1181232 trainable parameters across 145 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 07:03:31,046 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7181 (bs=8, micro_bs=8)
-2026-09-11 07:03:31,708 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.8351 (bs=8, micro_bs=8)
-2026-09-11 07:03:32,473 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6702 (bs=8, micro_bs=8)
-2026-09-11 07:03:33,220 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.7091 (bs=8, micro_bs=8)
-2026-09-11 07:03:34,006 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6114 (bs=8, micro_bs=8)
-2026-09-11 07:03:34,780 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7601 (bs=8, micro_bs=8)
-2026-09-11 07:03:35,528 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7553 (bs=8, micro_bs=8)
-2026-09-11 07:03:36,368 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7778 (bs=8, micro_bs=8)
-2026-09-11 07:03:37,168 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6898 (bs=8, micro_bs=8)
-2026-09-11 07:03:38,021 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7461 (bs=8, micro_bs=8)
-2026-09-11 07:03:38,790 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6939 (bs=8, micro_bs=8)
-2026-09-11 07:03:44,229 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\gpt2\gpt2_nystrom_full_metrics.json
-2026-09-11 07:03:44,343 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\gpt2\checkpoints\nystrom\weights.pt (module_params=0, lora_params=337)
-2026-09-11 07:03:44,727 [INFO] QwenQualitySweep: [2/2] nystrom -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 569.46 MB)
-2026-09-11 07:03:44,727 [INFO] QwenQualitySweep: [Quality Guard] Module 'nystrom' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 07:03:44,915 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:03:44,916 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-11 07:03:44,919 [INFO] QwenQualitySweep: 
+2026-09-11 20:25:15,868 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-11 20:25:15,868 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 20:25:15,868 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:25:15,868 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 20:25:15,868 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-11 20:25:15,869 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-11 20:25:15,869 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 20:25:15,869 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 20:25:15,869 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 20:25:15,869 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 20:25:15,869 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 20:25:15,869 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:25:16,084 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-11 20:25:16,454 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 20:25:16,847 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 20:25:19,080 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 57.91%
+2026-09-11 20:25:19,092 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:25:19,092 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 20:25:19,092 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 20:25:19,092 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 20:25:19,092 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 20:25:19,092 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 20:25:19,092 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 20:25:19,092 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:25:19,095 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 20:25:21,471 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\gpt2\gpt2_full_full_metrics.json
+2026-09-11 20:25:21,477 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-11 20:25:21,823 [INFO] QwenQualitySweep: [1/2] full -> PASS 57.91% (F1: 0.301, Peak VRAM: 793.19 MB)
+2026-09-11 20:25:21,823 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nystrom\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 20:25:21,974 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: nystrom (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 20:25:22,858 [INFO] framework.core.attention_utils: Successfully injected 'nystrom' into 12 transformer blocks.
+2026-09-11 20:25:22,861 [INFO] QwenQualitySweep: module=nystrom path=adapted_gpt
+2026-09-11 20:25:22,861 [INFO] QwenQualitySweep: module=nystrom injection summary: 0 SVDLinear layers active
+2026-09-11 20:25:22,861 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for nystrom (lr=2.0e-04)
+2026-09-11 20:25:22,956 [INFO] framework.utils.compat: Recovery fine-tuning selected 1181232 trainable parameters across 145 tensors.
+2026-09-11 20:25:22,956 [INFO] QwenQualitySweep: LoRA fine-tuning: 1181232 trainable parameters across 145 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-11 20:25:23,210 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6037 (bs=8, micro_bs=8)
+2026-09-11 20:25:23,577 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7314 (bs=8, micro_bs=8)
+2026-09-11 20:25:23,962 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6139 (bs=8, micro_bs=8)
+2026-09-11 20:25:24,361 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5491 (bs=8, micro_bs=8)
+2026-09-11 20:25:24,765 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6176 (bs=8, micro_bs=8)
+2026-09-11 20:25:25,143 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7921 (bs=8, micro_bs=8)
+2026-09-11 20:25:25,530 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6913 (bs=8, micro_bs=8)
+2026-09-11 20:25:25,933 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6094 (bs=8, micro_bs=8)
+2026-09-11 20:25:26,330 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6745 (bs=8, micro_bs=8)
+2026-09-11 20:25:26,707 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.5395 (bs=8, micro_bs=8)
+2026-09-11 20:25:27,092 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6610 (bs=8, micro_bs=8)
+2026-09-11 20:25:30,137 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\gpt2\gpt2_nystrom_full_metrics.json
+2026-09-11 20:25:30,201 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\gpt2\checkpoints\nystrom\weights.pt (module_params=0, lora_params=97)
+2026-09-11 20:25:30,600 [INFO] QwenQualitySweep: [2/2] nystrom -> PASS_LOW 51.03% (F1: 0.6753, Peak VRAM: 569.46 MB)
+2026-09-11 20:25:30,600 [INFO] QwenQualitySweep: [Quality Guard] Module 'nystrom' did not pass quality criteria (status=PASS_LOW, acc=51.03%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-11 20:25:30,781 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:25:30,781 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-11 20:25:30,784 [INFO] QwenQualitySweep: 
  Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-   full     PASS   60.78% 0.00% (base) 0.6354                  0            1.00x  793.2 MB               1.72              1.97
-nystrom PASS_LOW   50.92%       -9.86% 0.6748                  0            0.99x  569.5 MB               5.26              6.03
-2026-09-11 07:03:44,919 [INFO] QwenQualitySweep: ================================================================================
+   full     PASS   57.91% 0.00% (base) 0.3010                  0            1.00x  793.2 MB               1.76              2.02
+nystrom PASS_LOW   51.03%       -6.88% 0.6753                  0            0.99x  569.5 MB               2.95              3.39
+2026-09-11 20:25:30,784 [INFO] QwenQualitySweep: ================================================================================
