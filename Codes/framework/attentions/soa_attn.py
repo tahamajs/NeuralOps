@@ -210,13 +210,16 @@ class SOAAttention(BaseAttention):
         self.lora_alpha: float = lora_alpha
 
         # Decoder / Causal flag
-        if is_decoder is not None:
-            self.is_decoder: bool = is_decoder
-        elif cfg is not None:
-            self.is_decoder = bool(getattr(cfg, "is_decoder", False))
-        else:
-            self.is_decoder = False
-
+        is_dec = (
+            bool(_cfg_get(cfg, "is_decoder", False))
+            or bool(_cfg_get(cfg, "is_causal", False))
+            or str(_cfg_get(cfg, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama")
+            or (src_attn is not None and hasattr(src_attn, "c_attn"))
+            or bool(kwargs.get("is_causal", False))
+            or bool(kwargs.get("is_decoder", False))
+        )
+        self.is_decoder: bool = is_dec
+        self.is_causal: bool = is_dec
         self.is_nested_encoder: bool = False
 
         # 2. Factorized SVD linear projections for Q, K, V
@@ -250,6 +253,30 @@ class SOAAttention(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
+    @property
+    def q_proj(self) -> FactorizedLinear:
+        return FactorizedLinear(self.q_down, self.q_up)
+
+    @property
+    def k_proj(self) -> FactorizedLinear:
+        return FactorizedLinear(self.k_down, self.k_up)
+
+    @property
+    def v_proj(self) -> FactorizedLinear:
+        return FactorizedLinear(self.v_down, self.v_up)
+
+    @property
+    def query(self) -> FactorizedLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> FactorizedLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> FactorizedLinear:
+        return self.v_proj
+
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Robust weight extraction and SVD factorization across all architectures."""
         with torch.no_grad():
@@ -260,10 +287,10 @@ class SOAAttention(BaseAttention):
 
             # Check nested encoder container
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
+            has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj") or hasattr(old_attn, "dense")
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                and not has_out_lin
             ):
                 self.is_nested_encoder = True
 
@@ -278,9 +305,12 @@ class SOAAttention(BaseAttention):
 
             # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
+                self.is_decoder = True
+                self.is_causal = True
                 c_attn_w = src.c_attn.weight.detach()
                 c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+                c_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
+                if ("Conv1D" in c_cls) or hasattr(src.c_attn, "nf") or (c_attn_w.dim() == 2 and c_attn_w.shape[0] < c_attn_w.shape[1]):
                     c_attn_w = c_attn_w.t()
 
                 q_dim = self.q_head_size
@@ -297,7 +327,8 @@ class SOAAttention(BaseAttention):
                     b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
 
                 out_w = src.c_proj.weight.detach()
-                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
+                if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (out_w.dim() == 2 and out_w.shape[0] < out_w.shape[1]):
                     out_w = out_w.t()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
@@ -400,7 +431,7 @@ class SOAAttention(BaseAttention):
             _factorize_svd(w_k, self.k_down, self.k_up, b_k)
             _factorize_svd(w_v, self.v_down, self.v_up, b_v)
 
-            if w_o is not None:
+            if w_o is not None and not self.is_nested_encoder:
                 self.out_proj.weight.copy_(w_o.to(self.out_proj.weight.dtype))
                 if b_o is not None and self.out_proj.bias is not None:
                     self.out_proj.bias.copy_(b_o.to(self.out_proj.bias.dtype))
@@ -472,9 +503,10 @@ class SOAAttention(BaseAttention):
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
 
         # Causal mask for decoders
-        if self.is_decoder and N > 1:
+        is_causal = (self.is_decoder or getattr(self, "is_causal", False) or kwargs.get("is_causal", False)) and (encoder_hidden_states is None)
+        if is_causal and N > 1:
             causal_mask = torch.triu(
-                torch.full((N, N), float("-inf"), device=scores.device, dtype=scores.dtype),
+                torch.full((N, N), -1e4, device=scores.device, dtype=scores.dtype),
                 diagonal=1,
             )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
@@ -482,13 +514,7 @@ class SOAAttention(BaseAttention):
         # Standard Attention Mask
         mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
         if mask is not None:
-            if mask.dim() == 2:
-                mask_t = mask[:, None, None, :].to(scores.dtype)
-                scores = scores + (1.0 - mask_t) * -10000.0
-            elif mask.dim() == 3:
-                scores = scores + mask.unsqueeze(1).to(scores.dtype)
-            elif mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
+            scores = apply_attention_mask(scores, mask)
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
@@ -505,15 +531,21 @@ class SOAAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
 
         if self.is_nested_encoder:
-            output = context
-        else:
-            output = self.out_proj(context)
+            return (context, attn_weights if output_attentions else None)
 
+        output = self.out_proj(context)
         return (output, attn_weights if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("soa_attn_inject")
+@ATTENTION_REGISTRY.register("soa_inject")
+@ATTENTION_REGISTRY.register("soa_module_inject")
+@ATTENTION_REGISTRY.register("inject_soa_attn")
+@ATTENTION_REGISTRY.register("inject_soa")
+@ATTENTION_REGISTRY.register("inject_soa_module")
 def inject_soa_attn(
-    layer: Any,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -522,37 +554,83 @@ def inject_soa_attn(
     **kwargs: Any,
 ) -> Optional[SOAAttention]:
     """Safely replace attention module with hardened SOAAttention."""
+    target = layer if layer is not None else model
     try:
+        if target is not None and (
+            hasattr(target, "transformer")
+            or hasattr(target, "distilbert")
+            or hasattr(target, "roberta")
+            or hasattr(target, "bert")
+        ):
+            layers = None
+            if hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+                layers = target.roberta.encoder.layer
+            elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+                layers = target.bert.encoder.layer
+            elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+                layers = target.distilbert.transformer.layer
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+                layers = target.transformer.h
+            if layers is not None:
+                for idx, lyr in enumerate(layers):
+                    inject_soa_attn(
+                        layer=lyr,
+                        model_config=model_config or getattr(target, "config", None),
+                        comp_config=comp_config,
+                        layer_idx=idx,
+                        total_layers=len(layers),
+                        **kwargs,
+                    )
+                return target
+
         src = old_attn
-        if src is None:
-            for attr in ("attention", "self_attn", "attn"):
-                if hasattr(layer, attr):
-                    src = getattr(layer, attr)
-                    break
+        if src is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "query") or hasattr(cand, "q_lin") or hasattr(cand, "q_proj") or hasattr(cand, "c_attn"):
+                        src = cand
+                        break
+            if src is None:
+                for attr in ("attention", "self_attn", "attn", "self"):
+                    if hasattr(target, attr):
+                        src = getattr(target, attr)
+                        break
 
-        if src is None:
-            return None
-
-        k_rank = getattr(comp_config, "soa_rank", getattr(comp_config, "rank", 64))
-        dropout = getattr(comp_config, "dropout", 0.1)
+        cfg = model_config or getattr(target, "config", None)
+        k_rank = getattr(comp_config, "soa_rank", getattr(comp_config, "rank", kwargs.get("k_rank", 64)))
+        dropout = getattr(comp_config, "dropout", kwargs.get("dropout", 0.1))
 
         new_attn = SOAAttention(
-            config=model_config,
+            config=cfg,
             k_rank=k_rank,
             dropout=dropout,
             pretrained_attn=src,
             **kwargs,
         )
 
-        for attr in ("attention", "self_attn", "attn"):
-            if hasattr(layer, attr):
-                setattr(layer, attr, new_attn)
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                    return new_attn
+                else:
+                    target.attention = new_attn
+                    return new_attn
+            for attr in ("self_attn", "attn"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            if hasattr(target, "self"):
+                target.self = new_attn
+                new_attn.is_nested_encoder = True
                 return new_attn
 
         return new_attn
     except Exception as e:
         logger.error("inject_soa_attn failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None
 
 
 inject_soa = inject_soa_attn
