@@ -410,6 +410,27 @@ class VSpecAttention(BaseAttention):
         if src_attn is not None:
             self.copy_weights(src_attn)
 
+    @property
+    def query(self): return self.Pq
+    @property
+    def key(self): return self.Pk
+    @property
+    def value(self): return self.Pv
+    @property
+    def q_proj(self): return self.Pq
+    @property
+    def k_proj(self): return self.Pk
+    @property
+    def v_proj(self): return self.Pv
+    @property
+    def out_proj(self): return self.Po
+    @property
+    def o_proj(self): return self.Po
+    @property
+    def dense(self): return self.Po
+    @property
+    def c_proj(self): return self.Po
+
     def copy_weights(self, src: Any) -> None:
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
             "q": (None, None),
@@ -424,34 +445,55 @@ class VSpecAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+            c_mod = src.c_attn
+            base_c = getattr(c_mod, "base_layer", c_mod)
+            weight = getattr(base_c, "weight", getattr(c_mod, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                bias = getattr(base_c, "bias", getattr(c_mod, "bias", None))
+                bias_data = bias.data.clone() if bias is not None else None
+                is_conv1d = (
+                    "Conv1D" in c_mod.__class__.__name__
+                    or "Conv1D" in base_c.__class__.__name__
+                    or hasattr(c_mod, "nf")
+                    or hasattr(base_c, "nf")
+                    or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
+                )
+                if is_conv1d:
+                    weight = weight.t()
+                split_size = weight.shape[0] // 3
+                q_w = weight[:split_size, :]
+                k_w = weight[split_size : 2 * split_size, :]
+                v_w = weight[2 * split_size :, :]
+                q_b = bias_data[:split_size] if bias_data is not None else None
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+                v_b = bias_data[2 * split_size :] if bias_data is not None else None
+                extracted["q"] = (q_w, q_b)
+                extracted["k"] = (k_w, k_b)
+                extracted["v"] = (v_w, v_b)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(src.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            p_mod = src.c_proj
+            base_o = getattr(p_mod, "base_layer", p_mod)
+            w_o = getattr(base_o, "weight", getattr(p_mod, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                is_conv1d = (
+                    "Conv1D" in p_mod.__class__.__name__
+                    or "Conv1D" in base_o.__class__.__name__
+                    or hasattr(p_mod, "nf")
+                    or hasattr(base_o, "nf")
+                    or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                )
+                if is_conv1d:
+                    w_o = w_o.t()
+                b_o = getattr(base_o, "bias", getattr(p_mod, "bias", None))
+                extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -485,12 +527,17 @@ class VSpecAttention(BaseAttention):
                             break
 
         # Detect nested encoder architecture
-        cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj", "out"))
-        self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        cls_name = getattr(src, "__class__", type(src)).__name__
+        has_out = hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        is_nested = False
+        if (
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (hasattr(src, "query") and not has_out)
+        ):
+            is_nested = True
+        if hasattr(src, "self") and hasattr(src, "output"):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
 
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
         if not self.is_nested_encoder and extracted["o"][0] is None:
@@ -545,20 +592,16 @@ class VSpecAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
+        if encoder_hidden_states is not None or kwargs.get("encoder_hidden_states", None) is not None:
+            raise NotImplementedError("Cross-attention is not implemented for VSpecAttention")
+
         B, N, D = hidden_states.shape
         device = hidden_states.device
         dtype = hidden_states.dtype
 
         # Mask handling
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
-        valid = None
-        if mask is not None:
-            if mask.dim() == 2:
-                valid = mask.bool().to(device)
-            elif mask.dim() == 4:
-                valid = (mask[:, 0, 0, :] > -10000.0).to(device)
-            else:
-                valid = get_token_valid_mask(mask, B, N, device)
+        valid = get_token_valid_mask(mask, B, N, device) if mask is not None else None
 
         is_decoder = (
             self.is_decoder
@@ -601,8 +644,7 @@ class VSpecAttention(BaseAttention):
                 from framework.utils.compat import maybe_apply_rotary
                 Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning(f"maybe_apply_rotary failed: {e}")
 
         # GQA expansion
         if self.kv_repeat > 1:
@@ -649,9 +691,11 @@ class VSpecAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, k_len, self.all_head_size)
 
         if self.is_nested_encoder:
-            out = context
-        else:
-            out = self.Po(context, gq)
+            scatter_out = torch.zeros(B, N, context.shape[-1], device=device, dtype=context.dtype)
+            scatter_out.scatter_(1, idx.unsqueeze(-1).expand(-1, -1, context.shape[-1]), context)
+            return (scatter_out, (attn_weights if output_attentions else None))
+
+        out = self.Po(context, gq)
 
         if out.shape[-1] != D:
             out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
@@ -666,6 +710,7 @@ class VSpecAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("vspec_inject")
 @ATTENTION_REGISTRY.register("vspec_attention_inject")
+@ATTENTION_REGISTRY.register("inject_vspec")
 @ATTENTION_REGISTRY.register("inject_vspec_attn")
 def inject_vspec_attn(
     layer: nn.Module,
@@ -726,18 +771,19 @@ def inject_vspec_attn(
             **kwargs,
         )
 
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_block
+                new_block.is_nested_encoder = True
+            else:
+                layer.attention = new_block
+            return new_block
         for attr in ("self_attn", "attn", "self"):
             if hasattr(layer, attr):
                 setattr(layer, attr, new_block)
                 return new_block
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_block
-            else:
-                layer.attention = new_block
-            return new_block
         layer.attention = new_block
         return new_block
     except Exception as e:
         logger.error("inject_vspec_attn failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None

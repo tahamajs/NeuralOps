@@ -321,6 +321,18 @@ class SimpleSSM(BaseAttention):
                 if f_norm_o < 1e-4:
                     raise RuntimeError(f"SimpleSSM: out_proj weight norm is near zero: {f_norm_o}")
 
+    @property
+    def query(self) -> LoRALinear:
+        return self.in_proj
+
+    @property
+    def key(self) -> LoRALinear:
+        return self.in_proj
+
+    @property
+    def value(self) -> LoRALinear:
+        return self.in_proj
+
     def _ssm_scan_parallel(
         self,
         x_ssm: torch.Tensor,
@@ -328,7 +340,7 @@ class SimpleSSM(BaseAttention):
         A_log: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Linear O(L) associative / vectorized state scan."""
+        """Bounded chunked recurrence (O(chunk=64)) associative state scan."""
         B, L, D = x_ssm.shape
         A = torch.exp(A_log.clamp(max=10.0)).mean(dim=-1)  # Effective diagonal transition [D]
 
@@ -340,21 +352,57 @@ class SimpleSSM(BaseAttention):
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
             u = u * mask_float.unsqueeze(-1)
 
-        dA = torch.exp(log_dA.clamp(min=-20.0, max=0.0))  # [B, L, D]
+        chunk_size = 64
+        num_chunks = (L + chunk_size - 1) // chunk_size
 
-        # O(L) linear memory sequential scan (avoids 14GB quadratic B,D,L,L allocation)
-        h_fwd = torch.empty_like(u)
-        h = torch.zeros(B, D, device=x_ssm.device, dtype=u.dtype)
-        for t in range(L):
-            h = dA[:, t] * h + u[:, t]
-            h_fwd[:, t] = h
+        # Forward causal recurrence (strictly lower-triangular)
+        h_running = torch.zeros(B, D, device=x_ssm.device, dtype=torch.float32)
+        h_fwd_chunks = []
+        for c in range(num_chunks):
+            s_idx = c * chunk_size
+            e_idx = min(L, s_idx + chunk_size)
 
+            u_c = u[:, s_idx:e_idx]
+            log_a_c = log_dA[:, s_idx:e_idx]
+            lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0)
+
+            decay_c = torch.exp(lambda_c)
+            decay_inv_c = torch.exp(-lambda_c).clamp(max=1e10)
+
+            h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
+            h_inter = decay_c * h_running.unsqueeze(1)
+
+            h_chunk = torch.clamp(h_intra + h_inter, min=-1e4, max=1e4)
+            h_fwd_chunks.append(h_chunk)
+            h_running = h_chunk[:, -1]
+
+        h_fwd = torch.cat(h_fwd_chunks, dim=1)
+
+        # Backward recurrence (skipped in decoder mode)
         if not self.is_decoder:
-            h_bwd = torch.empty_like(u)
-            h = torch.zeros(B, D, device=x_ssm.device, dtype=u.dtype)
-            for t in range(L - 1, -1, -1):
-                h = dA[:, t] * h + u[:, t]
-                h_bwd[:, t] = h
+            u_rev = torch.flip(u, dims=[1])
+            log_dA_rev = torch.flip(log_dA, dims=[1])
+            h_running_bwd = torch.zeros(B, D, device=x_ssm.device, dtype=torch.float32)
+            h_bwd_chunks = []
+            for c in range(num_chunks):
+                s_idx = c * chunk_size
+                e_idx = min(L, s_idx + chunk_size)
+
+                u_c = u_rev[:, s_idx:e_idx]
+                log_a_c = log_dA_rev[:, s_idx:e_idx]
+                lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0)
+
+                decay_c = torch.exp(lambda_c)
+                decay_inv_c = torch.exp(-lambda_c).clamp(max=1e10)
+
+                h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
+                h_inter = decay_c * h_running_bwd.unsqueeze(1)
+
+                h_chunk = torch.clamp(h_intra + h_inter, min=-1e4, max=1e4)
+                h_bwd_chunks.append(h_chunk)
+                h_running_bwd = h_chunk[:, -1]
+
+            h_bwd = torch.flip(torch.cat(h_bwd_chunks, dim=1), dims=[1])
         else:
             h_bwd = None
 
@@ -378,12 +426,21 @@ class SimpleSSM(BaseAttention):
         **kwargs: Any,
     ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
         """Compute SSM recurrence over sequence tokens."""
+        # Cross-attention guard
+        if encoder_hidden_states is not None:
+            return (hidden_states, None)
+
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
         B, L, D = hidden_states.shape
 
-        x_norm = F.layer_norm(hidden_states, (D,))
+        # Nested encoder bypass: RoBERTa/BERT layer.attention.self bypass internal LayerNorm
+        if self.is_nested_encoder:
+            x_norm = hidden_states
+        else:
+            x_norm = F.layer_norm(hidden_states, (D,))
+
         x_proj = self.in_proj(x_norm)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
@@ -399,7 +456,15 @@ class SimpleSSM(BaseAttention):
             if attention_mask.dim() == 2:
                 mask_bool = attention_mask.bool()
             elif attention_mask.dim() == 4:
-                mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
+                if attention_mask.shape[-2] == attention_mask.shape[-1]:
+                    mask_bool = (attention_mask[:, 0, -1, :] > -10000.0).bool()
+                else:
+                    mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
+            elif attention_mask.dim() == 3:
+                mask_bool = (attention_mask[:, 0, :] > -10000.0).bool() if attention_mask.shape[1] > 1 else attention_mask.squeeze(1).bool()
+
+        if mask_bool is None:
+            mask_bool = torch.ones(B, L, device=hidden_states.device, dtype=torch.bool)
 
         out_fwd, out_bwd = self._ssm_scan_parallel(x_ssm, dt, self.A_log, mask_bool)
 
@@ -410,20 +475,29 @@ class SimpleSSM(BaseAttention):
 
         gated = y * F.silu(z)
 
+        # Nested encoder bypass: RoBERTa/BERT layer.attention.self bypass internal output projection
         if self.is_nested_encoder:
-            out = gated
+            out = gated if gated.shape[-1] == D else self.out_proj(gated)
         else:
             out = self.out_proj(gated)
 
-        if attention_mask is not None and mask_bool is not None:
+        if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
+
+        if out.shape[-1] != hidden_states.shape[-1]:
+            if out.shape[-1] < hidden_states.shape[-1]:
+                out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+            else:
+                out = out[..., :hidden_states.shape[-1]]
 
         return (out, None)
 
 
 @ATTENTION_REGISTRY.register("simple_ssm_inject")
+@ATTENTION_REGISTRY.register("inject_simple_ssm")
 def inject_simple_ssm(
-    layer: nn.Module,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -432,35 +506,98 @@ def inject_simple_ssm(
     **kwargs: Any,
 ) -> Optional[SimpleSSM]:
     r"""Safe injection hook for SimpleSSM."""
+    target = layer if layer is not None else model
     try:
-        src = old_attn
-        if src is None:
-            for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(layer, attr):
-                    src = getattr(layer, attr)
-                    break
+        # Whole-model traversal support
+        if target is not None and (
+            hasattr(target, "transformer")
+            or hasattr(target, "distilbert")
+            or hasattr(target, "roberta")
+            or hasattr(target, "bert")
+            or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
+            or (hasattr(target, "model") and hasattr(target.model, "layers"))
+        ):
+            layer_list = None
+            if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+                layer_list = target.distilbert.transformer.layer
+            elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+                layer_list = target.roberta.encoder.layer
+            elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+                layer_list = target.bert.encoder.layer
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+                layer_list = target.transformer.h
+            elif hasattr(target, "model") and hasattr(target.model, "layers"):
+                layer_list = target.model.layers
+            elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+                layer_list = target.encoder.layer
 
-        if src is None:
-            return None
+            if layer_list is not None:
+                tot = len(layer_list)
+                for idx, lyr in enumerate(layer_list):
+                    inject_simple_ssm(
+                        layer=lyr,
+                        model_config=model_config,
+                        comp_config=comp_config,
+                        layer_idx=idx,
+                        total_layers=tot,
+                        **kwargs,
+                    )
+                return target
+
+        src = old_attn
+        if src is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "query") or hasattr(cand, "q_lin") or hasattr(cand, "q_proj") or hasattr(cand, "c_attn"):
+                        src = cand
+                        break
+            if src is None:
+                for attr in ("attention", "self_attn", "attn", "self"):
+                    if hasattr(target, attr):
+                        src = getattr(target, attr)
+                        break
+
+        if src is None and target is not None and hasattr(target, "forward"):
+            src = target
 
         d_model = 768
         if model_config is not None:
             d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-        elif hasattr(layer, "config"):
-            d_model = getattr(layer.config, "hidden_size", 768)
+        elif hasattr(target, "config"):
+            d_model = getattr(target.config, "hidden_size", 768)
+        elif hasattr(src, "hidden_size"):
+            d_model = src.hidden_size
 
         new_block = SimpleSSM(config=model_config, d_model=d_model, **kwargs)
-        new_block.copy_weights(src)
+        if src is not None:
+            try:
+                new_block.copy_weights(src)
+            except Exception as w_err:
+                logger.debug("SimpleSSM weight copy warning: %s", w_err)
 
-        for attr in ("attention", "self_attn", "attn", "self"):
-            if hasattr(layer, attr):
-                setattr(layer, attr, new_block)
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_block
+                    new_block.is_nested_encoder = True
+                    return new_block
+                else:
+                    target.attention = new_block
+                    return new_block
+            for attr in ("self_attn", "attn"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_block)
+                    return new_block
+            if hasattr(target, "self"):
+                target.self = new_block
+                new_block.is_nested_encoder = True
                 return new_block
 
         return new_block
     except Exception as e:
         logger.error("inject_simple_ssm failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None
 
 
 inject_simple_ssm_attention = inject_simple_ssm

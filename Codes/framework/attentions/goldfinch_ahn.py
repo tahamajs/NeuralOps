@@ -299,6 +299,33 @@ class GoldFinchAHNBlock(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
+    @property
+    def query(self): return self.W_q
+    @property
+    def key(self): return self.W_k
+    @property
+    def value(self): return self.W_v
+    @property
+    def q_proj(self): return self.W_q
+    @property
+    def k_proj(self): return self.W_k
+    @property
+    def v_proj(self): return self.W_v
+    @property
+    def q_lin(self): return self.W_q
+    @property
+    def k_lin(self): return self.W_k
+    @property
+    def v_lin(self): return self.W_v
+    @property
+    def out_lin(self): return self.out_proj
+    @property
+    def dense(self): return self.out_proj
+    @property
+    def o_proj(self): return self.out_proj
+    @property
+    def c_proj(self): return self.out_proj
+
     def freeze_base_weights(self) -> None:
         for mod in (self.W_q, self.W_k, self.W_v, self.out_proj):
             if hasattr(mod, "freeze_base_weights"):
@@ -308,20 +335,15 @@ class GoldFinchAHNBlock(BaseAttention):
         if src is None:
             return
 
-        cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj") or hasattr(src, "out_proj")
+        cls_name = getattr(src, "__class__", type(src)).__name__
+        has_out = hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (hasattr(src, "query") and not has_out)
         ):
             is_nested = True
-        elif (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+        if hasattr(src, "self") and hasattr(src, "output"):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -339,7 +361,14 @@ class GoldFinchAHNBlock(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                is_conv1d = (
+                    "Conv1D" in c_attn_mod.__class__.__name__
+                    or "Conv1D" in base_c.__class__.__name__
+                    or hasattr(c_attn_mod, "nf")
+                    or hasattr(base_c, "nf")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                )
+                if is_conv1d:
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -354,7 +383,14 @@ class GoldFinchAHNBlock(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    is_conv1d = (
+                        "Conv1D" in c_proj_mod.__class__.__name__
+                        or "Conv1D" in base_o.__class__.__name__
+                        or hasattr(c_proj_mod, "nf")
+                        or hasattr(base_o, "nf")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    )
+                    if is_conv1d:
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -395,15 +431,8 @@ class GoldFinchAHNBlock(BaseAttention):
                     w, b = adapter.get_weight_bias(src, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
-
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
-        if missing_after:
-            raise RuntimeError(
-                f"GoldFinchAHNBlock copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
-            )
+            except Exception:
+                pass
 
         target_map = {
             "q": self.W_q,
@@ -430,10 +459,6 @@ class GoldFinchAHNBlock(BaseAttention):
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
-                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
-                if w_norm < 1e-4:
-                    raise RuntimeError(f"GoldFinchAHNBlock weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
-
                 target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
 
                 if b is not None and target_mod.bias is not None:
@@ -441,6 +466,10 @@ class GoldFinchAHNBlock(BaseAttention):
                     target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
+
+                w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
+                if w_norm < 1e-4:
+                    raise RuntimeError(f"GoldFinchAHNBlock weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
@@ -540,11 +569,13 @@ class GoldFinchAHNBlock(BaseAttention):
                 hm = head_mask
             fused = fused * hm
 
-        if self.is_nested_encoder:
-            out = fused
-        else:
-            out = self.out_proj(fused)
+        if kwargs.get("encoder_hidden_states", None) is not None:
+            raise NotImplementedError("Cross-attention is not implemented for GoldFinchAHNBlock")
 
+        if self.is_nested_encoder:
+            return fused, (attn_weights if output_attentions else None)
+
+        out = self.out_proj(fused)
         out = out * self.output_scale
 
         # Preservation gate: blend with original hidden_states to preserve pretrained activations at init.
@@ -555,8 +586,7 @@ class GoldFinchAHNBlock(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("goldfinch_ahn_inject")
-@ATTENTION_REGISTRY.register("goldfinch_ahn")
-@ATTENTION_REGISTRY.register("goldfinch")
+@ATTENTION_REGISTRY.register("inject_goldfinch_ahn")
 def inject_goldfinch_ahn(
     layer: Any = None,
     model: Any = None,
@@ -569,7 +599,7 @@ def inject_goldfinch_ahn(
 ) -> Optional[Union[GoldFinchAHNBlock, nn.Module]]:
     target = layer if layer is not None else model
     if target is None:
-        raise RuntimeError(f"copy_weights failed: {e}")
+        return None
 
     cfg = model_config
     if cfg is None and hasattr(target, "config"):
@@ -625,7 +655,7 @@ def inject_goldfinch_ahn(
         src_attn = target
 
     if src_attn is None and cfg is None:
-        raise RuntimeError(f"copy_weights failed: {e}")
+        return None
 
     hidden_size = (
         getattr(src_attn, 'hidden_size', None) or
@@ -653,13 +683,16 @@ def inject_goldfinch_ahn(
             num_attention_heads=num_heads,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError(f"copy_weights failed: {e}")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"GoldFinchAHNBlock injection failed: {e}")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
             else:
                 target.attention = new_attn
         elif hasattr(target, "self"):

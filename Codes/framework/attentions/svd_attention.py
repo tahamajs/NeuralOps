@@ -174,11 +174,15 @@ class SVDLinearAttention(BaseAttention):
         self.hidden_size: int = int(_cfg_get(
             config, "hidden_size", kwargs.get("hidden_size", 768)
         ))
-        self.num_heads: int = int(_cfg_get(
-            config,
-            "num_attention_heads",
-            _cfg_get(config, "num_heads", kwargs.get("num_attention_heads", 12)),
-        ))
+        self.num_heads: int = int(
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or _cfg_get(
+                config,
+                "num_attention_heads",
+                _cfg_get(config, "num_heads", 12),
+            )
+        )
         self.head_dim: int = int(_cfg_get(
             config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
         ))
@@ -410,9 +414,14 @@ class SVDLinearAttention(BaseAttention):
                     raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Copy Q
-            self.query.weight.copy_(w_q)
+            if w_q.shape == self.query.weight.shape:
+                self.query.weight.copy_(w_q)
+            else:
+                self.query.weight.data[:min(self.q_head_size, w_q.shape[0]), :min(self.hidden_size, w_q.shape[1])].copy_(
+                    w_q[:min(self.q_head_size, w_q.shape[0]), :min(self.hidden_size, w_q.shape[1])]
+                )
             if b_q is not None and self.query.bias is not None:
-                self.query.bias.copy_(b_q)
+                self.query.bias.data[:min(len(self.query.bias), len(b_q))].copy_(b_q[:min(len(self.query.bias), len(b_q))])
 
             # Copy K & V with GQA pooling/repetition if needed
             def _copy_kv(target_proj, w, b):
@@ -548,16 +557,21 @@ class SVDLinearAttention(BaseAttention):
             with torch.no_grad():
                 omega = self.omega[:D_dim, :effective_rank].to(device=device, dtype=torch.float32)
                 Y = torch.matmul(masked_h.float(), omega)  # [B, kv_len, r]
-                Q_mat, _ = torch.linalg.qr(Y, mode="reduced")  # [B, kv_len, r]
-                U_r = Q_mat[:, :, :effective_rank].to(device=device, dtype=dtype)
+                try:
+                    Q_mat, _ = torch.linalg.qr(Y.float(), mode="reduced")  # [B, kv_len, actual_r]
+                except Exception:
+                    Q_mat, _ = torch.linalg.qr(Y.float().cpu(), mode="reduced")
+                    Q_mat = Q_mat.to(device=device)
+                actual_r = min(effective_rank, Q_mat.shape[-1])
+                U_r = Q_mat[:, :, :actual_r].to(device=device, dtype=dtype)
 
             self._last_u_r = U_r
-            U_r_t = U_r.unsqueeze(1)  # [B, 1, kv_len, r]
+            U_r_t = U_r.unsqueeze(1)  # [B, 1, kv_len, actual_r]
 
-            K_proj = torch.matmul(U_r_t.transpose(-2, -1), K)  # [B, H, r, d]
-            V_proj = torch.matmul(U_r_t.transpose(-2, -1), V)  # [B, H, r, d]
+            K_proj = torch.matmul(U_r_t.transpose(-2, -1), K)  # [B, H, actual_r, d]
+            V_proj = torch.matmul(U_r_t.transpose(-2, -1), V)  # [B, H, actual_r, d]
 
-            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)  # [B, H, N, r]
+            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)  # [B, H, seq_len, actual_r]
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             probs = F.softmax(scores, dim=-1).to(dtype)
@@ -572,8 +586,9 @@ class SVDLinearAttention(BaseAttention):
                     head_mask = head_mask.unsqueeze(1)
                 probs = probs * head_mask
 
-            context = torch.matmul(probs, V_proj)  # [B, H, N, d]
-            context = context * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+            context = torch.matmul(probs, V_proj)  # [B, H, seq_len, d]
+            q_valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, device)
+            context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
 
         # 4. Context merge & Output projection

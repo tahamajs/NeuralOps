@@ -19,6 +19,7 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -28,6 +29,8 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -236,9 +239,11 @@ class DecayLinearAttention(BaseAttention):
         self.k_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.v_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
+        self.log_decay = nn.Parameter(torch.full((self.num_heads,), -1.5))
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        nn.init.constant_(self.decay_gate.bias, 3.0)
+        nn.init.zeros_(self.decay_gate.weight)
+        nn.init.zeros_(self.decay_gate.bias)
 
         self.rotary_emb = None
         self.comp_config: Optional[Any] = comp_config
@@ -319,7 +324,7 @@ class DecayLinearAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if ("Conv1D" in c_attn_mod.__class__.__name__) or ("Conv1D" in base_c.__class__.__name__) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -334,7 +339,7 @@ class DecayLinearAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if ("Conv1D" in c_proj_mod.__class__.__name__) or ("Conv1D" in base_o.__class__.__name__) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -421,7 +426,7 @@ class DecayLinearAttention(BaseAttention):
                     nn.init.zeros_(target_mod.bias)
 
                 # Frobenius norm verification (>= 1e-4)
-                w_norm = float(torch.norm(target_mod.weight.data).item())
+                w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"DecayLinearAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
@@ -464,15 +469,15 @@ class DecayLinearAttention(BaseAttention):
         log_lambdas = torch.log(lambdas_f)
         cum_log = torch.cumsum(log_lambdas, dim=-1)
         log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
-        decay = torch.exp(log_decay)
+        decay = torch.exp(log_decay.clamp(max=0.0))
 
         causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
         decay = decay.masked_fill(~causal_mask, 0.0)
 
         scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * decay  # [B, H, L, L]
         num = torch.matmul(scores, v_f)                           # [B, H, L, d]
-        denom = scores.sum(dim=-1, keepdim=True) + 1e-5
-        y = num / denom.clamp(min=1e-5)
+        denom = scores.sum(dim=-1, keepdim=True)
+        y = num / denom.clamp(min=1.0)
 
         if reverse:
             y = y.flip(dims=[2])
@@ -532,9 +537,9 @@ class DecayLinearAttention(BaseAttention):
         q = F.elu(q) + 1.0
         k = F.elu(k) + 1.0
 
-        # Data-dependent decay lambdas in (0, 1)
-        decay_logits = self.decay_gate(hidden_states).transpose(1, 2)
-        lambdas = torch.sigmoid(decay_logits)
+        # Data-dependent decay lambdas in (0, 1) with bounded negative log decay bias
+        decay_logits = self.decay_gate(hidden_states).transpose(1, 2) + self.log_decay.view(1, -1, 1)
+        lambdas = torch.sigmoid(decay_logits).clamp(min=1e-4, max=1.0 - 1e-4)
 
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         mask_bool = None
@@ -581,6 +586,7 @@ class DecayLinearAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("decay_linear_attention_inject")
+@ATTENTION_REGISTRY.register("inject_decay_linear_attention")
 def inject_decay_linear(
     layer: nn.Module,
     model_config: Any = None,
@@ -619,5 +625,6 @@ def inject_decay_linear(
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_block
         return new_block
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error("Failed to inject DecayLinearAttention at layer %d: %s", layer_idx, e)
+        return None

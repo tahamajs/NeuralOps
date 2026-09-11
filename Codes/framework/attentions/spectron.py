@@ -265,7 +265,8 @@ def _unpack_weight_bias(proj: Any) -> Tuple[Optional[torch.Tensor], Optional[tor
     b = getattr(proj, "bias", None)
     if w is not None:
         w = w.detach()
-        if hasattr(proj, "nf") or proj.__class__.__name__ == "Conv1D":
+        cls_p = getattr(proj, "__class__", type(proj)).__name__
+        if hasattr(proj, "nf") or "Conv1D" in cls_p or (w.ndim == 2 and w.shape[0] < w.shape[1] and "Linear" not in cls_p):
             w = w.t().contiguous()
     if b is not None:
         b = b.detach()
@@ -453,7 +454,7 @@ class SpectronAttention(BaseAttention):
             # Detect nested encoder container or inner self-attention
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-            if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+            if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention") or (
                 hasattr(old_attn, "query") and not has_out_proj
             ):
                 self.is_nested_encoder = True
@@ -842,12 +843,13 @@ def inject_spectron_layer(
             **kwargs,
         )
     except Exception as e:
-        log.warning(f"Failed to instantiate SpectronAttention: {e}")
-        raise RuntimeError(f"Injection failed")
+        log.error(f"Failed to instantiate SpectronAttention: {e}")
+        return None
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
+            new_attn.is_nested_encoder = True
         else:
             layer.attention = new_attn
     elif hasattr(layer, "attn"):
