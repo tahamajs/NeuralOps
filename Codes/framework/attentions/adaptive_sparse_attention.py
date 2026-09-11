@@ -7,12 +7,15 @@ and safe injection.
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+logger = logging.getLogger(__name__)
 
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import get_token_valid_mask
@@ -315,6 +318,18 @@ class AdaptiveSparseAttention(BaseAttention):
             if hasattr(mod, "unfreeze_base_weights"):
                 mod.unfreeze_base_weights()
 
+    @property
+    def query(self) -> nn.Module:
+        return self.q_proj
+
+    @property
+    def key(self) -> nn.Module:
+        return self.k_proj
+
+    @property
+    def value(self) -> nn.Module:
+        return self.v_proj
+
     def _relative_position_bucket(
         self, relative_position: torch.Tensor, bidirectional: bool = True, num_buckets: int = 32, max_distance: int = 128
     ) -> torch.Tensor:
@@ -368,9 +383,8 @@ class AdaptiveSparseAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         # 2. GPT-2 Fused c_attn / c_proj (handling Conv1D and LoRALinear wrapper)
         if hasattr(src, "c_attn") and src.c_attn is not None and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -428,11 +442,13 @@ class AdaptiveSparseAttention(BaseAttention):
                             break
 
         # Detect nested encoder architecture
-        cls_name = src.__class__.__name__
+        cls_name = getattr(src, "__class__", type(src)).__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
+            or (hasattr(src, "query") and not has_out_proj)
+            or (hasattr(src, "self") and hasattr(src, "output"))
         ) and not has_out_proj
 
         # Check required weights
@@ -542,25 +558,22 @@ class AdaptiveSparseAttention(BaseAttention):
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                except Exception:
+                    pass
                 try:
                     res = rotary_mod(probe_t, seq_len=N_k)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                except Exception:
+                    pass
                 try:
                     res = rotary_mod(probe_t)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                except Exception:
+                    pass
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
@@ -568,8 +581,8 @@ class AdaptiveSparseAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
+        chunk_size = 64
         scale = d ** -0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # [B, H, N_q, N_k]
 
         # Handle T5 position bias
         position_bias = kwargs.get("position_bias", None)
@@ -577,57 +590,80 @@ class AdaptiveSparseAttention(BaseAttention):
             position_bias = self.compute_bias(N_q, N_k, device=device)
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
-        if position_bias is not None:
-            if mask is not None and mask.dim() == 4:
-                position_bias = position_bias + mask.to(scores.dtype)
-            scores = scores + position_bias.to(scores.dtype)
-        elif mask is not None:
-            if mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
-            else:
-                valid_m = get_token_valid_mask(mask, B, N_k, device)
-                if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
-        # 1. Explicit Causal Masking (CRITICAL for decoders before Top-K)
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
             or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
-        if is_decoder:
-            causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        # 2. Vectorized Top-K Thresholding with learnable sparsity logits
         sparsity_per_head = torch.sigmoid(self.sparsity_logits).clamp(0.0, 0.95)  # [H]
         k_per_head = torch.clamp(((1.0 - sparsity_per_head) * N_k).long(), min=1, max=N_k)  # [H]
+        k_indices_base = (k_per_head - 1).view(1, H, 1, 1)
 
-        sorted_scores, _ = torch.sort(scores, dim=-1, descending=True)  # [B, H, N_q, N_k]
-        k_indices = (k_per_head - 1).view(1, H, 1, 1).expand(B, H, N_q, 1)
-        topk_thresh = torch.gather(sorted_scores, dim=-1, index=k_indices)  # [B, H, N_q, 1]
+        valid_m = None
+        if mask is not None and mask.dim() != 4:
+            valid_m = get_token_valid_mask(mask, B, N_k, device)
+            if valid_m is None:
+                valid_m = torch.ones(B, N_k, device=device, dtype=torch.bool)
 
-        # 3. Apply the Sparse Mask
-        scores = scores.masked_fill(scores < topk_thresh, -10000.0)
+        context_chunks = []
+        attn_chunks = [] if output_attentions else None
 
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
-        attn = self.dropout(attn)
+        for q_start in range(0, N_q, chunk_size):
+            q_end = min(q_start + chunk_size, N_q)
+            q_chunk = Q[:, :, q_start:q_end, :]  # [B, H, C_q, d]
+            C_q = q_end - q_start
 
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                hm = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                hm = head_mask.unsqueeze(-1).unsqueeze(-1)
-            elif head_mask.dim() == 3:
-                hm = head_mask.unsqueeze(1)
-            elif head_mask.dim() == 4:
-                hm = head_mask
-            else:
-                hm = head_mask
-            attn = attn * hm
+            scores_chunk = torch.matmul(q_chunk, K.transpose(-2, -1)) * scale  # [B, H, C_q, N_k]
 
-        context = torch.matmul(attn, V)
+            if position_bias is not None:
+                pb_chunk = position_bias[:, :, q_start:q_end, :]
+                if mask is not None and mask.dim() == 4:
+                    pb_chunk = pb_chunk + mask[:, :, q_start:q_end, :].to(scores_chunk.dtype)
+                scores_chunk = scores_chunk + pb_chunk.to(scores_chunk.dtype)
+            elif mask is not None:
+                if mask.dim() == 4:
+                    scores_chunk = scores_chunk + mask[:, :, q_start:q_end, :].to(scores_chunk.dtype)
+                elif valid_m is not None:
+                    scores_chunk = scores_chunk.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+
+            if is_decoder:
+                q_idx = torch.arange(q_start, q_end, device=device).view(1, 1, C_q, 1)
+                k_idx = torch.arange(N_k, device=device).view(1, 1, 1, N_k)
+                causal_chunk = k_idx <= q_idx
+                scores_chunk = scores_chunk.masked_fill(~causal_chunk, -10000.0)
+
+            # Vectorized Top-K Thresholding on chunk
+            sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
+            k_indices = k_indices_base.expand(B, H, C_q, 1)
+            topk_thresh = torch.gather(sorted_scores, dim=-1, index=k_indices)
+            scores_chunk = scores_chunk.masked_fill(scores_chunk < topk_thresh, -10000.0)
+
+            attn_chunk = torch.nan_to_num(F.softmax(scores_chunk.float(), dim=-1), nan=0.0).to(dtype)
+            attn_chunk = self.dropout(attn_chunk)
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    hm = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    hm = head_mask.unsqueeze(-1).unsqueeze(-1)
+                elif head_mask.dim() == 3:
+                    hm = head_mask.unsqueeze(1)
+                elif head_mask.dim() == 4:
+                    hm = head_mask[:, :, q_start:q_end, :]
+                else:
+                    hm = head_mask
+                attn_chunk = attn_chunk * hm
+
+            ctx_chunk = torch.matmul(attn_chunk, V)  # [B, H, C_q, d]
+            context_chunks.append(ctx_chunk)
+            if output_attentions:
+                attn_chunks.append(attn_chunk)
+
+        context = torch.cat(context_chunks, dim=2)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
+        attn = torch.cat(attn_chunks, dim=2) if output_attentions else None
 
         if self.is_nested_encoder:
             output = context
@@ -642,6 +678,8 @@ class AdaptiveSparseAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("adaptive_sparse_attention_inject")
 @ATTENTION_REGISTRY.register("adaptive_sparse_inject")
 @ATTENTION_REGISTRY.register("adaptive_sparse_attn_inject")
+@ATTENTION_REGISTRY.register("inject_adaptive_sparse")
+@ATTENTION_REGISTRY.register("inject_adaptive_sparse_attention")
 def inject_adaptive_sparse(
     layer: Any = None,
     model: Any = None,
@@ -667,6 +705,8 @@ def inject_adaptive_sparse(
         layer_list = target.distilbert.transformer.layer
     elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
         layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+        layer_list = target.bert.encoder.layer
     elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
         layer_list = target.transformer.h
     elif hasattr(target, "model") and hasattr(target.model, "layers"):
@@ -744,8 +784,9 @@ def inject_adaptive_sparse(
             pretrained_attn=src_attn,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"inject_adaptive_sparse failed: {e}")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
