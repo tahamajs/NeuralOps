@@ -28,7 +28,7 @@
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}}):
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
 \begin{itemize}
 \item \textbf{انتقال ترافیک به کش پرسرعت \lr{SRAM}:} با تقطیع محاسبات به بلوک‌های $64 \times 64$، تمام ماتریس‌های میانی ضرب داخلی درون کش اشتراکی پردازنده گرافیکی لود شده و از رفت‌وبرگشت به حافظه سراسری کند جلوگیری می‌شود.
 \item \textbf{کاهش خطی ردپای حافظه \lr{KV-Cache}:} در طول تولید خودبازگشتی، تنها بلوک‌های برتر فعال در کش نگه داشته می‌شوند و از اشغال فضای حافظه برای توکن‌های نامربوط پیشگیری می‌گردد.
@@ -76,7 +76,7 @@
 \begin{latin}
 \footnotesize
 \textbf{AI Technical Visualization Prompt:}\\
-"A hyper-detailed, photorealistic 3D scientific isometric schematic of the moba attention mechanism. Illustrating incoming token tensors partitioned into structured glowing data blocks of shape [B, M, B_s, D] flowing through an intelligent Top-K block router. Cyan and golden laser paths connecting active memory blocks directly into GPU SRAM shared cache, bypassing dense matrix materialization, dark metallic blueprint laboratory aesthetic, 8k resolution --ar 16:9"
+"A hyper-detailed, photorealistic 3D scientific isometric schematic of the moba attention mechanism. Illustrating incoming token tensors partitioned into structured glowing data blocks of shape [B, M, B\_s, D] flowing through an intelligent Top-K block router. Cyan and golden laser paths connecting active memory blocks directly into GPU SRAM shared cache, bypassing dense matrix materialization, dark metallic blueprint laboratory aesthetic, 8k resolution --ar 16:9"
 \end{latin}
 
 \begin{figure}[H]

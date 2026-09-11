@@ -28,7 +28,7 @@ a_{ij} = \frac{\langle \bar{\mathbf{q}}_i, \bar{\mathbf{k}}_j \rangle}{\sqrt{d_k
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}}):
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
 \begin{itemize}
 \item \textbf{بیشینه‌سازی توان عملیاتی هسته‌های تنسور (\lr{Tensor Cores}):} ابعاد بلوک‌های ۶۴ در ۶۴ امکان هم‌راستاسازی بهینه ماتریس‌ها با بلوک‌های سخت‌افزاری \lr{WMMA} را میسر می‌سازد.
 \item \textbf{مهار ترافیک تراشه‌ای (\lr{Memory-Bound Relief}):} حجم خواندن و نوشتن از حافظه \lr{DRAM} به یک‌پنجم تقلیل یافته و مانع از گلوگاه پهنای باند حافظه می‌گردد.
@@ -76,7 +76,7 @@ a_{ij} = \frac{\langle \bar{\mathbf{q}}_i, \bar{\mathbf{k}}_j \rangle}{\sqrt{d_k
 \begin{latin}
 \footnotesize
 \textbf{AI Technical Visualization Prompt:}\\
-"A hyper-detailed 3D technical blueprint visualization of moba_attention. Showing dense sequence tokens split into modular cubical data blocks, routed across high-speed parallel pathways into specialized matrix multiplier units, glowing azure and neon orange colors, cinematic lighting, 8k resolution --ar 16:9"
+"A hyper-detailed 3D technical blueprint visualization of moba\_attention. Showing dense sequence tokens split into modular cubical data blocks, routed across high-speed parallel pathways into specialized matrix multiplier units, glowing azure and neon orange colors, cinematic lighting, 8k resolution --ar 16:9"
 \end{latin}
 
 \begin{figure}[H]

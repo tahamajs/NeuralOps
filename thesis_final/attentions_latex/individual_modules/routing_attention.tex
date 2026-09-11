@@ -28,7 +28,7 @@ c(\mathbf{x}_i) = \arg\max_{k \in \{1, \dots, K\}} \frac{\langle \mathbf{x}_i, \
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}}):
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
 \begin{itemize}
 \item \textbf{سازگاری با کش سریع پردازنده:} خوشه‌ها ابعادی کوچک دارند و ماتریس توجه هر خوشه درون \lr{SRAM} جا می‌گیرد.
 \item \textbf{حذف ۹۰ درصدی تراکنش‌های زائد:} توکن‌های نامرتبط در خوشه‌های دیگر هرگز از حافظه اصلی فراخوانی نمی‌شوند.

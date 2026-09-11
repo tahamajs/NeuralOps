@@ -23,7 +23,7 @@
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}}):
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
 \begin{itemize}
 \item \textbf{مهار عطش پهنای باند حافظه (\lr{Memory-Bound Relief}):} در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی (\lr{Arithmetic Intensity}) به طور محسوسی بهبود می‌یابد.
 \item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها (\lr{KV-Cache}):} در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
@@ -80,7 +80,7 @@
 \begin{latin}
 \footnotesize
 \textbf{AI Technical Visualization Prompt:}\\
-"A 3D isometric diagram of svd_attention depicting an orthogonal singular value decomposition lattice: matrix W decomposing into U, Sigma, and V matrices with glowing spectral eigenvalues."
+"A 3D isometric diagram of svd\_attention depicting an orthogonal singular value decomposition lattice: matrix W decomposing into U, Sigma, and V matrices with glowing spectral eigenvalues."
 \end{latin}
 
 \begin{figure}[H]
