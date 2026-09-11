@@ -256,16 +256,11 @@ class TLinFormerAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Aliases for compatibility
-        self.query = self.q_proj
-        self.key = self.k_proj
-        self.value = self.v_proj
-
         # Sequence dimension low-rank projections: [rank, max_seq_len]
         self.proj_k = nn.Parameter(torch.empty(self.rank, self.max_seq_len))
         self.proj_v = nn.Parameter(torch.empty(self.rank, self.max_seq_len))
-        nn.init.xavier_uniform_(self.proj_k)
-        nn.init.xavier_uniform_(self.proj_v)
+        nn.init.normal_(self.proj_k, std=0.02)
+        nn.init.normal_(self.proj_v, std=0.02)
 
         dropout_p = getattr(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
@@ -273,6 +268,18 @@ class TLinFormerAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    @property
+    def query(self) -> LoRALinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> LoRALinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> LoRALinear:
+        return self.v_proj
 
     @property
     def E(self) -> nn.Parameter:
@@ -537,34 +544,83 @@ class TLinFormerAttention(BaseAttention):
         K_proj = torch.matmul(P_k, k_masked)
         V_proj = torch.matmul(P_v, v_masked)
 
-        # Scaled attention logits: (B, H, N, d) @ (B, H, d, r) -> (B, H, N, r)
-        scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q, K_proj.transpose(-2, -1)) * scale
-
-        # Causal lower-triangular masking for decoder models
+        # If decoder model with causal attention, standard LinFormer projection breaks causality.
+        # Preserve causality by falling back to standard causal scaled dot-product attention
         if self.is_decoder:
-            causal_mask = torch.tril(torch.ones(N, self.rank, device=scores.device, dtype=torch.bool))
-            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+            scale = 1.0 / math.sqrt(self.head_dim)
+            scores = torch.matmul(q, k.transpose(-2, -1)) * scale
 
-        # Safe head mask application
-        if head_mask is not None:
-            hm = head_mask.to(scores.device)
-            if hm.dim() == 1:
-                hm = hm.view(1, -1, 1, 1)
-            elif hm.dim() == 2:
-                hm = hm.view(hm.shape[0], 1, 1, 1)
-            elif hm.dim() == 3:
-                hm = hm.unsqueeze(1)
-            scores = scores * hm
+            causal_mask = torch.triu(
+                torch.full((N, N), float("-inf"), device=scores.device, dtype=scores.dtype),
+                diagonal=1,
+            )
+            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
-        probs = F.softmax(scores, dim=-1)
-        probs = self.dropout(probs)
+            if attention_mask is not None:
+                if attention_mask.dim() == 4:
+                    scores = scores + attention_mask.to(scores.dtype)
+                elif valid_mask is not None:
+                    pad_mask = valid_mask.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
+                    scores = scores.masked_fill(~pad_mask, -1e4)
 
-        if head_mask is not None:
-            probs = probs * hm
+            probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
+            probs = self.dropout(probs)
 
-        # Context aggregation: (B, H, N, r) @ (B, H, r, d) -> (B, H, N, d)
-        context = torch.matmul(probs, V_proj)
+            if head_mask is not None:
+                hm = head_mask.to(probs.device)
+                if hm.dim() == 1:
+                    hm = hm.view(1, -1, 1, 1)
+                elif hm.dim() == 2:
+                    hm = hm.view(hm.shape[0], 1, 1, 1)
+                elif hm.dim() == 3:
+                    hm = hm.unsqueeze(1)
+                probs = probs * hm
+
+            context = torch.matmul(probs, v)
+        else:
+            # Low-rank sequence projection parameters for non-causal encoder models
+            if N <= self.max_seq_len:
+                P_k = self.proj_k[:, :N].to(dtype=hidden_states.dtype, device=hidden_states.device)
+                P_v = self.proj_v[:, :N].to(dtype=hidden_states.dtype, device=hidden_states.device)
+            else:
+                P_k = F.interpolate(
+                    self.proj_k.unsqueeze(0).unsqueeze(0),
+                    size=(self.rank, N),
+                    mode="bilinear",
+                    align_corners=False,
+                ).squeeze(0).squeeze(0).to(dtype=hidden_states.dtype, device=hidden_states.device)
+                P_v = F.interpolate(
+                    self.proj_v.unsqueeze(0).unsqueeze(0),
+                    size=(self.rank, N),
+                    mode="bilinear",
+                    align_corners=False,
+                ).squeeze(0).squeeze(0).to(dtype=hidden_states.dtype, device=hidden_states.device)
+
+            # Sequence contraction: (r, N) @ (B, H, N, d) -> (B, H, r, d)
+            K_proj = torch.matmul(P_k, k_masked)
+            V_proj = torch.matmul(P_v, v_masked)
+
+            # Scaled attention logits: (B, H, N, d) @ (B, H, d, r) -> (B, H, N, r)
+            scale = 1.0 / math.sqrt(self.head_dim)
+            scores = torch.matmul(q, K_proj.transpose(-2, -1)) * scale
+
+            probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
+            probs = self.dropout(probs)
+
+            # Safe head mask application (applied only once after softmax)
+            if head_mask is not None:
+                hm = head_mask.to(probs.device)
+                if hm.dim() == 1:
+                    hm = hm.view(1, -1, 1, 1)
+                elif hm.dim() == 2:
+                    hm = hm.view(hm.shape[0], 1, 1, 1)
+                elif hm.dim() == 3:
+                    hm = hm.unsqueeze(1)
+                probs = probs * hm
+
+            # Context aggregation: (B, H, N, r) @ (B, H, r, d) -> (B, H, N, d)
+            context = torch.matmul(probs, V_proj)
+
         context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         # Output projection (bypassed for nested encoders)
@@ -572,6 +628,10 @@ class TLinFormerAttention(BaseAttention):
             output = context
         else:
             output = self.out_proj(context)
+
+        # Zero out representations for padding query tokens
+        if valid_mask is not None:
+            output = output * valid_mask.unsqueeze(-1).to(output.dtype)
 
         return (output, probs if output_attentions else None)
 
