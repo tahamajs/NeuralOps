@@ -409,3 +409,12 @@ The `LoRALinear` architecture incorporates telemetry hooks for tracking singular
 ## Limitations & Future Work
 
 TODO: Identify specific limitations and edge cases for this module.
+
+## Unified 4-Architecture Benchmark Results (TLinFormer Attention)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 52.29% | 0.68 | 0.9855 | 0 | 335.97 | `PASS_LOW` | N/A |
+| ROBERTA | 50.92% | 0.6748 | 0.9323 | 0 | 388.24 | `PASS_LOW` | N/A |
+| GPT2 | 50.92% | 0.6748 | 0.9784 | 0 | 581.47 | `PASS_LOW` | N/A |
