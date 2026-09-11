@@ -38,7 +38,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("swift_svd")
+@COMPRESSOR_REGISTRY.register("swift_svd_class")
 class SwiftSVDCompressor(BaseCompressor):
     """
     Swift-SVD Compressor: Fast Closed-Form Truncated SVD.
