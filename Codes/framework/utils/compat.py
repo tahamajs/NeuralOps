@@ -24,6 +24,13 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
     )
 
 
+def init_output_scale(module: nn.Module, name: str = "output_scale") -> None:
+    """Register output_scale learnable parameter if not already present."""
+    if not hasattr(module, name):
+        module.register_parameter(name, nn.Parameter(torch.ones(1)))
+
+
+
 def is_decoder_family(family: str) -> bool:
     return family in {"gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral", "falcon"}
 

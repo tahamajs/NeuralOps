@@ -245,6 +245,7 @@ class GalerkinAttention(BaseAttention):
         ) if config else dropout
         self.dropout = nn.Dropout(dropout_p)
 
+        self.output_scale = nn.Parameter(torch.ones(1))
         self.rotary_emb = None
         self.comp_config: Optional[Any] = comp_config
 
@@ -531,19 +532,24 @@ class GalerkinAttention(BaseAttention):
             r_actual = min(self.rank, kv_len)
             Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
 
-            # Project Keys and Values onto Orthonormal Basis: [B, H, r, d]
+            # Project Queries, Keys, and Values onto Orthonormal Basis: preserving inner product
+            Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)
             K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
             V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
             scale = d**-0.5
-            scores = torch.matmul(Q.float(), K_basis.float().transpose(-2, -1)) * scale  # [B, H, N, r]
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale  # [B, H, N, kv_len]
+            if eff_mask is not None:
+                if eff_mask.dim() == 2:
+                    scores = scores + (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
+                elif eff_mask.dim() == 4:
+                    scores = scores + eff_mask.float()
 
             probs = F.softmax(scores, dim=-1)
             probs = torch.nan_to_num(probs, nan=0.0)
             probs = self.dropout(probs)
 
-            # Attended representation in basis space: [B, H, N, d]
-            context = torch.matmul(probs.to(dtype), V_basis)
+            context = torch.matmul(probs.to(dtype), V)
 
             # Output token valid mask
             if eff_mask is not None and not is_cross_attention:
@@ -560,6 +566,7 @@ class GalerkinAttention(BaseAttention):
             context = context * head_mask
 
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        context = context * self.output_scale
 
         # 6. Output projection with nested encoder bypass
         if self.is_nested_encoder:

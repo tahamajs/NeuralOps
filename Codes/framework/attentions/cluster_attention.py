@@ -213,8 +213,9 @@ class ClusterAttention(BaseAttention):
             self.num_clusters = getattr(config, "cluster_num_clusters", num_clusters)
         else:
             self.num_clusters = num_clusters
-        self.n_iters: int = n_iters
+        self.n_iters: int = max(20, n_iters)
         self.window_size: int = window_size
+        self.temp = nn.Parameter(torch.tensor(0.1))
         self.local_residual = nn.Parameter(torch.tensor(0.5))
 
         model_type = getattr(config, "model_type", "").lower() if config else ""
@@ -587,9 +588,10 @@ class ClusterAttention(BaseAttention):
             # Centroid values: [B, H, K, Dh]
             V_cent = torch.matmul(attn_cent, V)
 
-            # 3. Differentiable Query-to-Centroid soft assignment & context gathering [B, H, L, Dh]
+            # 3. Differentiable Query-to-Centroid soft assignment with learned sharpening & context gathering [B, H, L, Dh]
             scores_assign = torch.matmul(Q, centroids.transpose(-2, -1)) * scale
-            attn_assign = torch.nan_to_num(F.softmax(scores_assign.float(), dim=-1), nan=0.0).to(dtype)
+            temp_clamped = self.temp.abs().clamp(min=1e-3, max=10.0)
+            attn_assign = torch.nan_to_num(F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0).to(dtype)
             global_context = torch.matmul(attn_assign, V_cent)
 
             # 4. Optional Local Sliding Window Attention
