@@ -7,6 +7,7 @@ and global linear kernel attention with adaptive gating.
 Hardened for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
 
+import logging
 import math
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
@@ -17,6 +18,8 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.attention_utils import repeat_kv
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -296,14 +299,14 @@ def kernel_linear_attention(
         KV_cum = torch.cumsum(kv_outer, dim=2)
         z_cum = torch.cumsum(K_feat, dim=2)
         num = torch.einsum("bhnf,bhnfd->bhnd", Q_feat, KV_cum)
-        denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1e-5)
+        denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1.0)
         ctx = num / denom
     else:
         KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_f)
         K_sum = K_feat.sum(dim=2)
-        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
-        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-5)
-    return torch.nan_to_num(ctx, nan=0.0).to(orig_dtype)
+        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1.0)
+        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
+    return torch.nan_to_num(ctx, nan=0.0).clamp(min=-1e4, max=1e4).to(orig_dtype)
 
 
 @ATTENTION_REGISTRY.register("aegis_v1_module", supports_causal=True, supports_gqa=True)
@@ -437,28 +440,38 @@ class AegisAttentionV1(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(old_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = old_attn.c_attn.weight.data
-            bias = getattr(old_attn.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+            c_attn_mod = old_attn.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                is_conv1d = (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf")
+                if is_conv1d or (weight.dim() == 2 and weight.shape[0] < weight.shape[1]) or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
+                    weight = weight.t().contiguous()
+                bias = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                bias_data = bias.data if bias is not None else None
+                split_size = weight.shape[0] // 3
+                q_w = weight[:split_size, :]
+                k_w = weight[split_size : 2 * split_size, :]
+                v_w = weight[2 * split_size :, :]
+                q_b = bias_data[:split_size] if bias_data is not None else None
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+                v_b = bias_data[2 * split_size :] if bias_data is not None else None
+                extracted["q"] = (q_w, q_b)
+                extracted["k"] = (k_w, k_b)
+                extracted["v"] = (v_w, v_b)
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
-            w_o = old_attn.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(old_attn.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            c_proj_mod = old_attn.c_proj
+            base_p = getattr(c_proj_mod, "base_layer", c_proj_mod)
+            w_o = getattr(base_p, "weight", getattr(c_proj_mod, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                is_conv1d = (c_proj_mod.__class__.__name__ == "Conv1D") or (base_p.__class__.__name__ == "Conv1D") or hasattr(c_proj_mod, "nf") or hasattr(base_p, "nf")
+                if is_conv1d or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]) or (w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size):
+                    w_o = w_o.t().contiguous()
+                b_o = getattr(base_p, "bias", getattr(c_proj_mod, "bias", None))
+                extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(old_attn, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -500,9 +513,13 @@ class AegisAttentionV1(BaseAttention):
         ):
             self.is_nested_encoder = True
         elif (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention")
+            or "RobertaSelfAttention" in str(type(old_attn))
+            or "BertSelfAttention" in str(type(old_attn))
+            or "roberta" in str(type(old_attn)).lower()
+            or ("bert" in str(type(old_attn)).lower() and "self" in str(type(old_attn)).lower())
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj:
+        ):
             self.is_nested_encoder = True
         else:
             self.is_nested_encoder = False
@@ -543,6 +560,8 @@ class AegisAttentionV1(BaseAttention):
 
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
+        elif hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
+            self.is_decoder = True
 
     @classmethod
     def from_distilbert_pretrained(
@@ -604,17 +623,19 @@ class AegisAttentionV1(BaseAttention):
 
         if N < self.cfg.local_window or self.is_decoder:
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
-            if eff_mask is not None and eff_mask.dim() == 4:
-                if eff_mask.dtype == torch.bool:
-                    scores = scores.masked_fill(~eff_mask, -10000.0)
-                else:
-                    scores = scores + eff_mask.float()
-            else:
-                if self.is_decoder and not is_cross and N > 1:
-                    causal_mask = torch.triu(torch.full((N, N_kv), -10000.0, device=Q.device, dtype=torch.float32), diagonal=1)
-                    scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
-                if eff_mask is not None and eff_mask.dim() == 2:
+            if self.is_decoder and not is_cross and N > 1:
+                causal_mask = torch.triu(torch.full((N, N_kv), -10000.0, device=Q.device, dtype=torch.float32), diagonal=1)
+                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+            if eff_mask is not None:
+                if eff_mask.dim() == 2:
                     scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                elif eff_mask.dim() == 3:
+                    scores = scores + (eff_mask.unsqueeze(1).float() - 1.0) * 10000.0
+                elif eff_mask.dim() == 4:
+                    if eff_mask.dtype == torch.bool:
+                        scores = scores.masked_fill(~eff_mask, -10000.0)
+                    else:
+                        scores = scores + eff_mask.float()
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             attn = F.softmax(scores, dim=-1).to(Q.dtype)
@@ -679,8 +700,8 @@ class AegisAttentionV1(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-@ATTENTION_REGISTRY.register("aegis_v1_fn")
 @ATTENTION_REGISTRY.register("aegis_v1_inject")
+@ATTENTION_REGISTRY.register("inject_aegis_v1")
 def inject_aegis_v1(
     layer: Any,
     model_config: Any = None,
@@ -689,7 +710,7 @@ def inject_aegis_v1(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> AegisAttentionV1:
+) -> Optional[AegisAttentionV1]:
     r"""Injects AEGIS-V1 attention into a transformer layer."""
     if model_config is None:
         if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
@@ -716,8 +737,8 @@ def inject_aegis_v1(
         try:
             new_attn.copy_weights(src_attn)
         except Exception as e:
-            print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
+            logger.error("inject_aegis_v1 copy_weights failed: %s", e)
+            return None
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
