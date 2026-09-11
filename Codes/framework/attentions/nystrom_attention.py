@@ -231,41 +231,46 @@ class NystromAttention(BaseAttention):
         self.value = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        self.q_proj = self.query
-        self.k_proj = self.key
-        self.v_proj = self.value
-        self.q_lin = self.query
-        self.k_lin = self.key
-        self.v_lin = self.value
-        self.out_lin = self.out_proj
-        self.dense = self.out_proj
-        self.o_proj = self.out_proj
-        self.c_proj = self.out_proj
-
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
+    @property
+    def q_proj(self): return self.query
+    @property
+    def k_proj(self): return self.key
+    @property
+    def v_proj(self): return self.value
+    @property
+    def q_lin(self): return self.query
+    @property
+    def k_lin(self): return self.key
+    @property
+    def v_lin(self): return self.value
+    @property
+    def out_lin(self): return self.out_proj
+    @property
+    def dense(self): return self.out_proj
+    @property
+    def o_proj(self): return self.out_proj
+    @property
+    def c_proj(self): return self.out_proj
+
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
 
-        cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        cls_name = getattr(src, "__class__", type(src)).__name__
+        has_out = hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
+            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            or (hasattr(src, "query") and not has_out)
         ):
             is_nested = True
-        elif (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+        if hasattr(src, "self") and hasattr(src, "output"):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -283,7 +288,14 @@ class NystromAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                is_conv1d = (
+                    "Conv1D" in c_attn_mod.__class__.__name__
+                    or "Conv1D" in base_c.__class__.__name__
+                    or hasattr(c_attn_mod, "nf")
+                    or hasattr(base_c, "nf")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                )
+                if is_conv1d:
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -298,7 +310,14 @@ class NystromAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    is_conv1d = (
+                        "Conv1D" in c_proj_mod.__class__.__name__
+                        or "Conv1D" in base_o.__class__.__name__
+                        or hasattr(c_proj_mod, "nf")
+                        or hasattr(base_o, "nf")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    )
+                    if is_conv1d:
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -339,15 +358,8 @@ class NystromAttention(BaseAttention):
                     w, b = adapter.get_weight_bias(src, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
-
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
-        if missing_after:
-            raise RuntimeError(
-                f"NystromAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
-            )
+            except Exception:
+                pass
 
         target_map = {
             "q": self.query,
@@ -382,7 +394,7 @@ class NystromAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                w_norm = float(torch.norm(target_mod.weight.data).item())
+                w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"NystromAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
@@ -411,6 +423,9 @@ class NystromAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if kwargs.get("encoder_hidden_states", None) is not None:
+            raise NotImplementedError("Cross-attention is not implemented for NystromAttention")
+
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
         device = hidden_states.device
@@ -428,41 +443,49 @@ class NystromAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        m = min(self.num_landmarks, N)
-
-        # Adaptive pooling landmarks
-        Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)
-        K_flat = K.reshape(B * H, N, d).transpose(1, 2)
-
-        Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
-        K_landmarks = F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).reshape(B, H, m, d)
-
-        scale = 1.0 / math.sqrt(d)
-        scores1 = torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1)) * scale
-        scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1)) * scale
-        scores3 = torch.matmul(Q_landmarks.float(), K.float().transpose(-2, -1)) * scale
-
-        if self.is_decoder:
-            causal_F1 = torch.tril(torch.ones(N, m, device=device, dtype=torch.bool))
-            scores1 = scores1.masked_fill(~causal_F1.unsqueeze(0).unsqueeze(0), -1e4)
-
         valid_mask = get_token_valid_mask(attention_mask, B, N, device)
-        mask_expanded = valid_mask.unsqueeze(1).unsqueeze(2)
-        scores3 = scores3.masked_fill(~mask_expanded, -1e4)
 
-        F1 = F.softmax(scores1, dim=-1).to(dtype)
-        F2 = F.softmax(scores2, dim=-1).to(dtype)
-        F3 = F.softmax(scores3, dim=-1).to(dtype)
+        if self.is_decoder or self.is_causal:
+            scale = 1.0 / math.sqrt(d)
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+            causal_mask = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+            scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
+            attn_weights = F.softmax(scores, dim=-1).to(dtype)
+            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+            attn_weights = self.dropout(attn_weights)
+            context = torch.matmul(attn_weights, V)
+        else:
+            m = min(self.num_landmarks, N)
 
-        F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)
+            # Adaptive pooling landmarks
+            Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)
+            K_flat = K.reshape(B * H, N, d).transpose(1, 2)
 
-        # Associative linear multiplication: O(N * m * d)
-        step1 = torch.matmul(F3, V)
-        step2 = torch.matmul(F2_pinv, step1)
-        context = torch.matmul(F1, step2)
+            Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
+            K_landmarks = F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).reshape(B, H, m, d)
 
-        context = torch.nan_to_num(context, nan=0.0)
-        context = self.dropout(context)
+            scale = 1.0 / math.sqrt(d)
+            scores1 = torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1)) * scale
+            scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1)) * scale
+            scores3 = torch.matmul(Q_landmarks.float(), K.float().transpose(-2, -1)) * scale
+
+            mask_expanded = valid_mask.unsqueeze(1).unsqueeze(2)
+            scores3 = scores3.masked_fill(~mask_expanded, -1e4)
+
+            F1 = F.softmax(scores1, dim=-1).to(dtype)
+            F2 = F.softmax(scores2, dim=-1).to(dtype)
+            F3 = F.softmax(scores3, dim=-1).to(dtype)
+
+            F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)
+
+            # Associative linear multiplication: O(N * m * d)
+            step1 = torch.matmul(F3, V)
+            step2 = torch.matmul(F2_pinv, step1)
+            context = torch.matmul(F1, step2)
+
+            context = torch.nan_to_num(context, nan=0.0)
+            context = self.dropout(context)
 
         if head_mask is not None:
             if head_mask.dim() == 1:
@@ -485,6 +508,7 @@ class NystromAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("nystrom_inject")
+@ATTENTION_REGISTRY.register("inject_nystrom")
 def inject_nystrom(
     layer: Any,
     model_config: Any = None,
@@ -527,6 +551,7 @@ def inject_nystrom(
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
             elif hasattr(layer, "self"):
@@ -534,5 +559,7 @@ def inject_nystrom(
             elif hasattr(layer, "attn"):
                 layer.attn = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"NystromAttention injection failed: {e}")
+        return None

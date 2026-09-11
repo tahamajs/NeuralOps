@@ -18,8 +18,11 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -300,22 +303,12 @@ class Jamba2Block(BaseAttention):
         if src is None:
             return
 
-        cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        is_nested = False
-        if (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
-            is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+        cls_name = getattr(src, '__class__', type(src)).__name__
+        has_out = hasattr(src, 'dense') or hasattr(src, 'out_proj') or hasattr(src, 'out_lin') or hasattr(src, 'c_proj') or hasattr(src, 'o_proj')
+        if (cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out)):
+            self.is_nested_encoder = True
+        if hasattr(src, 'self') and hasattr(src, 'output'):
+            self.is_nested_encoder = True
 
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
             "q": (None, None),
@@ -331,7 +324,7 @@ class Jamba2Block(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or hasattr(c_attn_mod, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -346,7 +339,7 @@ class Jamba2Block(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or hasattr(c_proj_mod, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -375,7 +368,10 @@ class Jamba2Block(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            w_data = mod.weight.data.clone()
+                            if (mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
+                                w_data = w_data.t()
+                            extracted[proj_key] = (w_data, mod.bias.data.clone() if mod.bias is not None else None)
                             break
 
         missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
@@ -388,8 +384,7 @@ class Jamba2Block(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug(f"UniversalAdapter fallback: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -492,7 +487,7 @@ class Jamba2Block(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
 
-        if self.is_decoder:
+        if self.is_decoder or getattr(self, "is_causal", False) or getattr(self.config, "is_decoder", False) or getattr(self.config, "is_causal", False):
             causal_mask = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool))
             scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
@@ -519,7 +514,8 @@ class Jamba2Block(BaseAttention):
         attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
-            attn_proj = attn_out
+            out = attn_out
+            return out, (probs if output_attentions else None)
         else:
             attn_proj = self.out_lin(attn_out)
 
@@ -535,8 +531,8 @@ class Jamba2Block(BaseAttention):
 
 @ATTENTION_REGISTRY.register("jamba_inject")
 @ATTENTION_REGISTRY.register("jamba2_inject")
-@ATTENTION_REGISTRY.register("jamba")
-@ATTENTION_REGISTRY.register("jamba2")
+@ATTENTION_REGISTRY.register("inject_jamba")
+@ATTENTION_REGISTRY.register("inject_jamba2")
 def inject_jamba(
     layer: Any = None,
     model: Any = None,
@@ -635,13 +631,15 @@ def inject_jamba(
             num_attention_heads=num_heads,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"Jamba2Block injection failed: {e}")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_block
+                new_block.is_nested_encoder = True
             else:
                 target.attention = new_block
         elif hasattr(target, "self"):

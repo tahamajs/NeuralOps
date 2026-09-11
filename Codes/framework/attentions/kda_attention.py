@@ -16,8 +16,11 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -250,22 +253,12 @@ class KDAAttention(BaseAttention):
         if src is None:
             return
 
-        cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        is_nested = False
-        if (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
-            is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+        cls_name = getattr(src, '__class__', type(src)).__name__
+        has_out = hasattr(src, 'dense') or hasattr(src, 'out_proj') or hasattr(src, 'out_lin') or hasattr(src, 'c_proj') or hasattr(src, 'o_proj')
+        if (cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out)):
+            self.is_nested_encoder = True
+        if hasattr(src, 'self') and hasattr(src, 'output'):
+            self.is_nested_encoder = True
 
         extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
             "q": (None, None),
@@ -281,7 +274,7 @@ class KDAAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or hasattr(c_attn_mod, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -296,7 +289,7 @@ class KDAAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or hasattr(c_proj_mod, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -325,7 +318,10 @@ class KDAAttention(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            w_data = mod.weight.data.clone()
+                            if (mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
+                                w_data = w_data.t()
+                            extracted[proj_key] = (w_data, mod.bias.data.clone() if mod.bias is not None else None)
                             break
 
         missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
@@ -338,8 +334,7 @@ class KDAAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug(f"UniversalAdapter fallback: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -405,7 +400,8 @@ class KDAAttention(BaseAttention):
 
         mask_float = None
         if mask is not None:
-            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            valid_m = get_token_valid_mask(mask, B, L, q.device)
+            mask_float = valid_m.float()
 
         y_fwd_list = []
         S = torch.zeros(B, H, d, v.shape[-1], device=q.device, dtype=torch.float32)
@@ -449,8 +445,8 @@ class KDAAttention(BaseAttention):
                 den_inter = den_inter * mc.unsqueeze(1).unsqueeze(-1)
 
             num_total = num_intra + num_inter
-            den_total = (den_intra + den_inter).clamp(min=1e-4)
-            yc = (num_total / (den_total + 1e-4)).to(q.dtype)
+            den_total = (den_intra + den_inter).clamp(min=1.0)
+            yc = (num_total / den_total).to(q.dtype)
             if mc is not None:
                 yc = yc * mc.unsqueeze(1).unsqueeze(-1)
             y_fwd_list.append(yc)
@@ -501,13 +497,14 @@ class KDAAttention(BaseAttention):
         attn_scores = (q.float() @ k.float().transpose(-1, -2))  # [B, H, L, L]
 
         if mask is not None:
-            mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
+            valid_m = get_token_valid_mask(mask, B, L, q.device)
+            mask_float = valid_m.float()
             mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
             D_causal = D_causal * mask_2d
 
         num_fwd = (attn_scores * D_causal) @ v.float()
         denom_fwd = (attn_scores * D_causal).sum(dim=-1, keepdim=True)
-        y_fwd = torch.clamp(num_fwd / (denom_fwd + 1e-6).clamp(min=1e-6), min=-1e4, max=1e4).to(q.dtype)
+        y_fwd = torch.clamp(num_fwd / denom_fwd.clamp(min=1.0), min=-1e4, max=1e4).to(q.dtype)
 
         if not self.is_decoder:
             triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
@@ -516,7 +513,7 @@ class KDAAttention(BaseAttention):
                 D_anti = D_anti * mask_2d
             num_bwd = (attn_scores * D_anti) @ v.float()
             denom_bwd = (attn_scores * D_anti).sum(dim=-1, keepdim=True)
-            y_bwd = torch.clamp(num_bwd / (denom_bwd + 1e-6).clamp(min=1e-6), min=-1e4, max=1e4).to(q.dtype)
+            y_bwd = torch.clamp(num_bwd / denom_bwd.clamp(min=1.0), min=-1e4, max=1e4).to(q.dtype)
             return y_fwd, y_bwd
 
         return y_fwd, None
@@ -603,8 +600,7 @@ class KDAAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("kda_inject")
-@ATTENTION_REGISTRY.register("kda")
-@ATTENTION_REGISTRY.register("kda_attention")
+@ATTENTION_REGISTRY.register("inject_kda")
 def inject_kda(
     layer: Any = None,
     model: Any = None,
@@ -701,13 +697,15 @@ def inject_kda(
             num_attention_heads=num_heads,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"KDA injection failed: {e}")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
             else:
                 target.attention = new_attn
         elif hasattr(target, "self"):

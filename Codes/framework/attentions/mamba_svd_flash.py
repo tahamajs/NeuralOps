@@ -246,8 +246,10 @@ class MambaSVDFlash(BaseAttention):
         self.v_proj = LoRALinear(self.d_model, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Gating for dynamic aggregation
+        # Gating for dynamic aggregation (negative initial bias preserves pretrained attention)
         self.gating = nn.Linear(self.d_model, self.d_model)
+        nn.init.zeros_(self.gating.weight)
+        nn.init.constant_(self.gating.bias, -2.0)
 
         # Initialize sigma bias for contractive stability (singular values ~ 0.85)
         nn.init.constant_(self.proj_sigma.bias, 1.8)
@@ -437,7 +439,7 @@ class MambaSVDFlash(BaseAttention):
                     nn.init.zeros_(target_mod.bias)
 
                 # Strict Frobenius norm verification on copied weight slice
-                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
+                w_norm = float(torch.linalg.norm(w[:out_d, :in_d].float()).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"MambaSVDFlash weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
@@ -492,15 +494,15 @@ class MambaSVDFlash(BaseAttention):
         if l == 1:
             return C_seq * (B_seq * hidden_states)
 
-        U_norm = F.normalize(U, p=2, dim=2, eps=1e-8)  # [B, L, D, r]
-        V_norm = F.normalize(V, p=2, dim=3, eps=1e-8)  # [B, L, r, D]
-        US = U_norm * Sigma.unsqueeze(2)     # [B, L, D, r] pre-scaled transition factor
-        bx = B_seq * hidden_states          # [B, L, D]
+        U_norm = F.normalize(U.float(), p=2, dim=2, eps=1e-8)  # [B, L, D, r]
+        V_norm = F.normalize(V.float(), p=2, dim=3, eps=1e-8)  # [B, L, r, D]
+        US = U_norm * Sigma.float().unsqueeze(2)               # [B, L, D, r]
+        bx = (B_seq * hidden_states).float()                   # [B, L, D]
 
         chunk_size = max(16, min(64, chunk_size))
         num_chunks = (l + chunk_size - 1) // chunk_size
 
-        h = torch.zeros(b, d, device=hidden_states.device, dtype=hidden_states.dtype)
+        h = torch.zeros(b, d, device=hidden_states.device, dtype=torch.float32)
         outputs = []
 
         if not reverse:
@@ -508,33 +510,35 @@ class MambaSVDFlash(BaseAttention):
                 s_idx = c * chunk_size
                 e_idx = min(l, s_idx + chunk_size)
                 for t in range(s_idx, e_idx):
-                    v_t = torch.bmm(V_norm[:, t], h.unsqueeze(-1))
-                    h_next = torch.bmm(US[:, t], v_t).squeeze(-1) + bx[:, t]
+                    v_t = torch.matmul(V_norm[:, t], h.unsqueeze(-1)).squeeze(-1)
+                    h_trans = torch.matmul(US[:, t], v_t.unsqueeze(-1)).squeeze(-1)
+                    h_next = h_trans + bx[:, t]
                     if mask is not None:
                         m_t = mask[:, t].view(b, 1)
                         h = torch.where(m_t, h_next, h)
                     else:
                         h = h_next
-                    h = torch.clamp(h, min=-1e4, max=1e4)
+                    h = torch.nan_to_num(h, nan=0.0, posinf=1e4, neginf=-1e4)
                     outputs.append(h)
         else:
             for c in range(num_chunks - 1, -1, -1):
                 s_idx = c * chunk_size
                 e_idx = min(l, s_idx + chunk_size)
                 for t in range(e_idx - 1, s_idx - 1, -1):
-                    v_t = torch.bmm(V_norm[:, t], h.unsqueeze(-1))
-                    h_next = torch.bmm(US[:, t], v_t).squeeze(-1) + bx[:, t]
+                    v_t = torch.matmul(V_norm[:, t], h.unsqueeze(-1)).squeeze(-1)
+                    h_trans = torch.matmul(US[:, t], v_t.unsqueeze(-1)).squeeze(-1)
+                    h_next = h_trans + bx[:, t]
                     if mask is not None:
                         m_t = mask[:, t].view(b, 1)
                         h = torch.where(m_t, h_next, h)
                     else:
                         h = h_next
-                    h = torch.clamp(h, min=-1e4, max=1e4)
+                    h = torch.nan_to_num(h, nan=0.0, posinf=1e4, neginf=-1e4)
                     outputs.append(h)
             outputs.reverse()
 
-        H = torch.stack(outputs, dim=1)
-        return C_seq * H
+        H = torch.stack(outputs, dim=1).to(hidden_states.dtype)
+        return torch.nan_to_num(C_seq * H, nan=0.0)
 
     def forward(
         self,
@@ -564,15 +568,29 @@ class MambaSVDFlash(BaseAttention):
 
         B, L, D = hidden_states.shape
 
-        # Process mask
+        # Process mask safely avoiding 4D causal token-zeroing
         mask_bool = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                mask_bool = attention_mask.bool()
+                valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
+                if valid_mask is None:
+                    valid_mask = torch.ones((B, L), device=hidden_states.device, dtype=torch.bool)
+                mask_bool = valid_mask
             elif attention_mask.dim() == 3:
                 mask_bool = (attention_mask.squeeze(1) > -10000.0).bool()
+                if mask_bool.dim() == 3:
+                    mask_bool = mask_bool[:, -1, :]
             elif attention_mask.dim() == 4:
-                mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
+                if attention_mask.size(-2) == 1:
+                    mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
+                else:
+                    # In [B, 1, L, L] or [B, H, L, L], causal mask has -10000.0 for row 0 col > 0.
+                    # Using diagonal extracts true token validity rather than zeroing out non-zero tokens.
+                    diag = torch.diagonal(attention_mask[:, 0], dim1=-2, dim2=-1)
+                    mask_bool = (diag > -10000.0).bool()
+
+        if mask_bool is None or mask_bool.shape != (B, L):
+            mask_bool = torch.ones((B, L), device=hidden_states.device, dtype=torch.bool)
 
         # ---------------------------------------------------------
         # 1. SVD-SSM Path: Forward-only for decoders, bidirectional for encoders
@@ -584,27 +602,13 @@ class MambaSVDFlash(BaseAttention):
         C_t_seq = self.proj_c(hidden_states)
 
         if self.is_decoder:
-            # Causal decoder: strictly forward-only scan, bounded processing
-            if self.training and hidden_states.requires_grad and L > 32:
-                import torch.utils.checkpoint as cp
-                def _fwd_fn(u, s, v, b_seq, c_seq, h_in, m):
-                    return self._svd_ssm_scan(u, s, v, b_seq, c_seq, h_in, mask=m, reverse=False)
-                ssm_out = cp.checkpoint(_fwd_fn, U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask_bool, use_reentrant=False)
-            else:
-                ssm_out = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False)
+            # Causal decoder: strictly forward-only scan, bounded chunked processing
+            ssm_out = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False, chunk_size=64)
         else:
-            # Bidirectional encoder: forward + backward scans
-            if self.training and hidden_states.requires_grad:
-                import torch.utils.checkpoint as cp
-                def _ssm_fn(u, s, v, b_seq, c_seq, h_in, m):
-                    fwd = self._svd_ssm_scan(u, s, v, b_seq, c_seq, h_in, mask=m, reverse=False)
-                    bwd = self._svd_ssm_scan(u, s, v, b_seq, c_seq, h_in, mask=m, reverse=True)
-                    return 0.5 * (fwd + bwd)
-                ssm_out = cp.checkpoint(_ssm_fn, U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask_bool, use_reentrant=False)
-            else:
-                ssm_fwd = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False)
-                ssm_bwd = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=True)
-                ssm_out = 0.5 * (ssm_fwd + ssm_bwd)
+            # Bidirectional encoder: forward + backward scans with bounded chunked processing
+            ssm_fwd = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False, chunk_size=64)
+            ssm_bwd = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=True, chunk_size=64)
+            ssm_out = 0.5 * (ssm_fwd + ssm_bwd)
 
         if isinstance(ssm_out, tuple):
             ssm_out = ssm_out[0]
@@ -653,8 +657,10 @@ class MambaSVDFlash(BaseAttention):
             if attention_mask.dim() == 2:
                 valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
                 if valid_mask is None:
-                    valid_mask = torch.ones(B, L, device=hidden_states.device, dtype=torch.bool)
+                    valid_mask = torch.ones((B, L), device=hidden_states.device, dtype=torch.bool)
                 scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
+            elif attention_mask.dim() == 3:
+                scores = scores + attention_mask.unsqueeze(1).clamp(min=-1e4)
             elif attention_mask.dim() == 4:
                 scores = scores + attention_mask.clamp(min=-1e4)
 
@@ -683,6 +689,7 @@ class MambaSVDFlash(BaseAttention):
         while isinstance(attn_out, (tuple, list)):
             attn_out = attn_out[0]
         Y = gamma * ssm_out + (1.0 - gamma) * attn_out
+        Y = torch.nan_to_num(Y, nan=0.0, posinf=1e4, neginf=-1e4)
 
         Y = Y * self.output_scale
         if self.is_nested_encoder:

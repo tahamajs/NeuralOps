@@ -260,7 +260,7 @@ class HymbaTransXBlock(BaseAttention):
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         self.mamba = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
-        self.alpha = nn.Parameter(torch.tensor(0.5))
+        self.alpha = nn.Parameter(torch.tensor(3.0))
         self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
@@ -464,7 +464,7 @@ class HymbaTransXBlock(BaseAttention):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         encoder_hidden_states: Optional[torch.Tensor] = None,
@@ -477,7 +477,12 @@ class HymbaTransXBlock(BaseAttention):
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross-attention is not supported by HymbaTransXBlock.")
 
-        x = hidden_states
+        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x", None))
+        if x is None and len(args) > 0:
+            x = args[0]
+        if attention_mask is None:
+            attention_mask = kwargs.get("mask", kwargs.get("attn_mask", None))
+
         B, L, D = x.shape
 
         q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
@@ -525,7 +530,7 @@ class HymbaTransXBlock(BaseAttention):
         attn2 = F.softmax(scores2, dim=-1)
         diff_attn = F.relu(attn1 - 0.2 * attn2)
         denom = diff_attn.sum(dim=-1, keepdim=True)
-        diff_attn = diff_attn / denom.clamp(min=1.0)
+        diff_attn = diff_attn / (denom + 1e-6)
         diff_attn = self.dropout(diff_attn).to(v.dtype)
 
         if head_mask is not None:
@@ -555,19 +560,120 @@ class HymbaTransXBlock(BaseAttention):
 @ATTENTION_REGISTRY.register("hymba_transx_inject")
 @ATTENTION_REGISTRY.register("inject_hymba_transx")
 def inject_hymba_transx(
-    layer: Any,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[HymbaTransXBlock]:
-    src_attn = old_attn if old_attn is not None else (getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))) if layer is not None else None)
+) -> Optional[Any]:
+    """Safe injection hook for HymbaTransX hybrid attention module."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config or getattr(target, "config", None)
+
+    # 1. Whole model traversal support
+    if (
+        old_attn is None
+        and target is not None
+        and (
+            hasattr(target, "transformer")
+            or hasattr(target, "distilbert")
+            or hasattr(target, "roberta")
+            or hasattr(target, "bert")
+            or (hasattr(target, "model") and hasattr(target.model, "layers"))
+            or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
+        )
+        and not (
+            hasattr(target, "q_lin")
+            or hasattr(target, "q_proj")
+            or hasattr(target, "c_attn")
+            or hasattr(target, "query")
+        )
+    ):
+        try:
+            layer_list = None
+            if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+                layer_list = target.distilbert.transformer.layer
+            elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+                layer_list = target.roberta.encoder.layer
+            elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+                layer_list = target.bert.encoder.layer
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+                layer_list = target.transformer.h
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "layer"):
+                layer_list = target.transformer.layer
+            elif hasattr(target, "model") and hasattr(target.model, "layers"):
+                layer_list = target.model.layers
+            elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+                layer_list = target.encoder.layer
+
+            if layer_list is not None:
+                tot = len(layer_list)
+                for idx, lyr in enumerate(layer_list):
+                    inject_hymba_transx(
+                        layer=lyr,
+                        model_config=cfg,
+                        comp_config=comp_config,
+                        layer_idx=idx,
+                        total_layers=tot,
+                        **kwargs,
+                    )
+                return target
+        except Exception as e:
+            logger.error("inject_hymba_transx whole-model traversal failed: %s", e)
+            return None
+
+    # 2. Named modules whole-model fallback
+    if (
+        old_attn is None
+        and target is not None
+        and hasattr(target, "named_modules")
+        and not (
+            hasattr(target, "attention")
+            or hasattr(target, "self")
+            or hasattr(target, "attn")
+            or hasattr(target, "q_proj")
+            or hasattr(target, "q_lin")
+            or hasattr(target, "query")
+            or hasattr(target, "c_attn")
+        )
+    ):
+        try:
+            replaced = 0
+            for name, module in list(target.named_modules()):
+                if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
+                    parent_name = name.rsplit(".", 1)[0] if "." in name else ""
+                    child_name = name.rsplit(".", 1)[-1] if "." in name else name
+                    parent = target.get_submodule(parent_name) if parent_name else target
+                    new_attn = inject_hymba_transx(
+                        layer=None,
+                        model_config=cfg,
+                        comp_config=comp_config,
+                        old_attn=module,
+                        **kwargs,
+                    )
+                    if new_attn is not None:
+                        setattr(parent, child_name, new_attn)
+                        replaced += 1
+            if replaced > 0:
+                return target
+        except Exception as e:
+            logger.error("inject_hymba_transx named_modules replacement failed: %s", e)
+            return None
+
+    src_attn = old_attn if old_attn is not None else (
+        getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+        if layer is not None else None
+    )
 
     hidden_size = kwargs.get("hidden_size")
-    if hidden_size is None and model_config is not None:
-        hidden_size = getattr(model_config, "hidden_size", getattr(model_config, "dim", getattr(model_config, "d_model", getattr(model_config, "n_embd", None))))
+    if hidden_size is None and cfg is not None:
+        hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "dim", getattr(cfg, "d_model", getattr(cfg, "n_embd", None))))
     if hidden_size is None and src_attn is not None:
         for attr in ["hidden_size", "embed_dim", "dim", "d_model"]:
             if hasattr(src_attn, attr) and getattr(src_attn, attr) is not None:
@@ -593,8 +699,8 @@ def inject_hymba_transx(
         hidden_size = 768
 
     num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
-    if num_heads is None and model_config is not None:
-        num_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "n_heads", getattr(model_config, "num_heads", None)))
+    if num_heads is None and cfg is not None:
+        num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", getattr(cfg, "num_heads", None)))
     if num_heads is None and src_attn is not None:
         num_heads = getattr(src_attn, "num_attention_heads", getattr(src_attn, "n_heads", getattr(src_attn, "num_heads", None)))
     if num_heads is None:
@@ -602,7 +708,7 @@ def inject_hymba_transx(
 
     try:
         new_attn = HymbaTransXBlock(
-            config=model_config,
+            config=cfg,
             comp_config=comp_config,
             old_attn=src_attn,
             hidden_size=hidden_size,
@@ -626,6 +732,6 @@ def inject_hymba_transx(
                 layer.attn = new_attn
         return new_attn
     except Exception as e:
-        logger.error("inject_hymba_transx failed: %s", e, exc_info=True)
+        logger.error("inject_hymba_transx failed: %s", e)
         return None
 
