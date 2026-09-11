@@ -257,20 +257,27 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     for name, param in model.named_parameters():
         param.requires_grad = any(param is p for p in trainable_params)
 
-    # Safety check on total trainable parameters
+    # Safety check on total trainable parameters to prevent OOM
     total_trainable = sum(p.numel() for p in trainable_params)
     logger.info("Recovery fine-tuning selected %d trainable parameters across %d tensors.", total_trainable, len(trainable_params))
-    if total_trainable > 5_000_000:
+    if total_trainable > 2_000_000:
         logger.warning(
-            "Total trainable parameters (%d) exceeds 5,000,000 threshold for recovery. Reducing lora_rank or freezing additional layers to prevent OOM.",
+            "Total trainable parameters (%d) exceeds 2,000,000 threshold for recovery. Pruning heavy base weights to prevent OOM.",
             total_trainable,
         )
-        # Automatically reduce lora_rank to 8 across all LoRA modules if present
-        for m in model.modules():
-            if hasattr(m, "lora_rank") and getattr(m, "lora_rank", 0) > 8:
-                m.lora_rank = 8
-                if hasattr(m, "lora_scaling") and hasattr(m, "lora_alpha"):
-                    m.lora_scaling = m.lora_alpha / 8
+        pruned_params = []
+        for p in trainable_params:
+            if p.ndim <= 1:
+                pruned_params.append(p)
+            elif p.numel() <= 32768:
+                pruned_params.append(p)
+            else:
+                p.requires_grad = False
+        trainable_params = pruned_params
+        for name, param in model.named_parameters():
+            param.requires_grad = any(param is p for p in trainable_params)
+        total_trainable = sum(p.numel() for p in trainable_params)
+        logger.info("Reduced recovery parameters to %d trainable parameters across %d tensors.", total_trainable, len(trainable_params))
 
     return trainable_params
 

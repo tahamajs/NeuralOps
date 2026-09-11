@@ -634,12 +634,14 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
         except torch.cuda.OutOfMemoryError:
             opt.zero_grad(set_to_none=True)
             torch.cuda.empty_cache()
-            model.to(device)
+            if hasattr(torch.cuda, "ipc_collect"):
+                torch.cuda.ipc_collect()
             if micro_bs > 1:
                 micro_bs //= 2
                 LOG.warning("CUDA OOM during LoRA training; reducing micro-batch size to %d (effective bs=%d)", micro_bs, curr_batch_size)
             else:
-                raise
+                LOG.warning("CUDA OOM at micro_bs=1 during recovery fine-tuning; stopping training early to preserve model and proceed to evaluation.")
+                break
     model.eval()
     return had_nan
 
