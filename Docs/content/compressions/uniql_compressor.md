@@ -319,3 +319,11 @@ The `UniQLCompressor` architecture incorporates telemetry hooks for tracking sin
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (UniQL Compressor)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.14% | 0.9027 | 1.0 | 0 | 339.22 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-uniql) |
+| ROBERTA | 82.45% | 0.8468 | 1.0 | 0 | 359.04 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-uniql) |
+| GPT2 | 60.89% | 0.6634 | 1.0 | 0 | 635.04 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-uniql) |
