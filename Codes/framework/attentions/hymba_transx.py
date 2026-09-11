@@ -15,6 +15,7 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -27,6 +28,8 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -200,19 +203,25 @@ class HymbaTransXBlock(BaseAttention):
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
         if hidden_size is None:
             if config is not None:
-                hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            elif source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            else:
+                hidden_size = getattr(config, "hidden_size", getattr(config, "dim", getattr(config, "d_model", getattr(config, "n_embd", None))))
+            if hidden_size is None and source_attn is not None:
+                for attr in ["hidden_size", "embed_dim", "dim", "d_model"]:
+                    if hasattr(source_attn, attr) and getattr(source_attn, attr) is not None:
+                        hidden_size = getattr(source_attn, attr)
+                        break
+                if hidden_size is None:
+                    out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+                    hidden_size = getattr(out_layer, "out_features", None) if out_layer is not None else None
+            if hidden_size is None:
                 hidden_size = 768
+
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 4))
-            elif source_attn is not None:
-                num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 4))
-            else:
-                num_heads = 4
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", getattr(config, "num_heads", None)))
+            if num_heads is None and source_attn is not None:
+                num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", getattr(source_attn, "num_heads", None)))
+            if num_heads is None:
+                num_heads = hidden_size // 64 if (hidden_size and hidden_size % 64 == 0) else 12
 
         self.dim = int(hidden_size)
         self.hidden_size = self.dim
@@ -250,10 +259,6 @@ class HymbaTransXBlock(BaseAttention):
         self.W_v = LoRALinear(self.dim, self.all_kv_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        self.q_proj = self.W_q1
-        self.k_proj = self.W_k1
-        self.v_proj = self.W_v
-
         self.mamba = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
         self.alpha = nn.Parameter(torch.tensor(0.5))
         self.output_scale = nn.Parameter(torch.ones(1))
@@ -263,6 +268,30 @@ class HymbaTransXBlock(BaseAttention):
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    @property
+    def query(self) -> nn.Module:
+        return self.W_q1
+
+    @property
+    def key(self) -> nn.Module:
+        return self.W_k1
+
+    @property
+    def value(self) -> nn.Module:
+        return self.W_v
+
+    @property
+    def q_proj(self) -> nn.Module:
+        return self.W_q1
+
+    @property
+    def k_proj(self) -> nn.Module:
+        return self.W_k1
+
+    @property
+    def v_proj(self) -> nn.Module:
+        return self.W_v
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -423,7 +452,7 @@ class HymbaTransXBlock(BaseAttention):
 
             # Norm checks
             for name, mod in [("W_q1", self.W_q1), ("W_k1", self.W_k1), ("W_v", self.W_v), ("out_proj", self.out_proj)]:
-                w_norm = float(torch.norm(mod.weight.data).item())
+                w_norm = float(torch.linalg.norm(mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     raise RuntimeError(f"HymbaTransXBlock weight verification failed for '{name}': norm too small ({w_norm:.2e})")
                 if self.freeze_base:
@@ -438,11 +467,16 @@ class HymbaTransXBlock(BaseAttention):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         output_attentions: Optional[bool] = False,
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("Cross-attention is not supported by HymbaTransXBlock.")
+
         x = hidden_states
         B, L, D = x.shape
 
@@ -479,6 +513,8 @@ class HymbaTransXBlock(BaseAttention):
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 valid_mask = get_token_valid_mask(attention_mask, B, L, x.device)
+                if valid_mask is None:
+                    valid_mask = torch.ones(B, L, device=x.device, dtype=torch.bool)
                 scores1 = scores1.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
                 scores2 = scores2.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
             elif attention_mask.dim() == 4:
@@ -488,7 +524,8 @@ class HymbaTransXBlock(BaseAttention):
         attn1 = F.softmax(scores1, dim=-1)
         attn2 = F.softmax(scores2, dim=-1)
         diff_attn = F.relu(attn1 - 0.2 * attn2)
-        diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-8)
+        denom = diff_attn.sum(dim=-1, keepdim=True)
+        diff_attn = diff_attn / denom.clamp(min=1.0)
         diff_attn = self.dropout(diff_attn).to(v.dtype)
 
         if head_mask is not None:
@@ -516,6 +553,7 @@ class HymbaTransXBlock(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("hymba_transx_inject")
+@ATTENTION_REGISTRY.register("inject_hymba_transx")
 def inject_hymba_transx(
     layer: Any,
     model_config: Any = None,
@@ -527,18 +565,40 @@ def inject_hymba_transx(
 ) -> Optional[HymbaTransXBlock]:
     src_attn = old_attn if old_attn is not None else (getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))) if layer is not None else None)
 
-    hidden_size = (
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (layer.in_features if hasattr(layer, 'in_features') else None) or
-        getattr(model_config, 'hidden_size', 64)
-    )
-    num_heads = (
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        getattr(model_config, 'num_attention_heads', 4)
-    )
+    hidden_size = kwargs.get("hidden_size")
+    if hidden_size is None and model_config is not None:
+        hidden_size = getattr(model_config, "hidden_size", getattr(model_config, "dim", getattr(model_config, "d_model", getattr(model_config, "n_embd", None))))
+    if hidden_size is None and src_attn is not None:
+        for attr in ["hidden_size", "embed_dim", "dim", "d_model"]:
+            if hasattr(src_attn, attr) and getattr(src_attn, attr) is not None:
+                hidden_size = getattr(src_attn, attr)
+                break
+        if hidden_size is None:
+            for sub in ["q_lin", "q_proj", "query", "in_proj", "c_attn"]:
+                if hasattr(src_attn, sub):
+                    mod = getattr(src_attn, sub)
+                    if hasattr(mod, "in_features"):
+                        hidden_size = mod.in_features
+                        break
+                    elif hasattr(mod, "weight") and mod.weight is not None:
+                        if hasattr(mod, "nf"):
+                            hidden_size = mod.weight.shape[0]
+                        else:
+                            hidden_size = mod.weight.shape[1] if mod.weight.ndim == 2 else None
+                        if hidden_size is not None:
+                            break
+    if hidden_size is None and layer is not None:
+        hidden_size = getattr(layer, "in_features", None)
+    if hidden_size is None:
+        hidden_size = 768
+
+    num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
+    if num_heads is None and model_config is not None:
+        num_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "n_heads", getattr(model_config, "num_heads", None)))
+    if num_heads is None and src_attn is not None:
+        num_heads = getattr(src_attn, "num_attention_heads", getattr(src_attn, "n_heads", getattr(src_attn, "num_heads", None)))
+    if num_heads is None:
+        num_heads = hidden_size // 64 if (hidden_size and hidden_size % 64 == 0) else 12
 
     try:
         new_attn = HymbaTransXBlock(
@@ -556,12 +616,16 @@ def inject_hymba_transx(
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
             elif hasattr(layer, "self"):
                 layer.self = new_attn
+                new_attn.is_nested_encoder = True
             elif hasattr(layer, "attn"):
                 layer.attn = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error("inject_hymba_transx failed: %s", e, exc_info=True)
+        return None
+

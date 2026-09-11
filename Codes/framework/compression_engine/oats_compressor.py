@@ -107,8 +107,16 @@ class OATSLoRALinear(nn.Module):
     ) -> OATSLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
         bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
-        in_features = getattr(base_layer, "in_features", weight.shape[1])
-        out_features = getattr(base_layer, "out_features", weight.shape[0])
+        in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
+        if in_features is None:
+            in_features = weight.shape[1]
+        out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
+        if out_features is None:
+            out_features = weight.shape[0]
+
+        # Ensure weight matches (out_features, in_features)
+        if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
+            weight = weight.t()
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
@@ -475,7 +483,7 @@ class OATSCompressor(BaseCompressor):
                                 total_comp_params += p.numel()
                             continue
 
-                    W_target = W_comp.t() if is_conv1d else W_comp
+                    W_target = W_comp
                     compressed_layer = OATSLoRALinear.from_linear(
                         module,
                         weight=W_target.to(dtype=dtype, device=device),

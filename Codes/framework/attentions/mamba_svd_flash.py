@@ -7,6 +7,7 @@ pretrained weight transfer, LoRA adapters, RoPE rotary embeddings, and causal/bi
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -19,6 +20,8 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -243,12 +246,6 @@ class MambaSVDFlash(BaseAttention):
         self.v_proj = LoRALinear(self.d_model, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Aliases
-        self.q_lin = self.q_proj
-        self.k_lin = self.k_proj
-        self.v_lin = self.v_proj
-        self.out_lin = self.out_proj
-
         # Gating for dynamic aggregation
         self.gating = nn.Linear(self.d_model, self.d_model)
 
@@ -272,6 +269,38 @@ class MambaSVDFlash(BaseAttention):
         for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj, self.proj_b, self.proj_c):
             if hasattr(mod, "unfreeze_base_weights"):
                 mod.unfreeze_base_weights()
+
+    @property
+    def q_lin(self) -> LoRALinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> LoRALinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> LoRALinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -> LoRALinear:
+        return self.out_proj
+
+    @property
+    def query(self) -> LoRALinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> LoRALinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> LoRALinear:
+        return self.v_proj
+
+    @property
+    def self(self) -> MambaSVDFlash:
+        return self
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights into Q, K, V, Out and SSM branches."""
@@ -454,33 +483,54 @@ class MambaSVDFlash(BaseAttention):
         hidden_states: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
+        chunk_size: int = 64,
     ) -> torch.Tensor:
-        """Bidirectional low-rank SVD-SSM state recurrence (Vectorized & Pre-scaled)."""
+        """Bidirectional low-rank SVD-SSM state recurrence (Bounded Chunked Processing)."""
         b, l, d = hidden_states.shape
-        h = torch.zeros(b, d, device=hidden_states.device, dtype=hidden_states.dtype)
-        outputs = []
+        if l == 0:
+            return torch.zeros_like(hidden_states)
+        if l == 1:
+            return C_seq * (B_seq * hidden_states)
 
-        U_norm = F.normalize(U, p=2, dim=2)  # [B, L, D, r]
-        V_norm = F.normalize(V, p=2, dim=3)  # [B, L, r, D]
+        U_norm = F.normalize(U, p=2, dim=2, eps=1e-8)  # [B, L, D, r]
+        V_norm = F.normalize(V, p=2, dim=3, eps=1e-8)  # [B, L, r, D]
         US = U_norm * Sigma.unsqueeze(2)     # [B, L, D, r] pre-scaled transition factor
         bx = B_seq * hidden_states          # [B, L, D]
 
-        step_range = range(l - 1, -1, -1) if reverse else range(l)
-        for t in step_range:
-            # v_{t-1} = V_{t, r}^\top h_{t-1}: [B, r, 1]
-            v_t = torch.bmm(V_norm[:, t], h.unsqueeze(-1))
-            # h_next = U_t * (Sigma_t * v_t) + bx_t
-            h_next = torch.bmm(US[:, t], v_t).squeeze(-1) + bx[:, t]
+        chunk_size = max(16, min(64, chunk_size))
+        num_chunks = (l + chunk_size - 1) // chunk_size
 
-            if mask is not None:
-                m_t = mask[:, t].view(b, 1)
-                h = torch.where(m_t, h_next, h)
-            else:
-                h = h_next
+        h = torch.zeros(b, d, device=hidden_states.device, dtype=hidden_states.dtype)
+        outputs = []
 
-            outputs.append(h)
-
-        if reverse:
+        if not reverse:
+            for c in range(num_chunks):
+                s_idx = c * chunk_size
+                e_idx = min(l, s_idx + chunk_size)
+                for t in range(s_idx, e_idx):
+                    v_t = torch.bmm(V_norm[:, t], h.unsqueeze(-1))
+                    h_next = torch.bmm(US[:, t], v_t).squeeze(-1) + bx[:, t]
+                    if mask is not None:
+                        m_t = mask[:, t].view(b, 1)
+                        h = torch.where(m_t, h_next, h)
+                    else:
+                        h = h_next
+                    h = torch.clamp(h, min=-1e4, max=1e4)
+                    outputs.append(h)
+        else:
+            for c in range(num_chunks - 1, -1, -1):
+                s_idx = c * chunk_size
+                e_idx = min(l, s_idx + chunk_size)
+                for t in range(e_idx - 1, s_idx - 1, -1):
+                    v_t = torch.bmm(V_norm[:, t], h.unsqueeze(-1))
+                    h_next = torch.bmm(US[:, t], v_t).squeeze(-1) + bx[:, t]
+                    if mask is not None:
+                        m_t = mask[:, t].view(b, 1)
+                        h = torch.where(m_t, h_next, h)
+                    else:
+                        h = h_next
+                    h = torch.clamp(h, min=-1e4, max=1e4)
+                    outputs.append(h)
             outputs.reverse()
 
         H = torch.stack(outputs, dim=1)
@@ -502,6 +552,9 @@ class MambaSVDFlash(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Execute the forward MambaSVD-Flash pass."""
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("MambaSVDFlash does not support cross-attention.")
+
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         while isinstance(attention_mask, (tuple, list)):
@@ -531,8 +584,14 @@ class MambaSVDFlash(BaseAttention):
         C_t_seq = self.proj_c(hidden_states)
 
         if self.is_decoder:
-            # Causal decoder: strictly forward-only scan, no future leakage
-            ssm_out = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False)
+            # Causal decoder: strictly forward-only scan, bounded processing
+            if self.training and hidden_states.requires_grad and L > 32:
+                import torch.utils.checkpoint as cp
+                def _fwd_fn(u, s, v, b_seq, c_seq, h_in, m):
+                    return self._svd_ssm_scan(u, s, v, b_seq, c_seq, h_in, mask=m, reverse=False)
+                ssm_out = cp.checkpoint(_fwd_fn, U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask_bool, use_reentrant=False)
+            else:
+                ssm_out = self._svd_ssm_scan(U, Sigma, V, B_t_seq, C_t_seq, hidden_states, mask=mask_bool, reverse=False)
         else:
             # Bidirectional encoder: forward + backward scans
             if self.training and hidden_states.requires_grad:
@@ -583,7 +642,7 @@ class MambaSVDFlash(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V_attn = repeat_kv(V_attn, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(1, self.head_dim))
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
         if self.is_decoder:
@@ -593,6 +652,8 @@ class MambaSVDFlash(BaseAttention):
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
+                if valid_mask is None:
+                    valid_mask = torch.ones(B, L, device=hidden_states.device, dtype=torch.bool)
                 scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
             elif attention_mask.dim() == 4:
                 scores = scores + attention_mask.clamp(min=-1e4)
@@ -638,7 +699,7 @@ class MambaSVDFlash(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("mamba_svd_flash_inject")
-@ATTENTION_REGISTRY.register("mamba_svd_flash")
+@ATTENTION_REGISTRY.register("inject_mamba_svd_flash")
 def inject_mamba_svd_flash(
     layer: Any = None,
     model: Any = None,
@@ -737,8 +798,9 @@ def inject_mamba_svd_flash(
             num_attention_heads=num_heads,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"Failed to instantiate or copy weights into MambaSVDFlash: {e}")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):

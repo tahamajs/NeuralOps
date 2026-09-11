@@ -175,11 +175,16 @@ class Mamba(BaseAttention):
 
         # Selective SSM decay parameter for causal sequences: A = -exp(A_log) <= 0
         self.A_log: nn.Parameter = nn.Parameter(torch.log(torch.arange(1, self.d_model + 1, dtype=torch.float32)))
-        self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(-2.0))
+        self.pres_gate: nn.Parameter = nn.Parameter(torch.tensor(2.0))
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    @property
+    def self(self) -> Mamba:
+        """Alias for nested RoBERTa/BERT container compatibility."""
+        return self
 
     def freeze_base_weights(self) -> None:
         """Freeze base linear projection weights when LoRA adapters are present."""
@@ -317,35 +322,39 @@ class Mamba(BaseAttention):
                 if norm_o < 1e-4:
                     raise RuntimeError(f"Mamba weight verification failed for 'o': norm too small ({norm_o:.2e})")
 
-            # in_proj branch 1 (first D): copied from q
-            if w_q is not None:
-                w_q = _orient(w_q, D)
-                if w_q.shape[0] < D and D % w_q.shape[0] == 0:
-                    rep = D // w_q.shape[0]
-                    w_q = w_q.repeat(rep, 1)
-                    if b_q is not None:
-                        b_q = b_q.repeat(rep)
-                out_d = min(D, w_q.size(0))
-                in_d = min(D, w_q.size(1))
-                self.in_proj.weight.data[:out_d, :in_d].copy_(w_q[:out_d, :in_d].to(device=self.in_proj.weight.device, dtype=self.in_proj.weight.dtype))
-                if b_q is not None and self.in_proj.bias is not None:
-                    min_b = min(D, b_q.numel())
-                    self.in_proj.bias.data[:min_b].copy_(b_q[:min_b].to(device=self.in_proj.bias.device, dtype=self.in_proj.bias.dtype))
+            # in_proj branch 1 (first D): SSM input representations from v (fallback to q)
+            w_main = w_v if w_v is not None else w_q
+            b_main = b_v if w_v is not None else b_q
+            if w_main is not None:
+                w_main = _orient(w_main, D)
+                if w_main.shape[0] < D and D % w_main.shape[0] == 0:
+                    rep = D // w_main.shape[0]
+                    w_main = w_main.repeat(rep, 1)
+                    if b_main is not None:
+                        b_main = b_main.repeat(rep)
+                out_d = min(D, w_main.size(0))
+                in_d = min(D, w_main.size(1))
+                self.in_proj.weight.data[:out_d, :in_d].copy_(w_main[:out_d, :in_d].to(device=self.in_proj.weight.device, dtype=self.in_proj.weight.dtype))
+                if b_main is not None and self.in_proj.bias is not None:
+                    min_b = min(D, b_main.numel())
+                    self.in_proj.bias.data[:min_b].copy_(b_main[:min_b].to(device=self.in_proj.bias.device, dtype=self.in_proj.bias.dtype))
 
-            # in_proj branch 2 (second D): copied from k
-            if w_k is not None:
-                w_k = _orient(w_k, D)
-                if w_k.shape[0] < D and D % w_k.shape[0] == 0:
-                    rep = D // w_k.shape[0]
-                    w_k = w_k.repeat(rep, 1)
-                    if b_k is not None:
-                        b_k = b_k.repeat(rep)
-                out_d = min(D, w_k.size(0))
-                in_d = min(D, w_k.size(1))
-                self.in_proj.weight.data[D : D + out_d, :in_d].copy_(w_k[:out_d, :in_d].to(device=self.in_proj.weight.device, dtype=self.in_proj.weight.dtype))
-                if b_k is not None and self.in_proj.bias is not None:
-                    min_b = min(D, b_k.numel())
-                    self.in_proj.bias.data[D : D + min_b].copy_(b_k[:min_b].to(device=self.in_proj.bias.device, dtype=self.in_proj.bias.dtype))
+            # in_proj branch 2 (second D): Gating representations from q (or k)
+            w_gate = w_q if w_q is not None else w_k
+            b_gate = b_q if w_q is not None else b_k
+            if w_gate is not None:
+                w_gate = _orient(w_gate, D)
+                if w_gate.shape[0] < D and D % w_gate.shape[0] == 0:
+                    rep = D // w_gate.shape[0]
+                    w_gate = w_gate.repeat(rep, 1)
+                    if b_gate is not None:
+                        b_gate = b_gate.repeat(rep)
+                out_d = min(D, w_gate.size(0))
+                in_d = min(D, w_gate.size(1))
+                self.in_proj.weight.data[D : D + out_d, :in_d].copy_(w_gate[:out_d, :in_d].to(device=self.in_proj.weight.device, dtype=self.in_proj.weight.dtype))
+                if b_gate is not None and self.in_proj.bias is not None:
+                    min_b = min(D, b_gate.numel())
+                    self.in_proj.bias.data[D : D + min_b].copy_(b_gate[:min_b].to(device=self.in_proj.bias.device, dtype=self.in_proj.bias.dtype))
 
             # out_proj: copied from o
             if w_o is not None:
@@ -382,6 +391,9 @@ class Mamba(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("Mamba does not support cross-attention.")
+
         if hidden_states.dim() == 4:
             B, H, L, Dh = hidden_states.shape
             hidden_states = hidden_states.view(B, L, H * Dh)
@@ -430,23 +442,37 @@ class Mamba(BaseAttention):
         proj = self.in_proj(hidden_states)
         p1, p2 = proj.chunk(2, dim=-1)
 
-        # Causal SSM selective recurrence for decoders
+        # Causal SSM selective recurrence for decoders, bidirectional for encoders
         if self.is_decoder and L > 1:
             # Learned continuous decay: A = -exp(A_log), discrete decay factor gamma = sigmoid(A) in (0, 1)
             decay = torch.sigmoid(-torch.exp(self.A_log[:D].clamp(max=5.0)).to(dtype=torch.float32, device=hidden_states.device))
-            # Build decay matrix: distance = i - j for i >= j
             pos = torch.arange(L, device=hidden_states.device)
             dist = (pos.unsqueeze(1) - pos.unsqueeze(0)).clamp(min=0)  # [L, L]
-            # Log decay weights: dist * log(decay + eps)
             log_gamma = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))  # [D]
             log_weights = dist.unsqueeze(-1) * log_gamma.unsqueeze(0).unsqueeze(0)  # [L, L, D]
             causal_mask = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool)).unsqueeze(-1)
             log_weights = log_weights.masked_fill(~causal_mask, float("-inf"))
-            # Softmax-normalized causal attention weights along past sequence dimension
             weights = torch.softmax(log_weights, dim=1).to(p1.dtype)  # [L_q, L_k, D]
-            # Einsum convolution: sum_j W[i, j, d] * p1[b, j, d] -> p1_causal[b, i, d]
+            weights = torch.nan_to_num(weights, nan=0.0)
             p1_causal = torch.einsum("ijd,bjd->bid", weights, p1)
             gated = F.silu(p1_causal) * p2
+        elif L > 1:
+            # Bidirectional SSM decay for encoders
+            decay = torch.sigmoid(-torch.exp(self.A_log[:D].clamp(max=5.0)).to(dtype=torch.float32, device=hidden_states.device))
+            pos = torch.arange(L, device=hidden_states.device)
+            dist_fwd = (pos.unsqueeze(1) - pos.unsqueeze(0)).clamp(min=0)
+            dist_bwd = (pos.unsqueeze(0) - pos.unsqueeze(1)).clamp(min=0)
+            log_gamma = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))
+            log_weights_fwd = dist_fwd.unsqueeze(-1) * log_gamma.unsqueeze(0).unsqueeze(0)
+            log_weights_bwd = dist_bwd.unsqueeze(-1) * log_gamma.unsqueeze(0).unsqueeze(0)
+            causal_fwd = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool)).unsqueeze(-1)
+            causal_bwd = torch.triu(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool)).unsqueeze(-1)
+            weights_fwd = torch.softmax(log_weights_fwd.masked_fill(~causal_fwd, float("-inf")), dim=1).to(p1.dtype)
+            weights_bwd = torch.softmax(log_weights_bwd.masked_fill(~causal_bwd, float("-inf")), dim=1).to(p1.dtype)
+            weights_fwd = torch.nan_to_num(weights_fwd, nan=0.0)
+            weights_bwd = torch.nan_to_num(weights_bwd, nan=0.0)
+            p1_mix = 0.5 * (torch.einsum("ijd,bjd->bid", weights_fwd, p1) + torch.einsum("ijd,bjd->bid", weights_bwd, p1))
+            gated = F.silu(p1_mix) * p2
         else:
             gated = F.silu(p1) * p2
 
@@ -477,6 +503,7 @@ class Mamba(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("mamba_inject")
+@ATTENTION_REGISTRY.register("inject_mamba")
 def inject_mamba(
     layer: Any = None,
     model: Any = None,
@@ -566,13 +593,17 @@ def inject_mamba(
             old_attn=src_attn,
             **kwargs,
         )
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error("Mamba instantiation failed: %s", e)
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_block
+                if target.attention.__class__.forward is nn.Module.forward:
+                    target.attention.forward = new_block.forward
             else:
                 target.attention = new_block
         elif hasattr(target, "self"):
