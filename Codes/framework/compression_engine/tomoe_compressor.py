@@ -350,8 +350,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("tomoe")
-@COMPRESSOR_REGISTRY.register("tomoe_compressor")
+@COMPRESSOR_REGISTRY.register("tomoe_class")
+@COMPRESSOR_REGISTRY.register("tomoe_compressor_class")
 class ToMoECompressor(BaseCompressor):
     """
     ToMoE Compressor: dynamically replaces dense feed-forward and projection layers
