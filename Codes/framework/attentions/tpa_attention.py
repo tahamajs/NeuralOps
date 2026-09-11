@@ -80,11 +80,19 @@ def apply_rotary_pos_emb(
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
-    cos_q = cos[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
-    sin_q = sin[..., : q.shape[-2], :rotary_dim].to(q.device, q.dtype)
+    cos_sub = cos[..., : q.shape[-2], :rotary_dim]
+    sin_sub = sin[..., : q.shape[-2], :rotary_dim]
+    if cos_sub.device != q.device or cos_sub.dtype != q.dtype:
+        cos_q = cos_sub.to(device=q.device, dtype=q.dtype)
+        sin_q = sin_sub.to(device=q.device, dtype=q.dtype)
+    else:
+        cos_q, sin_q = cos_sub, sin_sub
 
-    cos_k = cos[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
-    sin_k = sin[..., : k.shape[-2], :rotary_dim].to(k.device, k.dtype)
+    if cos_sub.device != k.device or cos_sub.dtype != k.dtype:
+        cos_k = cos_sub.to(device=k.device, dtype=k.dtype)
+        sin_k = sin_sub.to(device=k.device, dtype=k.dtype)
+    else:
+        cos_k, sin_k = cos_sub, sin_sub
 
     q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
     k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
@@ -499,60 +507,83 @@ class TPAttention(BaseAttention):
         B, L, D = hidden_states.shape
         H, H_kv, r, hd = self.num_heads, self.num_kv_heads, self.rank, self.head_dim
 
-        # Reshape directly to [B, H, L, r] to avoid expensive intermediate materialization
-        q1 = self.q_proj1(hidden_states).view(B, L, H, r).permute(0, 2, 1, 3)
-        q2 = self.q_proj2(hidden_states).view(B, L, H, r).permute(0, 2, 1, 3)
-        k1 = self.k_proj1(hidden_states).view(B, L, H_kv, r).permute(0, 2, 1, 3)
-        k2 = self.k_proj2(hidden_states).view(B, L, H_kv, r).permute(0, 2, 1, 3)
-        v = self.v_proj(hidden_states).view(B, L, H_kv, hd).permute(0, 2, 1, 3)  # (B, H_kv, L, hd)
+        q1 = self.q_proj1(hidden_states).view(B, L, H, r)
+        q2 = self.q_proj2(hidden_states).view(B, L, H, r)
+        k1 = self.k_proj1(hidden_states).view(B, L, H_kv, r)
+        k2 = self.k_proj2(hidden_states).view(B, L, H_kv, r)
+        v = self.v_proj(hidden_states).view(B, L, H_kv, hd)
 
-        # GQA expansion
-        if H_kv != H:
-            k1 = repeat_kv(k1, self.num_key_value_groups)
-            k2 = repeat_kv(k2, self.num_key_value_groups)
-            v = repeat_kv(v, self.num_key_value_groups)
+        # 1. Efficient broadcasting instead of einsum & contiguous transpose
+        Q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).view(B, L, H, r * r).transpose(1, 2)
+        K = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).view(B, L, H_kv, r * r).transpose(1, 2)
+        v = v.transpose(1, 2)
 
         # Partial Rotary Position Embeddings (RoPE)
         pos_emb = kwargs.get("position_embeddings", None)
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
             cos, sin = pos_emb
-            q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
-        # Exploit Tensor Product Factorization:
-        # score[b, h, i, j] = (q1[i] · k1[j]) * (q2[i] · k2[j]) / r
-        # This replaces [B, L, H, r*r] memory footprint with two small [B, H, L, L] contractions
-        scale = 1.0 / max(1.0, float(r))
-        s1 = torch.matmul(q1, k1.transpose(-1, -2))
-        s2 = torch.matmul(q2, k2.transpose(-1, -2))
-        scores = (s1 * s2) * scale
+        # GQA expansion
+        if H_kv != H:
+            K = repeat_kv(K, self.num_key_value_groups)
+            v = repeat_kv(v, self.num_key_value_groups)
 
-        # Causal mask for decoders
-        if self.is_decoder and L > 1:
-            causal_mask = torch.triu(
-                torch.full((L, L), float("-inf"), device=scores.device, dtype=scores.dtype),
-                diagonal=1,
-            )
-            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+        # 2. SDPA fast-path
+        is_causal_mask = self.is_decoder and L > 1
+        custom_mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
 
-        mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
-        if mask is not None:
-            scores = apply_attention_mask(scores, mask)
+        # If custom mask is provided and 2D/3D/4D, prepare for SDPA
+        if custom_mask is not None:
+            if custom_mask.dtype == torch.bool:
+                if custom_mask.dim() == 2:
+                    custom_mask = custom_mask.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, L]
+                elif custom_mask.dim() == 3:
+                    custom_mask = custom_mask.unsqueeze(1)  # [B, 1, L, S]
+            elif torch.is_floating_point(custom_mask):
+                if custom_mask.dim() == 2:
+                    custom_mask = custom_mask.unsqueeze(1).unsqueeze(2)
+                elif custom_mask.dim() == 3:
+                    custom_mask = custom_mask.unsqueeze(1)
 
-        attn_weights = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
-        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-        attn_weights = self.dropout(attn_weights)
+        if not output_attentions and head_mask is None:
+            with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=True):
+                context = F.scaled_dot_product_attention(
+                    query=Q.contiguous(),
+                    key=K.contiguous(),
+                    value=v.contiguous(),
+                    attn_mask=custom_mask,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                    is_causal=is_causal_mask if custom_mask is None else False,
+                )
+            attn_weights = None
+        else:
+            # Fallback path if output_attentions or head_mask are explicitly requested
+            scale = 1.0 / math.sqrt(r * r)
+            scores = torch.matmul(Q, K.transpose(-1, -2)) * scale
+            if is_causal_mask and custom_mask is None:
+                causal_mask = torch.triu(
+                    torch.full((L, L), float("-inf"), device=scores.device, dtype=scores.dtype),
+                    diagonal=1,
+                )
+                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+            elif custom_mask is not None:
+                scores = apply_attention_mask(scores, custom_mask)
 
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
-            attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
+            attn_weights = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
+            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+            attn_weights = self.dropout(attn_weights)
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(1)
+                attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
+            context = torch.matmul(attn_weights, v)
 
-        context = torch.matmul(attn_weights, v)
-        context = context.permute(0, 2, 1, 3).contiguous().view(B, L, H * hd)
+        context = context.transpose(1, 2).contiguous().view(B, L, H * hd)
 
         if self.is_nested_encoder:
             output = context
