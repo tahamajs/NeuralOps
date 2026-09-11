@@ -507,7 +507,7 @@ class KDAAttention(BaseAttention):
 
         num_fwd = (attn_scores * D_causal) @ v.float()
         denom_fwd = (attn_scores * D_causal).sum(dim=-1, keepdim=True)
-        y_fwd = (num_fwd / (denom_fwd + 1e-4).clamp(min=1e-4)).to(q.dtype)
+        y_fwd = torch.clamp(num_fwd / (denom_fwd + 1e-6).clamp(min=1e-6), min=-1e4, max=1e4).to(q.dtype)
 
         if not self.is_decoder:
             triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
@@ -516,7 +516,7 @@ class KDAAttention(BaseAttention):
                 D_anti = D_anti * mask_2d
             num_bwd = (attn_scores * D_anti) @ v.float()
             denom_bwd = (attn_scores * D_anti).sum(dim=-1, keepdim=True)
-            y_bwd = (num_bwd / (denom_bwd + 1e-4).clamp(min=1e-4)).to(q.dtype)
+            y_bwd = torch.clamp(num_bwd / (denom_bwd + 1e-6).clamp(min=1e-6), min=-1e4, max=1e4).to(q.dtype)
             return y_fwd, y_bwd
 
         return y_fwd, None

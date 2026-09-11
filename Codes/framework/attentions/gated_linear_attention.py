@@ -212,9 +212,11 @@ class GatedLinearAttention(BaseAttention):
         self.v_proj = LoRALinear(self.dim, self.kv_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
         self.z_proj = LoRALinear(self.dim, self.all_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
         self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
+        self.state_norm = nn.LayerNorm(self.head_dim)
+        self.output_scale = nn.Parameter(torch.ones(1))
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
 
-        nn.init.constant_(self.decay_gate.bias, 3.0)
+        nn.init.constant_(self.decay_gate.bias, 0.0)
 
         src_attn = kwargs.get("pretrained_attn", None)
         if src_attn is None:
@@ -409,13 +411,13 @@ class GatedLinearAttention(BaseAttention):
         C = torch.cumsum(log_lam, dim=-1)                            # [B, H, L]
         C_diff = C.unsqueeze(-1) - C.unsqueeze(-2)                   # [B, H, L, L]
 
-        # 1. Forward causal decay matrix
+        # 1. Forward causal decay matrix with moderate clamping (-15.0 to 0.0)
         tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
-        D_causal = torch.exp(C_diff.clamp(min=-40.0, max=0.0)) * tril_mask.float()  # [B, H, L, L]
+        D_causal = torch.exp(C_diff.clamp(min=-15.0, max=0.0)) * tril_mask.float()  # [B, H, L, L]
 
-        # 2. Backward anticausal decay matrix
+        # 2. Backward anticausal decay matrix with moderate clamping (-15.0 to 0.0)
         triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
-        D_anti = torch.exp((-C_diff).clamp(min=-40.0, max=0.0)) * triu_mask.float()  # [B, H, L, L]
+        D_anti = torch.exp((-C_diff).clamp(min=-15.0, max=0.0)) * triu_mask.float()  # [B, H, L, L]
 
         scale = 1.0 / math.sqrt(d)
         attn_scores = (q @ k.transpose(-1, -2)) * scale  # [B, H, L, L]
@@ -506,6 +508,8 @@ class GatedLinearAttention(BaseAttention):
         else:
             y = 0.5 * (y_fwd + y_bwd)  # [B, H, L, d]
 
+        y = self.state_norm(y)
+
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -517,6 +521,7 @@ class GatedLinearAttention(BaseAttention):
 
         y = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(y * F.silu(z), nan=0.0, posinf=1e4, neginf=-1e4)
+        context = context * self.output_scale
 
         if self.is_nested_encoder:
             out = context

@@ -488,15 +488,21 @@ def inject_attention(
         # Ensure config exists or construct minimal namespace config
         if config is None:
             from types import SimpleNamespace
+            is_decoder_family_bool = bool(is_dec or family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral"))
             config = SimpleNamespace(
                 hidden_size=hidden_size,
                 num_attention_heads=num_heads,
                 head_dim=head_dim,
                 num_key_value_heads=num_kv_heads or num_heads,
                 dropout=0.1,
-                is_decoder=is_dec,
+                is_decoder=is_decoder_family_bool,
+                is_causal=is_decoder_family_bool,
                 model_type=family,
             )
+        else:
+            if family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral") or is_dec:
+                setattr(config, "is_decoder", True)
+                setattr(config, "is_causal", True)
 
         # Ensure old_attn has canonical projection attributes for custom modules inspecting pretrained_attn
         for proj_key, alias_list in [

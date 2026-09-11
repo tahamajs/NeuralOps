@@ -217,6 +217,8 @@ class HGRN2OuterBlock(BaseAttention):
             freeze_base=True,
         )
         self.W_f = nn.Linear(self.dim, self.num_heads, bias=True)
+        self.state_norm = nn.LayerNorm(self.head_dim)
+        self.output_scale = nn.Parameter(torch.ones(1))
         self.out_proj = LoRALinear(
             self.q_head_size,
             self.dim,
@@ -226,7 +228,7 @@ class HGRN2OuterBlock(BaseAttention):
             freeze_base=True,
         )
 
-        nn.init.constant_(self.W_f.bias, -3.0)
+        nn.init.constant_(self.W_f.bias, 0.0)
 
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
@@ -487,6 +489,8 @@ class HGRN2OuterBlock(BaseAttention):
         else:
             y = 0.5 * (y_fwd + y_bwd)
 
+        y = self.state_norm(y)
+
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -495,6 +499,7 @@ class HGRN2OuterBlock(BaseAttention):
             y = y * head_mask
 
         y = y.transpose(1, 2).contiguous().view(B, L, H * d)
+        y = y * self.output_scale
 
         if self.is_nested_encoder:
             out = y
