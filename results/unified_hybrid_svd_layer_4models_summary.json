@@ -2,40 +2,40 @@
   {
     "Model": "distilbert",
     "Exit Code": 0,
-    "Baseline Acc": "90.48%",
+    "Baseline Acc": "90.94%",
     "SambaMoE Acc": "0.00%",
-    "Delta Acc": "-90.48%",
-    "F1": "0.9077",
+    "Delta Acc": "-90.94%",
+    "F1": "0.9125",
     "Status": "FAIL",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "389.5 MB",
-    "Time (s)": "14.9"
+    "Time (s)": "23.1"
   },
   {
     "Model": "roberta",
     "Exit Code": 0,
-    "Baseline Acc": "75.11%",
+    "Baseline Acc": "75.46%",
     "SambaMoE Acc": "0.00%",
-    "Delta Acc": "-75.11%",
-    "F1": "0.7586",
+    "Delta Acc": "-75.46%",
+    "F1": "0.7277",
     "Status": "FAIL",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "298.7 MB",
-    "Time (s)": "21.1"
+    "Peak VRAM": "712.3 MB",
+    "Time (s)": "30.2"
   },
   {
     "Model": "gpt2",
     "Exit Code": 0,
-    "Baseline Acc": "60.78%",
+    "Baseline Acc": "57.91%",
     "SambaMoE Acc": "0.00%",
-    "Delta Acc": "-60.78%",
-    "F1": "0.6354",
+    "Delta Acc": "-57.91%",
+    "F1": "0.3010",
     "Status": "FAIL",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "793.2 MB",
-    "Time (s)": "19.2"
+    "Time (s)": "31.4"
   }
 ]
