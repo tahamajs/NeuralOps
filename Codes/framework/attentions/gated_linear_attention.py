@@ -5,8 +5,11 @@ multiplicative SiLU output gating, denominator normalization, and pretrained wei
 Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -215,8 +218,8 @@ class GatedLinearAttention(BaseAttention):
         self.state_norm = nn.LayerNorm(self.head_dim)
         self.output_scale = nn.Parameter(torch.ones(1))
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
-
-        nn.init.constant_(self.decay_gate.bias, 0.0)
+        self.log_decay = nn.Parameter(torch.full((self.num_heads,), -1.0))
+        nn.init.constant_(self.decay_gate.bias, -1.0)
 
         src_attn = kwargs.get("pretrained_attn", None)
         if src_attn is None:
@@ -434,8 +437,8 @@ class GatedLinearAttention(BaseAttention):
         denom_fwd = (attn_scores.abs() * D_causal).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
         denom_bwd = (attn_scores.abs() * D_anti).sum(dim=-1, keepdim=True)    # [B, H, L, 1]
 
-        y_fwd = num_fwd / (denom_fwd + 1e-4).clamp(min=1e-4)
-        y_bwd = num_bwd / (denom_bwd + 1e-4).clamp(min=1e-4)
+        y_fwd = num_fwd / (denom_fwd + 1e-4).clamp(min=1.0)
+        y_bwd = num_bwd / (denom_bwd + 1e-4).clamp(min=1.0)
 
         return y_fwd, y_bwd
 
@@ -482,7 +485,7 @@ class GatedLinearAttention(BaseAttention):
         q = F.elu(q) + 1.0
         k = F.elu(k) + 1.0
 
-        decay_logits = self.decay_gate(hidden_states).transpose(1, 2)  # [B, H, L]
+        decay_logits = self.decay_gate(hidden_states).transpose(1, 2) + self.log_decay.view(1, -1, 1)  # [B, H, L]
         lambdas = torch.sigmoid(decay_logits)
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
@@ -535,6 +538,7 @@ class GatedLinearAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("gated_linear_attention_inject")
+@ATTENTION_REGISTRY.register("inject_gated_linear")
 def inject_gated_linear(
     layer: nn.Module,
     model_config: Any = None,
@@ -543,7 +547,7 @@ def inject_gated_linear(
     total_layers: int = 6,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> GatedLinearAttention:
+) -> Optional[GatedLinearAttention]:
     r"""Injection hook for GatedLinearAttention."""
     src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
 
@@ -560,20 +564,20 @@ def inject_gated_linear(
         getattr(model_config, 'num_attention_heads', 4)
     )
 
-    new_block = GatedLinearAttention(
-        config=model_config,
-        d_model=hidden_size,
-        num_heads=num_heads,
-        hidden_size=hidden_size,
-        num_attention_heads=num_heads,
-        **kwargs,
-    )
-    if src_attn is not None:
-        try:
+    try:
+        new_block = GatedLinearAttention(
+            config=model_config,
+            d_model=hidden_size,
+            num_heads=num_heads,
+            hidden_size=hidden_size,
+            num_attention_heads=num_heads,
+            **kwargs,
+        )
+        if src_attn is not None:
             new_block.copy_weights(src_attn)
-        except Exception as e:
-            print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
+    except Exception as e:
+        logger.error(f"GatedLinearAttention copy_weights failed: {e}")
+        return None
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
