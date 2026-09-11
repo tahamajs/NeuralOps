@@ -90,6 +90,7 @@ class LoRALinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
+        self.output_scale = nn.Parameter(torch.ones(1))
         if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
             self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
