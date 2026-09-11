@@ -104,15 +104,16 @@ class HGRN2Layer(BaseAttention):
         self.lora_alpha = lora_alpha
         self.lora_scaling = (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
 
-        # Base linear projections
         self.forget_gate = nn.Linear(self.d_model, self.d_model, bias=True)
         self.input_gate = nn.Linear(self.d_model, self.d_model, bias=True)
         self.v_proj = nn.Linear(self.d_model, self.d_model, bias=False)
         self.g_proj = nn.Linear(self.d_model, self.d_model, bias=False)
+        self.state_norm = nn.LayerNorm(self.d_model)
         self.out_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
-        # Initialize forget gate bias to -3.0 so softplus(-3) ~ 0.048 => f_t ~ exp(-0.048) ~ 0.95
-        nn.init.constant_(self.forget_gate.bias, -3.0)
+        # Initialize forget gate weight/bias for moderate decay: softplus(-1.0) ~ 0.31 => f_t ~ 0.73
+        nn.init.uniform_(self.forget_gate.weight, 0.01, 0.1)
+        nn.init.constant_(self.forget_gate.bias, 1.0)
         nn.init.constant_(self.input_gate.bias, 0.0)
 
         # LoRA Adapters
@@ -349,6 +350,9 @@ class HGRN2Layer(BaseAttention):
             h = h_fwd
         else:
             h = 0.5 * (h_fwd + h_bwd)
+
+        # Apply LayerNorm to recurrent state to stabilize representation
+        h = self.state_norm(h)
 
         # 4. Gating and output projection
         gated = h * F.silu(z)
