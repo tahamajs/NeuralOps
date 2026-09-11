@@ -5342,3 +5342,498 @@ Note: Creating a commit assumes that the repo already exists on the Huggingface 
 2026-09-11 13:12:43,602 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:22:01 | ETA: 3:56:43
 2026-09-11 13:13:13,611 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:22:31 | ETA: 3:57:33
 2026-09-11 13:13:43,616 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:23:01 | ETA: 3:58:23
+2026-09-11 13:14:13,618 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:23:31 | ETA: 3:59:13
+2026-09-11 13:14:43,625 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:24:01 | ETA: 4:00:03
+2026-09-11 13:15:13,626 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:24:31 | ETA: 4:00:53
+2026-09-11 13:15:43,630 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:25:01 | ETA: 4:01:43
+2026-09-11 13:16:13,634 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:25:31 | ETA: 4:02:33
+2026-09-11 13:16:43,636 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:26:01 | ETA: 4:03:23
+2026-09-11 13:17:13,642 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:26:32 | ETA: 4:04:13
+2026-09-11 13:17:43,647 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:27:02 | ETA: 4:05:03
+2026-09-11 13:18:13,650 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:27:32 | ETA: 4:05:53
+2026-09-11 13:18:43,652 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:28:02 | ETA: 4:06:43
+2026-09-11 13:19:13,661 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:28:32 | ETA: 4:07:33
+2026-09-11 13:19:43,662 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:29:02 | ETA: 4:08:23
+2026-09-11 13:20:13,666 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:29:32 | ETA: 4:09:13
+2026-09-11 13:20:43,671 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:30:02 | ETA: 4:10:03
+2026-09-11 13:21:13,675 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:30:32 | ETA: 4:10:53
+2026-09-11 13:21:43,682 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:31:02 | ETA: 4:11:43
+2026-09-11 13:22:13,696 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:31:32 | ETA: 4:12:33
+2026-09-11 13:22:43,712 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:32:02 | ETA: 4:13:23
+2026-09-11 13:23:13,715 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:32:32 | ETA: 4:14:13
+2026-09-11 13:23:43,718 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:33:02 | ETA: 4:15:03
+2026-09-11 13:24:13,729 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:33:32 | ETA: 4:15:53
+2026-09-11 13:24:43,741 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:34:02 | ETA: 4:16:43
+2026-09-11 13:25:13,755 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:34:32 | ETA: 4:17:33
+2026-09-11 13:25:43,765 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:35:02 | ETA: 4:18:23
+2026-09-11 13:26:13,773 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:35:32 | ETA: 4:19:13
+2026-09-11 13:26:43,777 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:36:02 | ETA: 4:20:03
+2026-09-11 13:27:13,780 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:36:32 | ETA: 4:20:53
+2026-09-11 13:27:43,788 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:37:02 | ETA: 4:21:43
+2026-09-11 13:28:13,804 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:37:32 | ETA: 4:22:33
+2026-09-11 13:28:43,805 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:38:02 | ETA: 4:23:23
+2026-09-11 13:29:13,817 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:38:32 | ETA: 4:24:13
+2026-09-11 13:29:43,832 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:39:02 | ETA: 4:25:03
+2026-09-11 13:30:13,843 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:39:32 | ETA: 4:25:53
+2026-09-11 13:30:43,848 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:40:02 | ETA: 4:26:43
+2026-09-11 13:31:13,861 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:40:32 | ETA: 4:27:33
+2026-09-11 13:31:43,862 [INFO] STATUS | Module: leka_v1 | Done: 30/80 | UploadQueue: 0 | Elapsed: 2:41:02 | ETA: 4:28:23
+2026-09-11 13:31:47,207 [WARNING] [leka_v1] TIMEOUT after 1200s — terminating process tree PID 25964.
+2026-09-11 13:31:47,405 [INFO] [leka_v1] Accuracies: {'distilbert': ('PASS_LOW', 51.03), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('FAIL', 0.0)} | exit=-999 | elapsed=1200.2s
+2026-09-11 13:31:47,405 [INFO] [leka_v1] Overall: TIMEOUT
+2026-09-11 13:31:47,408 [INFO] ============================================================
+2026-09-11 13:31:47,409 [INFO] [32/80] Running: linformer
+2026-09-11 13:31:47,409 [INFO] [linformer] Launching runner: run_all_4_linformer.py
+2026-09-11 13:32:13,875 [INFO] STATUS | Module: linformer | Done: 31/80 | UploadQueue: 0 | Elapsed: 2:41:32 | ETA: 4:15:19
+2026-09-11 13:32:43,886 [INFO] STATUS | Module: linformer | Done: 31/80 | UploadQueue: 0 | Elapsed: 2:42:02 | ETA: 4:16:07
+2026-09-11 13:33:13,897 [INFO] STATUS | Module: linformer | Done: 31/80 | UploadQueue: 0 | Elapsed: 2:42:32 | ETA: 4:16:54
+2026-09-11 13:33:43,903 [INFO] STATUS | Module: linformer | Done: 31/80 | UploadQueue: 0 | Elapsed: 2:43:02 | ETA: 4:17:42
+2026-09-11 13:34:13,912 [INFO] STATUS | Module: linformer | Done: 31/80 | UploadQueue: 0 | Elapsed: 2:43:32 | ETA: 4:18:29
+2026-09-11 13:34:26,811 [INFO] [linformer] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=159.4s
+2026-09-11 13:34:26,811 [INFO] [linformer] Overall: PASS_LOW
+2026-09-11 13:34:26,814 [INFO] ============================================================
+2026-09-11 13:34:26,814 [INFO] [33/80] Running: mamba
+2026-09-11 13:34:26,815 [INFO] [mamba] Launching runner: run_all_4_mamba.py
+2026-09-11 13:34:43,919 [INFO] STATUS | Module: mamba | Done: 32/80 | UploadQueue: 0 | Elapsed: 2:44:02 | ETA: 4:06:03
+2026-09-11 13:35:13,927 [INFO] STATUS | Module: mamba | Done: 32/80 | UploadQueue: 0 | Elapsed: 2:44:32 | ETA: 4:06:48
+2026-09-11 13:35:43,937 [INFO] STATUS | Module: mamba | Done: 32/80 | UploadQueue: 0 | Elapsed: 2:45:02 | ETA: 4:07:33
+2026-09-11 13:36:13,939 [INFO] STATUS | Module: mamba | Done: 32/80 | UploadQueue: 0 | Elapsed: 2:45:32 | ETA: 4:08:18
+2026-09-11 13:36:27,931 [INFO] [mamba] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.03)} | exit=0 | elapsed=121.1s
+2026-09-11 13:36:27,931 [INFO] [mamba] Overall: PASS_LOW
+2026-09-11 13:36:27,934 [INFO] ============================================================
+2026-09-11 13:36:27,934 [INFO] [34/80] Running: mamba_inject
+2026-09-11 13:36:27,934 [INFO] [mamba_inject] Launching runner: run_all_4_mamba_inject.py
+2026-09-11 13:36:43,949 [INFO] STATUS | Module: mamba_inject | Done: 33/80 | UploadQueue: 0 | Elapsed: 2:46:02 | ETA: 3:56:28
+2026-09-11 13:37:13,958 [INFO] STATUS | Module: mamba_inject | Done: 33/80 | UploadQueue: 0 | Elapsed: 2:46:32 | ETA: 3:57:11
+2026-09-11 13:37:43,967 [INFO] STATUS | Module: mamba_inject | Done: 33/80 | UploadQueue: 0 | Elapsed: 2:47:02 | ETA: 3:57:54
+2026-09-11 13:37:51,075 [INFO] [mamba_inject] Accuracies: {'distilbert': ('FAIL', 0.0), 'roberta': ('FAIL', 0.0), 'gpt2': ('FAIL', 0.0)} | exit=0 | elapsed=83.1s
+2026-09-11 13:37:51,075 [INFO] [mamba_inject] Overall: FAILED_LOW
+2026-09-11 13:37:51,078 [INFO] ============================================================
+2026-09-11 13:37:51,078 [INFO] [35/80] Running: mamba_svd_flash
+2026-09-11 13:37:51,079 [INFO] [mamba_svd_flash] Launching runner: run_all_4_mamba_svd_flash.py
+2026-09-11 13:38:13,980 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:47:32 | ETA: 3:46:40
+2026-09-11 13:38:43,988 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:48:02 | ETA: 3:47:20
+2026-09-11 13:39:13,994 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:48:32 | ETA: 3:48:01
+2026-09-11 13:39:44,002 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:49:02 | ETA: 3:48:42
+2026-09-11 13:40:14,010 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:49:32 | ETA: 3:49:22
+2026-09-11 13:40:44,014 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:50:02 | ETA: 3:50:03
+2026-09-11 13:41:14,018 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:50:32 | ETA: 3:50:43
+2026-09-11 13:41:44,024 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:51:02 | ETA: 3:51:24
+2026-09-11 13:42:14,025 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:51:32 | ETA: 3:52:04
+2026-09-11 13:42:44,031 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:52:02 | ETA: 3:52:45
+2026-09-11 13:43:14,038 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:52:32 | ETA: 3:53:26
+2026-09-11 13:43:44,047 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:53:02 | ETA: 3:54:06
+2026-09-11 13:44:14,048 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:53:32 | ETA: 3:54:47
+2026-09-11 13:44:44,052 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:54:02 | ETA: 3:55:27
+2026-09-11 13:45:14,058 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:54:32 | ETA: 3:56:08
+2026-09-11 13:45:44,060 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:55:02 | ETA: 3:56:49
+2026-09-11 13:46:14,065 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:55:32 | ETA: 3:57:29
+2026-09-11 13:46:44,068 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:56:02 | ETA: 3:58:10
+2026-09-11 13:47:14,076 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:56:32 | ETA: 3:58:50
+2026-09-11 13:47:44,077 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:57:02 | ETA: 3:59:31
+2026-09-11 13:48:14,085 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:57:32 | ETA: 4:00:12
+2026-09-11 13:48:44,091 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:58:02 | ETA: 4:00:52
+2026-09-11 13:49:14,097 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:58:32 | ETA: 4:01:33
+2026-09-11 13:49:44,103 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:59:02 | ETA: 4:02:13
+2026-09-11 13:50:14,113 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 2:59:32 | ETA: 4:02:54
+2026-09-11 13:50:44,117 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:00:02 | ETA: 4:03:35
+2026-09-11 13:51:14,125 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:00:32 | ETA: 4:04:15
+2026-09-11 13:51:44,126 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:01:02 | ETA: 4:04:56
+2026-09-11 13:52:14,131 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:01:32 | ETA: 4:05:36
+2026-09-11 13:52:44,142 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:02:02 | ETA: 4:06:17
+2026-09-11 13:53:14,151 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:02:32 | ETA: 4:06:58
+2026-09-11 13:53:44,157 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:03:02 | ETA: 4:07:38
+2026-09-11 13:54:14,159 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:03:32 | ETA: 4:08:19
+2026-09-11 13:54:44,163 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:04:02 | ETA: 4:08:59
+2026-09-11 13:55:14,169 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:04:32 | ETA: 4:09:40
+2026-09-11 13:55:44,179 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:05:02 | ETA: 4:10:21
+2026-09-11 13:56:14,182 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:05:32 | ETA: 4:11:01
+2026-09-11 13:56:44,189 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:06:02 | ETA: 4:11:42
+2026-09-11 13:57:14,193 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:06:32 | ETA: 4:12:22
+2026-09-11 13:57:44,202 [INFO] STATUS | Module: mamba_svd_flash | Done: 34/80 | UploadQueue: 0 | Elapsed: 3:07:02 | ETA: 4:13:03
+2026-09-11 13:57:51,113 [WARNING] [mamba_svd_flash] TIMEOUT after 1200s — terminating process tree PID 14560.
+2026-09-11 13:57:51,269 [INFO] [mamba_svd_flash] Accuracies: {'distilbert': ('PASS', 84.17), 'roberta': ('FAIL', 0.0), 'gpt2': ('FAIL', 0.0)} | exit=-999 | elapsed=1200.2s
+2026-09-11 13:57:51,269 [INFO] [mamba_svd_flash] Overall: TIMEOUT
+2026-09-11 13:57:51,271 [INFO] ============================================================
+2026-09-11 13:57:51,271 [INFO] [36/80] Running: mla
+2026-09-11 13:57:51,271 [INFO] [mla] Launching runner: run_all_4_mla.py
+2026-09-11 13:58:14,210 [INFO] STATUS | Module: mla | Done: 35/80 | UploadQueue: 0 | Elapsed: 3:07:32 | ETA: 4:01:07
+2026-09-11 13:58:44,211 [INFO] STATUS | Module: mla | Done: 35/80 | UploadQueue: 0 | Elapsed: 3:08:02 | ETA: 4:01:46
+2026-09-11 13:59:14,225 [INFO] STATUS | Module: mla | Done: 35/80 | UploadQueue: 0 | Elapsed: 3:08:32 | ETA: 4:02:24
+2026-09-11 13:59:44,229 [INFO] STATUS | Module: mla | Done: 35/80 | UploadQueue: 0 | Elapsed: 3:09:02 | ETA: 4:03:03
+2026-09-11 14:00:14,097 [INFO] [mla] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS', 57.22)} | exit=0 | elapsed=142.8s
+2026-09-11 14:00:14,097 [INFO] [mla] Overall: PASS
+2026-09-11 14:00:14,097 [INFO] [mla] Enqueued background HF upload for gpt2 (non-blocking)
+2026-09-11 14:00:14,102 [INFO] ============================================================
+2026-09-11 14:00:14,102 [INFO] [37/80] Running: nexus
+2026-09-11 14:00:14,105 [INFO] [nexus] Launching runner: run_all_4_nexus.py
+2026-09-11 14:00:14,244 [INFO] STATUS | Module: nexus | Done: 36/80 | UploadQueue: 0 | Elapsed: 3:09:32 | ETA: 3:51:39
+2026-09-11 14:00:17,197 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 14:00:17,912 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 14:00:18,697 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-gpt2-mla/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:00:19,578 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-gpt2-mla/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:00:19,578 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-gpt2-mla
+2026-09-11 14:00:20,470 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-gpt2-mla/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:00:44,247 [INFO] STATUS | Module: nexus | Done: 36/80 | UploadQueue: 0 | Elapsed: 3:10:02 | ETA: 3:52:16
+2026-09-11 14:00:54,268 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-gpt2-mla/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:00:55,426 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-gpt2-mla/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:00:56,615 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-gpt2-mla/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:00:56,615 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-gpt2-mla
+2026-09-11 14:01:14,255 [INFO] STATUS | Module: nexus | Done: 36/80 | UploadQueue: 0 | Elapsed: 3:10:32 | ETA: 3:52:53
+2026-09-11 14:01:44,262 [INFO] STATUS | Module: nexus | Done: 36/80 | UploadQueue: 0 | Elapsed: 3:11:02 | ETA: 3:53:29
+2026-09-11 14:02:14,265 [INFO] STATUS | Module: nexus | Done: 36/80 | UploadQueue: 0 | Elapsed: 3:11:32 | ETA: 3:54:06
+2026-09-11 14:02:41,182 [INFO] [nexus] Accuracies: {'distilbert': ('PASS_LOW', 50.92), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 51.61)} | exit=0 | elapsed=147.1s
+2026-09-11 14:02:41,182 [INFO] [nexus] Overall: PASS_LOW
+2026-09-11 14:02:41,185 [INFO] ============================================================
+2026-09-11 14:02:41,185 [INFO] [38/80] Running: nha
+2026-09-11 14:02:41,185 [INFO] [nha] Launching runner: run_all_4_nha.py
+2026-09-11 14:02:44,273 [INFO] STATUS | Module: nha | Done: 37/80 | UploadQueue: 0 | Elapsed: 3:12:02 | ETA: 3:43:11
+2026-09-11 14:03:14,280 [INFO] STATUS | Module: nha | Done: 37/80 | UploadQueue: 0 | Elapsed: 3:12:32 | ETA: 3:43:46
+2026-09-11 14:03:44,283 [INFO] STATUS | Module: nha | Done: 37/80 | UploadQueue: 0 | Elapsed: 3:13:02 | ETA: 3:44:20
+2026-09-11 14:04:14,286 [INFO] STATUS | Module: nha | Done: 37/80 | UploadQueue: 0 | Elapsed: 3:13:32 | ETA: 3:44:55
+2026-09-11 14:04:44,288 [INFO] STATUS | Module: nha | Done: 37/80 | UploadQueue: 0 | Elapsed: 3:14:02 | ETA: 3:45:30
+2026-09-11 14:05:14,294 [INFO] STATUS | Module: nha | Done: 37/80 | UploadQueue: 0 | Elapsed: 3:14:32 | ETA: 3:46:05
+2026-09-11 14:05:44,306 [INFO] STATUS | Module: nha | Done: 37/80 | UploadQueue: 0 | Elapsed: 3:15:02 | ETA: 3:46:40
+2026-09-11 14:06:14,315 [INFO] STATUS | Module: nha | Done: 37/80 | UploadQueue: 0 | Elapsed: 3:15:32 | ETA: 3:47:15
+2026-09-11 14:06:28,690 [INFO] [nha] Accuracies: {'distilbert': ('PASS', 90.71), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=227.5s
+2026-09-11 14:06:28,690 [INFO] [nha] Overall: PASS
+2026-09-11 14:06:28,691 [INFO] [nha] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:06:28,696 [INFO] ============================================================
+2026-09-11 14:06:28,696 [INFO] [39/80] Running: nha_compressor
+2026-09-11 14:06:28,698 [INFO] [nha_compressor] Launching runner: run_all_4_nha_compressor.py
+2026-09-11 14:06:37,899 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 14:06:39,608 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 14:06:41,148 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:06:43,870 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:06:43,871 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-nha
+2026-09-11 14:06:44,324 [INFO] STATUS | Module: nha_compressor | Done: 38/80 | UploadQueue: 0 | Elapsed: 3:16:02 | ETA: 3:36:40
+2026-09-11 14:06:46,023 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:07:14,336 [INFO] STATUS | Module: nha_compressor | Done: 38/80 | UploadQueue: 0 | Elapsed: 3:16:32 | ETA: 3:37:14
+2026-09-11 14:07:44,343 [INFO] STATUS | Module: nha_compressor | Done: 38/80 | UploadQueue: 0 | Elapsed: 3:17:02 | ETA: 3:37:47
+2026-09-11 14:08:06,339 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:08:07,347 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:08:08,732 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:08:08,732 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-nha
+2026-09-11 14:08:14,354 [INFO] STATUS | Module: nha_compressor | Done: 38/80 | UploadQueue: 0 | Elapsed: 3:17:32 | ETA: 3:38:20
+2026-09-11 14:08:44,357 [INFO] STATUS | Module: nha_compressor | Done: 38/80 | UploadQueue: 0 | Elapsed: 3:18:02 | ETA: 3:38:53
+2026-09-11 14:09:14,362 [INFO] STATUS | Module: nha_compressor | Done: 38/80 | UploadQueue: 0 | Elapsed: 3:18:32 | ETA: 3:39:26
+2026-09-11 14:09:44,366 [INFO] STATUS | Module: nha_compressor | Done: 38/80 | UploadQueue: 0 | Elapsed: 3:19:02 | ETA: 3:39:59
+2026-09-11 14:09:54,882 [INFO] [nha_compressor] Accuracies: {'distilbert': ('PASS', 90.71), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=206.2s
+2026-09-11 14:09:54,882 [INFO] [nha_compressor] Overall: PASS
+2026-09-11 14:09:54,882 [INFO] [nha_compressor] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:09:54,889 [INFO] ============================================================
+2026-09-11 14:09:54,889 [INFO] [40/80] Running: nsa
+2026-09-11 14:09:54,889 [INFO] [nsa] Launching runner: run_all_4_nsa.py
+2026-09-11 14:10:01,431 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 14:10:01,865 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:10:03,183 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:10:03,183 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-nha_compressor
+2026-09-11 14:10:03,709 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:10:14,368 [INFO] STATUS | Module: nsa | Done: 39/80 | UploadQueue: 0 | Elapsed: 3:19:32 | ETA: 3:29:46
+2026-09-11 14:10:18,849 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:10:19,263 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:10:19,915 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nha_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:10:19,915 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-nha_compressor
+2026-09-11 14:10:44,369 [INFO] STATUS | Module: nsa | Done: 39/80 | UploadQueue: 0 | Elapsed: 3:20:02 | ETA: 3:30:18
+2026-09-11 14:11:14,374 [INFO] STATUS | Module: nsa | Done: 39/80 | UploadQueue: 0 | Elapsed: 3:20:32 | ETA: 3:30:49
+2026-09-11 14:11:44,377 [INFO] STATUS | Module: nsa | Done: 39/80 | UploadQueue: 0 | Elapsed: 3:21:02 | ETA: 3:31:21
+2026-09-11 14:12:14,386 [INFO] STATUS | Module: nsa | Done: 39/80 | UploadQueue: 0 | Elapsed: 3:21:32 | ETA: 3:31:52
+2026-09-11 14:12:44,400 [INFO] STATUS | Module: nsa | Done: 39/80 | UploadQueue: 0 | Elapsed: 3:22:02 | ETA: 3:32:24
+2026-09-11 14:13:14,413 [INFO] STATUS | Module: nsa | Done: 39/80 | UploadQueue: 0 | Elapsed: 3:22:32 | ETA: 3:32:55
+2026-09-11 14:13:15,524 [INFO] [nsa] Accuracies: {'distilbert': ('PASS', 90.83), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=200.6s
+2026-09-11 14:13:15,524 [INFO] [nsa] Overall: PASS
+2026-09-11 14:13:15,524 [INFO] [nsa] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:13:15,529 [INFO] ============================================================
+2026-09-11 14:13:15,529 [INFO] [41/80] Running: nsa_attention
+2026-09-11 14:13:15,530 [INFO] [nsa_attention] Launching runner: run_all_4_nsa_attention.py
+2026-09-11 14:13:18,647 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 14:13:19,288 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 14:13:19,761 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:13:20,735 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:13:20,737 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-nsa
+2026-09-11 14:13:21,746 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:13:44,419 [INFO] STATUS | Module: nsa_attention | Done: 40/80 | UploadQueue: 0 | Elapsed: 3:23:02 | ETA: 3:23:02
+2026-09-11 14:14:14,428 [INFO] STATUS | Module: nsa_attention | Done: 40/80 | UploadQueue: 0 | Elapsed: 3:23:32 | ETA: 3:23:32
+2026-09-11 14:14:41,466 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:14:42,092 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:14:43,098 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:14:43,113 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-nsa
+2026-09-11 14:14:44,439 [INFO] STATUS | Module: nsa_attention | Done: 40/80 | UploadQueue: 0 | Elapsed: 3:24:02 | ETA: 3:24:02
+2026-09-11 14:15:14,445 [INFO] STATUS | Module: nsa_attention | Done: 40/80 | UploadQueue: 0 | Elapsed: 3:24:32 | ETA: 3:24:32
+2026-09-11 14:15:44,453 [INFO] STATUS | Module: nsa_attention | Done: 40/80 | UploadQueue: 0 | Elapsed: 3:25:02 | ETA: 3:25:02
+2026-09-11 14:16:14,465 [INFO] STATUS | Module: nsa_attention | Done: 40/80 | UploadQueue: 0 | Elapsed: 3:25:32 | ETA: 3:25:32
+2026-09-11 14:16:44,476 [INFO] STATUS | Module: nsa_attention | Done: 40/80 | UploadQueue: 0 | Elapsed: 3:26:02 | ETA: 3:26:02
+2026-09-11 14:17:05,037 [INFO] [nsa_attention] Accuracies: {'distilbert': ('PASS', 90.83), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=229.5s
+2026-09-11 14:17:05,037 [INFO] [nsa_attention] Overall: PASS
+2026-09-11 14:17:05,037 [INFO] [nsa_attention] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:17:05,042 [INFO] ============================================================
+2026-09-11 14:17:05,042 [INFO] [42/80] Running: nystrom
+2026-09-11 14:17:05,042 [INFO] [nystrom] Launching runner: run_all_4_nystrom.py
+2026-09-11 14:17:11,956 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 14:17:12,765 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa_attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:17:13,519 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa_attention/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:17:13,519 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-nsa_attention
+2026-09-11 14:17:14,037 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa_attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:17:14,478 [INFO] STATUS | Module: nystrom | Done: 41/80 | UploadQueue: 0 | Elapsed: 3:26:32 | ETA: 3:16:28
+2026-09-11 14:17:36,340 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa_attention/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:17:36,908 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa_attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:17:38,224 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nsa_attention/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:17:38,225 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-nsa_attention
+2026-09-11 14:17:44,486 [INFO] STATUS | Module: nystrom | Done: 41/80 | UploadQueue: 0 | Elapsed: 3:27:02 | ETA: 3:16:56
+2026-09-11 14:18:14,494 [INFO] STATUS | Module: nystrom | Done: 41/80 | UploadQueue: 0 | Elapsed: 3:27:32 | ETA: 3:17:25
+2026-09-11 14:18:44,501 [INFO] STATUS | Module: nystrom | Done: 41/80 | UploadQueue: 0 | Elapsed: 3:28:02 | ETA: 3:17:53
+2026-09-11 14:19:14,506 [INFO] STATUS | Module: nystrom | Done: 41/80 | UploadQueue: 0 | Elapsed: 3:28:32 | ETA: 3:18:22
+2026-09-11 14:19:44,515 [INFO] STATUS | Module: nystrom | Done: 41/80 | UploadQueue: 0 | Elapsed: 3:29:02 | ETA: 3:18:51
+2026-09-11 14:20:14,519 [INFO] STATUS | Module: nystrom | Done: 41/80 | UploadQueue: 0 | Elapsed: 3:29:32 | ETA: 3:19:19
+2026-09-11 14:20:36,372 [INFO] [nystrom] Accuracies: {'distilbert': ('PASS', 88.07), 'roberta': ('PASS_LOW', 52.18), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=211.3s
+2026-09-11 14:20:36,372 [INFO] [nystrom] Overall: PASS
+2026-09-11 14:20:36,373 [INFO] [nystrom] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:20:36,378 [INFO] ============================================================
+2026-09-11 14:20:36,378 [INFO] [43/80] Running: oha
+2026-09-11 14:20:36,378 [INFO] [oha] Launching runner: run_all_4_oha.py
+2026-09-11 14:20:37,932 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 14:20:38,774 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 14:20:39,336 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nystrom/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:20:40,060 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nystrom/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:20:40,060 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-nystrom
+2026-09-11 14:20:41,389 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nystrom/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:20:44,520 [INFO] STATUS | Module: oha | Done: 42/80 | UploadQueue: 0 | Elapsed: 3:30:02 | ETA: 3:10:02
+2026-09-11 14:21:14,523 [INFO] STATUS | Module: oha | Done: 42/80 | UploadQueue: 0 | Elapsed: 3:30:32 | ETA: 3:10:29
+2026-09-11 14:21:44,531 [INFO] STATUS | Module: oha | Done: 42/80 | UploadQueue: 0 | Elapsed: 3:31:02 | ETA: 3:10:56
+2026-09-11 14:22:04,459 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nystrom/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:22:04,881 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nystrom/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:22:05,578 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-nystrom/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:22:05,578 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-nystrom
+2026-09-11 14:22:14,532 [INFO] STATUS | Module: oha | Done: 42/80 | UploadQueue: 0 | Elapsed: 3:31:32 | ETA: 3:11:24
+2026-09-11 14:22:44,538 [INFO] STATUS | Module: oha | Done: 42/80 | UploadQueue: 0 | Elapsed: 3:32:02 | ETA: 3:11:51
+2026-09-11 14:23:14,542 [INFO] STATUS | Module: oha | Done: 42/80 | UploadQueue: 0 | Elapsed: 3:32:32 | ETA: 3:12:18
+2026-09-11 14:23:44,557 [INFO] STATUS | Module: oha | Done: 42/80 | UploadQueue: 0 | Elapsed: 3:33:02 | ETA: 3:12:45
+2026-09-11 14:24:14,562 [INFO] STATUS | Module: oha | Done: 42/80 | UploadQueue: 0 | Elapsed: 3:33:32 | ETA: 3:13:12
+2026-09-11 14:24:19,415 [INFO] [oha] Accuracies: {'distilbert': ('PASS', 90.14), 'roberta': ('PASS_LOW', 55.39), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=223.0s
+2026-09-11 14:24:19,415 [INFO] [oha] Overall: PASS
+2026-09-11 14:24:19,416 [INFO] [oha] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:24:19,418 [INFO] ============================================================
+2026-09-11 14:24:19,418 [INFO] [44/80] Running: optimized_hybrid_attention
+2026-09-11 14:24:19,419 [INFO] [optimized_hybrid_attention] Launching runner: run_all_4_optimized_hybrid_attention.py
+2026-09-11 14:24:21,205 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 14:24:22,183 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 14:24:23,046 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-oha/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:24:23,901 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-oha/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:24:23,901 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-oha
+2026-09-11 14:24:24,416 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-oha/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:24:44,564 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 43/80 | UploadQueue: 0 | Elapsed: 3:34:02 | ETA: 3:04:10
+2026-09-11 14:25:14,572 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 43/80 | UploadQueue: 0 | Elapsed: 3:34:32 | ETA: 3:04:36
+2026-09-11 14:25:44,578 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 43/80 | UploadQueue: 0 | Elapsed: 3:35:02 | ETA: 3:05:02
+2026-09-11 14:26:10,363 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-oha/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:26:11,191 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-oha/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:26:12,557 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-oha/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:26:12,557 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-oha
+2026-09-11 14:26:14,586 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 43/80 | UploadQueue: 0 | Elapsed: 3:35:32 | ETA: 3:05:28
+2026-09-11 14:26:44,587 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 43/80 | UploadQueue: 0 | Elapsed: 3:36:02 | ETA: 3:05:54
+2026-09-11 14:27:14,602 [INFO] STATUS | Module: optimized_hybrid_attention | Done: 43/80 | UploadQueue: 0 | Elapsed: 3:36:32 | ETA: 3:06:19
+2026-09-11 14:27:30,094 [INFO] [optimized_hybrid_attention] Accuracies: {'distilbert': ('PASS', 90.14), 'roberta': ('PASS_LOW', 55.39), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=190.7s
+2026-09-11 14:27:30,094 [INFO] [optimized_hybrid_attention] Overall: PASS
+2026-09-11 14:27:30,095 [INFO] [optimized_hybrid_attention] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:27:30,099 [INFO] ============================================================
+2026-09-11 14:27:30,099 [INFO] [45/80] Running: orion
+2026-09-11 14:27:30,102 [INFO] [orion] Launching runner: run_all_4_orion.py
+2026-09-11 14:27:34,012 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 409 Conflict"
+2026-09-11 14:27:35,178 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 14:27:35,994 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-optimized_hybrid_attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:27:36,911 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-optimized_hybrid_attention/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:27:36,912 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-optimized_hybrid_attention
+2026-09-11 14:27:37,361 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-optimized_hybrid_attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:27:44,610 [INFO] STATUS | Module: orion | Done: 44/80 | UploadQueue: 0 | Elapsed: 3:37:02 | ETA: 2:57:35
+2026-09-11 14:27:50,635 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-optimized_hybrid_attention/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:27:51,141 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-optimized_hybrid_attention/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 14:27:51,792 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-optimized_hybrid_attention/commit/main "HTTP/1.1 200 OK"
+2026-09-11 14:27:51,793 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-optimized_hybrid_attention
+2026-09-11 14:28:14,611 [INFO] STATUS | Module: orion | Done: 44/80 | UploadQueue: 0 | Elapsed: 3:37:32 | ETA: 2:57:59
+2026-09-11 14:28:44,615 [INFO] STATUS | Module: orion | Done: 44/80 | UploadQueue: 0 | Elapsed: 3:38:02 | ETA: 2:58:24
+2026-09-11 14:29:14,625 [INFO] STATUS | Module: orion | Done: 44/80 | UploadQueue: 0 | Elapsed: 3:38:32 | ETA: 2:58:48
+2026-09-11 14:29:44,633 [INFO] STATUS | Module: orion | Done: 44/80 | UploadQueue: 0 | Elapsed: 3:39:02 | ETA: 2:59:13
+2026-09-11 14:30:14,644 [INFO] STATUS | Module: orion | Done: 44/80 | UploadQueue: 0 | Elapsed: 3:39:33 | ETA: 2:59:37
+2026-09-11 14:30:44,653 [INFO] STATUS | Module: orion | Done: 44/80 | UploadQueue: 0 | Elapsed: 3:40:03 | ETA: 3:00:02
+2026-09-11 14:31:14,660 [INFO] STATUS | Module: orion | Done: 44/80 | UploadQueue: 0 | Elapsed: 3:40:33 | ETA: 3:00:27
+2026-09-11 14:31:41,566 [INFO] [orion] Accuracies: {'distilbert': ('PASS_LOW', 55.5), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=251.5s
+2026-09-11 14:31:41,566 [INFO] [orion] Overall: PASS_LOW
+2026-09-11 14:31:41,569 [INFO] ============================================================
+2026-09-11 14:31:41,569 [INFO] [46/80] Running: orion_module
+2026-09-11 14:31:41,570 [INFO] [orion_module] Launching runner: run_all_4_orion_module.py
+2026-09-11 14:31:44,662 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:41:03 | ETA: 2:51:55
+2026-09-11 14:32:14,669 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:41:33 | ETA: 2:52:19
+2026-09-11 14:32:44,675 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:42:03 | ETA: 2:52:42
+2026-09-11 14:33:14,682 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:42:33 | ETA: 2:53:05
+2026-09-11 14:33:44,691 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:43:03 | ETA: 2:53:29
+2026-09-11 14:34:14,694 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:43:33 | ETA: 2:53:52
+2026-09-11 14:34:44,702 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:44:03 | ETA: 2:54:15
+2026-09-11 14:35:14,711 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:44:33 | ETA: 2:54:39
+2026-09-11 14:35:44,717 [INFO] STATUS | Module: orion_module | Done: 45/80 | UploadQueue: 0 | Elapsed: 3:45:03 | ETA: 2:55:02
+2026-09-11 14:35:52,663 [INFO] [orion_module] Accuracies: {'distilbert': ('PASS_LOW', 55.5), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=251.1s
+2026-09-11 14:35:52,663 [INFO] [orion_module] Overall: PASS_LOW
+2026-09-11 14:35:52,665 [INFO] ============================================================
+2026-09-11 14:35:52,666 [INFO] [47/80] Running: performer
+2026-09-11 14:35:52,666 [INFO] [performer] Launching runner: run_all_4_performer.py
+2026-09-11 14:36:14,726 [INFO] STATUS | Module: performer | Done: 46/80 | UploadQueue: 0 | Elapsed: 3:45:33 | ETA: 2:46:42
+2026-09-11 14:36:44,727 [INFO] STATUS | Module: performer | Done: 46/80 | UploadQueue: 0 | Elapsed: 3:46:03 | ETA: 2:47:04
+2026-09-11 14:37:14,734 [INFO] STATUS | Module: performer | Done: 46/80 | UploadQueue: 0 | Elapsed: 3:46:33 | ETA: 2:47:27
+2026-09-11 14:37:44,736 [INFO] STATUS | Module: performer | Done: 46/80 | UploadQueue: 0 | Elapsed: 3:47:03 | ETA: 2:47:49
+2026-09-11 14:38:14,745 [INFO] STATUS | Module: performer | Done: 46/80 | UploadQueue: 0 | Elapsed: 3:47:33 | ETA: 2:48:11
+2026-09-11 14:38:28,253 [INFO] [performer] Accuracies: {'distilbert': ('PASS', 74.08), 'roberta': ('PASS', 60.32), 'gpt2': ('PASS_LOW', 49.08)} | exit=0 | elapsed=155.6s
+2026-09-11 14:38:28,253 [INFO] [performer] Overall: PASS
+2026-09-11 14:38:28,253 [INFO] [performer] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:38:28,254 [INFO] [performer] Enqueued background HF upload for roberta (non-blocking)
+2026-09-11 14:38:28,258 [INFO] ============================================================
+2026-09-11 14:38:28,258 [INFO] [48/80] Running: rala
+2026-09-11 14:38:28,259 [INFO] [rala] Launching runner: run_all_4_rala.py
+2026-09-11 14:38:38,902 [WARNING] [HF-ASYNC] Upload failed performer/distilbert: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1028)
+2026-09-11 14:38:42,941 [WARNING] [HF-ASYNC] Upload failed performer/roberta: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1028)
+2026-09-11 14:38:44,750 [INFO] STATUS | Module: rala | Done: 47/80 | UploadQueue: 0 | Elapsed: 3:48:03 | ETA: 2:40:07
+2026-09-11 14:39:14,766 [INFO] STATUS | Module: rala | Done: 47/80 | UploadQueue: 0 | Elapsed: 3:48:33 | ETA: 2:40:28
+2026-09-11 14:39:44,774 [INFO] STATUS | Module: rala | Done: 47/80 | UploadQueue: 0 | Elapsed: 3:49:03 | ETA: 2:40:49
+2026-09-11 14:40:14,775 [INFO] STATUS | Module: rala | Done: 47/80 | UploadQueue: 0 | Elapsed: 3:49:33 | ETA: 2:41:10
+2026-09-11 14:40:44,778 [INFO] STATUS | Module: rala | Done: 47/80 | UploadQueue: 0 | Elapsed: 3:50:03 | ETA: 2:41:31
+2026-09-11 14:41:14,781 [INFO] STATUS | Module: rala | Done: 47/80 | UploadQueue: 0 | Elapsed: 3:50:33 | ETA: 2:41:52
+2026-09-11 14:41:29,677 [INFO] [rala] Accuracies: {'distilbert': ('PASS', 60.09), 'roberta': ('PASS_LOW', 50.8), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=181.4s
+2026-09-11 14:41:29,677 [INFO] [rala] Overall: PASS
+2026-09-11 14:41:29,678 [INFO] [rala] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:41:29,682 [INFO] ============================================================
+2026-09-11 14:41:29,682 [INFO] [49/80] Running: rala_compressor
+2026-09-11 14:41:29,683 [INFO] [rala_compressor] Launching runner: run_all_4_rala_compressor.py
+2026-09-11 14:41:44,788 [INFO] STATUS | Module: rala_compressor | Done: 48/80 | UploadQueue: 0 | Elapsed: 3:51:03 | ETA: 2:34:02
+2026-09-11 14:42:11,748 [WARNING] [HF-ASYNC] Upload failed rala/distilbert: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-09-11 14:42:14,793 [INFO] STATUS | Module: rala_compressor | Done: 48/80 | UploadQueue: 0 | Elapsed: 3:51:33 | ETA: 2:34:22
+2026-09-11 14:42:44,798 [INFO] STATUS | Module: rala_compressor | Done: 48/80 | UploadQueue: 0 | Elapsed: 3:52:03 | ETA: 2:34:42
+2026-09-11 14:43:14,808 [INFO] STATUS | Module: rala_compressor | Done: 48/80 | UploadQueue: 0 | Elapsed: 3:52:33 | ETA: 2:35:02
+2026-09-11 14:43:44,812 [INFO] STATUS | Module: rala_compressor | Done: 48/80 | UploadQueue: 0 | Elapsed: 3:53:03 | ETA: 2:35:22
+2026-09-11 14:44:14,826 [INFO] STATUS | Module: rala_compressor | Done: 48/80 | UploadQueue: 0 | Elapsed: 3:53:33 | ETA: 2:35:42
+2026-09-11 14:44:30,379 [INFO] [rala_compressor] Accuracies: {'distilbert': ('PASS', 60.09), 'roberta': ('PASS_LOW', 50.8), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=180.7s
+2026-09-11 14:44:30,379 [INFO] [rala_compressor] Overall: PASS
+2026-09-11 14:44:30,379 [INFO] [rala_compressor] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:44:30,385 [INFO] ============================================================
+2026-09-11 14:44:30,385 [INFO] [50/80] Running: reap_moe
+2026-09-11 14:44:30,385 [INFO] [reap_moe] Launching runner: run_all_4_reap_moe.py
+2026-09-11 14:44:44,835 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:54:03 | ETA: 2:28:04
+2026-09-11 14:45:12,463 [WARNING] [HF-ASYNC] Upload failed rala_compressor/distilbert: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-09-11 14:45:14,841 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:54:33 | ETA: 2:28:23
+2026-09-11 14:45:44,851 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:55:03 | ETA: 2:28:42
+2026-09-11 14:46:14,857 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:55:33 | ETA: 2:29:01
+2026-09-11 14:46:44,863 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:56:03 | ETA: 2:29:20
+2026-09-11 14:47:14,871 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:56:33 | ETA: 2:29:39
+2026-09-11 14:47:44,879 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:57:03 | ETA: 2:29:58
+2026-09-11 14:48:14,887 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:57:33 | ETA: 2:30:17
+2026-09-11 14:48:44,895 [INFO] STATUS | Module: reap_moe | Done: 49/80 | UploadQueue: 0 | Elapsed: 3:58:03 | ETA: 2:30:36
+2026-09-11 14:48:54,422 [INFO] [reap_moe] Accuracies: {'distilbert': ('PASS', 90.02), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 52.41)} | exit=0 | elapsed=264.0s
+2026-09-11 14:48:54,422 [INFO] [reap_moe] Overall: PASS
+2026-09-11 14:48:54,423 [INFO] [reap_moe] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:48:54,427 [INFO] ============================================================
+2026-09-11 14:48:54,427 [INFO] [51/80] Running: regla
+2026-09-11 14:48:54,427 [INFO] [regla] Launching runner: run_all_4_regla.py
+2026-09-11 14:49:14,901 [INFO] STATUS | Module: regla | Done: 50/80 | UploadQueue: 0 | Elapsed: 3:58:33 | ETA: 2:23:07
+2026-09-11 14:49:36,476 [WARNING] [HF-ASYNC] Upload failed reap_moe/distilbert: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-09-11 14:49:44,911 [INFO] STATUS | Module: regla | Done: 50/80 | UploadQueue: 0 | Elapsed: 3:59:03 | ETA: 2:23:25
+2026-09-11 14:50:14,919 [INFO] STATUS | Module: regla | Done: 50/80 | UploadQueue: 0 | Elapsed: 3:59:33 | ETA: 2:23:43
+2026-09-11 14:50:44,921 [INFO] STATUS | Module: regla | Done: 50/80 | UploadQueue: 0 | Elapsed: 4:00:03 | ETA: 2:24:01
+2026-09-11 14:51:14,930 [INFO] STATUS | Module: regla | Done: 50/80 | UploadQueue: 0 | Elapsed: 4:00:33 | ETA: 2:24:19
+2026-09-11 14:51:44,933 [INFO] STATUS | Module: regla | Done: 50/80 | UploadQueue: 0 | Elapsed: 4:01:03 | ETA: 2:24:37
+2026-09-11 14:51:54,153 [INFO] [regla] Accuracies: {'distilbert': ('PASS', 71.79), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=179.7s
+2026-09-11 14:51:54,154 [INFO] [regla] Overall: PASS
+2026-09-11 14:51:54,154 [INFO] [regla] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:51:54,159 [INFO] ============================================================
+2026-09-11 14:51:54,159 [INFO] [52/80] Running: roast_hashed_linear
+2026-09-11 14:51:54,160 [INFO] [roast_hashed_linear] Launching runner: run_all_4_roast_hashed_linear.py
+2026-09-11 14:52:14,942 [INFO] STATUS | Module: roast_hashed_linear | Done: 51/80 | UploadQueue: 0 | Elapsed: 4:01:33 | ETA: 2:17:21
+2026-09-11 14:52:36,220 [WARNING] [HF-ASYNC] Upload failed regla/distilbert: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-09-11 14:52:44,946 [INFO] STATUS | Module: roast_hashed_linear | Done: 51/80 | UploadQueue: 0 | Elapsed: 4:02:03 | ETA: 2:17:38
+2026-09-11 14:53:14,948 [INFO] STATUS | Module: roast_hashed_linear | Done: 51/80 | UploadQueue: 0 | Elapsed: 4:02:33 | ETA: 2:17:55
+2026-09-11 14:53:44,951 [INFO] STATUS | Module: roast_hashed_linear | Done: 51/80 | UploadQueue: 0 | Elapsed: 4:03:03 | ETA: 2:18:12
+2026-09-11 14:54:14,952 [INFO] STATUS | Module: roast_hashed_linear | Done: 51/80 | UploadQueue: 0 | Elapsed: 4:03:33 | ETA: 2:18:29
+2026-09-11 14:54:44,962 [INFO] STATUS | Module: roast_hashed_linear | Done: 51/80 | UploadQueue: 0 | Elapsed: 4:04:03 | ETA: 2:18:46
+2026-09-11 14:55:03,942 [INFO] [roast_hashed_linear] Accuracies: {'distilbert': ('PASS', 90.14), 'roberta': ('PASS', 86.81), 'gpt2': ('PASS_LOW', 51.72)} | exit=0 | elapsed=189.8s
+2026-09-11 14:55:03,942 [INFO] [roast_hashed_linear] Overall: PASS
+2026-09-11 14:55:03,942 [INFO] [roast_hashed_linear] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:55:03,944 [INFO] [roast_hashed_linear] Enqueued background HF upload for roberta (non-blocking)
+2026-09-11 14:55:03,947 [INFO] ============================================================
+2026-09-11 14:55:03,947 [INFO] [53/80] Running: routing
+2026-09-11 14:55:03,947 [INFO] [routing] Launching runner: run_all_4_routing.py
+2026-09-11 14:55:14,975 [INFO] STATUS | Module: routing | Done: 52/80 | UploadQueue: 1 | Elapsed: 4:04:33 | ETA: 2:11:41
+2026-09-11 14:55:44,989 [INFO] STATUS | Module: routing | Done: 52/80 | UploadQueue: 1 | Elapsed: 4:05:03 | ETA: 2:11:57
+2026-09-11 14:55:46,007 [WARNING] [HF-ASYNC] Upload failed roast_hashed_linear/distilbert: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-09-11 14:56:14,990 [INFO] STATUS | Module: routing | Done: 52/80 | UploadQueue: 0 | Elapsed: 4:05:33 | ETA: 2:12:13
+2026-09-11 14:56:28,074 [WARNING] [HF-ASYNC] Upload failed roast_hashed_linear/roberta: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-09-11 14:56:44,991 [INFO] STATUS | Module: routing | Done: 52/80 | UploadQueue: 0 | Elapsed: 4:06:03 | ETA: 2:12:29
+2026-09-11 14:57:14,995 [INFO] STATUS | Module: routing | Done: 52/80 | UploadQueue: 0 | Elapsed: 4:06:33 | ETA: 2:12:45
+2026-09-11 14:57:45,003 [INFO] STATUS | Module: routing | Done: 52/80 | UploadQueue: 0 | Elapsed: 4:07:03 | ETA: 2:13:01
+2026-09-11 14:58:10,631 [INFO] [routing] Accuracies: {'distilbert': ('PASS', 63.76), 'roberta': ('PASS_LOW', 50.92), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=186.7s
+2026-09-11 14:58:10,631 [INFO] [routing] Overall: PASS
+2026-09-11 14:58:10,631 [INFO] [routing] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 14:58:10,634 [INFO] ============================================================
+2026-09-11 14:58:10,634 [INFO] [54/80] Running: saes_svd_compressor
+2026-09-11 14:58:10,634 [INFO] [saes_svd_compressor] Launching runner: run_all_4_saes_svd_compressor.py
+2026-09-11 14:58:15,010 [INFO] STATUS | Module: saes_svd_compressor | Done: 53/80 | UploadQueue: 0 | Elapsed: 4:07:33 | ETA: 2:06:06
+2026-09-11 14:58:45,014 [INFO] STATUS | Module: saes_svd_compressor | Done: 53/80 | UploadQueue: 0 | Elapsed: 4:08:03 | ETA: 2:06:22
+2026-09-11 14:58:52,710 [WARNING] [HF-ASYNC] Upload failed routing/distilbert: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+2026-09-11 14:59:15,016 [INFO] STATUS | Module: saes_svd_compressor | Done: 53/80 | UploadQueue: 0 | Elapsed: 4:08:33 | ETA: 2:06:37
+2026-09-11 14:59:45,025 [INFO] STATUS | Module: saes_svd_compressor | Done: 53/80 | UploadQueue: 0 | Elapsed: 4:09:03 | ETA: 2:06:52
+2026-09-11 15:00:15,029 [INFO] STATUS | Module: saes_svd_compressor | Done: 53/80 | UploadQueue: 0 | Elapsed: 4:09:33 | ETA: 2:07:07
+2026-09-11 15:00:45,037 [INFO] STATUS | Module: saes_svd_compressor | Done: 53/80 | UploadQueue: 0 | Elapsed: 4:10:03 | ETA: 2:07:23
+2026-09-11 15:00:47,484 [INFO] [saes_svd_compressor] Accuracies: {'distilbert': ('PASS', 89.79), 'roberta': ('PASS', 78.21), 'gpt2': ('PASS_LOW', 50.92)} | exit=0 | elapsed=156.8s
+2026-09-11 15:00:47,484 [INFO] [saes_svd_compressor] Overall: PASS
+2026-09-11 15:00:47,484 [INFO] [saes_svd_compressor] Enqueued background HF upload for distilbert (non-blocking)
+2026-09-11 15:00:47,485 [INFO] [saes_svd_compressor] Enqueued background HF upload for roberta (non-blocking)
+2026-09-11 15:00:47,488 [INFO] ============================================================
+2026-09-11 15:00:47,489 [INFO] [55/80] Running: samba_m3
+2026-09-11 15:00:47,489 [INFO] [samba_m3] Launching runner: run_all_4_samba_m3.py
+2026-09-11 15:00:48,643 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 200 OK"
+2026-09-11 15:00:49,001 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 15:00:49,385 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-saes_svd_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 15:00:50,065 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-saes_svd_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 15:00:50,065 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-distilbert-saes_svd_compressor
+2026-09-11 15:00:50,483 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-saes_svd_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 15:01:03,289 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-saes_svd_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 15:01:03,754 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-saes_svd_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 15:01:04,633 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-distilbert-saes_svd_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 15:01:04,633 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-distilbert-saes_svd_compressor
+2026-09-11 15:01:05,209 [INFO] HTTP Request: POST https://huggingface.co/api/repos/create "HTTP/1.1 200 OK"
+2026-09-11 15:01:05,563 [INFO] HTTP Request: POST https://huggingface.co/api/validate-yaml "HTTP/1.1 200 OK"
+2026-09-11 15:01:05,987 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-roberta-saes_svd_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 15:01:06,920 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-roberta-saes_svd_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 15:01:06,920 [INFO] [HF-ASYNC] Uploading weights.pt -> Hooshaai/svd-linear-attention-roberta-saes_svd_compressor
+2026-09-11 15:01:07,359 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-roberta-saes_svd_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 15:01:15,046 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:10:33 | ETA: 2:00:38
+2026-09-11 15:01:45,054 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:11:03 | ETA: 2:00:52
+2026-09-11 15:02:15,064 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:11:33 | ETA: 2:01:07
+2026-09-11 15:02:20,260 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-roberta-saes_svd_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 15:02:20,690 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-roberta-saes_svd_compressor/preupload/main "HTTP/1.1 200 OK"
+2026-09-11 15:02:21,296 [INFO] HTTP Request: POST https://huggingface.co/api/models/Hooshaai/svd-linear-attention-roberta-saes_svd_compressor/commit/main "HTTP/1.1 200 OK"
+2026-09-11 15:02:21,296 [INFO] [HF-ASYNC] Upload done: Hooshaai/svd-linear-attention-roberta-saes_svd_compressor
+2026-09-11 15:02:45,068 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:12:03 | ETA: 2:01:21
+2026-09-11 15:03:15,084 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:12:33 | ETA: 2:01:36
+2026-09-11 15:03:45,094 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:13:03 | ETA: 2:01:50
+2026-09-11 15:04:15,100 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:13:33 | ETA: 2:02:04
+2026-09-11 15:04:45,103 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:14:03 | ETA: 2:02:19
+2026-09-11 15:05:15,117 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:14:33 | ETA: 2:02:33
+2026-09-11 15:05:45,119 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:15:03 | ETA: 2:02:48
+2026-09-11 15:06:15,132 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:15:33 | ETA: 2:03:02
+2026-09-11 15:06:45,141 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:16:03 | ETA: 2:03:17
+2026-09-11 15:07:15,150 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:16:33 | ETA: 2:03:31
+2026-09-11 15:07:45,153 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:17:03 | ETA: 2:03:46
+2026-09-11 15:08:15,157 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:17:33 | ETA: 2:04:00
+2026-09-11 15:08:45,170 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:18:03 | ETA: 2:04:15
+2026-09-11 15:09:15,180 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:18:33 | ETA: 2:04:29
+2026-09-11 15:09:45,190 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:19:03 | ETA: 2:04:43
+2026-09-11 15:10:15,196 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:19:33 | ETA: 2:04:58
+2026-09-11 15:10:45,205 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:20:03 | ETA: 2:05:12
+2026-09-11 15:11:15,209 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:20:33 | ETA: 2:05:27
+2026-09-11 15:11:45,210 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:21:03 | ETA: 2:05:41
+2026-09-11 15:12:15,216 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:21:33 | ETA: 2:05:56
+2026-09-11 15:12:45,230 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:22:03 | ETA: 2:06:10
+2026-09-11 15:13:15,233 [INFO] STATUS | Module: samba_m3 | Done: 54/80 | UploadQueue: 0 | Elapsed: 4:22:33 | ETA: 2:06:25
+2026-09-11 15:13:35,700 [INFO] [samba_m3] Accuracies: {} | exit=0 | elapsed=768.2s
+2026-09-11 15:13:35,701 [INFO] [samba_m3] Overall: FAILED_LOW
+2026-09-11 15:13:35,702 [INFO] ============================================================
+2026-09-11 15:13:35,702 [INFO] [56/80] Running: samba_moe
+2026-09-11 15:13:35,703 [INFO] [samba_moe] Launching runner: run_all_4_samba_moe.py
+2026-09-11 15:13:45,247 [INFO] STATUS | Module: samba_moe | Done: 55/80 | UploadQueue: 0 | Elapsed: 4:23:03 | ETA: 1:59:34
+2026-09-11 15:14:15,250 [INFO] STATUS | Module: samba_moe | Done: 55/80 | UploadQueue: 0 | Elapsed: 4:23:33 | ETA: 1:59:48
+2026-09-11 15:14:45,254 [INFO] STATUS | Module: samba_moe | Done: 55/80 | UploadQueue: 0 | Elapsed: 4:24:03 | ETA: 2:00:01
