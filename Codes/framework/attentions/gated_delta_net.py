@@ -103,8 +103,9 @@ def chunked_delta_rule_scan(
 
         # Stable Normalized LMS delta update:
         # Bounded step size ensures strictly contractive operator |1 - step * ||k||^2| < 1
-        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True).clamp(min=1e-4)
-        step = (at / norm_k_sq).clamp(max=1.0)
+        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
+        denom = (1.0 + norm_k_sq).clamp(min=1.0)
+        step = (at / denom).clamp(min=0.0, max=1.0)
 
         delta_update = step * torch.matmul(kt.transpose(-1, -2), err)
         S = bt * S + delta_update
@@ -314,7 +315,18 @@ class GatedDeltaNet(BaseAttention):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
-        self.is_nested_encoder: bool = False
+        is_nested = False
+        if source_attn is not None:
+            src_cls = source_attn.__class__.__name__
+            if (
+                src_cls in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+                or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
+                or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
+            ):
+                is_nested = True
+        if not is_nested and model_type in ["roberta", "bert", "xlm-roberta"] and not self.is_decoder:
+            is_nested = True
+        self.is_nested_encoder: bool = bool(is_nested)
         self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # Multi-head projections equipped with LoRA adapters
@@ -379,7 +391,6 @@ class GatedDeltaNet(BaseAttention):
             return
 
         cls_name = old_attn.__class__.__name__
-        has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj")
         is_nested = False
         if (
             hasattr(old_attn, "self")
@@ -391,7 +402,9 @@ class GatedDeltaNet(BaseAttention):
         elif (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+        ):
+            is_nested = True
+        if not is_nested and getattr(self, "is_nested_encoder", False):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -420,7 +433,7 @@ class GatedDeltaNet(BaseAttention):
                 c_w = c_w.data.clone()
                 cls_c = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
                 base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
-                if "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
+                if hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -437,7 +450,7 @@ class GatedDeltaNet(BaseAttention):
                     o_w = o_w.data.clone()
                     cls_o = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                     base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
-                    if "Conv1D" in cls_o or "Conv1D" in base_cls_o or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
+                    if hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or "Conv1D" in cls_o or "Conv1D" in base_cls_o or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -690,7 +703,6 @@ class GatedDeltaNet(BaseAttention):
         gated_y = y * F.silu(z)
 
         # 10. Output projection with nested encoder bypass
-        gated_y = gated_y * self.output_scale
         if self.is_nested_encoder:
             out = gated_y
         else:
@@ -808,10 +820,12 @@ def inject_gated_delta_net(
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
+                new_block.is_nested_encoder = True
                 target.attention.self = new_block
             else:
                 target.attention = new_block
         elif hasattr(target, "self"):
+            new_block.is_nested_encoder = True
             target.self = new_block
         elif hasattr(target, "attn"):
             target.attn = new_block

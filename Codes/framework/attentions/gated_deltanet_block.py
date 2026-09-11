@@ -4,15 +4,19 @@ Implements an efficient hybrid linear-recurrent block switching dynamically betw
 multi-head self-attention and Bidirectional Gated DeltaNet with pretrained weight transfer.
 """
 
+import logging
 from typing import Any, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from framework.attentions.gated_delta_net import GatedDeltaNet
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register("gated_deltanet_block")
@@ -65,6 +69,31 @@ class GatedDeltaNetBlock(BaseAttention):
             config=config, d_model=self.d_model, num_heads=self.num_heads, **kwargs
         )
         self.norm = nn.LayerNorm(self.d_model)
+        self.is_nested_encoder: bool = getattr(self.deltanet, "is_nested_encoder", False)
+
+    # Compatibility properties
+    @property
+    def query(self) -> Any: return self.deltanet.query
+    @property
+    def key(self) -> Any: return self.deltanet.key
+    @property
+    def value(self) -> Any: return self.deltanet.value
+    @property
+    def q_proj(self) -> Any: return self.deltanet.q_proj
+    @property
+    def k_proj(self) -> Any: return self.deltanet.k_proj
+    @property
+    def v_proj(self) -> Any: return self.deltanet.v_proj
+    @property
+    def out_proj(self) -> Any: return self.deltanet.out_proj
+    @property
+    def q_lin(self) -> Any: return self.deltanet.q_lin
+    @property
+    def k_lin(self) -> Any: return self.deltanet.k_lin
+    @property
+    def v_lin(self) -> Any: return self.deltanet.v_lin
+    @property
+    def out_lin(self) -> Any: return self.deltanet.out_lin
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained weights to either MHA or GatedDeltaNet."""
@@ -114,6 +143,7 @@ class GatedDeltaNetBlock(BaseAttention):
         else:
             if hasattr(self.deltanet, "copy_weights"):
                 self.deltanet.copy_weights(old_attn)
+                self.is_nested_encoder = getattr(self.deltanet, "is_nested_encoder", False)
 
     def forward(
         self,
@@ -144,6 +174,8 @@ class GatedDeltaNetBlock(BaseAttention):
             )
             if attn_out.shape[-1] != x.shape[-1]:
                 attn_out = F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1])) if attn_out.shape[-1] < x.shape[-1] else attn_out[..., :x.shape[-1]]
+            if self.is_nested_encoder:
+                return attn_out, (attn_weights if output_attentions else None)
             out = self.norm(x + attn_out)
             return out, (attn_weights if output_attentions else None)
         else:
@@ -152,11 +184,14 @@ class GatedDeltaNetBlock(BaseAttention):
             )
             if delta_out.shape[-1] != x.shape[-1]:
                 delta_out = F.pad(delta_out, (0, x.shape[-1] - delta_out.shape[-1])) if delta_out.shape[-1] < x.shape[-1] else delta_out[..., :x.shape[-1]]
+            if self.is_nested_encoder:
+                return delta_out * self.output_scale, None
             out = self.norm(x + delta_out)
             return out * self.output_scale, None
 
 
 @ATTENTION_REGISTRY.register("gated_deltanet_block_inject")
+@ATTENTION_REGISTRY.register("inject_gated_deltanet_block")
 def inject_gated_deltanet_block(
     layer: nn.Module,
     model_config: Any = None,
@@ -208,16 +243,21 @@ def inject_gated_deltanet_block(
 
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
+                new_block.is_nested_encoder = True
+                new_block.deltanet.is_nested_encoder = True
                 layer.attention.self = new_block
             else:
                 layer.attention = new_block
+        elif hasattr(layer, "self"):
+            new_block.is_nested_encoder = True
+            new_block.deltanet.is_nested_encoder = True
+            layer.self = new_block
         elif hasattr(layer, "attn"):
             layer.attn = new_block
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_block
-        elif hasattr(layer, "self"):
-            layer.self = new_block
 
         return new_block
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"GatedDeltaNetBlock injection failed: {e}")
+        return None

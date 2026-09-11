@@ -229,7 +229,19 @@ class GalerkinAttention(BaseAttention):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
-        self.is_nested_encoder: bool = False
+
+        is_nested = kwargs.get("is_nested_encoder", False)
+        if not is_nested and source_attn is not None:
+            src_cls = source_attn.__class__.__name__
+            if (
+                src_cls in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+                or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
+                or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
+            ):
+                is_nested = True
+        if not is_nested and model_type in ["roberta", "bert", "xlm-roberta"] and not self.is_decoder:
+            is_nested = True
+        self.is_nested_encoder: bool = bool(is_nested)
 
         # Multi-head projections equipped with trainable LoRA adapters
         self.query = LoRALinear(hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -301,7 +313,9 @@ class GalerkinAttention(BaseAttention):
         elif (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+        ):
+            is_nested = True
+        elif self.is_nested_encoder:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -330,7 +344,7 @@ class GalerkinAttention(BaseAttention):
                 c_w = c_w.data.clone()
                 cls_c = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
                 base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
-                if "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
+                if "Conv1D" in cls_c or "Conv1D" in base_cls_c or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -347,7 +361,7 @@ class GalerkinAttention(BaseAttention):
                     o_w = o_w.data.clone()
                     cls_o = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                     base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
-                    if "Conv1D" in cls_o or "Conv1D" in base_cls_o or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
+                    if "Conv1D" in cls_o or "Conv1D" in base_cls_o or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -546,12 +560,13 @@ class GalerkinAttention(BaseAttention):
             r_actual = max(1, min(self.rank, kv_len))
             Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
 
-            # Project Keys and Values onto Orthonormal Basis: preserving inner product
+            # Project into Petrov-Galerkin orthonormal basis
+            Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)
             K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
             V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
             scale = d**-0.5
-            scores = torch.matmul(Q.float(), K_basis.float().transpose(-2, -1)) * scale  # [B, H, N, r]
+            scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1)) * scale  # [B, H, r, r]
 
             # Numerically stable softmax with denominator clamping (min=1.0)
             scores_max = scores.max(dim=-1, keepdim=True).values
@@ -561,8 +576,15 @@ class GalerkinAttention(BaseAttention):
             probs = torch.nan_to_num(probs, nan=0.0)
             probs = self.dropout(probs)
 
-            # Attended representation in basis space: [B, H, N, d]
-            context = torch.matmul(probs.to(dtype), V_basis)
+            # Attended representation in basis space: [B, H, r, d]
+            O_basis = torch.matmul(probs.to(dtype), V_basis)
+
+            # Reconstruct sequence representation via basis synthesis: [B, H, N, d]
+            context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)
+
+            # Energy-preserving scale normalization across sequence boundary
+            scale_factor = math.sqrt(kv_len / r_actual) if kv_len > r_actual else 1.0
+            context = context * scale_factor
 
             # Output token valid mask
             if eff_mask is not None and not is_cross_attention:
@@ -592,6 +614,8 @@ class GalerkinAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("galerkin_inject")
 @ATTENTION_REGISTRY.register("inject_galerkin")
+@ATTENTION_REGISTRY.register("galerkin_attention_inject")
+@ATTENTION_REGISTRY.register("inject_galerkin_attention")
 def inject_galerkin(
     layer: nn.Module,
     model_config: Any = None,
@@ -610,6 +634,8 @@ def inject_galerkin(
             src_attn = layer.attn
         elif hasattr(layer, "self_attn"):
             src_attn = layer.self_attn
+        elif hasattr(layer, "self"):
+            src_attn = layer.self
 
     try:
         new_attn = GalerkinAttention(
@@ -623,8 +649,12 @@ def inject_galerkin(
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
                 layer.attention.self = new_attn
+                new_attn.is_nested_encoder = True
             else:
                 layer.attention = new_attn
+        elif hasattr(layer, "self") and hasattr(layer, "output"):
+            layer.self = new_attn
+            new_attn.is_nested_encoder = True
         elif hasattr(layer, "attn"):
             layer.attn = new_attn
         elif hasattr(layer, "self_attn"):
