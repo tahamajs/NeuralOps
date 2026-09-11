@@ -192,6 +192,7 @@ class UnifiedMoE(nn.Module):
         expert_multiplier: int = 2,
     ) -> None:
         super().__init__()
+        self.output_scale = nn.Parameter(torch.ones(1))
         self.dim: int = dim
         self.num_experts: int = max(1, num_experts)
         self.top_k: int = min(max(1, top_k), self.num_experts)

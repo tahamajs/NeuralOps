@@ -168,6 +168,7 @@ class MixtureOfExperts(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
+        self.output_scale = nn.Parameter(torch.ones(1))
         self.dim: int = dim
         self.num_experts: int = num_experts
         self.top_k: int = top_k

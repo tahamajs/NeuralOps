@@ -126,6 +126,7 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
+        self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -198,6 +199,7 @@ class SpectralMambaConfig:
 class SpectralMamba(nn.Module):
     def __init__(self, d_model: int = 768, d_state: int = 16, **kwargs: Any) -> None:
         super().__init__()
+        self.output_scale = nn.Parameter(torch.ones(1))
         self.d_model = d_model
         self.mamba = Mamba(d_model)
         self.dt_scale = nn.Parameter(torch.zeros(d_model))

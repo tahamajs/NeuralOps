@@ -208,6 +208,7 @@ class DynamicLowRankProjector(nn.Module):
         freeze_base: bool = True,
     ) -> None:
         super().__init__()
+        self.output_scale = nn.Parameter(torch.ones(1))
         self.rank = rank
         self.in_dim = in_dim
         self.out_dim = out_dim
