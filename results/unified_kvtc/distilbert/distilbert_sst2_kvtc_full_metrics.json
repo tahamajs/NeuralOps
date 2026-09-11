@@ -1,19 +1,19 @@
 {
     "model": "distilbert_sst2_kvtc",
     "performance": {
-        "accuracy_pct": 89.45,
-        "f1_score": 0.8985,
-        "f1_macro": 0.8943,
-        "precision": 0.8954,
-        "recall": 0.8941,
-        "val_loss": 0.5356,
+        "accuracy_pct": 89.68,
+        "f1_score": 0.9004,
+        "f1_macro": 0.8966,
+        "precision": 0.8975,
+        "recall": 0.8964,
+        "val_loss": 0.5399,
         "status": "PASS",
-        "elapsed_s": 3.77
+        "elapsed_s": 3.92
     },
     "efficiency": {
         "total_params_before": 66955010,
         "total_params_after": 66955030,
-        "trainable_recovery_params": 4135700,
+        "trainable_recovery_params": 4135702,
         "compression_rate": 1.0,
         "compression_ratio_pct": -0.0,
         "flops_reduction_pct": 0.0,
@@ -64,8 +64,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 384.23,
-        "tokens_per_sec": 163127.82
+        "peak_vram_mb": 388.11,
+        "tokens_per_sec": 151447.23
     },
     "architecture": {
         "span_distribution": {},
@@ -73,10 +73,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 362.8,
-        "L_256_vram_mb": 365.37,
+        "L_128_vram_mb": 363.55,
+        "L_256_vram_mb": 366.12,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-11T02:09:40.981307"
+    "timestamp": "2026-09-11T05:31:35.830249"
 }
