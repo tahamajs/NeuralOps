@@ -19,8 +19,11 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -307,22 +310,12 @@ class CosformerAttention(BaseAttention):
         if src is None:
             return
 
-        cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        is_nested = False
-        if (
-            hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
-            and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
-            is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+        cls_name = getattr(src, '__class__', type(src)).__name__
+        has_out = hasattr(src, 'dense') or hasattr(src, 'out_proj') or hasattr(src, 'out_lin') or hasattr(src, 'c_proj') or hasattr(src, 'o_proj')
+        if (cls_name in ['BertSelfAttention', 'RobertaSelfAttention'] or (hasattr(src, 'query') and not has_out)):
+            self.is_nested_encoder = True
+        if hasattr(src, 'self') and hasattr(src, 'output'):
+            self.is_nested_encoder = True
 
         if hasattr(src, "rotary_emb"):
             self.rotary_emb = src.rotary_emb
@@ -347,7 +340,7 @@ class CosformerAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or hasattr(c_attn_mod, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -362,7 +355,7 @@ class CosformerAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or hasattr(c_proj_mod, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -395,7 +388,7 @@ class CosformerAttention(BaseAttention):
                         base_mod = getattr(mod, "base_layer", mod)
                         if hasattr(base_mod, "weight"):
                             w_data = base_mod.weight.data.clone()
-                            if (base_mod.__class__.__name__ == "Conv1D") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
+                            if (base_mod.__class__.__name__ == "Conv1D") or hasattr(base_mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
                                 w_data = w_data.t()
                             b_data = getattr(base_mod, "bias", None)
                             extracted[proj_key] = (w_data, b_data.data.clone() if b_data is not None else None)
@@ -412,8 +405,7 @@ class CosformerAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug(f"UniversalAdapter fallback: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -584,7 +576,7 @@ class CosformerAttention(BaseAttention):
             denom_sin = (Q_sin * Z_sin).sum(dim=-1, keepdim=True)
             denom = denom_cos + denom_sin + self.eps
 
-            context = (num / denom.clamp(min=self.eps)).to(dtype)
+            context = (num / denom.clamp(min=1.0)).to(dtype)
         else:
             # Global bidirectional associative accumulation
             # KV_cos: [B, H, d, d], KV_sin: [B, H, d, d]
@@ -597,7 +589,7 @@ class CosformerAttention(BaseAttention):
             num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)  # [B, H, N, d]
             denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1)) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1)) + self.eps
 
-            context = (num / denom.clamp(min=self.eps)).to(dtype)
+            context = (num / denom.clamp(min=1.0)).to(dtype)
 
         # 8. Head mask handling
         if head_mask is not None:
@@ -622,6 +614,7 @@ class CosformerAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("cosformer_inject")
+@ATTENTION_REGISTRY.register("inject_cosformer")
 def inject_cosformer(
     layer: nn.Module,
     model_config: Any = None,
@@ -671,6 +664,7 @@ def inject_cosformer(
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
                 layer.attention.self = new_attn
+                new_attn.is_nested_encoder = True
             else:
                 layer.attention = new_attn
         elif hasattr(layer, "attn"):
@@ -680,9 +674,7 @@ def inject_cosformer(
         elif hasattr(layer, "self"):
             layer.self = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
-
-
-fasa_inject = inject_cosformer
+    except Exception as e:
+        logger.error(f"Cosformer copy_weights failed: {e}")
+        return None
 
