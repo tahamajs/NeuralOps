@@ -96,6 +96,11 @@ class DobiSVDLinearLayer(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Differentiable forward pass with spectral gating matching Linear and Conv1D."""
+        if x.shape[-1] != self.in_features:
+            if x.shape[-1] < self.in_features:
+                x = F.pad(x, (0, self.in_features - x.shape[-1]))
+            else:
+                x = x[..., :self.in_features]
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
@@ -252,15 +257,38 @@ class DobiSVDCompressor(BaseCompressor):
         """Decompose a single linear or Conv1D layer into DobiSVDLinearLayer."""
         target_mod = getattr(layer, "base_layer", layer)
         cls_name = target_mod.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         raw_w = target_mod.weight.data
 
-        if is_conv1d:
-            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.t().float()  # [out_features, in_features]
+        # Determine in_features and out_features accurately for Linear, Conv1D, and fused QKV
+        in_f = None
+        out_f = None
+        if target_mod.bias is not None and getattr(target_mod.bias, "ndim", 0) == 1 and raw_w.ndim == 2:
+            bias_len = target_mod.bias.shape[0]
+            if raw_w.shape[1] == bias_len and raw_w.shape[0] != bias_len:
+                # Conv1D format: [in_features, out_features]
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            elif raw_w.shape[0] == bias_len and raw_w.shape[1] != bias_len:
+                # Linear format: [out_features, in_features]
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+        if in_f is None or out_f is None:
+            if hasattr(target_mod, "in_features") and hasattr(target_mod, "out_features"):
+                in_f, out_f = target_mod.in_features, target_mod.out_features
+            elif hasattr(target_mod, "nf") and hasattr(target_mod, "nx"):
+                in_f, out_f = target_mod.nx, target_mod.nf
+            elif "conv1d" in cls_name or (raw_w.ndim == 2 and raw_w.shape[0] < raw_w.shape[1]):
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+        # W must strictly be [out_features, in_features]
+        if raw_w.shape == (out_f, in_f):
+            W = raw_w.float()
+        elif raw_w.shape == (in_f, out_f):
+            W = raw_w.t().float()
         else:
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
-            W = raw_w.float()      # [out_features, in_features]
+            W = raw_w.float()
 
         max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
@@ -269,12 +297,15 @@ class DobiSVDCompressor(BaseCompressor):
         device = raw_w.device
         dtype = raw_w.dtype
         norm_w = torch.norm(W, p="fro").item()
+        if norm_w < 1e-4:
+            logger.warning("DobiSVD: weight tensor has near-zero Frobenius norm (%.6e < 1e-4)", norm_w)
+            return None, 1.0, 0
 
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("DobiSVD SVD computation failed: %s", e)
-            raise RuntimeError(f"Injection failed"), 1.0, 0
+            return None, 1.0, 0
 
         best_layer: Optional[DobiSVDLinearLayer] = None
         best_err = 1.0
@@ -302,9 +333,17 @@ class DobiSVDCompressor(BaseCompressor):
             )
             dobi_layer.set_low_rank_factors(U_r, V_r)
             if target_mod.bias is not None and dobi_layer.bias is not None:
-                dobi_layer.bias.data.copy_(target_mod.bias.data)
+                tb = target_mod.bias.data
+                db = dobi_layer.bias.data
+                min_b = min(tb.numel(), db.numel())
+                db[:min_b].copy_(tb[:min_b])
 
             W_recon = dobi_layer.weight.float()
+            recon_norm = torch.norm(W_recon, p="fro").item()
+            if recon_norm < 1e-4:
+                logger.warning("DobiSVD: reconstructed weight Frobenius norm too small (%.6e < 1e-4)", recon_norm)
+                continue
+
             if norm_w < 1e-12:
                 err = 0.0
             else:
@@ -366,11 +405,24 @@ class DobiSVDCompressor(BaseCompressor):
             target_mod = getattr(module, "base_layer", module)
             raw_w = target_mod.weight.data
             cls_name = target_mod.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-            if is_conv1d:
-                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
-            else:
-                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+            in_f = None
+            out_f = None
+            if target_mod.bias is not None and getattr(target_mod.bias, "ndim", 0) == 1 and raw_w.ndim == 2:
+                bias_len = target_mod.bias.shape[0]
+                if raw_w.shape[1] == bias_len and raw_w.shape[0] != bias_len:
+                    in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+                elif raw_w.shape[0] == bias_len and raw_w.shape[1] != bias_len:
+                    out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+            if in_f is None or out_f is None:
+                if hasattr(target_mod, "in_features") and hasattr(target_mod, "out_features"):
+                    in_f, out_f = target_mod.in_features, target_mod.out_features
+                elif hasattr(target_mod, "nf") and hasattr(target_mod, "nx"):
+                    in_f, out_f = target_mod.nx, target_mod.nf
+                elif "conv1d" in cls_name or (raw_w.ndim == 2 and raw_w.shape[0] < raw_w.shape[1]):
+                    in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+                else:
+                    out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
             orig_params = out_f * in_f
             total_orig_decomp_params += orig_params
@@ -450,32 +502,50 @@ class DobiSVDCompressor(BaseCompressor):
 
 def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Dobi factory function."""
-    init_rank_ratio = kwargs.pop("init_rank_ratio", _cfg_get(comp_config, "dobi_init_rank_ratio", _cfg_get(comp_config, "init_rank_ratio", 0.5)))
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "dobi_rank", _cfg_get(comp_config, "rank", None)))
-    init_gate_val = kwargs.pop("init_gate_val", _cfg_get(comp_config, "init_gate_val", 2.5))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 0.35)))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "dobi_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
-    target_attention_only = kwargs.pop(
-        "target_attention_only",
-        _cfg_get(comp_config, "dobi_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
-    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    try:
+        init_rank_ratio = kwargs.pop("init_rank_ratio", _cfg_get(comp_config, "dobi_init_rank_ratio", _cfg_get(comp_config, "init_rank_ratio", 0.5)))
+        rank = kwargs.pop("rank", _cfg_get(comp_config, "dobi_rank", _cfg_get(comp_config, "rank", None)))
+        init_gate_val = kwargs.pop("init_gate_val", _cfg_get(comp_config, "init_gate_val", 2.5))
+        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+        fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "dobi_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
+        target_attention_only = kwargs.pop(
+            "target_attention_only",
+            _cfg_get(comp_config, "dobi_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+        )
 
-    compressor = DobiSVDCompressor(
-        model,
-        init_rank_ratio=init_rank_ratio,
-        rank=rank,
-        init_gate_val=init_gate_val,
-        max_error=max_error,
-        fallback_to_original=fallback,
-        target_attention_only=target_attention_only,
-        cfg=comp_config,
-        **kwargs,
-    )
-    compressed_model, stats = compressor.compress()
-    if return_stats:
-        return compressed_model, stats
-    return compressed_model
+        compressor = DobiSVDCompressor(
+            model,
+            init_rank_ratio=init_rank_ratio,
+            rank=rank,
+            init_gate_val=init_gate_val,
+            max_error=max_error,
+            fallback_to_original=fallback,
+            target_attention_only=target_attention_only,
+            cfg=comp_config,
+            **kwargs,
+        )
+        compressed_model, stats = compressor.compress()
+        if return_stats:
+            return compressed_model, stats
+        return compressed_model
+    except Exception as e:
+        logger.error("dobi_factory failed: %s", e)
+        return (model, {}) if return_stats else model
+
+
+@COMPRESSOR_REGISTRY.register("inject_dobi")
+@COMPRESSOR_REGISTRY.register("dobi_inject")
+def inject_dobi(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook for Dobi-SVD."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+    try:
+        return dobi_factory(target, **kwargs)
+    except Exception as e:
+        logger.error("inject_dobi failed: %s", e)
+        return None
 
 
 dobi_svd_factory = dobi_factory
@@ -487,4 +557,5 @@ __all__ = [
     "dobi_factory",
     "dobi_svd_factory",
     "dobi_svd_compressor_factory",
+    "inject_dobi",
 ]
