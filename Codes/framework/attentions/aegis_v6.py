@@ -699,7 +699,7 @@ class AegisAttentionV3(BaseAttention):
         KV = torch.matmul(K_feat.transpose(-2, -1), V)
         Z = K_feat.sum(dim=-2, keepdim=True)
         num = torch.matmul(Q_feat, KV)
-        den = torch.matmul(Q_feat, Z.transpose(-2, -1)).clamp(min=1e-5)
+        den = torch.matmul(Q_feat, Z.transpose(-2, -1)).clamp(min=1.0)
         out = num / den
         out = out * pad.transpose(-2, -1)
         return torch.nan_to_num(out, nan=0.0)
@@ -763,6 +763,7 @@ class AegisAttentionV3(BaseAttention):
 
         fused = fused.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4)
+        fused = fused.clamp(min=-1e4, max=1e4)
 
         if self.is_nested_encoder:
             out = fused
@@ -770,6 +771,8 @@ class AegisAttentionV3(BaseAttention):
             out = self.out_proj(fused)
 
         out = out * self.output_scale
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+        out = out.clamp(min=-1e4, max=1e4)
 
         return out, None
 
@@ -778,6 +781,7 @@ class AegisAttentionV3(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("aegis_v6_inject")
+@ATTENTION_REGISTRY.register("inject_aegis_v6")
 def inject_aegis_v6(
     layer: Any = None,
     model_config: Any = None,
@@ -786,52 +790,59 @@ def inject_aegis_v6(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> AegisAttentionV3:
+) -> Optional[AegisAttentionV3]:
     r"""Injects AEGIS-V6 attention into a transformer layer."""
-    if model_config is None:
-        if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
-            model_config = layer
-        elif hasattr(layer, "attention"):
-            old_attn = layer.attention
-    h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768)))) if model_config is not None else 768
-    n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)))) if model_config is not None else 12
-    h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads))) if model_config is not None else h_size // max(1, n_heads)
-    n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads)) if model_config is not None else n_heads
+    try:
+        if model_config is None:
+            if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
+                model_config = layer
+            elif hasattr(layer, "attention"):
+                old_attn = layer.attention
+        h_size = getattr(model_config, "hidden_size", getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768)))) if model_config is not None else 768
+        n_heads = getattr(model_config, "num_attention_heads", getattr(model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)))) if model_config is not None else 12
+        h_dim = getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads))) if model_config is not None else h_size // max(1, n_heads)
+        n_kv_heads = getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads)) if model_config is not None else n_heads
 
-    cfg = AegisConfigV3(
-        hidden_size=h_size,
-        num_heads=n_heads,
-        num_key_value_heads=n_kv_heads,
-        head_dim=h_dim,
-        window_size=getattr(comp_config, "window_size", 64),
-        svd_rank=getattr(comp_config, "svd_rank", 384),
-        low_rank_update=getattr(comp_config, "low_rank_update", 16),
-        kernel_feature_dim=getattr(comp_config, "kernel_feature_dim", 128),
-        dropout=getattr(comp_config, "dropout", 0.1),
-        fusion_gate_bias=getattr(comp_config, "fusion_gate_bias", 1.8),
-    )
-    new_attn = AegisAttentionV3(config=cfg)
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
-    if src_attn is not None:
-        try:
+        src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+        is_dec = bool(getattr(model_config, "is_decoder", False)) if model_config is not None else False
+        if not is_dec and src_attn is not None:
+            is_dec = bool(getattr(src_attn, "is_decoder", False))
+        if not is_dec and layer is not None:
+            is_dec = bool(getattr(layer, "is_decoder", False))
+
+        cfg = AegisConfigV3(
+            hidden_size=h_size,
+            num_heads=n_heads,
+            num_key_value_heads=n_kv_heads,
+            head_dim=h_dim,
+            window_size=getattr(comp_config, "window_size", 64),
+            svd_rank=getattr(comp_config, "svd_rank", 384),
+            low_rank_update=getattr(comp_config, "low_rank_update", 16),
+            kernel_feature_dim=getattr(comp_config, "kernel_feature_dim", 128),
+            dropout=getattr(comp_config, "dropout", 0.1),
+            fusion_gate_bias=getattr(comp_config, "fusion_gate_bias", 1.8),
+            is_decoder=is_dec,
+        )
+        new_attn = AegisAttentionV3(config=cfg)
+        if src_attn is not None:
             new_attn.copy_weights(src_attn)
-        except Exception as e:
-            print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
-        p = next(src_attn.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
 
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
-        else:
-            layer.attention = new_attn
-    elif hasattr(layer, "self"):
-        layer.self = new_attn
-    elif hasattr(layer, "attn"):
-        layer.attn = new_attn
-    return new_attn
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
+        return new_attn
+    except Exception as e:
+        logger.error(f"Failed to inject AEGIS-V6: {e}")
+        return None
 
 
 # Stable public name used by the audit/test harness.
