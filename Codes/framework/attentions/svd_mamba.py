@@ -45,6 +45,64 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
     return w, b
 
 
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    if n_rep == 1:
+        return hidden_states
+    batch, num_kv_heads, slen, head_dim = hidden_states.shape
+    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_kv_heads, n_rep, slen, head_dim)
+    return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
+
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() < q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim <= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+
+    return q, k
+
+
+
 class SVDLinear(nn.Module):
     r"""SVD-factorized linear layer with trainable LoRA adapters.
     Base weight = U @ diag(S) @ V^T.
@@ -188,7 +246,32 @@ class SVDMamba(BaseAttention):
         self.num_heads = num_heads
         self.num_kv_heads = num_kv_heads
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.head_dim = max(1, self.d_model // self.num_heads)
+        self.all_head_size = self.num_heads * self.head_dim
+        self.kv_head_size = self.num_kv_heads * self.head_dim
         self.supports_gqa = True
+
+        # Attention path projections with LoRA
+        self.q_proj = SVDLinear(
+            self.d_model, self.all_head_size,
+            rank=max(1, min(self.d_model, self.all_head_size) // 4),
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+        )
+        self.k_proj = SVDLinear(
+            self.d_model, self.kv_head_size,
+            rank=max(1, min(self.d_model, self.kv_head_size) // 4),
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+        )
+        self.v_proj = SVDLinear(
+            self.d_model, self.kv_head_size,
+            rank=max(1, min(self.d_model, self.kv_head_size) // 4),
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+        )
+
+        # Gating for dynamic aggregation (negative initial bias preserves pretrained attention path)
+        self.gating = nn.Linear(self.d_model, self.d_model)
+        nn.init.zeros_(self.gating.weight)
+        nn.init.constant_(self.gating.bias, -2.0)
 
         # SVD-factorized projections
         self.in_proj = SVDLinear(
@@ -235,6 +318,30 @@ class SVDMamba(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
+    @property
+    def query(self) -> SVDLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -> SVDLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -> SVDLinear:
+        return self.v_proj
+
+    @property
+    def q_lin(self) -> SVDLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -> SVDLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -> SVDLinear:
+        return self.v_proj
+
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
         with torch.no_grad():
@@ -264,6 +371,8 @@ class SVDMamba(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
                 if c_attn_w is not None:
+                    if c_attn_w.dim() == 2 and c_attn_w.shape[0] == self.d_model and c_attn_w.shape[1] == 3 * self.d_model:
+                        c_attn_w = c_attn_w.t()
                     split_size = c_attn_w.size(0) // 3
                     w_q = c_attn_w[:split_size, :]
                     w_k = c_attn_w[split_size : 2 * split_size, :]
@@ -273,7 +382,12 @@ class SVDMamba(BaseAttention):
                         b_k = c_attn_b[split_size : 2 * split_size]
                         b_v = c_attn_b[2 * split_size :]
 
-                w_o, b_o = _unpack_weight_bias(src.c_proj)
+                c_proj_w, c_proj_b = _unpack_weight_bias(src.c_proj)
+                if c_proj_w is not None:
+                    if c_proj_w.dim() == 2 and c_proj_w.shape[0] != self.d_model and c_proj_w.shape[1] == self.d_model:
+                        c_proj_w = c_proj_w.t()
+                    w_o = c_proj_w
+                    b_o = c_proj_b
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
@@ -309,6 +423,8 @@ class SVDMamba(BaseAttention):
                     adapter = UniversalAdapter()
                     w_q, b_q = adapter.get_weight_bias(src, "q")
                     w_v, b_v = adapter.get_weight_bias(src, "v")
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(src, "k")
                     if w_o is None:
                         w_o, b_o = adapter.get_weight_bias(src, "o")
                 except Exception as e:
@@ -328,8 +444,15 @@ class SVDMamba(BaseAttention):
                     f"SVDMamba: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
+            if w_k is None:
+                w_k = w_q
+
+            # Copy into attention path
+            self.q_proj.decompose_from_weight(w_q[: self.all_head_size, : self.d_model], b_q[: self.all_head_size] if b_q is not None else None)
+            self.k_proj.decompose_from_weight(w_k[: self.kv_head_size, : self.d_model], b_k[: self.kv_head_size] if b_k is not None else None)
+            self.v_proj.decompose_from_weight(w_v[: self.kv_head_size, : self.d_model], b_v[: self.kv_head_size] if b_v is not None else None)
+
             # Assemble in_proj weight: [V, Q, V, Q] repeated to 2 * inner_dim
-            # Ensure w_v and w_q have matching column dimensions before concatenation (e.g. GQA)
             if w_v.shape[0] < self.inner_dim:
                 n_rep = math.ceil(self.inner_dim / w_v.shape[0])
                 v_chunk = w_v.repeat(n_rep, 1)[: self.inner_dim, : self.d_model]
@@ -370,6 +493,12 @@ class SVDMamba(BaseAttention):
                     out_w = out_w.repeat(1, n_rep)[:, : self.inner_dim]
                 self.out_proj.decompose_from_weight(out_w, b_o[: self.d_model] if b_o is not None else None)
 
+            # Verify Frobenius norms
+            if float(torch.linalg.norm(self.in_proj.weight.float())) < 1e-4:
+                raise RuntimeError("SVDMamba: in_proj near-zero norm")
+            if float(torch.linalg.norm(self.q_proj.weight.float())) < 1e-4:
+                raise RuntimeError("SVDMamba: q_proj near-zero norm")
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -381,43 +510,96 @@ class SVDMamba(BaseAttention):
         output_attentions: Optional[bool] = False,
         output_hidden_states: Optional[bool] = False,
         return_dict: Optional[bool] = True,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
+        if encoder_hidden_states is not None:
+            return (hidden_states, None)
+
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
+
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
         batch, seqlen, _ = hidden_states.shape
 
-        # 1. Project input
+        mask_bool = None
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask_bool = attention_mask.bool()
+            elif attention_mask.dim() == 4:
+                if attention_mask.shape[-2] == attention_mask.shape[-1]:
+                    mask_bool = (attention_mask[:, 0, -1, :] > -10000.0).bool()
+                else:
+                    mask_bool = (attention_mask[:, 0, 0, :] > -10000.0).bool()
+            elif attention_mask.dim() == 3:
+                mask_bool = (attention_mask[:, 0, :] > -10000.0).bool() if attention_mask.shape[1] > 1 else attention_mask.squeeze(1).bool()
+
+        if mask_bool is None:
+            mask_bool = torch.ones(batch, seqlen, device=hidden_states.device, dtype=torch.bool)
+
+        # ---------------------------------------------------------
+        # 1. Attention Path (Multi-Head Attention with RoPE and Causal Masking)
+        # ---------------------------------------------------------
+        Q = self.q_proj(hidden_states).view(batch, seqlen, self.num_heads, self.head_dim).transpose(1, 2)
+        K = self.k_proj(hidden_states).view(batch, seqlen, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        V_attn = self.v_proj(hidden_states).view(batch, seqlen, self.num_kv_heads, self.head_dim).transpose(1, 2)
+
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+            cos, sin = pos_emb[0], pos_emb[1]
+            Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+
+        if self.kv_repeat > 1:
+            K = repeat_kv(K, self.kv_repeat)
+            V_attn = repeat_kv(V_attn, self.kv_repeat)
+
+        scale = 1.0 / math.sqrt(max(1, self.head_dim))
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+
+        if self.is_decoder:
+            causal_mask = torch.tril(torch.ones(seqlen, seqlen, device=hidden_states.device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+
+        if mask_bool is not None:
+            scores = scores.masked_fill(~mask_bool.unsqueeze(1).unsqueeze(2), -1e4)
+
+        probs = F.softmax(scores, dim=-1).to(V_attn.dtype)
+        probs = torch.nan_to_num(probs, nan=0.0)
+        attn_out = torch.matmul(probs, V_attn).transpose(1, 2).contiguous().view(batch, seqlen, self.all_head_size)
+
+        # ---------------------------------------------------------
+        # 2. Selective SSM Path (Bounded FP32 associative update with min=1.0 denominator clamp)
+        # ---------------------------------------------------------
         xz = self.in_proj(hidden_states)          # [B, L, 2*inner]
         x, z = xz.chunk(2, dim=-1)                # each [B, L, inner]
 
-        # 2. Causal convolution
         x_t = x.transpose(1, 2)                   # [B, inner, L]
         x_pad = F.pad(x_t, (self.d_conv - 1, 0))
         x_conv = self.conv1d(x_pad)[..., :seqlen]
         x_conv = x_conv.transpose(1, 2)           # [B, L, inner]
         x_conv = F.silu(x_conv)
 
-        # 3. Selective SSM (S6)
         x_proj = self.x_proj(x_conv)              # [B, L, dt_rank+2*d_state]
         delta = x_proj[:, :, : self.dt_rank]
-        B = x_proj[:, :, self.dt_rank : self.dt_rank + self.d_state]
-        C = x_proj[:, :, self.dt_rank + self.d_state :]
+        B_ssm = x_proj[:, :, self.dt_rank : self.dt_rank + self.d_state]
+        C_ssm = x_proj[:, :, self.dt_rank + self.d_state :]
 
         delta = self.dt_proj(delta)
-        delta = F.softplus(delta + self.dt_bias).clamp(min=1e-3, max=1.0)
+        delta = F.softplus(delta + self.dt_bias).clamp(min=1e-3, max=0.1)
 
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x_conv.dtype)
 
-        # Chunked associative scan in FP32
         log_alpha = (delta.unsqueeze(-1) * A.view(1, 1, 1, -1)).float()
-        u = (delta.unsqueeze(-1) * B.unsqueeze(2) * x_conv.unsqueeze(-1)).float()
+        u = (delta.unsqueeze(-1) * B_ssm.unsqueeze(2) * x_conv.unsqueeze(-1)).float()
+        u_den = (delta.unsqueeze(-1) * B_ssm.unsqueeze(2).abs()).float()
 
         chunk_size = 64
         num_chunks = (seqlen + chunk_size - 1) // chunk_size
         h_running = x_conv.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
+        h_den_running = x_conv.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
         y_chunks = []
 
         for c in range(num_chunks):
@@ -425,43 +607,54 @@ class SVDMamba(BaseAttention):
             e_idx = min(seqlen, s_idx + chunk_size)
 
             u_c = u[:, s_idx:e_idx]
+            u_den_c = u_den[:, s_idx:e_idx]
             log_a_c = log_alpha[:, s_idx:e_idx]
             lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0)
 
             decay_c = torch.exp(lambda_c)
-            decay_inv_c = torch.exp(-lambda_c)
+            decay_inv_c = torch.exp(-lambda_c).clamp(max=1e10)
 
             h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
             h_inter = decay_c * h_running.unsqueeze(1)
+            h_chunk = torch.clamp(h_intra + h_inter, min=-1e4, max=1e4)
 
-            h_chunk = h_intra + h_inter
-            y_c = (C[:, s_idx:e_idx].unsqueeze(2).float() * h_chunk).sum(dim=-1).to(x_conv.dtype)
+            h_den_intra = decay_c * torch.cumsum(decay_inv_c * u_den_c, dim=1)
+            h_den_inter = decay_c * h_den_running.unsqueeze(1)
+            h_den_chunk = torch.clamp(h_den_intra + h_den_inter, min=0.0, max=1e4)
+
+            # Bounded denominator clamp to prevent explosive activations
+            denom_c = (C_ssm[:, s_idx:e_idx].abs().unsqueeze(2).float() * h_den_chunk).sum(dim=-1).clamp(min=1.0)
+            num_c = (C_ssm[:, s_idx:e_idx].unsqueeze(2).float() * h_chunk).sum(dim=-1)
+            y_c = (num_c / denom_c).to(x_conv.dtype)
             y_chunks.append(y_c)
-            h_running = torch.clamp(h_chunk[:, -1], min=-1e3, max=1e3)
+            h_running = h_chunk[:, -1]
+            h_den_running = h_den_chunk[:, -1]
 
         y = torch.cat(y_chunks, dim=1)
         y = y + self.D * x_conv
-        y = y * F.silu(z)
+        ssm_out = y * F.silu(z)
 
-        # 4. Global SVD mixing
+        # Global SVD mixing
         global_scores = hidden_states @ self.global_V
         global_mix = self.global_out(global_scores)
-        y = y + global_mix
+        ssm_out = ssm_out + global_mix
 
-        # out_proj maps inner_dim (expand * d_model) back to d_model (bypassed for nested encoders)
+        ssm_proj = self.out_proj(ssm_out)
+
+        # ---------------------------------------------------------
+        # 3. Dynamic Aggregation with Negative-Biased Gating
+        # ---------------------------------------------------------
+        gamma = torch.sigmoid(self.gating(hidden_states))
+        Y = gamma * ssm_proj + (1.0 - gamma) * attn_out
+        Y = torch.nan_to_num(Y, nan=0.0, posinf=1e4, neginf=-1e4)
+
         if self.is_nested_encoder:
-            out = y
+            out = Y
         else:
-            out = self.out_proj(y)
+            out = Y
 
-        # Masking
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask.unsqueeze(-1).to(out.dtype)
-                out = out * mask
-            elif attention_mask.dim() == 4:
-                mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(-1).to(out.dtype)
-                out = out * mask
+        if mask_bool is not None:
+            out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
@@ -469,11 +662,13 @@ class SVDMamba(BaseAttention):
             else:
                 out = out[..., :hidden_states.shape[-1]]
 
-        return (out, None)
+        return (out, probs if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("svd_mamba_inject")
 @ATTENTION_REGISTRY.register("inject_svd_mamba")
+@ATTENTION_REGISTRY.register("SVD-Mamba_inject")
+@ATTENTION_REGISTRY.register("inject_SVD_Mamba")
 def inject_svd_mamba(
     layer: Any = None,
     model: Any = None,
@@ -495,6 +690,7 @@ def inject_svd_mamba(
         or hasattr(target, "roberta")
         or hasattr(target, "bert")
         or (hasattr(target, "model") and hasattr(target.model, "layers"))
+        or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
     ):
         layer_list = None
         if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
@@ -529,8 +725,18 @@ def inject_svd_mamba(
         if src is None and target is not None:
             for attr in ("attention", "self_attn", "attn", "self"):
                 if hasattr(target, attr):
-                    src = getattr(target, attr)
-                    break
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "query") or hasattr(cand, "q_lin") or hasattr(cand, "q_proj") or hasattr(cand, "c_attn"):
+                        src = cand
+                        break
+            if src is None:
+                for attr in ("attention", "self_attn", "attn", "self"):
+                    if hasattr(target, attr):
+                        src = getattr(target, attr)
+                        break
+
+        if src is None and target is not None and hasattr(target, "forward"):
+            src = target
 
         d_model = (
             kwargs.get("hidden_size") or
@@ -554,19 +760,29 @@ def inject_svd_mamba(
         )
 
         if target is not None:
-            for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(target, attr):
-                    if attr == "attention" and hasattr(target.attention, "self"):
-                        target.attention.self = new_module
-                    else:
-                        setattr(target, attr, new_module)
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_module
+                    new_module.is_nested_encoder = True
                     return new_module
+                else:
+                    target.attention = new_module
+                    return new_module
+            for attr in ("self_attn", "attn"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_module)
+                    return new_module
+            if hasattr(target, "self"):
+                target.self = new_module
+                new_module.is_nested_encoder = True
+                return new_module
+
             target.attention = new_module
 
         return new_module
     except Exception as e:
         logger.error("inject_svd_mamba failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None
 
 
 inject_svd_mamba_attention = inject_svd_mamba

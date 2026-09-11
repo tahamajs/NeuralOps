@@ -37,6 +37,52 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
+def _extract_valid_token_mask(
+    mask: Optional[torch.Tensor],
+    batch_size: int,
+    seq_len: int,
+    device: torch.device,
+) -> torch.Tensor:
+    """Robust extraction of boolean validity mask where True=valid token, False=padding.
+    Safeguards against extended attention masks where 0.0 was mistakenly inverted to False.
+    """
+    if mask is None:
+        return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
+    if not isinstance(mask, torch.Tensor):
+        return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
+
+    mask = mask.to(device=device)
+
+    if mask.dim() == 2:
+        if mask.dtype == torch.bool:
+            return mask
+        elif torch.is_floating_point(mask) and (mask < -1.0).any():
+            return mask >= -1.0
+        elif torch.is_floating_point(mask):
+            return mask > 0.5
+        else:
+            return mask > 0
+    elif mask.dim() == 4:
+        # [B, 1, 1, N] or [B, 1, N, N]
+        if mask.size(2) == 1:
+            m = mask[:, 0, 0, :]
+        else:
+            m = mask[:, 0, -1, :]
+        if m.dtype == torch.bool:
+            return m
+        elif torch.is_floating_point(m):
+            if (m < -1.0).any():
+                return m >= -1.0
+            elif (m <= 0.0).all():
+                return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
+            else:
+                return m > 0.5
+        else:
+            return m > 0
+
+    return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
+
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """
     Rotates half the hidden dimensions: [-x2, x1].
@@ -268,20 +314,33 @@ class XAttention(BaseAttention):
 
     # Properties for universal aliases without polluting state_dict
     @property
-    def W_q(self) -> LoRALinear:
-        return self.query
-
+    def W_q(self) -> LoRALinear: return self.query
     @property
-    def W_k(self) -> LoRALinear:
-        return self.key
-
+    def W_k(self) -> LoRALinear: return self.key
     @property
-    def W_v(self) -> LoRALinear:
-        return self.value
-
+    def W_v(self) -> LoRALinear: return self.value
     @property
-    def out(self) -> LoRALinear:
-        return self.out_proj
+    def out(self) -> LoRALinear: return self.out_proj
+    @property
+    def q_proj(self) -> LoRALinear: return self.query
+    @property
+    def k_proj(self) -> LoRALinear: return self.key
+    @property
+    def v_proj(self) -> LoRALinear: return self.value
+    @property
+    def q_lin(self) -> LoRALinear: return self.query
+    @property
+    def k_lin(self) -> LoRALinear: return self.key
+    @property
+    def v_lin(self) -> LoRALinear: return self.value
+    @property
+    def out_lin(self) -> LoRALinear: return self.out_proj
+    @property
+    def dense(self) -> LoRALinear: return self.out_proj
+    @property
+    def o_proj(self) -> LoRALinear: return self.out_proj
+    @property
+    def c_proj(self) -> LoRALinear: return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
@@ -309,7 +368,8 @@ class XAttention(BaseAttention):
             weight = c_attn.weight.data
             bias = getattr(c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+            is_conv1d = "Conv1D" in c_attn.__class__.__name__ or hasattr(c_attn, "nf")
+            if is_conv1d or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
                 weight = weight.t()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
@@ -325,7 +385,8 @@ class XAttention(BaseAttention):
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             c_proj = getattr(src.c_proj, "base_layer", src.c_proj)
             w_o = c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+            is_conv1d = "Conv1D" in c_proj.__class__.__name__ or hasattr(c_proj, "nf")
+            if is_conv1d or (w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size):
                 w_o = w_o.t()
             b_o = getattr(c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -398,6 +459,11 @@ class XAttention(BaseAttention):
                     if target.bias is not None:
                         target.bias.data.zero_()
 
+                # Frobenius norm verification (>= 1e-4)
+                w_norm = float(torch.linalg.norm(target.weight.data.float()).item())
+                if w_norm < 1e-4:
+                    raise RuntimeError(f"XAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+
                 target.freeze_base_weights()
 
         # Preserve source LoRA adapters if present on source module
@@ -456,8 +522,9 @@ class XAttention(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
-        is_cross_attention = key_value_states is not None
-        kv_input = key_value_states if is_cross_attention else hidden_states
+        if key_value_states is not None:
+            raise NotImplementedError("XAttention does not support cross-attention")
+        kv_input = hidden_states
 
         B, N_q, D = hidden_states.shape
         N_k = kv_input.shape[1]
@@ -499,7 +566,7 @@ class XAttention(BaseAttention):
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         # True Block Sparse Routing with Padding Awareness
-        if self.block_size > 0 and self.keep_ratio < 1.0 and N_k > self.block_size:
+        if self.block_size > 0 and self.keep_ratio < 1.0 and N_k > self.block_size and N_q > self.block_size:
             bsz = self.block_size
             pad_q = (bsz - (N_q % bsz)) % bsz
             pad_k = (bsz - (N_k % bsz)) % bsz
@@ -521,9 +588,8 @@ class XAttention(BaseAttention):
             # If attention mask is present, factor token validity into K block averaging
             mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
             if mask is not None:
-                valid_m = get_token_valid_mask(mask, B, N_k, device)
-                if valid_m is not None:
-                    k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).to(K.dtype)
+                valid_m = _extract_valid_token_mask(mask, B, N_k, device)
+                k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).to(K.dtype)
 
             q_valid_blocks = q_valid.view(B, 1, num_q_blocks, bsz, 1)
             Q_blocks = (Q_pad.view(B, H, num_q_blocks, bsz, d) * q_valid_blocks).sum(dim=3) / q_valid_blocks.sum(dim=3).clamp(min=1.0)
@@ -534,9 +600,9 @@ class XAttention(BaseAttention):
             coarse_scores = torch.matmul(Q_blocks, K_blocks.transpose(-1, -2)) * scale
 
             if is_decoder:
-                causal_block_mask = torch.tril(
-                    torch.ones((num_q_blocks, num_k_blocks), device=device, dtype=torch.bool)
-                ).unsqueeze(0).unsqueeze(0)
+                q_block_pos = torch.arange(num_k_blocks - num_q_blocks, num_k_blocks, device=device).unsqueeze(1)
+                k_block_pos = torch.arange(num_k_blocks, device=device).unsqueeze(0)
+                causal_block_mask = (k_block_pos <= q_block_pos).unsqueeze(0).unsqueeze(0)
                 coarse_scores = coarse_scores.masked_fill(~causal_block_mask, -10000.0)
 
             k_blocks = max(1, min(num_k_blocks, int(math.ceil(num_k_blocks * self.keep_ratio))))
@@ -565,7 +631,9 @@ class XAttention(BaseAttention):
 
         # Apply causal mask
         if is_decoder:
-            causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+            q_pos = torch.arange(N_k - N_q, N_k, device=device).unsqueeze(1)
+            k_pos = torch.arange(N_k, device=device).unsqueeze(0)
+            causal_tril = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
         # Apply attention mask
@@ -574,9 +642,8 @@ class XAttention(BaseAttention):
             if mask.dim() == 4:
                 scores = scores + mask.to(scores.dtype)
             else:
-                valid_m = get_token_valid_mask(mask, B, N_k, device)
-                if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                valid_m = _extract_valid_token_mask(mask, B, N_k, device)
+                scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
         attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
@@ -603,13 +670,14 @@ class XAttention(BaseAttention):
 
         output = output * self.output_scale
 
-        valid_m = get_token_valid_mask(attention_mask, B, N_q, device)
-        if valid_m is not None:
+        if attention_mask is not None:
+            valid_m = _extract_valid_token_mask(attention_mask, B, N_q, device)
             output = output * valid_m.unsqueeze(-1).to(output.dtype)
 
         return output, (attn if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("inject_xattention")
 @ATTENTION_REGISTRY.register("xattention_inject")
 @ATTENTION_REGISTRY.register("x_inject")
 def inject_xattention(
@@ -705,4 +773,4 @@ def inject_xattention(
         return new_attn
     except Exception as e:
         logger.error("inject_xattention failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None

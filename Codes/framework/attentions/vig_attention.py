@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
-from framework.core.attention_mask import get_token_valid_mask
+from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -253,15 +253,6 @@ class ViGAttention(BaseAttention):
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
         )
 
-        # Standard aliases
-        self.W_q = self.q_proj
-        self.W_k = self.k_proj
-        self.W_v = self.v_proj
-        self.out = self.out_proj
-        self.query = self.q_proj
-        self.key = self.k_proj
-        self.value = self.v_proj
-
         self.gate_net = nn.Linear(self.dim, 2 * self.num_heads)
         dropout_p = _cfg_get(
             config,
@@ -277,6 +268,36 @@ class ViGAttention(BaseAttention):
 
         if src_attn is not None:
             self.copy_weights(src_attn)
+
+    # State dict compatibility aliases via properties
+    @property
+    def query(self) -> LoRALinear: return self.q_proj
+    @property
+    def key(self) -> LoRALinear: return self.k_proj
+    @property
+    def value(self) -> LoRALinear: return self.v_proj
+    @property
+    def out(self) -> LoRALinear: return self.out_proj
+    @property
+    def W_q(self) -> LoRALinear: return self.q_proj
+    @property
+    def W_k(self) -> LoRALinear: return self.k_proj
+    @property
+    def W_v(self) -> LoRALinear: return self.v_proj
+    @property
+    def q_lin(self) -> LoRALinear: return self.q_proj
+    @property
+    def k_lin(self) -> LoRALinear: return self.k_proj
+    @property
+    def v_lin(self) -> LoRALinear: return self.v_proj
+    @property
+    def out_lin(self) -> LoRALinear: return self.out_proj
+    @property
+    def dense(self) -> LoRALinear: return self.out_proj
+    @property
+    def o_proj(self) -> LoRALinear: return self.out_proj
+    @property
+    def c_proj(self) -> LoRALinear: return self.out_proj
 
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -302,7 +323,7 @@ class ViGAttention(BaseAttention):
             weight = old_attn.c_attn.weight.data
             bias = getattr(old_attn.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.dim:
+            if ("Conv1D" in old_attn.c_attn.__class__.__name__) or hasattr(old_attn.c_attn, "nf") or (weight.dim() == 2 and (weight.shape[0] < weight.shape[1] or weight.shape[1] == 3 * self.dim)):
                 weight = weight.t()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
@@ -317,7 +338,7 @@ class ViGAttention(BaseAttention):
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             w_o = old_attn.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.dim and w_o.shape[1] == self.dim:
+            if ("Conv1D" in old_attn.c_proj.__class__.__name__) or hasattr(old_attn.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] != self.dim and w_o.shape[1] == self.dim))):
                 w_o = w_o.t()
             b_o = getattr(old_attn.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -392,6 +413,11 @@ class ViGAttention(BaseAttention):
                     if target.bias is not None:
                         target.bias.data.zero_()
 
+                # Frobenius norm verification (>= 1e-4)
+                w_norm = float(torch.linalg.norm(target.weight.data.float()).item())
+                if w_norm < 1e-4:
+                    raise RuntimeError(f"ViGAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+
                 target.freeze_base_weights()
 
         # Preserve source LoRA adapters
@@ -445,96 +471,30 @@ class ViGAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        H: int = max(1, int(math.isqrt(N)))
-        W: int = (N + H - 1) // H
-        total: int = H * W
-        pad_len: int = total - N
-
-        if pad_len > 0:
-            x = torch.cat(
-                [
-                    hidden_states,
-                    torch.zeros(B, pad_len, D, device=device, dtype=dtype),
-                ],
-                dim=1,
-            )
-            N_pad = total
-        else:
-            x = hidden_states
-            N_pad = N
-
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
-        if mask is not None:
-            if mask.dim() == 4:
-                valid_2d = (mask[:, 0, 0, :] > -10000.0).to(device)
-            elif mask.dim() == 3:
-                valid_2d = (mask[:, 0, :] > -10000.0).to(device)
-            elif mask.dim() == 2:
-                valid_2d = (mask > 0).to(device)
-            else:
-                valid_2d = mask.bool().to(device)
-            if pad_len > 0:
-                valid = torch.cat([valid_2d, torch.zeros(B, pad_len, dtype=torch.bool, device=device)], dim=1)
-            else:
-                valid = valid_2d
-        else:
-            valid = torch.ones(B, N_pad, dtype=torch.bool, device=device)
-
         Hh = self.num_heads
         H_kv = self.num_kv_heads
         Dh = self.head_dim
 
-        q = self.q_proj(x).view(B, N_pad, Hh, Dh).permute(0, 2, 1, 3)
-        k = self.k_proj(x).view(B, N_pad, H_kv, Dh).permute(0, 2, 1, 3)
-        v = self.v_proj(x).view(B, N_pad, H_kv, Dh).permute(0, 2, 1, 3)
+        q = self.q_proj(hidden_states).view(B, N, Hh, Dh).transpose(1, 2)
+        k = self.k_proj(hidden_states).view(B, N, H_kv, Dh).transpose(1, 2)
+        v = self.v_proj(hidden_states).view(B, N, H_kv, Dh).transpose(1, 2)
 
         # Rotary position embeddings
         pos_emb = kwargs.get("position_embeddings", None)
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
-            if pad_len > 0:
-                cos_pad = torch.cat([cos, torch.zeros(cos.size(0), pad_len, cos.size(-1), device=cos.device, dtype=cos.dtype)], dim=1)
-                sin_pad = torch.cat([sin, torch.zeros(sin.size(0), pad_len, sin.size(-1), device=sin.device, dtype=sin.dtype)], dim=1)
-            else:
-                cos_pad, sin_pad = cos, sin
-            q, k = apply_rotary_pos_emb(q, k, cos_pad, sin_pad)
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
         elif getattr(self, "rotary_emb", None) is not None:
             try:
                 from framework.utils.compat import maybe_apply_rotary
                 q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning("maybe_apply_rotary failed: %s; continuing without RoPE", e)
 
         # GQA expansion
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
-
-        gates = torch.sigmoid(self.gate_net(x)).view(B, N_pad, 2, Hh, 1)
-
-        q = q.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
-        k = k.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
-        v = v.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
-
-        # Row Linear Attention
-        q_row = q.reshape(B, Hh * W, H, Dh).transpose(2, 3)
-        k_row = k.reshape(B, Hh * W, H, Dh).transpose(2, 3)
-        v_row = v.reshape(B, Hh * W, H, Dh).transpose(2, 3)
-
-        q_row_lin = F.elu(q_row.float()) + 1.0
-        k_row_lin = F.elu(k_row.float()) + 1.0
-
-        valid_grid = valid.reshape(B, H, W).permute(0, 2, 1)
-        valid_row = (
-            valid_grid.unsqueeze(1)
-            .expand(B, Hh, W, H)
-            .reshape(B, Hh * W, H)
-            .unsqueeze(-2)
-            .to(k_row_lin.dtype)
-        )
-        k_row_lin = k_row_lin * valid_row
-        v_row_f = v_row.float() * valid_row
 
         is_decoder = (
             self.is_decoder
@@ -542,98 +502,74 @@ class ViGAttention(BaseAttention):
             or getattr(getattr(self, "config", None), "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
+        # 1. Topological Graph Adjacency for 1D Token Sequences
+        # Bounded local window (radius 16) + Global Anchor Tokens (token 0 and token N-1)
+        pos = torch.arange(N, device=device)
+        diff = pos.unsqueeze(0) - pos.unsqueeze(1)  # diff[i, j] = pos[j] - pos[i]
+        local_mask = diff.abs() <= 16
+
+        anchor_mask = torch.zeros((N, N), device=device, dtype=torch.bool)
+        anchor_mask[0, :] = True
+        anchor_mask[:, 0] = True
+        if N > 1:
+            anchor_mask[-1, :] = True
+            anchor_mask[:, -1] = True
+
+        graph_adj = local_mask | anchor_mask
         if is_decoder:
-            # Per-axis causal softmax attention along rows
-            # q_row: [B, Hh * W, Dh, H] -> permute to [B, Hh * W, H, Dh]
-            q_r = q_row.transpose(-1, -2).float()
-            k_r = k_row.transpose(-1, -2).float()
-            v_r = v_row.transpose(-1, -2).float()
-            scale_r = 1.0 / math.sqrt(Dh)
-            scores_r = torch.matmul(q_r, k_r.transpose(-1, -2)) * scale_r
-            tril_r = torch.tril(torch.ones(H, H, device=q.device, dtype=torch.bool))
-            scores_r = scores_r.masked_fill(~tril_r.unsqueeze(0).unsqueeze(0), float("-inf"))
-            valid_r_mask = valid_row.squeeze(-2)  # [B, Hh * W, H]
-            scores_r = scores_r.masked_fill(~(valid_r_mask.bool()).unsqueeze(-2), float("-inf"))
-            # If an entire row is masked out, softmax produces NaNs: fill with 0.0 after nan_to_num
-            attn_r = torch.softmax(scores_r, dim=-1)
-            attn_r = torch.nan_to_num(attn_r, nan=0.0)
-            out_row = torch.matmul(attn_r, v_r)
-            out_row = out_row.transpose(2, 3).reshape(B, Hh, W, H, Dh).permute(0, 1, 3, 2, 4)
+            causal_mask = diff <= 0  # i >= j
+            graph_adj = graph_adj & causal_mask
+
+        # Branch 1: Topological Graph Attention
+        scale = 1.0 / math.sqrt(Dh)
+        scores_graph = torch.matmul(q, k.transpose(-1, -2)) * scale
+        scores_graph = scores_graph.masked_fill(~graph_adj.unsqueeze(0).unsqueeze(0), -10000.0)
+        if attention_mask is not None:
+            scores_graph = apply_attention_mask(scores_graph, attention_mask)
+        attn_graph = torch.nan_to_num(F.softmax(scores_graph.float(), dim=-1), nan=0.0).to(dtype)
+        out_graph = torch.matmul(attn_graph, v)
+
+        # Branch 2: Global Linear Recurrence / Attention with denom.clamp(min=1.0)
+        q_lin = F.elu(q.float()) + 1.0
+        k_lin = F.elu(k.float()) + 1.0
+
+        valid_m = get_token_valid_mask(attention_mask, B, N, device)
+        if valid_m is not None:
+            k_lin = k_lin * valid_m.unsqueeze(1).unsqueeze(-1).to(k_lin.dtype)
+            v_f = v.float() * valid_m.unsqueeze(1).unsqueeze(-1).to(v.dtype)
         else:
-            kv_row = torch.einsum("b m n d, b m n e -> b m d e", k_row_lin, v_row_f)
-            z_row = k_row_lin.sum(dim=2, keepdim=True)
-            denom_row = torch.einsum("b m n d, b m d -> b m n", q_row_lin, z_row.squeeze(2)).unsqueeze(-1)
-            out_row = torch.einsum("b m n d, b m d e -> b m n e", q_row_lin, kv_row) / (denom_row.clamp(min=1e-5))
-            out_row = out_row.transpose(2, 3).reshape(B, Hh, W, H, Dh).permute(0, 1, 3, 2, 4)
-
-        # Column Linear Attention
-        q_col = q.permute(0, 1, 2, 4, 3)
-        k_col = k.permute(0, 1, 2, 4, 3)
-        v_col = v.permute(0, 1, 2, 4, 3)
-        q_col_flat = q_col.reshape(B * Hh * H, W, Dh)
-        k_col_flat = k_col.reshape(B * Hh * H, W, Dh)
-        v_col_flat = v_col.reshape(B * Hh * H, W, Dh)
-
-        q_col_lin = F.elu(q_col_flat.float()) + 1.0
-        k_col_lin = F.elu(k_col_flat.float()) + 1.0
-
-        valid_col = (
-            valid.reshape(B, H, W)
-            .unsqueeze(1)
-            .expand(B, Hh, H, W)
-            .reshape(B * Hh * H, W)
-            .unsqueeze(-1)
-            .to(k_col_lin.dtype)
-        )
-        k_col_lin = k_col_lin * valid_col
-        v_col_f = v_col_flat.float() * valid_col
+            v_f = v.float()
 
         if is_decoder:
-            # Per-axis causal softmax attention along columns
-            scale_c = 1.0 / math.sqrt(Dh)
-            scores_c = torch.matmul(q_col_flat.float(), k_col_flat.float().transpose(-1, -2)) * scale_c
-            tril_c = torch.tril(torch.ones(W, W, device=q.device, dtype=torch.bool))
-            scores_c = scores_c.masked_fill(~tril_c.unsqueeze(0), float("-inf"))
-            valid_c_mask = valid_col.squeeze(-1)  # [B * Hh * H, W]
-            scores_c = scores_c.masked_fill(~(valid_c_mask.bool()).unsqueeze(-2), float("-inf"))
-            attn_c = torch.softmax(scores_c, dim=-1)
-            attn_c = torch.nan_to_num(attn_c, nan=0.0)
-            out_col = torch.matmul(attn_c, v_col_flat.float())
-            out_col = out_col.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
+            causal_tril = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+            scores_lin = torch.matmul(q_lin, k_lin.transpose(-1, -2)) * causal_tril
+            denom_lin = scores_lin.sum(dim=-1, keepdim=True)
+            out_global = (torch.matmul(scores_lin, v_f) / denom_lin.clamp(min=1.0)).to(dtype)
         else:
-            kv_col = torch.einsum("b n d, b n e -> b d e", k_col_lin, v_col_f)
-            z_col = k_col_lin.sum(dim=1, keepdim=True)
-            denom_col = torch.einsum("b n d, b d -> b n", q_col_lin, z_col.squeeze(1)).unsqueeze(-1)
-            out_col = torch.einsum("b n d, b d e -> b n e", q_col_lin, kv_col) / (denom_col.clamp(min=1e-5))
-            out_col = out_col.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
+            kv = torch.matmul(k_lin.transpose(-1, -2), v_f)  # [B, H, Dh, Dh]
+            num = torch.matmul(q_lin, kv)                    # [B, H, N, Dh]
+            denom = torch.matmul(q_lin, k_lin.sum(dim=-2, keepdim=True).transpose(-1, -2))  # [B, H, N, 1]
+            out_global = (num / denom.clamp(min=1.0)).to(dtype)
 
-        # Gated fusion
-        out_row = out_row.permute(0, 1, 3, 2, 4).reshape(B, Hh, N_pad, Dh).permute(0, 2, 1, 3)
-        out_col = out_col.permute(0, 1, 3, 2, 4).reshape(B, Hh, N_pad, Dh).permute(0, 2, 1, 3)
+        # Gated Fusion
+        gates = torch.sigmoid(self.gate_net(hidden_states)).view(B, N, self.num_heads, 2)
+        gate_graph = gates[..., 0].transpose(1, 2).unsqueeze(-1).to(dtype)
+        gate_global = gates[..., 1].transpose(1, 2).unsqueeze(-1).to(dtype)
 
-        gate_row = gates[:, :, 0, :, :]
-        gate_col = gates[:, :, 1, :, :]
-
-        out = (out_row * gate_row + out_col * gate_col).to(dtype)
+        out = gate_graph * out_graph + gate_global * out_global
         out = self.dropout(out)
 
         # Head mask broadcasting
         if head_mask is not None:
             if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, 1, -1, 1)
+                head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
-                head_mask = head_mask.view(head_mask.size(0), 1, head_mask.size(1), 1)
+                head_mask = head_mask.view(head_mask.size(0), -1, 1, 1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            elif head_mask.dim() == 4:
-                if head_mask.shape[-1] == head_mask.shape[-2] and head_mask.shape[-1] != out.shape[-1]:
-                    head_mask = head_mask.mean(dim=-1, keepdim=True)
+                head_mask = head_mask.unsqueeze(1)
             out = out * head_mask.to(dtype)
 
-        out = out.reshape(B, N_pad, self.all_head_size)
-
-        if pad_len > 0:
-            out = out[:, :N, :]
+        out = out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             output = out
@@ -719,4 +655,4 @@ def inject_vig(
         return new_attn
     except Exception as e:
         logger.error("inject_vig failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None
