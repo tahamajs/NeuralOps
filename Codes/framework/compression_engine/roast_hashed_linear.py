@@ -184,6 +184,7 @@ class ROASTLinear(nn.Module):
 
 @COMPRESSOR_REGISTRY.register('roast')
 @COMPRESSOR_REGISTRY.register('roast_compressor')
+@COMPRESSOR_REGISTRY.register('roast_hashed_linear')
 class ROASTCompressor(BaseCompressor):
     """
     Replace eligible linear and Conv1D layers with ROASTLinear (hardware-aware weight sharing).
@@ -403,6 +404,7 @@ class ROASTCompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register('roast_factory')
 @COMPRESSOR_REGISTRY.register('roast_compressor_factory')
+@COMPRESSOR_REGISTRY.register('roast_hashed_linear_factory')
 def roast_factory(
     model: Any,
     comp_config: Any = None,
