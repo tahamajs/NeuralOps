@@ -6,7 +6,7 @@
 \textbf{تمثیل ملموس و مثال کاربردی:}
 نقشه‌برداری و رصد صور فلکی در ستاره‌شناسی مدرن: تلسکوپ ستاره‌های درخشان و محوری صورت فلکی شکارچی (\lr{Orion}) را به صورت نقطه‌ای و با فوکوس لیزری دقیق رصد می‌کند (اتصالات تنک با وضوح بالا)، در حالی که غبارها و سحابی‌های مه‌آلود پس‌زمینه را با انتگرال‌گیری پیوسته پتانسیل‌های طیفی تقریب می‌زند.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی (Mathematical Derivation)}
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
 فضای نمایش به دو زیرفضای فرکانس بالا (تنک) و فرکانس پایین (طیفی) تفکیک می‌شود:
 \begin{equation}
 \operatorname{Orion}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \operatorname{SparseTopK}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) + \left(\mathbf{Q} \mathbf{U}_r\right) \left(\mathbf{V}_r^\top \mathbf{K}^\top \mathbf{V}\right)
@@ -17,7 +17,7 @@ r \ll d, \quad \mathcal{O}_{\text{total}} = \mathcal{O}(N \cdot k_{\text{sparse}
 \end{equation}
 این جداسازی طیفی، پوشش کامل وابستگی‌های متنی را تضمین می‌سازد.
 
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده (Algorithmic Tensor Trace)}
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
 در پیاده‌سازی سورس پایتون در فایل ماژول \lr{orion.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
 \begin{enumerate}
 \item تجزیه بردار تعبیه ورودی به دو مولفه طیفی فرکانس بالا و فرکانس پایین.
@@ -27,8 +27,8 @@ r \ll d, \quad \mathcal{O}_{\text{total}} = \mathcal{O}(N \cdot k_{\text{sparse}
 \item ترکیب خطی دو جریان اطلاعاتی و انتقال به لایه پسین با تصحیح مانده.
 \end{enumerate}
 
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه (Hardware \& Roofline Analysis)}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}}):
 \begin{itemize}
 \item \textbf{انطباق با الگوهای دسترسی حافظه:} شاخه طیفی کاملاً محاسباتی (\lr{Compute-Bound}) بوده و هسته‌های موازی پردازنده را به اوج کارایی می‌رساند.
 \item \textbf{تثبیت مصرف بافر:} اندازه بافر موقت به ابعاد رتبه طیفی $r$ وابسته بوده و با طول توالی منفجر نمی‌شود.
@@ -47,7 +47,7 @@ r \ll d, \quad \mathcal{O}_{\text{total}} = \mathcal{O}(N \cdot k_{\text{sparse}
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دقت 81.42 درصد در کنار مصرف پایدار 750.0 مگابایتی (صرفه‌جویی 82.1 درصدی نسبت به ۴۲۰۰ مگابایت مبنا) اثبات می‌کند که تجزیه چندمقیاسی اوریون مانع از تداخل سیگنال‌های محلی و دوربرد شده و ساختار بهینه بازنمایی را با مصرف سخت‌افزاری اندک محقق می‌سازد.
 
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک (TikZ Architecture Flowchart)}
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
 
 \begin{center}

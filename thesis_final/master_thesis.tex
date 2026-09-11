@@ -127,9 +127,9 @@
 \addcontentsline{toc}{chapter}{چکیده}
 مدل‌های زبانی بزرگ ترنسفورمر با وجود توانمندی شگفت‌انگیز در پردازش زبان طبیعی، با چالش جدی پیچیدگی محاسباتی و ردپای حافظه مربعی $\mathcal{O}(N^2)$ در مکانیزم توجه چندسره استاندارد (\lr{Standard MHA}) روبرو هستند. این چالش در استقرار مدل‌ها روی پردازنده‌های گرافیکی تجاری با محدودیت حافظه، گلوگاه بزرگی به نام دیوار حافظه (\lr{Memory Wall}) ایجاد می‌کند. در این پژوهش، چارچوب سیستم‌محور \lr{NeuralOps} طراحی و پیاده‌سازی شده است که ارزیابی تجربی دقیق و فشرده‌سازی سخت‌افزار-آگاه را بر روی \textbf{۱۰۰ مکانیزم برتر توجه منتخب از میان بیش از ۱۳۰ مکانیزم پیاده‌سازی‌شده} ممکن می‌سازد. 
 
-پژوهش حاضر در ۴ معماری شاخص زبانی شامل \lr{DistilBERT}، \lr{RoBERTa-base}، \lr{GPT-2} و \lr{Qwen3.5-0.8B} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} و در شرایط سخت‌افزاری کاملاً یکسان بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} اجرا گردیده است. فرآیند تست ۴ مرحله‌ای شامل جایگزینی درجا، نگاشت وزن‌ها با آداپتورهای \lr{LoRA}، بازیابی سریع ۵۰ تا ۱۰۰۰ گام و پروفایلینگ دقیق \lr{Roofline} به کار گرفته شد. 
+پژوهش حاضر در ۴ معماری شاخص زبانی شامل \lr{DistilBERT}}، \lr{RoBERTa-base}}، \lr{GPT-2}} و \lr{Qwen3.5-0.8B}} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} و در شرایط سخت‌افزاری کاملاً یکسان بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} اجرا گردیده است. فرآیند تست ۴ مرحله‌ای شامل جایگزینی درجا، نگاشت وزن‌ها با آداپتورهای \lr{LoRA}، بازیابی سریع ۵۰ تا ۱۰۰۰ گام و پروفایلینگ دقیق \lr{Roofline} به کار گرفته شد. 
 
-نتایج نشان داد که مکانیزم توجه قهرمان \lr{Fusion Attention} با مهار حافظه \lr{Peak VRAM} از \lr{4200 MB} خط پایه به \lr{480 MB} (کاهش \lr{88.6\%})، توان عملیاتی پردازش را از \lr{15,400} به \lr{67,500 tok/s} (شتاب \lr{4.38x}) رسانده و دقت \lr{93.12\%} را به ثبت رسانده است. همچنین دروازه کیفیت با آستانه سخت‌گیرانه \lr{56\%} موفقیت استقرار صنعتی این مکانیزم‌ها را اثبات نمود.
+نتایج نشان داد که مکانیزم توجه قهرمان \lr{Fusion Attention}} با مهار حافظه \lr{Peak VRAM} از \lr{4200 MB} خط پایه به \lr{480 MB} (کاهش \lr{88.6\%})، توان عملیاتی پردازش را از \lr{15,400} به \lr{67,500 tok/s} (شتاب \lr{4.38x}) رسانده و دقت \lr{93.12\%} را به ثبت رسانده است. همچنین دروازه کیفیت با آستانه سخت‌گیرانه \lr{56\%} موفقیت استقرار صنعتی این مکانیزم‌ها را اثبات نمود.
 
 \vspace{0.8cm}
 \noindent \textbf{کلمات کلیدی:} مدلهای زبانی بزرگ، مکانیزم توجه خطی، تجزیه مقادیر منفرد (\lr{SVD})، فشرده‌سازی مدل، مدل سقف کارایی (\lr{Roofline})، فریمورک \lr{NeuralOps}.
@@ -182,7 +182,7 @@
 پیشرفت‌های چشمگیر در یادگیری عمیق و هوش مصنوعی مولد در سال‌های اخیر، تحت سیطره معماری بنیادین ترنسفورمر (\lr{Vaswani et al., 2017}) رقم خورده است. سنگ بنای این معماری، مکانیزم توجه چندسره استاندارد (\lr{Standard Multi-Head Attention}) است که امکان مدل‌سازی جامع ارتباطات بین تمام توکن‌های متن را میسر می‌سازد. با این حال، نیاز محاسباتی و ردپای حافظه این لایه با طول دنباله ورودی به صورت مربعی مقیاس‌بندی می‌شود. در عصر کنونی مدل‌های زبانی بزرگ، طول کانتکست‌های طولانی (از ۸ هزار توکن تا ۳۲ هزار و بالاتر) به یک ضرورت کاربردی تبدیل شده است، اما پیچیدگی $\mathcal{O}(N^2)$ به عنوان سدی سخت‌افزاری و بنیادین در برابر استقرار محلی و کم‌هزینه این مدل‌ها عمل می‌کند.
 
 \section{بیان مسئله}
-در استنتاج و آموزش مدل‌های زبانی نظیر \lr{RoBERTa-base}، \lr{GPT-2} و \lr{Qwen3.5-0.8B}، لایه توجه سنتی نه تنها نیازمند ذخیره‌سازی ماتریس توجه با ابعاد $[B, H, N, N]$ است، بلکه بافر کلید-مقدار (\lr{KV Cache}) در مدل‌های خودبازگشتی حجم سرسام‌آوری از حافظه ویدیویی (\lr{VRAM}) را به خود اختصاص می‌دهد. بر روی یک پردازنده گرافیکی مصرف‌کننده و همراه نظیر \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، طول کانتکست‌های متوسط به سرعت خطای سرریز حافظه (\lr{CUDA Out of Memory - OOM}) را ایجاد می‌کنند. اگرچه مکانیزم‌های خطی، تنک، بازگشتی و اسپکترال متعددی در مقالات پژوهشی پیشنهاد شده‌اند، اما سه چالش اساسی وجود دارد:
+در استنتاج و آموزش مدل‌های زبانی نظیر \lr{RoBERTa-base}}، \lr{GPT-2}} و \lr{Qwen3.5-0.8B}}، لایه توجه سنتی نه تنها نیازمند ذخیره‌سازی ماتریس توجه با ابعاد $[B, H, N, N]$ است، بلکه بافر کلید-مقدار (\lr{KV Cache}) در مدل‌های خودبازگشتی حجم سرسام‌آوری از حافظه ویدیویی (\lr{VRAM}) را به خود اختصاص می‌دهد. بر روی یک پردازنده گرافیکی مصرف‌کننده و همراه نظیر \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)}، طول کانتکست‌های متوسط به سرعت خطای سرریز حافظه (\lr{CUDA Out of Memory - OOM}) را ایجاد می‌کنند. اگرچه مکانیزم‌های خطی، تنک، بازگشتی و اسپکترال متعددی در مقالات پژوهشی پیشنهاد شده‌اند، اما سه چالش اساسی وجود دارد:
 \begin{enumerate}
     \item \textbf{فقدان ارزیابی تطبیقی در شرایط آزمایشگاهی یکسان:} هر مقاله از محیط سخت‌افزاری، دیتاست و پیاده‌سازی متفاوتی استفاده کرده است.
     \item \textbf{افت شدید دقت و پدیده فروپاشی کلاس (\lr{Majority Class Collapse}):} بسیاری از تکنیک‌های فشرده‌سازی با هرس بی‌رویه دچار ریزش آماری شدید می‌شوند.
@@ -272,7 +272,7 @@
 \begin{equation}
 \text{AI} = \frac{\text{FLOPs}}{\text{Memory Traffic (Bytes)}}
 \end{equation}
-در صورتی که شدت محاسباتی از نقطه شکست سخت‌افزار (\lr{Ridge Point}) کمتر باشد، الگوریتم در ناحیه مقید به حافظه (\lr{Memory-Bound}) قرار داشته و افزایش تعداد هسته‌های پردازشی تاثیری بر شتاب آن نخواهد داشت. توجه متراکم استاندارد به دلیل فراخوانی مکرر ماتریس $N \times N$ شدیداً مقید به پهنای باند است، در حالی که الگوریتم‌های فیوزشده نظیر \lr{FlashAttention} و \lr{Fusion Attention} با نگهداری بلاک‌ها در حافظه سریع \lr{SRAM}، شدت محاسباتی را چند برابر ارتقا می‌دهند.
+در صورتی که شدت محاسباتی از نقطه شکست سخت‌افزار (\lr{Ridge Point}) کمتر باشد، الگوریتم در ناحیه مقید به حافظه (\lr{Memory-Bound}) قرار داشته و افزایش تعداد هسته‌های پردازشی تاثیری بر شتاب آن نخواهد داشت. توجه متراکم استاندارد به دلیل فراخوانی مکرر ماتریس $N \times N$ شدیداً مقید به پهنای باند است، در حالی که الگوریتم‌های فیوزشده نظیر \lr{FlashAttention} و \lr{Fusion Attention}} با نگهداری بلاک‌ها در حافظه سریع \lr{SRAM}، شدت محاسباتی را چند برابر ارتقا می‌دهند.
 
 \section{مرور ادبیات مکانیزم‌های کارآمد توجه}
 مکانیزم‌های توجه نوین در ۵ شاخه عمده تکامل یافته‌اند:
@@ -329,22 +329,22 @@
 \section{مدل‌های زبانی پایه مورد ارزیابی}
 چهار مدل با ساختارهای ناهمگون برای راستی‌آزمایی ماژول‌ها انتخاب شدند:
 \begin{enumerate}
-    \item \textbf{\lr{DistilBERT}:} مدل انکودر متراکم با ۶ لایه، ۱۲ سر توجه و بعد پنهان ۷۶۸ (۶۶ میلیون پارامتر).
-    \item \textbf{\lr{RoBERTa-base}:} مدل انکودر دوطرفه با ۱۲ لایه، ۱۲ سر توجه و بعد پنهان ۷۶۸ (۱۲۵ میلیون پارامتر).
-    \item \textbf{\lr{GPT-2}:} مدل دیکودر خودبازگشتی با ۱۲ لایه، ۱۲ سر توجه و ترانهاده پروجکشن خطی \lr{Conv1D}.
-    \item \textbf{\lr{Qwen3.5-0.8B}:} مدل پیشرفته نوین با ۲۴ لایه، پشتیبانی از توجه با سرهای گروه‌بندی‌شده (\lr{GQA}) و کدگذاری مکانی چرخشی (\lr{RoPE}).
+    \item \textbf{\lr{DistilBERT}}:} مدل انکودر متراکم با ۶ لایه، ۱۲ سر توجه و بعد پنهان ۷۶۸ (۶۶ میلیون پارامتر).
+    \item \textbf{\lr{RoBERTa-base}}:} مدل انکودر دوطرفه با ۱۲ لایه، ۱۲ سر توجه و بعد پنهان ۷۶۸ (۱۲۵ میلیون پارامتر).
+    \item \textbf{\lr{GPT-2}}:} مدل دیکودر خودبازگشتی با ۱۲ لایه، ۱۲ سر توجه و ترانهاده پروجکشن خطی \lr{Conv1D}.
+    \item \textbf{\lr{Qwen3.5-0.8B}}:} مدل پیشرفته نوین با ۲۴ لایه، پشتیبانی از توجه با سرهای گروه‌بندی‌شده (\lr{GQA}) و کدگذاری مکانی چرخشی (\lr{RoPE}).
 \end{enumerate}
 
 \section{مجموعه داده‌های ارزیابی (\lr{GLUE Benchmark})}
 تمرکز اصلی ارزیابی همگن بر روی دیتاست ارزیابی استاندارد زبان طبیعی \lr{GLUE SST-2} (تحلیل احساسات دودویی با ۸۷۲ نمونه اعتبارسنجی) بوده است. همچنین کنترل سازگاری روی زیرمجموعه‌های \lr{MRPC} و \lr{CoLA} انجام پذیرفته است.
 
 \section{خط پایه ارزیابی (\lr{Baseline Reference})}
-خط پایه ارزیابی به عنوان توجه کامل استاندارد \lr{Multi-Head Attention} بر روی مدل \lr{RoBERTa-base} و \lr{DistilBERT} با شرایط زیر تعریف گردید:
+خط پایه ارزیابی به عنوان توجه کامل استاندارد \lr{Multi-Head Attention} بر روی مدل \lr{RoBERTa-base}} و \lr{DistilBERT}} با شرایط زیر تعریف گردید:
 \begin{itemize}
-    \item \textbf{دقت خط پایه (Accuracy):} \lr{91.20\%} تا \lr{91.30\%}
+    \item \textbf{دقت خط پایه \lr{(Accuracy)}:} \lr{91.20\%} تا \lr{91.30\%}
     \item \textbf{شاخص آماری خط پایه (F1-Score):} \lr{88.40\%}
-    \item \textbf{اوج مصرف حافظه (Peak VRAM):} \lr{4200.0 MB}
-    \item \textbf{توان عملیاتی پایه (Throughput):} \lr{15,400 tok/s}
+    \item \textbf{اوج مصرف حافظه \lr{(Peak VRAM)}:} \lr{4200.0 MB}
+    \item \textbf{توان عملیاتی پایه \lr{(Throughput)}:} \lr{15,400 tok/s}
 \end{itemize}
 
 \section{فرآیند ۴ مرحله‌ای ارزیابی در فریمورک NeuralOps}
@@ -384,7 +384,7 @@
 \label{chap:results}
 
 \section{مقدمه}
-در این فصل نتایج ارزیابی جامع سخت‌افزاری و زبانی ارائه می‌گردد. ابتدا خلاصه نتایج کلی مطرح شده و سپس تک‌نگاری کالبدشکافی عمیق ۱۲ بخشی برای تمام ۱۰۰ ماژول برتر مستندسازی می‌شود. در ادامه مدل قهرمان (\lr{Fusion Attention}) و نمودارهای تحلیلی تفکیکی ارائه خواهند گردید.
+در این فصل نتایج ارزیابی جامع سخت‌افزاری و زبانی ارائه می‌گردد. ابتدا خلاصه نتایج کلی مطرح شده و سپس تک‌نگاری کالبدشکافی عمیق ۱۲ بخشی برای تمام ۱۰۰ ماژول برتر مستندسازی می‌شود. در ادامه مدل قهرمان (\lr{Fusion Attention}}) و نمودارهای تحلیلی تفکیکی ارائه خواهند گردید.
 
 \section{خلاصه نتایج کلی در ۴ مدل زبانی}
 \begin{table}[htbp]
@@ -400,7 +400,7 @@
 توجه خطی و فضای حالت (SSM) & \lr{86.30\%} & \lr{84.50\%} & \lr{485.2 MB} & \lr{42,100 tok/s} \\
 مکانیزم‌های تنک و درهم‌سازی & \lr{89.15\%} & \lr{87.90\%} & \lr{540.0 MB} & \lr{36,800 tok/s} \\
 همجوشی سخت‌افزاری و FP8 & \lr{90.85\%} & \lr{90.20\%} & \lr{295.4 MB} & \lr{115,200 tok/s} \\
-\textbf{مدل قهرمان (\lr{Fusion Attention})} & \textbf{\lr{93.12\%}} & \textbf{\lr{92.40\%}} & \textbf{\lr{480.0 MB}} & \textbf{\lr{67,500 tok/s}} \\
+\textbf{مدل قهرمان (\lr{Fusion Attention}})} & \textbf{\lr{93.12\%}} & \textbf{\lr{92.40\%}} & \textbf{\lr{480.0 MB}} & \textbf{\lr{67,500 tok/s}} \\
 \hline
 \end{tabular}
 \label{tab:family_summary}
@@ -412,14 +412,14 @@
 % فراخوانی ۱۰۰ ماژول برتر
 \input{chapter_attentions.tex}
 
-\section{مدل قهرمان پایان‌نامه: Fusion Attention}
+\section{مدل قهرمان پایان‌نامه: \lr{Fusion Attention}}
 \subsection{ایده و فرمول‌بندی}
-ماژول \lr{Fusion Attention} با ادغام دو استراتژی پیشرفته ابداع گردیده است: قطعه‌بندی بلاکی تانسورها (\lr{Block-Sparse Tiling}) با انتخاب پویا بر اساس امتیازات میانگین سنتروید بلاک‌ها، همراه با تجزیه مقادیر منفرد بر روی ماتریس تصویرسازی مقادیر ($\mathbf{V}$). بدین ترتیب، تنها بلاک‌های پرس‌وجو و کلید با همبستگی بالا ضرب شده و عملیات پروجکشن ارزش با ماتریس کم‌مرتبه انجام می‌پذیرد.
+ماژول \lr{Fusion Attention}} با ادغام دو استراتژی پیشرفته ابداع گردیده است: قطعه‌بندی بلاکی تانسورها (\lr{Block-Sparse Tiling}) با انتخاب پویا بر اساس امتیازات میانگین سنتروید بلاک‌ها، همراه با تجزیه مقادیر منفرد بر روی ماتریس تصویرسازی مقادیر ($\mathbf{V}$). بدین ترتیب، تنها بلاک‌های پرس‌وجو و کلید با همبستگی بالا ضرب شده و عملیات پروجکشن ارزش با ماتریس کم‌مرتبه انجام می‌پذیرد.
 
 \subsection{تحلیل نتایج تجربی مدل قهرمان}
 \begin{table}[htbp]
 \centering
-\caption{کارنامه تجربی مدل قهرمان \lr{Fusion Attention} در مقایسه با خط پایه بر روی \lr{RoBERTa-base}}
+\caption{کارنامه تجربی مدل قهرمان \lr{Fusion Attention}} در مقایسه با خط پایه بر روی \lr{RoBERTa-base}}}
 \begin{tabular}{|l|c|c|c|}
 \hline
 \textbf{شاخص ارزیابی} & \textbf{خط پایه استاندارد} & \textbf{مدل قهرمان \lr{Fusion}} & \textbf{میزان بهبود / تغییر} \\
@@ -448,7 +448,7 @@
 \end{figure}
 
 \subsection{جبهه پارتو تعادل حافظه و توان عملیاتی}
-شکل \ref{fig:chart_pareto} پراکندگی ۱۰۰ ماژول توجه را در فضای دوبعدی اوج مصرف حافظه (\lr{Peak VRAM}) در برابر توان عملیاتی (\lr{Throughput}) به تصویر می‌کشد. خط مرز پارتو نشان‌دهنده ماژول‌های بهینه نامغلوب است. ماژول‌های مجهز به فیوژن محاسباتی و فاکتورسازی \lr{SVD} موفق شده‌اند در عین کاهش مصرف حافظه از ۴۲۰۰ به کمتر از ۴۸۰ مگابایت، توان عملیاتی را از ۱۵,۴۰۰ توکن بر ثانیه به بیش از ۶۷,۵۰۰ توکن ارتقا دهند.
+شکل \ref{fig:chart_pareto} پراکندگی ۱۰۰ ماژول توجه را در فضای دوبعدی اوج مصرف حافظه (\lr{Peak VRAM}) در برابر توان عملیاتی (\lr{Throughput}) به تصویر می‌کشد. خط مرز پارتو نشان‌دهنده ماژول‌های بهینه نامغلوب است. ماژول‌های مجهز به فیوژن محاسباتی و فاکتورسازی \lr{SVD} موفق شده‌اند در عین کاهش مصرف حافظه از \lr{4200 MB} به کمتر از \lr{480 MB}، توان عملیاتی را از \lr{15,400} توکن بر ثانیه به بیش از \lr{67,500} توکن بر ثانیه ارتقا دهند.
 
 \begin{figure}[H]
 \centering
@@ -458,7 +458,7 @@
 \end{figure}
 
 \subsection{مقایسه چندشاخصی خانواده‌های معماری (نمودار راداری)}
-در شکل \ref{fig:chart_radar_families}، عملکرد میانگین ۵ خانواده اصلی مکانیزم‌های توجه بر روی ۵ شاخص کلیدی (دقت، امتیاز F1، مهار حافظه، توان عملیاتی و فشردگی پارامتری) مقایسه شده است. خانواده فاکتورسازی اسپکترال در مهار حافظه پیشتاز است، در حالی که خانواده همجوشی سخت‌افزاری (\lr{Hardware Fusion}) بیشترین توان عملیاتی را به نمایش می‌گذارد.
+در شکل \ref{fig:chart_radar_families}، عملکرد میانگین ۵ خانواده اصلی مکانیزم‌های توجه بر روی ۵ شاخص کلیدی (دقت، امتیاز \lr{F1-Score}، مهار حافظه، توان عملیاتی و فشردگی پارامتری) مقایسه شده است. خانواده فاکتورسازی اسپکترال در مهار حافظه پیشتاز است، در حالی که خانواده همجوشی سخت‌افزاری (\lr{Hardware Fusion}) بیشترین توان عملیاتی را به نمایش می‌گذارد.
 
 \begin{figure}[H]
 \centering
@@ -488,7 +488,7 @@
 \begin{itemize}
     \item \textbf{پاسخ به سوال و فرضیه ۱ (امکان فشرده‌سازی SVD):} نتایج تجربی کاملاً تایید کرد که با فاکتورسازی مقادیر منفرد ماتریس‌های توجه و حفظ آستانه انرژی $\ge 0.92$، دقت مدل پایه در سطح \lr{90.5\%} حفظ شده و اوج مصرف حافظه از ۴۲۰۰ مگابایت به کمتر از ۳۵۰ مگابایت می‌رسد.
     \item \textbf{پاسخ به سوال و فرضیه ۲ (نقش آداپتورهای LoRA):} آداپتورهای کم‌مرتبه \lr{LoRA} با تثبیت وزن‌های سنگین، در کمتر از ۵۰ تا ۲۵۰ گام توانستند هرگونه افت ناشی از شکست رتبه را جبران نمایند.
-    \item \textbf{پاسخ به سوال و فرضیه ۳ (فیوژن سخت‌افزاری و مدل Roofline):} پیاده‌سازی کرنل‌های فیوزشده ترایتون در ماژول‌هایی نظیر \lr{FlashAttention-3} و \lr{Fusion Attention} توان عملیاتی را تا بیش از \lr{131,000 tok/s} رساند که معادل شتاب بیش از ۸ برابری است.
+    \item \textbf{پاسخ به سوال و فرضیه ۳ (فیوژن سخت‌افزاری و مدل Roofline):} پیاده‌سازی کرنل‌های فیوزشده ترایتون در ماژول‌هایی نظیر \lr{FlashAttention-3} و \lr{Fusion Attention}} توان عملیاتی را تا بیش از \lr{131,000 tok/s} رساند که معادل شتاب بیش از ۸ برابری است.
 \end{itemize}
 
 \section{دستاوردهای علمی و عملی}
@@ -501,7 +501,7 @@
 \section{پیشنهادات برای پژوهش‌های آینده}
 \begin{itemize}
     \item توسعه کوانتایزاسیون تطبیقی ۴ بیتی (\lr{FP4/INT4}) به صورت ترکیب‌شده با فاکتورسازی SVD.
-    \item اعمال مکانیزم \lr{Fusion Attention} روی مدل‌های زبانی بسیار بزرگ (نظیر مدل‌های ۷۰ میلیارد پارامتری).
+    \item اعمال مکانیزم \lr{Fusion Attention}} روی مدل‌های زبانی بسیار بزرگ (نظیر مدل‌های ۷۰ میلیارد پارامتری).
     \item گسترش به حوزه‌های چندوجهی (\lr{Multimodal Attention}) شامل تصویر و صوت.
 \end{itemize}
 
@@ -510,6 +510,7 @@
 % ==============================================================================
 \chapter*{مراجع}
 \addcontentsline{toc}{chapter}{مراجع}
+\begin{latin}
 \begin{enumerate}
     \item \textbf{Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., \& Polosukhin, I. (2017).} Attention is all you need. \textit{Advances in Neural Information Processing Systems (NeurIPS 2017)}, 30, 5998--6008.
     \item \textbf{Dao, T., Fu, D. Y., Ermon, S., Rudra, A., \& Re, C. (2022).} FlashAttention: Fast and memory-efficient exact attention with IO-awareness. \textit{Advances in Neural Information Processing Systems (NeurIPS 2022)}, 35, 16344--16359.
@@ -527,11 +528,12 @@
     \item \textbf{Williams, S., Waterman, A., \& Patterson, D. (2009).} Roofline: an insightful visual performance model for multicore architectures. \textit{Communications of the ACM}, 52(4), 65--76.
     \item \textbf{Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., \& Chen, W. (2022).} LoRA: Low-rank adaptation of large language models. \textit{International Conference on Learning Representations (ICLR 2022)}.
     \item \textbf{Micikevicius, P., Stosic, D., Burgess, N., Cornea, M., Dubey, P., Grisenthwaite, R., Ha, S., Heinecke, A., \& Judd, P. (2022).} FP8 formats for deep learning. \textit{arXiv preprint \lr{arXiv:2209.05433}}.
-    \item \textbf{Sanh, V., Debut, L., Chaumond, J., \& Wolf, T. (2019).} DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter. \textit{NeurIPS EMC2 Workshop 2019}.
+    \item \textbf{Sanh, V., Debut, L., Chaumond, J., \& Wolf, T. (2019).} \lr{DistilBERT}, a distilled version of BERT: smaller, faster, cheaper and lighter. \textit{NeurIPS EMC2 Workshop 2019}.
     \item \textbf{Liu, Y., Ott, M., Goyal, N., Du, J., Joshi, M., Chen, D., Levy, O., Lewis, M., Zettlemoyer, L., \& Stoyanov, V. (2019).} RoBERTa: A robustly optimized BERT pretraining approach. \textit{arXiv preprint \lr{arXiv:1907.11692}}.
     \item \textbf{Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., \& Sutskever, I. (2019).} Language models are unsupervised multitask learners. \textit{OpenAI blog}, 1(8), 9.
     \item \textbf{Wang, A., Singh, A., Michael, J., Hill, F., Levy, O., \& Bowman, S. R. (2018).} GLUE: A multi-task benchmark and analysis platform for natural language understanding. \textit{ICLR 2019 Workshop}.
 \end{enumerate}
+\end{latin}
 
 \newpage
 \thispagestyle{empty}
@@ -545,12 +547,12 @@
 
 Large language models (LLMs) based on the Transformer architecture have fundamentally reshaped modern natural language processing. However, their standard Multi-Head Attention (MHA) exhibits quadratic computational and memory complexity, $\mathcal{O}(N^2)$, with respect to sequence length. This memory footprint creates a severe hardware bottleneck—the "Memory Wall"—especially when deploying models on consumer-grade edge GPUs.
 
-This thesis presents \textbf{NeuralOps}, a hardware-aware framework for the empirical benchmarking, drop-in injection, and compression of attention mechanisms. We systematically evaluate the \textbf{Top 100 attention mechanisms selected from over 130 implementations} across four diverse language model architectures: \lr{DistilBERT}, \lr{RoBERTa-base}, \lr{GPT-2}, and \lr{Qwen3.5-0.8B} on the \lr{GLUE SST-2} benchmark under identical laboratory conditions using an \lr{NVIDIA GeForce RTX 4070 Laptop GPU (8GB GDDR6)}.
+This thesis presents \textbf{NeuralOps}, a hardware-aware framework for the empirical benchmarking, drop-in injection, and compression of attention mechanisms. We systematically evaluate the \textbf{Top 100 attention mechanisms selected from over 130 implementations} across four diverse language model architectures: \lr{DistilBERT}}, \lr{RoBERTa-base}}, \lr{GPT-2}}, and \lr{Qwen3.5-0.8B}} on the \lr{GLUE SST-2} benchmark under identical laboratory conditions using an \lr{NVIDIA GeForce RTX 4070 Laptop GPU (8GB GDDR6)}.
 
-Through a four-phase evaluation pipeline (drop-in injection, weight alignment, rapid recovery calibration, and hardware roofline profiling), we demonstrate that low-rank Singular Value Decomposition (SVD) combined with trainable \lr{LoRA} residual adapters effectively preserves linguistic representation while slashing peak VRAM. Our champion model, \textbf{Fusion Attention}, cuts peak VRAM from 4200.0 MB to 480.0 MB (an 88.6\% reduction), boosts throughput by 4.38x from 15,400 to 67,500 tokens/sec, and achieves an outstanding accuracy of 93.12\% (outperforming standard attention). These findings confirm that transformer attention can be linearised and compressed for efficient local inference without compromising representation capacity.
+Through a four-phase evaluation pipeline (drop-in injection, weight alignment, rapid recovery calibration, and hardware roofline profiling), we demonstrate that low-rank Singular Value Decomposition \lr{(SVD)} combined with trainable \lr{LoRA} residual adapters effectively preserves linguistic representation while slashing peak VRAM. Our champion model, \textbf{\lr{Fusion Attention}}, cuts peak VRAM from 4200.0 MB to 480.0 MB (an 88.6\% reduction), boosts throughput by 4.38x from 15,400 to 67,500 tokens/sec, and achieves an outstanding accuracy of 93.12\% (outperforming standard attention). These findings confirm that transformer attention can be linearised and compressed for efficient local inference without compromising representation capacity.
 
 \vspace{0.8cm}
-\noindent \textbf{Keywords:} Large Language Models, Linear Attention, Singular Value Decomposition (SVD), Model Compression, Roofline Model, NeuralOps Framework.
+\noindent \textbf{Keywords:} Large Language Models, Linear Attention, Singular Value Decomposition \lr{(SVD)}, Model Compression, Roofline Model, NeuralOps Framework.
 \end{latin}
 
 \newpage

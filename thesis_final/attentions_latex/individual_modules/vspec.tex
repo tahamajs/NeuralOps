@@ -6,13 +6,13 @@
 \textbf{تمثیل ملموس و مثال کاربردی:}
 تمثیل \textbf{تلسکوپ فضایی مجهز به آینه‌های اپتیک سازگارپذیر (\lr{Adaptive Optics})}: آینه‌های تلسکوپ در هر هزارم ثانیه تغییر انحنا می‌دهند تا انکسار ناشی از امواج جوی را خنثی کرده و تصویری کاملاً شفاف از کهکشان‌های دوردست ثبت کنند.
 
-\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی (Mathematical Derivation)}
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
 \begin{equation}
 q(\mathbf{z} \mid \mathbf{X}) = \mathcal{N}\left(\boldsymbol{\mu}_{\text{spec}}(\mathbf{X}), \boldsymbol{\Sigma}_{\text{spec}}(\mathbf{X})\right), \quad \mathbf{A}_{\text{vspec}} = \operatorname{Gate}_{\text{SVD}}(\mathbf{z}) \odot \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}}\right)
 \end{equation}
 که در آن نمونه‌برداری تغییراتی مقاومت مدل در برابر نویزهای گرامری را افزایش می‌دهد.
 
-\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده (Algorithmic Tensor Trace)}
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
 در پیاده‌سازی سورس پایتون در فایل ماژول \lr{vspec.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
 \begin{enumerate}
 \item \textbf{دریافت تانسور ورودی:} تانسور تعبیه ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ (اندازه دسته، طول دنباله و بعد پنهان) دریافت می‌شود.
@@ -22,8 +22,8 @@ q(\mathbf{z} \mid \mathbf{X}) = \mathcal{N}\left(\boldsymbol{\mu}_{\text{spec}}(
 \item \textbf{بازگشت به بعد اصلی و پروجکشن پایانی:} تانسور به شکل $[B, N, D]$ بازآرایی شده و با یک لایه خطی پایانی به لایه پسین تزریق می‌گردد.
 \end{enumerate}
 
-\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه (Hardware \& Roofline Analysis)}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}}):
 \begin{itemize}
 \item \textbf{مهار عطش پهنای باند حافظه (\lr{Memory-Bound Relief}):} در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی (\lr{Arithmetic Intensity}) به طور محسوسی بهبود می‌یابد.
 \item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها (\lr{KV-Cache}):} در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
@@ -42,7 +42,7 @@ q(\mathbf{z} \mid \mathbf{X}) = \mathcal{N}\left(\boldsymbol{\mu}_{\text{spec}}(
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 کاهش ۸۲.۱ درصدی مصرف حافظه (۷۵۰ مگابایت در مقابل ۴۲۰۰ مگابایت) و دستیابی به دقت ۷۹.۲۴٪ نشان‌دهنده تعادل موفق میان یادگیری تغییراتی و مهار سربار سخت‌افزاری است.
 
-\subsubsection*{۶. دیاگرام معماری شکیل در لاتک (TikZ Architecture Flowchart)}
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
 
 \begin{center}
