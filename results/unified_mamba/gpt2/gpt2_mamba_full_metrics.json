@@ -1,19 +1,19 @@
 {
     "model": "gpt2_mamba",
     "performance": {
-        "accuracy_pct": 50.92,
-        "f1_score": 0.6748,
-        "f1_macro": 0.3374,
-        "precision": 0.2546,
-        "recall": 0.5,
-        "val_loss": 0.7436,
+        "accuracy_pct": 51.03,
+        "f1_score": 0.6677,
+        "f1_macro": 0.3687,
+        "precision": 0.5131,
+        "recall": 0.5018,
+        "val_loss": 0.7106,
         "status": "PASS_LOW",
-        "elapsed_s": 11.7
+        "elapsed_s": 20.04
     },
     "efficiency": {
         "total_params_before": 124441344,
         "total_params_after": 118100772,
-        "trainable_recovery_params": 738816,
+        "trainable_recovery_params": 738840,
         "compression_rate": 1.0537,
         "compression_ratio_pct": 5.1,
         "flops_reduction_pct": 0.0,
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 649.69,
-        "tokens_per_sec": 20723.08
+        "peak_vram_mb": 649.7,
+        "tokens_per_sec": 15548.21
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +61,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 630.81,
-        "L_256_vram_mb": 1066.37,
-        "L_512_vram_mb": 2802.81,
+        "L_128_vram_mb": 630.83,
+        "L_256_vram_mb": 1066.38,
+        "L_512_vram_mb": 2802.82,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-11T06:24:31.643656"
+    "timestamp": "2026-09-11T13:36:23.220144"
 }
