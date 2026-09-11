@@ -555,3 +555,9 @@ The `AdaptiveSparseAttention` architecture incorporates telemetry hooks for trac
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (Adaptive Sparse Attention)
+Evaluated on SST-2 sentiment classification (FP16, batch size 8, 200 recovery steps, lr 2e-4, LoRA rank 16):
+
+| Model Architecture | Baseline Acc | Adaptive Sparse Acc | Δ Acc | F1 Score | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:------------:|:--------------------:|:-----:|:--------:|:---------:|:-----------:|:------------------------|
+| ROBERTA | 75.00% | 58.14% | -16.86% | 0.6883 | 702.8 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive-sparse) |
