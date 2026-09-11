@@ -1146,7 +1146,10 @@ def main():
     # unscale gradients belonging to fp16 parameters. Cast the trained model
     # to the requested sweep precision immediately afterwards.
     dtype = torch.float32
-    base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, torch_dtype=dtype).to(device)
+    try:
+        base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, dtype=dtype).to(device)
+    except TypeError:
+        base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, torch_dtype=dtype).to(device)
     base.config.pad_token_id = tokenizer.pad_token_id; install_qwen_aliases(base)
     base.tokenizer = tokenizer
     if hasattr(base, "config") and base.config is not None:
