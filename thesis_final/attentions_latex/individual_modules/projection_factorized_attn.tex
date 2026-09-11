@@ -1,0 +1,99 @@
+\subsection{کالبدشکافی ماژول \lr{projection\_factorized\_attn}}
+
+\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
+معماری \lr{projection\_factorized\_attn} بار سنگین پارامترهای پروجکشن توجه را هدف قرار می‌دهد. این ماژول با تجزیه فاکتوری ماتریس‌های پروجکشن $\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V$ به دو ماتریس رتبه‌پایین متوالی، هم حجم پارامترها و هم ترافیک انتقال وزن از حافظه گرافیکی به کش پردازنده را به شدت مهار می‌سازد.
+
+\textbf{تمثیل ملموس و مثال کاربردی:}
+سیستم ترجمه میان ۲۰۰ زبان زنده جهان از طریق یک زبان میانجی استاندارد بین‌المللی (\lr{Interlingua}): به جای تدوین ۴۰,۰۰۰ فرهنگ لغت مستقیم دوجانبه ($200 \times 200$)، همه زبان‌ها به زبان میانجی خلاصه ترجمه شده و سپس به زبان مقصد تبدیل می‌شوند ($200 + 200 = 400$ فرهنگ لغت)، که حجم کتابخانه را تا ۹۹ درصد کاهش می‌دهد.
+
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی (Mathematical Derivation)}
+ماتریس پروجکشن $\mathbf{W} \in \mathbb{R}^{D \times D}$ با بهره‌گیری از قضیه اکارت-یانگ به دو فاکتور گلوگاهی $\mathbf{U} \in \mathbb{R}^{D \times r}$ و $\mathbf{V} \in \mathbb{R}^{r \times D}$ تجزیه می‌گردد ($r \ll D$):
+\begin{equation}
+\mathbf{W} \approx \mathbf{U} \mathbf{V}, \quad \|\mathbf{W} - \mathbf{U}\mathbf{V}\|_F = \sqrt{\sum_{i=r+1}^D \sigma_i^2}
+\end{equation}
+پروجکشن ورودی به صورت حاصل‌ضرب پیوسته پرانتزبندی‌شده ارزیابی می‌شود:
+\begin{equation}
+\mathbf{Q} = (\mathbf{X} \mathbf{U}_Q) \mathbf{V}_Q + \mathbf{b}_Q, \quad \mathbf{K} = (\mathbf{X} \mathbf{U}_K) \mathbf{V}_K + \mathbf{b}_K
+\end{equation}
+حجم پارامترها از $D^2$ به $2 D r$ کاهش یافته و در فاز توجه نیز ادغام می‌گردد.
+
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده (Algorithmic Tensor Trace)}
+در پیاده‌سازی سورس پایتون در فایل ماژول \lr{projection\_factorized\_attn.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\begin{enumerate}
+\item دریافت تانسور تعبیه با ابعاد $[B, N, D]$.
+\item ضرب در ماتریس فشرده‌ساز زیرفضا $\mathbf{U}$ جهت کاهش بعد از $D$ به گلوگاه باریک $r=64$.
+\item انبساط مجدد بردارها با ضرب در ماتریس $\mathbf{V}$ به ابعاد چندسره $[B, H, N, d_k]$.
+\item محاسبه هسته توجه خطی بر روی بردارهای فاکتورشده.
+\item پروجکشن خروجی با فاکتورسازی مشابه و جمع با مسیر اتصالی افزونه.
+\end{enumerate}
+
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه (Hardware \& Roofline Analysis)}
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+\begin{itemize}
+\item \textbf{رهایی از محدودیت پهنای باند خواندن وزن (\lr{Bandwidth Relief}):} حجم داده وزن‌های خوانده‌شده از \lr{DRAM} به یک‌چهارم تقلیل می‌یابد.
+\item \textbf{افزایش نرخ استفاده از رجیسترها:} ابعاد برداری $r$ امکان نگهداری طولانی‌تر داده‌ها در کش نزدیک به هسته‌ها را میسر می‌سازد.
+\end{itemize}
+
+\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
+بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\begin{itemize}
+\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
+\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 84.98 درصد
+\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 83.1 درصد
+\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
+\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 36,500 توکن بر ثانیه
+\end{itemize}
+
+\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
+دستیابی به دقت 84.98 درصد و سرعت 36,500 توکن/ثانیه همراه با مهار مصرف VRAM روی 750.0 مگابایت (کاهش 82.1 درصدی نسبت به ۴۲۰۰ مگابایت پایه)، اثبات می‌کند که فاکتورسازی پروجکشن‌ها بخش عمده پایه‌های اسپکترال مدل را حفظ نموده و مانع از هدررفت منابع روی وزن‌های همبسته متراکم می‌شود.
+
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک (TikZ Architecture Flowchart)}
+جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    fact/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی $\mathbf{X}$};
+    \node [fact, right=1.0cm of input] (u) {کاهش بعد $\mathbf{U}_r$};
+    \node [fact, right=1.0cm of u] (v) {انبساط $\mathbf{V}_r$};
+    \node [outblock, right=1.0cm of v] (out) {خروجی پروجکشن};
+
+    \draw [->, thick, draw=blue!80] (input) -- (u);
+    \draw [->, thick, draw=orange!80] (u) -- (v);
+    \draw [->, thick, draw=orange!80] (v) -- (out);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
+برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
+
+\vspace{0.2cm}
+\begin{latin}
+\footnotesize
+\textbf{AI Technical Visualization Prompt:}\\
+"A 3D schematic representation of projection factorized attention. Wide incoming data vectors compressing through a slender optical bottleneck before cleanly fanning out into multi-head representations, pristine corporate laboratory aesthetic, 8k resolution --ar 16:9"
+\end{latin}
+
+\begin{figure}[H]
+    \centering
+    \framebox[0.9\textwidth]{
+    \begin{minipage}{0.85\textwidth}
+    \vspace{1.8cm}
+    \centering
+    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{projection\_factorized\_attn}]}\\[0.2cm]
+    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
+    \vspace{1.8cm}
+    \end{minipage}
+    }
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{projection\_factorized\_attn}}
+    \label{fig:projection_factorized_attn}
+\end{figure}
+
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}

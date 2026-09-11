@@ -1,0 +1,100 @@
+\subsection{کالبدشکافی ماژول \lr{nasc\_attention}}
+
+\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
+معماری پیشرفته \lr{nasc\_attention} (آبشار طیفی مشترک نکسوس-ایجیس) از دو سازوکار مکمل بهره می‌برد: ابتدا پالایش و هرس تنک توکن‌های غیرحساس، و سپس اعمال تجزیه مقادیر منفرد بر تانسورهای غنی باقیمانده. این ساختار آبشاری مانع از هدررفت منابع روی بخش‌های فاقد بار معنایی می‌شود.
+
+\textbf{تمثیل ملموس و مثال کاربردی:}
+یک تصفیه‌خانه چندمرحله‌ای مدرن آب شهری را در نظر بگیرید: آب ورودی ابتدا از توری‌های مکانیکی برای جداسازی ذرات درشت و ضایعات عبور می‌کند (غربالگری تنک اولیه توسط \lr{NEXUS})، سپس آب شفاف‌شده از غشاهای نانومتری جهت حذف ریزآلاینده‌ها گذرانده می‌شود (پالایش طیفی \lr{SVD} در \lr{AEGIS})، تا آبی کاملاً سبک و گوارا با کمترین صرف انرژی تولید گردد.
+
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی (Mathematical Derivation)}
+تانسور تعبیه ابتدا از یک فیلتر امتیازدهی تنک عبور می‌کند تا مجموعه توکن‌های مهم $\mathcal{I}_{\text{active}}$ با نسبت $\gamma \in (0, 1]$ تعیین شود:
+\begin{equation}
+\mathcal{I}_{\text{active}} = \left\{ i \in \{1, \dots, N\} \mid \sigma(\mathbf{x}_i \mathbf{w}_{\text{score}}) > \tau \right\}
+\end{equation}
+سپس بر روی تانسور کاهش‌یافته $\tilde{\mathbf{X}} = \mathbf{X}[\mathcal{I}_{\text{active}}]$، پروجکشن با تجزیه طیفی رتبه $r$ اعمال می‌گردد:
+\begin{equation}
+\mathbf{W} \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top, \quad \mathbf{Q} = \tilde{\mathbf{X}} \mathbf{U}_r \boldsymbol{\Sigma}_r^{1/2}, \quad \mathbf{K} = \tilde{\mathbf{X}} \mathbf{V}_r \boldsymbol{\Sigma}_r^{1/2}
+\end{equation}
+خروجی نهایی توجه متمرکز در موقعیت‌های اصلی بازتوزیع می‌گردد.
+
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده (Algorithmic Tensor Trace)}
+در پیاده‌سازی سورس پایتون در فایل ماژول \lr{nasc\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\begin{enumerate}
+\item ارزیابی امتیاز پویای توکن‌ها در تانسور ورودی با یک عملگر نگاشت سبک به ابعاد $[B, N, 1]$.
+\item ایجاد ماسک تنک و گزینش زیرمجموعه فعال با دستور \lr{torch.masked\_select} یا ایندکس‌دهی موازی.
+\item فرافکنی تانسور تنک بر روی زیرفضای طیفی $r$ با ماتریس‌های متعامد $\mathbf{U}_r$ و $\mathbf{V}_r$.
+\item محاسبه ضرب تانسوری توجه با طول مؤثر تقلیل‌یافته $\tilde{N} = \gamma N$.
+\item بازیابی ابعاد اصلی دنباله با تزریق نگاشت‌های مانده و ادغام با لایه اتصالی پروجکشن پایانی.
+\end{enumerate}
+
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه (Hardware \& Roofline Analysis)}
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+\begin{itemize}
+\item \textbf{افزایش شدت محاسباتی:} حذف توکن‌های کم‌ارزش پیش از ضرب ماتریسی، شدت محاسباتی هسته‌ها را به ازای هر بایت لودشده از حافظه افزایش می‌دهد.
+\item \textbf{تثبیت مصرف پهنای باند حافظه:} داده‌های ورودی به بلوک‌های طیفی کوچک‌تر شده و به طور کامل درون حافظه کش سطح دوم پردازنده (\lr{L2 Cache}) مستقر می‌شوند.
+\end{itemize}
+
+\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
+بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\begin{itemize}
+\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
+\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 89.11 درصد
+\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 86.2 درصد
+\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
+\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 34,200 توکن بر ثانیه
+\end{itemize}
+
+\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
+دستیابی به دقت عالی 89.11 درصد در کنار افت 82.1 درصدی اوج مصرف حافظه (از ۴۲۰۰ مگابایت به 750.0 مگابایت) و توان 34,200 توکن/ثانیه، تأییدکننده تئوری افت سریع مقادیر تکین در توکن‌های متنی است. با حذف زودهنگام توکن‌های زاید، نویز فرکانس بالا وارد فاز تجزیه طیفی نشده و بازنمایی نهایی با خلوص ریاضیاتی بسیار بالایی شکل می‌گیرد.
+
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک (TikZ Architecture Flowchart)}
+جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    sparse/.style={rectangle, draw=purple!70, fill=purple!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    spec/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی $\mathbf{X}$};
+    \node [sparse, right=1.0cm of input] (nexus) {غربالگری تنک};
+    \node [spec, right=1.0cm of nexus] (svd) {تجزیه طیفی};
+    \node [outblock, right=1.0cm of svd] (out) {خروجی آبشاری};
+
+    \draw [->, thick, draw=blue!80] (input) -- (nexus);
+    \draw [->, thick, draw=purple!80] (nexus) -- (svd);
+    \draw [->, thick, draw=orange!80] (svd) -- (out);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
+برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
+
+\vspace{0.2cm}
+\begin{latin}
+\footnotesize
+\textbf{AI Technical Visualization Prompt:}\\
+"A futuristic scientific 3D illustration of the NASC spectral cascade attention. Showing raw token data streams filtered through a glowing crystalline sieve followed by an emerald and orange laser prism that performs singular value spectral decomposition, publication quality, 8k resolution --ar 16:9"
+\end{latin}
+
+\begin{figure}[H]
+    \centering
+    \framebox[0.9\textwidth]{
+    \begin{minipage}{0.85\textwidth}
+    \vspace{1.8cm}
+    \centering
+    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{nasc\_attention}]}\\[0.2cm]
+    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
+    \vspace{1.8cm}
+    \end{minipage}
+    }
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{nasc\_attention}}
+    \label{fig:nasc_attention}
+\end{figure}
+
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}

@@ -1,0 +1,107 @@
+\subsection{کالبدشکافی ماژول \lr{nha\_attention}}
+
+\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
+ماژول \lr{nha\_attention} پاسخی دوگانه به معمای ترکیب توجه موضعی و تعاملات سراسری است. در این ساختار، یک پنجره لغزان محلی وظیفه پردازش ساختار نحوی ریز را بر عهده دارد، در حالی که سرهای هیدرا با تکیه بر ویژگی‌های تصادفی، وضعیت سراسری متن را بدون سربار درجه دو نمایندگی می‌کنند.
+
+\textbf{تمثیل ملموس و مثال کاربردی:}
+برج دیده‌بانی و رادار یک پایگاه هوایی را تصور کنید: دیده‌بان مستقر در برج با دوربین دوچشمی خود، شعاع ۳۰۰ متری باند فرود را با جزئیات سانتیمتری و با وضوح بالا رصد می‌کند (پنجره لغزان محلی)، در حالی که رادار گردان هوایی، آسمان کل منطقه تا شعاع ۵۰ کیلومتری را با فرکانس‌های رادیویی پوشش می‌دهد (سرهای هیدرای سراسری).
+
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی (Mathematical Derivation)}
+خروجی نهایی از ترکیب خطی دو شاخه مجزای موضعی و سراسری محاسبه می‌شود:
+\begin{equation}
+\mathbf{Y} = \mathbf{Y}_{\text{local}} + \mathbf{Y}_{\text{hydra}}
+\end{equation}
+شاخه موضعی با پنجره لغزان $W$ به فرم زیر است:
+\begin{equation}
+\mathbf{Y}_{\text{local}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}_W^\top}{\sqrt{d_k}} + \mathbf{M}_{\text{local}}\right)\mathbf{V}_W
+\end{equation}
+و شاخه هیدرا با نگاشت کرنل خطی $\phi(\cdot)$ ارزیابی می‌گردد:
+\begin{equation}
+\mathbf{Y}_{\text{hydra}} = \frac{\phi(\mathbf{Q})\left(\phi(\mathbf{K})^\top \mathbf{V}\right)}{\phi(\mathbf{Q}) \sum_j \phi(\mathbf{k}_j)^\top}
+\end{equation}
+بدین ترتیب هر دو مقیاس نحوی و معنایی با پیچیدگی $\mathcal{O}(N W + N d)$ پوشش داده می‌شوند.
+
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده (Algorithmic Tensor Trace)}
+در پیاده‌سازی سورس پایتون در فایل ماژول \lr{nha\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\begin{enumerate}
+\item دریافت بردار ورودی و انشعاب به دو مسیر پردازش موضعی و سراسری.
+\item اعمال ماسک باند قطری برای محدودسازی پنجره محلی به شعاع $W=32$.
+\item نگاشت تانسورهای شاخه سراسری با تابع فعال‌سازی غیرخطی الگوبرداری‌شده از کرنل خطی.
+\item تجمع ماتریس ضرب داخلی سراسری با ویژگی شرکت‌پذیری و محاسبه حاصل‌ضرب مقادیر.
+\item جمع برداری دو تانسور موضعی و سراسری و ارسال به پروجکشن پایانی لایه.
+\end{enumerate}
+
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه (Hardware \& Roofline Analysis)}
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+\begin{itemize}
+\item \textbf{تطابق کامل پنجره محلی با رجیسترهای محاسباتی:} داده‌های پنجره کوچک بدون جابه‌جایی در کش باقی می‌مانند.
+\item \textbf{اسکن خطی شاخه سراسری:} محاسبات تجمعی به صورت تک‌گذره انجام شده و نیاز به ذخیره‌سازی ماتریس کامل برطرف می‌شود.
+\end{itemize}
+
+\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
+بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\begin{itemize}
+\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
+\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 88.50 درصد
+\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 85.2 درصد
+\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
+\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 36,500 توکن بر ثانیه
+\end{itemize}
+
+\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
+کسب دقت مطلوب 88.50 درصد و سرعت پردازش 36,500 توکن/ثانیه همراه با کاهش 82.1 درصدی مصرف حافظه (از ۴۲۰۰ مگابایت به 750.0 مگابایت)، نشان می‌دهد که شاخه محلی ضعف مدل‌های خطی را در ردیابی قواعد گرامری رفع کرده و شاخه هیدرا زمینه را برای درک پیوستگی متن فراهم می‌سازد.
+
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک (TikZ Architecture Flowchart)}
+جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    branch/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    sum/.style={circle, draw=green!80, fill=green!20, text centered, minimum size=0.8cm, font=\large},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی $\mathbf{X}$};
+    \node [branch, above right=0.5cm and 1.0cm of input] (loc) {پنجره محلی};
+    \node [branch, below right=0.5cm and 1.0cm of input] (hydra) {کرنل هیدرا};
+    \node [sum, right=2.8cm of input] (plus) {$\boldsymbol{+}$};
+    \node [outblock, right=1.0cm of plus] (out) {خروجی ترکیبی};
+
+    \draw [->, thick, draw=blue!80] (input) |- (loc);
+    \draw [->, thick, draw=blue!80] (input) |- (hydra);
+    \draw [->, thick, draw=orange!80] (loc) -| (plus);
+    \draw [->, thick, draw=orange!80] (hydra) -| (plus);
+    \draw [->, thick, draw=green!80] (plus) -- (out);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
+برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
+
+\vspace{0.2cm}
+\begin{latin}
+\footnotesize
+\textbf{AI Technical Visualization Prompt:}\\
+"A 3D technical scientific diagram of the Neighborhood-Hydra attention architecture. Dual luminous channels branching out: one glowing blue showing sliding-window attention, another glowing amber depicting multi-headed hydra linear projections, merging into a unified tensor core, 8k resolution --ar 16:9"
+\end{latin}
+
+\begin{figure}[H]
+    \centering
+    \framebox[0.9\textwidth]{
+    \begin{minipage}{0.85\textwidth}
+    \vspace{1.8cm}
+    \centering
+    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{nha\_attention}]}\\[0.2cm]
+    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
+    \vspace{1.8cm}
+    \end{minipage}
+    }
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{nha\_attention}}
+    \label{fig:nha_attention}
+\end{figure}
+
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}

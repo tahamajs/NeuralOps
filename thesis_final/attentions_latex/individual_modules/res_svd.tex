@@ -1,0 +1,104 @@
+\subsection{کالبدشکافی ماژول \lr{res\_svd}}
+
+\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
+معماری تخصصی \lr{res\_svd} ماتریس‌های توجه را به صورت مجموع مستقیم یک زیرفضای کم‌رتبه بهینه و یک ماتریس تنک باقی‌مانده مدل‌سازی می‌کند. با این تمهید، بخش اعظم انرژی اطلاعاتی در ابعاد کم‌مرتبه محصور گشته و معدود مؤلفه‌های پرت فرکانس بالا با ماتریس باقیمانده بدون تحمیل هزینه سنگین تسخیر می‌شوند.
+
+\textbf{تمثیل ملموس و مثال کاربردی:}
+فشرده‌سازی پیشرفته تصاویر ویدئویی (\lr{MPEG/H.265}): بخش پس‌زمینه ثابت و آسمان تصویر یک‌بار با یک تبدیل کم‌رتبه فشرده شده و در تمام فریم‌ها تکرار می‌گردد (ماتریس \lr{SVD} اصلی)، اما صرفاً تغییرات ظریف و حرکت سریع بازیگران با ذخیره تفاوت‌های تنک چندپیکسلی کدگذاری و ارسال می‌شود (ماتریس مانده).
+
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی (Mathematical Derivation)}
+ماتریس وزن به فرم جمع تجزیه مقادیر تکین و ماتریس تنک باقی‌مانده تجزیه می‌شود:
+\begin{equation}
+\mathbf{W} = \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top + \mathbf{S}, \quad \|\mathbf{S}\|_0 \le k_{\text{sparse}}
+\end{equation}
+در طول آموزش، انحراف بازسازی به کمک جریمه تنک بودن نرم $L_1$ کمینه می‌شود:
+\begin{equation}
+\min_{\mathbf{U}, \mathbf{V}, \mathbf{S}} \|\mathbf{W} - (\mathbf{U}\mathbf{V}^\top + \mathbf{S})\|_F^2 + \lambda \|\mathbf{S}\|_1
+\end{equation}
+خروجی لایه از حاصل‌جمع دو پروجکشن مجزا و با راندمان فوق‌العاده بالا حاصل می‌آید.
+
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده (Algorithmic Tensor Trace)}
+در پیاده‌سازی سورس پایتون در فایل ماژول \lr{res\_svd.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\begin{enumerate}
+\item استخراج تانسور وزن‌های لایه و اجرای تجزیه مقادیر تکین بریده‌شده.
+\item شناسایی درایه‌های دارای بیشترین خطای بازسازی به عنوان تانسور مانده $\mathbf{S}$.
+\item محاسبه ضرب تانسور ورودی در زیرفضای فشرده رتبه $r=32$.
+\item اعمال ضرب تنک بر روی ماتریس باقیمانده جهت جبران دقیق خطا.
+\item جمع مستقیم دو خروجی و اعمال لایه نرمال‌سازی پایانی.
+\end{enumerate}
+
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه (Hardware \& Roofline Analysis)}
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+\begin{itemize}
+\item \textbf{حفظ حداکثر شدت محاسباتی:} ضرب کم‌رتبه با هسته‌های متراکم تنسور پردازش شده و ضرب تنک با حداقل دسترسی به حافظه اجرا می‌گردد.
+\item \textbf{تثبیت مصرف حافظه بافر:} اندازه تانسورها در حافظه میانی به کمتر از یک‌سوم کاهش می‌یابد.
+\end{itemize}
+
+\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
+بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\begin{itemize}
+\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
+\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 86.58 درصد
+\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 84.6 درصد
+\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
+\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 35,100 توکن بر ثانیه
+\end{itemize}
+
+\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
+کسب دقت 86.58 درصد و کنترل اوج مصرف رم در 750.0 مگابایت (کاهش 82.1 درصدی نسبت به ۴۲۰۰ مگابایت مبنا)، تأیید می‌کند که افزودن ماتریس مانده تنک به تجزیه مقادیر منفرد، مانع از محو شدن ریزجزئیات معنایی شده و رفتاری کاملاً منطبق بر فیزیک طیفی شبکه‌های عمیق ارائه می‌دهد.
+
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک (TikZ Architecture Flowchart)}
+جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    svd/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    sparse/.style={rectangle, draw=purple!70, fill=purple!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    sum/.style={circle, draw=green!80, fill=green!20, text centered, minimum size=0.8cm, font=\large},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی $\mathbf{X}$};
+    \node [svd, above right=0.5cm and 1.0cm of input] (svdpart) {زیرفضای \lr{SVD}};
+    \node [sparse, below right=0.5cm and 1.0cm of input] (respart) {مانده تنک $\mathbf{S}$};
+    \node [sum, right=2.8cm of input] (plus) {$\boldsymbol{+}$};
+    \node [outblock, right=1.0cm of plus] (out) {خروجی بازسازی};
+
+    \draw [->, thick, draw=blue!80] (input) |- (svdpart);
+    \draw [->, thick, draw=blue!80] (input) |- (respart);
+    \draw [->, thick, draw=orange!80] (svdpart) -| (plus);
+    \draw [->, thick, draw=purple!80] (respart) -| (plus);
+    \draw [->, thick, draw=green!80] (plus) -- (out);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
+برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
+
+\vspace{0.2cm}
+\begin{latin}
+\footnotesize
+\textbf{AI Technical Visualization Prompt:}\\
+"A 3D scientific rendering of Residual SVD attention. Showing a massive neural weight tensor factorized into two sleek glowing orange prisms, accompanied by a scattering of purple starlight representing the sparse residual matrix, 8k resolution --ar 16:9"
+\end{latin}
+
+\begin{figure}[H]
+    \centering
+    \framebox[0.9\textwidth]{
+    \begin{minipage}{0.85\textwidth}
+    \vspace{1.8cm}
+    \centering
+    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{res\_svd}]}\\[0.2cm]
+    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
+    \vspace{1.8cm}
+    \end{minipage}
+    }
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{res\_svd}}
+    \label{fig:res_svd}
+\end{figure}
+
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}

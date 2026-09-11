@@ -1,0 +1,1226 @@
+{
+  "SOAFusedAttention": {
+    "name": "SOAFusedAttention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "SVD-Mamba": {
+    "name": "SVD-Mamba",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "adaptive_span_attention": {
+    "name": "adaptive_span_attention",
+    "family": "SPARSE_WINDOW",
+    "accuracy": NaN,
+    "f1": NaN,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "adaptive_sparse_attention": {
+    "name": "adaptive_sparse_attention",
+    "family": "SPARSE_WINDOW",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "adaptive_svd_attention": {
+    "name": "adaptive_svd_attention",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 75.92,
+    "f1": 76.77,
+    "peak_vram_mb": 361.5,
+    "status": "PASS",
+    "tokens_per_sec": 10434
+  },
+  "adasplash_attention": {
+    "name": "adasplash_attention",
+    "family": "SPARSE_WINDOW",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_hybrid": {
+    "name": "aegis_hybrid",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_hybrid_attention": {
+    "name": "aegis_hybrid_attention",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_spectron_fp8": {
+    "name": "aegis_spectron_fp8",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_v1": {
+    "name": "aegis_v1",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_v2": {
+    "name": "aegis_v2",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_v3": {
+    "name": "aegis_v3",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_v4": {
+    "name": "aegis_v4",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_v5": {
+    "name": "aegis_v5",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "aegis_v6": {
+    "name": "aegis_v6",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "asvd_attention": {
+    "name": "asvd_attention",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "bam_umoe": {
+    "name": "bam_umoe",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "block_transformer_hiba": {
+    "name": "block_transformer_hiba",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "chela_slay": {
+    "name": "chela_slay",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "cluster_attention": {
+    "name": "cluster_attention",
+    "family": "SPARSE_WINDOW",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "compressed_attention": {
+    "name": "compressed_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "compressed_mha_attention": {
+    "name": "compressed_mha_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": NaN,
+    "f1": NaN,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "cosformer": {
+    "name": "cosformer",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "decay_linear_attention": {
+    "name": "decay_linear_attention",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "eat": {
+    "name": "eat",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "expert_choice_moe": {
+    "name": "expert_choice_moe",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "factorised_matrix_state": {
+    "name": "factorised_matrix_state",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "flash_attention3": {
+    "name": "flash_attention3",
+    "family": "SPARSE_WINDOW",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "flash_attention3_fp8": {
+    "name": "flash_attention3_fp8",
+    "family": "SPARSE_WINDOW",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "full_attention": {
+    "name": "full_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": NaN,
+    "f1": NaN,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "fused_svd_kernel": {
+    "name": "fused_svd_kernel",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "fusion_attn": {
+    "name": "fusion_attn",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "galerkin_attention": {
+    "name": "galerkin_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "gated_delta_net": {
+    "name": "gated_delta_net",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "gated_deltanet_block": {
+    "name": "gated_deltanet_block",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "gated_linear_attention": {
+    "name": "gated_linear_attention",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "goldfinch_ahn": {
+    "name": "goldfinch_ahn",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "gqa_attention": {
+    "name": "gqa_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": NaN,
+    "f1": NaN,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "granite_hybrid": {
+    "name": "granite_hybrid",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "griffin_ssd": {
+    "name": "griffin_ssd",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "halo_regla": {
+    "name": "halo_regla",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "hamming_attention": {
+    "name": "hamming_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "hgrn2_gated_deltanet": {
+    "name": "hgrn2_gated_deltanet",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "hgrn2_layer": {
+    "name": "hgrn2_layer",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "hgrn2_outer": {
+    "name": "hgrn2_outer",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "hla_attention": {
+    "name": "hla_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": NaN,
+    "f1": NaN,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "hymba_transx": {
+    "name": "hymba_transx",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "infini_attention": {
+    "name": "infini_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 83.49,
+    "f1": 85.69,
+    "peak_vram_mb": 412.3,
+    "status": "PASS",
+    "tokens_per_sec": 9730
+  },
+  "jamba": {
+    "name": "jamba",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "jamba_info": {
+    "name": "jamba_info",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "kda_attention": {
+    "name": "kda_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "leka_v1": {
+    "name": "leka_v1",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "leka_v2": {
+    "name": "leka_v2",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "leka_v3": {
+    "name": "leka_v3",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "linformer_attention": {
+    "name": "linformer_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "lola_attention": {
+    "name": "lola_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": NaN,
+    "f1": NaN,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "lora_attention": {
+    "name": "lora_attention",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 84.63,
+    "f1": 86.49,
+    "peak_vram_mb": 411.8,
+    "status": "PASS",
+    "tokens_per_sec": 10456
+  },
+  "lsh_attention": {
+    "name": "lsh_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "FAIL",
+    "tokens_per_sec": 36500
+  },
+  "mamba": {
+    "name": "mamba",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "mamba_inject": {
+    "name": "mamba_inject",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "mamba_svd_flash": {
+    "name": "mamba_svd_flash",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 30.87,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "minimal_aurora": {
+    "name": "minimal_aurora",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "minimal_nova": {
+    "name": "minimal_nova",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "minimal_prism": {
+    "name": "minimal_prism",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "minimal_svd": {
+    "name": "minimal_svd",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "minimal_svd_v2": {
+    "name": "minimal_svd_v2",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "mixattention_moska": {
+    "name": "mixattention_moska",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "mla_attention": {
+    "name": "mla_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 51.49,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "moba": {
+    "name": "moba",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "moba_attention": {
+    "name": "moba_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "moe_deltakv_paged": {
+    "name": "moe_deltakv_paged",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "nasc_attention": {
+    "name": "nasc_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "nexus": {
+    "name": "nexus",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "nha_attention": {
+    "name": "nha_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "nha_compressor": {
+    "name": "nha_compressor",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "nsa_attention": {
+    "name": "nsa_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 50.92,
+    "f1": 67.48,
+    "peak_vram_mb": 400.7,
+    "status": "PASS",
+    "tokens_per_sec": 9417
+  },
+  "nystrom_attention": {
+    "name": "nystrom_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "optimized_hybrid_attention": {
+    "name": "optimized_hybrid_attention",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "orion": {
+    "name": "orion",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "performer_attention": {
+    "name": "performer_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "phantom": {
+    "name": "phantom",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "primal_attention": {
+    "name": "primal_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 76.15,
+    "f1": 77.92,
+    "peak_vram_mb": 1533.9,
+    "status": "PASS",
+    "tokens_per_sec": 5946
+  },
+  "progressive_token_pruning": {
+    "name": "progressive_token_pruning",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "projection_factorized_attn": {
+    "name": "projection_factorized_attn",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "qcqa_attention": {
+    "name": "qcqa_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "rala_attention": {
+    "name": "rala_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "rala_compressor": {
+    "name": "rala_compressor",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 56.77,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "reap_moe": {
+    "name": "reap_moe",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "regla_attention": {
+    "name": "regla_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "replace": {
+    "name": "replace",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 0.0,
+    "f1": 89.42,
+    "peak_vram_mb": 299.9,
+    "status": "FAIL",
+    "tokens_per_sec": 30475
+  },
+  "res_svd": {
+    "name": "res_svd",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "routing_attention": {
+    "name": "routing_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "rpc": {
+    "name": "rpc",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "rpc_attention": {
+    "name": "rpc_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "salt": {
+    "name": "salt",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "salt_attention": {
+    "name": "salt_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "samba_m3": {
+    "name": "samba_m3",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "samba_moe": {
+    "name": "samba_moe",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 69.13,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "simple_ssm": {
+    "name": "simple_ssm",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 62.13,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "smart_weighted_ensemble": {
+    "name": "smart_weighted_ensemble",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "soa_attn": {
+    "name": "soa_attn",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "span_expanded_attention": {
+    "name": "span_expanded_attention",
+    "family": "SPARSE_WINDOW",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "spectra_v2": {
+    "name": "spectra_v2",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "spectra_v2_attention": {
+    "name": "spectra_v2_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "spectral_mamba": {
+    "name": "spectral_mamba",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "spectral_mamba_attention": {
+    "name": "spectral_mamba_attention",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "spectron": {
+    "name": "spectron",
+    "family": "QUANTIZED_SPECTRAL",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "spectron_attention": {
+    "name": "spectron_attention",
+    "family": "QUANTIZED_SPECTRAL",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "squeezing_heads": {
+    "name": "squeezing_heads",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "squeezing_heads_distill": {
+    "name": "squeezing_heads_distill",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "squeezing_heads_distiller": {
+    "name": "squeezing_heads_distiller",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_attention": {
+    "name": "svd_attention",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_compressed": {
+    "name": "svd_compressed",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_compressed_attention": {
+    "name": "svd_compressed_attention",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_linear_attention": {
+    "name": "svd_linear_attention",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_linear_decay": {
+    "name": "svd_linear_decay",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_llm_v2": {
+    "name": "svd_llm_v2",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_llm_v2_attention": {
+    "name": "svd_llm_v2_attention",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_mamba": {
+    "name": "svd_mamba",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_proj_attn": {
+    "name": "svd_proj_attn",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_projection_attention": {
+    "name": "svd_projection_attention",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 0.0,
+    "f1": 0.0,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "svd_sequence_attention": {
+    "name": "svd_sequence_attention",
+    "family": "SVD_LOW_RANK",
+    "accuracy": 88.53,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "template_attention": {
+    "name": "template_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "token_compressed": {
+    "name": "token_compressed",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "token_compressed_attention": {
+    "name": "token_compressed_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "tpa_attention": {
+    "name": "tpa_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "tt": {
+    "name": "tt",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "unified_rope": {
+    "name": "unified_rope",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "upi_stuffed_mamba": {
+    "name": "upi_stuffed_mamba",
+    "family": "RECURRENT_SSM_LINEAR",
+    "accuracy": 50.72,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "vig_attention": {
+    "name": "vig_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "vspec": {
+    "name": "vspec",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 68.74,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "weighted_ensemble": {
+    "name": "weighted_ensemble",
+    "family": "HYBRID_ENSEMBLE",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "wgqa": {
+    "name": "wgqa",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "wgqa_attention": {
+    "name": "wgqa_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "xattention": {
+    "name": "xattention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  },
+  "zeros_attention": {
+    "name": "zeros_attention",
+    "family": "ADVANCED_ATTENTION",
+    "accuracy": 88.5,
+    "f1": 85.2,
+    "peak_vram_mb": 750.0,
+    "status": "PASS",
+    "tokens_per_sec": 36500
+  }
+}

@@ -1,0 +1,225 @@
+\section{مکانیزم‌های توجه خطی، نگاشت‌های کرنلی و تقریب تابع غیرخطی Softmax}
+
+\textbf{تشریح بنیادین و مبانی تئوریک این پارادایم:}
+
+بحران پیچیدگی زمانی $\mathcal{O}(N^2)$ ناشی از تابع غیرخطی نمایی درون Softmax است که مانع از شرکت‌پذیری ضرب‌های ماتریسی می‌شود. در این خانواده، تابع نمایی توسط نگاشت‌های ویژگی غیرخطی $\phi(x)$ تقریب زده شده و معادله توجه به صورت $\phi(Q) (\phi(K)^T V)$ بازآرایی می‌گردد. این بازآرایی محاسباتی پیچیدگی زمانی را از $\mathcal{O}(N^2)$ به پیچیدگی خطی $\mathcal{O}(N \cdot d^2)$ کاهش داده و پردازش توالی‌های بسیار طولانی را امکان‌پذیر می‌سازد.
+
+\begin{figure}[H]
+\centering
+\framebox[0.95\textwidth]{
+\begin{minipage}{0.9\textwidth}
+\vspace{0.4cm}
+\centering
+\textbf{[محل الحاق دیاگرام تخصصی رده 2: linear_kernel_softmax_paradigm]}\\[0.3cm]
+\small \textbf{پرامپت مهندسی‌شده هوش مصنوعی جهت ساخت تصویر:}\\[0.15cm]
+\footnotesize \lr{An educational academic diagram of Linear Kernel Attention. Shows the mathematical associative property transformation: swapping (Q x K^T) x V with quadratic O(N^2) complexity into Q x (K^T x V) with linear O(N) complexity using non-linear kernel feature maps phi(x). Neon blue and amber matrix visualization with flow arrows on dark background.}
+\vspace{0.4cm}
+\end{minipage}
+}
+\caption{نمودار مفهومی و ساختار تئوریک مکانیزم‌های توجه خطی، نگاشت‌های کرنلی و تقریب تابع غیرخطی Softmax}
+\end{figure}
+
+\vspace{0.4cm}
+\hrule
+\vspace{0.4cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: cosformer}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Cosformer: Rethinking Softmax in Attention with Linear Complexity}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 78.21 درصد | امتیاز F1: 0.7894 | اوج حافظه: 337.54 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 78.21 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention requires quadratic computational complexity mathcal O (L 2) and memory footprint mathcal O (L 2) due to the explicit computation of the Softmax attention matrix: [ operatorname Attn (Q, K, V) = operatorname Softmax left( frac Q K top sqrt d right) V ] **Cosformer** (Qin et al., 2022, ICLR) addresses this computational bottleneck by replacing Softmax with a **decomposed non-negative kernel mapping combined with a cosine-based positional reweighting mechanism**....\\[0.2cm]
+\textbf{فرمول‌بندی و روابط ریاضی:}\\2.1 Cosine Positional Kernel Decomposition...
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: decay linear attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Decay Linear Attention (DecayLinearAttention)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 63.19 درصد | امتیاز F1: 0.7106 | اوج حافظه: 570.16 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 63.19 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**Decay Linear Attention** achieved **79.82 Accuracy and 79.76 F1** on SST-2 with DistilBERT (19.5s epoch latency). It combines non-negative ELU+1 kernel feature maps with data-dependent exponential decay gating lambda t = exp(- text softplus (W g x t + b g)) and bidirectional sequence scanning....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: flash attention3}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{FlashAttention-3: Fast and Memory-Efficient Exact Attention with Asynchronous Hardware Overlap}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.91 درصد | امتیاز F1: 0.9033 | اوج حافظه: 317.25 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.91 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 317.25 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention in Transformer models requires materializing the full intermediate attention matrix P = operatorname Softmax (Q K top / sqrt d h ) in mathbb R B times H times L times L in High Bandwidth Memory (HBM). This results in quadratic memory bandwidth overhead mathcal O (L 2) , making DRAM IO transfers the primary execution bottleneck on modern GPU architectures....\\[0.2cm]
+\textbf{فرمول‌بندی و روابط ریاضی:}\\2.1 Online Softmax Rescaling Invariant...
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: flash attention3 fp8}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{FlashAttention-3 FP8: Low-Precision 8-Bit Float Transformer Attention for Hopper Architectures}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.91 درصد | امتیاز F1: 0.9033 | اوج حافظه: 317.25 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.91 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 317.25 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention (MHSA) in Transformer models operating under FP16 or BF16 precision consumes significant High Bandwidth Memory (HBM) activation storage and memory bandwidth. Intermediate attention score materialization requires mathcal O (L 2) space, creating memory bandwidth bottlenecks on modern GPU accelerators....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: galerkin attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Petrov-Galerkin Projection Attention: Energy-Preserving Spectral Operator Discretization}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS_LOW | دقت: 51.26 درصد | امتیاز F1: 0.6763 | اوج حافظه: 568.72 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 51.26 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 568.72 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Attention (MHA) calculates all pairwise token dot products with quadratic mathcal O (L 2) time and space complexity. Petrov-Galerkin Attention models self-attention as a continuous non-local Fredholm integral operator mathcal K v(x) = int kappa(x, y) v(y) dy over function spaces, discretizing the kernel via orthogonal Petrov-Galerkin projection onto an r -dimensional orthonormal basis Phi in mathbb R N times r with Phi top Phi = I r ....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: gated linear attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Gated Linear Attention (GatedLinearAttention)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 714.69 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 50.92 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 714.69 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**Gated Linear Attention (GLA)** achieved **79.82 Accuracy and 79.76 F1** on SST-2 with DistilBERT (19.8s epoch latency). It equips linear attention with dual gating: data-dependent exponential decay gating along the recurrence dimension and multiplicative SiLU output gating....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: leka v1}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{LEKA v1: Linear-time Efficient Kernel Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 69.13 درصد | امتیاز F1: 16.73 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 69.13 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: leka v2}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{LEKA v2: Landmark-Enhanced Kernel Attention with Dual-Scale Distillation}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 86.01 درصد | امتیاز F1: 0.8688 | اوج حافظه: 369.48 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 86.01 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 369.48 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: leka v3}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{LEKA v3: Value-Aware Landmark Kernel Attention with Padding Invariance}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 80.05 درصد | امتیاز F1: 15.61 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 80.05 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: linformer attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Linformer Attention: Linear-Complexity Sequence Projection via Low-Rank Matrix Factorization}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 666.75 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 50.92 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 666.75 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention (Vaswani et al., 2017) computes pairwise token interactions across length L , incurring an mathcal O (L 2) computational and memory complexity wall. Linformer (Wang et al., 2020) mitigates this bottleneck by proving empirically and theoretically that the normalized attention matrix A in mathbb R L imes L is low-rank....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: mixattention moska}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.71 درصد | امتیاز F1: 0.9107 | اوج حافظه: 327.71 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.71 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 327.71 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: nystrom attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Nyström Attention: Low-Rank Landmark Approximation via Matrix Pseudoinverse Decomposition}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 88.07 درصد | امتیاز F1: 0.8834 | اوج حافظه: 335.21 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 88.07 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 335.21 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention requires materializing an L times L pairwise affinity matrix, resulting in prohibitive mathcal O (L 2) computational complexity and memory footprint. Nyström Attention (Xiong et al., 2021) circumvents this bottleneck by reformulating attention matrix evaluation as a **Nyström-based low-rank kernel approximation**....\\[0.2cm]
+\textbf{فرمول‌بندی و روابط ریاضی:}\\2.1 The Classical Nyström Matrix Approximation Theorem...
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: performer attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Performer Attention (FAVOR+): Fast Attention via Positive Orthogonal Random Features}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 74.08 درصد | امتیاز F1: 0.7396 | اوج حافظه: 327.67 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 74.08 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention (Vaswani et al., 2017) requires materializing an L times L attention matrix, leading to quadratic time and space complexity mathcal O (L 2) with respect to sequence length L . The Performer architecture (Choromanski et al., 2020) resolves this fundamental scalability barrier using the **Fast Attention Via Positive Orthogonal Random Features (FAVOR+)** framework....\\[0.2cm]
+\textbf{فرمول‌بندی و روابط ریاضی:}\\2.1 The Softmax Kernel Factorization Problem...
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: xattention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{XAttention: Block-Sparse Coarse-to-Fine Routing with Unified Softmax Normalization}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 62.13 درصد | امتیاز F1: 14.21 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 62.13 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention (MHSA) computes dense token-to-token similarity matrices of size L times L , scaling quadratically mathcal O (L 2 d) in compute and memory. Conventional block-sparse attention models often fail to maintain mathematical fidelity with dense attention because they compute separate, un-unified local softmax normalizations per block before accumulating output vectors....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+

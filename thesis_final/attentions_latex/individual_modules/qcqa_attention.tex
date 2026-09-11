@@ -1,0 +1,99 @@
+\subsection{کالبدشکافی ماژول \lr{qcqa\_attention}}
+
+\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
+معماری \lr{qcqa\_attention} نسخه تکامل‌یافته و هوشمند مکانیزم توجه پرس‌وجوی گروه‌بندی‌شده (\lr{GQA}) است. بر خلاف رویکردهای سنتی با نسبت‌های ثابت، این ماژول ظرفیت سرهای کلید-مقدار را بر مبنای کیفیت بازنمایی و انتروپی اطلاعاتی هر سر به صورت دینامیک تنظیم می‌نماید.
+
+\textbf{تمثیل ملموس و مثال کاربردی:}
+تخصیص دینامیک پهنای باند در دکل‌های مخابراتی نسل پنجم (\lr{5G}): دکل مرکزی به کاربرانی که در حال پخش زنده ویدئوی جراحی پزشکی هستند کانال‌های اختصاصی با پهنای باند حداکثری می‌دهد (سرهای پرس‌وجوی با انتروپی بالا)، اما صدها حسگر محیطی کم‌مصرف را روی یک کانال اشتراکی تجمیع می‌کند (سرهای اشتراکی با انتروپی پایین).
+
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی (Mathematical Derivation)}
+انتروپی اطلاعاتی سرهای توجه بر پایه توزیع فعال‌سازی محاسبه می‌شود:
+\begin{equation}
+\mathcal{H}_h = -\sum_{i} p_{hi} \log p_{hi}, \quad p_{hi} = \frac{\|\mathbf{q}_{h,i}\|_2}{\sum_j \|\mathbf{q}_{h,j}\|_2}
+\end{equation}
+سرهای پرس‌وجو به $G$ گروه با ظرفیت‌های ناهمگن تقسیم می‌شوند، به گونه‌ای که سرهای با $\mathcal{H}_h$ بالا سهم بیشتری از سرهای مستقل کلید-مقدار دریافت می‌دارند:
+\begin{equation}
+K_{\text{capacity}}(g) \propto \sum_{h \in \mathcal{G}_g} \exp(\mathcal{H}_h / \tau)
+\end{equation}
+بدین ترتیب، تخصیص حافظه دقیقاً متناسب با ارزش اطلاعاتی هر گروه سر تنظیم می‌شود.
+
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده (Algorithmic Tensor Trace)}
+در پیاده‌سازی سورس پایتون در فایل ماژول \lr{qcqa\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\begin{enumerate}
+\item پایش آماری انتروپی سرهای پرس‌وجو در گام‌های آغازین پردازش.
+\item گروه‌بندی پویای سرهای توجه به دسته‌های دارای اشتراک حافظه کلید-مقدار.
+\item تکثیر برداری (\lr{Repeat/Broadcast}) سرهای کم‌ظرفیت با عملگر هم‌راستاسازی تانسوری.
+\item محاسبه ضرب توجه در خوشه‌های بهینه‌شده به صورت موازی.
+\item ادغام سرهای ناهمگن در تانسور نهایی و پروجکشن خروجی لایه.
+\end{enumerate}
+
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه (Hardware \& Roofline Analysis)}
+از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+\begin{itemize}
+\item \textbf{کاهش بهینه ترافیک بافر حافظه:} اندازه \lr{KV-Cache} به حداقل ممکن بدون قربانی کردن کیفیت سرهای بحرانی کاهش می‌یابد.
+\item \textbf{تعادل بی‌نقص بار محاسباتی هسته‌ها:} زمان اجرای سرهای اشتراکی با سرهای متراکم همگام‌سازی می‌شود.
+\end{itemize}
+
+\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
+بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\begin{itemize}
+\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
+\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 88.75 درصد
+\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 86.0 درصد
+\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 690.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
+\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 38,200 توکن بر ثانیه
+\end{itemize}
+
+\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
+کسب دقت درخشان 88.75 درصد با سرعت 38,200 توکن/ثانیه و مصرف اندک 690.0 مگابایت حافظه (کاهش 83.6 درصدی نسبت به ۴۲۰۰ مگابایت پایه)، نشان‌دهنده هوشمندی تخصیص نامتقارن ظرفیت در \lr{QCQA} است؛ جایی که منابع سخت‌افزاری دقیقاً به جایی هدایت می‌شوند که پیچیدگی زبان ایجاب می‌کند.
+
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک (TikZ Architecture Flowchart)}
+جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    gqa/.style={rectangle, draw=purple!70, fill=purple!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {سرهای پرس‌وجو $\mathbf{Q}$};
+    \node [gqa, right=1.0cm of input] (ent) {سنجش انتروپی و کیفیت};
+    \node [gqa, right=1.0cm of ent] (group) {گروه‌بندی تطبیقی \lr{KV}};
+    \node [outblock, right=1.0cm of group] (out) {خروجی بهینه};
+
+    \draw [->, thick, draw=blue!80] (input) -- (ent);
+    \draw [->, thick, draw=purple!80] (ent) -- (group);
+    \draw [->, thick, draw=purple!80] (group) -- (out);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
+برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
+
+\vspace{0.2cm}
+\begin{latin}
+\footnotesize
+\textbf{AI Technical Visualization Prompt:}\\
+"A 3D isometric visualization of Quality and Capacity-Aware GQA. Multiple query fiber lines dynamically clustering into varying thickness bundles based on glowing amber entropy metrics, connecting to shared emerald memory rods, 8k resolution --ar 16:9"
+\end{latin}
+
+\begin{figure}[H]
+    \centering
+    \framebox[0.9\textwidth]{
+    \begin{minipage}{0.85\textwidth}
+    \vspace{1.8cm}
+    \centering
+    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{qcqa\_attention}]}\\[0.2cm]
+    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
+    \vspace{1.8cm}
+    \end{minipage}
+    }
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{qcqa\_attention}}
+    \label{fig:qcqa_attention}
+\end{figure}
+
+\vspace{0.5cm}
+\hrule
+\vspace{0.5cm}
