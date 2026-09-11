@@ -24,7 +24,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import get_token_valid_mask
+from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -259,8 +259,12 @@ class TLinFormerAttention(BaseAttention):
         # Sequence dimension low-rank projections: [rank, max_seq_len]
         self.proj_k = nn.Parameter(torch.empty(self.rank, self.max_seq_len))
         self.proj_v = nn.Parameter(torch.empty(self.rank, self.max_seq_len))
-        nn.init.normal_(self.proj_k, std=0.02)
-        nn.init.normal_(self.proj_v, std=0.02)
+        with torch.no_grad():
+            nn.init.normal_(self.proj_k, std=0.02)
+            nn.init.normal_(self.proj_v, std=0.02)
+            min_dim = min(self.rank, self.max_seq_len)
+            self.proj_k.data[:min_dim, :min_dim].fill_diagonal_(1.0)
+            self.proj_v.data[:min_dim, :min_dim].fill_diagonal_(1.0)
 
         dropout_p = getattr(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
@@ -270,24 +274,29 @@ class TLinFormerAttention(BaseAttention):
             self.copy_weights(source_attn)
 
     @property
-    def query(self) -> LoRALinear:
-        return self.q_proj
-
+    def query(self) -> LoRALinear: return self.q_proj
     @property
-    def key(self) -> LoRALinear:
-        return self.k_proj
-
+    def key(self) -> LoRALinear: return self.k_proj
     @property
-    def value(self) -> LoRALinear:
-        return self.v_proj
-
+    def value(self) -> LoRALinear: return self.v_proj
     @property
-    def E(self) -> nn.Parameter:
-        return self.proj_k
-
+    def q_lin(self) -> LoRALinear: return self.q_proj
     @property
-    def F(self) -> nn.Parameter:
-        return self.proj_v
+    def k_lin(self) -> LoRALinear: return self.k_proj
+    @property
+    def v_lin(self) -> LoRALinear: return self.v_proj
+    @property
+    def out_lin(self) -> LoRALinear: return self.out_proj
+    @property
+    def dense(self) -> LoRALinear: return self.out_proj
+    @property
+    def o_proj(self) -> LoRALinear: return self.out_proj
+    @property
+    def c_proj(self) -> LoRALinear: return self.out_proj
+    @property
+    def E(self) -> nn.Parameter: return self.proj_k
+    @property
+    def F(self) -> nn.Parameter: return self.proj_v
 
     def copy_weights(self, src: Any) -> None:
         """
@@ -328,7 +337,7 @@ class TLinFormerAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if ("Conv1D" in c_attn_mod.__class__.__name__) or ("Conv1D" in base_c.__class__.__name__) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -343,7 +352,7 @@ class TLinFormerAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if ("Conv1D" in c_proj_mod.__class__.__name__) or ("Conv1D" in base_o.__class__.__name__) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -522,25 +531,30 @@ class TLinFormerAttention(BaseAttention):
         k_masked = k * v_mask_4d
         v_masked = v * v_mask_4d
 
-        # Low-rank sequence projection parameters
-        if N <= self.max_seq_len:
-            P_k = self.proj_k[:, :N].to(dtype=hidden_states.dtype, device=hidden_states.device)
-            P_v = self.proj_v[:, :N].to(dtype=hidden_states.dtype, device=hidden_states.device)
+        L = N
+        k_eff = min(self.rank, L)
+
+        if L <= self.rank:
+            P_k = self.proj_k[:L, :L].to(dtype=hidden_states.dtype, device=hidden_states.device)
+            P_v = self.proj_v[:L, :L].to(dtype=hidden_states.dtype, device=hidden_states.device)
+        elif L <= self.max_seq_len:
+            P_k = self.proj_k[:k_eff, :L].to(dtype=hidden_states.dtype, device=hidden_states.device)
+            P_v = self.proj_v[:k_eff, :L].to(dtype=hidden_states.dtype, device=hidden_states.device)
         else:
             P_k = F.interpolate(
-                self.proj_k.unsqueeze(0).unsqueeze(0),
-                size=(self.rank, N),
-                mode="bilinear",
+                self.proj_k[:k_eff].unsqueeze(0),
+                size=L,
+                mode="linear",
                 align_corners=False,
-            ).squeeze(0).squeeze(0).to(dtype=hidden_states.dtype, device=hidden_states.device)
+            ).squeeze(0).to(dtype=hidden_states.dtype, device=hidden_states.device)
             P_v = F.interpolate(
-                self.proj_v.unsqueeze(0).unsqueeze(0),
-                size=(self.rank, N),
-                mode="bilinear",
+                self.proj_v[:k_eff].unsqueeze(0),
+                size=L,
+                mode="linear",
                 align_corners=False,
-            ).squeeze(0).squeeze(0).to(dtype=hidden_states.dtype, device=hidden_states.device)
+            ).squeeze(0).to(dtype=hidden_states.dtype, device=hidden_states.device)
 
-        # Sequence contraction: (r, N) @ (B, H, N, d) -> (B, H, r, d)
+        # Sequence contraction: (k_eff, L) @ (B, H, L, d) -> (B, H, k_eff, d)
         K_proj = torch.matmul(P_k, k_masked)
         V_proj = torch.matmul(P_v, v_masked)
 
@@ -548,20 +562,26 @@ class TLinFormerAttention(BaseAttention):
         # Preserve causality by falling back to standard causal scaled dot-product attention
         if self.is_decoder:
             scale = 1.0 / math.sqrt(self.head_dim)
-            scores = torch.matmul(q, k.transpose(-2, -1)) * scale
-
-            causal_mask = torch.triu(
-                torch.full((N, N), float("-inf"), device=scores.device, dtype=scores.dtype),
-                diagonal=1,
-            )
-            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
-
-            if attention_mask is not None:
-                if attention_mask.dim() == 4:
-                    scores = scores + attention_mask.to(scores.dtype)
-                elif valid_mask is not None:
-                    pad_mask = valid_mask.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
-                    scores = scores.masked_fill(~pad_mask, -1e4)
+            if L <= self.rank:
+                scores = torch.matmul(q, K_proj.transpose(-2, -1)) * scale
+                causal_mask = torch.tril(torch.ones(L, L, device=scores.device, dtype=torch.bool))
+                scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+                if attention_mask is not None:
+                    scores = apply_attention_mask(scores, attention_mask)
+            else:
+                scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+                causal_mask = torch.triu(
+                    torch.full((N, N), float("-inf"), device=scores.device, dtype=scores.dtype),
+                    diagonal=1,
+                )
+                scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+                if attention_mask is not None:
+                    if attention_mask.dim() == 4:
+                        scores = scores + attention_mask.to(scores.dtype)
+                    elif valid_mask is not None:
+                        pad_mask = valid_mask.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
+                        scores = scores.masked_fill(~pad_mask, -1e4)
+                V_proj = v
 
             probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
             probs = self.dropout(probs)
@@ -576,33 +596,16 @@ class TLinFormerAttention(BaseAttention):
                     hm = hm.unsqueeze(1)
                 probs = probs * hm
 
-            context = torch.matmul(probs, v)
+            context = torch.matmul(probs, V_proj)
         else:
-            # Low-rank sequence projection parameters for non-causal encoder models
-            if N <= self.max_seq_len:
-                P_k = self.proj_k[:, :N].to(dtype=hidden_states.dtype, device=hidden_states.device)
-                P_v = self.proj_v[:, :N].to(dtype=hidden_states.dtype, device=hidden_states.device)
-            else:
-                P_k = F.interpolate(
-                    self.proj_k.unsqueeze(0).unsqueeze(0),
-                    size=(self.rank, N),
-                    mode="bilinear",
-                    align_corners=False,
-                ).squeeze(0).squeeze(0).to(dtype=hidden_states.dtype, device=hidden_states.device)
-                P_v = F.interpolate(
-                    self.proj_v.unsqueeze(0).unsqueeze(0),
-                    size=(self.rank, N),
-                    mode="bilinear",
-                    align_corners=False,
-                ).squeeze(0).squeeze(0).to(dtype=hidden_states.dtype, device=hidden_states.device)
-
-            # Sequence contraction: (r, N) @ (B, H, N, d) -> (B, H, r, d)
-            K_proj = torch.matmul(P_k, k_masked)
-            V_proj = torch.matmul(P_v, v_masked)
-
-            # Scaled attention logits: (B, H, N, d) @ (B, H, d, r) -> (B, H, N, r)
             scale = 1.0 / math.sqrt(self.head_dim)
             scores = torch.matmul(q, K_proj.transpose(-2, -1)) * scale
+
+            if attention_mask is not None:
+                if L <= self.rank:
+                    scores = apply_attention_mask(scores, attention_mask)
+                else:
+                    scores = scores.masked_fill((~valid_mask).unsqueeze(1).unsqueeze(-1), -1e4)
 
             probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
             probs = self.dropout(probs)
@@ -637,6 +640,7 @@ class TLinFormerAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("tlinformer_inject")
+@ATTENTION_REGISTRY.register("inject_tlinformer")
 def inject_tlinformer(
     layer: nn.Module,
     model_config: Any = None,

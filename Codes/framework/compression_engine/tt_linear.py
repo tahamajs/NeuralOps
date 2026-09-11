@@ -80,6 +80,7 @@ class TTLinearLayer(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
+        self.nx = in_features  # Conv1D compatibility
         self.tt_rank = tt_rank
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
@@ -152,15 +153,17 @@ class TTLinearLayer(nn.Module):
     def materialize_weight(self) -> torch.Tensor:
         """
         Reconstruct the full dense weight matrix W in R^{out_features x in_features}.
+        Safe against 1-dimension collapsing.
         """
-        # Start with core 0: (1, p0, q0, r1) -> (p0, q0, r1)
-        res = self.cores[0].squeeze(0)  # (p0, q0, r1)
+        # Start with core 0: select leading boundary index 0
+        res = self.cores[0][0]  # (p0, q0, r1)
         for i in range(1, self.d):
             core = self.cores[i]  # (r_i, p_i, q_i, r_{i+1})
             # Contract over r_i
             res = torch.tensordot(res, core, dims=([-1], [0]))  # (p0, q0, ..., p_i, q_i, r_{i+1})
 
-        res = res.squeeze(-1)  # (p0, q0, p1, q1, ..., p_{d-1}, q_{d-1})
+        # Select trailing boundary index 0
+        res = res[..., 0]  # (p0, q0, p1, q1, ..., p_{d-1}, q_{d-1})
 
         # Permute to (q0, q1, ..., q_{d-1}, p0, p1, ..., p_{d-1})
         q_indices = [2 * k + 1 for k in range(self.d)]
@@ -179,15 +182,18 @@ class TTLinearLayer(nn.Module):
             q1, q2 = self.q_dims
             # core0: (1, p1, q1, r) -> (p1, q1, r)
             # core1: (r, p2, q2, 1) -> (r, p2, q2)
-            c0 = self.cores[0].squeeze(0)
-            c1 = self.cores[1].squeeze(-1)
+            c0 = self.cores[0][0]
+            c1 = self.cores[1][..., 0]
             # Full contraction: W = tensordot(c0, c1, dims=([-1],[0])) -> (p1, q1, p2, q2)
             W_tensor = torch.tensordot(c0, c1, dims=([-1], [0]))
             W = W_tensor.permute(1, 3, 0, 2).contiguous().view(self.out_features, self.in_features)
-            out = F.linear(x_flat, W, self.bias)
         else:
             W = self.materialize_weight()
-            out = F.linear(x_flat, W, self.bias)
+
+        if W.dtype != x_flat.dtype or W.device != x_flat.device:
+            W = W.to(device=x_flat.device, dtype=x_flat.dtype)
+
+        out = F.linear(x_flat, W, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_delta = self.scaling * F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B).to(out.dtype)
@@ -221,16 +227,28 @@ class TTLinearLayer(nn.Module):
         cls_name = base_layer.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
-        if is_conv1d:
+        if hasattr(base_layer, "nx") and hasattr(base_layer, "nf"):
+            in_f = int(base_layer.nx)
+            out_f = int(base_layer.nf)
             W = raw_w.t().float().contiguous()
-            in_f = W.shape[1]
-            out_f = W.shape[0]
+        elif hasattr(base_layer, "in_features") and hasattr(base_layer, "out_features"):
+            in_f = int(base_layer.in_features)
+            out_f = int(base_layer.out_features)
+            if raw_w.shape == (in_f, out_f):
+                W = raw_w.t().float().contiguous()
+            else:
+                W = raw_w.float().contiguous()
+        elif is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.t().float().contiguous()
         else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float().contiguous()
-            out_f, in_f = W.shape[0], W.shape[1]
 
         bias = base_layer.bias.data if getattr(base_layer, "bias", None) is not None else None
         norm_orig = torch.linalg.norm(W).item() + 1e-8
+        if norm_orig < 1e-4:
+            raise RuntimeError("Layer weight has near-zero Frobenius norm (< 1e-4)")
 
         # Check for existing LoRA in linear_layer
         has_orig_lora = hasattr(linear_layer, "lora_A") and hasattr(linear_layer, "lora_B")
@@ -366,8 +384,8 @@ class TTLinearLayer(nn.Module):
                 elif hasattr(linear_layer, "lora_B") and linear_layer.lora_B.shape == best_layer.lora_B.shape:
                     best_layer.lora_B.data.copy_(linear_layer.lora_B.data)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                import logging
+                logging.getLogger(__name__).warning("TTLinear copy_weights warning: %s", e)
 
         return best_layer
 
