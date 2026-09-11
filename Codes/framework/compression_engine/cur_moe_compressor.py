@@ -35,7 +35,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("cur_moe_compressor")
+@COMPRESSOR_REGISTRY.register("cur_moe_class")
+@COMPRESSOR_REGISTRY.register("cur_moe_compressor_class")
 class CURMoECompressor(BaseCompressor):
     """
     Compresses Mixture of Experts (MoE) layers and dense FFN layers using CUR cross-approximation.
@@ -103,6 +104,11 @@ class CURMoECompressor(BaseCompressor):
 
         raw_w = target_mod.weight.data
         orig_w = raw_w.t().float() if is_conv1d else raw_w.float()
+        norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
+        if norm_orig.item() < 1e-4:
+            logger.warning("CURMoECompressor: Layer %s weight Frobenius norm %.6f < 1e-4, skipping", name, norm_orig.item())
+            return False
+
         out_f, in_f = orig_w.shape
         max_rank = min(out_f, in_f)
 
@@ -121,7 +127,6 @@ class CURMoECompressor(BaseCompressor):
         best_cur_layer = None
         best_err = float("inf")
         best_r = cur_r
-        norm_orig = torch.norm(orig_w, p="fro").clamp_min(1e-8)
 
         for _ in range(self.max_retries + 1):
             try:
@@ -150,7 +155,7 @@ class CURMoECompressor(BaseCompressor):
                 logger.warning("CURMoECompressor: Error on %s with rank %d: %s", name, cur_r, ex)
                 break
 
-        if best_err > self.max_error:
+        if best_err > self.max_error or best_cur_layer is None:
             logger.warning(
                 "CURMoECompressor: Layer %s error %.4f exceeded max_error %.4f",
                 name, best_err, self.max_error
@@ -162,44 +167,47 @@ class CURMoECompressor(BaseCompressor):
                     p.requires_grad = False
                 return False
 
-        if best_cur_layer is not None:
-            new_layer = best_cur_layer
-            compressed_layer = new_layer
-            # Preserve existing LoRA adapter weights if the source module has them
-            if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
-               module.lora_A is not None and module.lora_B is not None:
-                src_lA = getattr(module.lora_A, 'weight', module.lora_A)
-                src_lB = getattr(module.lora_B, 'weight', module.lora_B)
-                if hasattr(new_layer, 'lora_A') and new_layer.lora_A is not None:
-                    if hasattr(src_lA, 'data') and src_lA.shape == new_layer.lora_A.shape:
-                        new_layer.lora_A.data.copy_(src_lA.data)
-                if hasattr(new_layer, 'lora_B') and new_layer.lora_B is not None:
-                    if hasattr(src_lB, 'data') and src_lB.shape == new_layer.lora_B.shape:
-                        new_layer.lora_B.data.copy_(src_lB.data)
+        new_layer = best_cur_layer
+        compressed_layer = new_layer
 
-            if hasattr(module, 'base_layer'):
-                module.base_layer = compressed_layer  # put compressed layer inside wrapper
-                # module itself (LoRALinear wrapper) remains the replacement
-                new_module = module
+        has_base_layer = hasattr(module, 'base_layer') or (hasattr(module, 'linear') and (hasattr(module, 'lora_A') or hasattr(module, 'r')))
+        # Preserve existing LoRA adapter weights if the source module has them and not wrapped
+        if not has_base_layer and hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
+           module.lora_A is not None and module.lora_B is not None:
+            src_lA = getattr(module.lora_A, 'weight', module.lora_A)
+            src_lB = getattr(module.lora_B, 'weight', module.lora_B)
+            dst_lA = getattr(new_layer, 'lora_A', None)
+            dst_lB = getattr(new_layer, 'lora_B', None)
+            if dst_lA is not None and hasattr(src_lA, 'data') and hasattr(dst_lA, 'data') and src_lA.shape == dst_lA.shape:
+                dst_lA.data.copy_(src_lA.data)
+            if dst_lB is not None and hasattr(src_lB, 'data') and hasattr(dst_lB, 'data') and src_lB.shape == dst_lB.shape:
+                dst_lB.data.copy_(src_lB.data)
+
+        if hasattr(module, 'base_layer'):
+            module.base_layer = compressed_layer  # put compressed layer inside wrapper
+            new_module = module
+        elif hasattr(module, 'linear') and (hasattr(module, 'lora_A') or hasattr(module, 'r')):
+            module.linear = compressed_layer  # put compressed layer inside framework LoRALinear
+            new_module = module
+        else:
+            new_module = compressed_layer
+
+        if has_base_layer:
+            for p_name, p in module.named_parameters():
+                if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                    p.requires_grad = True
+        else:
+            if name == "":
+                self.model = new_module
             else:
-                new_module = compressed_layer
+                replace_module(self.model, name, new_module)
 
-            if hasattr(module, 'base_layer'):
-                for p_name, p in module.named_parameters():
-                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
-                        p.requires_grad = True
-            else:
-                if name == "":
-                    self.model = new_module
-                else:
-                    replace_module(self.model, name, new_module)
-
-            self.compressed_layers.append(name)
-            self.layer_errors[name] = float(best_err)
-            self.layer_ranks[name] = int(best_r)
-            self.total_orig_decomp_params += (in_f * out_f)
-            self.total_comp_decomp_params += (best_r * (in_f + out_f + best_r))
-            return True
+        self.compressed_layers.append(name)
+        self.layer_errors[name] = float(best_err)
+        self.layer_ranks[name] = int(best_r)
+        self.total_orig_decomp_params += (in_f * out_f)
+        self.total_comp_decomp_params += (best_r * (in_f + out_f + best_r))
+        return True
 
         return False
 
@@ -313,6 +321,7 @@ class CURMoECompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cur_moe")
+@COMPRESSOR_REGISTRY.register("cur_moe_compressor")
 @COMPRESSOR_REGISTRY.register("cur_moe_factory")
 @COMPRESSOR_REGISTRY.register("cur_moe_compressor_factory")
 def cur_moe_factory(
@@ -347,3 +356,20 @@ def cur_moe_factory(
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
+
+def inject_cur_moe(model: nn.Module, **kwargs: Any) -> Optional[nn.Module]:
+    """Safe injection hook for cur_moe. Catches exceptions, logs, and returns None on failure."""
+    try:
+        res = cur_moe_factory(model, **kwargs)
+        if isinstance(res, tuple):
+            return res[0]
+        return res
+    except Exception as e:
+        logger.error(f"Failed to inject cur_moe: {e}", exc_info=True)
+        return None
+
+
+def cur_moe_inject(model: nn.Module, **kwargs: Any) -> Optional[nn.Module]:
+    """Safe injection hook for cur_moe alias."""
+    return inject_cur_moe(model, **kwargs)
