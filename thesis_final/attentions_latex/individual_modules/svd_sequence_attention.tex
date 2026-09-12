@@ -4,7 +4,7 @@
 برخلاف روش‌های معمول که بعد کانال را فشرده می‌کنند، ماژول \lr{svd\_sequence\_attention} \textbf{بعد زمان و توالی توکن‌ها} را با تجزیه SVD فاکتورگیری کرده و پیچیدگی طولانی را مهار می‌سازد.
 
 \textbf{تمثیل ملموس و مثال کاربردی:}
-تمثیل \textbf{تدوینگر سینمایی در انتخاب فریم‌های کلیدی \lr{(Keyframes)}}: یک صحنه دو ساعته حاوی ده‌ها هزار فریم تکراری، با انتخاب ۱۰ فریم حیاتی نقاط عطف و پیوند زدن آن‌ها خلاصه می‌شود؛ مخاطب بدون تماشای راش‌های تکراری، تمام کشمکش داستان را به وضوح درک می‌کند.
+تمثیل \textbf{تدوینگر سینمایی در انتخاب فریم‌های کلیدی \lr{(Keyframes)}: یک صحنه دو ساعته حاوی ده‌ها هزار فریم تکراری، با انتخاب ۱۰ فریم حیاتی نقاط عطف و پیوند زدن آن‌ها خلاصه می‌شود؛ مخاطب بدون تماشای راش‌های تکراری، تمام کشمکش داستان را به وضوح درک می‌کند.
 
 \subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
 \begin{equation}
@@ -61,7 +61,7 @@
     \node [sum, right=1.0cm of v] (plus) {$\boldsymbol{+}$};
     \node [outblock, right=1.0cm of plus] (out) {خروجی کم‌مرتبه};
 
-    \node [lora, below=0.8cm of $(u)!0.5!(v)$] (res) {مسیر مکمل $\mathbf{W}_0$ / \lr{LoRA Adapter}};
+    \node [lora, below=0.8cm of $(u)!0.5!(v)$] (res) {مسیر مکمل $\mathbf{W}_0$ / \lr{LoRA Adapter};
 
     \draw [->, thick, draw=blue!80] (input) -- (u);
     \draw [->, thick, draw=orange!80] (u) -- (v);
@@ -89,12 +89,12 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{svd\_sequence\_attention}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for svd\_sequence\_attention)}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{svd\_sequence\_attention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for svd\_sequence\_attention)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}
     }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{svd\_sequence\_attention}}
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{svd\_sequence\_attention}
     \label{fig:svd_sequence_attention}
 \end{figure}
 

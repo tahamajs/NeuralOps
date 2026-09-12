@@ -1,7 +1,7 @@
 \subsection{کالبدشکافی ماژول \lr{token\_compressed\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-مکانیزم \lr{token\_compressed\_attention} بر پایه \textbf{هرس انطباقی توکن‌ها بر اساس برجستگی اطلاعاتی (Saliency-Based Pruning)} استوار است تا توکن‌های کم‌محتوا قبل از ورود به هسته ضرب ماتریسی فیلتر شوند.
+مکانیزم \lr{token\_compressed\_attention} بر پایه \textbf{هرس انطباقی توکن‌ها بر اساس برجستگی اطلاعاتی \lr{(Saliency-Based Pruning)}} استوار است تا توکن‌های کم‌محتوا قبل از ورود به هسته ضرب ماتریسی فیلتر شوند.
 
 \textbf{تمثیل ملموس و مثال کاربردی:}
 تمثیل \textbf{ویراستار ارشد یک خبرگزاری بین‌المللی}: ویراستار متون خام خبرنگاران را بازخوانی کرده، قیود غیرضروری، حواشی و واژگان کم‌ارزش را حذف می‌کند و تنها تیترها و وقایع کلیدی را روی تلکس خبری مخابره می‌نماید.
@@ -80,12 +80,12 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{token\_compressed\_attention}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for token\_compressed\_attention)}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{token\_compressed\_attention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for token\_compressed\_attention)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}
     }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{token\_compressed\_attention}}
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{token\_compressed\_attention}
     \label{fig:token_compressed_attention}
 \end{figure}
 

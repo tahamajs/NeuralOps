@@ -1,7 +1,7 @@
 \subsection{کالبدشکافی ماژول \lr{tpa\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
-ماژول \lr{tpa\_attention} بر مبنای \textbf{توجه ضرب تانسوری (Tensor Product Attention)} توسعه یافته که ماتریس‌های تصویر را به حاصل‌ضرب کرونکر دو ماتریس فاکتور تفکیک می‌کند.
+ماژول \lr{tpa\_attention} بر مبنای \textbf{توجه ضرب تانسوری \lr{(Tensor Product Attention)}} توسعه یافته که ماتریس‌های تصویر را به حاصل‌ضرب کرونکر دو ماتریس فاکتور تفکیک می‌کند.
 
 \textbf{تمثیل ملموس و مثال کاربردی:}
 یک \textbf{مکعب روبیک با چرخش‌های هماهنگ در صفحات افقی و عمودی}: به جای تغییر موقعیت تصادفی تک‌تک ۲۶ مکعب کوچک، چرخش ساختاریافته صفحات هندسی با کمترین حرکت، نظم کل ساختار را برقرار می‌کند.
@@ -10,7 +10,7 @@
 \begin{equation}
 \mathbf{W} = \mathbf{W}_1 \otimes \mathbf{W}_2, \quad \operatorname{TPA}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \left(\mathbf{Q}(\mathbf{W}_1 \otimes \mathbf{W}_2)\mathbf{K}^T\right) \mathbf{V}
 \end{equation}
-با کاهش ابعاد متغیرها از $D \times D$ به مجموع ابعاد فاکتورهای تانسوری $D_1^2 + D_2^2$ ($D = D_1 D_2$).
+با کاهش ابعاد متغیرها از $D \times D$ به مجموع ابعاد فاکتورهای تانسوری $D_1^2 + D_2^2$ $(D = D_1 D_2)$.
 
 \subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
 در پیاده‌سازی سورس پایتون در فایل ماژول \lr{tpa\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
@@ -80,12 +80,12 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{tpa\_attention}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for tpa\_attention)}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{tpa\_attention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for tpa\_attention)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}
     }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{tpa\_attention}}
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{tpa\_attention}
     \label{fig:tpa_attention}
 \end{figure}
 

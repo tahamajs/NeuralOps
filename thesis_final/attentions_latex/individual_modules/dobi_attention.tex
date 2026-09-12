@@ -117,7 +117,8 @@
 
 
 بررسی ماتریس درهم‌ریختگی مدل نشان می‌دهد که تحت شرایط آزمون صفر شات، مدل خودکاهنده \lr{GPT-2} با اعمال لایه‌های DOBI به پیش‌بینی متوازن‌ترین توزیع کلاسی در قالب اکثریت سوق یافته که به کسب دقت \lr{82.34\%} منجر شده است.
-مطالعات ابلیشن اثبات کرد که حذف بردار گیتینگ $\boldsymbol{\alpha}$ و اتکا به برش ثابت SVD افت دقت را به میزان \lr{-3.4\%} دیگر تشدید می‌نماید.\subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
+مطالعات ابلیشن اثبات کرد که حذف بردار گیتینگ $\boldsymbol{\alpha}$ و اتکا به برش ثابت SVD افت دقت را به میزان \lr{-3.4\%} دیگر تشدید می‌نماید.
+\subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
 کسب دقت \lr{82.34\%} بر روی مدل خودکاهنده \lr{GPT-2} نشان‌دهنده پایداری تحسین‌برانگیز لایه‌های DOBI-SVD در تقریب وزن‌های متراکم بدون آسیب‌زدن به توان پایه‌ای زبانی مدل است.
 
 علت صفر شدن شاخص F1 \lr{(0.00\%)} به تطبیق توزیعی مدل بر روی برچسب‌های کلاسی بدون بازآموزی ریزتنظیم مربوط می‌شود. در مدل‌های خودکاهنده که ذاتاً برای پیش‌بینی توکن بعدی بهینه‌سازی شده‌اند، تغییر ساختار لایه‌های خطی به پایه‌های فاکتورگیری‌شده نیازمند یک دوره کوتاه هم‌ترازی سر رگرسیون نهایی است.
@@ -147,10 +148,11 @@
 ماژول \lr{dobi\_attention} ثابت کرد که ادغام فاکتورگیری متعامد SVD با گیتینگ پیوسته مشتق‌پذیر، رویکردی بسیار کارآمد و منعطف برای فشرده‌سازی مدل‌های ترانسفورمر خودکاهنده است. این معماری توازن ارزنده‌ای میان پایه‌های ریاضی محکم و پیاده‌سازی کاربردی در بستر رساله ارائه می‌نماید.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-\subsubsection*{بخش ۱۲: مراجع \lr{(References)}}
-\begin{enumerate}
-    \item \textbf{Radford, A., et al. (2019).} Language models are unsupervised multitask learners. \textit{OpenAI blog}, 1(8), 9.
-    \item \textbf{Edelman, A., Arias, T. A., \& Smith, S. T. (1998).} The geometry of algorithms with orthogonality constraints. \textit{SIAM journal on Matrix Analysis and Applications}, 20(2), 303--353.
-    \item \textbf{Zhang, C., et al. (2022).} Differentiable pruning via continuous rank relaxation for deep networks. \textit{IEEE Transactions on Pattern Analysis and Machine Intelligence}, 44(11), 7850--7864.
-    \item \textbf{Vaswani, A., et al. (2017).} Attention is all you need. \textit{Advances in Neural Information Processing Systems}, 30, 5998--6008.
-\end{enumerate}
+در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:dobi_svd_arch_dobi_attention} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_dobi_svd.jpeg}
+\caption{معماری \lr{Dobi-SVD}: تجزیه مقادیر منفرد مشتق‌پذیر با گیتینگ اسپکترال یادگیرنده \lr{(Learnable Spectral Gating)}}
+\label{fig:dobi_svd_arch_dobi_attention}
+\end{figure}

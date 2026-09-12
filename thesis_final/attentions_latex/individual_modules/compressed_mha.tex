@@ -63,7 +63,7 @@
 
 پشتیبانی کامل از سازوکار \lr{GQA} با تابع کمکی \lr{repeat\_kv} پشتیبانی می‌شود.
 
-خروجی با عملگر \lr{.contiguous().view(B, N, D)} برای پردازش لایه‌های بعدی آماده می‌شود.
+خروجی با عملگر \lr{.contiguous().view\lr{(B, N, D)}} برای پردازش لایه‌های بعدی آماده می‌شود.
 
 \subsubsection*{بخش ۶: تحلیل سخت‌افزاری و عملکرد \lr{(Hardware Analysis)}}
 بر پایه مدل سقف نظری \lr{(Roofline Model)} روی پردازنده \lr{NVIDIA RTX 4070}، این ماژول محاسبات را با الگوهای منظم تانسور کورها هماهنگ می‌سازد.
@@ -101,7 +101,8 @@
 
 
 ماتریس درهم‌ریختگی نشان می‌دهد که کسب دقت \lr{83.14\%} حاکی از حفظ بخش اعظم توانایی تشخیصی مدل با وجود چالش افت F1 است.
-مطالعات ابلیشن پایداری ساختار فشرده را در برابر نوسانات طول دنباله تایید نمود.\subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
+مطالعات ابلیشن پایداری ساختار فشرده را در برابر نوسانات طول دنباله تایید نمود.
+\subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
 دقت ارزیابی \lr{83.14\%} بر روی مدل \lr{Qwen-0.5B} نشان می‌دهد که فشرده‌سازی MHA ساختار معنایی متن را در انکودرهای زبانی حفظ کرده است.
 
 افت شاخص F1 به \lr{0.00\%} نمایانگر انقباض مرزهای تصمیم‌گیری به سمت کلاس با فراوانی بالاتر است.
@@ -131,10 +132,11 @@
 ماژول \lr{compressed\_mha} نشان داد که تکنیک‌های فشرده‌سازی تانسوری لایه توجه بر روی مدل‌های زبانی دیکودر نسل جدید نیز قابل پیاده‌سازی بوده و بستری مناسب برای تحقیقات آتی رساله در زمینه بهینه‌سازی مدل‌های تولیدی فراهم می‌سازد.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-\subsubsection*{بخش ۱۲: مراجع \lr{(References)}}
-\begin{enumerate}
-    \item \textbf{Bai, J., et al. (2023).} Qwen technical report. \textit{arXiv preprint arXiv:2309.16609}.
-    \item \textbf{Shazeer, N. (2019).} Fast transformer decoding: One write-head is all you need. \textit{arXiv preprint arXiv:1911.02150}.
-    \item \textbf{Hu, E. J., et al. (2021).} LoRA: Low-rank adaptation of large language models. \textit{ICLR 2022}.
-    \item \textbf{Vaswani, A., et al. (2017).} Attention is all you need. \textit{Advances in Neural Information Processing Systems}, 30, 5998--6008.
-\end{enumerate}
+در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:compressed_mha_joint_svd_arch_compressed_mha} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_compressed_mha_joint_svd.jpeg}
+\caption{معماری توجه چندسره فشرده از طریق \lr{SVD} برش‌خورده مشترک \lr{(Joint Truncated SVD)} روی پروجکشن‌های \lr{QKV}}
+\label{fig:compressed_mha_joint_svd_arch_compressed_mha}
+\end{figure}

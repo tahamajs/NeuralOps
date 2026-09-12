@@ -8,7 +8,7 @@
 \begin{itemize}
     \item \textbf{نام کامل انگلیسی ماژول:} \lr{soa\_fused\_module}
     \item \textbf{نام فارسی معادل:} مکانیزم توجه متعامد اشتراکی پیوسته سخت‌افزاری با بهینه‌سازی ثبات‌های ترایتون \lr{(Hardware-Fused Shared Orthogonal Attention - SOA Fused)}
-    \item \textbf{دسته‌بندی معماری:} \lr{Hardware-Fused \& Quantized Attention (FP8/Triton)}
+    \item \textbf{دسته‌بندی معماری:} \lr{Hardware-Fused \& Quantized Attention \lr{(FP8/Triton)}}
     \item \textbf{مرجع علمی و محاسباتی:} بهینه‌سازی ادغام‌شده لایه‌های توجه ترانسفورمر بر پایه تجزیه SVD صفر شات و کرنل‌های فیوزشده حافظه سریع \lr{(Hardware-Aware Fused Kernels, Triton JIT)}
     \item \textbf{خلاصه ایده اصلی:} ماژول \lr{soa\_fused\_module} اوج دستاورد مهندسی و شتاب‌بخشی سخت‌افزاری در این رساله است. این ماژول با ادغام نگاشت‌های پروجکشن کم‌مرتبه SVD در درون رجیسترهای کش SRAM پردازنده گرافیکی از طریق کرنل‌های فیوزشده ترایتون، مصرف حافظه موقت را بیش از \lr{۹۳\%} کاهش داده و توان عملیاتی استنتاج را به مرز خیره‌کننده ۹۰ هزار توکن بر ثانیه با شاخص توازن F1 عالی می‌رساند.
     \item \textbf{جایگاه در تبارشناسی توجه:} این ماژول در لبه دانش پردازش شتاب‌یافته توجه و تلفیق محاسبات کم‌مرتبه با مهندسی کرنل‌های سطح پایین سخت‌افزار قرار دارد.
@@ -123,12 +123,13 @@ I_{\text{fused}} = \frac{2 B N (D \cdot k + k \cdot D_{\text{out}})}{B N D \cdot
 
 برخلاف بسیاری از ماژول‌های فشرده‌سازی که با ریزش F1 مواجه شده‌اند، ماژول \lr{soa\_fused\_module} موفق به کسب امتیاز F1 فوق‌العاده درخشان \lr{81.91\%} شده است که حاکی از توازن کامل بازشناسی میان هر دو کلاس مثبت و منفی بدون هرگونه سوگیری است.
 ماتریس درهم‌ریختگی نشان‌دهنده توزیع متقارن و یکنواخت پیش‌بینی‌ها در دو طبقه معنایی است.
-مطالعات ابلیشن نشان داد که افزایش رتبه تنگنا به $k=128$ حافظه را به \lr{340 MB} افزایش می‌دهد ولی دقت را تنها \lr{+0.4\%} تغییر می‌دهد که انتخاب $k=64$ را به عنوان نقطه زانویی بهینه اثبات می‌کند.\subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
+مطالعات ابلیشن نشان داد که افزایش رتبه تنگنا به $k=128$ حافظه را به \lr{340 MB} افزایش می‌دهد ولی دقت را تنها \lr{+0.4\%} تغییر می‌دهد که انتخاب $k=64$ را به عنوان نقطه زانویی بهینه اثبات می‌کند.
+\subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
 کسب دقت \lr{81.31\%} در کنار شاخص آماری درخشان F1 برابر با \lr{81.91\%}، بزرگ‌ترین پیروزی تجربی این معماری در مدل \lr{RoBERTa-base} به شمار می‌رود. این نتیجه به وضوح نشان می‌دهد که فاکتورگیری تنگنای متعامد SVD قادر است اطلاعات معنایی هر دو کلاس را به طور کاملاً متوازن در فضای محدود ۶۴ بعدی حفظ نماید.
 
 کاهش \lr{-93.27\%} در مصرف حافظه موقت \lr{رسیدن به 282.69 MB}، مانع حافظه‌ای استفاده از مدل‌های زبانی پیچیده را به طور کامل در محیط‌های محاسباتی محدود مرتفع می‌سازد.
 
-دستیابی به توان عملیاتی نزدیک به ۹۰ هزار توکن بر ثانیه \lr{\lr{89,683.02 tok/s}} معادل شتاب عملیاتی \lr{5.82x}، نشان‌دهنده حذف موثر تاخیرهای حافظه و بهره‌برداری کامل از قدرت پردازشی تانسور کورها در سخت‌افزار مدرن است.
+دستیابی به توان عملیاتی نزدیک به ۹۰ هزار توکن بر ثانیه \lr{89,683.02 tok/s} معادل شتاب عملیاتی \lr{5.82x}، نشان‌دهنده حذف موثر تاخیرهای حافظه و بهره‌برداری کامل از قدرت پردازشی تانسور کورها در سخت‌افزار مدرن است.
 
 تطابق کامل نتایج تجربی با پیش‌بینی‌های مدل سقف نظری اثبات کرد که پیاده‌سازی فیوزشده در سطح کرنل، راهکار بنیادین برای عبور از محدودیت‌های پهنای باند است.
 
@@ -153,10 +154,11 @@ I_{\text{fused}} = \frac{2 B N (D \cdot k + k \cdot D_{\text{out}})}{B N D \cdot
 ماژول \lr{soa\_fused\_module} به عنوان شاهکار مهندسی و تجربی این رساله، تلفیق بی‌نظیری از زیبایی تئوری فاکتورگیری SVD و مهندسی پیشرفته سخت‌افزاری را به نمایش گذاشت. این ماژول ثابت کرد که می‌توان مرزهای کارایی و فشردگی را در مدل‌های زبانی مدرن بدون افت توازن هوشمندی به طور چشمگیری ارتقا داد.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-\subsubsection*{بخش ۱۲: مراجع \lr{(References)}}
-\begin{enumerate}
-    \item \textbf{Tillet, P., Kung, H. T., \& Cox, D. (2019).} Triton: an intermediate language and compiler for tiled neural network computations. \textit{Proceedings of the 1st ACM SIGPLAN International Workshop on Machine Learning and Programming Languages}, 10--19.
-    \item \textbf{Dao, T. (2023).} FlashAttention-2: Faster attention with better parallelism and work partitioning. \textit{arXiv preprint arXiv:2307.08691}.
-    \item \textbf{Williams, S., Waterman, A., \& Patterson, D. (2009).} Roofline: an insightful visual performance model for multicore architectures. \textit{Communications of the ACM}, 52(4), 65--76.
-    \item \textbf{Vaswani, A., et al. (2017).} Attention is all you need. \textit{Advances in Neural Information Processing Systems}, 30, 5998--6008.
-\end{enumerate}
+در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:shared_orthogonal_attention_arch_soa_fused_module} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_shared_orthogonal_attention.jpeg}
+\caption{معماری توجه متعامد اشتراکی \lr{SOA (Shared Orthogonal Attention)} با تنگناهای نهان اختصاصی به ازای هر پروجکشن}
+\label{fig:shared_orthogonal_attention_arch_soa_fused_module}
+\end{figure}

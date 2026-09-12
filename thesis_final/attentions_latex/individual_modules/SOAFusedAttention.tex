@@ -41,7 +41,7 @@
 \end{itemize}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-دقت \lr{81.31\%}ی و پایداری عملکرد با شاخص F1 برابر \lr{81.91\%} تأیید می‌کند که فاکتورسازی زیرفضای نهفته به کمک تجزیه مقادیر منفرد (SVD) مؤلفه‌های فرکانس بالای حامل نویز را حذف کرده و هسته معنایی جملات را حفظ نموده است. از منظر سخت‌افزاری، کاهش اوج مصرف حافظه به \lr{282.7 MB} (کاهش چشمگیر \lr{93.3\%}ی در مقایسه با مبنای \lr{4200 MB}ی) حاصل همجوشی محاسبات در سطح حافظه کش پرسرعت SRAM و حذف رفت‌وبرگشت‌های متوالی تانسورهای میانی به حافظه سراسری DRAM است که توان عملیاتی را تا \lr{36,500} توکن بر ثانیه تثبیت کرده است.
+دقت \lr{81.31\%}ی و پایداری عملکرد با شاخص F1 برابر \lr{81.91\%} تأیید می‌کند که فاکتورسازی زیرفضای نهفته به کمک تجزیه مقادیر منفرد \lr{(SVD)} مؤلفه‌های فرکانس بالای حامل نویز را حذف کرده و هسته معنایی جملات را حفظ نموده است. از منظر سخت‌افزاری، کاهش اوج مصرف حافظه به \lr{282.7 MB} (کاهش چشمگیر \lr{93.3\%}ی در مقایسه با مبنای \lr{4200 MB}ی) حاصل همجوشی محاسبات در سطح حافظه کش پرسرعت SRAM و حذف رفت‌وبرگشت‌های متوالی تانسورهای میانی به حافظه سراسری DRAM است که توان عملیاتی را تا \lr{36,500} توکن بر ثانیه تثبیت کرده است.
 
 \subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
@@ -81,15 +81,25 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{SOAFusedAttention}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for SOAFusedAttention)}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{SOAFusedAttention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for SOAFusedAttention)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}
     }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{SOAFusedAttention}}
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{SOAFusedAttention}
     \label{fig:SOAFusedAttention}
 \end{figure}
 
 \vspace{0.5cm}
 \hrule
 \vspace{0.5cm}
+
+\subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:shared_orthogonal_attention_arch_SOAFusedAttention} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_shared_orthogonal_attention.jpeg}
+\caption{معماری توجه متعامد اشتراکی \lr{SOA (Shared Orthogonal Attention)} با تنگناهای نهان اختصاصی به ازای هر پروجکشن}
+\label{fig:shared_orthogonal_attention_arch_SOAFusedAttention}
+\end{figure}

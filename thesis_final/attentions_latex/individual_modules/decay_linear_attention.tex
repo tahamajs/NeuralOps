@@ -16,7 +16,7 @@
 \begin{equation}
 \bar{\mathbf{A}}_t = \exp(\boldsymbol{\Delta}_t \mathbf{A}), \quad \bar{\mathbf{B}}_t = (\boldsymbol{\Delta}_t \mathbf{A})^{-1} (\bar{\mathbf{A}}_t - \mathbf{I}) \cdot (\boldsymbol{\Delta}_t \mathbf{B}_t)
 \end{equation}
-جهت برقراری پایداری لیاپانوف \lr{(Lyapunov Stability)}، مقادیر ویژه ماتریس $\mathbf{A}$ باید در نیم‌صفحه منفی چپ صفحه مختلط قرار داشته باشند ($\operatorname{Re}(\lambda_i(\mathbf{A})) < 0$)، که با قفل کردن ماتریس به صورت ماتریس قطری هرمیتی منفی تضمین می‌گردد.
+جهت برقراری پایداری لیاپانوف \lr{(Lyapunov Stability)}، مقادیر ویژه ماتریس $\mathbf{A}$ باید در نیم‌صفحه منفی چپ صفحه مختلط قرار داشته باشند $(\operatorname{Re}(\lambda_i(\mathbf{A})) < 0)$، که با قفل کردن ماتریس به صورت ماتریس قطری هرمیتی منفی تضمین می‌گردد.
 
 \subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
 در پیاده‌سازی سورس پایتون در فایل ماژول \lr{decay\_linear\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
@@ -89,12 +89,12 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{decay\_linear\_attention}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for decay\_linear\_attention)}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{decay\_linear\_attention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for decay\_linear\_attention)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}
     }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{decay\_linear\_attention}}
+    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{decay\_linear\_attention}
     \label{fig:decay_linear_attention}
 \end{figure}
 
