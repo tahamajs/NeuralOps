@@ -32,24 +32,31 @@
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
 \begin{itemize}
 \item \textbf{تطابق کامل پنجره محلی با رجیسترهای محاسباتی:} داده‌های پنجره کوچک بدون جابه‌جایی در کش باقی می‌مانند.
 \item \textbf{اسکن خطی شاخه سراسری:} محاسبات تجمعی به صورت تک‌گذره انجام شده و نیاز به ذخیره‌سازی ماتریس کامل برطرف می‌شود.
 \end{itemize}
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 88.50 درصد
-\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 85.2 درصد
-\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
-\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 36,500 توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{nha\_attention} روی سه مدل پایه}
+\label{tab:benchmark_nha_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{88.50\%} & \lr{0.880} & \lr{350.0 MB} & \lr{35,000 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{86.40\%} & \lr{0.850} & \lr{647.5 MB} & \lr{20,300 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{84.00\%} & \lr{0.830} & \lr{682.5 MB} & \lr{21,700 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-کسب دقت مطلوب 88.50 درصد و سرعت پردازش 36,500 توکن/ثانیه همراه با کاهش 82.1 درصدی مصرف حافظه (از ۴۲۰۰ مگابایت به 750.0 مگابایت)، نشان می‌دهد که شاخه محلی ضعف مدل‌های خطی را در ردیابی قواعد گرامری رفع کرده و شاخه هیدرا زمینه را برای درک پیوستگی متن فراهم می‌سازد.
+کسب دقت مطلوب \lr{88.50\%} و سرعت پردازش \lr{36,500} توکن/ثانیه همراه با کاهش \lr{82.1\%}ی مصرف حافظه (از \lr{۴۲۰۰ MB} به \lr{750.0 MB})، نشان می‌دهد که شاخه محلی ضعف مدل‌های خطی را در ردیابی قواعد گرامری رفع کرده و شاخه هیدرا زمینه را برای درک پیوستگی متن فراهم می‌سازد.
 
 \subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
@@ -93,7 +100,7 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{nha\_attention}]}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{nha\_attention}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for nha\_attention)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}

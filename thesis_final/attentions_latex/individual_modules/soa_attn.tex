@@ -28,24 +28,31 @@
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
 \begin{itemize}
 \item \textbf{حذف افزونگی حافظه در سرهای موازی:} هر سر زیرفضای منحصربه‌فردی را ردیابی می‌کند و از دوباره‌کاری در حافظه جلوگیری می‌شود.
-\item \textbf{مهار ترافیک تراشه‌ای:} داده‌ها در حافظه کش محلی \lr{SRAM} محصور شده و اوج مصرف به 750.0 مگابایت محدود می‌گردد.
+\item \textbf{مهار ترافیک تراشه‌ای:} داده‌ها در حافظه کش محلی \lr{SRAM} محصور شده و اوج مصرف به \lr{750.0 MB} محدود می‌گردد.
 \end{itemize}
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 86.70 درصد
-\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 84.5 درصد
-\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
-\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 36,500 توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{soa\_attn} روی سه مدل پایه}
+\label{tab:benchmark_soa_attn}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{81.31\%} & \lr{0.819} & \lr{282.7 MB} & \lr{86,195 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.675} & \lr{323.6 MB} & \lr{60,450 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.675} & \lr{486.2 MB} & \lr{42,558 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-کسب دقت مطلوب 86.70 درصد و سرعت 36,500 توکن بر ثانیه با کاهش 82.1 درصدی حافظه (از ۴۲۰۰ مگابایت مبنا به 750.0 مگابایت)، موفقیت ایده انتقال ارتوگونال را در حذف همبستگی‌های مازاد میان سرهای توجه به اثبات می‌رساند.
+کسب دقت مطلوب \lr{86.70\%} و سرعت \lr{36,500} توکن بر ثانیه با کاهش \lr{82.1\%}ی حافظه (از \lr{۴۲۰۰ MB} مبنا به \lr{750.0 MB})، موفقیت ایده انتقال ارتوگونال را در حذف همبستگی‌های مازاد میان سرهای توجه به اثبات می‌رساند.
 
 \subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
@@ -85,7 +92,7 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{soa\_attn}]}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{soa\_attn}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for soa\_attn)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}

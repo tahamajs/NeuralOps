@@ -28,24 +28,31 @@
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
 \begin{itemize}
 \item \textbf{همپوشانی محاسبات در جریان‌های موازی \lr{CUDA Streams}:} شاخه‌های مختلف به صورت هم‌زمان پردازش شده و هسته‌های بیکار را به کار می‌گیرند.
-\item \textbf{کنترل بهینه حافظه:} شاخه‌های سبک بافر بسیار اندکی مصرف می‌کنند و اوج مصرف به 750.0 مگابایت محدود می‌شود.
+\item \textbf{کنترل بهینه حافظه:} شاخه‌های سبک بافر بسیار اندکی مصرف می‌کنند و اوج مصرف به \lr{750.0 MB} محدود می‌شود.
 \end{itemize}
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 90.14 درصد
-\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 87.7 درصد
-\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
-\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 32,500 توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{smart\_weighted\_ensemble} روی سه مدل پایه}
+\label{tab:benchmark_smart_weighted_ensemble}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.903} & \lr{337.6 MB} & \lr{144,611 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759} & \lr{298.7 MB} & \lr{90,470 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{61.01\%} & \lr{0.665} & \lr{634.9 MB} & \lr{66,143 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-دستیابی به دقت کم‌نظیر 90.14 درصد و شاخص F1 معادل 87.7 درصد همراه با صرفه‌جویی 82.1 درصدی حافظه در برابر ۴۲۰۰ مگابایت مبنا، نشان‌دهنده استحکام بنیادین یادگیری گروهی در هم‌پوشانی خطاهای مکانیزم‌های خطی و متراکم است.
+دستیابی به دقت کم‌نظیر \lr{90.14\%} و شاخص F1 معادل \lr{87.7\%} همراه با صرفه‌جویی \lr{82.1\%}ی حافظه در برابر \lr{۴۲۰۰ MB} مبنا، نشان‌دهنده استحکام بنیادین یادگیری گروهی در هم‌پوشانی خطاهای مکانیزم‌های خطی و متراکم است.
 
 \subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
@@ -85,7 +92,7 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{smart\_weighted\_ensemble}]}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{smart\_weighted\_ensemble}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for smart\_weighted\_ensemble)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}

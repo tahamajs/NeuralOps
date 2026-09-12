@@ -28,24 +28,31 @@ N_l = \left\lfloor N_0 \cdot \left(1 - \frac{l}{L}(1 - \rho_{\text{final}})\righ
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
 \begin{itemize}
 \item \textbf{کاهش فزاینده زمان محاسبات در لایه‌های عمیق:} تعداد توکن‌ها در لایه‌های پایانی تا ۵۰ درصد کاهش می‌یابد که به معنای صرفه‌جویی چهاربرابری در ضرب ماتریسی است.
-\item \textbf{سبک‌سازی پایدار بافر حافظه:} مصرف حافظه کل شبکه به 750.0 مگابایت محدود می‌شود که 82.1 درصد کمتر از حالت ۴۲۰۰ مگابایت بدون هرس است.
+\item \textbf{سبک‌سازی پایدار بافر حافظه:} مصرف حافظه کل شبکه به \lr{750.0 MB} محدود می‌شود که \lr{82.1\%} کمتر از حالت \lr{۴۲۰۰ MB} بدون هرس است.
 \end{itemize}
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 90.48 درصد
-\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 87.9 درصد
-\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
-\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 41,200 توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{progressive\_token\_pruning} روی سه مدل پایه}
+\label{tab:benchmark_progressive_token_pruning}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{90.48\%} & \lr{0.908} & \lr{331.9 MB} & \lr{57,650 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{75.34\%} & \lr{0.791} & \lr{383.7 MB} & \lr{29,993 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.675} & \lr{571.2 MB} & \lr{28,217 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-دستیابی به دقت درخشان 90.48 درصد و سرعت خیره‌کننده 41,200 توکن در ثانیه با تقلیل حافظه به 750.0 مگابایت (کاهش 82.1 درصدی نسبت به ۴۲۰۰ مگابایت مدل متراکم)، نشان می‌دهد که بیش از ۴۰ درصد توکن‌های زبانی در لایه‌های پایانی نقش حشو دارند و هرس هوشمند آن‌ها نه تنها به درک مدل صدمه نمی‌زند، بلکه از پدیده بیش‌برازش نیز جلوگیری می‌کند.
+دستیابی به دقت درخشان \lr{90.48\%} و سرعت خیره‌کننده \lr{41,200} توکن در ثانیه با تقلیل حافظه به \lr{750.0 MB} (کاهش \lr{82.1\%}ی نسبت به \lr{۴۲۰۰ MB} مدل متراکم)، نشان می‌دهد که بیش از ۴۰ درصد توکن‌های زبانی در لایه‌های پایانی نقش حشو دارند و هرس هوشمند آن‌ها نه تنها به درک مدل صدمه نمی‌زند، بلکه از پدیده بیش‌برازش نیز جلوگیری می‌کند.
 
 \subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
@@ -85,7 +92,7 @@ N_l = \left\lfloor N_0 \cdot \left(1 - \frac{l}{L}(1 - \rho_{\text{final}})\righ
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{progressive\_token\_pruning}]}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{progressive\_token\_pruning}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for progressive\_token\_pruning)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}

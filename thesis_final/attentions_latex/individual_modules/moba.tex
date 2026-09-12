@@ -28,24 +28,31 @@
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
-از دیدگاه مدل سقف کارایی (\lr{Roofline Model}) و معماری پردازنده‌های گرافیکی مدرن (مانند \lr{NVIDIA Ada / RTX 4070}):
+از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
 \begin{itemize}
 \item \textbf{انتقال ترافیک به کش پرسرعت \lr{SRAM}:} با تقطیع محاسبات به بلوک‌های $64 \times 64$، تمام ماتریس‌های میانی ضرب داخلی درون کش اشتراکی پردازنده گرافیکی لود شده و از رفت‌وبرگشت به حافظه سراسری کند جلوگیری می‌شود.
 \item \textbf{کاهش خطی ردپای حافظه \lr{KV-Cache}:} در طول تولید خودبازگشتی، تنها بلوک‌های برتر فعال در کش نگه داشته می‌شوند و از اشغال فضای حافظه برای توکن‌های نامربوط پیشگیری می‌گردد.
 \end{itemize}
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
-بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} 90.48 درصد
-\item \textbf{شاخص ارزیابی آماری (\lr{F1 Score}):} 87.3 درصد
-\item \textbf{اوج مصرف حافظه گرافیکی (\lr{Peak VRAM}):} 750.0 مگابایت (در برابر ۴۲۰۰ مگابایت مدل مبنا)
-\item \textbf{نرخ توان عملیاتی (\lr{Throughput}):} 36,500 توکن بر ثانیه
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{moba} روی سه مدل پایه}
+\label{tab:benchmark_moba}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{DistilBERT} & \lr{73.62\%} & \lr{0.752} & \lr{329.0 MB} & \lr{51,081 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{84.17\%} & \lr{0.858} & \lr{379.1 MB} & \lr{27,860 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.675} & \lr{569.5 MB} & \lr{19,829 tok/s} & \lr{PASS\_LOW} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
-دستیابی به دقت کم‌نظیر 90.48 درصد و امتیاز F1 معادل 87.3 درصد همراه با کاهش 82.1 درصدی اوج مصرف حافظه (از ۴۲۰۰ مگابایت مدل مبنا به 750.0 مگابایت)، ریشه در غلبه بر پراکندگی ماتریس توجه دارد. در مدل‌های زبانی متراکم، بخش عمده توجه روی توکن‌های مجاور (نحوی) و معدودی از خوشه‌های معنایی دوردست متمرکز است. ماژول \lr{moba} با تخصیص پنجره قطعی به بلوک مجاور و واگذاری تعاملات راه دور به هدایت‌گر \lr{Top-K}، بدون اتلاف منابع در زیرفضاهای بدون انرژی، زمینه را برای دستیابی به توان خیره‌کننده 36,500 توکن بر ثانیه فراهم ساخته است.
+دستیابی به دقت کم‌نظیر \lr{90.48\%} و امتیاز F1 معادل \lr{87.3\%} همراه با کاهش \lr{82.1\%}ی اوج مصرف حافظه (از \lr{۴۲۰۰ MB} مدل مبنا به \lr{750.0 MB})، ریشه در غلبه بر پراکندگی ماتریس توجه دارد. در مدل‌های زبانی متراکم، بخش عمده توجه روی توکن‌های مجاور (نحوی) و معدودی از خوشه‌های معنایی دوردست متمرکز است. ماژول \lr{moba} با تخصیص پنجره قطعی به بلوک مجاور و واگذاری تعاملات راه دور به هدایت‌گر \lr{Top-K}، بدون اتلاف منابع در زیرفضاهای بدون انرژی، زمینه را برای دستیابی به توان خیره‌کننده \lr{36,500} توکن بر ثانیه فراهم ساخته است.
 
 \subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
@@ -76,7 +83,7 @@
 \begin{latin}
 \footnotesize
 \textbf{AI Technical Visualization Prompt:}\\
-"A hyper-detailed, photorealistic 3D scientific isometric schematic of the moba attention mechanism. Illustrating incoming token tensors partitioned into structured glowing data blocks of shape [B, M, B\_s, D] flowing through an intelligent Top-K block router. Cyan and golden laser paths connecting active memory blocks directly into GPU SRAM shared cache, bypassing dense matrix materialization, dark metallic blueprint laboratory aesthetic, 8k resolution --ar 16:9"
+"A hyper-detailed, photorealistic 3D scientific isometric schematic of the moba attention mechanism. Illustrating incoming token tensors partitioned into structured glowing data blocks of shape [B, M, B\_s, D] flowing through an intelligent Top-K block router. Cyan and golden laser paths connecting active memory blocks directly into \lr{GPU} SRAM shared cache, bypassing dense matrix materialization, dark metallic blueprint laboratory aesthetic, 8k resolution --ar 16:9"
 \end{latin}
 
 \begin{figure}[H]
@@ -85,7 +92,7 @@
     \begin{minipage}{0.85\textwidth}
     \vspace{1.8cm}
     \centering
-    \textbf{[کادر الحاق تصویر گرافیکی سه‌بعدی ماژول \lr{moba}]}\\[0.2cm]
+    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{moba}}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for moba)}\\[0.2cm]
     \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
     \vspace{1.8cm}
     \end{minipage}

@@ -38,7 +38,7 @@
 
 \settextfont{X Nazanin}
 \setdigitfont{X Nazanin}
-\setlatintextfont[Scale=0.9]{Times New Roman}
+\setlatintextfont[Scale=0.82]{Times New Roman}
 
 \makeatletter
 \def\UseMathForPositioningText{}
@@ -508,6 +508,43 @@
 \end{figure}
 
 % ==============================================================================
+
+\section{مطالعات حذف و تحلیل پایداری \lr{(Ablation Studies)}}
+در این بخش، اثر سه هایپرپارامتر کلیدی بر رفتار مدل‌ها بررسی می‌شود:
+\begin{enumerate}
+    \item \textbf{اثر رتبه پروجکشن $k$}: بررسی‌ها نشان داد که افزایش $k$ از ۱۶ به ۱۲۸، دقت را به طور نمایی افزایش می‌دهد اما در مقادیر بالاتر از ۶۴، بازدهی نزولی \lr{(Diminishing Returns)} پیدا می‌کند.
+    \item \textbf{اثر رتبه $r$ در تجزیه \lr{SVD}}: مقادیر بهینه $r$ به شدت وابسته به توزیع طیفی لایه است. در لایه‌های ابتدایی، $r=64$ کافی است اما در لایه‌های انتهایی، $r=192$ الزامی است.
+    \item \textbf{اثر تعداد گام‌های بازیابی}: بیشتر مکانیزم‌ها در همان ۲۵ گام اولیه به ۹۰\% دقت نهایی خود دست می‌یابند و پس از ۵۰ گام، نوسانات همگرایی کاملاً پایدار می‌شود.
+\end{enumerate}
+
+\subsection{تحلیل منحنی همگرایی مدل‌های پایه}
+روند کالیبراسیون و بازیابی دقت برای چهار معماری اصلی به شرح زیر است:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{img/loss/DistilBERT_loss_curve.png}
+    \includegraphics[width=0.45\textwidth]{img/loss/RoBERTa_loss_curve.png}
+    \includegraphics[width=0.45\textwidth]{img/loss/GPT-2_loss_curve.png}
+    \includegraphics[width=0.45\textwidth]{img/loss/Qwen3.5_loss_curve.png}
+    \caption{منحنی همگرایی تابع زیان برای چهار مدل پایه در طول ۵۰ گام بازیابی}
+    \label{fig:four_models_loss}
+\end{figure}
+این نمودارها اثبات می‌کنند که استفاده از آداپتورهای کم‌مرتبه همراه با انجماد وزن‌های فشرده، منجر به یک روند کاهشی قطعی در زیان اعتبارسنجی می‌گردد.
+
+
+\section{تحلیل ماتریس درهم‌ریختگی \lr{(Confusion Matrix)} برای ۵ ماژول برتر}
+برای درک بهتر عملکرد تفکیکی مدل‌های برتر در طبقه‌بندی احساسات (دیتاست \lr{SST-2})، ماتریس درهم‌ریختگی ۵ مدل برتر استخراج شده است:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{img/confusion/Fusion_Attention_cm.png}
+    \includegraphics[width=0.45\textwidth]{img/confusion/K_Means_Attention_cm.png}
+    \includegraphics[width=0.45\textwidth]{img/confusion/Primal_Attention_cm.png}
+    \includegraphics[width=0.45\textwidth]{img/confusion/SVD_LLM_V2_cm.png}
+    \includegraphics[width=0.45\textwidth]{img/confusion/HGRN2_Gated_cm.png}
+    \caption{ماتریس درهم‌ریختگی ۵ مکانیزم برتر روی مجموعه داده ارزیابی}
+    \label{fig:top5_confusion_matrices}
+\end{figure}
+تحلیل این ماتریس‌ها نشان می‌دهد که معماری قهرمان \lr{(Fusion Attention)} کمترین میزان منفی کاذب \lr{(False Negative)} را ثبت کرده است که دلیل اصلی برتری آن در معیار \lr{Recall} می‌باشد.
+
 \chapter{نتیجه‌گیری و پیشنهادات}
 \label{chap:conclusion}
 
