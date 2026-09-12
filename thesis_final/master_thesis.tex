@@ -28,7 +28,7 @@
 
 % -- پیوندها ------------------------------------------------------------------
 \usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=cyan,
-            pdftitle={NeuralOps: طراحی، ارزیابی تجربی و فشرده‌سازی مکانیزم‌های توجه خطی و تجزیه مقادیر منفرد}]{hyperref}
+            pdftitle={طراحی، ارزیابی تجربی و فشرده‌سازی مکانیزم‌های توجه خطی و تجزیه مقادیر منفرد}]{hyperref}
 
 % -- زی‌پرشین (باید حتماً آخرین بسته باشد) ----------------------------------------
 \usepackage{xepersian}
@@ -38,7 +38,7 @@
 
 \settextfont{X Nazanin}
 \setdigitfont{X Nazanin}
-\setlatintextfont[Scale=0.82]{Times New Roman}
+\setlatintextfont[Scale=0.80]{Times New Roman}
 
 \makeatletter
 \def\UseMathForPositioningText{}
@@ -67,7 +67,7 @@
     
     \rule{\linewidth}{0.4mm}\\[0.4cm]
     {\Large \textbf{طراحی، ارزیابی تجربی و فشرده‌سازی مکانیزم‌های توجه خطی و تجزیه مقادیر منفرد (\lr{SVD}) در مدل‌های زبانی بزرگ ترنسفورمر}}\\[0.3cm]
-    {\large \textbf{\lr{NeuralOps: A Hardware-Aware Framework for SVD Linear Attention and Transformer Model Compression}}}\\[0.2cm]
+    {\large \textbf{\lr{A Hardware-Aware Framework for SVD Linear Attention and Transformer Model Compression}}}\\[0.2cm]
     \rule{\linewidth}{0.4mm}\\[1.5cm]
     
     \begin{minipage}{0.45\textwidth}
@@ -128,14 +128,14 @@
 % 5. چکیده فارسی
 \chapter*{چکیده}
 \addcontentsline{toc}{chapter}{چکیده}
-مدل‌های زبانی بزرگ ترنسفورمر با وجود توانمندی شگفت‌انگیز در پردازش زبان طبیعی، با چالش جدی پیچیدگی محاسباتی و ردپای حافظه مربعی $\mathcal{O}(N^2)$ در مکانیزم توجه چندسره استاندارد (\lr{Standard MHA}) روبرو هستند. این چالش در استقرار مدل‌ها روی پردازنده‌های گرافیکی تجاری با محدودیت حافظه، گلوگاه بزرگی به نام دیوار حافظه (\lr{Memory Wall}) ایجاد می‌کند. در این پژوهش، چارچوب سیستم‌محور \lr{NeuralOps} طراحی و پیاده‌سازی شده است که ارزیابی تجربی دقیق و فشرده‌سازی سخت‌افزار-آگاه را بر روی \textbf{۱۰۰ مکانیزم برتر توجه منتخب از میان بیش از ۱۳۰ مکانیزم پیاده‌سازی‌شده} ممکن می‌سازد. 
+مدل‌های زبانی بزرگ ترنسفورمر با وجود توانمندی شگفت‌انگیز در پردازش زبان طبیعی، با چالش جدی پیچیدگی محاسباتی و ردپای حافظه مربعی $\mathcal{O}(N^2)$ در مکانیزم توجه چندسره استاندارد (\lr{Standard MHA}) روبرو هستند. این چالش در استقرار مدل‌ها روی پردازنده‌های گرافیکی تجاری با محدودیت حافظه، گلوگاه بزرگی به نام دیوار حافظه (\lr{Memory Wall}) ایجاد می‌کند. در این پژوهش، چارچوب سیستم‌محور چارچوب پژوهش طراحی و پیاده‌سازی شده است که ارزیابی تجربی دقیق و فشرده‌سازی سخت‌افزار-آگاه را بر روی \textbf{۱۰۰ مکانیزم برتر توجه منتخب از میان بیش از ۱۳۰ مکانیزم پیاده‌سازی‌شده} ممکن می‌سازد. 
 
 پژوهش حاضر در ۴ معماری شاخص زبانی شامل \lr{DistilBERT}}، \lr{RoBERTa-base}}، \lr{GPT-2}} و \lr{Qwen3.5-0.8B}} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} و در شرایط سخت‌افزاری کاملاً یکسان بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} اجرا گردیده است. فرآیند تست ۴ مرحله‌ای شامل جایگزینی درجا، نگاشت وزن‌ها با آداپتورهای \lr{LoRA}، بازیابی سریع ۵۰ تا ۱۰۰۰ گام و پروفایلینگ دقیق \lr{Roofline} به کار گرفته شد. 
 
 نتایج نشان داد که مکانیزم توجه قهرمان \lr{Fusion Attention}} با مهار حافظه \lr{Peak VRAM} از \lr{4200 MB} خط پایه به \lr{480 MB} (کاهش \lr{88.6\%})، توان عملیاتی پردازش را از \lr{15,400} به \lr{67,500 tok/s} (شتاب \lr{4.38x}) رسانده و دقت \lr{93.12\%} را به ثبت رسانده است. همچنین دروازه کیفیت با آستانه سخت‌گیرانه \lr{56\%} موفقیت استقرار صنعتی این مکانیزم‌ها را اثبات نمود.
 
 \vspace{0.8cm}
-\noindent \textbf{کلمات کلیدی:} مدلهای زبانی بزرگ، مکانیزم توجه خطی، تجزیه مقادیر منفرد (\lr{SVD})، فشرده‌سازی مدل، مدل سقف کارایی (\lr{Roofline})، فریمورک \lr{NeuralOps}.
+\noindent \textbf{کلمات کلیدی:} مدلهای زبانی بزرگ، مکانیزم توجه خطی، تجزیه مقادیر منفرد (\lr{SVD})، فشرده‌سازی مدل، مدل سقف کارایی (\lr{Roofline})، چارچوب پژوهش.
 
 \newpage
 \tableofcontents
@@ -197,7 +197,7 @@
 
 \section{اهداف تحقیق}
 \subsection{هدف اصلی}
-طراحی، پیاده‌سازی و ارزیابی تجربی سخت‌افزار-آگاه یک چارچوب یکپارچه (\lr{NeuralOps}) جهت جایگزینی درجا، خطی‌سازی و فشرده‌سازی طیفی مقادیر منفرد (\lr{SVD}) در لایه‌های توجه مدل‌های زبانی ترنسفورمر.
+طراحی، پیاده‌سازی و ارزیابی تجربی سخت‌افزار-آگاه یک چارچوب یکپارچه (چارچوب پژوهش) جهت جایگزینی درجا، خطی‌سازی و فشرده‌سازی طیفی مقادیر منفرد (\lr{SVD}) در لایه‌های توجه مدل‌های زبانی ترنسفورمر.
 
 \subsection{اهداف فرعی}
 \begin{itemize}
@@ -224,7 +224,7 @@
 \section{نوآوری‌های تحقیق}
 \begin{enumerate}
     \item \textbf{نوآوری نظری:} اثبات و تبیین ریاضی کران خطای فروبنیوس در تقریب مقادیر منفرد لایه‌های توجه و انطباق آن با شدت محاسباتی مدل \lr{Roofline}.
-    \item \textbf{نوآوری در پیاده‌سازی:} ارائه فریمورک \lr{NeuralOps} مجهز به رجیستری مرکزی و متدهای تزریق درجا با پشتیبانی از انکودرهای تودرتو و مکانیزم‌های \lr{RoPE/GQA}.
+    \item \textbf{نوآوری در پیاده‌سازی:} ارائه چارچوب پژوهش مجهز به رجیستری مرکزی و متدهای تزریق درجا با پشتیبانی از انکودرهای تودرتو و مکانیزم‌های \lr{RoPE/GQA}.
     \item \textbf{نوآوری تجربی:} اجرای بزرگ‌ترین ارزیابی تطبیقی همزمان روی ۱۰۰ مکانیزم برتر بر روی ۴ مدل شاخص زبانی و سخت‌افزار یکسان \lr{RTX 4070 Laptop}.
 \end{enumerate}
 
@@ -236,7 +236,7 @@
 \end{itemize}
 
 \section{ساختار پایان‌نامه}
-این رساله در پنج فصل تنظیم شده است: در فصل دوم به تشریح مبانی ریاضی، فیزیک سخت‌افزار و پیشینه پژوهش پرداخته می‌شود. در فصل سوم روش‌شناسی سیستم، محیط آزمایش و معماری \lr{NeuralOps} شرح داده می‌شود. در فصل چهارم نتایج تجربی، کالبدشکافی ۱۰۰ مکانیزم برتر و مدل قهرمان بررسی می‌گردد. در فصل پنجم نتیجه‌گیری، پاسخ به فرضیه‌ها و افق‌های آتی ارائه خواهد شد.
+این رساله در پنج فصل تنظیم شده است: در فصل دوم به تشریح مبانی ریاضی، فیزیک سخت‌افزار و پیشینه پژوهش پرداخته می‌شود. در فصل سوم روش‌شناسی سیستم، محیط آزمایش و معماری چارچوب پژوهش شرح داده می‌شود. در فصل چهارم نتایج تجربی، کالبدشکافی ۱۰۰ مکانیزم برتر و مدل قهرمان بررسی می‌گردد. در فصل پنجم نتیجه‌گیری، پاسخ به فرضیه‌ها و افق‌های آتی ارائه خواهد شد.
 
 % ==============================================================================
 % فصل دوم: مبانی نظری و پیشینه تحقیق
@@ -301,13 +301,13 @@
 \lr{Reformer (Kitaev et al.)} & ۲۰۲۰ & ۱ & هش حساس به مکان LSH & \lr{87.8\%} & \lr{60\%} \\
 \lr{FlashAttention (Dao et al.)} & ۲۰۲۲ & ۲ & فیوژن SRAM سخت‌افزاری & \lr{91.2\%} & \lr{80\%} \\
 \lr{Mamba (Gu \& Dao)} & ۲۰۲۳ & ۱ & فضای حالت انتخابی S6 & \lr{90.5\%} & \lr{85\%} \\
-\textbf{چارچوب حاضر (\lr{NeuralOps})} & \textbf{۱۴۰۵} & \textbf{۱۰۰+} & \textbf{همجوشی SVD، فیوژن و LoRA} & \textbf{\lr{93.12\%}} & \textbf{\lr{88.6\%}} \\
+\textbf{چارچوب حاضر (چارچوب پژوهش)} & \textbf{۱۴۰۵} & \textbf{۱۰۰+} & \textbf{همجوشی SVD، فیوژن و LoRA} & \textbf{\lr{93.12\%}} & \textbf{\lr{88.6\%}} \\
 \hline
 \end{tabular}
 \label{tab:prev_works}
 \end{table}
 
-\section{شکاف تحقیقاتی (\lr{Research Gap}) و ضرورت چارچوب NeuralOps}
+\section{شکاف تحقیقاتی (\lr{Research Gap}) و ضرورت چارچوب سیستم‌محور پژوهش}
 بررسی ادبیات پژوهش نشان می‌دهد که مقالات گذشته همواره در محیط‌های مجزا، با کدهای تک‌منظوره و بدون در نظر گرفتن محدودیت پردازنده‌های گرافیکی تجاری ارائه شده‌اند. علاوه بر این، ارزیابی جامعی که نقاط ضعف آماری، پدیده ریزش به کلاس اکثریت و موازنه سخت‌افزاری میان سرعت و حافظه را به صورت همزمان بر روی بیش از ۱۰۰ مکانیزم بررسی کند تا کنون وجود نداشته است. این پایان‌نامه مستقیماً این شکاف را پر می‌کند.
 
 % ==============================================================================
@@ -317,7 +317,7 @@
 \label{chap:method}
 
 \section{مقدمه}
-در این فصل ساختار متدولوژی آزمایشگاهی، مشخصات دقیق سخت‌افزار مورد استفاده، معماری مدل‌های زبانی پایه، پروتکل ۴ مرحله‌ای تست و سازوکار مهندسی نرم‌افزار چارچوب \lr{NeuralOps} تبیین می‌شود.
+در این فصل ساختار متدولوژی آزمایشگاهی، مشخصات دقیق سخت‌افزار مورد استفاده، معماری مدل‌های زبانی پایه، پروتکل ۴ مرحله‌ای تست و سازوکار مهندسی نرم‌افزار چارچوب پژوهش تبیین می‌شود.
 
 \section{محیط آزمایشگاهی و مشخصات سخت‌افزاری}
 تمامی آزمایش‌های این رساله بر روی یک سیستم اختصاصی با مشخصات کاملاً ثابت و بدون تغییر فرکانس کاری انجام شده است:
@@ -350,7 +350,7 @@
     \item \textbf{توان عملیاتی پایه \lr{(Throughput)}:} \lr{15,400 tok/s}
 \end{itemize}
 
-\section{فرآیند ۴ مرحله‌ای ارزیابی در فریمورک NeuralOps}
+\section{فرآیند ۴ مرحله‌ای ارزیابی در چارچوب سیستم‌محور پژوهش}
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
@@ -366,7 +366,7 @@
 \draw[arrow] (p2) -- (p3);
 \draw[arrow] (p3) -- (p4);
 \end{tikzpicture}
-\caption{فرآیند چهارمرحله‌ای آزمایشگاهی فریمورک \lr{NeuralOps}}
+\caption{فرآیند چهارمرحله‌ای آزمایشگاهی چارچوب پژوهش}
 \label{fig:method_pipeline}
 \end{figure}
 
@@ -476,7 +476,7 @@
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{chart_attention_taxonomy.png}
-\caption{درخت تبارشناسی \lr{(Taxonomy Tree)} و رده‌بندی ساختاری مکانیزم‌های توجه در فریمورک \lr{NeuralOps}}
+\caption{درخت تبارشناسی \lr{(Taxonomy Tree)} و رده‌بندی ساختاری مکانیزم‌های توجه در چارچوب پژوهش}
 \label{fig:chart_attention_taxonomy}
 \end{figure}
 
@@ -562,7 +562,7 @@
 \begin{enumerate}
     \item تدوین دانشنامه جامع و تک‌نگاری ۱۲ بخشی ۱۰۰ مکانیزم برتر توجه به زبان فارسی برای نخستین بار.
     \item اثبات عملی امکان‌پذیری استقرار مدل‌های زبانی بزرگ کانتکست-بلند روی کارت‌های گرافیکی معمولی با ۸ گیگابایت VRAM.
-    \item طراحی فریمورک منبع‌باز \lr{NeuralOps} با قابلیت تزریق درجا و ارزیابی خودکار.
+    \item طراحی چارچوب سیستم‌محور چارچوب پژوهش با قابلیت تزریق درجا و ارزیابی خودکار.
 \end{enumerate}
 
 \section{پیشنهادات برای پژوهش‌های آینده}
@@ -614,12 +614,12 @@
 
 Large language models (LLMs) based on the Transformer architecture have fundamentally reshaped modern natural language processing. However, their standard Multi-Head Attention (MHA) exhibits quadratic computational and memory complexity, $\mathcal{O}(N^2)$, with respect to sequence length. This memory footprint creates a severe hardware bottleneck—the "Memory Wall"—especially when deploying models on consumer-grade edge GPUs.
 
-This thesis presents \textbf{NeuralOps}, a hardware-aware framework for the empirical benchmarking, drop-in injection, and compression of attention mechanisms. We systematically evaluate the \textbf{Top 100 attention mechanisms selected from over 130 implementations} across four diverse language model architectures: DistilBERT, RoBERTa-base, GPT-2, and Qwen3.5-0.8B on the GLUE SST-2 benchmark under identical laboratory conditions using an NVIDIA GeForce RTX 4070 Laptop GPU (8GB GDDR6).
+This thesis presents a comprehensive hardware-aware framework, a hardware-aware framework for the empirical benchmarking, drop-in injection, and compression of attention mechanisms. We systematically evaluate the \textbf{Top 100 attention mechanisms selected from over 130 implementations} across four diverse language model architectures: DistilBERT, RoBERTa-base, GPT-2, and Qwen3.5-0.8B on the GLUE SST-2 benchmark under identical laboratory conditions using an NVIDIA GeForce RTX 4070 Laptop GPU (8GB GDDR6).
 
 Through a four-phase evaluation pipeline (drop-in injection, weight alignment, rapid recovery calibration, and hardware roofline profiling), we demonstrate that low-rank Singular Value Decomposition (SVD) combined with trainable LoRA residual adapters effectively preserves linguistic representation while slashing peak VRAM. Our champion model, \textbf{Fusion Attention}, cuts peak VRAM from 4200.0 MB to 480.0 MB (an 88.6\% reduction), boosts throughput by 4.38x from 15,400 to 67,500 tokens/sec, and achieves an outstanding accuracy of 93.12\% (outperforming standard attention). These findings confirm that transformer attention can be linearised and compressed for efficient local inference without compromising representation capacity.
 
 \vspace{0.8cm}
-\noindent \textbf{Keywords:} Large Language Models, Linear Attention, Singular Value Decomposition \lr{(SVD)}, Model Compression, Roofline Model, NeuralOps Framework.
+\noindent \textbf{Keywords:} Large Language Models, Linear Attention, Singular Value Decomposition \lr{(SVD)}, Model Compression, Roofline Model, Hardware-Aware Framework.
 \end{latin}
 
 \newpage
@@ -637,7 +637,7 @@ Through a four-phase evaluation pipeline (drop-in injection, weight alignment, r
     \large \textbf{B.Sc. Project / Thesis}\\[0.8cm]
     
     \rule{\linewidth}{0.4mm}\\[0.4cm]
-    {\Large \textbf{NeuralOps: A Hardware-Aware Framework for SVD Linear Attention and Transformer Model Compression}}\\[0.2cm]
+    {\Large \textbf{A Hardware-Aware Framework for SVD Linear Attention and Transformer Model Compression}}\\[0.2cm]
     \rule{\linewidth}{0.4mm}\\[1.5cm]
     
     \begin{minipage}{0.45\textwidth}
