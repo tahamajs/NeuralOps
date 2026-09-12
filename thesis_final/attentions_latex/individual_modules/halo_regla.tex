@@ -1,9 +1,24 @@
-% ===========================================================================
-% Analysis for Module 077: halo_regla
-% ===========================================================================
-\subsection{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{halo\_regla}}
-\label{sec:halo_regla}
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 9: \lr{halo\_regla}}
+\label{sec:mod_halo_regla}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
 
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 9: \lr{halo\_regla}}
+\label{sec:mod_halo_regla}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 9: \lr{halo\_regla}}
+\label{sec:halo_regla}
+\vspace{-0.2cm}\noindent\rule{\textwidth}{0.5pt}
+\vspace{0.4cm}
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 \begin{itemize}
     \item \textbf{نام کامل انگلیسی ماژول:} \lr{halo\_regla}
@@ -81,8 +96,6 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 
 \textbf{نکته کلیدی:} این ارزیابی و مقادیر ثبت‌شده به طور مستقیم بر روی مدل پایه زبان‌شناختی \lr{RoBERTa-base} (معماری ۱۲ لایه انکودر متراکم با ۷۶۸ بعد مخفی و ۱۲ سر توجه) حاصل شده است.
 
-
-
 تحلیل ماتریس درهم‌ریختگی \lr{Confusion Matrix} بیانگر آن است که ماژول در دسته‌بندی توکن‌های احساسی مثبت و منفی توازن نسبی را حفظ کرده است. در صورتی که شاخص \lr{F1-Score} در جدول فوق کاهش یافته باشد، این امر بازتابی از تمایل جزیی لایه‌های فشرده‌شده به مرزهای آماری پروجکشن بوده و نشان‌دهنده وقوع انقباض رتبه است.
 مطالعات ابلیشن \lr{Ablation Studies} روی پارامتر رتبه و نرخ فشرده‌سازی نشان داد که با افزایش $k$ یا ابعاد سرها به بیش از ۶۴، بازیافت دقت تسریع شده اما توان عملیاتی توکن بر ثانیه با شیب ملایم‌تری کاهش می‌یابد.
 \subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
@@ -111,11 +124,37 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 ماژول \lr{halo\_regla} با موفقیت نشان داد که پیاده‌سازی مکانیزم‌های توجه مدرن با کاهش پیچیدگی و مصرف حافظه، گزینه‌ای بسیار جذاب برای عملیاتی‌سازی مدل‌های زبانی بر روی کارت‌های گرافیکی مصرف‌کننده \lr{مانند سری RTX 40} به شمار می‌رود. این یافته مستقیماً فرضیه اصلی این رساله مبنی بر امکان‌پذیری فشرده‌سازی لایه توجه ترنسفورمر بدون افت فاحش در شاخص‌های درک زبانی را تایید می‌نماید.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:regla_attention_arch_halo_regla} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
+در این بخش دیاگرام تفصیلی گردش داده و نمودار مقایسه عملکرد سه‌معیاره ماژول ارائه گردیده است. شکل \ref{fig:arch_halo_regla} معماری تانسوری و ساختار پروجکشن‌های لایه را به تصویر می‌کشد و شکل \ref{fig:comp_halo_regla} عملکرد آن را در مقایسه با مدل پایه نشان می‌دهد.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/arch_regla_attention.jpeg}
+\includegraphics[width=0.90\textwidth]{img/arch_regla_attention.jpeg}
 \caption{معماری توجه خطی گیت‌شده و منظم‌شده \lr{ReGLA (Regularized Gated Linear Attention)}}
-\label{fig:regla_attention_arch_halo_regla}
+\label{fig:arch_halo_regla}
 \end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/halo_regla_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{halo\_regla} در برابر خط مبنا}
+\label{fig:comp_halo_regla}
+\end{figure}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{halo\_regla} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/arch_halo_regla_1.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{halo\_regla}}
+\label{fig:arch_halo_regla}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/halo_regla_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{halo\_regla} در برابر خط مبنا}
+\label{fig:comp_halo_regla}
+\end{figure}
+

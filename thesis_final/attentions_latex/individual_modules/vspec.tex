@@ -1,3 +1,14 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 106: \lr{vspec}}
+\label{sec:mod_vspec}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
 \subsection{کالبدشکافی ماژول \lr{vspec}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
@@ -74,21 +85,24 @@ q(\mathbf{z} \mid \mathbf{X}) = \mathcal{N}\left(\boldsymbol{\mu}_{\text{spec}}(
 "A 3D astronomical telescope with micro-actuators reshaping a deformable hexagonal mirror array, focusing twinkling cosmic light rays into a sharp spectral point."
 \end{latin}
 
-\begin{figure}[H]
-    \centering
-    \framebox[0.9\textwidth]{
-    \begin{minipage}{0.85\textwidth}
-    \vspace{1.8cm}
-    \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{vspec}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for vspec)}\\[0.2cm]
-    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
-    \vspace{1.8cm}
-    \end{minipage}
-    }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{vspec}
-    \label{fig:vspec}
+
+
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{vspec} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/architecture/vspec_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{vspec}}
+\label{fig:arch_vspec}
 \end{figure}
 
-\vspace{0.5cm}
-\hrule
-\vspace{0.5cm}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/vspec_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{vspec} در برابر خط مبنا}
+\label{fig:comp_vspec}
+\end{figure}
+

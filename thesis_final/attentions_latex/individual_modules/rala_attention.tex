@@ -1,3 +1,20 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 82: \lr{rala\_attention}}
+\label{sec:mod_rala_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 82: \lr{rala\_attention}}
+\label{sec:mod_rala_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
 \subsection{کالبدشکافی ماژول \lr{rala\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
@@ -63,7 +80,7 @@
     \node [branch, above right=0.5cm and 1.0cm of input] (lin) {توجه خطی تجمعی};
     \node [branch, below right=0.5cm and 1.0cm of input] (aug) {تصحیح کم‌رتبه};
     \node [sum, right=2.8cm of input] (plus) {$\boldsymbol{+}$};
-    \node [outblock, right=1.0cm of plus] (out) {خروجی \lr{RALA};
+    \node [outblock, right=1.0cm of plus] (out) {خروجی \lr{RALA}};
 
     \draw [->, thick, draw=blue!80] (input) |- (lin);
     \draw [->, thick, draw=blue!80] (input) |- (aug);
@@ -83,21 +100,23 @@
 "A 3D scientific visualization of Rank-Augmented Linear Attention (RALA). A sleek blue pipeline executing continuous linear associative recurrence, intertwined with an intense golden laser pathway representing rank-augmented correction, merging seamlessly, 8k resolution --ar 16:9"
 \end{latin}
 
-\begin{figure}[H]
-    \centering
-    \framebox[0.9\textwidth]{
-    \begin{minipage}{0.85\textwidth}
-    \vspace{1.8cm}
-    \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{rala\_attention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for rala\_attention)}\\[0.2cm]
-    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
-    \vspace{1.8cm}
-    \end{minipage}
-    }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{rala\_attention}
-    \label{fig:rala_attention}
+
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{rala\_attention} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/architecture/rala_attention_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{rala\_attention}}
+\label{fig:arch_rala_attention}
 \end{figure}
 
-\vspace{0.5cm}
-\hrule
-\vspace{0.5cm}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/rala_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{rala\_attention} در برابر خط مبنا}
+\label{fig:comp_rala_attention}
+\end{figure}
+

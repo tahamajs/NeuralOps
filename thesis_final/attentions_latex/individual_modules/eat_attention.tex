@@ -1,3 +1,24 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 14: \lr{eat\_attention}}
+\label{sec:mod_eat_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 14: \lr{eat\_attention}}
+\label{sec:mod_eat_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 23: \lr{eat\_attention}}
+\label{sec:eat_attention}
+\vspace{-0.2cm}\noindent\rule{\textwidth}{0.5pt}
+\vspace{0.4cm}
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 ماژول \lr{eat\_attention} پیاده‌سازی رسمی مکانیزم «ترنسفورمر با توجه کارا و هرس پیش‌رونده توکن‌ها» \lr{(Efficient Attention Transformer with Progressive Token Pruning - EAT)} در بستر پژوهشی این رساله است. این ماژول در فایل \path{Codes/framework/attentions/eat.py} توسعه یافته و تحت کلاس ارشد \lr{EATBlock} به همراه ماژول کمکی \lr{ProgressiveTokenPruning} در رجیستری مرکزی ثبت شده است.
 هدف راهبردی این ماژول، مهار هزینه محاسباتی از طریق فشرده‌سازی خودکار طول دنباله در طول عبور از لایه‌های متوالی شبکه است. با ارزیابی اهمیت اطلاعاتی توکن‌ها بر پایه الگوهای فعال‌سازی لایه توجه، توکن‌های حاوی اطلاعات حاشیه‌ای و با همبستگی بالا به صورت پیش‌رونده هرس شده و طول موثر دنباله به شکل پویا کاهش می‌یابد.
@@ -79,14 +100,9 @@ s_i = \frac{1}{H \cdot N} \sum_{h=1}^H \sum_{j=1}^N \mathbf{A}_{h, j, i}
 \end{tabular}
 \end{table}
 
-
-
-
 \textbf{نکته کلیدی و تصریح مدل پایه:} این ارزیابی صراحتاً و منحصراً بر روی مدل پایه زبان‌شناختی \lr{legacy\_bert} (شامل ۱۲ لایه انکودر متراکم با ابعاد مخفی ۷۶۸) انجام شده است.
 
 جدول زیر نتایج شاخص‌های کارایی این ماژول را در مقایسه با مدل خط پایه ثبت نموده است:
-
-
 
 ماتریس درهم‌ریختگی نشان می‌دهد که خروجی‌های مدل در آزمون به سمت کلاس اکثریت تمایل یافته است. مطالعات ابلیشن نشان داد که ملایم‌تر کردن نرخ هرس در لایه‌های ابتدایی مانع از حذف زودهنگام کلمات کلیدی عاطفی اقلیت می‌گردد.
 \subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
@@ -121,11 +137,37 @@ s_i = \frac{1}{H \cdot N} \sum_{h=1}^H \sum_{j=1}^N \mathbf{A}_{h, j, i}
 ماژول \lr{eat\_attention} پتانسیل بالای تکنیک‌های هرس پیش‌رونده توکن‌ها را برای تقلیل ابعاد محاسباتی آشکار ساخت. یافته‌های تجربی نشان داد که بهینه‌سازی توابع امتیازدهی توکن‌ها جهت صیانت از کلمات کلیدی نادر، پیش‌شرط اساسی دستیابی به تعادل همزمان در دقت و سنجه‌های تشخیصی چندکلاسی است.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:eat_attention_arch_eat_attention} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
+در این بخش دیاگرام تفصیلی گردش داده و نمودار مقایسه عملکرد سه‌معیاره ماژول ارائه گردیده است. شکل \ref{fig:arch_eat_attention} معماری تانسوری و ساختار پروجکشن‌های لایه را به تصویر می‌کشد و شکل \ref{fig:comp_eat_attention} عملکرد آن را در مقایسه با مدل پایه نشان می‌دهد.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/arch_eat_attention.jpeg}
+\includegraphics[width=0.90\textwidth]{img/arch_eat_attention.jpeg}
 \caption{معماری ترنسفورمر توجه کارآمد \lr{EAT (Efficient Attention Transformer)}}
-\label{fig:eat_attention_arch_eat_attention}
+\label{fig:arch_eat_attention}
 \end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/eat_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{eat\_attention} در برابر خط مبنا}
+\label{fig:comp_eat_attention}
+\end{figure}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{eat\_attention} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/arch_eat_attention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{eat\_attention}}
+\label{fig:arch_eat_attention}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/eat_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{eat\_attention} در برابر خط مبنا}
+\label{fig:comp_eat_attention}
+\end{figure}
+

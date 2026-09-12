@@ -1,3 +1,20 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 97: \lr{svd\_projection\_attention}}
+\label{sec:mod_svd_projection_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 97: \lr{svd\_projection\_attention}}
+\label{sec:mod_svd_projection_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
 \subsection{کالبدشکافی ماژول \lr{svd\_projection\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
@@ -61,7 +78,7 @@
     \node [sum, right=1.0cm of v] (plus) {$\boldsymbol{+}$};
     \node [outblock, right=1.0cm of plus] (out) {خروجی کم‌مرتبه};
 
-    \node [lora, below=0.8cm of $(u)!0.5!(v)$] (res) {مسیر مکمل $\mathbf{W}_0$ / \lr{LoRA Adapter};
+    \node [lora, below=0.8cm of $(u)!0.5!(v)$] (res) {مسیر مکمل $\mathbf{W}_0$ / \lr{LoRA Adapter}};
 
     \draw [->, thick, draw=blue!80] (input) -- (u);
     \draw [->, thick, draw=orange!80] (u) -- (v);
@@ -83,21 +100,23 @@
 "3D illustration of an ancient stone tablet undergoing holographic laser restoration, tracing glowing gold orthogonal symmetry lines across cracked granite."
 \end{latin}
 
-\begin{figure}[H]
-    \centering
-    \framebox[0.9\textwidth]{
-    \begin{minipage}{0.85\textwidth}
-    \vspace{1.8cm}
-    \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{svd\_projection\_attention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for svd\_projection\_attention)}\\[0.2cm]
-    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
-    \vspace{1.8cm}
-    \end{minipage}
-    }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{svd\_projection\_attention}
-    \label{fig:svd_projection_attention}
+
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{svd\_projection\_attention} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/architecture/svd_projection_attention_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{svd\_projection\_attention}}
+\label{fig:arch_svd_projection_attention}
 \end{figure}
 
-\vspace{0.5cm}
-\hrule
-\vspace{0.5cm}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/svd_projection_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{svd\_projection\_attention} در برابر خط مبنا}
+\label{fig:comp_svd_projection_attention}
+\end{figure}
+

@@ -1,7 +1,13 @@
-% ===========================================================================
-% Analysis for Module 040: factorized_attention
-% ===========================================================================
-\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{factorized\_attention}}
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 34: \lr{factorized\_attention}}
+\label{sec:mod_factorized_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
 
 \subsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 \begin{itemize}
@@ -66,10 +72,10 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{table}[ht]
 \centering
 \small
-\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{factorized\_attention} در مقایسه با خط پایه بر روی مدل \lr{DistilBERT}
+\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{factorized\_attention} در مقایسه با خط پایه بر روی مدل \lr{DistilBERT}}
 \begin{tabular}{lcccc}
 \hline
-\textbf{شاخص ارزیابی} & \textbf{مدل پایه \lr{(Baseline)} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
+\textbf{شاخص ارزیابی} & \textbf{مدل پایه \lr{(Baseline)}} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
 \hline
 مدل ارزیابی‌شده & \lr{DistilBERT} & \lr{DistilBERT} & --- & \lr{TARGET} \\
 دقت ارزیابی \lr{(Accuracy)} & \lr{91.20\%} & \lr{81.08\%} & \lr{-10.12\%} & \lr{PASS} \\
@@ -109,5 +115,21 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \subsection*{بخش ۱۰: نتیجه‌گیری بخش \lr{(Section Conclusion)}}
 ماژول \lr{factorized\_attention} با موفقیت نشان داد که پیاده‌سازی مکانیزم‌های توجه مدرن با کاهش پیچیدگی و مصرف حافظه، گزینه‌ای بسیار جذاب برای عملیاتی‌سازی مدل‌های زبانی بر روی کارت‌های گرافیکی مصرف‌کننده (مانند سری \lr{RTX 40}) به شمار می‌رود. این یافته مستقیماً فرضیه اصلی این رساله مبنی بر امکان‌پذیری فشرده‌سازی لایه توجه ترنسفورمر بدون افت فاحش در شاخص‌های درک زبانی را تایید می‌نماید.
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش نمودارهای تحلیلی و معماری تفصیلی ماژول ارائه گردیده است.
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{factorized\_attention} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/arch_factorized_attention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{factorized\_attention}}
+\label{fig:arch_factorized_attention}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/factorized_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{factorized\_attention} در برابر خط مبنا}
+\label{fig:comp_factorized_attention}
+\end{figure}
+

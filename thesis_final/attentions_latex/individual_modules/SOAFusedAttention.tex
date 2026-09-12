@@ -1,3 +1,20 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 41: \lr{SOAFusedAttention}}
+\label{sec:mod_SOAFusedAttention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 41: \lr{SOAFusedAttention}}
+\label{sec:mod_SOAFusedAttention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
 \subsection{کالبدشکافی ماژول \lr{SOAFusedAttention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
@@ -75,24 +92,7 @@
 "A hyper-detailed, photorealistic 3D scientific isometric schematic of the SOAFusedAttention attention mechanism. Illustrating incoming token tensors of shape [B, N, D] flowing smoothly into optimized projection blocks and state matrices. Glowing cyan, neon amber, and vibrant violet data pathways highlighting low-rank dimension reduction and on-chip SRAM cache operations, contrasted against a dark metallic blueprint background. Clean technical typography, publication-grade academic rendering, Unreal Engine 5 cinematic lighting, 8k resolution --ar 16:9"
 \end{latin}
 
-\begin{figure}[H]
-    \centering
-    \framebox[0.9\textwidth]{
-    \begin{minipage}{0.85\textwidth}
-    \vspace{1.8cm}
-    \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{SOAFusedAttention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for SOAFusedAttention)}\\[0.2cm]
-    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
-    \vspace{1.8cm}
-    \end{minipage}
-    }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{SOAFusedAttention}
-    \label{fig:SOAFusedAttention}
-\end{figure}
 
-\vspace{0.5cm}
-\hrule
-\vspace{0.5cm}
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
 در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:shared_orthogonal_attention_arch_SOAFusedAttention} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
@@ -103,3 +103,22 @@
 \caption{معماری توجه متعامد اشتراکی \lr{SOA (Shared Orthogonal Attention)} با تنگناهای نهان اختصاصی به ازای هر پروجکشن}
 \label{fig:shared_orthogonal_attention_arch_SOAFusedAttention}
 \end{figure}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{SOAFusedAttention} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/architecture/SOAFusedAttention_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{SOAFusedAttention}}
+\label{fig:arch_SOAFusedAttention}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/SOAFusedAttention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{SOAFusedAttention} در برابر خط مبنا}
+\label{fig:comp_SOAFusedAttention}
+\end{figure}
+

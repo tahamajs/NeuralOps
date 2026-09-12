@@ -1,9 +1,24 @@
-% ===========================================================================
-% Analysis for Module 099: soa_fused_module
-% ===========================================================================
-\subsection{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{soa\_fused\_module}}
-\label{sec:soa_fused_module}
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 35: \lr{soa\_fused\_module}}
+\label{sec:mod_soa_fused_module}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
 
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 35: \lr{soa\_fused\_module}}
+\label{sec:mod_soa_fused_module}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 53: \lr{soa\_fused\_module}}
+\label{sec:soa_fused_module}
+\vspace{-0.2cm}\noindent\rule{\textwidth}{0.5pt}
+\vspace{0.4cm}
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 \begin{itemize}
     \item \textbf{نام کامل انگلیسی ماژول:} \lr{soa\_fused\_module}
@@ -114,12 +129,7 @@ I_{\text{fused}} = \frac{2 B N (D \cdot k + k \cdot D_{\text{out}})}{B N D \cdot
 \end{tabular}
 \end{table}
 
-
-
-
 \textbf{نکته کلیدی:} این ارزیابی و نتایج ثبت‌شده به طور مستقیم بر روی مدل پایه \lr{RoBERTa-base} حاصل گردیده است.
-
-
 
 برخلاف بسیاری از ماژول‌های فشرده‌سازی که با ریزش F1 مواجه شده‌اند، ماژول \lr{soa\_fused\_module} موفق به کسب امتیاز F1 فوق‌العاده درخشان \lr{81.91\%} شده است که حاکی از توازن کامل بازشناسی میان هر دو کلاس مثبت و منفی بدون هرگونه سوگیری است.
 ماتریس درهم‌ریختگی نشان‌دهنده توزیع متقارن و یکنواخت پیش‌بینی‌ها در دو طبقه معنایی است.
@@ -154,11 +164,37 @@ I_{\text{fused}} = \frac{2 B N (D \cdot k + k \cdot D_{\text{out}})}{B N D \cdot
 ماژول \lr{soa\_fused\_module} به عنوان شاهکار مهندسی و تجربی این رساله، تلفیق بی‌نظیری از زیبایی تئوری فاکتورگیری SVD و مهندسی پیشرفته سخت‌افزاری را به نمایش گذاشت. این ماژول ثابت کرد که می‌توان مرزهای کارایی و فشردگی را در مدل‌های زبانی مدرن بدون افت توازن هوشمندی به طور چشمگیری ارتقا داد.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:shared_orthogonal_attention_arch_soa_fused_module} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
+در این بخش دیاگرام تفصیلی گردش داده و نمودار مقایسه عملکرد سه‌معیاره ماژول ارائه گردیده است. شکل \ref{fig:arch_soa_fused_module} معماری تانسوری و ساختار پروجکشن‌های لایه را به تصویر می‌کشد و شکل \ref{fig:comp_soa_fused_module} عملکرد آن را در مقایسه با مدل پایه نشان می‌دهد.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/arch_shared_orthogonal_attention.jpeg}
+\includegraphics[width=0.90\textwidth]{img/arch_shared_orthogonal_attention.jpeg}
 \caption{معماری توجه متعامد اشتراکی \lr{SOA (Shared Orthogonal Attention)} با تنگناهای نهان اختصاصی به ازای هر پروجکشن}
-\label{fig:shared_orthogonal_attention_arch_soa_fused_module}
+\label{fig:arch_soa_fused_module}
 \end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/soa_fused_attn_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{soa\_fused\_module} در برابر خط مبنا}
+\label{fig:comp_soa_fused_module}
+\end{figure}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{soa\_fused\_module} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/arch_soa_fused_module.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{soa\_fused\_module}}
+\label{fig:arch_soa_fused_module}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/soa_fused_module_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{soa\_fused\_module} در برابر خط مبنا}
+\label{fig:comp_soa_fused_module}
+\end{figure}
+

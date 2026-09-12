@@ -1,3 +1,11 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}\vspace{-0.2cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 85: \lr{dynamic\_entropy\_attention}}
+\label{sec:dynamic_entropy_attention}
+\vspace{-0.2cm}\noindent\rule{\textwidth}{0.5pt}
+\vspace{0.4cm}
 % ===========================================================================
 % Analysis for Module 033: dynamic_entropy_attention
 % ===========================================================================
@@ -66,10 +74,10 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{table}[ht]
 \centering
 \small
-\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{dynamic\_entropy\_attention} در مقایسه با خط پایه بر روی مدل \lr{RoBERTa-base}
+\caption{کارنامه تجربی و شاخص‌های عملکردی ماژول \lr{dynamic\_entropy\_attention} در مقایسه با خط پایه بر روی مدل \lr{RoBERTa-base}}
 \begin{tabular}{lcccc}
 \hline
-\textbf{شاخص ارزیابی} & \textbf{مدل پایه \lr{(Baseline)} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
+\textbf{شاخص ارزیابی} & \textbf{مدل پایه \lr{(Baseline)}} & \textbf{ماژول حاضر} & \textbf{تغییرات نسبی} & \textbf{وضعیت کیفی} \\
 \hline
 مدل ارزیابی‌شده & \lr{RoBERTa-base} & \lr{RoBERTa-base} & --- & \lr{TARGET} \\
 دقت ارزیابی \lr{(Accuracy)} & \lr{91.20\%} & \lr{0.00\%} & \lr{-91.20\%} & \lr{PASS} \\
@@ -111,3 +119,13 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
 در این بخش نمودارهای تحلیلی و معماری تفصیلی ماژول ارائه گردیده است.
+
+\subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش نمودار مقایسه عملکرد تجربی ماژول با خط پایه در سه شاخص کلیدی دقت، اوج مصرف حافظه گرافیکی و توان عملیاتی استنتاج ارائه گردیده است (شکل \ref{fig:comp_dynamic_entropy_attention}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/tt_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{dynamic\_entropy\_attention} در برابر خط مبنا}
+\label{fig:comp_dynamic_entropy_attention}
+\end{figure}

@@ -1,9 +1,24 @@
-% ===========================================================================
-% Analysis for Module 097: dobi_attention
-% ===========================================================================
-\subsection{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{dobi\_attention}}
-\label{sec:dobi_attention}
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 33: \lr{dobi\_attention}}
+\label{sec:mod_dobi_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
 
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 33: \lr{dobi\_attention}}
+\label{sec:mod_dobi_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 74: \lr{dobi\_attention}}
+\label{sec:dobi_attention}
+\vspace{-0.2cm}\noindent\rule{\textwidth}{0.5pt}
+\vspace{0.4cm}
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 \begin{itemize}
     \item \textbf{نام کامل انگلیسی ماژول:} \lr{dobi\_attention}
@@ -109,12 +124,7 @@
 \end{tabular}
 \end{table}
 
-
-
-
 \textbf{نکته کلیدی:} این ارزیابی و نتایج ثبت‌شده به طور مستقیم بر روی مدل پایه \lr{GPT-2} حاصل گردیده است.
-
-
 
 بررسی ماتریس درهم‌ریختگی مدل نشان می‌دهد که تحت شرایط آزمون صفر شات، مدل خودکاهنده \lr{GPT-2} با اعمال لایه‌های DOBI به پیش‌بینی متوازن‌ترین توزیع کلاسی در قالب اکثریت سوق یافته که به کسب دقت \lr{82.34\%} منجر شده است.
 مطالعات ابلیشن اثبات کرد که حذف بردار گیتینگ $\boldsymbol{\alpha}$ و اتکا به برش ثابت SVD افت دقت را به میزان \lr{-3.4\%} دیگر تشدید می‌نماید.
@@ -148,11 +158,37 @@
 ماژول \lr{dobi\_attention} ثابت کرد که ادغام فاکتورگیری متعامد SVD با گیتینگ پیوسته مشتق‌پذیر، رویکردی بسیار کارآمد و منعطف برای فشرده‌سازی مدل‌های ترانسفورمر خودکاهنده است. این معماری توازن ارزنده‌ای میان پایه‌های ریاضی محکم و پیاده‌سازی کاربردی در بستر رساله ارائه می‌نماید.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش دیاگرام تفصیلی گردش داده و ساختار معماری ماژول ارائه گردیده است. شکل \ref{fig:dobi_svd_arch_dobi_attention} ساختار تانسوری و اجزای درونی این مکانیزم را به نمایش می‌گذارد.
+در این بخش دیاگرام تفصیلی گردش داده و نمودار مقایسه عملکرد سه‌معیاره ماژول ارائه گردیده است. شکل \ref{fig:arch_dobi_attention} معماری تانسوری و ساختار پروجکشن‌های لایه را به تصویر می‌کشد و شکل \ref{fig:comp_dobi_attention} عملکرد آن را در مقایسه با مدل پایه نشان می‌دهد.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{img/arch_dobi_svd.jpeg}
+\includegraphics[width=0.90\textwidth]{img/arch_dobi_svd.jpeg}
 \caption{معماری \lr{Dobi-SVD}: تجزیه مقادیر منفرد مشتق‌پذیر با گیتینگ اسپکترال یادگیرنده \lr{(Learnable Spectral Gating)}}
-\label{fig:dobi_svd_arch_dobi_attention}
+\label{fig:arch_dobi_attention}
 \end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/dobi_svd_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{dobi\_attention} در برابر خط مبنا}
+\label{fig:comp_dobi_attention}
+\end{figure}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{dobi\_attention} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/arch_dobi_attention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{dobi\_attention}}
+\label{fig:arch_dobi_attention}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/dobi_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{dobi\_attention} در برابر خط مبنا}
+\label{fig:comp_dobi_attention}
+\end{figure}
+

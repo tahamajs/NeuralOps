@@ -1,3 +1,14 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 109: \lr{zeros\_attention}}
+\label{sec:mod_zeros_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
 \subsection{کالبدشکافی ماژول \lr{zeros\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
@@ -74,21 +85,24 @@
 "An electronic 3D circuit board featuring glowing ceramic DC-blocking capacitors filtering DC bias voltage, allowing pure high-frequency sinusoidal AC signals to propagate freely."
 \end{latin}
 
-\begin{figure}[H]
-    \centering
-    \framebox[0.9\textwidth]{
-    \begin{minipage}{0.85\textwidth}
-    \vspace{1.8cm}
-    \centering
-    \textbf{طرح‌واره معماری و جریان تانسوری ماژول \lr{zeros\_attention}\\[0.3cm]\small \lr{(Tensor Flow \& Architectural Schematic for zeros\_attention)}\\[0.2cm]
-    \small (بر اساس پرامپت فنی فوق تولید و در این کادر جایگزین می‌شود)
-    \vspace{1.8cm}
-    \end{minipage}
-    }
-    \caption{شماتیک و جریان داده تانسوری در ماژول \lr{zeros\_attention}
-    \label{fig:zeros_attention}
+
+
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{zeros\_attention} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/architecture/zeros_attention_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{zeros\_attention}}
+\label{fig:arch_zeros_attention}
 \end{figure}
 
-\vspace{0.5cm}
-\hrule
-\vspace{0.5cm}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/zeros_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{zeros\_attention} در برابر خط مبنا}
+\label{fig:comp_zeros_attention}
+\end{figure}
+

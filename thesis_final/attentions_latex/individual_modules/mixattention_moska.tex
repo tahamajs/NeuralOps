@@ -1,9 +1,24 @@
-% ===========================================================================
-% Analysis for Module 042: mixattention_moska
-% ===========================================================================
-\subsection{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{mixattention\_moska}}
-\label{sec:mixattention_moska}
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 72: \lr{mixattention\_moska}}
+\label{sec:mod_mixattention_moska}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
 
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 72: \lr{mixattention\_moska}}
+\label{sec:mod_mixattention_moska}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 12: \lr{mixattention\_moska}}
+\label{sec:mixattention_moska}
+\vspace{-0.2cm}\noindent\rule{\textwidth}{0.5pt}
+\vspace{0.4cm}
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 \begin{itemize}
     \item \textbf{نام کامل انگلیسی ماژول:} \lr{mixattention\_moska}
@@ -81,8 +96,6 @@ $$\Pr_{h \in \mathcal{H}}[h(\mathbf{q}_i) = h(\mathbf{k}_j)] = 1 - \frac{\theta(
 
 \textbf{نکته کلیدی:} این ارزیابی و مقادیر ثبت‌شده به طور مستقیم بر روی مدل سبک‌وزن \lr{DistilBERT} (۶ لایه انکودر تقطیرشده با ابعاد پنهان ۷۶۸) حاصل شده است.
 
-
-
 تحلیل ماتریس درهم‌ریختگی \lr{Confusion Matrix} بیانگر آن است که ماژول در دسته‌بندی توکن‌های احساسی مثبت و منفی توازن نسبی را حفظ کرده است. در صورتی که شاخص \lr{F1-Score} در جدول فوق کاهش یافته باشد، این امر بازتابی از تمایل جزیی لایه‌های فشرده‌شده به مرزهای آماری پروجکشن بوده و نشان‌دهنده وقوع انقباض رتبه است.
 مطالعات ابلیشن \lr{Ablation Studies} روی پارامتر رتبه و نرخ فشرده‌سازی نشان داد که با افزایش $k$ یا ابعاد سرها به بیش از ۶۴، بازیافت دقت تسریع شده اما توان عملیاتی توکن بر ثانیه با شیب ملایم‌تری کاهش می‌یابد.
 \subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
@@ -111,4 +124,30 @@ $$\Pr_{h \in \mathcal{H}}[h(\mathbf{q}_i) = h(\mathbf{k}_j)] = 1 - \frac{\theta(
 ماژول \lr{mixattention\_moska} با موفقیت نشان داد که پیاده‌سازی مکانیزم‌های توجه مدرن با کاهش پیچیدگی و مصرف حافظه، گزینه‌ای بسیار جذاب برای عملیاتی‌سازی مدل‌های زبانی بر روی کارت‌های گرافیکی مصرف‌کننده \lr{مانند سری RTX 40} به شمار می‌رود. این یافته مستقیماً فرضیه اصلی این رساله مبنی بر امکان‌پذیری فشرده‌سازی لایه توجه ترنسفورمر بدون افت فاحش در شاخص‌های درک زبانی را تایید می‌نماید.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش نمودارهای تحلیلی و معماری تفصیلی ماژول ارائه گردیده است.
+در این بخش نمودار مقایسه عملکرد تجربی ماژول با خط پایه در سه شاخص کلیدی دقت، اوج مصرف حافظه گرافیکی و توان عملیاتی استنتاج ارائه گردیده است (شکل \ref{fig:comp_mixattention_moska}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/mixattention_moska_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{mixattention\_moska} در برابر خط مبنا}
+\label{fig:comp_mixattention_moska}
+\end{figure}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{mixattention\_moska} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/architecture/mixattention_moska_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{mixattention\_moska}}
+\label{fig:arch_mixattention_moska}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/mixattention_moska_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{mixattention\_moska} در برابر خط مبنا}
+\label{fig:comp_mixattention_moska}
+\end{figure}
+
