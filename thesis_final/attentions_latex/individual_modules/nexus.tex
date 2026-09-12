@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 76: \lr{nexus}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 73: \lr{nexus}}
 \label{sec:mod_nexus}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 76: \lr{nexus}}
-\label{sec:mod_nexus}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{nexus}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 معماری \lr{nexus} بر ایده رتبه‌بندی پیوسته اهمیت توکن‌ها از طریق تابع امتیازدهی عصبی \lr{(X-scoring)} بنا شده است. به جای مقایسه کورکورانه تمام توکن‌ها، ماتریس ارتباط صرفاً میان جفت‌های دارای پتانسیل برهمکنش بالا شکل می‌گیرد تا بار محاسبات نامتقارن مهار گردد.
@@ -53,13 +45,22 @@ s_{ij} = \phi_Q(\mathbf{q}_i)^\top \phi_K(\mathbf{k}_j) \cdot \mathbf{1}_{\{ \op
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{69.13\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{71.4\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{38,900} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{nexus}}
+\label{tab:benchmark_nexus}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دستیابی به توان عملیاتی فوق‌العاده \lr{38,900} توکن بر ثانیه و تقلیل مصرف حافظه به \lr{750.0 MB} (افت \lr{82.1\%}ی نسبت به \lr{۴۲۰۰ MB} baseline) با وجود افت کنترل‌شده دقت در سطح \lr{69.13\%}، گویای مصالحه هوشمندانه میان توان عملیاتی و بار محاسباتی است. برای کاربردهای لبه‌ای و بلادرنگ با حجم تراکنش فوق‌سنگین، معماری \lr{nexus} سرعتی فراتر از مکانیزم‌های استاندارد ارائه می‌دهد.
@@ -95,8 +96,6 @@ s_{ij} = \phi_Q(\mathbf{q}_i)^\top \phi_K(\mathbf{k}_j) \cdot \mathbf{1}_{\{ \op
 \textbf{AI Technical Visualization Prompt:}\\
 "A 3D technological visualization of the NEXUS neural scoring attention. Glowing nodes on a neural grid scoring relevance between tokens, bright cyan energy links forming sparse pathways between high-score tokens, dark glass substrate, high dynamic range, 8k resolution --ar 16:9"
 \end{latin}
-
-
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
 

@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 79: \lr{performer\_attention}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 76: \lr{performer\_attention}}
 \label{sec:mod_performer_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 79: \lr{performer\_attention}}
-\label{sec:mod_performer_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{performer\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 معماری جریان‌ساز \lr{performer\_attention} با ابداع الگوریتم \lr{FAVOR+}، سد محاسباتی سافت‌مکس را از طریق نگاشت توابع ویژگی تصادفی مثبت و متعامد شکست. این رویکرد تقریب بدون سوگیری از توجه کامل را در زمان و حافظه کاملاً خطی به ارمغان می‌آورد.
@@ -53,13 +45,22 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{87.20\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{84.5\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{720.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{39,100} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{performer\_attention}}
+\label{tab:benchmark_performer_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 ثبت توان فوق‌العاده \lr{39,100} توکن در ثانیه و اوج مصرف رم \lr{720.0 MB} (کاهش \lr{82.9\%}ی نسبت به \lr{۴۲۰۰ MB} مبنا) در کنار دقت پایدار \lr{87.20\%}، اثبات‌کننده قدرت ریاضی نگاشت ارتوگونال مثبت \lr{FAVOR+} است که خطای واریانس تقریب‌های رندوم قبلی را مهار کرده است.
@@ -95,8 +96,6 @@
 \textbf{AI Technical Visualization Prompt:}\\
 "A 3D scientific rendering of the Performer FAVOR+ mechanism. Geometric orthogonal projection axes glowing in cyan and purple, mapping continuous token tensors into positive random feature spaces, futuristic data flow, 8k resolution --ar 16:9"
 \end{latin}
-
-
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
 

@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 87: \lr{salt}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 83: \lr{salt}}
 \label{sec:mod_salt}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 87: \lr{salt}}
-\label{sec:mod_salt}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{salt}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 معماری \lr{salt} با هدف هم‌راستاسازی طیفی وزن‌های کم‌رتبه با جهت‌های اصلی واریانس اطلاعاتی مدل مبنا توسعه یافته است. این ماژول پایه‌های تبدیل را روی بردارهای ویژه متناظر با بزرگ‌ترین مقادیر تکین قفل می‌کند تا همگرایی تنظیم دقیق با کمترین پارامتر ممکن محقق گردد.
@@ -53,13 +45,22 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{80.28\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{78.9\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,100} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{salt}}
+\label{tab:benchmark_salt}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 کسب دقت \lr{80.28\%} و کنترل اوج مصرف رم در سطح \lr{750.0 MB} (صرفه‌جویی \lr{82.1\%}ی نسبت به \lr{۴۲۰۰ MB} پایه) با سرعت \lr{36,100} توکن/ثانیه، نشان می‌دهد که هم‌راستاسازی بردارهای تطبیق با طیف ویژه ماتریس پایه، از سرگردانی گرادیان در زیرفضاهای پوچ ممانعت می‌نماید.
@@ -95,8 +96,6 @@
 \textbf{AI Technical Visualization Prompt:}\\
 "A 3D scientific visualization of Spectral Alignment and Low-Rank Tuning (SALT). Harmonic spectral resonance curves locking into alignment with structural crystalline lattice bars of a neural network, glowing amber and cyan tones, 8k resolution --ar 16:9"
 \end{latin}
-
-
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
 

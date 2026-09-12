@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 84: \lr{regla\_attention}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 81: \lr{regla\_attention}}
 \label{sec:mod_regla_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 84: \lr{regla\_attention}}
-\label{sec:mod_regla_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{regla\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 مکانیزم \lr{regla\_attention} با تزریق گیت‌های زوال وابسته به داده به بطن ساختار توجه خطی بازگشتی، قابلیت فراموشی انتخابی و نگهداری بلندمدت را ممکن می‌سازد. این طراحی مانع از اشباع نامطلوب تانسور حافظه در متون طولانی می‌شود.
@@ -53,13 +45,22 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{84.60\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{82.3\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{710.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{42,000} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{regla\_attention}}
+\label{tab:benchmark_regla_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دستیابی به سرعت چشمگیر \lr{42,000} توکن در ثانیه همراه با تقلیل مصرف رم به \lr{710.0 MB} (کاهش \lr{83.1\%}ی نسبت به \lr{۴۲۰۰ MB} مبنا) و دقت مطلوب \lr{84.60\%}، کارایی استثنایی اسکن خطی با گیت‌های انطباقی را در مدیریت وابستگی‌های زبانی به اثبات می‌رساند.
@@ -108,9 +109,6 @@
 \label{fig:regla_attention_arch_regla_attention}
 \end{figure}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
-
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{regla\_attention} ارائه شده است.
 
 \begin{figure}[htbp]
 \centering

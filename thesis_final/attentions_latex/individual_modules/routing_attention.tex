@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 86: \lr{routing\_attention}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 82: \lr{routing\_attention}}
 \label{sec:mod_routing_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 86: \lr{routing\_attention}}
-\label{sec:mod_routing_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{routing\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 معماری \lr{routing\_attention} توکن‌ها را در یک فضای برداری کروی خوشه‌بندی می‌کند. هر پرس‌وجو به جای جستجو در کل دنباله، صرفاً به توکن‌های کلیدی که در همان سلول ورونوی کروی قرار گرفته‌اند توجه می‌کند تا هزینه محاسباتی از حالت مربعی به شبه‌خطی دگرگون گردد.
@@ -53,13 +45,22 @@ c(\mathbf{x}_i) = \arg\max_{k \in \{1, \dots, K\}} \frac{\langle \mathbf{x}_i, \
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{83.40\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{81.2\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{780.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{33,100} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{routing\_attention}}
+\label{tab:benchmark_routing_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 ثبت دقت \lr{83.40\%} و مصرف رم \lr{780.0 MB} (کاهش \lr{81.4\%}ی نسبت به مدل مبنای \lr{۴۲۰۰ MB}) همراه با سرعت \lr{33,100} توکن در ثانیه، تأییدکننده همبستگی زاویه‌ای توکن‌ها در فضای معنایی است و نشان می‌دهد خوشه‌بندی کروی انحراف خطای بسیار اندکی تولید می‌کند.
@@ -95,8 +96,6 @@ c(\mathbf{x}_i) = \arg\max_{k \in \{1, \dots, K\}} \frac{\langle \mathbf{x}_i, \
 \textbf{AI Technical Visualization Prompt:}\\
 "A 3D scientific visualization of spherical routing attention. Showing hundreds of glowing data points projected onto the surface of a luminous sphere, partitioned into vibrant Voronoi geometric cells with localized laser interconnections, 8k resolution --ar 16:9"
 \end{latin}
-
-
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
 

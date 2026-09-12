@@ -3,22 +3,12 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 78: \lr{padre}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 75: \lr{padre}}
 \label{sec:mod_padre}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
 
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 78: \lr{padre}}
-\label{sec:mod_padre}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 21: \lr{padre}}
-\label{sec:padre}
-\vspace{-0.2cm}\noindent\rule{\textwidth}{0.5pt}
-\vspace{0.4cm}
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 ماژول \lr{padre} پیاده‌سازی رسمی مکانیزم «توجه چندجمله‌ای با منظم‌سازی دراپ‌اوت» \lr{(Polynomial Attention with Dropout Regularization - PADRe)} در چارچوب تحقیقاتی حاضر است. این ماژول در مسیر \path{Codes/framework/compression_engine/padre_attention.py} پیاده‌سازی گردیده و از طریق کلاس \lr{PADReAttention} در سیستم ثبت ماژول‌های چارچوب پایدار شده است.
 رسالت محوری این ماژول، حذف عملگر هزینه‌بر و غیرخطی سافت‌مکس \lr{(Softmax)} و جایگزینی آن با یک نگاشت کرنل چندجمله‌ای تیلور مرتبه دوم پایدار $(\phi(x) = 1 + x + \frac{1}{2}x^2)$ به همراه مکانیزم منظم‌سازی تصادفی است. این جایگزینی ساختاری امکان بهره‌گیری از خاصیت شرکت‌پذیری ضرب ماتریسی را فراهم آورده و پیچیدگی زمانی و حافظه‌ای لایه توجه را از درجه درجه‌دوم $\mathcal{O}(N^2)$ به خطی $\mathcal{O}(N \cdot d^2)$ تبدیل می‌نماید.
@@ -155,9 +145,6 @@
 \label{fig:comp_padre}
 \end{figure}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
-
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{padre} ارائه شده است.
 
 \begin{figure}[htbp]
 \centering

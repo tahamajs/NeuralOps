@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 65: \lr{leka\_v3}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 63: \lr{leka\_v3}}
 \label{sec:mod_leka_v3}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 65: \lr{leka\_v3}}
-\label{sec:mod_leka_v3}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{leka\_v3}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 مکانیزم نوآورانه \lr{leka\_v3} پاسخی بنیادین به یکی از حیاتی‌ترین چالش‌های مهندسی مدل‌های هوش مصنوعی مدرن است: \textbf{چگونه می‌توان ظرفیت بازنمایی زبانی مدل را در بالاترین سطح نگه داشت و هم‌زمان هزینه‌های سنگین پردازشی و بن‌بست‌های حافظه سخت‌افزار را مهار کرد؟}
@@ -50,13 +42,22 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.5\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{85.2\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{leka\_v3}}
+\label{tab:benchmark_leka_v3}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 مهار قطعی مصرف حافظه بر روی \lr{750.0 MB} و دستیابی به نرخ گذردهی \lr{36,500} توکن بر ثانیه، محصول مستقیم اجرای محاسبات درون حافظه فوق‌سریع \lr{SRAM} است که مانع از اشباع پهنای باند حافظه سراسری پردازنده می‌گردد.
@@ -96,8 +97,6 @@
 \textbf{AI Technical Visualization Prompt:}\\
 "A hyper-detailed, photorealistic 3D scientific isometric schematic of the leka\_v3 attention mechanism. Illustrating incoming token tensors of shape [B, N, D] flowing smoothly into optimized projection blocks and state matrices. Glowing cyan, neon amber, and vibrant violet data pathways highlighting low-rank dimension reduction and on-chip SRAM cache operations, contrasted against a dark metallic blueprint background. Clean technical typography, publication-grade academic rendering, Unreal Engine 5 cinematic lighting, 8k resolution --ar 16:9"
 \end{latin}
-
-
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
 

@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 41: \lr{SOAFusedAttention}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 40: \lr{SOAFusedAttention}}
 \label{sec:mod_SOAFusedAttention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 41: \lr{SOAFusedAttention}}
-\label{sec:mod_SOAFusedAttention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{SOAFusedAttention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 مکانیزم نوآورانه \lr{SOAFusedAttention} پاسخی بنیادین به یکی از حیاتی‌ترین چالش‌های مهندسی مدل‌های هوش مصنوعی مدرن است: \textbf{چگونه می‌توان ظرفیت بازنمایی زبانی مدل را در بالاترین سطح نگه داشت و هم‌زمان هزینه‌های سنگین پردازشی و بن‌بست‌های حافظه سخت‌افزار را مهار کرد؟}
@@ -49,13 +41,22 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{81.31\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{81.91\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{282.7 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{SOAFusedAttention}}
+\label{tab:benchmark_SOAFusedAttention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دقت \lr{81.31\%}ی و پایداری عملکرد با شاخص F1 برابر \lr{81.91\%} تأیید می‌کند که فاکتورسازی زیرفضای نهفته به کمک تجزیه مقادیر منفرد \lr{(SVD)} مؤلفه‌های فرکانس بالای حامل نویز را حذف کرده و هسته معنایی جملات را حفظ نموده است. از منظر سخت‌افزاری، کاهش اوج مصرف حافظه به \lr{282.7 MB} (کاهش چشمگیر \lr{93.3\%}ی در مقایسه با مبنای \lr{4200 MB}ی) حاصل همجوشی محاسبات در سطح حافظه کش پرسرعت SRAM و حذف رفت‌وبرگشت‌های متوالی تانسورهای میانی به حافظه سراسری DRAM است که توان عملیاتی را تا \lr{36,500} توکن بر ثانیه تثبیت کرده است.
@@ -104,9 +105,6 @@
 \label{fig:shared_orthogonal_attention_arch_SOAFusedAttention}
 \end{figure}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
-
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{SOAFusedAttention} ارائه شده است.
 
 \begin{figure}[htbp]
 \centering

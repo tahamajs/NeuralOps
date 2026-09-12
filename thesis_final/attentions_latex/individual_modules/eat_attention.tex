@@ -9,16 +9,6 @@
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
 
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 14: \lr{eat\_attention}}
-\label{sec:mod_eat_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 23: \lr{eat\_attention}}
-\label{sec:eat_attention}
-\vspace{-0.2cm}\noindent\rule{\textwidth}{0.5pt}
-\vspace{0.4cm}
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 ماژول \lr{eat\_attention} پیاده‌سازی رسمی مکانیزم «ترنسفورمر با توجه کارا و هرس پیش‌رونده توکن‌ها» \lr{(Efficient Attention Transformer with Progressive Token Pruning - EAT)} در بستر پژوهشی این رساله است. این ماژول در فایل \path{Codes/framework/attentions/eat.py} توسعه یافته و تحت کلاس ارشد \lr{EATBlock} به همراه ماژول کمکی \lr{ProgressiveTokenPruning} در رجیستری مرکزی ثبت شده است.
 هدف راهبردی این ماژول، مهار هزینه محاسباتی از طریق فشرده‌سازی خودکار طول دنباله در طول عبور از لایه‌های متوالی شبکه است. با ارزیابی اهمیت اطلاعاتی توکن‌ها بر پایه الگوهای فعال‌سازی لایه توجه، توکن‌های حاوی اطلاعات حاشیه‌ای و با همبستگی بالا به صورت پیش‌رونده هرس شده و طول موثر دنباله به شکل پویا کاهش می‌یابد.
@@ -153,9 +143,6 @@ s_i = \frac{1}{H \cdot N} \sum_{h=1}^H \sum_{j=1}^N \mathbf{A}_{h, j, i}
 \label{fig:comp_eat_attention}
 \end{figure}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
-
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{eat\_attention} ارائه شده است.
 
 \begin{figure}[htbp]
 \centering

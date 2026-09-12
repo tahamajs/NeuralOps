@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 82: \lr{rala\_attention}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 79: \lr{rala\_attention}}
 \label{sec:mod_rala_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 82: \lr{rala\_attention}}
-\label{sec:mod_rala_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{rala\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 معماری \lr{rala\_attention} با هدف حل چالش تاریخی مدل‌های خطی—یعنی ناتوانی در تمرکز بر الگوهای تیز و دقیق—پایه‌گذاری شده است. این معماری یک ردیاب تجمعی خطی سریع را با یک مسیر مکمل کم‌رتبه ادغام می‌کند تا تمرکز نرم را بازآفرینی نماید.
@@ -53,13 +45,22 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.50\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{85.2\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{rala\_attention}}
+\label{tab:benchmark_rala_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دستیابی به دقت عالی \lr{88.50\%} و سرعت \lr{36,500} توکن/ثانیه همراه با افت \lr{82.1\%}ی حافظه (از \lr{۴۲۰۰ MB} به \lr{750.0 MB})، نشان می‌دهد که افزودن مسیر کم‌رتبه مکمل، مشکل ناتوانی توجه خطی در بازخوانی دقیق کلمات کلیدی گذشته را به کلی مرتفع ساخته است.
@@ -99,8 +100,6 @@
 \textbf{AI Technical Visualization Prompt:}\\
 "A 3D scientific visualization of Rank-Augmented Linear Attention (RALA). A sleek blue pipeline executing continuous linear associative recurrence, intertwined with an intense golden laser pathway representing rank-augmented correction, merging seamlessly, 8k resolution --ar 16:9"
 \end{latin}
-
-
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
 

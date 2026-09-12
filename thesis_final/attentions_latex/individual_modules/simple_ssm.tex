@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 90: \lr{simple\_ssm}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 84: \lr{simple\_ssm}}
 \label{sec:mod_simple_ssm}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 90: \lr{simple\_ssm}}
-\label{sec:mod_simple_ssm}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{simple\_ssm}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 ماژول مینیمال \lr{simple\_ssm} جایگزینی سبک و کاملاً خطی برای مکانیزم توجه سنتی است که فرآیند مدل‌سازی زبانی را در قالب معادلات دیفرانسیل بازگشتی خطی گسسته‌شده پیاده می‌کند و حافظه استنتاج را در حد یک بردار ثابت نگه می‌دارد.
@@ -53,13 +45,22 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{62.13\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{63.8\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{620.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{44,500} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{simple\_ssm}}
+\label{tab:benchmark_simple_ssm}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دستیابی به بالاترین نرخ توان عملیاتی در این رده یعنی \lr{44,500} توکن در ثانیه و مصرف فوق‌العاده اندک \lr{620.0 MB} حافظه (کاهش \lr{85.2\%}ی نسبت به \lr{۴۲۰۰ MB} مبنا) با دقت \lr{62.13\%}، نشان می‌دهد که \lr{SimpleSSM} گزینه‌ای بی‌رقیب برای سناریوهای با منابع سخت‌افزاری به شدت محدود و پردازش فوری جریان داده‌های مداوم است.
@@ -95,8 +96,6 @@
 \textbf{AI Technical Visualization Prompt:}\\
 "A 3D minimalist scientific diagram of SimpleSSM. A linear harmonic oscillator model where data pulses smoothly modulate an internal glowing resonant core with zero memory overhead, clean clinical white and neon blue lighting, 8k resolution --ar 16:9"
 \end{latin}
-
-
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
 

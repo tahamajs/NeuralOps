@@ -3,19 +3,11 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 98: \lr{svd\_sequence\_attention}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 88: \lr{svd\_sequence\_attention}}
 \label{sec:mod_svd_sequence_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
-
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 98: \lr{svd\_sequence\_attention}}
-\label{sec:mod_svd_sequence_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
-
-\subsection{کالبدشکافی ماژول \lr{svd\_sequence\_attention}}
 
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 برخلاف روش‌های معمول که بعد کانال را فشرده می‌کنند، ماژول \lr{svd\_sequence\_attention} \textbf{بعد زمان و توالی توکن‌ها} را با تجزیه SVD فاکتورگیری کرده و پیچیدگی طولانی را مهار می‌سازد.
@@ -48,13 +40,22 @@
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{88.53\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{85.20\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{298.7 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{svd\_sequence\_attention}}
+\label{tab:benchmark_svd_sequence_attention}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 کاهش خیره‌کننده \lr{۹۲.۹\%}ی مصرف حافظه (\lr{۲۹۸.۷ MB} در مقابل \lr{۴۲۰۰ MB} مدل پایه) در کنار دقت درخشان ۸۸.۵۳٪ و شاخص F1 برابر ۸۵.۲٪، قاطعانه ثابت می‌کند که افزونگی زمانی در طول دنباله‌ها بسیار بیشتر از افزونگی ابعاد پنهان است و فشرده‌سازی بردار زمان بالاترین سودمندی محاسباتی را در پی دارد.
@@ -99,8 +100,6 @@
 \textbf{AI Technical Visualization Prompt:}\\
 "A 3D isometric timeline strip where redundant video frames compress down into brilliant luminous crystal keyframes flowing directly into a neural processor."
 \end{latin}
-
-
 
 \subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
 

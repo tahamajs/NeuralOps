@@ -3,19 +3,17 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 106: \lr{vspec}}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 60: \lr{vspec}}
 \label{sec:mod_vspec}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
 \vspace*{0.3cm}
 
-\subsection{کالبدشکافی ماژول \lr{vspec}}
-
 \subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
 ماژول \lr{vspec} از \textbf{توجه طیفی تغییراتی توکن-انطباقی \lr{(Variational Spectral Attention)}} مجهز به گیت‌بندی تکین‌ها برای استخراج الگوهای پنهان استفاده می‌کند.
 
 \textbf{تمثیل ملموس و مثال کاربردی:}
-تمثیل \textbf{تلسکوپ فضایی مجهز به آینه‌های اپتیک سازگارپذیر \lr{(Adaptive Optics)}: آینه‌های تلسکوپ در هر هزارم ثانیه تغییر انحنا می‌دهند تا انکسار ناشی از امواج جوی را خنثی کرده و تصویری کاملاً شفاف از کهکشان‌های دوردست ثبت کنند.
+تمثیل \textbf{تلسکوپ فضایی مجهز به آینه‌های اپتیک سازگارپذیر \lr{(Adaptive Optics)}}: آینه‌های تلسکوپ در هر هزارم ثانیه تغییر انحنا می‌دهند تا انکسار ناشی از امواج جوی را خنثی کرده و تصویری کاملاً شفاف از کهکشان‌های دوردست ثبت کنند.
 
 \subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
 \begin{equation}
@@ -42,13 +40,22 @@ q(\mathbf{z} \mid \mathbf{X}) = \mathcal{N}\left(\boldsymbol{\mu}_{\text{spec}}(
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
-\begin{itemize}
-\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
-\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{79.24\%}
-\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{53.87\%}
-\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
-\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
-\end{itemize}
+
+
+\begin{table}[H]
+\centering
+\small
+\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{vspec}}
+\label{tab:benchmark_vspec}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\midrule
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 کاهش \lr{۸۲.۱\%}ی مصرف حافظه (\lr{۷۵۰ MB} در مقابل \lr{۴۲۰۰ MB}) و دستیابی به دقت ۷۹.۲۴٪ نشان‌دهنده تعادل موفق میان یادگیری تغییراتی و مهار سربار سخت‌افزاری است.
