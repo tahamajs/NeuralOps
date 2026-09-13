@@ -762,10 +762,6 @@ def inject_adaptive_span(
     max_span = getattr(comp_config, "max_span", kwargs.get("max_span", 128))
 
     model_type_str = str(getattr(cfg, "model_type", "")).lower() if cfg is not None else ""
-    if "qwen" in model_type_str or "gpt" in model_type_str:
-        max_span = min(max_span, 64)
-    elif "roberta" in model_type_str or "bert" in model_type_str:
-        max_span = min(max_span, 96)  # Allow ramp to matter
 
     is_nested_layer = (
         (hasattr(target, "attention") and hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"))
